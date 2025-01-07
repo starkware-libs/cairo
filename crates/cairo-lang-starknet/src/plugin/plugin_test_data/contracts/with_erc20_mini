@@ -9,9 +9,9 @@ cairo_level_tests/contracts/with_erc20_mini.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod erc20_mini_contract {
-    use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
+    use crate::components::erc20_mini;
     #[storage]
     struct Storage {
         #[flat]
@@ -34,7 +34,7 @@ mod erc20_mini_contract {
             self.erc20_token.deref()
         }
         fn storage_mut(
-            ref self: ContractState
+            ref self: ContractState,
         ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
             self.erc20_token.deref()
         }
@@ -50,7 +50,7 @@ mod erc20_mini_contract {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.erc20_init(name, symbol, decimals, initial_supply, recipient);
         }
@@ -61,6 +61,7 @@ mod erc20_mini_contract {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[flat]
     erc20_token: starknet::storage::FlattenedStorage<erc20_mini::ERC20Storage>,
 }
 #[doc(hidden)]
@@ -76,6 +77,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[flat]
     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
 }
 #[doc(hidden)]
@@ -229,7 +231,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_mini::Event, Event> {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         );
     }
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -238,9 +240,9 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
-    use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
+    use crate::components::erc20_mini;
     #[storage]
     struct Storage {
         #[flat]
@@ -263,7 +265,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
             self.erc20_token.deref()
         }
         fn storage_mut(
-            ref self: ContractState
+            ref self: ContractState,
         ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
             self.erc20_token.deref()
         }
@@ -279,7 +281,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.erc20_init(name, symbol, decimals, initial_supply, recipient);
         }
@@ -290,6 +292,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[flat]
     erc20_token: starknet::storage::FlattenedStorage<erc20_mini::ERC20Storage>,
 }
 #[doc(hidden)]
@@ -305,6 +308,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[flat]
     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_mini::ERC20Storage>>,
 }
 #[doc(hidden)]
@@ -458,7 +462,7 @@ impl EventERC20TokenIntoEvent of Into<erc20_mini::Event, Event> {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         );
     }
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;

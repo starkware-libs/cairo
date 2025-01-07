@@ -31,17 +31,17 @@ foo
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:10
 type B = bar::Coupon; // Invalid: missing type annotation.
-         ^*^
+         ^^^
 
 error: Coupon cannot be used with extern functions.
  --> lib.cairo:4:23
 type D = extern_func::Coupon;
-                      ^****^
+                      ^^^^^^
 
 error: Invalid path.
  --> lib.cairo:5:15
 type E = foo::UnknownIdentifier;
-              ^***************^
+              ^^^^^^^^^^^^^^^^^
 
 error: Type "test::foo::Coupon" has no members.
  --> lib.cairo:14:7
@@ -91,19 +91,19 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "test::bar::<S, T>::Coupon", found: "()".
- --> lib.cairo:8:46
+ --> lib.cairo:8:26
 fn get_coupon<S, T>() -> bar::<S, T>::Coupon {}
-                                             ^^
+                         ^^^^^^^^^^^^^^^^^^^
 
 error: Unexpected return type. Expected: "test::bar2::<S, T>::Coupon", found: "()".
- --> lib.cairo:9:48
+ --> lib.cairo:9:27
 fn get_coupon2<S, T>() -> bar2::<S, T>::Coupon {}
-                                               ^^
+                          ^^^^^^^^^^^^^^^^^^^^
 
 error: Unexpected return type. Expected: "test::MyStruct::<S>", found: "()".
- --> lib.cairo:10:35
+ --> lib.cairo:10:23
 fn get_struct<S>() -> MyStruct<S> {}
-                                  ^^
+                      ^^^^^^^^^^^
 
 error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
  --> lib.cairo:15:7
@@ -118,12 +118,12 @@ error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no 
 error: Unexpected argument type. Expected: "test::bar::<?8, ?9>::Coupon", found: "test::bar2::<?10, ?11>::Coupon".
  --> lib.cairo:23:9
     y = get_coupon2();
-        ^***********^
+        ^^^^^^^^^^^^^
 
 error: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon", found: "test::MyStruct::<?14>".
  --> lib.cairo:26:9
     z = get_struct();
-        ^**********^
+        ^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -167,7 +167,7 @@ foo0
 error: Trait has no implementation in context: core::traits::Drop::<test::m::bar_no_drop::Coupon>.
  --> lib.cairo:19:5
     use_drop(x);
-    ^******^
+    ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -232,16 +232,17 @@ error: Coupons are disabled in the current crate.
 You can enable them by enabling the coupons experimental feature in the crate config.
  --> lib.cairo:1:16
 fn foo(x: foo::Coupon) {
-               ^****^
+               ^^^^^^
 
 error: Wrong number of arguments. Expected 1, found: 2
  --> lib.cairo:2:5
     foo(x, __coupon__: x);
-    ^*******************^
+    ^^^^^^^^^^^^^^^^^^^^^
 
 //! > crate_settings
 edition = "2023_01"
 
 [experimental_features]
 negative_impls = false
+associated_item_constraints = false
 coupons = false

@@ -16,9 +16,9 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
@@ -26,7 +26,7 @@ mod counter_contract {
         #[substorage(v0)]
         upgradable: upgradable_comp::Storage,
         #[substorage(v0)]
-        ownable: ownable_comp::Storage
+        ownable: ownable_comp::Storage,
     }
 
     #[event]
@@ -35,17 +35,17 @@ mod counter_contract {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event
+        OwnableEvent: ownable_comp::Event,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterIncreased {
-        amount: u128
+        amount: u128,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterDecreased {
-        amount: u128
+        amount: u128,
     }
 
     #[constructor]
@@ -81,7 +81,9 @@ mod counter_contract {
 #[doc(hidden)]
 struct StorageStorageBase {
     counter: starknet::storage::StorageBase<u128>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -102,7 +104,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[doc(hidden)]
 struct StorageStorageBaseMut {
     counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -121,7 +125,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          upgradable: upgradable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 
@@ -994,9 +1000,9 @@ impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICoun
 impl ICounterContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
 impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
@@ -1004,7 +1010,7 @@ impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IC
         #[substorage(v0)]
         upgradable: upgradable_comp::Storage,
         #[substorage(v0)]
-        ownable: ownable_comp::Storage
+        ownable: ownable_comp::Storage,
     }
 
     #[event]
@@ -1013,17 +1019,17 @@ impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IC
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event
+        OwnableEvent: ownable_comp::Event,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterIncreased {
-        amount: u128
+        amount: u128,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterDecreased {
-        amount: u128
+        amount: u128,
     }
 
     #[constructor]
@@ -1059,7 +1065,9 @@ impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 #[doc(hidden)]
 struct StorageStorageBase {
     counter: starknet::storage::StorageBase<u128>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -1080,7 +1088,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[doc(hidden)]
 struct StorageStorageBaseMut {
     counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -1099,7 +1109,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          upgradable: upgradable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 

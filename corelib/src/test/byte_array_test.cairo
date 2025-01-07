@@ -1,3 +1,4 @@
+use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -22,7 +23,7 @@ fn test_append_word() {
 
     ba.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
     compare_byte_array(
-        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     );
 
     ba.append_word(0x1f2021, 3);
@@ -39,7 +40,7 @@ fn test_append_word() {
     ba.append_word(0x2425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 27);
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e
+        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e,
     ];
     compare_byte_array(@ba, expected_data.span(), 0, 0);
 
@@ -56,7 +57,7 @@ fn test_append() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -71,7 +72,7 @@ fn test_add_eq() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -85,7 +86,7 @@ fn test_concat() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -100,7 +101,7 @@ fn test_add() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -139,7 +140,7 @@ fn test_concat_first_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
 }
@@ -154,7 +155,7 @@ fn test_concat_second_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x1f);
 }
@@ -193,7 +194,7 @@ fn test_concat_split_index_gt_16() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01,
-        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x21);
 }
@@ -208,7 +209,7 @@ fn test_concat_pending_sum_up_to_full() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 0, 0);
 }
@@ -250,7 +251,10 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
 
     let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01];
     compare_byte_array(
-        @ba3, expected_data.span(), 29, 0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba3,
+        expected_data.span(),
+        29,
+        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     );
 }
 
@@ -457,9 +461,9 @@ fn test_serde() {
     compare_spans(
         serialized.span(),
         [0, // data len
-         0x68656c6c6f, // pending_word
-         5 // pending_word_len
-        ].span()
+        0x68656c6c6f, // pending_word
+        5 // pending_word_len
+        ].span(),
     );
 
     let mut serialized = array![];
@@ -473,14 +477,26 @@ fn test_serde() {
             0x63746572732e, // pending_word
             6 // pending_word_len
         ]
-            .span()
+            .span(),
     );
+}
+
+#[test]
+fn test_iterator() {
+    let ba: ByteArray = "hello";
+    let mut iter = ba.into_iter();
+    assert_eq!(iter.next(), Option::Some('h'));
+    assert_eq!(iter.next(), Option::Some('e'));
+    assert_eq!(iter.next(), Option::Some('l'));
+    assert_eq!(iter.next(), Option::Some('l'));
+    assert_eq!(iter.next(), Option::Some('o'));
+    assert_eq!(iter.next(), Option::None);
 }
 
 // ========= Test helper functions =========
 
 fn compare_byte_array(
-    mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252
+    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
 ) {
     assert(ba.data.len() == data.len(), 'wrong data len');
     let mut ba_data = ba.data.span();
@@ -493,7 +509,7 @@ fn compare_byte_array(
                 let expected_word = *data.pop_front().unwrap();
                 assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
             },
-            Option::None(_) => { break; }
+            Option::None(_) => { break; },
         }
         data_index += 1;
     };
@@ -504,7 +520,7 @@ fn compare_byte_array(
 }
 
 fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
-    mut a: Span<T>, mut b: Span<T>
+    mut a: Span<T>, mut b: Span<T>,
 ) {
     assert_eq!(a.len(), b.len());
     let mut index = 0;
@@ -514,7 +530,7 @@ fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
                 let current_b = b.pop_front().unwrap();
                 assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
             },
-            Option::None(_) => { break; }
+            Option::None(_) => { break; },
         }
         index += 1;
     };

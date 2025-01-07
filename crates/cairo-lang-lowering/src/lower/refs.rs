@@ -25,9 +25,9 @@ pub struct ClosureInfo {
 pub struct SemanticLoweringMapping {
     /// Maps member paths ([MemberPath]) to lowered variable ids or scattered variable ids.
     scattered: OrderedHashMap<MemberPath, Value>,
-    /// Maps captured member paths to a clusure that captured them.
+    /// Maps captured member paths to a closure that captured them.
     pub captured: UnorderedHashMap<MemberPath, VariableId>,
-    /// Maps captured member paths which are copiable to a clusure that captured them.
+    /// Maps captured member paths which are copiable to a closure that captured them.
     pub copiable_captured: UnorderedHashMap<MemberPath, VariableId>,
     /// Maps the variable id of a closure to the closure info.
     pub closures: UnorderedHashMap<VariableId, ClosureInfo>,
@@ -219,7 +219,7 @@ enum Value {
     Scattered(Box<Scattered>),
 }
 
-/// A value for an non-stored member path. Recursively holds the [Value] for the members.
+/// A value for a non-stored member path. Recursively holds the [Value] for the members.
 #[derive(Clone, Debug, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 struct Scattered {

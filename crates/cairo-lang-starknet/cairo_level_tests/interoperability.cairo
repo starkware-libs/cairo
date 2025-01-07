@@ -1,5 +1,5 @@
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 
 #[starknet::interface]
 trait IContract<T> {
@@ -34,7 +34,6 @@ mod contract_a {
         }
     }
 }
-
 use contract_a::MyTrait;
 #[test]
 fn test_internal_func() {
@@ -46,12 +45,12 @@ fn test_internal_func() {
 fn test_flow() {
     // Set up.
     let (address0, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false,
     )
         .unwrap();
     let mut contract0 = IContractDispatcher { contract_address: address0 };
     let (address1, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false,
     )
         .unwrap();
     let mut contract1 = IContractDispatcher { contract_address: address1 };
@@ -64,7 +63,7 @@ fn test_flow() {
 
     // Library calls.
     let mut library = IContractLibraryDispatcher {
-        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
+        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
     };
     assert_eq!(library.foo(300), 0);
 }
@@ -74,7 +73,7 @@ fn test_flow() {
 fn test_flow_safe_dispatcher() {
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
+        contract_a::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false,
     )
         .unwrap();
     let mut contract = IContractSafeDispatcher { contract_address };
@@ -84,7 +83,7 @@ fn test_flow_safe_dispatcher() {
 
     // Library calls.
     let mut library = IContractSafeLibraryDispatcher {
-        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap()
+        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
     };
     assert_eq!(library.foo(300), Result::Ok(0));
 }
@@ -93,7 +92,7 @@ fn test_flow_safe_dispatcher() {
 // gas usage and add about 110000.
 #[test]
 #[available_gas(826400)]
-#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
+#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED'))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.
     test_flow();
@@ -103,12 +102,12 @@ fn test_flow_out_of_gas() {
 fn test_class_hash_not_found() {
     assert_eq!(
         deploy_syscall(5.try_into().unwrap(), 0, [100].span(), false),
-        Result::Err(array!['CLASS_HASH_NOT_FOUND'])
+        Result::Err(array!['CLASS_HASH_NOT_FOUND']),
     );
 }
 
 #[test]
-#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED', 'ENTRYPOINT_FAILED',))]
+#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED', 'ENTRYPOINT_FAILED'))]
 fn test_contract_not_deployed() {
     let mut contract = IContractDispatcher { contract_address: 5.try_into().unwrap() };
     contract.foo(10);
@@ -131,7 +130,7 @@ fn test_failed_constructor() {
     let mut calldata = array![];
     calldata.append(100);
     let mut err = deploy_syscall(
-        contract_failed_constructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+        contract_failed_constructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false,
     )
         .unwrap_err();
     assert_eq!(err.pop_front().unwrap(), 'Failure');
@@ -155,17 +154,17 @@ fn test_non_empty_calldata_nonexistent_constructor() {
         contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(),
         0,
         array![100].span(),
-        false
+        false,
     )
         .unwrap_err();
     assert_eq!(err.pop_front().unwrap(), 'INVALID_CALLDATA_LEN');
 }
 
 #[test]
-#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED',))]
+#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED'))]
 fn test_entrypoint_failed() {
     let (address0, _) = deploy_syscall(
-        contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
+        contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false,
     )
         .unwrap();
     let mut contract = IContractDispatcher { contract_address: address0 };

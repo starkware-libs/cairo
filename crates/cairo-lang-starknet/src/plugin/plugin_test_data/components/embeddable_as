@@ -13,7 +13,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -36,7 +36,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -49,7 +49,7 @@ trait MyTrait<T> {
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 MyTraitDispatcherTrait:
 
 trait MyTraitDispatcherTrait<T> {
@@ -145,7 +145,7 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitDispatcherCopy of core::traits::Copy::<MyTraitDispatcher>;
@@ -164,7 +164,7 @@ impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
@@ -243,7 +243,7 @@ impl MyTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<My
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitLibraryDispatcherCopy of core::traits::Copy::<MyTraitLibraryDispatcher>;
@@ -262,7 +262,7 @@ impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatc
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
@@ -341,7 +341,7 @@ impl MyTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeLibraryDispatcherCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcher>;
@@ -360,7 +360,7 @@ impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibrar
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
@@ -439,7 +439,7 @@ impl MyTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoi
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeDispatcherCopy of core::traits::Copy::<MyTraitSafeDispatcher>;
@@ -458,7 +458,7 @@ impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
@@ -537,7 +537,7 @@ impl MyTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMu
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitDispatcherSubPointersDrop of core::traits::Drop::<MyTraitDispatcherSubPointers>;
@@ -546,7 +546,7 @@ impl MyTraitDispatcherSubPointersCopy of core::traits::Copy::<MyTraitDispatcherS
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitDispatcherSubPointersMut>;
@@ -555,7 +555,7 @@ impl MyTraitDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitDispatch
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MyTraitLibraryDispatcherSubPointers>;
@@ -564,7 +564,7 @@ impl MyTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MyTraitLibr
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitLibraryDispatcherSubPointersMut>;
@@ -573,7 +573,7 @@ impl MyTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitL
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointers>;
@@ -582,7 +582,7 @@ impl MyTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MyTrait
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointersMut>;
@@ -591,7 +591,7 @@ impl MyTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<MyTr
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MyTraitSafeDispatcherSubPointers>;
@@ -600,7 +600,7 @@ impl MyTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MyTraitSafeDis
 
 lib.cairo:16:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl MyTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitSafeDispatcherSubPointersMut>;
@@ -609,7 +609,7 @@ impl MyTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitSafe
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -691,7 +691,7 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyImpl<
-            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
 
 > of MyTrait<TContractState> {
     
@@ -703,7 +703,7 @@ pub impl MyImpl<
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -711,7 +711,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -733,7 +733,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:5:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -742,7 +742,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:5:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -751,7 +751,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:8:5
     #[embeddable_as(MyImpl)]
-    ^**********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyImpl<
@@ -762,7 +762,7 @@ pub trait UnsafeNewContractStateTraitForMyImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');

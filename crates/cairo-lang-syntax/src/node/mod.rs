@@ -26,6 +26,7 @@ pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
 pub mod utils;
+pub mod with_db;
 
 #[cfg(test)]
 mod ast_test;
@@ -49,6 +50,21 @@ impl SyntaxNode {
         let inner = SyntaxNodeInner {
             green,
             offset: TextOffset::default(),
+            parent: None,
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
+        };
+        Self(Arc::new(inner))
+    }
+
+    pub fn new_root_with_offset(
+        db: &dyn SyntaxGroup,
+        file_id: FileId,
+        green: GreenId,
+        initial_offset: Option<TextOffset>,
+    ) -> Self {
+        let inner = SyntaxNodeInner {
+            green,
+            offset: initial_offset.unwrap_or_default(),
             parent: None,
             stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };

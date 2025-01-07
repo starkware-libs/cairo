@@ -833,7 +833,7 @@ impl SignatureBasedConcreteLibfunc for ConcreteGetOutputLibFunc {
     }
 }
 
-/// Verifies the the circuit evaluation has failed.
+/// Verifies the circuit evaluation has failed.
 #[derive(Default)]
 pub struct CircuitFailureGuaranteeVerifyLibFunc {}
 impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {

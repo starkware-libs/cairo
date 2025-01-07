@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 fn foo(a: A::<felt252>) -> felt252 {
     match a {
-        A::Variant0(t) => { t }
+        A::Variant0(t) => { t },
     }
 }
 
@@ -15,7 +15,7 @@ foo
 
 //! > module_code
 enum A<T> {
-    Variant0: T
+    Variant0: T,
 }
 
 //! > expected_diagnostics
@@ -42,7 +42,7 @@ enum A {
 error: Recursive type "test::A" has infinite size.
  --> lib.cairo:2:5
     Variant: A,
-    ^********^
+    ^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -90,7 +90,7 @@ enum B {
 error: Non-phantom type containing phantom type.
  --> lib.cairo:5:5
     Variant: A,
-    ^********^
+    ^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -114,4 +114,4 @@ enum A {
 error: Cannot have array of type "()" that is zero sized.
  --> lib.cairo:2:5
     Variant: Array<()>,
-    ^****************^
+    ^^^^^^^^^^^^^^^^^^

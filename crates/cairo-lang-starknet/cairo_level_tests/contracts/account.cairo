@@ -1,13 +1,15 @@
 #[starknet::contract(account)]
 mod account {
-    use core::num::traits::Zero;
     use core::ecdsa::check_ecdsa_signature;
-    use starknet::{account::Call, syscalls::call_contract_syscall, SyscallResultTrait};
+    use core::num::traits::Zero;
+    use starknet::SyscallResultTrait;
+    use starknet::account::Call;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::syscalls::call_contract_syscall;
 
     #[storage]
     struct Storage {
-        public_key: felt252
+        public_key: felt252,
     }
 
     #[constructor]
@@ -43,7 +45,7 @@ mod account {
         self: @ContractState,
         class_hash: felt252,
         contract_address_salt: felt252,
-        public_key_: felt252
+        public_key_: felt252,
     ) -> felt252 {
         self.validate_transaction()
     }
@@ -74,7 +76,7 @@ mod account {
                         let mut res = call_contract_syscall(
                             address: call.to,
                             entry_point_selector: call.selector,
-                            calldata: call.calldata
+                            calldata: call.calldata,
                         )
                             .unwrap_syscall();
                         result.append(res);

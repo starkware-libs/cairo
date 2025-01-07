@@ -48,7 +48,7 @@ fn handle_struct(
     let mut ctor = vec![];
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
-        let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
+        let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
         let member_kind =
             get_field_kind_for_member(db, diagnostics, &member, EventFieldKind::DataSerde);
         members.push((member.name(db).text(db), member_kind));
@@ -73,7 +73,7 @@ fn handle_struct(
     let ctor = RewriteNode::Modified(ModifiedNode { children: Some(ctor) });
 
     // Add an implementation for `Event<StructName>`.
-    let struct_name = RewriteNode::new_trimmed(struct_ast.name(db).as_syntax_node());
+    let struct_name = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let event_impl = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
@@ -182,7 +182,7 @@ fn handle_enum(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<(RewriteNode, StarkNetEventAuxData)> {
     const SELECTOR: &str = "__selector__";
-    let enum_name = RewriteNode::new_trimmed(enum_ast.name(db).as_syntax_node());
+    let enum_name = RewriteNode::from_ast_trimmed(&enum_ast.name(db));
 
     // TODO(spapini): Support generics.
     let generic_params = enum_ast.generic_params(db);
@@ -202,9 +202,7 @@ fn handle_enum(
     for variant in enum_ast.variants(db).elements(db) {
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
-            ast::OptionTypeClause::TypeClause(tc) => {
-                RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
-            }
+            ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
         };
 
         let maybe_add_variant_to_keys = if variant.has_attr(db, FLAT_ATTR) {
@@ -213,7 +211,7 @@ fn handle_enum(
             "
                 core::array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
         };
-        let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
+        let variant_name = RewriteNode::from_ast_trimmed(&variant.name(db));
         let name = variant.name(db).text(db);
         let member_kind =
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);

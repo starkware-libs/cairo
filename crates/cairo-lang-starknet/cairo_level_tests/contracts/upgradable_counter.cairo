@@ -7,9 +7,9 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
     component!(path: upgradable_comp, storage: upgradable, event: UpgradableEvent);
     component!(path: ownable_comp, storage: ownable, event: OwnableEvent);
 
@@ -19,7 +19,7 @@ mod counter_contract {
         #[substorage(v0)]
         upgradable: upgradable_comp::Storage,
         #[substorage(v0)]
-        ownable: ownable_comp::Storage
+        ownable: ownable_comp::Storage,
     }
 
     #[event]
@@ -28,17 +28,17 @@ mod counter_contract {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event
+        OwnableEvent: ownable_comp::Event,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterIncreased {
-        amount: u128
+        amount: u128,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterDecreased {
-        amount: u128
+        amount: u128,
     }
 
     #[constructor]

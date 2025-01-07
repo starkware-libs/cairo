@@ -1,5 +1,5 @@
 use starknet::storage::{
-    StoragePointerReadAccess, StoragePointerWriteAccess, MutableVecTrait, StoragePathEntry
+    MutableVecTrait, StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 
 

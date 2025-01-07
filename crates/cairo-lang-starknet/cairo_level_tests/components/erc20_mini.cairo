@@ -1,7 +1,8 @@
-use starknet::{ContractAddress, get_caller_address, contract_address_const};
 use starknet::storage::{
-    StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess, StorageMapWriteAccess
+    StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+    StoragePointerWriteAccess,
 };
+use starknet::{ContractAddress, contract_address_const, get_caller_address};
 
 
 #[starknet::interface]
@@ -14,7 +15,7 @@ pub trait ERC20Trait<TCS> {
     fn allowance(self: @TCS, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(ref self: TCS, recipient: ContractAddress, amount: u256);
     fn transfer_from(
-        ref self: TCS, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TCS, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     );
     fn approve(ref self: TCS, spender: ContractAddress, amount: u256);
     fn increase_allowance(ref self: TCS, spender: ContractAddress, added_value: u256);
@@ -29,13 +30,11 @@ pub trait HasStorage<
     /// The storage node.
     impl StorageImpl: starknet::storage::StorageTrait<Storage>,
     /// The mutable storage node.
-    impl StorageImplMut: starknet::storage::StorageTraitMut<Storage>
+    impl StorageImplMut: starknet::storage::StorageTraitMut<Storage>,
 > {
     fn storage(self: @TContractState) -> StorageImpl::BaseType;
     fn storage_mut(ref self: TContractState) -> StorageImplMut::BaseType;
 }
-
-
 use core::num::traits::Zero;
 use starknet::storage::Map;
 #[starknet::storage_node]
@@ -105,7 +104,7 @@ pub impl ERC20Impl<
     }
 
     fn transfer_from(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) {
         let caller = get_caller_address();
         self.spend_allowance(sender, caller, amount);
@@ -121,19 +120,19 @@ pub impl ERC20Impl<
         let caller = get_caller_address();
         self
             .approve_helper(
-                caller, spender, self.storage().allowances.read((caller, spender)) + added_value
+                caller, spender, self.storage().allowances.read((caller, spender)) + added_value,
             );
     }
 
     fn decrease_allowance(
-        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256,
     ) {
         let caller = get_caller_address();
         self
             .approve_helper(
                 caller,
                 spender,
-                self.storage().allowances.read((caller, spender)) - subtracted_value
+                self.storage().allowances.read((caller, spender)) - subtracted_value,
             );
     }
 }
@@ -148,7 +147,7 @@ pub impl ERC20HelperImpl<
     +Into<Event, ContractStateEvent>,
 > of ERC20HelperTrait<TContractState> {
     fn transfer_helper(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     ) {
         assert(!sender.is_zero(), 'ERC20: transfer from 0');
         assert(!recipient.is_zero(), 'ERC20: transfer to 0');
@@ -161,7 +160,7 @@ pub impl ERC20HelperImpl<
     }
 
     fn spend_allowance(
-        ref self: TContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ref self: TContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
     ) {
         let current_allowance = self.storage().allowances.read((owner, spender));
         let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
@@ -173,7 +172,7 @@ pub impl ERC20HelperImpl<
     }
 
     fn approve_helper(
-        ref self: TContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ref self: TContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
     ) {
         assert(!spender.is_zero(), 'ERC20: approve from 0');
         self.storage_mut().allowances.write((owner, spender), amount);
@@ -185,7 +184,7 @@ pub impl ERC20HelperImpl<
         symbol: felt252,
         decimals: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.storage_mut().name.write(name);
         self.storage_mut().symbol.write(symbol);
@@ -197,9 +196,9 @@ pub impl ERC20HelperImpl<
             .emit(
                 Event::Transfer(
                     TransferEvent {
-                        from: contract_address_const::<0>(), to: recipient, value: initial_supply
-                    }
-                )
+                        from: contract_address_const::<0>(), to: recipient, value: initial_supply,
+                    },
+                ),
             );
     }
 }

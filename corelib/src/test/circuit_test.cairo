@@ -1,9 +1,8 @@
 use crate::circuit::{
-    RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
-    circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
-    AddInputResultTrait, CircuitInputs,
+    AddInputResultTrait, AddMod, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
+    CircuitOutputsTrait, EvalCircuitTrait, MulMod, RangeCheck96, circuit_add, circuit_inverse,
+    circuit_mul, circuit_sub, u384, u96,
 };
-
 use crate::num::traits::Zero;
 use crate::traits::TryInto;
 
@@ -70,13 +69,13 @@ fn test_into_u384() {
                 limb1: 0x50000006700000089000000a,
                 limb2: 0x1000000230000004,
                 limb3: 0,
-            }
+            },
     );
     assert!(
         0x10000002300000045000000670000008_u128
             .into() == u384 {
                 limb0: 0x300000045000000670000008, limb1: 0x10000002, limb2: 0, limb3: 0,
-            }
+            },
     );
     assert!(
         0x70000023000000450000006700000089000000ab000000cd000000ef0000000_felt252
@@ -85,7 +84,7 @@ fn test_into_u384() {
                 limb1: 0x50000006700000089000000a,
                 limb2: 0x700000230000004,
                 limb3: 0,
-            }
+            },
     );
 }
 
@@ -98,12 +97,12 @@ fn test_from_u384() {
     assert!(
         u384 { limb0, limb1, limb2, limb3 }
             .try_into() == Option::Some(
-                0x100000023000000450000006700000089000000ab000000cd000000ef0000000_u256
-            )
+                0x100000023000000450000006700000089000000ab000000cd000000ef0000000_u256,
+            ),
     );
     assert!(u384 { limb0, limb1, limb2, limb3: 1 }.try_into() == Option::<u256>::None);
     assert!(
-        u384 { limb0, limb1, limb2: 0x11000000230000004, limb3 }.try_into() == Option::<u256>::None
+        u384 { limb0, limb1, limb2: 0x11000000230000004, limb3 }.try_into() == Option::<u256>::None,
     );
     let limb0 = 0x300000045000000670000008;
     let limb1 = 0x10000002;
@@ -111,7 +110,7 @@ fn test_from_u384() {
     let limb3 = 0;
     assert!(
         u384 { limb0, limb1, limb2, limb3 }
-            .try_into() == Option::Some(0x10000002300000045000000670000008_u128)
+            .try_into() == Option::Some(0x10000002300000045000000670000008_u128),
     );
     assert!(u384 { limb0, limb1: 0x110000002, limb2, limb3 }.try_into() == Option::<u128>::None);
     assert!(u384 { limb0, limb1, limb2: 1, limb3 }.try_into() == Option::<u128>::None);
@@ -133,6 +132,27 @@ fn test_fill_inputs_loop() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
     circuit_inputs.done().eval(modulus).unwrap();
+}
+
+#[test]
+fn test_u384_serde() {
+    let value = u384 {
+        limb0: 0xb000000cd000000ef0000000,
+        limb1: 0x50000006700000089000000a,
+        limb2: 0x100000023000000450000000,
+        limb3: 0x80000009a000000bc0000000,
+    };
+    let serialized = array![
+        0x50000006700000089000000ab000000cd000000ef0000000,
+        0x80000009a000000bc0000000100000023000000450000000,
+    ];
+    let mut buffer = array![];
+    value.serialize(ref buffer);
+    assert!(buffer == serialized);
+
+    let mut serialized = serialized.span();
+
+    assert!(Serde::<u384>::deserialize(ref serialized) == Option::Some(value));
 }
 
 #[test]

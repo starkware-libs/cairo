@@ -1,5 +1,5 @@
-use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
+use starknet::syscalls::deploy_syscall;
 
 #[starknet::interface]
 trait IContractWithEvent<T> {
@@ -58,15 +58,14 @@ mod contract_with_event {
         self.emit(FlatEvent::FlatEvent(StaticEvent {}));
     }
 }
-
-use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
+use contract_with_event::{Event, FlatEvent, IncrementalEvent, StaticEvent};
 
 #[test]
 fn test_events() {
     core::internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false
+        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false,
     )
         .unwrap();
     let mut contract = IContractWithEventDispatcher { contract_address };
@@ -82,40 +81,40 @@ fn test_events() {
 
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 0 }))
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 0 })),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 1 }))
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 1 })),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::StaticEvent(StaticEvent {}))
+        Option::Some(Event::StaticEvent(StaticEvent {})),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::StaticEvent(StaticEvent {}))
+        Option::Some(Event::StaticEvent(StaticEvent {})),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 2 }))
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 2 })),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::StaticEvent(StaticEvent {}))
+        Option::Some(Event::StaticEvent(StaticEvent {})),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 3 }))
+        Option::Some(Event::IncrementalEvent(IncrementalEvent { value: 3 })),
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {})))
+        Option::Some(Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {}))),
     );
     // Check that `FlatEvent` is flattened and can be deserialized directly.
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Option::Some(FlatEvent::FlatEvent(StaticEvent {}))
+        Option::Some(FlatEvent::FlatEvent(StaticEvent {})),
     );
     assert!(starknet::testing::pop_log_raw(contract_address).is_none());
 }

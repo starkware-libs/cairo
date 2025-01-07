@@ -58,12 +58,39 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
+/// This enum is used to control how multi-element collections (i.e. arrays, tuples)
+/// are broken into lines. It provides two options: `SingleBreakPoint` and `LineByLine`, allowing
+/// flexible configuration based on desired readability or space efficiency.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CollectionsBreakingBehavior {
+    /// Keeps all elements of the collection on a single line, where possible.
+    SingleBreakPoint,
+    /// Breaks each element of the collection onto a new line for improved readability.
+    LineByLine,
+}
+
+/// Impl CollectionsBreakingBehavior from bool, where true is `LineByLine` and false is
+/// `SingleBreakPoint`. This adheres to the existing behavior of the formatter CLI.
+impl From<bool> for CollectionsBreakingBehavior {
+    fn from(b: bool) -> Self {
+        if b {
+            CollectionsBreakingBehavior::LineByLine
+        } else {
+            CollectionsBreakingBehavior::SingleBreakPoint
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
     sort_module_level_items: bool,
+    tuple_breaking_behavior: CollectionsBreakingBehavior,
+    fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+    merge_use_items: bool,
+    allow_duplicate_uses: bool,
 }
 
 // Config params
@@ -72,17 +99,75 @@ const TAB_SIZE: usize = 4;
 const MAX_LINE_LENGTH: usize = 100;
 
 impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize, sort_module_level_items: bool) -> Self {
-        Self { tab_size, max_line_length, sort_module_level_items }
+    pub fn new(
+        tab_size: usize,
+        max_line_length: usize,
+        sort_module_level_items: bool,
+        tuple_breaking_behavior: CollectionsBreakingBehavior,
+        fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+        merge_use_items: bool,
+        allow_duplicate_uses: bool,
+    ) -> Self {
+        Self {
+            tab_size,
+            max_line_length,
+            sort_module_level_items,
+            tuple_breaking_behavior,
+            fixed_array_breaking_behavior,
+            merge_use_items,
+            allow_duplicate_uses,
+        }
     }
 
-    pub fn sort_module_level_items(mut self, sort_module_level_items: bool) -> Self {
-        self.sort_module_level_items = sort_module_level_items;
+    pub fn sort_module_level_items(mut self, sort_module_level_items: Option<bool>) -> Self {
+        if let Some(sort) = sort_module_level_items {
+            self.sort_module_level_items = sort;
+        }
+        self
+    }
+
+    pub fn tuple_breaking_behavior(
+        mut self,
+        behavior: Option<CollectionsBreakingBehavior>,
+    ) -> Self {
+        if let Some(behavior) = behavior {
+            self.tuple_breaking_behavior = behavior;
+        }
+        self
+    }
+
+    pub fn fixed_array_breaking_behavior(
+        mut self,
+        behavior: Option<CollectionsBreakingBehavior>,
+    ) -> Self {
+        if let Some(behavior) = behavior {
+            self.fixed_array_breaking_behavior = behavior;
+        }
+        self
+    }
+    pub fn merge_use_items(mut self, merge: Option<bool>) -> Self {
+        if let Some(merge) = merge {
+            self.merge_use_items = merge;
+        }
+        self
+    }
+    pub fn allow_duplicate_uses(mut self, allow: Option<bool>) -> Self {
+        if let Some(allow) = allow {
+            self.allow_duplicate_uses = allow;
+        }
         self
     }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH, false)
+        Self {
+            tab_size: TAB_SIZE,
+            max_line_length: MAX_LINE_LENGTH,
+            sort_module_level_items: true,
+            tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
+            fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+            merge_use_items: true,
+            allow_duplicate_uses: false,
+        }
     }
 }

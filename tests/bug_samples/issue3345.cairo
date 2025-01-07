@@ -1,7 +1,7 @@
 #[derive(Copy, Drop, starknet::Store)]
 struct Node {
     left: u128,
-    right: u128
+    right: u128,
 }
 
 #[starknet::interface]
@@ -11,9 +11,8 @@ trait ITree<TContractState> {
 
 #[starknet::contract]
 mod example_failure {
-    use super::Node;
-    use super::ITree;
     use starknet::storage::Map;
+    use super::{ITree, Node};
 
     #[storage]
     struct Storage {

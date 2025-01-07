@@ -258,7 +258,7 @@ fn handle_component_impl(
         let Some(impl_function) = handle_component_embeddable_as_impl_item(
             db,
             diagnostics,
-            RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node()),
+            RewriteNode::from_ast_trimmed(&item_impl.name(db)),
             item,
         ) else {
             continue;
@@ -312,12 +312,10 @@ fn handle_component_impl(
 fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -> RewriteNode {
     let elements = trait_path.elements(db);
     let (last, prefix) = elements.split_last().unwrap();
-    let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
+    let last_without_generics = RewriteNode::from_ast_trimmed(&last.identifier_ast(db));
 
     RewriteNode::interspersed(
-        chain!(prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())), [
-            last_without_generics
-        ]),
+        chain!(prefix.iter().map(RewriteNode::from_ast_trimmed), [last_without_generics]),
         RewriteNode::text("::"),
     )
 }
@@ -338,7 +336,7 @@ fn handle_component_embeddable_as_impl_item(
     let signature = declaration.signature(db);
     let parameters = signature.parameters(db);
 
-    let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
+    let function_name = RewriteNode::from_ast_trimmed(&declaration.name(db));
     let parameters_elements = parameters.elements(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic::error(
@@ -381,14 +379,14 @@ fn handle_component_embeddable_as_impl_item(
         ast::OptionReturnTypeClause::Empty(_) => RewriteNode::empty(),
         ast::OptionReturnTypeClause::ReturnTypeClause(x) => RewriteNode::interpolate_patched(
             " $ret_ty$",
-            &[("ret_ty".to_string(), RewriteNode::new_trimmed(x.as_syntax_node()))].into(),
+            &[("ret_ty".to_string(), RewriteNode::from_ast_trimmed(&x))].into(),
         ),
     };
 
     let generated_function_sig = RewriteNode::interpolate_patched(
         &format!("$attributes$\n    fn $function_name$({self_param}$rest_params_node$)$ret_ty$"),
         &[
-            ("attributes".to_string(), RewriteNode::new_trimmed(attributes.as_syntax_node())),
+            ("attributes".to_string(), RewriteNode::from_ast_trimmed(&attributes)),
             ("function_name".to_string(), function_name.clone()),
             ("rest_params_node".to_string(), rest_params_node),
             ("ret_ty".to_string(), ret_ty),

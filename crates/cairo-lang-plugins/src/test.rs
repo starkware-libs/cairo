@@ -1,3 +1,4 @@
+use std::default::Default;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
@@ -10,11 +11,14 @@ use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
     init_files_group,
 };
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
+};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -32,7 +36,7 @@ cairo_lang_test_utils::test_file_test!(
         derive: "derive",
         generate_trait: "generate_trait",
         panicable: "panicable",
-        external_attributes_validation: "external_attributes_validation"
+        external_attributes_validation: "external_attributes_validation",
     },
     test_expand_plugin
 );
@@ -152,25 +156,40 @@ impl MacroPlugin for DoubleIndirectionPlugin {
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
+        let node = item_ast.as_syntax_node();
+        let orig_span = node.span(db);
+        let code_mappings = |content: &str| {
+            vec![CodeMapping {
+                span: TextSpan {
+                    start: TextOffset::default(),
+                    end: TextOffset::default().add_width(TextWidth::from_str(content)),
+                },
+                origin: CodeOrigin::Start(orig_span.start),
+            }]
+        };
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 if struct_ast.has_attr(db, "first") {
+                    let content = "#[second] struct A {}\n".to_string();
                     PluginResult {
                         code: Some(PluginGeneratedFile {
                             name: "virt1".into(),
-                            content: "#[second] struct A {}\n".to_string(),
-                            code_mappings: Default::default(),
+                            code_mappings: code_mappings(content.as_str()),
+                            content,
                             aux_data: None,
+                            diagnostics_note: Some("first note".to_string()),
                         }),
                         ..PluginResult::default()
                     }
                 } else if struct_ast.has_attr(db, "second") {
+                    let content = "struct B {}\n".to_string();
                     PluginResult {
                         code: Some(PluginGeneratedFile {
                             name: "virt2".into(),
-                            content: "struct B {}\n".to_string(),
-                            code_mappings: Default::default(),
+                            code_mappings: code_mappings(content.as_str()),
+                            content,
                             aux_data: None,
+                            diagnostics_note: Some("second note".to_string()),
                         }),
                         ..PluginResult::default()
                     }

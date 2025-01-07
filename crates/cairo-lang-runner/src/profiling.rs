@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use cairo_lang_lowering::ids::FunctionLongId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
@@ -7,7 +7,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{LookupIntern, require};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 
 #[cfg(test)]
@@ -28,6 +28,13 @@ pub struct ProfilingInfo {
     /// The value is the weight of the stack trace.
     /// The stack trace entries are sorted in the order they occur.
     pub stack_trace_weights: OrderedHashMap<Vec<usize>, usize>,
+
+    /// The number of steps in the trace that originated from each sierra statement
+    /// combined with information about the user function call stack.
+    /// The call stack items are deduplicated to flatten and aggregate recursive calls
+    /// and loops (which are tail recursion).
+    /// The entries are sorted in the order they occur.
+    pub scoped_sierra_statement_weights: OrderedHashMap<(Vec<usize>, StatementIdx), usize>,
 }
 
 /// Weights per libfunc.
@@ -152,6 +159,10 @@ pub struct ProcessedProfilingInfo {
 
     /// Weight (in steps in the relevant run) of each Cairo function.
     pub cairo_function_weights: Option<OrderedHashMap<String, usize>>,
+
+    /// For each Sierra statement in the scope of a particular call stack with deduplicated frames
+    /// (collapsed recursion): the number of steps in the trace that originated from it.
+    pub scoped_sierra_statement_weights: Option<OrderedHashMap<Vec<String>, usize>>,
 }
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -176,6 +187,10 @@ impl Display for ProcessedProfilingInfo {
         }
 
         self.stack_trace_weights.fmt(f)?;
+
+        if let Some(weights) = &self.scoped_sierra_statement_weights {
+            format_scoped_sierra_statement_weights(weights, f)?;
+        }
 
         Ok(())
     }
@@ -207,6 +222,9 @@ pub struct ProfilingInfoProcessorParams {
     /// Whether to process the profiling info by Cairo stack trace (that is, no generated
     /// functions in the traces).
     pub process_by_cairo_stack_trace: bool,
+    /// Process the profiling info by Sierra statement in the scope of a particular
+    /// call stack (recursion collapsed) and output in a format compatible with Flamegraph.
+    pub process_by_scoped_statement: bool,
 }
 impl Default for ProfilingInfoProcessorParams {
     fn default() -> Self {
@@ -220,6 +238,7 @@ impl Default for ProfilingInfoProcessorParams {
             process_by_cairo_function: true,
             process_by_stack_trace: true,
             process_by_cairo_stack_trace: true,
+            process_by_scoped_statement: false,
         }
     }
 }
@@ -274,12 +293,16 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let cairo_function_weights =
             self.process_cairo_function_weights(sierra_statement_weights_iter, params);
 
+        let scoped_sierra_statement_weights =
+            self.process_scoped_sierra_statement_weights(raw_profiling_info, params);
+
         ProcessedProfilingInfo {
             sierra_statement_weights,
             stack_trace_weights,
             libfunc_weights,
             user_function_weights,
             cairo_function_weights,
+            scoped_sierra_statement_weights,
         }
     }
 
@@ -480,6 +503,41 @@ impl<'a> ProfilingInfoProcessor<'a> {
         )
     }
 
+    /// Process Sierra statement weights in the scope of a particular call stack
+    fn process_scoped_sierra_statement_weights(
+        &self,
+        raw_profiling_info: &ProfilingInfo,
+        params: &ProfilingInfoProcessorParams,
+    ) -> Option<OrderedHashMap<Vec<String>, usize>> {
+        if params.process_by_scoped_statement {
+            return Some(
+                raw_profiling_info
+                    .scoped_sierra_statement_weights
+                    .iter()
+                    .map(|((idx_stack_trace, statement_idx), &weight)| {
+                        let statement_name =
+                            match self.statement_idx_to_gen_statement(statement_idx) {
+                                GenStatement::Invocation(invocation) => {
+                                    invocation.libfunc_id.to_string()
+                                }
+                                GenStatement::Return(_) => "return".into(),
+                            };
+                        let key: Vec<String> = chain!(
+                            index_stack_trace_to_name_stack_trace(
+                                &self.sierra_program,
+                                idx_stack_trace
+                            ),
+                            [statement_name]
+                        )
+                        .collect();
+                        (key, weight)
+                    })
+                    .collect(),
+            );
+        }
+        None
+    }
+
     /// Translates the given Sierra statement index into the actual statement.
     fn statement_idx_to_gen_statement(
         &self,
@@ -532,4 +590,15 @@ fn index_stack_trace_to_name_stack_trace(
     idx_stack_trace: &[usize],
 ) -> Vec<String> {
     idx_stack_trace.iter().map(|idx| sierra_program.funcs[*idx].id.to_string()).collect()
+}
+
+/// Writes scoped Sierra statement weights data in a FlameGraph compatible format.
+fn format_scoped_sierra_statement_weights(
+    weights: &OrderedHashMap<Vec<String>, usize>,
+    f: &mut std::fmt::Formatter<'_>,
+) -> std::fmt::Result {
+    for (key, weight) in weights.iter() {
+        f.write_fmt(format_args!("{} {weight}\n", key.join(";")))?;
+    }
+    Ok(())
 }

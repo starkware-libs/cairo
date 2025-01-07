@@ -1,7 +1,7 @@
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
-    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
+    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
 ) -> CircuitElement::<AddModGate<Lhs, Rhs>> {
     CircuitElement::<AddModGate<Lhs, Rhs>> {}
 }
@@ -10,7 +10,7 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `submod` operation to the two input circuits.
 pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
-    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
+    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
 ) -> CircuitElement::<SubModGate<Lhs, Rhs>> {
     CircuitElement::<SubModGate<Lhs, Rhs>> {}
 }
@@ -18,15 +18,15 @@ pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 /// Given a circuit element, returns a new circuit element representing the circuit that applies
 /// the inverse operation on the input circuit.
 pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
-    input: CircuitElement<Input>
+    input: CircuitElement<Input>,
 ) -> CircuitElement::<InverseGate<Input>> {
     CircuitElement::<InverseGate<Input>> {}
 }
 
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `mul` operation to the two input circuits.
-pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,>(
-    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>
+pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
+    lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
 ) -> CircuitElement::<MulModGate<Lhs, Rhs>> {
     CircuitElement::<MulModGate<Lhs, Rhs>> {}
 }
@@ -117,7 +117,7 @@ extern fn eval_circuit<C>(
 
 /// Fill an input in the circuit instance's data.
 extern fn add_circuit_input<C>(
-    accumulator: CircuitInputAccumulator<C>, value: [U96Guarantee; 4]
+    accumulator: CircuitInputAccumulator<C>, value: [U96Guarantee; 4],
 ) -> AddInputResult<C> nopanic;
 
 /// The result of filling an input in the circuit instance's data.
@@ -177,16 +177,16 @@ pub impl CircuitElementCopy<T> of Copy<CircuitElement<T>>;
 pub trait CircuitElementTrait<T> {}
 impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>> {}
 impl AddModCircuitElement<
-    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
+    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,
 > of CircuitElementTrait<AddModGate<Lhs, Rhs>> {}
 impl SubModCircuitElement<
-    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
+    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,
 > of CircuitElementTrait<SubModGate<Lhs, Rhs>> {}
 impl InverseCircuitElement<
-    Input, +CircuitElementTrait<Input>
+    Input, +CircuitElementTrait<Input>,
 > of CircuitElementTrait<InverseGate<Input>> {}
 impl MulModCircuitElement<
-    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>
+    Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,
 > of CircuitElementTrait<MulModGate<Lhs, Rhs>> {}
 
 /// A trait for defining a circuit.
@@ -195,7 +195,7 @@ trait CircuitDefinition<CES> {
     type CircuitType;
 }
 impl CircuitDefinitionImpl<
-    T, impl Unwrap: UnwrapCircuitElement<T>, +crate::metaprogramming::IsTuple<T>
+    T, impl Unwrap: UnwrapCircuitElement<T>, +crate::metaprogramming::IsTuple<T>,
 > of CircuitDefinition<T> {
     type CircuitType = Circuit<Unwrap::Unwrapped>;
 }
@@ -211,7 +211,7 @@ impl UnwrapCircuitElementDirect<T> of UnwrapCircuitElement<CircuitElement<T>> {
 }
 /// Implementation for unwrapping a basic tuple of `CircuitElement`s.
 impl UnwrapCircuitElementBase<
-    T, impl UnwrapT: UnwrapCircuitElement<T>
+    T, impl UnwrapT: UnwrapCircuitElement<T>,
 > of UnwrapCircuitElement<(T,)> {
     type Unwrapped = (UnwrapT::Unwrapped,);
 }
@@ -222,7 +222,7 @@ impl UnwrapCircuitElementNext<
     impl UnwrapHead: UnwrapCircuitElement<TS::Head>,
     impl UnwrapRest: UnwrapCircuitElement<TS::Rest>,
     impl TEF: crate::metaprogramming::TupleExtendFront<
-        UnwrapRest::Unwrapped, UnwrapHead::Unwrapped
+        UnwrapRest::Unwrapped, UnwrapHead::Unwrapped,
     >,
 > of UnwrapCircuitElement<T> {
     type Unwrapped = TEF::Result;
@@ -235,7 +235,7 @@ pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
     // Inlining to make sure possibly huge `CES` won't be in a user function name.
     #[inline]
     fn new_inputs<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
-        self: CES
+        self: CES,
     ) -> AddInputResult<CD::CircuitType> {
         AddInputResult::More(init_circuit_data::<CD::CircuitType>())
     }
@@ -248,7 +248,7 @@ impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn get_descriptor<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
-        self: CES
+        self: CES,
     ) -> CircuitDescriptor<CD::CircuitType> {
         get_circuit_descriptor::<CD::CircuitType>()
     }
@@ -261,11 +261,11 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn next<Value, +IntoCircuitInputValue<Value>, +Drop<Value>>(
-        self: AddInputResult<C>, value: Value
+        self: AddInputResult<C>, value: Value,
     ) -> AddInputResult<C> {
         match self {
             AddInputResult::More(accumulator) => add_circuit_input(
-                accumulator, value.into_circuit_input_value()
+                accumulator, value.into_circuit_input_value(),
             ),
             AddInputResult::Done(_) => core::panic_with_felt252('All inputs have been filled'),
         }
@@ -288,9 +288,7 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
     fn into_circuit_input_value(self: [u96; 4]) -> [U96Guarantee; 4] {
         let [val0, val1, val2, val3] = self;
         [
-            into_u96_guarantee(val0),
-            into_u96_guarantee(val1),
-            into_u96_guarantee(val2),
+            into_u96_guarantee(val0), into_u96_guarantee(val1), into_u96_guarantee(val2),
             into_u96_guarantee(val3),
         ]
     }
@@ -299,10 +297,8 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
 impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
     fn into_circuit_input_value(self: u384) -> [U96Guarantee; 4] {
         [
-            into_u96_guarantee(self.limb0),
-            into_u96_guarantee(self.limb1),
-            into_u96_guarantee(self.limb2),
-            into_u96_guarantee(self.limb3),
+            into_u96_guarantee(self.limb0), into_u96_guarantee(self.limb1),
+            into_u96_guarantee(self.limb2), into_u96_guarantee(self.limb3),
         ]
     }
 }
@@ -318,7 +314,7 @@ pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn eval_ex(
-        self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus
+        self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus,
     ) -> crate::circuit::EvalCircuitResult<C> {
         eval_circuit::<C>(descriptor, self, modulus, 0, 1)
     }
@@ -327,11 +323,11 @@ pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
 /// A trait for evaluating a circuit.
 pub trait CircuitOutputsTrait<Outputs, OutputElement> {
     /// Evaluates the circuit with the given data and modulus.
-    fn get_output(self: Outputs, output: OutputElement,) -> u384;
+    fn get_output(self: Outputs, output: OutputElement) -> u384;
 }
 
 impl CircuitOutputsImpl<
-    C, Output
+    C, Output,
 > of CircuitOutputsTrait<CircuitOutputs<C>, CircuitElement<Output>> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
@@ -395,13 +391,13 @@ enum NextU96LessThanGuarantee<const LIMB_COUNT: usize> {
 }
 
 extern fn u96_limbs_less_than_guarantee_verify<
-    const LIMB_COUNT: usize, impl MO: MinusOne<LIMB_COUNT>
+    const LIMB_COUNT: usize, impl MO: MinusOne<LIMB_COUNT>,
 >(
-    guarantee: U96LimbsLtGuarantee<LIMB_COUNT>
+    guarantee: U96LimbsLtGuarantee<LIMB_COUNT>,
 ) -> NextU96LessThanGuarantee<MO::VALUE> nopanic;
 
 extern fn u96_single_limb_less_than_guarantee_verify(
-    guarantee: U96LimbsLtGuarantee<1>
+    guarantee: U96LimbsLtGuarantee<1>,
 ) -> U96Guarantee nopanic;
 
 impl DestructDestructU96LimbsLtGuarantee4 of Destruct<U96LimbsLtGuarantee<4>> {
@@ -423,16 +419,14 @@ pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
 }
 
 extern fn get_circuit_output<C, Output>(
-    outputs: CircuitOutputs<C>
+    outputs: CircuitOutputs<C>,
 ) -> (u384, U96LimbsLtGuarantee<4>) nopanic;
 
 /// Helper module to convert into `u384`.
 mod conversions {
-    use crate::internal::{
-        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper}
-    };
-    use crate::integer::upcast;
-
+    use crate::integer::{downcast, upcast};
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper};
+    use crate::internal::bounded_int;
     use super::{u384, u96};
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
@@ -480,13 +474,13 @@ mod conversions {
     }
 
     impl AddHelperTo96By32Impl of AddHelper<
-        BoundedInt<0, { POW96 - POW32 }>, BoundedInt<0, { POW32 - 1 }>
+        BoundedInt<0, { POW96 - POW32 }>, BoundedInt<0, { POW32 - 1 }>,
     > {
         type Result = u96;
     }
 
     impl AddHelperTo128By64Impl of AddHelper<
-        BoundedInt<0, { POW128 - POW64 }>, BoundedInt<0, { POW64 - 1 }>
+        BoundedInt<0, { POW128 - POW64 }>, BoundedInt<0, { POW64 - 1 }>,
     > {
         type Result = BoundedInt<0, { POW128 - 1 }>;
     }
@@ -507,6 +501,14 @@ mod conversions {
         u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
     }
 
+    pub fn felt252_try_into_two_u96(value: felt252) -> Option<(u96, u96)> {
+        let v: u256 = value.into();
+        let (limb1_low32, limb0) = bounded_int::div_rem(v.low, NZ_POW96_TYPED);
+        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(v.high)?;
+        let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
+        Option::Some((limb0, limb1))
+    }
+
     pub fn try_into_u128(value: u384) -> Option<u128> {
         if value.limb2 != 0 || value.limb3 != 0 {
             return Option::None;
@@ -516,7 +518,7 @@ mod conversions {
             return Option::None;
         }
         Option::Some(
-            upcast(bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0))
+            upcast(bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0)),
         )
     }
 
@@ -532,13 +534,17 @@ mod conversions {
         Option::Some(
             u256 {
                 high: upcast(
-                    bounded_int::add(bounded_int::mul(limb2_low, POW64_TYPED), limb1_high)
+                    bounded_int::add(bounded_int::mul(limb2_low, POW64_TYPED), limb1_high),
                 ),
                 low: upcast(
-                    bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0)
+                    bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0),
                 ),
-            }
+            },
         )
+    }
+
+    pub fn two_u96_into_felt252(limb0: u96, limb1: u96) -> felt252 {
+        limb0.into() + limb1.into() * POW96
     }
 }
 
@@ -569,6 +575,21 @@ impl U384TryIntoU128 of TryInto<u384, u128> {
 impl U384TryIntoU256 of TryInto<u384, u256> {
     fn try_into(self: u384) -> Option<u256> {
         conversions::try_into_u256(self)
+    }
+}
+
+impl U384Serde of Serde<u384> {
+    fn serialize(self: @u384, ref output: Array<felt252>) {
+        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
+        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {
+        let [l01, l23] = (*serialized.multi_pop_front::<2>()?).unbox();
+        let (limb0, limb1) = conversions::felt252_try_into_two_u96(l01)?;
+        let (limb2, limb3) = conversions::felt252_try_into_two_u96(l23)?;
+
+        return Option::Some(u384 { limb0, limb1, limb2, limb3 });
     }
 }
 

@@ -1,4 +1,4 @@
-use super::{Mutable, StoragePath, StorageAsPath, StoragePathTrait};
+use super::{Mutable, StorageAsPath, StoragePath, StoragePathTrait};
 
 /// A struct for holding an address to initialize a storage path with. The members (not direct
 /// members, but accessible using deref) of a contract state are either `StorageBase` or
@@ -34,7 +34,7 @@ impl FlattenedStorageCopy<T> of Copy<FlattenedStorage<T>> {}
 
 /// Dereference a flattened storage into a the storage object containing the members of the object.
 impl FlattenedStorageDeref<
-    T, impl StorageImpl: StorageTrait<T>
+    T, impl StorageImpl: StorageTrait<T>,
 > of core::ops::Deref<FlattenedStorage<T>> {
     type Target = StorageImpl::BaseType;
     fn deref(self: FlattenedStorage<T>) -> Self::Target {
@@ -45,7 +45,7 @@ impl FlattenedStorageDeref<
 /// Dereference a mutable flattened storage into a the storage object containing a mutable version
 /// of the members of the object.
 impl MutableFlattenedStorageDeref<
-    T, impl StorageImpl: StorageTraitMut<T>
+    T, impl StorageImpl: StorageTraitMut<T>,
 > of core::ops::Deref<FlattenedStorage<Mutable<T>>> {
     type Target = StorageImpl::BaseType;
     fn deref(self: FlattenedStorage<Mutable<T>>) -> Self::Target {
@@ -70,7 +70,7 @@ pub trait StorageTraitMut<T> {
     /// The type of the struct containing the mutable StorageBase or FlattenedStorage of all the
     /// members of a the type `T`.
     type BaseType;
-    /// Creates a struct containing a mutable version of the the StorageBase or FlattenedStorage of
+    /// Creates a struct containing a mutable version of the StorageBase or FlattenedStorage of
     /// all the members of a contract state. Should be called from the `deref` method of the
     /// contract state.
     fn storage_mut(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType;

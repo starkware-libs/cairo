@@ -1,7 +1,7 @@
-use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
+use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
@@ -42,10 +42,10 @@ pub fn generate_equations<
     // expression).
     for idx in statement_topological_ordering {
         match &program.get_statement(&idx).unwrap() {
-            cairo_lang_sierra::program::Statement::Return(_) => {
+            Statement::Return(_) => {
                 generator.set_or_add_constraint(&idx, CostExprMap::default());
             }
-            cairo_lang_sierra::program::Statement::Invocation(invocation) => {
+            Statement::Invocation(invocation) => {
                 let libfunc_cost = get_cost(&mut generator, &idx, &invocation.libfunc_id);
                 for (branch, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
                     let next_future_cost =
@@ -104,24 +104,21 @@ impl StatementFutureCost for EquationGenerator {
 
 /// Returns the reverse topological ordering of the program statements.
 fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementIdx>, CostError> {
-    get_topological_ordering(
+    reverse_topological_ordering(
         false,
         program.funcs.iter().map(|f| f.entry_point),
         program.statements.len(),
         |idx| {
             Ok(match program.get_statement(&idx).unwrap() {
-                cairo_lang_sierra::program::Statement::Invocation(invocation) => invocation
+                Statement::Invocation(invocation) => invocation
                     .branches
                     .iter()
                     .rev()
                     .map(|branch| idx.next(&branch.target))
                     .collect(),
-                cairo_lang_sierra::program::Statement::Return(_) => {
-                    vec![]
-                }
+                Statement::Return(_) => vec![],
             })
         },
-        CostError::StatementOutOfBounds,
         |_| unreachable!("Cycles are not detected."),
     )
 }

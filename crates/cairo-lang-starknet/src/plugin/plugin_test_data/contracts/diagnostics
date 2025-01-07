@@ -33,7 +33,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -137,7 +137,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -145,7 +145,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -167,7 +167,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -176,7 +176,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -191,12 +191,12 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
 error: Plugin diagnostic: The first parameter of an entry point must be `self`.
  --> lib.cairo:10:12
     fn bar(_n: u32) {}
-           ^*****^
+           ^^^^^^^
 
 warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -229,7 +229,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -353,7 +353,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -361,7 +361,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -383,7 +383,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -392,7 +392,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -402,7 +402,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: The constructor function must be called `constructor`.
  --> lib.cairo:7:8
     fn invalid_constructor_name(ref self: ContractState) {}
-       ^**********************^
+       ^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -441,7 +441,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -614,7 +614,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -622,7 +622,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -644,7 +644,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -653,7 +653,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -663,12 +663,12 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:7:5
     #[external]
-    ^*********^
+    ^^^^^^^^^^^
 
 error: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:9:5
     #[external(v1)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -703,7 +703,7 @@ struct MyType {}
 
 lib.cairo:8:10
 #[derive(Drop)]
-         ^**^
+         ^^^^
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
@@ -711,7 +711,7 @@ impl MyTypeDrop of core::traits::Drop::<MyType>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -838,7 +838,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -846,7 +846,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -868,7 +868,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -877,7 +877,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -885,9 +885,11 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
- --> lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+ --> lib.cairo:5:5-6:56
+      #[external(v0)]
+ _____^
+|     fn foo(ref self: ContractState, x: super::MyType) {}
+|________________________________________________________^
 
 //! > ==========================================================================
 
@@ -918,7 +920,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -1043,7 +1045,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1051,7 +1053,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1073,7 +1075,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1082,7 +1084,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1090,9 +1092,9 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:59
+ --> lib.cairo:6:40
     fn foo(ref self: ContractState) -> (felt252, felt252) {}
-                                                          ^^
+                                       ^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1123,7 +1125,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -1250,7 +1252,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1258,7 +1260,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1280,7 +1282,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1289,7 +1291,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1299,17 +1301,19 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
  --> lib.cairo:6:11
     fn foo<T>(ref self: ContractState, x: T) {}
-          ^*^
+          ^^^
 
 warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 
 error: Type not found.
- --> lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+ --> lib.cairo:5:5-6:47
+      #[external(v0)]
+ _____^
+|     fn foo<T>(ref self: ContractState, x: T) {}
+|_______________________________________________^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -1332,7 +1336,7 @@ mod test_contract {
     struct Storage {}
     #[external(v0)]
     fn foo(
-        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252),
     ) -> (felt252, felt252) {}
 }
 
@@ -1345,13 +1349,13 @@ mod test_contract {
     struct Storage {}
     #[external(v0)]
     fn foo(
-        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252),
     ) -> (felt252, felt252) {}
 }
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -1423,7 +1427,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x37db5b411e79068f08f0832de46108b618c2f188115ac652f78be4f6dfcdeb4;
+pub const TEST_CLASS_HASH: felt252 = 0x51e947dc07c2918ff505d4f848310fd40dc215c7a78b8e0ec19a8c6ab47ce3;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1483,7 +1487,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1491,7 +1495,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1513,7 +1517,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1522,7 +1526,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1530,9 +1534,9 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:8:29
+ --> lib.cairo:8:10
     ) -> (felt252, felt252) {}
-                            ^^
+         ^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1575,7 +1579,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -1759,7 +1763,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1767,7 +1771,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1789,7 +1793,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1798,7 +1802,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1806,14 +1810,18 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
- --> lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+ --> lib.cairo:5:5-6:47
+      #[external(v0)]
+ _____^
+|     fn __validate__(ref self: ContractState) {}
+|_______________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
- --> lib.cairo:11:5
-    #[external(v0)]
-    ^*************^
+ --> lib.cairo:11:5-12:46
+      #[external(v0)]
+ _____^
+|     fn __execute__(ref self: ContractState) {}
+|______________________________________________^
 
 //! > ==========================================================================
 
@@ -1898,7 +1906,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -2002,7 +2010,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2010,7 +2018,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2032,7 +2040,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2041,7 +2049,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2051,12 +2059,12 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
  --> lib.cairo:8:37
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
-                                    ^*^
+                                    ^^^
 
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
  --> lib.cairo:8:53
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
-                                                    ^*^
+                                                    ^^^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:8:69
@@ -2066,7 +2074,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:12:53
     fn bar1(ref self: ContractState, a: felt252) -> felt252 {
-                                                    ^*****^
+                                                    ^^^^^^^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:18:50
@@ -2076,12 +2084,12 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:23:53
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
-                                                    ^********************^
+                                                    ^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:31:53
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
-                                                    ^*******************^
+                                                    ^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2118,7 +2126,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -2229,7 +2237,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2237,7 +2245,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2259,7 +2267,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2268,7 +2276,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2303,9 +2311,12 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts must define a 'Storage' struct.
- --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+ --> lib.cairo:1:1-6:1
+  #[starknet::contract]
+ _^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -2340,9 +2351,12 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
- --> lib.cairo:3:5
-    struct Storage {
-    ^**************^
+ --> lib.cairo:3:5-5:5
+      struct Storage {
+ _____^
+|         same_name: felt252,
+|     }
+|_____^
 
 //! > ==========================================================================
 
@@ -2383,7 +2397,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -2485,17 +2499,23 @@ pub mod __constructor {
 
 
 
-lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+lib.cairo:5:5-7:27
+      #[external(v0)]
+ _____^
+|     #[generate_trait]
+|     impl AImpl of ATrait {}
+|___________________________^
 generate_trait:
 
     trait ATrait {}
 
 
-lib.cairo:9:5
-    #[external(v1)]
-    ^*************^
+lib.cairo:9:5-11:27
+      #[external(v1)]
+ _____^
+|     #[generate_trait]
+|     impl BImpl of BTrait {}
+|___________________________^
 generate_trait:
 
     trait BTrait {}
@@ -2503,7 +2523,7 @@ generate_trait:
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2511,7 +2531,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2533,7 +2553,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2542,7 +2562,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2552,17 +2572,17 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:5:5
     #[external(v0)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:9:5
     #[external(v1)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:9:5
     #[external(v1)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2589,19 +2609,23 @@ trait ContractAbi {}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
- --> lib.cairo:1:1
-#[contract]
-^*********^
+ --> lib.cairo:1:1-2:20
+  #[contract]
+ _^
+| mod test_contract {}
+|____________________^
 
 error: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:1:1
 #[contract]
-^*********^
+^^^^^^^^^^^
 
 error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
- --> lib.cairo:4:1
-#[abi]
-^****^
+ --> lib.cairo:4:1-5:20
+  #[abi]
+ _^
+| trait ContractAbi {}
+|____________________^
 
 //! > ==========================================================================
 
@@ -2649,42 +2673,42 @@ mod test_contract {
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:13:5
     #[external(v0)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:15:9
         #[external(v0)]
-        ^*************^
+        ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:17:9
         #[l1_handler]
-        ^***********^
+        ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:19:9
         #[constructor]
-        ^************^
+        ^^^^^^^^^^^^^^
 
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:24:5
     #[external(v0)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:26:9
         #[external(v0)]
-        ^*************^
+        ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:28:9
         #[l1_handler]
-        ^***********^
+        ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:30:9
         #[constructor]
-        ^************^
+        ^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -2725,7 +2749,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 InterfaceTraitDispatcherTrait:
 
 trait InterfaceTraitDispatcherTrait<T> {
@@ -2915,7 +2939,7 @@ impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<Inter
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitDispatcherCopy of core::traits::Copy::<InterfaceTraitDispatcher>;
@@ -2934,7 +2958,7 @@ impl InterfaceTraitDispatcherSerde of core::serde::Serde::<InterfaceTraitDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceTraitDispatcher of starknet::Store::<InterfaceTraitDispatcher> {
@@ -3013,7 +3037,7 @@ impl InterfaceTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcher>;
@@ -3032,7 +3056,7 @@ impl InterfaceTraitLibraryDispatcherSerde of core::serde::Serde::<InterfaceTrait
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceTraitLibraryDispatcher of starknet::Store::<InterfaceTraitLibraryDispatcher> {
@@ -3111,7 +3135,7 @@ impl InterfaceTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::Sub
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcher>;
@@ -3130,7 +3154,7 @@ impl InterfaceTraitSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceT
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceTraitSafeLibraryDispatcher of starknet::Store::<InterfaceTraitSafeLibraryDispatcher> {
@@ -3209,7 +3233,7 @@ impl InterfaceTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage:
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeDispatcher>;
@@ -3228,7 +3252,7 @@ impl InterfaceTraitSafeDispatcherSerde of core::serde::Serde::<InterfaceTraitSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceTraitSafeDispatcher of starknet::Store::<InterfaceTraitSafeDispatcher> {
@@ -3307,7 +3331,7 @@ impl InterfaceTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPoi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitDispatcherSubPointers>;
@@ -3316,7 +3340,7 @@ impl InterfaceTraitDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitDispatcherSubPointersMut>;
@@ -3325,7 +3349,7 @@ impl InterfaceTraitDispatcherSubPointersMutCopy of core::traits::Copy::<Interfac
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointers>;
@@ -3334,7 +3358,7 @@ impl InterfaceTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inte
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointersMut>;
@@ -3343,7 +3367,7 @@ impl InterfaceTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<I
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
@@ -3352,7 +3376,7 @@ impl InterfaceTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointersMut>;
@@ -3361,7 +3385,7 @@ impl InterfaceTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointers>;
@@ -3370,7 +3394,7 @@ impl InterfaceTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Interfa
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointersMut>;
@@ -3379,7 +3403,7 @@ impl InterfaceTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Inte
 
 lib.cairo:8:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -3601,9 +3625,12 @@ pub mod __constructor {
 
 
 
-lib.cairo:23:5
-    #[generate_trait]
-    ^***************^
+lib.cairo:23:5-32:5
+      #[generate_trait]
+ _____^
+| ...
+|     }
+|_____^
 generate_trait:
 
     trait NonInterfaceTrait {
@@ -3618,7 +3645,7 @@ generate_trait:
 
 lib.cairo:8:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3626,7 +3653,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:8:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3648,7 +3675,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:10:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3657,7 +3684,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:10:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3694,7 +3721,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -3795,7 +3822,7 @@ pub mod __constructor {
 
 lib.cairo:6:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3803,7 +3830,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:6:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3825,7 +3852,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3834,7 +3861,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3844,7 +3871,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
  --> lib.cairo:7:10
     enum Event {}
-         ^***^
+         ^^^^^
 
 //! > ==========================================================================
 
@@ -3879,7 +3906,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -3983,7 +4010,7 @@ pub mod __constructor {
 
 lib.cairo:7:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl MyEventDrop of core::traits::Drop::<MyEvent>;
@@ -3991,7 +4018,7 @@ impl MyEventDrop of core::traits::Drop::<MyEvent>;
 
 lib.cairo:7:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl MyEventIsEvent of starknet::Event<MyEvent> {
@@ -4013,7 +4040,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -4021,7 +4048,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -4043,7 +4070,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -4052,7 +4079,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -4062,7 +4089,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
  --> lib.cairo:8:10
     enum MyEvent {}
-         ^*****^
+         ^^^^^^^
 
 //! > ==========================================================================
 
@@ -4108,7 +4135,7 @@ trait IContractNonTypeGenerics<+Destruct<u32>> {}
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:2:25
 trait IContract2Generics<T, S> {}
-                        ^****^
+                        ^^^^^^
 
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:5:26
@@ -4118,7 +4145,7 @@ trait IContract0Generics {}
 error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:8:31
 trait IContractNonTypeGenerics<+Destruct<u32>> {}
-                              ^**************^
+                              ^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -4151,17 +4178,17 @@ trait IContract<T> {
 error: Plugin diagnostic: The first parameter must be named `self`.
  --> lib.cairo:3:21
     fn ref_bad_name(ref wrong_name: T, other: felt252) -> felt252;
-                    ^***************^
+                    ^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The first parameter must be named `self`.
  --> lib.cairo:4:22
     fn snap_bad_name(wrong_name: @T, other: felt252) -> felt252;
-                     ^************^
+                     ^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `starknet::interface` functions must have a `self` parameter.
  --> lib.cairo:5:5
     fn no_params() -> felt252;
-    ^***********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -4175,7 +4202,7 @@ trait IContract<T> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -4224,7 +4251,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -4243,7 +4270,7 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -4322,7 +4349,7 @@ impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -4341,7 +4368,7 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -4420,7 +4447,7 @@ impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -4439,7 +4466,7 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -4518,7 +4545,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -4537,7 +4564,7 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -4616,7 +4643,7 @@ impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
@@ -4625,7 +4652,7 @@ impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
@@ -4634,7 +4661,7 @@ impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
@@ -4643,7 +4670,7 @@ impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContract
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
@@ -4652,7 +4679,7 @@ impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
@@ -4661,7 +4688,7 @@ impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICont
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
@@ -4670,7 +4697,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
@@ -4679,7 +4706,7 @@ impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
@@ -4709,7 +4736,7 @@ trait IContract<T> {
 error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
  --> lib.cairo:5:9
         ref param_ref: felt252,
-        ^*^
+        ^^^
 
 error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:6:18
@@ -4719,7 +4746,7 @@ error: Plugin diagnostic: `starknet::interface` functions don't support paramete
 error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:7:20
         arr_param: Array<T>,
-                   ^******^
+                   ^^^^^^^^
 
 error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:8:21
@@ -4729,7 +4756,7 @@ error: Plugin diagnostic: `starknet::interface` functions don't support paramete
 error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:9:20
         tup_param: (felt252, T),
-                   ^**********^
+                   ^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -4748,7 +4775,7 @@ trait IContract<T> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -4797,7 +4824,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -4816,7 +4843,7 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -4895,7 +4922,7 @@ impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -4914,7 +4941,7 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -4993,7 +5020,7 @@ impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -5012,7 +5039,7 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -5091,7 +5118,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -5110,7 +5137,7 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -5189,7 +5216,7 @@ impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
@@ -5198,7 +5225,7 @@ impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
@@ -5207,7 +5234,7 @@ impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
@@ -5216,7 +5243,7 @@ impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContract
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
@@ -5225,7 +5252,7 @@ impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
@@ -5234,7 +5261,7 @@ impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICont
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
@@ -5243,7 +5270,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
@@ -5252,7 +5279,7 @@ impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
@@ -5275,7 +5302,7 @@ trait IContract<T> {
 error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:3:24
     fn non_ref_or_snap(self: T, other: felt252) -> felt252;
-                       ^*****^
+                       ^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -5287,7 +5314,7 @@ trait IContract<T> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -5336,7 +5363,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -5355,7 +5382,7 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -5434,7 +5461,7 @@ impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -5453,7 +5480,7 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -5532,7 +5559,7 @@ impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -5551,7 +5578,7 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -5630,7 +5657,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -5649,7 +5676,7 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -5728,7 +5755,7 @@ impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
@@ -5737,7 +5764,7 @@ impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
@@ -5746,7 +5773,7 @@ impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
@@ -5755,7 +5782,7 @@ impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContract
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
@@ -5764,7 +5791,7 @@ impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
@@ -5773,7 +5800,7 @@ impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICont
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
@@ -5782,7 +5809,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
@@ -5791,7 +5818,7 @@ impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
@@ -5815,12 +5842,12 @@ trait IContract<T> {
 error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:3:12
     fn foo(ref self: u32, other: felt252) -> felt252;
-           ^***********^
+           ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:4:12
     fn bar(self: @u32, other: felt252) -> felt252;
-           ^********^
+           ^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -5833,7 +5860,7 @@ trait IContract<T> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 IContractDispatcherTrait:
 
 trait IContractDispatcherTrait<T> {
@@ -5882,7 +5909,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
@@ -5901,7 +5928,7 @@ impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
@@ -5980,7 +6007,7 @@ impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
@@ -5999,7 +6026,7 @@ impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
@@ -6078,7 +6105,7 @@ impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
@@ -6097,7 +6124,7 @@ impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
@@ -6176,7 +6203,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
@@ -6195,7 +6222,7 @@ impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
@@ -6274,7 +6301,7 @@ impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
@@ -6283,7 +6310,7 @@ impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
@@ -6292,7 +6319,7 @@ impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
@@ -6301,7 +6328,7 @@ impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContract
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
@@ -6310,7 +6337,7 @@ impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
@@ -6319,7 +6346,7 @@ impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICont
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
@@ -6328,7 +6355,7 @@ impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
@@ -6337,7 +6364,7 @@ impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
@@ -6371,17 +6398,17 @@ impl EmbeddableImpl<TContractState> of Interface<TContractState> {
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:9:5
     #[external(v0)]
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:11:5
     #[l1_handler]
-    ^***********^
+    ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:13:5
     #[constructor]
-    ^************^
+    ^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -6404,7 +6431,7 @@ impl EmbeddableImpl<TContractState> of Interface<TContractState> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
 trait InterfaceDispatcherTrait<T> {
@@ -6592,9 +6619,12 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 }
 
 
-lib.cairo:7:1
-#[starknet::embeddable]
-^*********************^
+lib.cairo:7:1-15:1
+  #[starknet::embeddable]
+ _^
+| ...
+| }
+|_^
 embeddable:
 
 trait UnsafeNewContractStateTraitForEmbeddableImpl<
@@ -6677,7 +6707,7 @@ mod __constructor_EmbeddableImpl {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
@@ -6696,7 +6726,7 @@ impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
@@ -6775,7 +6805,7 @@ impl InterfaceDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
@@ -6794,7 +6824,7 @@ impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispatcher> {
@@ -6873,7 +6903,7 @@ impl InterfaceLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
@@ -6892,7 +6922,7 @@ impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibraryDispatcher> {
@@ -6971,7 +7001,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
@@ -6990,7 +7020,7 @@ impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> {
@@ -7069,7 +7099,7 @@ impl InterfaceSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
@@ -7078,7 +7108,7 @@ impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
@@ -7087,7 +7117,7 @@ impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
@@ -7096,7 +7126,7 @@ impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
@@ -7105,7 +7135,7 @@ impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Interf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
@@ -7114,7 +7144,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inter
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
@@ -7123,7 +7153,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<In
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
@@ -7132,7 +7162,7 @@ impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
@@ -7159,7 +7189,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
@@ -7194,17 +7224,17 @@ mod contract {
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:16:9
         #[external(v0)]
-        ^*************^
+        ^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:18:9
         #[l1_handler]
-        ^***********^
+        ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:20:9
         #[constructor]
-        ^************^
+        ^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -7222,7 +7252,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
@@ -7255,7 +7285,7 @@ mod contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
 trait InterfaceDispatcherTrait<T> {
@@ -7445,7 +7475,7 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
@@ -7464,7 +7494,7 @@ impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
@@ -7543,7 +7573,7 @@ impl InterfaceDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
@@ -7562,7 +7592,7 @@ impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispatcher> {
@@ -7641,7 +7671,7 @@ impl InterfaceLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
@@ -7660,7 +7690,7 @@ impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibraryDispatcher> {
@@ -7739,7 +7769,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
@@ -7758,7 +7788,7 @@ impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> {
@@ -7837,7 +7867,7 @@ impl InterfaceSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
@@ -7846,7 +7876,7 @@ impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
@@ -7855,7 +7885,7 @@ impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
@@ -7864,7 +7894,7 @@ impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
@@ -7873,7 +7903,7 @@ impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Interf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
@@ -7882,7 +7912,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inter
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
@@ -7891,7 +7921,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<In
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
@@ -7900,7 +7930,7 @@ impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
@@ -7909,7 +7939,7 @@ impl InterfaceSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Interface
 
 lib.cairo:7:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -7991,8 +8021,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyEmbeddableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     #[external(v0)]
     fn foo1(self: @TContractState) {
@@ -8013,7 +8043,7 @@ pub impl MyEmbeddableImpl<
 
 lib.cairo:7:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -8021,7 +8051,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:7:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -8043,7 +8073,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:9:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -8052,7 +8082,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:9:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -8061,7 +8091,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:12:5
     #[embeddable_as(MyEmbeddableImpl)]
-    ^********************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
@@ -8072,8 +8102,8 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8092,8 +8122,8 @@ fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContr
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8112,8 +8142,8 @@ fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContr
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8147,7 +8177,7 @@ pub mod __constructor_MyEmbeddableImpl {
 
 lib.cairo:25:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -8161,6 +8191,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<super::component::Storage>,
 }
 #[doc(hidden)]
@@ -8176,6 +8207,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component::Storage>>,
 }
 #[doc(hidden)]
@@ -8190,6 +8222,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_storage: super::component::ComponentState<ContractState>,
 }
 
@@ -8283,7 +8316,7 @@ impl HasComponentImpl_component of super::component::HasComponent<ContractState>
 
 lib.cairo:34:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -8291,7 +8324,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:34:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -8330,7 +8363,7 @@ impl EventCompEventIntoEvent of Into<super::component::Event, Event> {
 
 lib.cairo:27:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -8339,7 +8372,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:27:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -8373,14 +8406,16 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'abi' attribute for impl aliases only supports the 'embed_v0' argument.
- --> lib.cairo:10:5
-    #[abi(v0)]
-    ^********^
+ --> lib.cairo:10:5-11:48
+      #[abi(v0)]
+ _____^
+|     impl Alias = super::SomeImpl<ContractState>;
+|________________________________________________^
 
 error: Plugin diagnostic: The 'abi' attribute for impls only supports the 'per_item' or 'embed_v0' argument.
  --> lib.cairo:13:5
     #[abi(embed)]
-    ^***********^
+    ^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -8403,9 +8438,12 @@ mod test_contract {
     }
 }
 
-lib.cairo:1:1
-#[generate_trait]
-^***************^
+lib.cairo:1:1-4:1
+  #[generate_trait]
+ _^
+| ...
+| }
+|_^
 generate_trait:
 
 trait SomeTrait<T> {
@@ -8415,7 +8453,7 @@ trait SomeTrait<T> {
 
 lib.cairo:5:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -8519,7 +8557,7 @@ pub mod __constructor {
 
 lib.cairo:5:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -8527,7 +8565,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:5:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -8549,7 +8587,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -8558,7 +8596,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -8579,7 +8617,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -8592,7 +8630,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -8619,7 +8657,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -8649,49 +8687,49 @@ It is possible that the type inference failed because the types differ in the nu
 Consider adding or removing snapshots.
  --> lib.cairo:55:32
             get_dep_component!(self, Comp1).foo1();
-                               ^**^
+                               ^^^^
 
 error: Expected variable or constant, found impl.
  --> lib.cairo:56:32
             get_dep_component!(Comp1, @self).foo1();
-                               ^***^
+                               ^^^^^
 
 error: Identifier not found.
  --> lib.cairo:56:40
             get_dep_component!(Comp1, @self).foo1();
-                                       ^**^
+                                       ^^^^
 
 error: Identifier not found.
  --> lib.cairo:57:40
             get_dep_component!(@self, @self).foo1();
-                                       ^**^
+                                       ^^^^
 
 error: Expected variable or constant, found impl.
  --> lib.cairo:58:32
             get_dep_component!(Comp1, Comp1).foo1();
-                               ^***^
+                               ^^^^^
 
 error[E0002]: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
  --> lib.cairo:59:46
             get_dep_component!(@self, Comp2).foo1();
-                                             ^**^
+                                             ^^^^
 
 error: Invalid path.
  --> lib.cairo:60:13
             get_dep_component!(@self, super::NotHasComponent).foo1();
-            ^***********************************************^
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:62:32
             get_dep_component!(not_contract_state, Comp1).foo1();
-                               ^****************^
+                               ^^^^^^^^^^^^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:63:39
             get_dep_component!(@self, NonExistingImpl).foo1();
-                                      ^*************^
+                                      ^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -8703,7 +8741,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -8716,7 +8754,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -8743,7 +8781,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -8769,7 +8807,7 @@ mod component3 {
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 Comp3TraitDispatcherTrait:
 
 trait Comp3TraitDispatcherTrait<T> {
@@ -8912,7 +8950,7 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
@@ -8931,7 +8969,7 @@ impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
@@ -9010,7 +9048,7 @@ impl Comp3TraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
@@ -9029,7 +9067,7 @@ impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryD
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
@@ -9108,7 +9146,7 @@ impl Comp3TraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
@@ -9127,7 +9165,7 @@ impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafe
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
@@ -9206,7 +9244,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::Sub
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
@@ -9225,7 +9263,7 @@ impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatc
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
@@ -9304,7 +9342,7 @@ impl Comp3TraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
@@ -9313,7 +9351,7 @@ impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispa
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
@@ -9322,7 +9360,7 @@ impl Comp3TraitDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitDi
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
@@ -9331,7 +9369,7 @@ impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3Tra
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
@@ -9340,7 +9378,7 @@ impl Comp3TraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
@@ -9349,7 +9387,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
@@ -9358,7 +9396,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<C
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
@@ -9367,7 +9405,7 @@ impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitS
 
 lib.cairo:30:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
@@ -9376,7 +9414,7 @@ impl Comp3TraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3Tra
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -9458,13 +9496,16 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
+lib.cairo:6:5-11:5
+      #[generate_trait]
+ _____^
+| ...
+|     }
+|_____^
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo1(self: @ComponentState<TContractState>);
     }
@@ -9472,7 +9513,7 @@ generate_trait:
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -9480,7 +9521,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9502,7 +9543,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -9511,7 +9552,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -9520,7 +9561,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -9602,13 +9643,16 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
+lib.cairo:19:5-24:5
+      #[generate_trait]
+ _____^
+| ...
+|     }
+|_____^
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
@@ -9616,7 +9660,7 @@ generate_trait:
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -9624,7 +9668,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9646,7 +9690,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:16:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -9655,7 +9699,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:16:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -9664,7 +9708,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:36:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -9750,7 +9794,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -9767,7 +9811,7 @@ pub impl Comp3<
 
 lib.cairo:36:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -9775,7 +9819,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:36:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -9797,7 +9841,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:39:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -9806,7 +9850,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:39:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -9815,7 +9859,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:42:5
     #[embeddable_as(Comp3)]
-    ^*********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForComp3<
@@ -9830,7 +9874,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9853,7 +9897,7 @@ fn __wrapper__Comp3__foo4<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9898,7 +9942,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -9911,7 +9955,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -9934,7 +9978,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -9957,48 +10001,48 @@ mod component3 {
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:51:36
             get_dep_component_mut!(Comp1, self).foo1();
-                                   ^***^
+                                   ^^^^^
 
 error: Identifier not found.
  --> lib.cairo:52:46
             get_dep_component_mut!(ref self, self).foo1();
-                                             ^**^
+                                             ^^^^
 
 error: Expected variable or constant, found impl.
  --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^***^
+                                       ^^^^^
 
 error: ref argument must be a variable.
  --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
-                                       ^***^
+                                       ^^^^^
 
 error[E0002]: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
 Candidate `test::component1::Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
  --> lib.cairo:54:53
             get_dep_component_mut!(ref self, Comp2).foo1();
-                                                    ^**^
+                                                    ^^^^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:55:36
             get_dep_component_mut!(self, Comp1).foo1();
-                                   ^**^
+                                   ^^^^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:56:40
             get_dep_component_mut!(mut self, Comp1).foo1();
-                                       ^**^
+                                       ^^^^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:57:44
             get_dep_component_mut!(ref ref self, Comp1).foo1();
-                                           ^**^
+                                           ^^^^
 
 error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:58:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
-                                           ^**^
+                                           ^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -10010,7 +10054,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -10023,7 +10067,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -10046,7 +10090,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -10067,7 +10111,7 @@ mod component3 {
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 Comp3TraitDispatcherTrait:
 
 trait Comp3TraitDispatcherTrait<T> {
@@ -10163,7 +10207,7 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
@@ -10182,7 +10226,7 @@ impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
@@ -10261,7 +10305,7 @@ impl Comp3TraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
@@ -10280,7 +10324,7 @@ impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryD
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
@@ -10359,7 +10403,7 @@ impl Comp3TraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
@@ -10378,7 +10422,7 @@ impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafe
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
@@ -10457,7 +10501,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::Sub
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
@@ -10476,7 +10520,7 @@ impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatc
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
@@ -10555,7 +10599,7 @@ impl Comp3TraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
@@ -10564,7 +10608,7 @@ impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispa
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
@@ -10573,7 +10617,7 @@ impl Comp3TraitDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitDi
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
@@ -10582,7 +10626,7 @@ impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3Tra
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
@@ -10591,7 +10635,7 @@ impl Comp3TraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
@@ -10600,7 +10644,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
@@ -10609,7 +10653,7 @@ impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<C
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
@@ -10618,7 +10662,7 @@ impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitS
 
 lib.cairo:27:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Comp3TraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
@@ -10627,7 +10671,7 @@ impl Comp3TraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3Tra
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -10709,13 +10753,16 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
+lib.cairo:6:5-11:5
+      #[generate_trait]
+ _____^
+| ...
+|     }
+|_____^
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo1(self: @ComponentState<TContractState>);
     }
@@ -10723,7 +10770,7 @@ generate_trait:
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -10731,7 +10778,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -10753,7 +10800,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -10762,7 +10809,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -10771,7 +10818,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -10853,13 +10900,16 @@ pub trait HasComponent<TContractState> {
 
 
 
-lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
+lib.cairo:19:5-24:5
+      #[generate_trait]
+ _____^
+| ...
+|     }
+|_____^
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
@@ -10867,7 +10917,7 @@ generate_trait:
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -10875,7 +10925,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:14:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -10897,7 +10947,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:16:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -10906,7 +10956,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:16:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -10915,7 +10965,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:32:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -11001,7 +11051,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -11013,7 +11063,7 @@ pub impl Comp3<
 
 lib.cairo:32:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -11021,7 +11071,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:32:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -11043,7 +11093,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:35:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -11052,7 +11102,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:35:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -11061,7 +11111,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:38:5
     #[embeddable_as(Comp3)]
-    ^*********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForComp3<
@@ -11076,7 +11126,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -11123,7 +11173,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        a_member: felt252
+        a_member: felt252,
     }
 
     #[abi(embed_v0)]
@@ -11141,7 +11191,7 @@ Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference
 Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
  --> lib.cairo:18:27
             self.a_member.write(0);
-                          ^***^
+                          ^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -11156,7 +11206,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        a_member: felt252
+        a_member: felt252,
     }
 
     #[abi(embed_v0)]
@@ -11170,7 +11220,7 @@ mod contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -11266,7 +11316,7 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -11285,7 +11335,7 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -11364,7 +11414,7 @@ impl ContractTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -11383,7 +11433,7 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -11462,7 +11512,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -11481,7 +11531,7 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -11560,7 +11610,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -11579,7 +11629,7 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -11658,7 +11708,7 @@ impl ContractTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
@@ -11667,7 +11717,7 @@ impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTrai
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
@@ -11676,7 +11726,7 @@ impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractT
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
@@ -11685,7 +11735,7 @@ impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Contr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
@@ -11694,7 +11744,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Co
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
@@ -11703,7 +11753,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<C
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
@@ -11712,7 +11762,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy:
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
@@ -11721,7 +11771,7 @@ impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Contract
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
@@ -11730,7 +11780,7 @@ impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Contr
 
 lib.cairo:6:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -11809,7 +11859,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3b1a0f089233a1d0d98b6d9576c2636903d23c1b78085851496af3bff605a30;
+pub const TEST_CLASS_HASH: felt252 = 0x3232c860888b3e1c54dda19284c63d6667fbbdebe403a54921a6dfbbe3134c9;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -11861,7 +11911,7 @@ pub mod __constructor {
 
 lib.cairo:6:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -11869,7 +11919,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:6:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -11891,7 +11941,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:9:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -11900,7 +11950,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:9:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -11918,7 +11968,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -11930,12 +11980,11 @@ trait ContractTrait<TContractState> {
 #[starknet::contract]
 mod contract {
     component!(path: super::test_component, storage: component_member, event: CompEvent);
-
     use super::ContractTrait;
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        component_member: super::test_component::Storage
+        component_member: super::test_component::Storage,
     }
 
     #[event]
@@ -11957,9 +12006,9 @@ mod contract {
 error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
 Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
 Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
- --> lib.cairo:35:40
+ --> lib.cairo:34:40
             self.component_member.data.write();
-                                       ^***^
+                                       ^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -11968,7 +12017,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -11980,12 +12029,11 @@ trait ContractTrait<TContractState> {
 #[starknet::contract]
 mod contract {
     component!(path: super::test_component, storage: component_member, event: CompEvent);
-
     use super::ContractTrait;
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        component_member: super::test_component::Storage
+        component_member: super::test_component::Storage,
     }
 
     #[event]
@@ -12005,7 +12053,7 @@ mod contract {
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -12101,7 +12149,7 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -12120,7 +12168,7 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -12199,7 +12247,7 @@ impl ContractTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -12218,7 +12266,7 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -12297,7 +12345,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -12316,7 +12364,7 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -12395,7 +12443,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -12414,7 +12462,7 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -12493,7 +12541,7 @@ impl ContractTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
@@ -12502,7 +12550,7 @@ impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTrai
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
@@ -12511,7 +12559,7 @@ impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractT
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
@@ -12520,7 +12568,7 @@ impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Contr
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
@@ -12529,7 +12577,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Co
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
@@ -12538,7 +12586,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<C
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
@@ -12547,7 +12595,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy:
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
@@ -12556,7 +12604,7 @@ impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Contract
 
 lib.cairo:9:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
@@ -12565,7 +12613,7 @@ impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Contr
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -12656,7 +12704,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -12664,7 +12712,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -12686,7 +12734,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -12695,7 +12743,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -12704,7 +12752,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:14:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -12718,6 +12766,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_member: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[doc(hidden)]
@@ -12733,6 +12782,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_member: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
 }
 #[doc(hidden)]
@@ -12747,6 +12797,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_member: super::test_component::ComponentState<ContractState>,
 }
 
@@ -12783,7 +12834,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3653c75be8955a10e60ac6743eb49d095f4656c3a082b05e48756e24f1671f2;
+pub const TEST_CLASS_HASH: felt252 = 0x29df08f1d7a448905745936c947da165c96a5e2fdbd90ffd2bdabbc7a7e0b1d;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -12852,17 +12903,17 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:26:14
+lib.cairo:25:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:26:20
+lib.cairo:25:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -12899,18 +12950,18 @@ impl EventCompEventIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:19:5
+lib.cairo:18:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:19:5
+lib.cairo:18:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -12926,26 +12977,26 @@ ExpandContractTestRunner(expect_diagnostics: true)
 //! > cairo_code
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
     fn read(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read(address_domain, base)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
         starknet::SyscallResult::Ok(u256Pair { a, b })
     }
     fn write(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write(address_domain, base, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
@@ -12955,7 +13006,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
@@ -12976,7 +13027,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        u256_pair: super::u256Pair
+        u256_pair: super::u256Pair,
     }
 
     #[abi(embed_v0)]
@@ -12996,33 +13047,33 @@ error: Type "core::starknet::storage::storage_base::StorageBase::<test::u256Pair
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::starknet::storage::map::StorageMapReadAccess::read and core::starknet::storage::StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:59:30
             self.u256_pair.a.read()
-                             ^**^
+                             ^^^^
 
 //! > generated_cairo_code
 lib.cairo:
 
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
     fn read(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read(address_domain, base)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
         starknet::SyscallResult::Ok(u256Pair { a, b })
     }
     fn write(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write(address_domain, base, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
@@ -13032,7 +13083,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
@@ -13053,7 +13104,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        u256_pair: super::u256Pair
+        u256_pair: super::u256Pair,
     }
 
     #[abi(embed_v0)]
@@ -13066,7 +13117,7 @@ mod contract {
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 ContractTraitDispatcherTrait:
 
 trait ContractTraitDispatcherTrait<T> {
@@ -13178,7 +13229,7 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
@@ -13197,7 +13248,7 @@ impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatche
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitDispatcher of starknet::Store::<ContractTraitDispatcher> {
@@ -13276,7 +13327,7 @@ impl ContractTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
@@ -13295,7 +13346,7 @@ impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLi
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitLibraryDispatcher of starknet::Store::<ContractTraitLibraryDispatcher> {
@@ -13374,7 +13425,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
@@ -13393,7 +13444,7 @@ impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTra
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeLibraryDispatcher of starknet::Store::<ContractTraitSafeLibraryDispatcher> {
@@ -13472,7 +13523,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
@@ -13491,7 +13542,7 @@ impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeD
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreContractTraitSafeDispatcher of starknet::Store::<ContractTraitSafeDispatcher> {
@@ -13570,7 +13621,7 @@ impl ContractTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
@@ -13579,7 +13630,7 @@ impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTrai
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
@@ -13588,7 +13639,7 @@ impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractT
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
@@ -13597,7 +13648,7 @@ impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Contr
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
@@ -13606,7 +13657,7 @@ impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Co
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
@@ -13615,7 +13666,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<C
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
@@ -13624,7 +13675,7 @@ impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy:
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
@@ -13633,7 +13684,7 @@ impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Contract
 
 lib.cairo:43:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
@@ -13642,7 +13693,7 @@ impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Contr
 
 lib.cairo:48:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -13721,7 +13772,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1ef205582bfa9cd0a088bc1b88a40d43b5ed2c42cf4087763c93ef1eb5803a6;
+pub const TEST_CLASS_HASH: felt252 = 0xc5af418eb5eed4ff51ca2888dc884ade488de0dea59772fe757c6cfc2d73f3;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -13774,7 +13825,7 @@ pub mod __constructor {
 
 lib.cairo:48:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -13782,7 +13833,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:48:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -13804,7 +13855,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:51:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -13813,7 +13864,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:51:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -13839,7 +13890,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         fn func(self: @ComponentState<TContractState>) {}
     }
@@ -13867,9 +13918,11 @@ mod contract {
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:35:5
-    #[abi(embed_v0)]
-    ^**************^
+ --> lib.cairo:35:5-36:66
+      #[abi(embed_v0)]
+ _____^
+|     impl MyEmbeddedImpl = super::component::MyImpl<ContractState>;
+|__________________________________________________________________^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -13886,7 +13939,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         fn func(self: @ComponentState<TContractState>) {}
     }
@@ -13914,7 +13967,7 @@ mod contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 InterfaceDispatcherTrait:
 
 trait InterfaceDispatcherTrait<T> {
@@ -14010,7 +14063,7 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
@@ -14029,7 +14082,7 @@ impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceDispatcher of starknet::Store::<InterfaceDispatcher> {
@@ -14108,7 +14161,7 @@ impl InterfaceDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
@@ -14127,7 +14180,7 @@ impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceLibraryDispatcher of starknet::Store::<InterfaceLibraryDispatcher> {
@@ -14206,7 +14259,7 @@ impl InterfaceLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
@@ -14225,7 +14278,7 @@ impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeLibraryDispatcher of starknet::Store::<InterfaceSafeLibraryDispatcher> {
@@ -14304,7 +14357,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
@@ -14323,7 +14376,7 @@ impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatche
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterfaceSafeDispatcher of starknet::Store::<InterfaceSafeDispatcher> {
@@ -14402,7 +14455,7 @@ impl InterfaceSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
@@ -14411,7 +14464,7 @@ impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
@@ -14420,7 +14473,7 @@ impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDisp
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
@@ -14429,7 +14482,7 @@ impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<Interface
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
@@ -14438,7 +14491,7 @@ impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Interf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
@@ -14447,7 +14500,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inter
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
@@ -14456,7 +14509,7 @@ impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<In
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
@@ -14465,7 +14518,7 @@ impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSaf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
@@ -14474,7 +14527,7 @@ impl InterfaceSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Interface
 
 lib.cairo:6:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -14556,8 +14609,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyEmbeddableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     
     fn func(self: @TContractState) {
@@ -14568,7 +14621,7 @@ pub impl MyEmbeddableImpl<
 
 lib.cairo:6:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -14576,7 +14629,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:6:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -14598,7 +14651,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:8:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -14607,7 +14660,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:8:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -14616,7 +14669,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:11:5
     #[embeddable_as(MyEmbeddableImpl)]
-    ^********************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
@@ -14627,8 +14680,8 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__func<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__func<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -14660,7 +14713,7 @@ pub mod __constructor_MyEmbeddableImpl {
 
 lib.cairo:19:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -14674,6 +14727,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<super::component::Storage>,
 }
 #[doc(hidden)]
@@ -14689,6 +14743,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component::Storage>>,
 }
 #[doc(hidden)]
@@ -14703,6 +14758,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_storage: super::component::ComponentState<ContractState>,
 }
 
@@ -14796,7 +14852,7 @@ impl HasComponentImpl_component of super::component::HasComponent<ContractState>
 
 lib.cairo:28:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -14804,7 +14860,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:28:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -14843,7 +14899,7 @@ impl EventCompEventIntoEvent of Into<super::component::Event, Event> {
 
 lib.cairo:21:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -14852,7 +14908,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:21:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

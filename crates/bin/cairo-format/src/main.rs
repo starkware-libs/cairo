@@ -37,8 +37,24 @@ struct FormatterArgs {
     #[arg(short, long, default_value_t = false)]
     print_parsing_errors: bool,
     /// Enable sorting the module level items (imports, mod definitions...).
-    #[arg(short, long, default_value_t = false)]
-    sort_mod_level_items: bool,
+    #[arg(short, long)]
+    sort_mod_level_items: Option<bool>,
+    /// Controls tuple breaking behavior. Set to 'line-by-line' (default) to format each
+    /// tuple item on a new line, or 'single-break-point' to keep as many items as possible on the
+    /// same line (as space permits). Defaults to line-by-line.
+    #[arg(long)]
+    tuple_line_breaking: Option<bool>,
+    /// Controls fixed array breaking behavior. Set to 'single-break-point' (default) to format
+    /// each array item on a new line, or 'line-by-line' to keep as many items as possible on the
+    /// same line (as space permits). Defaults to single line.
+    #[arg(long)]
+    fixed_array_line_breaking: Option<bool>,
+    /// Enable merging of `use` items.
+    #[arg(long)]
+    merge_use_items: Option<bool>,
+    ///  Enable duplicates in `use` items.
+    #[arg(long)]
+    allow_duplicates: Option<bool>,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -183,7 +199,12 @@ fn main() -> ExitCode {
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();
-    let config = FormatterConfig::default().sort_module_level_items(args.sort_mod_level_items);
+    let config = FormatterConfig::default()
+        .sort_module_level_items(args.sort_mod_level_items)
+        .tuple_breaking_behavior(args.tuple_line_breaking.map(Into::into))
+        .fixed_array_breaking_behavior(args.fixed_array_line_breaking.map(Into::into))
+        .merge_use_items(args.merge_use_items)
+        .allow_duplicate_uses(args.allow_duplicates);
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(

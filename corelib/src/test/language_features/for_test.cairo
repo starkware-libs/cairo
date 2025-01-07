@@ -1,5 +1,3 @@
-use crate::iter::IntoIterator;
-
 #[test]
 fn test_for_loop_array_sum() {
     let mut sum = 0;
@@ -22,7 +20,7 @@ fn test_for_loop_array_variables() {
 fn test_for_loop_array_tuples() {
     let mut i = 10;
     for (x, y) in array![
-        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17)
+        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17),
     ] {
         assert_eq!(x, i);
         assert_eq!(y, i);

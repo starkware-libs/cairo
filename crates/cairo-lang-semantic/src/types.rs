@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId,
+    StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -13,6 +13,7 @@ use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_ex
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;
 
 use crate::corelib::{
@@ -109,6 +110,11 @@ impl TypeId {
     /// sized array containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
         self.lookup_intern(db).is_phantom(db)
+    }
+
+    /// Short name of the type argument.
+    pub fn short_name(&self, db: &dyn SemanticGroup) -> String {
+        db.priv_type_short_name(*self)
     }
 }
 impl TypeLongId {
@@ -265,7 +271,6 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        // TODO(spapini): Format generics.
         let generic_type_format = self.generic_type(db).format(db.upcast());
         let mut generic_args = self.generic_args(db).into_iter();
         if let Some(first) = generic_args.next() {
@@ -275,13 +280,13 @@ impl ConcreteTypeId {
             f.push_str("::<");
             f.push_str(&first.format(db));
             for arg in generic_args {
-                // If the formatted type is becoming too long, stop adding more arguments.
-                if f.len() > CHARS_BOUND {
-                    f.push_str(", ...");
-                    break;
-                }
                 f.push_str(", ");
-                f.push_str(&arg.format(db));
+                if f.len() > CHARS_BOUND {
+                    // If the formatted type is becoming too long, add short version of arguments.
+                    f.push_str(&arg.short_name(db));
+                } else {
+                    f.push_str(&arg.format(db));
+                }
             }
             f.push('>');
             f
@@ -475,6 +480,30 @@ impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
     }
 }
 
+/// A wrapper around ImplTypeById that implements Ord for saving in an ordered collection.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplTypeById(ImplTypeId);
+
+impl From<ImplTypeId> for ImplTypeById {
+    fn from(impl_type_id: ImplTypeId) -> Self {
+        Self(impl_type_id)
+    }
+}
+impl Ord for ImplTypeById {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0
+            .impl_id
+            .get_internal_id()
+            .cmp(other.0.impl_id.get_internal_id())
+            .then_with(|| self.0.ty.get_internal_id().cmp(other.0.ty.get_internal_id()))
+    }
+}
+impl PartialOrd for ImplTypeById {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path. Used for resolving from non-statement context.
 pub fn resolve_type(
@@ -626,6 +655,7 @@ pub fn extract_fixed_size_array_size(
                 &size,
                 size_expr_syntax.stable_ptr().untyped(),
                 get_usize_ty(db),
+                false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
@@ -678,6 +708,8 @@ pub fn get_impl_at_context(
 ) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
+    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
+    inference.conform_generic_params_type_constraints(&constrains);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
@@ -896,6 +928,46 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             closure.param_tys.iter().all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
+    }
+}
+
+pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    match ty.lookup_intern(db) {
+        TypeLongId::Concrete(concrete_type_id) => {
+            let mut result = concrete_type_id.generic_type(db).format(db.upcast());
+            let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
+            if generic_args.peek().is_some() {
+                result.push_str("::<h0x");
+                let mut hasher = Keccak256::new();
+                for arg in generic_args {
+                    hasher.update(arg.short_name(db).as_bytes());
+                }
+                for c in hasher.finalize() {
+                    result.push_str(&format!("{c:x}"));
+                }
+                result.push('>');
+            }
+            result
+        }
+        TypeLongId::Tuple(types) => {
+            let mut result = String::from("(h0x");
+            let mut hasher = Keccak256::new();
+            for ty in types {
+                hasher.update(ty.short_name(db).as_bytes());
+            }
+            for c in hasher.finalize() {
+                result.push_str(&format!("{c:x}"));
+            }
+            result.push(')');
+            result
+        }
+        TypeLongId::Snapshot(ty) => {
+            format!("@{}", ty.short_name(db))
+        }
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            format!("[{}; {:?}", type_id.short_name(db), size.debug(db.elongate()))
+        }
+        other => other.format(db),
     }
 }
 

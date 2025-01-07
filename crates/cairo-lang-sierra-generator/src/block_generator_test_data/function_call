@@ -139,7 +139,7 @@ extern fn felt252_add(a: felt252, b: felt252) -> felt252;
 error: An extern function must be marked as nopanic.
  --> lib.cairo:1:1
 extern fn felt252_add(a: felt252, b: felt252) -> felt252;
-^*******************************************************^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_diagnostics
 

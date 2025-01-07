@@ -28,7 +28,7 @@ mod test_contract {
 
     #[l1_handler]
     fn l1_handler_func(
-        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252,
     ) {}
 
     #[event]
@@ -81,7 +81,7 @@ mod test_contract {
 
     #[l1_handler]
     fn l1_handler_func(
-        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252,
     ) {}
 
     #[event]
@@ -109,7 +109,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -178,7 +178,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2cd967636a47442d438bb2596f3c9848f0a831f916f4bb50d807e6eb90df576;
+pub const TEST_CLASS_HASH: felt252 = 0x50afb5642ad6a435e97435ad44ec6060db9755b206a962ddf6d6cbb4a8b99d;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -329,7 +329,7 @@ pub mod __constructor {
 
 lib.cairo:29:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -337,7 +337,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:29:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -393,7 +393,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 lib.cairo:34:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -401,7 +401,7 @@ impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 lib.cairo:34:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
@@ -427,7 +427,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 lib.cairo:39:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
@@ -435,7 +435,7 @@ impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 lib.cairo:39:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
@@ -453,7 +453,7 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -462,7 +462,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

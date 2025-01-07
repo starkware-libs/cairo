@@ -13,7 +13,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-    a: felt252
+    a: felt252,
 }
 
 type RenamedStruct = MyStruct;
@@ -39,7 +39,7 @@ foo
 
 //! > module_code
 enum MyEnum {
-    f: felt252
+    f: felt252,
 }
 
 type RenamedEnum = MyEnum;
@@ -233,4 +233,4 @@ type Alias = bad_type;
 error: Type not found.
  --> lib.cairo:1:14
 type Alias = bad_type;
-             ^******^
+             ^^^^^^^^

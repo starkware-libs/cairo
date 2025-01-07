@@ -3,15 +3,17 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId, UseId,
+    EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    ErrorCode, Severity, error_code,
 };
-use cairo_lang_syntax as syntax;
+use cairo_lang_filesystem::db::Edition;
+use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -20,7 +22,8 @@ use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
-use crate::resolve::ResolvedConcreteItem;
+use crate::items::trt::ConcreteTraitTypeId;
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
 
@@ -334,6 +337,47 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+
+            SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_trait,
+                actual_trait,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter trait of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_trait.debug(db),
+                    actual_trait.debug(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongGenericParamKindForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_kind,
+                actual_kind,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter kind of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_kind,
+                    actual_kind
+                )
+            }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
                 format!(
                     "Ambiguous method call. More than one applicable trait function with a \
@@ -521,6 +565,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
             },
+            SemanticDiagnosticKind::AmbiguousPath(module_items) => {
+                format!(
+                    "Ambiguous path. Multiple matching items: {}",
+                    module_items
+                        .iter()
+                        .map(|item| format!("`{}`", item.full_path(db.upcast())))
+                        .join(", ")
+                )
+            }
+            SemanticDiagnosticKind::UseStarEmptyPath => {
+                "`*` in `use` items is not allowed for empty path.".into()
+            }
+            SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition) => {
+                format!("Global `use` item is not supported in `{edition:?}` edition.")
+            }
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
@@ -546,8 +605,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::ItemNotVisible(item_id) => {
-                format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
+            SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
+                format!(
+                    "Item `{}` is not visible in this context{}.",
+                    item_id.full_path(db.upcast()),
+                    if containing_modules.is_empty() {
+                        "".to_string()
+                    } else if let [module_id] = &containing_modules[..] {
+                        format!(" through module `{}`", module_id.full_path(db.upcast()))
+                    } else {
+                        format!(
+                            " through any of the modules: {}",
+                            containing_modules
+                                .iter()
+                                .map(|module_id| format!("`{}`", module_id.full_path(db.upcast())))
+                                .join(", ")
+                        )
+                    }
+                )
             }
             SemanticDiagnosticKind::UnusedImport(use_id) => {
                 format!("Unused import: `{}`", use_id.full_path(db.upcast()))
@@ -621,6 +696,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as const."
+                )
+            }
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
@@ -632,6 +715,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NameDefinedMultipleTimes(name) => {
                 format!("The name `{name}` is defined multiple times.")
+            }
+            SemanticDiagnosticKind::NonPrivateUseStar => {
+                "`pub` not supported for global `use`.".into()
             }
             SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
                 "Named arguments are not supported in this context.".into()
@@ -652,6 +738,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::FailedConstantCalculation => {
+                "Failed to calculate constant.".into()
+            }
+            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                "Constant calculation depth exceeded.".into()
+            }
+            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -860,8 +953,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
-            SemanticDiagnosticKind::TypeEqualTraitReImplementation => {
-                "Type equals trait should not be re-implemented.".into()
+            SemanticDiagnosticKind::CallExpressionRequiresFunction { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!("Call expression requires a function, found `{}`.", ty.format(db))
+                } else {
+                    format!(
+                        "Call expression requires a function, found `{}`.\n{}",
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
+            SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
+                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
@@ -875,6 +979,25 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
+            }
+            SemanticDiagnosticKind::NonTraitTypeConstrained { identifier, concrete_trait_id } => {
+                format!(
+                    "associated type `{}` not found for `{}`",
+                    identifier,
+                    concrete_trait_id.full_path(db)
+                )
+            }
+            SemanticDiagnosticKind::DuplicateTypeConstraint {
+                concrete_trait_type_id: trait_type_id,
+            } => {
+                format!(
+                    "the value of the associated type `{}` in trait `{}` is already specified",
+                    trait_type_id.trait_type(db).name(db.upcast()),
+                    trait_type_id.concrete_trait(db).full_path(db)
+                )
+            }
+            SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
+                "Type constraints syntax is not enabled in the current crate.".into()
             }
         }
     }
@@ -905,6 +1028,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
+        }
+    }
+
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+        if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
+            notes
+        } else {
+            &[]
         }
     }
 
@@ -1002,6 +1133,20 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_name: SmolStr,
+    },
+    WrongGenericParamTraitForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_trait: ConcreteTraitId,
+        actual_trait: ConcreteTraitId,
+    },
+    WrongGenericParamKindForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_kind: GenericKind,
+        actual_kind: GenericKind,
     },
     WrongType {
         expected_ty: semantic::TypeId,
@@ -1121,13 +1266,16 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound(NotFoundItemType),
+    AmbiguousPath(Vec<ModuleItemId>),
+    UseStarEmptyPath,
+    GlobalUsesNotSupportedInEdition(Edition),
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,
     TraitItemForbiddenInItsImpl,
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
-    ItemNotVisible(ModuleItemId),
+    ItemNotVisible(ModuleItemId, Vec<ModuleId>),
     UnusedImport(UseId),
     RedundantModifier {
         current_modifier: SmolStr,
@@ -1158,10 +1306,15 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    PassConstAsNonConst {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     NameDefinedMultipleTimes(SmolStr),
+    NonPrivateUseStar,
     NamedArgumentsAreNotSupported,
     ArgPassedToNegativeImpl,
     UnnamedArgumentFollowsNamed,
@@ -1171,6 +1324,9 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
+    FailedConstantCalculation,
+    ConstantCalculationDepthExceeded,
+    InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
@@ -1189,7 +1345,12 @@ pub enum SemanticDiagnosticKind {
         trait_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
+    CallExpressionRequiresFunction {
+        ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
+
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineAttrForExternFunctionNotAllowed,
@@ -1231,7 +1392,9 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
-    TypeEqualTraitReImplementation,
+    CompilerTraitReImplementation {
+        trait_id: TraitId,
+    },
     ClosureInGlobalScope,
     MaybeMissingColonColon,
     CallingShadowedFunction {
@@ -1239,6 +1402,14 @@ pub enum SemanticDiagnosticKind {
     },
     RefClosureArgument,
     MutableCapturedVariable,
+    NonTraitTypeConstrained {
+        identifier: SmolStr,
+        concrete_trait_id: ConcreteTraitId,
+    },
+    DuplicateTypeConstraint {
+        concrete_trait_type_id: ConcreteTraitTypeId,
+    },
+    TypeConstraintsSyntaxNotEnabled,
 }
 
 /// The kind of an expression with multiple possible return types.
@@ -1256,6 +1427,9 @@ impl SemanticDiagnosticKind {
             Self::CannotCallMethod { .. } => {
                 error_code!(E0002)
             }
+            Self::MissingMember(_) => error_code!(E0003),
+            Self::MissingItemsInImpl(_) => error_code!(E0004),
+            Self::ModuleFileNotFound(_) => error_code!(E0005),
             _ => return None,
         })
     }
@@ -1299,6 +1473,25 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
             ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+        }
+    }
+}
+impl From<&ResolvedGenericItem> for ElementKind {
+    fn from(val: &ResolvedGenericItem) -> Self {
+        match val {
+            ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
+            ResolvedGenericItem::Module(_) => ElementKind::Module,
+            ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
+            ResolvedGenericItem::TraitFunction(_) => ElementKind::TraitFunction,
+            ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
+                ElementKind::Type
+            }
+            ResolvedGenericItem::Variant(_) => ElementKind::Variant,
+            ResolvedGenericItem::Trait(_) => ElementKind::Trait,
+            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
+                ElementKind::Impl
+            }
+            ResolvedGenericItem::Variable(_) => ElementKind::Variable,
         }
     }
 }

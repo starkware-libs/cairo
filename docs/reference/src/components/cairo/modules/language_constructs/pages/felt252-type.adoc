@@ -1,6 +1,35 @@
 = Felt252 type
 
-This section is a work in progress.
+Field elements have the property of intentionally "wrapping around" when their value exceeds the
+specified range, using modular arithmetic.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Code Example
+The following example demonstrates how the maximum value of `felt252` behaves when adding `1`.
+
+[source, rust]
+----
+fn main() {
+    // max value of felt252
+    let x: felt252 = 3618502788666131213697322783095070105623107215331596699973092056135872020480;
+    let y: felt252 = 1;
+    assert(x + y == 0, 'P == 0 (mod P)');
+}
+----
+
+== Simplifying the Code
+Since `felt252` is the default data type, there's no need to explicitly specify it in simple cases.
+Here’s the simplified version:
+
+[source, rust]
+----
+fn main() {
+    // max value of felt252
+    let x = 3618502788666131213697322783095070105623107215331596699973092056135872020480;
+    let y = 1;
+    assert(x + y == 0, 'P == 0 (mod P)');
+}
+----
+
+== Conclusion
+The `felt252` data type uses modular arithmetic to ensure that all values remain within the allowed
+range. This makes it ideal for applications requiring reliable computation in finite fields.

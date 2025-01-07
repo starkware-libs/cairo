@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_runnable_utils::builder::{BuildError, RunnableBuilder};
+use cairo_lang_runnable_utils::builder::{BuildError, EntryCodeConfig, RunnableBuilder};
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumType;
@@ -20,13 +20,12 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::HintParams;
 use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
-use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
@@ -192,24 +191,26 @@ impl SierraCasmRunner {
     pub fn run_function_with_starknet_context(
         &self,
         func: &Function,
-        args: &[Arg],
+        args: Vec<Arg>,
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let (assembled_program, builtins) = self.builder.assemble_function_program(func)?;
+        let (assembled_program, builtins) =
+            self.builder.assemble_function_program(func, EntryCodeConfig::testing())?;
         let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
-
+        let user_args = self.prepare_args(func, available_gas, args)?;
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
+            user_args,
             starknet_state,
             string_to_hint,
             run_resources: RunResources::default(),
             syscalls_used_resources: Default::default(),
+            no_temporary_segments: true,
         };
         let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
             .run_function(
                 func,
-                (self.get_initial_available_gas(func, available_gas)?, args),
                 &mut hint_processor,
                 hints_dict,
                 assembled_program.bytecode.iter(),
@@ -269,6 +270,9 @@ impl SierraCasmRunner {
         // runner). The header is not counted, and the footer is, but then the relevant
         // entry is removed.
         let mut sierra_statement_weights = UnorderedHashMap::default();
+        // Total weight of Sierra statements grouped by the respective (collapsed) user function
+        // call stack.
+        let mut scoped_sierra_statement_weights = OrderedHashMap::default();
         for step in trace.iter() {
             // Skip the header.
             if step.pc < real_pc_0 {
@@ -298,6 +302,19 @@ impl SierraCasmRunner {
             );
 
             *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+
+            if profiling_config.collect_scoped_sierra_statement_weights {
+                // The current stack trace, including the current function (recursive calls
+                // collapsed).
+                let cur_stack: Vec<usize> =
+                    chain!(function_stack.iter().map(|&(idx, _)| idx), [user_function_idx])
+                        .dedup()
+                        .collect();
+
+                *scoped_sierra_statement_weights
+                    .entry((cur_stack, sierra_statement_idx))
+                    .or_insert(0) += 1;
+            }
 
             let Some(gen_statement) =
                 self.builder.sierra_program().statements.get(sierra_statement_idx.0)
@@ -343,7 +360,11 @@ impl SierraCasmRunner {
         // Remove the footer.
         sierra_statement_weights.remove(&StatementIdx(sierra_len));
 
-        ProfilingInfo { sierra_statement_weights, stack_trace_weights }
+        ProfilingInfo {
+            sierra_statement_weights,
+            stack_trace_weights,
+            scoped_sierra_statement_weights,
+        }
     }
 
     fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
@@ -392,7 +413,6 @@ impl SierraCasmRunner {
     pub fn run_function<'a, Bytecode>(
         &self,
         func: &Function,
-        (available_gas, args): (usize, &[Arg]),
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
         bytecode: Bytecode,
@@ -401,16 +421,14 @@ impl SierraCasmRunner {
     where
         Bytecode: ExactSizeIterator<Item = &'a BigInt> + Clone,
     {
-        self.validate_args(func, args)?;
         let return_types =
             self.builder.generic_id_and_size_from_concrete(&func.signature.ret_types);
         let data_len = bytecode.len();
-        let gas = self.requires_gas_builtin(func).then_some(available_gas);
         let RunFunctionResult { ap, mut used_resources, memory, relocated_trace } =
             casm_run::run_function(
                 bytecode,
                 builtins,
-                |vm| initialize_vm(vm, gas, args, data_len),
+                |vm| initialize_vm(vm, data_len),
                 hint_processor,
                 hints_dict,
             )?;
@@ -441,10 +459,23 @@ impl SierraCasmRunner {
         Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }
 
-    /// Validates the arguments given shallowly matches the parameters of a function.
-    fn validate_args(&self, func: &Function, args: &[Arg]) -> Result<(), RunnerError> {
+    /// Groups the args by parameters, and additionally add `gas` as the first if required.
+    fn prepare_args(
+        &self,
+        func: &Function,
+        available_gas: Option<usize>,
+        args: Vec<Arg>,
+    ) -> Result<Vec<Vec<Arg>>, RunnerError> {
+        let mut user_args = vec![];
+        if let Some(gas) = self
+            .requires_gas_builtin(func)
+            .then_some(self.get_initial_available_gas(func, available_gas)?)
+        {
+            user_args.push(vec![Arg::Value(Felt252::from(gas))]);
+        }
         let mut expected_arguments_size = 0;
-        let mut arg_iter = args.iter().enumerate();
+        let actual_args_size = args_size(&args);
+        let mut arg_iter = args.into_iter().enumerate();
         for (param_index, (_, param_size)) in self
             .builder
             .generic_id_and_size_from_concrete(&func.signature.param_types)
@@ -452,6 +483,7 @@ impl SierraCasmRunner {
             .filter(|(ty, _)| self.builder.is_user_arg_type(ty))
             .enumerate()
         {
+            let mut curr_arg = vec![];
             let param_size: usize = param_size.into_or_panic();
             expected_arguments_size += param_size;
             let mut taken_size = 0;
@@ -463,16 +495,17 @@ impl SierraCasmRunner {
                 if taken_size > param_size {
                     return Err(RunnerError::ArgumentUnaligned { param_index, arg_index });
                 }
+                curr_arg.push(arg);
             }
+            user_args.push(curr_arg);
         }
-        let actual_args_size = args_size(args);
         if expected_arguments_size != actual_args_size {
             return Err(RunnerError::ArgumentsSizeMismatch {
                 expected: expected_arguments_size,
                 actual: actual_args_size,
             });
         }
-        Ok(())
+        Ok(user_args)
     }
 
     /// Handling the main return value to create a `RunResultValue`.
@@ -588,7 +621,13 @@ impl SierraCasmRunner {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfoCollectionConfig {
     /// The maximum depth of the stack trace to collect.
-    max_stack_trace_depth: usize,
+    pub max_stack_trace_depth: usize,
+    /// If this flag is set, in addition to the Sierra statement weights and stack trace weights
+    /// the runner will also collect weights for Sierra statements taking into account current call
+    /// stack and collapsing recursive calls (which also includes loops).
+    /// The resulting dictionary can be pretty huge hence this feature is optional and disabled by
+    /// default.
+    pub collect_scoped_sierra_statement_weights: bool,
 }
 
 impl ProfilingInfoCollectionConfig {
@@ -614,50 +653,16 @@ impl Default for ProfilingInfoCollectionConfig {
             } else {
                 MAX_STACK_TRACE_DEPTH_DEFAULT
             },
+            collect_scoped_sierra_statement_weights: false,
         }
     }
 }
 
 /// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end
 /// of the program, as well as placing the arguments at the initial ap values.
-pub fn initialize_vm(
-    vm: &mut VirtualMachine,
-    gas_value: Option<usize>,
-    args: &[Arg],
-    data_len: usize,
-) -> Result<(), Box<CairoRunError>> {
+pub fn initialize_vm(vm: &mut VirtualMachine, data_len: usize) -> Result<(), Box<CairoRunError>> {
     // Create the builtin cost segment, with dummy values.
     let builtin_cost_segment = vm.add_memory_segment();
-    let mut ap = vm.get_ap();
-    if let Some(value) = gas_value {
-        // Adding the gas as the first argument.
-        vm.insert_value(ap, value).map_err(|e| Box::new(e.into()))?;
-        ap += 1;
-    }
-    let mut stack = vec![(ap, args)];
-    while let Some((mut buffer, values)) = stack.pop() {
-        for value in values {
-            match value {
-                Arg::Value(v) => {
-                    vm.insert_value(buffer, v).map_err(|e| Box::new(e.into()))?;
-                    buffer += 1;
-                }
-                Arg::Array(arr) => {
-                    let arr_buffer = vm.add_memory_segment();
-                    stack.push((arr_buffer, arr));
-                    vm.insert_value(buffer, arr_buffer).map_err(|e| Box::new(e.into()))?;
-                    buffer += 1;
-                    vm.insert_value(
-                        buffer,
-                        (arr_buffer + args_size(arr))
-                            .map_err(|e| Box::new(MemoryError::Math(e).into()))?,
-                    )
-                    .map_err(|e| Box::new(e.into()))?;
-                    buffer += 1;
-                }
-            }
-        }
-    }
     for token_type in CostTokenType::iter_precost() {
         vm.insert_value(
             (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)).unwrap(),

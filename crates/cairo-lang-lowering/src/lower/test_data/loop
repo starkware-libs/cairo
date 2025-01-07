@@ -66,8 +66,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -220,8 +223,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -394,8 +400,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
@@ -540,8 +549,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -709,8 +721,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+|         break;
+|     }
+|_____^
 
 Parameters:
 blk0 (root):
@@ -810,8 +825,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u8
 blk0 (root):
@@ -974,8 +992,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1018,7 +1039,7 @@ foo
 struct S {}
 #[derive(Drop)]
 struct T {
-    s: S
+    s: S,
 }
 trait TT {
     fn f1oo(self: @S);
@@ -1059,8 +1080,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1108,11 +1132,11 @@ extern fn ex(a: u32) nopanic;
 extern fn ex1(a: @B) nopanic;
 #[derive(Drop)]
 struct B {
-    c: u32
+    c: u32,
 }
 #[derive(Drop)]
 struct A {
-    b: B
+    b: B,
 }
 
 //! > semantic_diagnostics
@@ -1155,8 +1179,11 @@ End:
 
 
 Generated loop lowering for source location:
-        loop {
-        ^****^
+          loop {
+ _________^
+| ...
+|         };
+|_________^
 
 Parameters: v0: core::integer::u32
 blk0 (root):
@@ -1177,8 +1204,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
@@ -1229,11 +1259,11 @@ extern fn ex(a: @u32) nopanic;
 extern fn ex1(a: B) nopanic;
 #[derive(Drop, Copy)]
 struct B {
-    c: u32
+    c: u32,
 }
 #[derive(Drop)]
 struct A {
-    b: B
+    b: B,
 }
 
 //! > semantic_diagnostics
@@ -1272,8 +1302,11 @@ End:
 
 
 Generated loop lowering for source location:
-        loop {
-        ^****^
+          loop {
+ _________^
+| ...
+|         };
+|_________^
 
 Parameters: v0: @core::integer::u32
 blk0 (root):
@@ -1294,8 +1327,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: test::B
 blk0 (root):
@@ -1399,8 +1435,11 @@ End:
 
 
 Generated loop lowering for source location:
-    while i != 5 {
-    ^************^
+      while i != 5 {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::felt252, v1: test::A
 blk0 (root):

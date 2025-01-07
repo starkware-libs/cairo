@@ -65,6 +65,7 @@ FunctionSignature
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration)
+    │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -91,13 +92,14 @@ FunctionWithBody
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc  {
-                   ^******^
+                   ^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
     ├── visibility (kind: VisibilityDefault) []
     ├── declaration (kind: FunctionDeclaration)
+    │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -137,7 +139,7 @@ FunctionDeclaration
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
-                   ^*******^
+                   ^^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody

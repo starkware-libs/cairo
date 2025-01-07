@@ -19,7 +19,7 @@ fn foo() -> felt252 {
         MyEnum::B(b) => {
             // 'b' is not revoked.
             b + b + b
-        }
+        },
     };
     // 'w1' is revoked because of the revoke_ap() inside the match.
     let _w2 = w1 + w1;
@@ -107,7 +107,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             revoke_ap();
             return 0;
         },
-        MyEnum::B(b) => { b + b + b }
+        MyEnum::B(b) => { b + b + b },
     };
 
     // w1 is not revoked.
@@ -118,7 +118,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             // Same as above, without revoke_ap() and without an early return.
             a
         },
-        MyEnum::B(b) => { b + b + b }
+        MyEnum::B(b) => { b + b + b },
     };
 
     // w2 is revoked.

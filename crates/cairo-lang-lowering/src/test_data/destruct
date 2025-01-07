@@ -4,8 +4,8 @@
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo(flag: bool) -> Option<A> {
-    let a = A {};
+fn foo(flag: bool, x: u128) -> Option<A> {
+    let a = A { x };
     if flag {
         Option::Some(a)
     } else {
@@ -17,14 +17,16 @@ fn foo(flag: bool) -> Option<A> {
 foo
 
 //! > module_code
-struct A {}
+struct A {
+    x: u128,
+}
 impl ADestruct of Destruct<A> {
     #[inline(never)]
     #[feature("corelib-internal-use")]
     fn destruct(self: A) nopanic {
-        let A { } = self;
+        let A { x } = self;
         // Use RangeCheck, a previously unused implicit.
-        match core::integer::u128_overflowing_add(1_u128, 2_u128) {
+        match core::integer::u128_overflowing_add(x, 2_u128) {
             Result::Ok(v) => v,
             Result::Err(v) => v,
         };
@@ -36,30 +38,30 @@ impl ADestruct of Destruct<A> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck, v1: core::bool
+Parameters: v0: core::RangeCheck, v1: core::bool, v2: core::integer::u128
 blk0 (root):
 Statements:
 End:
   Match(match_enum(v1) {
-    bool::False(v2) => blk1,
-    bool::True(v3) => blk2,
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
   })
 
 blk1:
 Statements:
-  (v4: test::A) <- struct_construct()
-  (v5: core::RangeCheck) <- test::ADestruct::destruct(v0, v4)
-  (v6: ()) <- struct_construct()
-  (v7: core::option::Option::<test::A>) <- Option::None(v6)
+  (v5: test::A) <- struct_construct(v2)
+  (v6: core::RangeCheck) <- test::ADestruct::destruct(v0, v5)
+  (v7: ()) <- struct_construct()
+  (v8: core::option::Option::<test::A>) <- Option::None(v7)
 End:
-  Return(v5, v7)
+  Return(v6, v8)
 
 blk2:
 Statements:
-  (v8: test::A) <- struct_construct()
-  (v9: core::option::Option::<test::A>) <- Option::Some(v8)
+  (v9: test::A) <- struct_construct(v2)
+  (v10: core::option::Option::<test::A>) <- Option::Some(v9)
 End:
-  Return(v0, v9)
+  Return(v0, v10)
 
 //! > ==========================================================================
 
@@ -125,7 +127,7 @@ impl APanicDestruct of PanicDestruct<A> {
 }
 
 struct B {
-    a: A
+    a: A,
 }
 impl BPanicDestruct of PanicDestruct<B> {
     #[inline(never)]
@@ -360,14 +362,18 @@ impl ADestruct of Destruct<A> {
 
 //! > lowering_diagnostics
 error: Call cycle of `nopanic` functions is not allowed.
- --> lib.cairo:3:5
-    #[inline(always)]
-    ^***************^
+ --> lib.cairo:3:5-4:35
+      #[inline(always)]
+ _____^
+|     fn destruct(self: A) nopanic {}
+|___________________________________^
 
 error: Cannot inline a function that might call itself.
- --> lib.cairo:3:5
-    #[inline(always)]
-    ^***************^
+ --> lib.cairo:3:5-4:35
+      #[inline(always)]
+ _____^
+|     fn destruct(self: A) nopanic {}
+|___________________________________^
 
 //! > lowering_flat
 Parameters:

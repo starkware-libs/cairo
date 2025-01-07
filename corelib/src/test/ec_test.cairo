@@ -1,8 +1,8 @@
 use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
-use crate::ecdsa;
 use crate::option::OptionTrait;
 use crate::test::test_utils::assert_eq;
 use crate::traits::TryInto;
+use crate::ecdsa;
 
 #[test]
 #[should_panic]
@@ -43,7 +43,7 @@ fn test_ec_operations() {
     assert_eq(
         @double_x,
         @75984168971785666410219869038140038216102669781812169677875295511117260233,
-        'bad double x'
+        'bad double x',
     );
     assert(double_y == expected_double_y || double_y == -expected_double_y, 'bad double y');
 
@@ -83,31 +83,31 @@ fn test_ecdsa() {
     let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
     assert(
         ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
-        'ecdsa returned false'
+        'ecdsa returned false',
     );
     assert(
         !ecdsa::check_ecdsa_signature(
-            message_hash: message_hash + 1, :public_key, :signature_r, :signature_s
+            message_hash: message_hash + 1, :public_key, :signature_r, :signature_s,
         ),
-        'ecdsa - wrong message'
+        'ecdsa - wrong message',
     );
     assert(
         !ecdsa::check_ecdsa_signature(
-            :message_hash, public_key: public_key + 1, :signature_r, :signature_s
+            :message_hash, public_key: public_key + 1, :signature_r, :signature_s,
         ),
-        'ecdsa - wrong public_key'
+        'ecdsa - wrong public_key',
     );
     assert(
         !ecdsa::check_ecdsa_signature(
-            :message_hash, :public_key, signature_r: signature_r + 1, :signature_s
+            :message_hash, :public_key, signature_r: signature_r + 1, :signature_s,
         ),
-        'ecdsa - wrong r'
+        'ecdsa - wrong r',
     );
     assert(
         !ecdsa::check_ecdsa_signature(
-            :message_hash, :public_key, :signature_r, signature_s: signature_s + 1
+            :message_hash, :public_key, :signature_r, signature_s: signature_s + 1,
         ),
-        'ecdsa - wrong s'
+        'ecdsa - wrong s',
     );
 }
 
@@ -120,19 +120,19 @@ fn test_ecdsa_recover_public_key() {
         @ecdsa::recover_public_key(:message_hash, :signature_r, :signature_s, y_parity: false)
             .unwrap(),
         @0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec,
-        'recover_ecdsa_public_key failed'
+        'recover_ecdsa_public_key failed',
     );
     assert(
         ecdsa::check_ecdsa_signature(
             :message_hash,
             public_key: ecdsa::recover_public_key(
-                :message_hash, :signature_r, :signature_s, y_parity: true
+                :message_hash, :signature_r, :signature_s, y_parity: true,
             )
                 .unwrap(),
             :signature_r,
-            :signature_s
+            :signature_s,
         ),
-        'ecdsa returned false'
+        'ecdsa returned false',
     );
 }
 
@@ -149,11 +149,11 @@ fn test_ec_mul() {
     assert_eq(
         @x,
         @2881632108168892236043523177391659237686965655035240771134509747985978822780,
-        'ec_mul failed (x).'
+        'ec_mul failed (x).',
     );
     assert_eq(
         @y,
         @591135563672138037839394207500885413019058613584891498394077262936524140839,
-        'ec_mul failed (y).'
+        'ec_mul failed (y).',
     );
 }

@@ -63,7 +63,7 @@ mod empty_contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitDispatcherTrait:
 
 trait OutsideTraitDispatcherTrait<T> {
@@ -244,9 +244,12 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
 }
 
 
-lib.cairo:7:1
-#[starknet::embeddable]
-^*********************^
+lib.cairo:7:1-15:1
+  #[starknet::embeddable]
+ _^
+| ...
+| }
+|_^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImpl<
@@ -318,7 +321,7 @@ mod __constructor_OutsideImpl {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitDispatcherCopy of core::traits::Copy::<OutsideTraitDispatcher>;
@@ -337,7 +340,7 @@ impl OutsideTraitDispatcherSerde of core::serde::Serde::<OutsideTraitDispatcher>
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
@@ -416,7 +419,7 @@ impl OutsideTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersM
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitLibraryDispatcher>;
@@ -435,7 +438,7 @@ impl OutsideTraitLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitLibr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibraryDispatcher> {
@@ -514,7 +517,7 @@ impl OutsideTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPo
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitSafeLibraryDispatcher>;
@@ -533,7 +536,7 @@ impl OutsideTraitSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTrait
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSafeLibraryDispatcher> {
@@ -612,7 +615,7 @@ impl OutsideTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::S
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeDispatcherCopy of core::traits::Copy::<OutsideTraitSafeDispatcher>;
@@ -631,7 +634,7 @@ impl OutsideTraitSafeDispatcherSerde of core::serde::Serde::<OutsideTraitSafeDis
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispatcher> {
@@ -710,7 +713,7 @@ impl OutsideTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPoint
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitDispatcherSubPointers>;
@@ -719,7 +722,7 @@ impl OutsideTraitDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitD
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitDispatcherSubPointersMut>;
@@ -728,7 +731,7 @@ impl OutsideTraitDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTra
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointers>;
@@ -737,7 +740,7 @@ impl OutsideTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Outsid
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointersMut>;
@@ -746,7 +749,7 @@ impl OutsideTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Out
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointers>;
@@ -755,7 +758,7 @@ impl OutsideTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Ou
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointersMut>;
@@ -764,7 +767,7 @@ impl OutsideTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointers>;
@@ -773,7 +776,7 @@ impl OutsideTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<OutsideTr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointersMut>;
@@ -782,7 +785,7 @@ impl OutsideTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Outsid
 
 lib.cairo:17:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -899,7 +902,7 @@ pub mod __constructor {
 
 lib.cairo:17:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -907,7 +910,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:17:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -929,7 +932,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:19:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -938,7 +941,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:19:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -975,7 +978,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -1018,7 +1021,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -1039,7 +1042,7 @@ mod empty_contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithDestructDispatcherTrait:
 
 trait OutsideTraitWithDestructDispatcherTrait<T> {
@@ -1149,9 +1152,12 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
 }
 
 
-lib.cairo:6:1
-#[starknet::embeddable]
-^*********************^
+lib.cairo:6:1-13:1
+  #[starknet::embeddable]
+ _^
+| ...
+| }
+|_^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
@@ -1195,7 +1201,7 @@ mod __constructor_OutsideImplWithDestruct {
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithPanicDestructDispatcherTrait:
 
 trait OutsideTraitWithPanicDestructDispatcherTrait<T> {
@@ -1305,9 +1311,12 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
 }
 
 
-lib.cairo:20:1
-#[starknet::embeddable]
-^*********************^
+lib.cairo:20:1-27:1
+  #[starknet::embeddable]
+ _^
+| ...
+| }
+|_^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
@@ -1318,7 +1327,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -1351,7 +1360,7 @@ mod __constructor_OutsideImplWithPanicDestruct {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructDispatcher>;
@@ -1370,7 +1379,7 @@ impl OutsideTraitWithDestructDispatcherSerde of core::serde::Serde::<OutsideTrai
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWithDestructDispatcher> {
@@ -1449,7 +1458,7 @@ impl OutsideTraitWithDestructDispatcherSubPointersMutImpl of starknet::storage::
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcher>;
@@ -1468,7 +1477,7 @@ impl OutsideTraitWithDestructLibraryDispatcherSerde of core::serde::Serde::<Outs
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructLibraryDispatcher> {
@@ -1547,7 +1556,7 @@ impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutImpl of starknet::st
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcher>;
@@ -1566,7 +1575,7 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherSerde of core::serde::Serde::<
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructSafeLibraryDispatcher> {
@@ -1645,7 +1654,7 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutImpl of starknet
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcher>;
@@ -1664,7 +1673,7 @@ impl OutsideTraitWithDestructSafeDispatcherSerde of core::serde::Serde::<Outside
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTraitWithDestructSafeDispatcher> {
@@ -1743,7 +1752,7 @@ impl OutsideTraitWithDestructSafeDispatcherSubPointersMutImpl of starknet::stora
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcher>;
@@ -1762,7 +1771,7 @@ impl OutsideTraitWithPanicDestructDispatcherSerde of core::serde::Serde::<Outsid
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTraitWithPanicDestructDispatcher> {
@@ -1841,7 +1850,7 @@ impl OutsideTraitWithPanicDestructDispatcherSubPointersMutImpl of starknet::stor
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcher>;
@@ -1860,7 +1869,7 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherSerde of core::serde::Serde::
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructLibraryDispatcher> {
@@ -1939,7 +1948,7 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutImpl of starkne
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcher>;
@@ -1958,7 +1967,7 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSerde of core::serde::Ser
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
@@ -2037,7 +2046,7 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutImpl of sta
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcher>;
@@ -2056,7 +2065,7 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSerde of core::serde::Serde::<Ou
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeDispatcher> {
@@ -2135,7 +2144,7 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutImpl of starknet::
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointers>;
@@ -2144,7 +2153,7 @@ impl OutsideTraitWithDestructDispatcherSubPointersCopy of core::traits::Copy::<O
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointersMut>;
@@ -2153,7 +2162,7 @@ impl OutsideTraitWithDestructDispatcherSubPointersMutCopy of core::traits::Copy:
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointers>;
@@ -2162,7 +2171,7 @@ impl OutsideTraitWithDestructLibraryDispatcherSubPointersCopy of core::traits::C
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointersMut>;
@@ -2171,7 +2180,7 @@ impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutCopy of core::traits
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointers>;
@@ -2180,7 +2189,7 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersCopy of core::trait
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMut>;
@@ -2189,7 +2198,7 @@ impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutCopy of core::tr
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointers>;
@@ -2198,7 +2207,7 @@ impl OutsideTraitWithDestructSafeDispatcherSubPointersCopy of core::traits::Copy
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDestructSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
@@ -2207,7 +2216,7 @@ impl OutsideTraitWithDestructSafeDispatcherSubPointersMutCopy of core::traits::C
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointers>;
@@ -2216,7 +2225,7 @@ impl OutsideTraitWithPanicDestructDispatcherSubPointersCopy of core::traits::Cop
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointersMut>;
@@ -2225,7 +2234,7 @@ impl OutsideTraitWithPanicDestructDispatcherSubPointersMutCopy of core::traits::
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointers>;
@@ -2234,7 +2243,7 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersCopy of core::trai
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMut>;
@@ -2243,7 +2252,7 @@ impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutCopy of core::t
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointers>;
@@ -2252,7 +2261,7 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersCopy of core::
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMut>;
@@ -2261,7 +2270,7 @@ impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutCopy of cor
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointers>;
@@ -2270,7 +2279,7 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersCopy of core::traits:
 
 lib.cairo:15:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
@@ -2279,7 +2288,7 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutCopy of core::trai
 
 lib.cairo:29:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -2395,7 +2404,7 @@ pub mod __constructor {
 
 lib.cairo:29:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2403,7 +2412,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:29:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2425,7 +2434,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:31:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2434,7 +2443,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:31:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2444,12 +2453,12 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:8:21
     TContractState, impl DisallowedDestruct: Destruct<TContractState>,
-                    ^***********************************************^
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:22:21
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
-                    ^*********************************************************^
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2510,7 +2519,7 @@ mod empty_contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 OutsideTraitWithDropDispatcherTrait:
 
 trait OutsideTraitWithDropDispatcherTrait<T> {
@@ -2620,9 +2629,12 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
 }
 
 
-lib.cairo:6:1
-#[starknet::embeddable]
-^*********************^
+lib.cairo:6:1-13:1
+  #[starknet::embeddable]
+ _^
+| ...
+| }
+|_^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDrop<
@@ -2666,7 +2678,7 @@ mod __constructor_OutsideImplWithDrop {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropDispatcher>;
@@ -2685,7 +2697,7 @@ impl OutsideTraitWithDropDispatcherSerde of core::serde::Serde::<OutsideTraitWit
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDropDispatcher> {
@@ -2764,7 +2776,7 @@ impl OutsideTraitWithDropDispatcherSubPointersMutImpl of starknet::storage::SubP
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcher>;
@@ -2783,7 +2795,7 @@ impl OutsideTraitWithDropLibraryDispatcherSerde of core::serde::Serde::<OutsideT
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTraitWithDropLibraryDispatcher> {
@@ -2862,7 +2874,7 @@ impl OutsideTraitWithDropLibraryDispatcherSubPointersMutImpl of starknet::storag
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcher>;
@@ -2881,7 +2893,7 @@ impl OutsideTraitWithDropSafeLibraryDispatcherSerde of core::serde::Serde::<Outs
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDropSafeLibraryDispatcher> {
@@ -2960,7 +2972,7 @@ impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutImpl of starknet::st
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropSafeDispatcher>;
@@ -2979,7 +2991,7 @@ impl OutsideTraitWithDropSafeDispatcherSerde of core::serde::Serde::<OutsideTrai
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWithDropSafeDispatcher> {
@@ -3058,7 +3070,7 @@ impl OutsideTraitWithDropSafeDispatcherSubPointersMutImpl of starknet::storage::
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointers>;
@@ -3067,7 +3079,7 @@ impl OutsideTraitWithDropDispatcherSubPointersCopy of core::traits::Copy::<Outsi
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointersMut>;
@@ -3076,7 +3088,7 @@ impl OutsideTraitWithDropDispatcherSubPointersMutCopy of core::traits::Copy::<Ou
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointers>;
@@ -3085,7 +3097,7 @@ impl OutsideTraitWithDropLibraryDispatcherSubPointersCopy of core::traits::Copy:
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointersMut>;
@@ -3094,7 +3106,7 @@ impl OutsideTraitWithDropLibraryDispatcherSubPointersMutCopy of core::traits::Co
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointers>;
@@ -3103,7 +3115,7 @@ impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersCopy of core::traits::C
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointersMut>;
@@ -3112,7 +3124,7 @@ impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutCopy of core::traits
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointers>;
@@ -3121,7 +3133,7 @@ impl OutsideTraitWithDropSafeDispatcherSubPointersCopy of core::traits::Copy::<O
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl OutsideTraitWithDropSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
@@ -3130,7 +3142,7 @@ impl OutsideTraitWithDropSafeDispatcherSubPointersMutCopy of core::traits::Copy:
 
 lib.cairo:15:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -3240,7 +3252,7 @@ pub mod __constructor {
 
 lib.cairo:15:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3248,7 +3260,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:15:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3270,7 +3282,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:17:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3279,7 +3291,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:17:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

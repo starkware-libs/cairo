@@ -62,7 +62,7 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate};
+use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
@@ -83,8 +83,8 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, LocalItem, Member,
-    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
+    ConcreteEnumId, GenericArgumentId, GenericParam, LocalItem, Member, Mutability, Parameter,
+    PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
 
 /// Expression with its id.
@@ -845,21 +845,22 @@ fn compute_expr_function_call_semantic(
             if ctx.are_closures_in_context {
                 // TODO(TomerStarkware): find the correct trait based on captured variables.
                 let fn_once_trait = crate::corelib::fn_once_trait(db);
+                let fn_trait = crate::corelib::fn_trait(db);
                 let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
-                let (call_function_id, _, fixed_closure, closure_mutability) =
+                let mut closure_call_data = |call_trait| {
                     compute_method_function_call_data(
                         ctx,
-                        &[fn_once_trait],
+                        &[call_trait],
                         "call".into(),
-                        self_expr,
+                        self_expr.clone(),
                         syntax.into(),
                         None,
                         |ty, _, inference_errors| {
-                            Some(NoImplementationOfTrait {
-                                ty,
-                                inference_errors,
-                                trait_name: "FnOnce".into(),
-                            })
+                            if call_trait == fn_once_trait {
+                                Some(CallExpressionRequiresFunction { ty, inference_errors })
+                            } else {
+                                None
+                            }
                         },
                         |_, _, _| {
                             unreachable!(
@@ -869,7 +870,10 @@ fn compute_expr_function_call_semantic(
                                  NoImplementationOfTrait function."
                             )
                         },
-                    )?;
+                    )
+                };
+                let (call_function_id, _, fixed_closure, closure_mutability) =
+                    closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))?;
 
                 let args_iter = args_syntax.elements(syntax_db).into_iter();
                 // Normal parameters
@@ -1047,32 +1051,13 @@ pub fn compute_root_expr(
         let Ok(concrete_trait_id) = imp.concrete_trait else {
             continue;
         };
-        let ConcreteTraitLongId { trait_id, generic_args } =
-            concrete_trait_id.lookup_intern(ctx.db);
-        if trait_id == crate::corelib::fn_once_trait(ctx.db) {
+        if crate::corelib::fn_traits(ctx.db).contains(&concrete_trait_id.trait_id(ctx.db)) {
             ctx.are_closures_in_context = true;
         }
-        if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
-        {
-            continue;
-        }
-        let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()
-        else {
-            unreachable!("TypeEqual should have 2 arguments");
-        };
-        let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(ctx.db) {
-            inference.impl_type_assignment(impl_type)
-        } else {
-            *ty0
-        };
-        let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(ctx.db) {
-            inference.impl_type_assignment(impl_type)
-        } else {
-            *ty1
-        };
-        inference.conform_ty(ty0, ty1).ok();
     }
-    inference.finalize_impl_type_bounds();
+    let constrains =
+        ctx.db.generic_params_type_constraints(ctx.resolver.data.generic_params.clone());
+    inference.conform_generic_params_type_constraints(&constrains);
 
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
@@ -1082,7 +1067,17 @@ pub fn compute_root_expr(
     if let Err((err_set, actual_ty, expected_ty)) =
         inference.conform_ty_for_diag(res_ty, return_type)
     {
-        let diag_added = ctx.diagnostics.report(syntax, WrongReturnType { expected_ty, actual_ty });
+        let diag_added = ctx.diagnostics.report(
+            ctx.signature
+                .map(|s| match s.stable_ptr.lookup(ctx.db.upcast()).ret_ty(ctx.db.upcast()) {
+                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr().untyped(),
+                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                        return_type_clause.ty(ctx.db.upcast()).stable_ptr().untyped()
+                    }
+                })
+                .unwrap_or_else(|| syntax.stable_ptr().untyped()),
+            WrongReturnType { expected_ty, actual_ty },
+        );
         inference.consume_reported_error(err_set, diag_added);
     }
 
@@ -1090,7 +1085,9 @@ pub fn compute_root_expr(
     inference.finalize(ctx.diagnostics, syntax.into());
 
     ctx.apply_inference_rewriter();
-
+    if ctx.signature.map(|s| s.is_const) == Some(true) {
+        validate_const_expr(ctx, res);
+    }
     Ok(res)
 }
 
@@ -1688,11 +1685,15 @@ fn compute_expr_closure_semantic(
         if let Err((err_set, actual_ty, expected_ty)) =
             inference.conform_ty_for_diag(new_ctx.arenas.exprs[body].ty(), return_type)
         {
-            let diag_added =
-                new_ctx.diagnostics.report(syntax.expr(syntax_db).stable_ptr(), WrongReturnType {
-                    expected_ty,
-                    actual_ty,
-                });
+            let diag_added = new_ctx.diagnostics.report(
+                match syntax.ret_ty(ctx.db.upcast()).stable_ptr().lookup(ctx.db.upcast()) {
+                    OptionReturnTypeClause::Empty(_) => syntax.expr(syntax_db).stable_ptr(),
+                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                        return_type_clause.ty(ctx.db.upcast()).stable_ptr()
+                    }
+                },
+                WrongReturnType { expected_ty, actual_ty },
+            );
             inference.consume_reported_error(err_set, diag_added);
         }
         (params, return_type, body)
@@ -1866,6 +1867,11 @@ fn compute_expr_indexed_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr_syntax = &syntax.index_expr(syntax_db);
+    let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
+    // Make sure the maximal amount of types is known when trying to access. Ignoring the returned
+    // value, as any errors will be reported later.
+    ctx.resolver.inference().solve().ok();
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
         .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
@@ -1881,8 +1887,6 @@ fn compute_expr_indexed_semantic(
         |ty, _, _| Some(MultipleImplementationOfIndexOperator(ty)),
     )?;
 
-    let index_expr_syntax = &syntax.index_expr(syntax_db);
-    let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
     expr_function_call(
         ctx,
         function_id,
@@ -1907,7 +1911,7 @@ fn compute_method_function_call_data(
     self_expr: ExprAndId,
     method_syntax: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<ast::GenericArg>>,
-    no_implementation_diagnostic: fn(
+    no_implementation_diagnostic: impl Fn(
         TypeId,
         SmolStr,
         TraitInferenceErrors,
@@ -2075,8 +2079,39 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::Path(path) => {
-            // A path of length 1 is an identifier, which will result in a variable pattern.
-            // Currently, other paths are not supported (and not clear if ever will be).
+            let item_result = ctx.resolver.resolve_generic_path(
+                &mut Default::default(),
+                path,
+                NotFoundItemType::Identifier,
+                Some(&mut ctx.environment),
+            );
+            if let Ok(item) = item_result {
+                if let Some(generic_variant) =
+                    try_extract_matches!(item, ResolvedGenericItem::Variant)
+                {
+                    let (concrete_enum, _n_snapshots) =
+                        extract_concrete_enum_from_pattern_and_validate(
+                            ctx,
+                            pattern_syntax,
+                            ty,
+                            generic_variant.enum_id,
+                        )?;
+                    let concrete_variant = ctx
+                        .db
+                        .concrete_enum_variant(concrete_enum, &generic_variant)
+                        .map_err(|_| ctx.diagnostics.report(path, UnknownEnum))?;
+                    return Ok(Pattern::EnumVariant(PatternEnumVariant {
+                        variant: concrete_variant,
+                        inner_pattern: None,
+                        ty,
+                        stable_ptr: path.stable_ptr().into(),
+                    }));
+                }
+            }
+
+            // Paths with a single element are treated as identifiers, which will result in a
+            // variable pattern if no matching enum variant is found. If a matching enum
+            // variant exists, it is resolved to the corresponding concrete variant.
             if path.elements(syntax_db).len() > 1 {
                 return Err(ctx.diagnostics.report(path, Unsupported));
             }
@@ -3577,6 +3612,7 @@ pub fn compute_statement_semantic(
                         &rhs_expr,
                         stmt_item_syntax.stable_ptr().untyped(),
                         explicit_type,
+                        false,
                     );
                     let name_syntax = const_syntax.name(syntax_db);
                     let name = name_syntax.text(db.upcast());

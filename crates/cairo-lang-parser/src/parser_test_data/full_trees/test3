@@ -21,6 +21,7 @@ false
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'main'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -78,6 +79,7 @@ false
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'fib'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -240,6 +242,7 @@ false
     │       │   ├── pub_kw (kind: TokenPub): 'pub'
     │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'fib_tuple'
     │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -451,6 +454,7 @@ false
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -575,6 +579,7 @@ false
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -966,6 +971,7 @@ false
     │       │   │       └── child #0 (kind: TokenWhitespace).
     │       │   └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   ├── token (kind: TokenFunction): 'fn'

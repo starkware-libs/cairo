@@ -58,19 +58,9 @@ fn build_u512_safe_divmod_by_u256(
 
         // Divide in a hint.
         hint Uint512DivModByUint256 {
-            dividend0: dividend0,
-            dividend1: dividend1,
-            dividend2: dividend2,
-            dividend3: dividend3,
-            divisor0: divisor0,
-            divisor1: divisor1
+            dividend0, dividend1, dividend2, dividend3, divisor0, divisor1
         } into {
-            quotient0: quotient0,
-            quotient1: quotient1,
-            quotient2: quotient2,
-            quotient3: quotient3,
-            remainder0: remainder0,
-            remainder1: remainder1
+            quotient0, quotient1, quotient2, quotient3, remainder0, remainder1
         };
 
         // Verify the hint ranges.

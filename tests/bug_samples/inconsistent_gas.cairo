@@ -1,17 +1,17 @@
 #[starknet::contract]
 mod test_contract {
-    use starknet::get_caller_address;
-    use starknet::storage_read_syscall;
-    use starknet::storage_write_syscall;
+    use starknet::storage_access::{
+        storage_address_from_base_and_offset, storage_base_address_from_felt252,
+    };
     use starknet::syscalls::emit_event_syscall;
-    use starknet::storage_access::storage_base_address_from_felt252;
-    use starknet::storage_access::storage_address_from_base_and_offset;
-    use starknet::ContractAddress;
-    use starknet::SyscallResultTrait;
+    use starknet::{
+        ContractAddress, SyscallResultTrait, get_caller_address, storage_read_syscall,
+        storage_write_syscall,
+    };
 
     #[storage]
     struct Storage {
-        my_storage_var: felt252
+        my_storage_var: felt252,
     }
 
     #[external(v0)]
@@ -25,7 +25,7 @@ mod test_contract {
     fn test_storage_read(ref self: ContractState, address: felt252) -> felt252 {
         let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt252(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8,
         );
         storage_read_syscall(domain_address, storage_address).unwrap_syscall()
     }
@@ -34,7 +34,7 @@ mod test_contract {
     fn test_storage_write(ref self: ContractState, address: felt252, value: felt252) {
         let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt252(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8,
         );
         storage_write_syscall(domain_address, storage_address, value).unwrap_syscall();
     }

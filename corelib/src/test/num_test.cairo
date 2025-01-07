@@ -1,9 +1,8 @@
-use crate::num::traits::BitSize;
 use crate::num::traits::{
-    OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul,
-    CheckedAdd, CheckedSub, CheckedMul, SaturatingAdd, SaturatingSub, SaturatingMul
+    BitSize, Bounded, CheckedAdd, CheckedMul, CheckedSub, OverflowingAdd, OverflowingMul,
+    OverflowingSub, Pow, SaturatingAdd, SaturatingMul, SaturatingSub, WrappingAdd, WrappingMul,
+    WrappingSub,
 };
-use crate::num::traits::Bounded;
 
 
 #[test]
@@ -440,4 +439,31 @@ fn test_saturating_mul_unsigned_integers() {
     assert_eq!(Bounded::<u128>::MAX.saturating_mul(2), Bounded::<u128>::MAX);
     assert_eq!(2_u256.saturating_mul(3), 6);
     assert_eq!(Bounded::<u256>::MAX.saturating_mul(2), Bounded::<u256>::MAX);
+}
+
+#[test]
+fn test_pow() {
+    assert_eq!((-2_i8).pow(0), 1);
+    assert_eq!((-2_i8).pow(1), -2);
+    assert_eq!((-2_i8).pow(2), 4);
+    assert_eq!((-2_i8).pow(3), -8);
+    assert_eq!((-2_i8).pow(4), 16);
+    assert_eq!((-2_i8).pow(5), -32);
+    assert_eq!((-2_i8).pow(6), 64);
+
+    assert_eq!(0.pow(0), 1);
+    assert_eq!(0.pow(1), 0);
+    assert_eq!(0.pow(2), 0);
+
+    assert_eq!(2.pow(0), 0b1);
+    assert_eq!(2.pow(1), 0b10);
+    assert_eq!(2.pow(2), 0b100);
+    assert_eq!(2.pow(3), 0b1000);
+    assert_eq!(2.pow(4), 0b10000);
+    assert_eq!(2.pow(5), 0b100000);
+    assert_eq!(2.pow(6), 0b1000000);
+    assert_eq!(2.pow(7), 0b10000000);
+    assert_eq!(2.pow(8), 0b100000000);
+    assert_eq!(2.pow(9), 0b1000000000);
+    assert_eq!(2.pow(10), 0b10000000000);
 }

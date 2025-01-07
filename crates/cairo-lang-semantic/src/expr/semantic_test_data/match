@@ -134,7 +134,7 @@ test_expr_semantics(expect_diagnostics: false)
 enum A {
     A,
     B,
-    C
+    C,
 }
 
 //! > function_body
@@ -212,7 +212,7 @@ test_expr_semantics(expect_diagnostics: false)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: u8,
@@ -409,7 +409,7 @@ match a {
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
     MyEnum::B => 3_u16,
-                 ^***^
+                 ^^^^^
 
 //! > expected_semantics
 Match(
@@ -483,7 +483,7 @@ match a {
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
     MyEnum::B => 3 + 3_u16,
-                 ^*******^
+                 ^^^^^^^^^
 
 //! > expected_semantics
 Match(
@@ -580,7 +580,7 @@ test_expr_semantics(expect_diagnostics: true)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: felt252,
@@ -769,17 +769,17 @@ Match(
 error: Missing variable in pattern.
  --> lib.cairo:14:5
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-    ^**********^
+    ^^^^^^^^^^^^
 
 error: Missing variable in pattern.
  --> lib.cairo:14:20
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-                   ^***************^
+                   ^^^^^^^^^^^^^^^^^
 
 error: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
-                                                           ^***^
+                                                           ^^^^^
 
 //! > ==========================================================================
 
@@ -792,7 +792,7 @@ test_expr_semantics(expect_diagnostics: true)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: u8,
@@ -1037,3 +1037,126 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:15
     MyEnum::A(x) | MyEnum::B((x, _)) => 1,
               ^
+
+//! > ==========================================================================
+
+//! > Test match with imported variants.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum MyEnum<T> {
+    A: u8,
+    B: (u8, felt252),
+    C: (T, u8),
+}
+use MyEnum::{A, B, C};
+
+//! > function_body
+let a: MyEnum<u8> = A(5);
+
+//! > expr_code
+match a {
+    A(x) | B((x, _)) => x,
+    C((x, y)) => x + y,
+}
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::a),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::A,
+                            inner_pattern: Some(
+                                Variable(
+                                    x,
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::B,
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                x,
+                                            ),
+                                            Otherwise(
+                                                PatternOtherwise {
+                                                    ty: core::felt252,
+                                                },
+                                            ),
+                                        ],
+                                        ty: (core::integer::u8, core::felt252),
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                ],
+                expression: Var(
+                    LocalVarId(test::x),
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: MyEnum::C,
+                            inner_pattern: Some(
+                                Tuple(
+                                    PatternTuple {
+                                        field_patterns: [
+                                            Variable(
+                                                x,
+                                            ),
+                                            Variable(
+                                                y,
+                                            ),
+                                        ],
+                                        ty: (core::integer::u8, core::integer::u8),
+                                    },
+                                ),
+                            ),
+                            ty: test::MyEnum::<core::integer::u8>,
+                        },
+                    ),
+                ],
+                expression: FunctionCall(
+                    ExprFunctionCall {
+                        function: core::integer::U8Add::add,
+                        args: [
+                            Value(
+                                Var(
+                                    LocalVarId(test::x),
+                                ),
+                            ),
+                            Value(
+                                Var(
+                                    LocalVarId(test::y),
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::integer::u8,
+                    },
+                ),
+            },
+        ],
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics

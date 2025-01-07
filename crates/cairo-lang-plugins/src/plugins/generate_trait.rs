@@ -71,8 +71,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 for arg in attr_arg.arguments(db).arguments(db).elements(db) {
                     builder.add_modified(RewriteNode::interpolate_patched(
                         &format!("{extra_ident}#[$attr$]\n"),
-                        &[("attr".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))]
-                            .into(),
+                        &[("attr".to_string(), RewriteNode::from_ast_trimmed(&arg))].into(),
                     ));
                 }
             }
@@ -141,7 +140,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     }
     match impl_ast.body(db) {
         ast::MaybeImplBody::None(semicolon) => {
-            builder.add_modified(RewriteNode::new_trimmed(impl_generic_params.as_syntax_node()));
+            builder.add_modified(RewriteNode::from_ast_trimmed(&impl_generic_params));
             builder.add_node(semicolon.as_syntax_node());
         }
         ast::MaybeImplBody::Some(body) => {
@@ -153,6 +152,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         let decl = function_item.declaration(db);
                         let signature = decl.signature(db);
                         builder.add_node(function_item.attributes(db).as_syntax_node());
+                        builder.add_node(decl.optional_const(db).as_syntax_node());
                         builder.add_node(decl.function_kw(db).as_syntax_node());
                         builder.add_node(decl.name(db).as_syntax_node());
                         builder.add_node(decl.generic_params(db).as_syntax_node());
@@ -245,6 +245,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

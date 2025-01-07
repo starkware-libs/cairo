@@ -7,7 +7,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 enum MyEnum {
     A: felt252,
     B: felt252,
-    MissingComma
+    MissingComma,
 }
 
 //! > top_level_kind
@@ -44,8 +44,9 @@ ItemEnum
     │   │           └── item #0 (kind: PathSegmentSimple)
     │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #1 (kind: TokenComma): ','
-    │   └── item #2 (kind: Variant)
-    │       ├── attributes (kind: AttributeList) []
-    │       ├── name (kind: TokenIdentifier): 'MissingComma'
-    │       └── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── item #2 (kind: Variant)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── name (kind: TokenIdentifier): 'MissingComma'
+    │   │   └── type_clause (kind: OptionTypeClauseEmpty) []
+    │   └── separator #2 (kind: TokenComma): ','
     └── rbrace (kind: TokenRBrace): '}'

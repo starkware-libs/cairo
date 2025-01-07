@@ -8,7 +8,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -35,7 +35,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -57,7 +57,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -148,7 +148,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -156,7 +156,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -178,7 +178,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -187,7 +187,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -196,7 +196,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -297,7 +297,7 @@ pub mod __constructor {
 
 lib.cairo:15:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -305,7 +305,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:15:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -344,7 +344,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -353,7 +353,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -363,32 +363,32 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
  --> lib.cairo:20:16
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
-               ^**************************^
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
  --> lib.cairo:20:46
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
-                                             ^******************************^
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
  --> lib.cairo:20:80
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
-                                                                               ^*********^
+                                                                               ^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
  --> lib.cairo:22:16
     component!(super::test_component, test_component_storage, ABC);
-               ^*******************^
+               ^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
  --> lib.cairo:22:39
     component!(super::test_component, test_component_storage, ABC);
-                                      ^********************^
+                                      ^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
  --> lib.cairo:22:63
     component!(super::test_component, test_component_storage, ABC);
-                                                              ^*^
+                                                              ^^^
 
 //! > ==========================================================================
 
@@ -402,7 +402,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -427,7 +427,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -447,7 +447,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -538,7 +538,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -546,7 +546,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -568,7 +568,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -577,7 +577,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -586,7 +586,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -687,7 +687,7 @@ pub mod __constructor {
 
 lib.cairo:15:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -695,7 +695,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:15:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -734,7 +734,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -743,7 +743,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -753,22 +753,22 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
  --> lib.cairo:19:54
     component!(path: super::test_component, storage: a::test_component_storage, event: b::ABC);
-                                                     ^***********************^
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
  --> lib.cairo:19:88
     component!(path: super::test_component, storage: a::test_component_storage, event: b::ABC);
-                                                                                       ^****^
+                                                                                       ^^^^^^
 
 error: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
  --> lib.cairo:20:54
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
-                                                     ^*************************^
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
  --> lib.cairo:20:90
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
-                                                                                         ^******^
+                                                                                         ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -782,7 +782,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -806,7 +806,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -825,7 +825,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -916,7 +916,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -924,7 +924,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -946,7 +946,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -955,7 +955,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -964,7 +964,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -1065,7 +1065,7 @@ pub mod __constructor {
 
 lib.cairo:15:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1073,7 +1073,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:15:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1112,7 +1112,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1121,7 +1121,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1131,17 +1131,17 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Component macro argument `path` must be a path expression.
  --> lib.cairo:19:22
     component!(path: a + b, storage: c + d, event: e + f);
-                     ^***^
+                     ^^^^^
 
 error: Plugin diagnostic: Component macro argument `storage` must be a path expression.
  --> lib.cairo:19:38
     component!(path: a + b, storage: c + d, event: e + f);
-                                     ^***^
+                                     ^^^^^
 
 error: Plugin diagnostic: Component macro argument `event` must be a path expression.
  --> lib.cairo:19:52
     component!(path: a + b, storage: c + d, event: e + f);
-                                                   ^***^
+                                                   ^^^^^
 
 //! > ==========================================================================
 
@@ -1155,7 +1155,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1175,7 +1175,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1188,7 +1188,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1208,7 +1208,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1216,7 +1216,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -1307,7 +1307,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1315,7 +1315,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1337,7 +1337,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1346,7 +1346,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1355,7 +1355,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -1424,7 +1424,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
+pub const TEST_CLASS_HASH: felt252 = 0x121a1470e2769fd2e9f4441ff7ab7e2ae96e0f4e0446116a0f29d76df75b33;
 
 
 pub mod __external {
@@ -1456,7 +1456,7 @@ pub mod __constructor {
 
 lib.cairo:15:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1464,7 +1464,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:15:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1503,7 +1503,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1512,7 +1512,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:11:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1522,22 +1522,25 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:20:5
     component![path: super::test_component, storage: test_component_storage, event: ABC];
-    ^***********************************************************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:22:5
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
-    ^***********************************************************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
- --> lib.cairo:24:5
-    component!(
-    ^*********^
+ --> lib.cairo:24:5-26:6
+      component!(
+ _____^
+|         path: super::test_component, storage: test_component_storage, event: ABC, another: x,
+|     );
+|______^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:28:5
     component!(path: super::test_component, storage: test_component_storage);
-    ^***********************************************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1551,7 +1554,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1583,7 +1586,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1610,7 +1613,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -1701,7 +1704,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1709,7 +1712,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1731,7 +1734,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1740,7 +1743,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1749,7 +1752,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -1768,8 +1771,12 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub non_path_type: starknet::storage::FlattenedStorage<(usize, usize)>,
+        #[substorage(v0)]
     pub non_component: starknet::storage::FlattenedStorage<usize>,
+        // non-v0 substorage member.
+        #[substorage]
     pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[doc(hidden)]
@@ -1789,8 +1796,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub non_path_type: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<(usize, usize)>>,
+        #[substorage(v0)]
     pub non_component: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<usize>>,
+        // non-v0 substorage member.
+        #[substorage]
     pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
 }
 #[doc(hidden)]
@@ -1809,6 +1820,8 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        // non-v0 substorage member.
+        #[substorage]
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
 
@@ -1896,7 +1909,7 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 
 lib.cairo:24:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1904,7 +1917,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:24:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1943,7 +1956,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1952,22 +1965,31 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
- --> lib.cairo:14:9
-        #[substorage(v0)]
-        ^***************^
+error: Plugin diagnostic: Only #[substorage(v0)] is supported.
+ --> lib.cairo:19:9
+        #[substorage]
+        ^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
- --> lib.cairo:16:9
-        #[substorage(v0)]
-        ^***************^
+ --> lib.cairo:14:9-15:37
+          #[substorage(v0)]
+ _________^
+|         non_path_type: (usize, usize),
+|_____________________________________^
+
+error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
+ --> lib.cairo:16:9-17:28
+          #[substorage(v0)]
+ _________^
+|         non_component: usize,
+|____________________________^
 
 //! > ==========================================================================
 
@@ -1981,7 +2003,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2007,7 +2029,7 @@ non_existing: path::to::component::Storage,
 ````
  --> lib.cairo:11:54
     component!(path: super::test_component, storage: non_existing, event: ABC);
-                                                     ^**********^
+                                                     ^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -2016,7 +2038,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2035,7 +2057,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -2126,7 +2148,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2134,7 +2156,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2156,7 +2178,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2165,7 +2187,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2174,7 +2196,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -2275,7 +2297,7 @@ pub mod __constructor {
 
 lib.cairo:16:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2283,7 +2305,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:16:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2322,7 +2344,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2331,7 +2353,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2349,7 +2371,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2377,7 +2399,7 @@ test_component_storage: path::to::component::Storage,
 ````
  --> lib.cairo:11:54
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
-                                                     ^********************^
+                                                     ^^^^^^^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -2386,7 +2408,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2407,7 +2429,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -2498,7 +2520,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2506,7 +2528,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2528,7 +2550,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2537,7 +2559,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2546,7 +2568,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -2654,7 +2676,7 @@ pub mod __constructor {
 
 lib.cairo:18:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2662,7 +2684,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:18:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2701,7 +2723,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2710,7 +2732,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2728,7 +2750,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2756,7 +2778,7 @@ NonExisting: path::to::component::Event,
 Note: currently with components, only an enum Event directly in the contract is supported.
  --> lib.cairo:11:85
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
-                                                                                    ^*********^
+                                                                                    ^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -2765,7 +2787,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2786,7 +2808,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -2877,7 +2899,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2885,7 +2907,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2907,7 +2929,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -2916,7 +2938,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2925,7 +2947,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -2942,6 +2964,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[doc(hidden)]
@@ -2957,6 +2980,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
 }
 #[doc(hidden)]
@@ -2971,6 +2995,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
 
@@ -3060,7 +3085,7 @@ pub mod __constructor {
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3068,7 +3093,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:9:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3090,7 +3115,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3099,7 +3124,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:12:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3117,7 +3142,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3134,7 +3159,6 @@ mod test_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
-
     #[event]
     use super::Event;
 
@@ -3153,7 +3177,7 @@ ABC: path::to::component::Event,
 Note: currently with components, only an enum Event directly in the contract is supported.
  --> lib.cairo:16:85
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
-                                                                                    ^*^
+                                                                                    ^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -3162,7 +3186,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3179,7 +3203,6 @@ mod test_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
-
     #[event]
     use super::Event;
 
@@ -3191,7 +3214,7 @@ mod test_contract {
 
 lib.cairo:9:10
 #[derive(Drop, starknet::Event)]
-         ^**^
+         ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3199,7 +3222,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:9:16
 #[derive(Drop, starknet::Event)]
-               ^*************^
+               ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3238,7 +3261,7 @@ impl EventABCIntoEvent of Into<test_component::Event, Event> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -3329,7 +3352,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3337,7 +3360,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3359,7 +3382,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3368,7 +3391,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3377,7 +3400,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:14:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -3391,6 +3414,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[doc(hidden)]
@@ -3406,6 +3430,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
 }
 #[doc(hidden)]
@@ -3420,6 +3445,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
 
@@ -3456,7 +3482,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
+pub const TEST_CLASS_HASH: felt252 = 0x1c59c1f2e69fc61b0f9162b5cdb7fd6a0828ffb8f03548b02c3c52f2ef1c284;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -3509,7 +3535,7 @@ pub mod __constructor {
 
 lib.cairo:17:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3518,7 +3544,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:17:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3536,14 +3562,14 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3583,12 +3609,12 @@ Comp2Event: path::to::component::Event,
 Note: currently with components, only an enum Event directly in the contract is supported.
  --> lib.cairo:20:77
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
-                                                                            ^********^
+                                                                            ^^^^^^^^^^
 
-warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`.
+warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:27:9
         component2_storage: super::component2::Storage,
-        ^****************^
+        ^^^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -3597,14 +3623,14 @@ lib.cairo:
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3637,7 +3663,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -3728,7 +3754,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3736,7 +3762,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3758,7 +3784,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3767,7 +3793,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3776,7 +3802,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:8:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -3867,7 +3893,7 @@ pub trait HasComponent<TContractState> {
 
 lib.cairo:8:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3875,7 +3901,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:8:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3897,7 +3923,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:10:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -3906,7 +3932,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:10:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3915,7 +3941,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:16:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -3931,7 +3957,9 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
 #[doc(hidden)]
@@ -3949,7 +3977,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component1::Storage>>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component2::Storage>>,
 }
 #[doc(hidden)]
@@ -3966,7 +3996,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component1_storage: super::component1::ComponentState<ContractState>,
+        #[substorage(v0)]
         pub component2_storage: super::component2::ComponentState<ContractState>,
 }
 
@@ -4076,7 +4108,7 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
 
 lib.cairo:31:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -4084,7 +4116,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:31:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -4123,7 +4155,7 @@ impl EventComp1EventIntoEvent of Into<super::component1::Event, Event> {
 
 lib.cairo:22:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -4132,7 +4164,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:22:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

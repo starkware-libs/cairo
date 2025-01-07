@@ -45,7 +45,7 @@ impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
     }
 }
 
-/// Trait for implementing a specialization generator with with a simple id.
+/// Trait for implementing a specialization generator with a simple id.
 pub trait NamedType: Default {
     type Concrete: ConcreteType;
     const ID: GenericTypeId;

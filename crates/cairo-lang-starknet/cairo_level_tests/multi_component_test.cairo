@@ -1,8 +1,8 @@
-use super::utils::serialized;
-use crate::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
+use crate::components::mintable::{MintTraitDispatcher, MintTraitDispatcherTrait};
 use crate::contracts::multi_component::{
-    contract_with_4_components, GetSupplyDispatcher, GetSupplyDispatcherTrait
+    GetSupplyDispatcher, GetSupplyDispatcherTrait, contract_with_4_components,
 };
+use super::utils::serialized;
 
 #[test]
 fn test_flow() {
@@ -12,7 +12,7 @@ fn test_flow() {
         contract_with_4_components::TEST_CLASS_HASH.try_into().unwrap(),
         0,
         serialized((('name', 'symbol'), (18_u8, 1000_u256, recipient), recipient)),
-        false
+        false,
     )
         .unwrap();
     let mut get_supply_dispatcher = GetSupplyDispatcher { contract_address };

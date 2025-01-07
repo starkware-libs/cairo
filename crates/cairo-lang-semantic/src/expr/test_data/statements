@@ -168,12 +168,12 @@ foo
 error: Identifier not found.
  --> lib.cairo:7:9
         Some(_) => {},
-        ^**^
+        ^^^^
 
 error: Identifier not found.
  --> lib.cairo:8:9
         None(_) => {},
-        ^**^
+        ^^^^
 
 //! > ==========================================================================
 
@@ -199,9 +199,9 @@ foo
 error: Unknown statement attribute.
  --> lib.cairo:2:5
     #[unknown_attr1]
-    ^**************^
+    ^^^^^^^^^^^^^^^^
 
 error: Unknown statement attribute.
  --> lib.cairo:3:5
     #[unknown_attr2]
-    ^**************^
+    ^^^^^^^^^^^^^^^^

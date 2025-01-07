@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod erc20_contract {
-    use crate::components::erc20::erc20 as erc20_comp;
     use starknet::ContractAddress;
+    use crate::components::erc20::erc20 as erc20_comp;
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -31,7 +31,7 @@ mod erc20_contract {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.erc20_token.init(name, symbol, decimals, initial_supply, recipient);
         }
