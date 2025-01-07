@@ -1,5 +1,6 @@
-//! Contains the storage-related types and traits for Cairo contracts and provides abstractions for
-//! reading and writing to Starknet storage.
+//! Storage-related types and traits for Cairo contracts.
+//!
+//! This module provides abstractions for reading and writing to Starknet storage.
 //!
 //! The front facing interface for the user is simple and intuitive, for example consider the
 //! following storage struct:
@@ -18,14 +19,10 @@
 //! ```
 //! fn use_storage(self: @ContractState) {
 //!     let a_value = self.a.read();
-//!     // For a Map, the user can use the `entry` method to access the value at a specific key:
+//!     // For a `Map`, the user can use the `entry` method to access the value at a specific key:
 //!     let b_value = self.b.entry(42).read();
-//!     // Or simply pass the key to the `read` method:
-//!     let b_value = self.b.read(42);
-//!     // Accessing a nested Map must be done using the `entry` method, either:
+//!     // Accessing a nested `Map` must be done using the `entry` method multiple times:
 //!     let c_value = self.c.entry(42).entry(43).read()
-//!     // Or:
-//!     let c_value = self.c.entry(42).read(43);
 //! }
 //!  ```
 //!
@@ -77,18 +74,21 @@ use core::traits::Into;
 use starknet::SyscallResult;
 use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_felt252};
 
-mod vec;
-use vec::{MutableVecIndexView, VecIndexView};
-pub use vec::{MutableVecTrait, Vec, VecTrait};
+mod map;
+pub use map::{Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry};
+
+mod storage_base;
+pub use storage_base::{FlattenedStorage, StorageBase, StorageTrait, StorageTraitMut};
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
+
 mod sub_pointers;
 pub use sub_pointers::{SubPointers, SubPointersForward, SubPointersMut, SubPointersMutForward};
-mod storage_base;
-pub use storage_base::{FlattenedStorage, StorageBase, StorageTrait, StorageTraitMut};
-mod map;
-pub use map::{Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry};
+
+mod vec;
+use vec::{MutableVecIndexView, VecIndexView};
+pub use vec::{MutableVecTrait, Vec, VecTrait};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
@@ -145,8 +145,8 @@ impl StorableStoragePointer0OffsetReadAccess<
     }
 }
 
-/// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for 0
-/// offset.
+/// Simple implementation of `StoragePointerReadAccess` for any mutable type that implements `Store`
+/// for 0 offset.
 impl MutableStorableStoragePointer0OffsetReadAccess<
     T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerReadAccess<StoragePointer0Offset<T>> {
@@ -160,8 +160,8 @@ impl MutableStorableStoragePointer0OffsetReadAccess<
     }
 }
 
-/// Simple implementation of `StoragePointerWriteAccess` for any type that implements `Store` for 0
-/// offset.
+/// Simple implementation of `StoragePointerWriteAccess` for any mutable type that implements
+/// `Store` for 0 offset.
 impl StorableStoragePointer0OffsetWriteAccess<
     T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerWriteAccess<StoragePointer0Offset<T>> {
@@ -193,6 +193,7 @@ pub impl StorableStoragePointerReadAccess<
 }
 
 /// Simple implementation of `StoragePointerReadAccess` for any mutable type that implements `Store`
+/// for any offset.
 impl MutableStorableStoragePointerReadAccess<
     T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerReadAccess<StoragePointer<T>> {
@@ -209,7 +210,7 @@ impl MutableStorableStoragePointerReadAccess<
 }
 
 /// Simple implementation of `StoragePointerWriteAccess` for any mutable type that implements
-/// `Store`.
+/// `Store` for any offset.
 impl MutableStorableStoragePointerWriteAccess<
     T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerWriteAccess<StoragePointer<T>> {
@@ -227,9 +228,10 @@ impl MutableStorableStoragePointerWriteAccess<
 
 /// An intermediate struct to store a hash state, in order to be able to hash multiple values and
 /// get the final address.
-/// Storage path should have two interfaces, if T is storable then it should implement
+/// Storage path should have two interfaces, if `T` is storable then it should implement
 /// `StorageAsPointer` in order to be able to get the address of the storage path. Otherwise, if
-/// T is not storable then it should implement some kind of updating trait, e.g. `StoragePathEntry`.
+/// `T` is not storable then it should implement some kind of updating trait, e.g.
+/// `StoragePathEntry`.
 pub struct StoragePath<T> {
     __hash_state__: StoragePathHashState,
 }
@@ -244,30 +246,28 @@ impl StoragePathDrop<T> of core::traits::Drop<StoragePath<T>> {}
 /// next to the type.
 use storage_node::{StorageNodeDeref, StorageNodeMutDeref};
 
-
 /// Trait for StoragePath operations.
 trait StoragePathTrait<T> {
     fn new(init_value: felt252) -> StoragePath<T>;
     fn finalize(self: StoragePath<T>) -> StorageBaseAddress;
 }
 
-
 impl StoragePathImpl<T> of StoragePathTrait<T> {
     fn new(init_value: felt252) -> StoragePath<T> {
         StoragePath { __hash_state__: core::pedersen::PedersenTrait::new(init_value) }
     }
+
     fn finalize(self: StoragePath<T>) -> StorageBaseAddress {
         storage_base_address_from_felt252(self.__hash_state__.finalize())
     }
 }
 
-/// Trait for updating the hash state of a storage path with a given value. Also change the generic
+/// Trait for updating the hash state of a storage path with a given value. Also changes the generic
 /// type of the storage path from `SourceType` to `TargetType`.
 trait StoragePathUpdateTrait<SourceType, TargetType, Value> {
     fn update(self: StoragePath<SourceType>, value: Value) -> StoragePath<TargetType>;
 }
 
-/// Trait for converting a storage path of type `SourceType` to a storage path of type `TargetType`.
 impl StoragePathUpdateImpl<
     SourceType, TargetType, Value, impl HashImpl: core::hash::Hash<Value, StoragePathHashState>,
 > of StoragePathUpdateTrait<SourceType, TargetType, Value> {
@@ -283,7 +283,6 @@ impl StoragePathSIntoStoragePathTImpl<
         StoragePath { __hash_state__: self.__hash_state__ }
     }
 }
-
 
 /// Trait for creating a new `StoragePath` from a storage member.
 pub trait StorageAsPath<TMemberState> {
@@ -311,7 +310,7 @@ impl MutableStorableStoragePathAsPointer<
     }
 }
 
-/// Implement deref for storage paths that implements StorageAsPointer.
+/// Implement `Deref` for storage paths that implements `StorageAsPointer`.
 impl StoragePathDeref<
     T, impl PointerImpl: StorageAsPointer<StoragePath<T>>,
 > of core::ops::Deref<StoragePath<T>> {
@@ -321,7 +320,7 @@ impl StoragePathDeref<
     }
 }
 
-/// Implement deref for StoragePointer0Offset into a StoragePointer.
+/// Implement `Deref` for `StoragePointer0Offset` into a `StoragePointer`.
 impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>> {
     type Target = StoragePointer<T>;
     fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
@@ -334,19 +333,17 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
     }
 }
 
-
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 pub struct PendingStoragePath<T> {
     __hash_state__: StoragePathHashState,
     __pending_key__: felt252,
 }
 
-/// A trait for creating a `PendingStoragePath` from a hash state and a key.
+/// A trait for creating a `PendingStoragePath` from a `StoragePath` hash state and a key.
 pub trait PendingStoragePathTrait<T, S> {
     fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>;
 }
 
-/// Creates a new `PendingStoragePath` from a `StoragePath` as an hash state and a key.
 impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
     fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
         PendingStoragePath {
