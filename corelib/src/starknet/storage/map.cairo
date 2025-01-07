@@ -23,7 +23,7 @@
 //! 2. Path-based access combining `StoragePathEntry` with
 //! `StoragePointerReadAccess`/`StoragePointerWriteAccess`:
 //!    This approach first computes a `StoragePath` for the entry, which can then be used with
-//!    the StoragePointer access traits from `starknet::storage`:
+//!    the `StoragePointer` access traits from `starknet::storage`:
 //!    ```
 //!    // Get storage path for the entry
 //!    let path = self.my_map.entry(key);
@@ -59,6 +59,7 @@
 //! # Examples
 //!
 //! Basic usage with a single mapping:
+//!
 //! ```
 //! #[storage]
 //! struct Storage {
@@ -72,6 +73,7 @@
 //! ```
 //!
 //! Nested mappings:
+//!
 //! ```
 //! #[storage]
 //! struct Storage {
