@@ -1,4 +1,4 @@
 mod collect;
 mod iterator;
-pub use collect::IntoIterator;
+pub use collect::{FromIterator, IntoIterator};
 pub use iterator::Iterator;
