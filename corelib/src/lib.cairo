@@ -354,7 +354,7 @@ pub fn panic_with_felt252(err_code: felt252) -> never {
 /// assert(false, 'error message');
 /// ```
 #[inline]
-pub fn assert(cond: bool, err_code: felt252) {
+pub const fn assert(cond: bool, err_code: felt252) {
     if !cond {
         panic_with_felt252(err_code)
     }

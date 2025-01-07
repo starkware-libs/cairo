@@ -496,7 +496,7 @@ fn test_iterator() {
 // ========= Test helper functions =========
 
 fn compare_byte_array(
-    mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
+    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
 ) {
     assert(ba.data.len() == data.len(), 'wrong data len');
     let mut ba_data = ba.data.span();
