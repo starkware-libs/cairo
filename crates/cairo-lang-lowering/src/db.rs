@@ -119,8 +119,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::FunctionId>>;
 
-    /// Returns the set of direct callees of a concrete function with a body after the panic phase.
-    fn concrete_function_with_body_postpanic_direct_callees(
+    /// Returns the set of direct callees of a concrete function after the baseline optimization
+    /// phase.
+    fn concrete_function_with_body_inlined_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -135,8 +136,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
-    /// a body (i.e. excluding libfunc callees), after the panic phase.
-    fn concrete_function_with_body_postpanic_direct_callees_with_body(
+    /// a body (i.e. excluding libfunc callees), after the baseline optimization phase.
+    fn concrete_function_with_body_inlined_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -264,11 +265,11 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns the representative of the concrete function's strongly connected component. The
     /// representative is consistently chosen for all the concrete functions in the same SCC.
-    /// This is using the representation after the panic phase.
+    /// This is using the representation after the baseline optimization phase.
     #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_postpanic_representative
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_inlined_representative
     )]
-    fn concrete_function_with_body_scc_postpanic_representative(
+    fn concrete_function_with_body_scc_inlined_representative(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -276,11 +277,11 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Returns all the concrete functions in the same strongly connected component as the given
     /// concrete function.
-    /// This is using the representation after the panic phase.
+    /// This is using the representation after the baseline optimization phase.
     #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_inlined_scc
     )]
-    fn concrete_function_with_body_postpanic_scc(
+    fn concrete_function_with_body_inlined_scc(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
@@ -544,12 +545,12 @@ fn concrete_function_with_body_direct_callees(
     Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
-fn concrete_function_with_body_postpanic_direct_callees(
+fn concrete_function_with_body_inlined_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+    let lowered_function = db.inlined_function_with_body_lowered(function_id)?;
     Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
@@ -636,14 +637,14 @@ fn concrete_function_with_body_direct_callees_with_body(
     )
 }
 
-fn concrete_function_with_body_postpanic_direct_callees_with_body(
+fn concrete_function_with_body_inlined_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_postpanic_direct_callees(function_id, dependency_type)?,
+        db.concrete_function_with_body_inlined_direct_callees(function_id, dependency_type)?,
         dependency_type,
     )
 }
@@ -797,7 +798,9 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .to_usize()
                     .unwrap()
         }
-        TypeLongId::Closure(_) => unimplemented!(),
+        TypeLongId::Closure(closure_ty) => {
+            closure_ty.captured_types.iter().map(|ty| db.type_size(*ty)).sum()
+        }
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)

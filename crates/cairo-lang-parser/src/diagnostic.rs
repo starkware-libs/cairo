@@ -35,7 +35,7 @@ pub enum ParserDiagnosticKind {
     MissingTypeClause,
     MissingTypeExpression,
     MissingWrappedArgList,
-    MissingPatteren,
+    MissingPattern,
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
@@ -82,7 +82,7 @@ impl DiagnosticEntry for ParserDiagnostic {
                                                             list wrapped in either parentheses, \
                                                             brackets, or braces."
                 .to_string(),
-            ParserDiagnosticKind::MissingPatteren => {
+            ParserDiagnosticKind::MissingPattern => {
                 "Missing tokens. Expected a pattern.".to_string()
             }
             ParserDiagnosticKind::ExpectedInToken => {

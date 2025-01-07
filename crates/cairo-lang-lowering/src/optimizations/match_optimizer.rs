@@ -242,7 +242,7 @@ pub struct FixInfo {
 
 #[derive(Clone)]
 struct OptimizationCandidate<'a> {
-    /// The variable that is match.
+    /// The variable that is matched.
     match_variable: VariableId,
 
     /// The match arms of the extern match that we are optimizing.

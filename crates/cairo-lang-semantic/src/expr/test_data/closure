@@ -18,9 +18,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
- --> lib.cairo:2:15
+ --> lib.cairo:2:11
     || -> i32 {
-              ^
+          ^^^
 
 //! > ==========================================================================
 
@@ -92,9 +92,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
- --> lib.cairo:2:20
-    let _x: i32 =  || {
-                   ^**^
+ --> lib.cairo:2:20-5:5
+      let _x: i32 =  || {
+ ____________________^
+| ...
+|     };
+|_____^
 
 //! > ==========================================================================
 
@@ -117,14 +120,20 @@ const _x: i32 =  || {
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:1:18
-const _x: i32 =  || {
-                 ^**^
+ --> lib.cairo:1:18-4:1
+  const _x: i32 =  || {
+ __________________^
+| ...
+| };
+|_^
 
 error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
- --> lib.cairo:1:1
-const _x: i32 =  || {
-^*******************^
+ --> lib.cairo:1:1-4:2
+  const _x: i32 =  || {
+ _^
+| ...
+| };
+|__^
 
 //! > ==========================================================================
 
@@ -148,14 +157,20 @@ fn bar<const N: u32>() {}
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:3:14
-    bar::<{  || -> u32 {
-             ^*********^
+ --> lib.cairo:3:14-5:5
+      bar::<{  || -> u32 {
+ ______________^
+|         2
+|     } }>();
+|_____^
 
 error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
- --> lib.cairo:3:11
-    bar::<{  || -> u32 {
-          ^************^
+ --> lib.cairo:3:11-5:7
+      bar::<{  || -> u32 {
+ ___________^
+|         2
+|     } }>();
+|_______^
 
 //! > ==========================================================================
 
@@ -238,7 +253,7 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 error: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
-                      ^*^
+                      ^^^
 
 //! > ==========================================================================
 
@@ -269,7 +284,7 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 error: Type mismatch: `core::integer::u128` and `core::felt252`.
  --> lib.cairo:9:39
     let _f: u128 = core::ops::FnOnce::call(c, (2,));
-                                      ^**^
+                                      ^^^^
 
 //! > ==========================================================================
 
@@ -317,7 +332,7 @@ foo
 error: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
  --> lib.cairo:3:22
         a.into() + b.into() + c.into()
-                     ^**^
+                     ^^^^
 
 //! > ==========================================================================
 
@@ -344,7 +359,7 @@ fn bar() -> u32 {
 warning: Function `bar` is shadowed by a local variable.
  --> lib.cairo:6:19
     let _f: u32 = bar(2);
-                  ^*^
+                  ^^^
 
 //! > ==========================================================================
 
@@ -378,12 +393,12 @@ fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 error: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
  --> lib.cairo:7:19
     let _x: u32 = bar();
-                  ^***^
+                  ^^^^^
 
 error: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
  --> lib.cairo:12:11
         a.into()
-          ^**^
+          ^^^^
 
 //! > ==========================================================================
 
@@ -409,10 +424,10 @@ fn bar(a: felt252) -> u32 {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:5:18
-    let bar = |_a, _b, _c| -> u32 {
-                 ^
+error: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (core::felt252,)>.
+ --> lib.cairo:8:19
+    let _f: u32 = bar(2);
+                  ^^^^^^
 
 //! > ==========================================================================
 
@@ -439,7 +454,7 @@ foo
 error: Arguments to closure functions cannot be references
  --> lib.cairo:6:23
     let _f: u32 = bar(ref a);
-                      ^***^
+                      ^^^^^
 
 //! > ==========================================================================
 
@@ -527,22 +542,22 @@ error: `?` can only be used in a function with `Option` or `Result` return type.
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
     let bar2 = |b: Option<u32>| {
-                ^************^
+                ^^^^^^^^^^^^^^
 
 error: Function not found.
  --> lib.cairo:10:19
     let _f: u32 = bar(a).unwrap();
-                  ^*^
+                  ^^^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:10:26
     let _f: u32 = bar(a).unwrap();
-                         ^****^
+                         ^^^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
     let bar1 = |a| -> Option<u32> {
-        ^**^
+        ^^^^
 
 //! > ==========================================================================
 
@@ -570,7 +585,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:4:13
             break;
-            ^****^
+            ^^^^^^
 
 //! > ==========================================================================
 
@@ -598,7 +613,7 @@ foo
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:4:13
             continue;
-            ^*******^
+            ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -671,7 +686,7 @@ error: Call expression requires a function, found `core::integer::u32`.
 Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
  --> lib.cairo:4:5
     x()
-    ^*^
+    ^^^
 
 //! > ==========================================================================
 
@@ -702,4 +717,4 @@ impl MyImpl of core::ops::FnOnce<u32, ()> {
 error: Trait `core::ops::function::FnOnce` should not be re-implemented.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
-               ^************************^
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^

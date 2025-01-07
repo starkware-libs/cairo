@@ -78,9 +78,16 @@ fn add_abi_diagnostics(
     };
     for err in abi_builder.errors() {
         if !matches!(err, ABIError::SemanticError) {
+            let location = err.location(db).unwrap_or_else(|| {
+                if let Ok(Some(attr)) = contract.module_id().find_attr(db, CONTRACT_ATTR) {
+                    attr.stable_ptr.untyped()
+                } else {
+                    contract.submodule_id.stable_ptr(db.upcast()).untyped()
+                }
+            });
+
             diagnostics.push(PluginDiagnostic::warning(
-                err.location(db)
-                    .unwrap_or_else(|| contract.submodule_id.stable_ptr(db.upcast()).untyped()),
+                location,
                 format!("Failed to generate ABI: {err}"),
             ));
         }
@@ -250,7 +257,7 @@ fn member_analyze(
     user_data_path.pop();
 }
 
-/// Adds diagnostics for a enum deriving `starknet::Store`.
+/// Adds diagnostics for an enum deriving `starknet::Store`.
 ///
 /// Specifically finds cases missing a `#[default]` variant.
 fn add_derive_store_enum_diags(

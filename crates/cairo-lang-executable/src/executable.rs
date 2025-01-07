@@ -32,19 +32,19 @@ impl Executable {
                 ExecutableEntryPoint {
                     builtins: compiled.wrapper.builtins.clone(),
                     offset: 0,
-                    kind: EntryPointKind::NonReturning,
+                    kind: EntryPointKind::Standalone,
                 },
                 ExecutableEntryPoint {
                     builtins: compiled.wrapper.builtins,
                     offset: non_returning_header.current_code_offset,
-                    kind: EntryPointKind::Function,
+                    kind: EntryPointKind::Bootloader,
                 },
             ],
         }
     }
 }
 
-/// Information about a executable entrypoint.
+/// Information about an executable entrypoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutableEntryPoint {
     /// The used builtins of the function.
@@ -58,9 +58,13 @@ pub struct ExecutableEntryPoint {
 /// The kind of an entrypoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EntryPointKind {
+    /// Entrypoint is for running it using a bootloader.
+    ///
     /// The entrypoint is a function, ending with a `ret`, expecting the builtins as its parameters.
-    Function,
+    Bootloader,
+    /// Entrypoint is for running this executable as a standalone program.
+    ///
     /// The entrypoint starts with `ap += <builtins.len()>` and expected the builtins to be injected
     /// there, and ends with an infinite loop.
-    NonReturning,
+    Standalone,
 }

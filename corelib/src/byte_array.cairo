@@ -43,19 +43,19 @@
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
-#[allow(unused_imports)]
-use crate::bytes_31::{
-    BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
-    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
-};
 use crate::clone::Clone;
 use crate::cmp::min;
-#[allow(unused_imports)]
-use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
 use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
+#[allow(unused_imports)]
+use crate::bytes_31::{
+    BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
+    one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
+};
+#[allow(unused_imports)]
+use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
@@ -153,7 +153,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ba.append(@"2");
     /// assert!(ba == "12");
     /// ```
-    fn append(ref self: ByteArray, mut other: @ByteArray) {
+    fn append(ref self: ByteArray, other: @ByteArray) {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
@@ -277,29 +277,21 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(byte == 98);
     /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
-        let (word_index, index_in_word) = DivRem::div_rem(
-            index, BYTES_IN_BYTES31.try_into().unwrap(),
-        );
-
-        let data_len = self.data.len();
-        if word_index == data_len {
+        let (word_index, index_in_word) = DivRem::div_rem(index, 31);
+        if word_index == self.data.len() {
             // Index is in pending word.
             if index_in_word >= *self.pending_word_len {
                 return Option::None;
             }
             // index_in_word is from MSB, we need index from LSB.
-            let index_from_lsb = *self.pending_word_len - 1 - index_in_word;
-            let pending_bytes31: bytes31 = (*self.pending_word).try_into().unwrap();
-            return Option::Some(pending_bytes31.at(index_from_lsb));
+            return Option::Some(
+                u8_at_u256((*self.pending_word).into(), *self.pending_word_len - 1 - index_in_word),
+            );
         }
 
-        if word_index > data_len {
-            return Option::None;
-        }
-
+        let data_word: bytes31 = *self.data.get(word_index)?.deref();
         // index_in_word is from MSB, we need index from LSB.
-        let index_from_lsb = BYTES_IN_BYTES31 - 1 - index_in_word;
-        Option::Some(self.data.at(word_index).at(index_from_lsb))
+        Option::Some(data_word.at(BYTES_IN_BYTES31 - 1 - index_in_word))
     }
 
     /// Returns a `ByteArray` with the reverse order of `self`.
@@ -350,9 +342,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             if index == low_part_limit {
                 break;
             }
-            let curr_byte_as_u128 = (low / one_shift_left_bytes_u128(index)) % POW_2_8;
-
-            self.append_byte(curr_byte_as_u128.try_into().unwrap());
+            self.append_byte(core::bytes_31::get_lsb(split_u128(low, index).high));
             index += 1;
         };
         if low_part_limit == BYTES_IN_U128 {
@@ -362,10 +352,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                 if index_in_high_part == high_part_len {
                     break;
                 }
-                let curr_byte_as_u128 = (high
-                    / one_shift_left_bytes_u128(index_in_high_part)) % POW_2_8;
-
-                self.append_byte(curr_byte_as_u128.try_into().unwrap());
+                self
+                    .append_byte(
+                        core::bytes_31::get_lsb(split_u128(high, index_in_high_part).high),
+                    );
                 index_in_high_part += 1;
             }
         }
@@ -402,13 +392,11 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: usize) {
         let u256 { low, high } = word.into();
 
-        let (low_quotient, low_remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(split_index).try_into().unwrap(),
-        );
+        let low_result = split_u128(low, split_index);
         let left = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - split_index).into()
-            + low_quotient.into();
+            + low_result.high.into();
 
-        self.append_split(left, low_remainder.into());
+        self.append_split(left, low_result.low.into());
     }
 
     /// Appends a single word to the end of `self`, given that the index of splitting `word` is
@@ -437,12 +425,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: usize) {
         let u256 { low, high } = word.into();
 
-        let (high_quotient, high_remainder) = u128_safe_divmod(
-            high, one_shift_left_bytes_u128(split_index - BYTES_IN_U128).try_into().unwrap(),
-        );
-        let right = high_remainder.into() * POW_2_128 + low.into();
+        let high_result = split_u128(high, split_index - BYTES_IN_U128);
+        let right = high_result.low.into() * POW_2_128 + low.into();
 
-        self.append_split(high_quotient.into(), right);
+        self.append_split(high_result.high.into(), right);
     }
 
     /// A helper function to append a remainder to `self`, by:
@@ -502,5 +488,28 @@ impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
 pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
+    }
+}
+
+// TODO: Implement a more efficient version of this iterator.
+/// An iterator struct over a ByteArray.
+#[derive(Drop, Clone)]
+pub struct ByteArrayIter {
+    ba: ByteArray,
+    current_index: crate::ops::RangeIterator<usize>,
+}
+
+impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
+    type Item = u8;
+    fn next(ref self: ByteArrayIter) -> Option<u8> {
+        self.ba.at(self.current_index.next()?)
+    }
+}
+
+impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
+    type IntoIter = ByteArrayIter;
+    #[inline]
+    fn into_iter(self: ByteArray) -> Self::IntoIter {
+        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }

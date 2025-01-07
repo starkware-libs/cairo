@@ -1,7 +1,7 @@
+use starknet::SyscallResultTrait;
+use starknet::secp256_trait::{Secp256PointTrait, Signature, is_valid_signature, recover_public_key};
+use starknet::secp256r1::{Secp256r1Impl, Secp256r1Point};
 use crate::option::OptionTrait;
-use starknet::{secp256r1::Secp256r1Impl, SyscallResultTrait};
-use starknet::secp256_trait::{recover_public_key, Secp256PointTrait, Signature, is_valid_signature};
-use starknet::secp256r1::Secp256r1Point;
 use crate::test::test_utils::assert_eq;
 
 #[test]

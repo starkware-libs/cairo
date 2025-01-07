@@ -1,3 +1,4 @@
+use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -480,10 +481,22 @@ fn test_serde() {
     );
 }
 
+#[test]
+fn test_iterator() {
+    let ba: ByteArray = "hello";
+    let mut iter = ba.into_iter();
+    assert_eq!(iter.next(), Option::Some('h'));
+    assert_eq!(iter.next(), Option::Some('e'));
+    assert_eq!(iter.next(), Option::Some('l'));
+    assert_eq!(iter.next(), Option::Some('l'));
+    assert_eq!(iter.next(), Option::Some('o'));
+    assert_eq!(iter.next(), Option::None);
+}
+
 // ========= Test helper functions =========
 
 fn compare_byte_array(
-    mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
+    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
 ) {
     assert(ba.data.len() == data.len(), 'wrong data len');
     let mut ba_data = ba.data.span();

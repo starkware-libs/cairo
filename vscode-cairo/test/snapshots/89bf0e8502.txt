@@ -1,7 +1,0 @@
-//! > cairo_code
-pub // trailing.
-
-//! > syntax
-pub                  source.cairo keyword.other.cairo
-//                   source.cairo comment.line.double-slash.cairo punctuation.definition.comment.cairo
-␣trailing.           source.cairo comment.line.double-slash.cairo

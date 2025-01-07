@@ -288,9 +288,7 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
     fn into_circuit_input_value(self: [u96; 4]) -> [U96Guarantee; 4] {
         let [val0, val1, val2, val3] = self;
         [
-            into_u96_guarantee(val0),
-            into_u96_guarantee(val1),
-            into_u96_guarantee(val2),
+            into_u96_guarantee(val0), into_u96_guarantee(val1), into_u96_guarantee(val2),
             into_u96_guarantee(val3),
         ]
     }
@@ -299,10 +297,8 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
 impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
     fn into_circuit_input_value(self: u384) -> [U96Guarantee; 4] {
         [
-            into_u96_guarantee(self.limb0),
-            into_u96_guarantee(self.limb1),
-            into_u96_guarantee(self.limb2),
-            into_u96_guarantee(self.limb3),
+            into_u96_guarantee(self.limb0), into_u96_guarantee(self.limb1),
+            into_u96_guarantee(self.limb2), into_u96_guarantee(self.limb3),
         ]
     }
 }
@@ -428,11 +424,9 @@ extern fn get_circuit_output<C, Output>(
 
 /// Helper module to convert into `u384`.
 mod conversions {
-    use crate::internal::{
-        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
-    };
-    use crate::integer::{upcast, downcast};
-
+    use crate::integer::{downcast, upcast};
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper};
+    use crate::internal::bounded_int;
     use super::{u384, u96};
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;

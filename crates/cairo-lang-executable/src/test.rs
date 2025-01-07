@@ -2,6 +2,7 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
@@ -17,6 +18,7 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .skip_auto_withdraw_gas()
+            .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
             .detect_corelib()
             .with_plugin_suite(executable_plugin_suite())
             .build()

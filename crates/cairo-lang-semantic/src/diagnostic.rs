@@ -3,17 +3,17 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
+    EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
     TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -337,6 +337,47 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+
+            SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_trait,
+                actual_trait,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter trait of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_trait.debug(db),
+                    actual_trait.debug(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongGenericParamKindForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_kind,
+                actual_kind,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter kind of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_kind,
+                    actual_kind
+                )
+            }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
                 format!(
                     "Ambiguous method call. More than one applicable trait function with a \
@@ -655,6 +696,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as const."
+                )
+            }
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
@@ -689,6 +738,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::FailedConstantCalculation => {
+                "Failed to calculate constant.".into()
+            }
+            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                "Constant calculation depth exceeded.".into()
+            }
+            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -975,6 +1031,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
         }
     }
 
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+        if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
+            notes
+        } else {
+            &[]
+        }
+    }
+
     fn error_code(&self) -> Option<ErrorCode> {
         self.kind.error_code()
     }
@@ -1069,6 +1133,20 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_name: SmolStr,
+    },
+    WrongGenericParamTraitForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_trait: ConcreteTraitId,
+        actual_trait: ConcreteTraitId,
+    },
+    WrongGenericParamKindForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_kind: GenericKind,
+        actual_kind: GenericKind,
     },
     WrongType {
         expected_ty: semantic::TypeId,
@@ -1228,6 +1306,10 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    PassConstAsNonConst {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
@@ -1242,6 +1324,9 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
+    FailedConstantCalculation,
+    ConstantCalculationDepthExceeded,
+    InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
@@ -1343,6 +1428,8 @@ impl SemanticDiagnosticKind {
                 error_code!(E0002)
             }
             Self::MissingMember(_) => error_code!(E0003),
+            Self::MissingItemsInImpl(_) => error_code!(E0004),
+            Self::ModuleFileNotFound(_) => error_code!(E0005),
             _ => return None,
         })
     }

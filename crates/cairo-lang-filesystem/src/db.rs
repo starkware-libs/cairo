@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast};
+use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use smol_str::{SmolStr, ToSmolStr};
@@ -26,7 +27,7 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Unique identifier of a crate.
 ///
-/// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
+/// This directly translates to [`DependencySettings.discriminator`] except the discriminator
 /// **must** be `None` for the core crate.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct CrateIdentifier(SmolStr);
@@ -154,7 +155,7 @@ pub struct ExperimentalFeaturesConfig {
     pub associated_item_constraints: bool,
     /// Allows using coupon types and coupon calls.
     ///
-    /// Each function has a associated `Coupon` type, which represents paying the cost of the
+    /// Each function has an associated `Coupon` type, which represents paying the cost of the
     /// function before calling it.
     #[serde(default)]
     pub coupons: bool,
@@ -313,10 +314,16 @@ fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration>
 
 fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
     match file.lookup_intern(db) {
-        FileLongId::OnDisk(path) => match fs::read_to_string(path) {
-            Ok(content) => Some(content.into()),
-            Err(_) => None,
-        },
+        FileLongId::OnDisk(path) => {
+            // This does not result in performance cost due to OS caching and the fact that salsa
+            // will re-execute only this single query if the file content did not change.
+            db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+            match fs::read_to_string(path) {
+                Ok(content) => Some(content.into()),
+                Err(_) => None,
+            }
+        }
         FileLongId::Virtual(virt) => Some(virt.content),
         FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }

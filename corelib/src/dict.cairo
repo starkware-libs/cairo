@@ -24,7 +24,7 @@
 //! assert!(dict.get(1) == 20);
 //!
 //! dict.insert(0, 20);
-//! assert!(dict.get(0) == 20
+//! assert!(dict.get(0) == 20);
 //! ```
 //!
 //! It is also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry
@@ -48,7 +48,7 @@
 //! ```
 
 #[feature("deprecated-index-traits")]
-use crate::traits::{Index, Default, Felt252DictValue};
+use crate::traits::{Default, Felt252DictValue, Index};
 
 /// A dictionary that maps `felt252` keys to a value of any type.
 pub extern type Felt252Dict<T>;
@@ -62,9 +62,8 @@ pub extern type SquashedFelt252Dict<T>;
 pub extern type Felt252DictEntry<T>;
 
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
-
-use crate::{RangeCheck, SegmentArena};
 use crate::gas::GasBuiltin;
+use crate::{RangeCheck, SegmentArena};
 
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
@@ -154,10 +153,9 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
 
     #[inline]
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
-        let (entry, prev_value) = felt252_dict_entry_get(self, key);
-        let return_value = prev_value;
-        self = felt252_dict_entry_finalize(entry, prev_value);
-        return_value
+        let (entry, value) = felt252_dict_entry_get(self, key);
+        self = felt252_dict_entry_finalize(entry, value);
+        value
     }
 
     #[inline(never)]

@@ -36,7 +36,6 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-executable
           - test --profile=ci-dev -p cairo-lang-filesystem
           - test --profile=ci-dev -p cairo-lang-formatter
-          - test --profile=ci-dev -p cairo-lang-language-server
           - test --profile=ci-dev -p cairo-lang-lowering
           - test --profile=ci-dev -p cairo-lang-parser
           - test --profile=ci-dev -p cairo-lang-plugins

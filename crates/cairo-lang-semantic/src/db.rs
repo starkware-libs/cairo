@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -23,7 +24,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
+use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -40,7 +41,7 @@ use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::{ImplTypeId, TypeSizeInformation};
+use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
@@ -162,6 +163,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::constant::constant_const_type)]
     #[salsa::cycle(items::constant::constant_const_type_cycle)]
     fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;
+    /// Returns information required for const calculations.
+    #[salsa::invoke(items::constant::const_calc_info)]
+    fn const_calc_info(&self) -> Arc<ConstCalcInfo>;
 
     // Use.
     // ====
@@ -711,6 +715,7 @@ pub trait SemanticGroup:
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
         lookup_context: ImplLookupContext,
+        impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
         inference::InferenceError,
@@ -1462,6 +1467,13 @@ pub trait SemanticGroup:
         in_cycle: bool,
     ) -> Maybe<GenericParamData>;
 
+    /// Returns the type constraints intoduced by the generic params.
+    #[salsa::invoke(items::generics::generic_params_type_constraints)]
+    fn generic_params_type_constraints(
+        &self,
+        generic_params: Vec<GenericParamId>,
+    ) -> Vec<(TypeId, TypeId)>;
+
     // Concrete type.
     // ==============
     /// Returns true if there is only one value for the given type and hence the values of the given
@@ -1492,6 +1504,10 @@ pub trait SemanticGroup:
     /// Private query to check if a type contains no variables.
     #[salsa::invoke(types::priv_type_is_var_free)]
     fn priv_type_is_var_free(&self, ty: types::TypeId) -> bool;
+
+    /// Private query for a shorter unique name for types.
+    #[salsa::invoke(types::priv_type_short_name)]
+    fn priv_type_short_name(&self, ty: types::TypeId) -> String;
 
     // Expression.
     // ===========

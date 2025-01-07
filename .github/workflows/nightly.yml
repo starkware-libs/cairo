@@ -55,13 +55,3 @@ jobs:
           scripts/starknet_sierra_validate.sh https://papyrus-integration-mainnet.sw-dev.io/rpc/v0_7
       - run: >
           scripts/starknet_sierra_validate.sh https://papyrus-integration-sepolia-testnet.sw-dev.io/rpc/v0_7
-
-  vscode-cairo-check-cairo-snippets:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '22.x'
-      - run: >
-          scripts/vscode-cairo-check-cairo-snippets.sh

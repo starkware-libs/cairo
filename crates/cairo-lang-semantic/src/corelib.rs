@@ -74,7 +74,7 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let internal = core_submodule(db, "internal");
     let bounded_int = get_submodule(db, internal, "bounded_int")
         .expect("Could not find bounded_int submodule in corelib.");
-    let size_ty = core_felt252_ty(db);
+    let size_ty = db.core_felt252_ty();
     let lower_id = ConstValue::Int(min, size_ty).intern(db);
     let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
@@ -110,7 +110,7 @@ pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(db.core_felt252_ty())])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -213,41 +213,104 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
-pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+pub fn jump_nz_zero_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt252_ty(db))],
+        vec![GenericArgumentId::Type(ty)],
         "Zero",
     )
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
-pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt252_ty(db))],
+        vec![GenericArgumentId::Type(ty)],
         "NonZero",
     )
 }
 
 /// Generates a ConcreteVariant instance for `Option::Some`.
-pub fn option_some_variant(
-    db: &dyn SemanticGroup,
-    generic_arg: GenericArgumentId,
-) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "Some")
+pub fn option_some_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "option"),
+        "Option",
+        vec![GenericArgumentId::Type(ty)],
+        "Some",
+    )
 }
 
 /// Generates a ConcreteVariant instance for `Option::None`.
-pub fn option_none_variant(
+pub fn option_none_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "option"),
+        "Option",
+        vec![GenericArgumentId::Type(ty)],
+        "None",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `Result::Ok`.
+pub fn result_ok_variant(db: &dyn SemanticGroup, ok_ty: TypeId, err_ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Ok",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `Result::Err`.
+pub fn result_err_variant(
     db: &dyn SemanticGroup,
-    generic_arg: GenericArgumentId,
+    ok_ty: TypeId,
+    err_ty: TypeId,
 ) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "None")
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Err",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::InRange`.
+pub fn signed_int_result_in_range_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "InRange",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Underflow`.
+pub fn signed_int_result_underflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Underflow",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Overflow`.
+pub fn signed_int_result_overflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Overflow",
+    )
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
@@ -849,7 +912,7 @@ pub fn validate_literal(
     }
     let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
         value < min || value > max
-    } else if ty == core_felt252_ty(db) {
+    } else if ty == db.core_felt252_ty() {
         value.abs()
             > BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000000",

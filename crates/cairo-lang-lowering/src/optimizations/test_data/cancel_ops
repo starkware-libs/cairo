@@ -179,7 +179,7 @@ fn foo(a: felt252) -> felt252 {
         let (a, _arr) = c;
         return a;
     } else {
-        cosume(c);
+        consume(c);
         return 1;
     }
 }
@@ -188,7 +188,7 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > module_code
-extern fn cosume(arg: (felt252, Array<felt252>)) nopanic;
+extern fn consume(arg: (felt252, Array<felt252>)) nopanic;
 
 //! > semantic_diagnostics
 
@@ -242,7 +242,7 @@ End:
 
 blk4:
 Statements:
-  () <- test::cosume(v11)
+  () <- test::consume(v11)
   (v28: core::felt252) <- 1
 End:
   Return(v28)
@@ -297,7 +297,7 @@ End:
 
 blk4:
 Statements:
-  () <- test::cosume(v11)
+  () <- test::consume(v11)
   (v28: core::felt252) <- 1
 End:
   Return(v28)

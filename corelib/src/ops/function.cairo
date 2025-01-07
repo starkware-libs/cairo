@@ -38,3 +38,12 @@ pub trait Fn<T, Args> {
     /// Performs the call operation.
     fn call(self: @T, args: Args) -> Self::Output;
 }
+
+/// Implementation of `Fn` for snapshots.
+/// This allows using a snapshot of a type that implements `Fn` as a function.
+impl FnSnapshotImpl<T, Args, impl F: Fn<T, Args>> of Fn<@T, Args> {
+    type Output = F::Output;
+    fn call(self: @@T, args: Args) -> Self::Output {
+        F::call(*self, args)
+    }
+}

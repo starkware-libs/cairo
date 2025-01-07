@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCARB_REPO="https://github.com/software-mansion/scarb"
 
-CURRENT_VERSION='2.9.1'
+CURRENT_VERSION='2.9.2'
 NEW_VERSION="$@"
 
 # NOTE: These two functions were copied from asdf-scarb.
@@ -50,5 +50,4 @@ check_scarb_version_sync
 
 sed -i "s/$CURRENT_VERSION/$NEW_VERSION/g" \
     $(find . -type f -iname "*.toml") \
-    ./scripts/bump_version.sh \
-    ./vscode-cairo/package.json
+    ./scripts/bump_version.sh
