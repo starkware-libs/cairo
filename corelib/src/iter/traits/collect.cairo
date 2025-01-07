@@ -96,8 +96,8 @@ impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
     }
 }
 
-impl SnapshotIteratorSpanBased<C, T, +Into<@C, Span<T>>> of core::iter::IntoIterator<@C> {
-    type IntoIter = core::array::SpanIter<T>;
+impl SnapshotIteratorSpanBased<C, T, +Into<@C, Span<T>>> of IntoIterator<@C> {
+    type IntoIter = crate::array::SpanIter<T>;
     fn into_iter(self: @C) -> Self::IntoIter {
         let span: Span<T> = self.into();
         span.into_iter()
