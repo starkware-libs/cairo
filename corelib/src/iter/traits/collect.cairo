@@ -1,75 +1,79 @@
-/// Conversion into an [`Iterator`].
-///
-/// By implementing `IntoIterator` for a type, you define how it will be
-/// converted to an iterator. This is common for types which describe a
-/// collection of some kind.
-///
-/// One benefit of implementing `IntoIterator` is that your type will [work
-/// with Cairo's `for` loop syntax](crate::iter#for-loops-and-intoiterator).
-///
-/// # Examples
-///
-/// Basic usage:
-///
-/// ```
-/// let mut iter = array![1, 2, 3].into_iter();
-///
-/// assert_eq!(Option::Some(1), iter.next());
-/// assert_eq!(Option::Some(2), iter.next());
-/// assert_eq!(Option::Some(3), iter.next());
-/// assert_eq!(Option::None, iter.next());
-/// ```
-/// Implementing `IntoIterator` for your type:
-///
-/// ```
-/// // A sample collection, that's just a wrapper over Array<u32>
-/// #[derive(Drop, Debug)]
-/// struct MyCollection {
-///     arr: Array<u32>
-/// }
-///
-/// // Let's give it some methods so we can create one and add things
-/// // to it.
-/// #[generate_trait]
-/// impl MyCollectionImpl of MyCollectionTrait {
-///     fn new() -> MyCollection {
-///         MyCollection {
-///             arr: ArrayTrait::new()
-///         }
-///     }
-///
-///     fn add(ref self: MyCollection, elem: u32) {
-///         self.arr.append(elem);
-///     }
-/// }
-///
-/// // and we'll implement IntoIterator
-/// impl MyCollectionIntoIterator of IntoIterator<MyCollection> {
-///     type IntoIter = crate::array::ArrayIter<u32>;
-///     fn into_iter(self: MyCollection) -> Self::IntoIter {
-///         self.arr.into_iter()
-///     }
-/// }
-///
-/// // Now we can make a new collection...
-/// let mut c = MyCollectionTrait::new();
-///
-/// // ... add some stuff to it ...
-/// c.add(0);
-/// c.add(1);
-/// c.add(2);
-///
-/// // ... and then turn it into an Iterator:
-/// let mut n = 0;
-/// for i in c {
-///     assert_eq!(i, n);
-///     n += 1;
-/// };
-/// ```
+//! Conversion into an [`Iterator`].
+//!
+//! By implementing `IntoIterator` for a type, you define how it will be
+//! converted to an iterator. This is common for types which describe a
+//! collection of some kind.
+//!
+//! One benefit of implementing `IntoIterator` is that your type will [work
+//! with Cairo's `for` loop syntax](crate::iter#for-loops-and-intoiterator).
+//!
+//! # Examples
+//!
+//! Basic usage:
+//!
+//! ```
+//! let mut iter = array![1, 2, 3].into_iter();
+//!
+//! assert_eq!(Option::Some(1), iter.next());
+//! assert_eq!(Option::Some(2), iter.next());
+//! assert_eq!(Option::Some(3), iter.next());
+//! assert_eq!(Option::None, iter.next());
+//! ```
+//!
+//! Implementing `IntoIterator` for your type:
+//!
+//! ```
+//! // A sample collection, that's just a wrapper over `Array<u32>`
+//! #[derive(Drop, Debug)]
+//! struct MyCollection {
+//!     arr: Array<u32>
+//! }
+//!
+//! // Let's give it some methods so we can create one and add things
+//! // to it.
+//! #[generate_trait]
+//! impl MyCollectionImpl of MyCollectionTrait {
+//!     fn new() -> MyCollection {
+//!         MyCollection {
+//!             arr: ArrayTrait::new()
+//!         }
+//!     }
+//!
+//!     fn add(ref self: MyCollection, elem: u32) {
+//!         self.arr.append(elem);
+//!     }
+//! }
+//!
+//! // and we'll implement `IntoIterator`
+//! impl MyCollectionIntoIterator of IntoIterator<MyCollection> {
+//!     type IntoIter = crate::array::ArrayIter<u32>;
+//!     fn into_iter(self: MyCollection) -> Self::IntoIter {
+//!         self.arr.into_iter()
+//!     }
+//! }
+//!
+//! // Now we can make a new collection...
+//! let mut c = MyCollectionTrait::new();
+//!
+//! // ... add some stuff to it ...
+//! c.add(0);
+//! c.add(1);
+//! c.add(2);
+//!
+//! // ... and then turn it into an `Iterator`:
+//! let mut n = 0;
+//! for i in c {
+//!     assert_eq!(i, n);
+//!     n += 1;
+//! };
+//! ```
+
+/// A trait to create an iterator from a type.
 pub trait IntoIterator<T> {
     /// The iterator type that will be created.
     type IntoIter;
     impl Iterator: Iterator<Self::IntoIter>;
+
     /// Creates an iterator from a value.
     ///
     /// See the [module-level documentation] for more.
