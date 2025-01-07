@@ -913,29 +913,34 @@ impl<'db> Inference<'db> {
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
 
-        // Don't try to resolve impls if the first generic param is a variable.
-        let generic_args = concrete_trait_id.generic_args(self.db);
-        match generic_args.first() {
-            Some(GenericArgumentId::Type(ty)) => {
-                if let TypeLongId::Var(_) = ty.lookup_intern(self.db) {
-                    // Don't try to infer such impls.
-                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+        // If has any type assignments, we can try to resolve it, even if first generic arg is a
+        // var.
+        if !impl_var_trait_item_mappings
+            .types
+            .iter()
+            .any(|(_, ty)| ty.is_var_free(self.db) && !ty.is_missing(self.db))
+        {
+            // Don't try to resolve impls if the first generic param is a variable.
+            let dont_infer = Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+            match concrete_trait_id.generic_args(self.db).first() {
+                Some(GenericArgumentId::Type(ty))
+                    if matches!(ty.lookup_intern(self.db), TypeLongId::Var(_)) =>
+                {
+                    return dont_infer;
                 }
-            }
-            Some(GenericArgumentId::Impl(imp)) => {
-                // Don't try to infer such impls.
-                if let ImplLongId::ImplVar(_) = imp.lookup_intern(self.db) {
-                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+                Some(GenericArgumentId::Impl(imp))
+                    if matches!(imp.lookup_intern(self.db), ImplLongId::ImplVar(_)) =>
+                {
+                    return dont_infer;
                 }
-            }
-            Some(GenericArgumentId::Constant(const_value)) => {
-                if let ConstValue::Var(_, _) = const_value.lookup_intern(self.db) {
-                    // Don't try to infer such impls.
-                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+                Some(GenericArgumentId::Constant(const_value))
+                    if matches!(const_value.lookup_intern(self.db), ConstValue::Var(_, _)) =>
+                {
+                    return dont_infer;
                 }
+                _ => {}
             }
-            _ => {}
-        };
+        }
         let (canonical_trait, canonicalizer) = CanonicalTrait::canonicalize(
             self.db,
             self.inference_id,

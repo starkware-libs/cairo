@@ -390,7 +390,7 @@ fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
+error: Inference cycle detected
  --> lib.cairo:7:19
     let _x: u32 = bar();
                   ^^^^^

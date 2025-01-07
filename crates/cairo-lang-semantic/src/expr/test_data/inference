@@ -755,3 +755,26 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:1:13
 fn foo() -> Option {
             ^^^^^^
+
+//! > ==========================================================================
+
+//! > Impl resolution by type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let _u32: u32 = 2.pow(5);
+    const _U32: u32 = 2.pow(5);
+    let _felt252: felt252 = 2.pow(5);
+    const _FELT252: felt252 = 2.pow(5);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::num::traits::Pow;
+
+//! > expected_diagnostics
