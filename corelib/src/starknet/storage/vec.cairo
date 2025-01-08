@@ -65,6 +65,8 @@
 //! Loading the numbers into a memory array:
 //!
 //! ```
+//! use core::starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
+//!
 //! fn to_array(self: @ContractState) -> Array<u256> {
 //!     let mut arr = array![];
 //!
