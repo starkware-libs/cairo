@@ -22,7 +22,7 @@ pub fn func_name_from_test_name(test_name: &str, aux_infos: &Vec<CasmBuilderAuxi
 
     let mut func_name_parts: Vec<String> = Vec::new();
 
-    // Add teh base function name
+    // Add the base function name
     func_name_parts.push(
         if test_name.contains('_') {
             // If the test name contains underscores, we assume that all parts of the function

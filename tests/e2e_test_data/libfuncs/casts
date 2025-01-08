@@ -28,12 +28,6 @@ return([1]); // 2
 
 test::foo@0([0]: u16) -> (u64);
 
-//! > test_name
-u16 to u64 upcast
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > u64 to u64 upcast

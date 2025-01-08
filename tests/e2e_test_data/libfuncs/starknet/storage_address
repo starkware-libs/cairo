@@ -68,19 +68,6 @@ return([2], [3]); // 3
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, StorageBaseAddress);
 
-//! > test_name
-storage_base_address_from_felt252 libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .storage_base_address_from_felt252_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_storage_base_address_from_felt252 (mem : F → F) (κ : ℕ) (range_check addr ρ_range_check ρ_res : F) : Prop :=
-  true
-
-def auto_spec_storage_base_address_from_felt252 (mem : F → F) (κ : ℕ) (range_check addr ρ_range_check ρ_res : F) : Prop :=
-  true
-
 //! > ==========================================================================
 
 //! > storage_address_from_base_and_offset libfunc
@@ -115,19 +102,6 @@ store_temp<StorageAddress>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
-
-//! > test_name
-storage_address_from_base_and_offset libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .storage_address_from_base_and_offset_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_storage_address_from_base_and_offset (mem : F → F) (κ : ℕ) (base offset ρ_res : F) : Prop :=
-  true
-
-def auto_spec_storage_address_from_base_and_offset (mem : F → F) (κ : ℕ) (base offset ρ_res : F) : Prop :=
-  true
 
 //! > ==========================================================================
 
@@ -216,16 +190,3 @@ store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress
 return([4], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::storage_access::StorageAddress>);
-
-//! > test_name
-storage_address_try_from_felt252 libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .storage_address_try_from_felt252_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_storage_address_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
-  true
-
-def auto_spec_storage_address_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
-  true

@@ -50,12 +50,6 @@ return(); // 6
 test::foo@0([0]: Array<felt252>) -> (Array<felt252>);
 test::bar@5([0]: Snapshot<Array<felt252>>) -> ();
 
-//! > test_name
-Array snapshot.
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > struct snapshot.
@@ -138,12 +132,6 @@ return(); // 18
 
 test::foo@0([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
 test::bar@16([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
-
-//! > test_name
-struct snapshot.
-
-//! > lean_soundness
--- Could not find lean info.
 
 //! > ==========================================================================
 

@@ -57,46 +57,6 @@ return([5], [8]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: u16, [2]: u16) -> (RangeCheck, core::result::Result::<core::integer::u16, core::integer::u16>);
 
-//! > test_name
-u16_overflowing_add libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_overflowing_add_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-def limit_fixer : F := (340282366920938463463374607431768145920 : F) -- (u128::MAX - limit + 1)
-def limit : F := (65536 : F) -- limit
-
-def spec_u16_overflowing_add (mem : F → F) (κ : ℕ) (range_check a b ρ_branch_id ρ_a_plus_b : F) : Prop :=
-  true
-
-def spec_u16_overflowing_add (mem : F → F) (κ : ℕ) (range_check a b ρ_branch_id ρ_a_plus_b : F) : Prop :=
-  ∃ orig_range_check : F, orig_range_check = range_check ∧
-  ∃ no_overflow : F,
-  ∃ deferred_a_plus_b : F, deferred_a_plus_b = a + b ∧
-  (
-    (no_overflow = 0 ∧
-      ∃ temp_a_plus_b : F, temp_a_plus_b = deferred_a_plus_b ∧
-      ∃ fixed_a_plus_b : F, fixed_a_plus_b = temp_a_plus_b - limit ∧
-      is_range_checked (rc_bound F) fixed_a_plus_b ∧
-      ρ_branch_id = 1 ∧
-      ρ_a_plus_b = fixed_a_plus_b
-    ) ∨
-    (no_overflow ≠ 0 ∧
-      ∃ temp_fixed_a_plus_b : F,
-      ∃ a_plus_b : F, a_plus_b = deferred_a_plus_b ∧
-      temp_fixed_a_plus_b = a_plus_b + limit_fixer ∧
-      is_range_checked (rc_bound F) temp_fixed_a_plus_b ∧
-      ρ_branch_id = 0 ∧
-      ρ_a_plus_b = a_plus_b
-    )
-  )
-
 //! > ==========================================================================
 
 //! > u16_overflowing_sub libfunc
@@ -157,43 +117,6 @@ return([5], [8]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: u16, [2]: u16) -> (RangeCheck, core::result::Result::<core::integer::u16, core::integer::u16>);
 
-//! > test_name
-u16_overflowing_sub libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_overflowing_sub_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-def u128_limit : F := (340282366920938463463374607431768211456 : F) -- (BigInt::from(u128::MAX) + 1) as BigInt
-def limit : F := (65536 : F) -- limit
-
-def spec_u16_overflowing_sub (mem : F → F) (κ : ℕ) (range_check a b ρ_branch_id ρ_a_minus_b : F) : Prop :=
-  true
-
-def spec_u16_overflowing_sub (mem : F → F) (κ : ℕ) (range_check a b ρ_branch_id ρ_a_minus_b : F) : Prop :=
-  ∃ orig_range_check : F, orig_range_check = range_check ∧
-  ∃ a_ge_b : F,
-  ∃ a_minus_b : F, a_minus_b = a - b ∧
-  (
-    (a_ge_b = 0 ∧
-      ∃ fixed_a_minus_b : F, fixed_a_minus_b = a_minus_b + u128_limit ∧
-      is_range_checked (rc_bound F) fixed_a_minus_b ∧
-      ∃ wrapping_a_minus_b : F, wrapping_a_minus_b = a_minus_b + limit ∧
-      ρ_branch_id = 1 ∧
-      ρ_a_minus_b = wrapping_a_minus_b
-    ) ∨
-    (a_ge_b ≠ 0 ∧
-      is_range_checked (rc_bound F) a_minus_b ∧
-      ρ_branch_id = 0 ∧
-      ρ_a_minus_b = a_minus_b
-    )
-  )
-
 //! > ==========================================================================
 
 //! > u16_eq libfunc (a deref, b deref)
@@ -243,33 +166,6 @@ store_temp<core::bool>([5]) -> ([5]); // 9
 return([5]); // 10
 
 test::foo@0([0]: u16, [1]: u16) -> (core::bool);
-
-//! > test_name
-u16_eq libfunc (a deref, b deref)
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_eq_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-
-def spec_u16_eq (mem : F → F) (κ : ℕ) (a b ρ_branch_id : F) : Prop :=
-  true
-
-def spec_u16_eq (mem : F → F) (κ : ℕ) (a b ρ_branch_id : F) : Prop :=
-  ∃ diff : F, diff = a - b ∧
-  (
-    (diff = 0 ∧
-      ρ_branch_id = 1
-    ) ∨
-    (diff ≠ 0 ∧
-      ρ_branch_id = 0
-    )
-  )
 
 //! > ==========================================================================
 
@@ -329,33 +225,6 @@ store_temp<core::bool>([5]) -> ([5]); // 12
 return([5]); // 13
 
 test::foo@0() -> (core::bool);
-
-//! > test_name
-u16_eq libfunc (a immediate, b immediate)
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_eq_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-
-def spec_u16_eq (mem : F → F) (κ : ℕ) (a b ρ_branch_id : F) : Prop :=
-  true
-
-def spec_u16_eq (mem : F → F) (κ : ℕ) (a b ρ_branch_id : F) : Prop :=
-  ∃ diff : F, diff = a - b ∧
-  (
-    (diff = 0 ∧
-      ρ_branch_id = 1
-    ) ∨
-    (diff ≠ 0 ∧
-      ρ_branch_id = 0
-    )
-  )
 
 //! > ==========================================================================
 
@@ -435,52 +304,6 @@ return([4], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
-//! > test_name
-u16_try_from_felt252 libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_try_from_felt252_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-def limit : F := (65536 : F) -- LIMIT
-def a_imm : F := (10633823966279327296825105735305134080 : F) -- a_imm
-def b_imm_fix : F := (319014718988379808869724395961158008831 : F) -- (BigInt::from(u128::MAX) - b_imm + 1) as BigInt
-def u128_limit_minus_1 : F := (340282366920938463463374607431768211455 : F) -- u128::MAX
-def u128_limit_minus_2 : F := (340282366920938463463374607431768211454 : F) -- u128::MAX - 1
-def fixer_limit : F := (340282366920938463463374607431768145920 : F) -- (u128::MAX - LIMIT + 1)
-
-def spec_u16_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_branch_id ρ : F) : Prop :=
-  true
-
-def spec_u16_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_branch_id ρ : F) : Prop :=
-  ∃ orig_range_check : F, orig_range_check = range_check ∧
-  ∃ is_small : F,
-  (
-    (is_small = 0 ∧
-      ∃ shifted_value : F, shifted_value = value - limit ∧
-      x_part = x * a_imm ∧
-      value = x_part + y ∧
-      is_range_checked (rc_bound F) y ∧
-      y_fixed = y + b_imm_fix ∧
-      is_range_checked (rc_bound F) y_fixed ∧
-      is_range_checked (rc_bound F) x ∧
-      diff = x - u128_limit_minus_1 ∧
-      ρ_branch_id = 1
-    ) ∨
-    (is_small ≠ 0 ∧
-      is_range_checked (rc_bound F) value ∧
-      ∃ value_upper_limit : F, value_upper_limit = value + fixer_limit ∧
-      is_range_checked (rc_bound F) value_upper_limit ∧
-      ρ_branch_id = 0 ∧
-      ρ = value
-    )
-  )
-
 //! > ==========================================================================
 
 //! > u16_is_zero libfunc
@@ -530,25 +353,6 @@ return([3]); // 8
 
 test::foo@0([0]: u16) -> (u16);
 
-//! > test_name
-u16_is_zero libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_is_zero_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-
-def spec_u16_is_zero (mem : F → F) (κ : ℕ) (value ρ : F) : Prop :=
-  true
-
-def spec_u16_is_zero (mem : F → F) (κ : ℕ) (value ρ : F) : Prop :=
-  ρ = value
-
 //! > ==========================================================================
 
 //! > u16_safe_divmod libfunc
@@ -596,39 +400,6 @@ store_temp<Tuple<u16, u16>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: u16, [2]: NonZero<u16>) -> (RangeCheck, Tuple<u16, u16>);
-
-//! > test_name
-u16_safe_divmod libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .u16_safe_divmod_code.lean
-open tactic
-
-variables {F : Type} [field F] [decidable_eq F]
-variable  mem : F → F
-variable  σ : register_state F
-
-def one : F := (1 : F) -- 1
-
-def spec_u16_safe_divmod (mem : F → F) (κ : ℕ) (range_check a b ρ_q ρ_r : F) : Prop :=
-  true
-
-def spec_u16_safe_divmod (mem : F → F) (κ : ℕ) (range_check a b ρ_q ρ_r : F) : Prop :=
-  ∃ orig_range_check : F, orig_range_check = range_check ∧
-  ∃ r_plus_1 : F,
-  ∃ b_minus_r_minus_1 : F,
-  ∃ bq : F,
-  ∃ q : F,
-  ∃ r : F, r = mem range_check ∧
-  r_plus_1 = r + one ∧
-  b_minus_r_minus_1 = b - r_plus_1 ∧
-  is_range_checked (rc_bound F) b_minus_r_minus_1 ∧
-  is_range_checked (rc_bound F) q ∧
-  bq = b * q ∧
-  a = bq + r ∧
-  ρ_q = q ∧
-  ρ_r = r
 
 //! > ==========================================================================
 

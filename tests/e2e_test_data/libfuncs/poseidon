@@ -118,16 +118,3 @@ store_temp<felt252>([17]) -> ([17]); // 23
 return([16], [17]); // 24
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, felt252);
-
-//! > test_name
-felt252_div
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .felt252_div_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_felt252_div (mem : F → F) (κ : ℕ) (s0 s1 s2 poseidon ρ_poseidon ρ_r0 ρ_r1 ρ_r2 : F) : Prop :=
-  true
-
-def auto_spec_felt252_div (mem : F → F) (κ : ℕ) (s0 s1 s2 poseidon ρ_poseidon ρ_r0 ρ_r1 ρ_r2 : F) : Prop :=
-  true

@@ -36,12 +36,6 @@ return([1]); // 3
 
 test::foo@0() -> (test::SingleVariant);
 
-//! > test_name
-init enum with a single variant
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > match enum with a single variant
@@ -87,12 +81,6 @@ return([2]); // 5
 
 test::foo@0([0]: test::SingleVariant) -> (felt252);
 
-//! > test_name
-match enum with a single variant
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > init enum with 2 variants
@@ -134,12 +122,6 @@ store_temp<test::Option>([1]) -> ([1]); // 2
 return([1]); // 3
 
 test::foo@0() -> (test::Option);
-
-//! > test_name
-init enum with 2 variants
-
-//! > lean_soundness
--- Could not find lean info.
 
 //! > ==========================================================================
 
@@ -200,19 +182,6 @@ return([4]); // 10
 
 test::foo@0([0]: test::Option) -> (felt252);
 
-//! > test_name
-match enum with 2 variants
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .match_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_match (mem : F → F) (κ : ℕ) ( : F) : Prop :=
-  true
-
-def auto_spec_match (mem : F → F) (κ : ℕ) ( : F) : Prop :=
-  true
-
 //! > ==========================================================================
 
 //! > init a non-first variant in an enum with more than 2 variants
@@ -255,12 +224,6 @@ return([1]); // 3
 
 test::foo@0() -> (test::Color);
 
-//! > test_name
-init a non-first variant in an enum with more than 2 variants
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > init the first variant in an enum with more than 2 variants
@@ -302,12 +265,6 @@ store_temp<test::Color>([1]) -> ([1]); // 2
 return([1]); // 3
 
 test::foo@0() -> (test::Color);
-
-//! > test_name
-init the first variant in an enum with more than 2 variants
-
-//! > lean_soundness
--- Could not find lean info.
 
 //! > ==========================================================================
 

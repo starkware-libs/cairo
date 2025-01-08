@@ -444,6 +444,7 @@ pub fn run_test_file(
             write_lean_completeness_spec_file(&path, lean_func_name, result.outputs.get("lean_completeness_spec"))?;
             write_lean_completeness_file(&path, lean_func_name, result.outputs.get("lean_completeness"))?;
             write_lean_code_file(&path, lean_func_name, result.outputs.get("lean_code"))?;
+            test.attributes.shift_remove("test_name");
         }
 
         // Fix if in fix mode, unrelated to the result.

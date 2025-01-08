@@ -69,19 +69,6 @@ return([1], [2]); // 3
 
 test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 
-//! > test_name
-felt252_dict_new libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .felt252_dict_new_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_felt252_dict_new (mem : F → F) (κ : ℕ) (segment_arena_ptr ρ_segment_arena_ptr ρ_new_dict_end : F) : Prop :=
-  true
-
-def auto_spec_felt252_dict_new (mem : F → F) (κ : ℕ) (segment_arena_ptr ρ_segment_arena_ptr ρ_new_dict_end : F) : Prop :=
-  true
-
 //! > ==========================================================================
 
 //! > Test dict insert.
@@ -132,19 +119,6 @@ store_temp<Felt252Dict<felt252>>([5]) -> ([5]); // 3
 return([5]); // 4
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Dict<felt252>);
-
-//! > test_name
-Test dict insert.
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .Test_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_Test (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
-def auto_spec_Test (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
 
 //! > ==========================================================================
 
@@ -200,19 +174,6 @@ store_temp<felt252>([3]) -> ([3]); // 5
 return([5], [3]); // 6
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, felt252);
-
-//! > test_name
-Test dict get.
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .Test_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_Test (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
-def auto_spec_Test (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
 
 //! > ==========================================================================
 
@@ -318,19 +279,6 @@ store_temp<Felt252Dict<felt252>>([18]) -> ([18]); // 17
 return([18]); // 18
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>);
-
-//! > test_name
-Dict get and insert multiple calls
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .Dict_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_Dict (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
-def auto_spec_Dict (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
 
 //! > ==========================================================================
 
@@ -579,12 +527,6 @@ return([4], [6], [5], [7]); // 6
 
 test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);
 
-//! > test_name
-felt252_dict_squash libfunc
-
-//! > lean_soundness
--- Could not find lean info.
-
 //! > ==========================================================================
 
 //! > felt252_dict_entry get
@@ -630,19 +572,6 @@ return([4]); // 3
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Tuple<Felt252DictEntry<felt252>, felt252>);
 
-//! > test_name
-felt252_dict_entry get
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .felt252_dict_entry_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
-def auto_spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
 //! > ==========================================================================
 
 //! > felt252_dict_entry finalize
@@ -682,19 +611,6 @@ store_temp<Felt252Dict<felt252>>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: Felt252DictEntry<felt252>, [1]: felt252) -> (Felt252Dict<felt252>);
-
-//! > test_name
-felt252_dict_entry finalize
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .felt252_dict_entry_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_entry new_value ρ_dict_entry : F) : Prop :=
-  true
-
-def auto_spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_entry new_value ρ_dict_entry : F) : Prop :=
-  true
 
 //! > ==========================================================================
 
@@ -765,16 +681,3 @@ store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>>([11]) -> ([11]); // 5
 return([11]); // 6
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252, [3]: felt252, [4]: felt252) -> (Tuple<Felt252Dict<felt252>, felt252, felt252>);
-
-//! > test_name
-felt252_dict_entry repeated update
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .felt252_dict_entry_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true
-
-def auto_spec_felt252_dict_entry (mem : F → F) (κ : ℕ) (dict_ptr key ρ_dict_ptr ρ_prev_value : F) : Prop :=
-  true

@@ -84,19 +84,6 @@ return([4], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::class_hash::ClassHash>);
 
-//! > test_name
-class_hash_try_from_felt252 libfunc
-
-//! > lean_soundness
-import starkware.cairo.lean.semantics.soundness.prelude
-import .class_hash_try_from_felt252_code.lean
-variables {F : Type} [field F] [decidable_eq F]
-def spec_class_hash_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
-  true
-
-def auto_spec_class_hash_try_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
-  true
-
 //! > ==========================================================================
 
 //! > class_hash_to_felt252 libfunc
@@ -130,9 +117,3 @@ store_temp<felt252>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: ClassHash) -> (felt252);
-
-//! > test_name
-class_hash_to_felt252 libfunc
-
-//! > lean_soundness
--- Could not find lean info.
