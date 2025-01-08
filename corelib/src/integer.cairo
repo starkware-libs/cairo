@@ -13,22 +13,40 @@
 //!
 //! Integer types implement various traits that enable common operations:
 //!
-//! * Basic arithmetic via [`Add`], [`Sub`], [`Mul`], and [`DivRem`]
+//! * Basic arithmetic via [`Add`], [`Sub`], [`Mul`], [`Div`], [`Rem`] and [`DivRem`]
 //! * Bitwise operations via [`BitAnd`], [`BitOr`], [`BitXor`], and [`BitNot`]
 //! * Comparison via [`PartialEq`] and [`PartialOrd`]
 //! * Safe arithmetic via [`CheckedAdd`], [`CheckedSub`], [`CheckedMul`]
-//! * Wrapping arithmetic via [`WrappingAdd`], [`WrappingSub`]
+//! * Wrapping arithmetic via [`WrappingAdd`], [`WrappingSub`], [`WrappingMul`]
 //! * Overflow handling via [`OverflowingAdd`], [`OverflowingSub`], [`OverflowingMul`]
+//!
+//! [`Add`]: crate::traits::Add
+//! [`Sub`]: crate::traits::Sub
+//! [`Mul`]: crate::traits::Mul
+//! [`Div`]: crate::traits::Div
+//! [`Rem`]: crate::traits::Rem
+//! [`DivRem`]: crate::traits::DivRem
+//! [`CheckedAdd`]: crate::num::traits::ops::checked::CheckedAdd
+//! [`CheckedSub`]: crate::num::traits::ops::checked::CheckedSub
+//! [`CheckedMul`]: crate::num::traits::ops::checked::CheckedMul
+//! [`WrappingAdd`]: crate::num::traits::ops::wrapping::WrappingAdd
+//! [`WrappingSub`]: crate::num::traits::ops::wrapping::WrappingSub
+//! [`WrappingMul`]: crate::num::traits::ops::wrapping::WrappingMul
+//! [`OverflowingAdd`]: crate::num::traits::ops::overflowing::OverflowingAdd
+//! [`OverflowingSub`]: crate::num::traits::ops::overflowing::OverflowingSub
+//! [`OverflowingMul`]: crate::num::traits::ops::overflowing::OverflowingMul
 //!
 //! # Examples
 //!
-//! Basic arithmetic:
+//! Basic operators:
 //!
 //! ```
 //! let a: u8 = 5;
 //! let b: u8 = 10;
-//! let sum = a + b; // 15
-//! let product = a * b; // 50
+//! assert_eq!(a + b, 15);
+//! assert_eq!(a * b, 50);
+//! assert_eq!(a & b, 0);
+//! assert!(a < b);
 //! ```
 //!
 //! Checked operations:
@@ -36,8 +54,8 @@
 //! ```
 //! use core::traits::CheckedAdd;
 //!
-//! let max = u8::MAX;
-//! let result = max.checked_add(1_u8); // Returns None (overflow)
+//! let max: u8 = Bounded::max();
+//! assert!(max.checked_add(1_u8).is_none());
 //! ```
 //!
 //! # Conversions
@@ -46,13 +64,6 @@
 //!
 //! * [`TryInto`] for potentially fallible conversions
 //! * [`Into`] for infallible conversions to wider types
-//!
-//! # Panics
-//!
-//! Integer operations will panic on:
-//! * Overflow in non-wrapping arithmetic operations
-//!
-//! Use the checked variants of these operations to handle these cases safely.
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
@@ -70,6 +81,7 @@ impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 
 impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
 
+/// The 128-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u128;
 
@@ -288,6 +300,7 @@ pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nop
 
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
+/// The 8-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u8;
 
@@ -441,6 +454,7 @@ impl U8BitSize of crate::num::traits::BitSize<u8> {
     }
 }
 
+/// The 16-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u16;
 
@@ -600,6 +614,7 @@ impl U16BitSize of crate::num::traits::BitSize<u16> {
     }
 }
 
+/// The 32-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u32;
 
@@ -759,6 +774,7 @@ impl U32BitSize of crate::num::traits::BitSize<u32> {
     }
 }
 
+/// The 64-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u64;
 
@@ -915,6 +931,10 @@ impl U64BitSize of crate::num::traits::BitSize<u64> {
     }
 }
 
+/// The 256-bit unsigned integer type.
+///
+/// The `u256` type is composed of two 128-bit parts: the low part [0, 128) and the high part [128,
+/// 256).
 #[derive(Copy, Drop, Hash, PartialEq, Serde)]
 pub struct u256 {
     pub low: u128,
@@ -1908,6 +1928,7 @@ impl I128OverflowingSub = signed_int_impls::OverflowingSubImpl<i128>;
 impl I128WrappingAdd = signed_int_impls::WrappingAddImpl<i128>;
 impl I128WrappingSub = signed_int_impls::WrappingSubImpl<i128>;
 
+/// The 8-bit signed integer type.
 #[derive(Copy, Drop)]
 pub extern type i8;
 
@@ -1992,6 +2013,7 @@ impl I8BitSize of crate::num::traits::BitSize<i8> {
     }
 }
 
+/// The 16-bit signed integer type.
 #[derive(Copy, Drop)]
 pub extern type i16;
 
@@ -2077,6 +2099,7 @@ impl I16BitSize of crate::num::traits::BitSize<i16> {
     }
 }
 
+/// The 32-bit signed integer type.
 #[derive(Copy, Drop)]
 pub extern type i32;
 
@@ -2162,6 +2185,7 @@ impl I32BitSize of crate::num::traits::BitSize<i32> {
     }
 }
 
+/// The 64-bit signed integer type.
 #[derive(Copy, Drop)]
 pub extern type i64;
 
@@ -2247,6 +2271,7 @@ impl I64BitSize of crate::num::traits::BitSize<i64> {
     }
 }
 
+/// The 128-bit signed integer type.
 #[derive(Copy, Drop)]
 pub extern type i128;
 
