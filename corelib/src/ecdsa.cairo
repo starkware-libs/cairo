@@ -173,7 +173,7 @@ pub fn recover_public_key(
 ) -> Option<felt252> {
     let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
     let y: u256 = signature_r_point.try_into()?.y().into();
-    // If the actual the parity of the actual y is different than requested, flip the parity.
+    // If the actual parity of the actual y is different than requested, flip the parity.
     if (y.low & 1 == 1) != y_parity {
         signature_r_point = -signature_r_point;
     }
