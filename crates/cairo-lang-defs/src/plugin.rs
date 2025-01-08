@@ -95,7 +95,7 @@ pub struct MacroPluginMetadata<'a> {
     pub edition: Edition,
 }
 
-// TOD(spapini): Move to another place.
+// TODO(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
