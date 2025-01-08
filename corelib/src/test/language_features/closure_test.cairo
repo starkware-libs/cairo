@@ -41,6 +41,20 @@ fn panicable_closure() {
     assert_eq!(c(2), 5);
 }
 
+struct Callable<F, +core::ops::Fn<F, ()>> {
+    f: F,
+}
+
+#[test]
+fn closure_snapshot_call() {
+    let callable = Callable { f: || 10_u8 };
+    assert_eq!(core::ops::FnOnce::call(callable.f, ()), 10);
+    assert_eq!(core::ops::Fn::call(@callable.f, ()), 10);
+    // With snapshot
+    assert_eq!(core::ops::FnOnce::call(@callable.f, ()), 10);
+    assert_eq!(core::ops::Fn::call(@@callable.f, ()), 10);
+}
+
 fn option_map<T, F, +core::ops::FnOnce<F, (T,)>, +Drop<F>>(
     opt: Option<T>, f: F,
 ) -> Option<core::ops::FnOnce::<F, (T,)>::Output> {
@@ -83,6 +97,7 @@ impl ArrayExt of ArrayExtTrait {
         output
     }
 }
+
 #[test]
 fn array_map_test() {
     let arr = array![1, 2, 3];

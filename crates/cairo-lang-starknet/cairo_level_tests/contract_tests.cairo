@@ -15,8 +15,8 @@ mod test_contract {
     #[storage]
     struct Storage {
         value: felt252,
-        mapping: Map::<u128, bool>,
-        large_mapping: Map::<u256, u256>,
+        mapping: Map<u128, bool>,
+        large_mapping: Map<u256, u256>,
     }
 
     #[external(v0)]

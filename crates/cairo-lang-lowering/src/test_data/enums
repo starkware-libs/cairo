@@ -19,7 +19,7 @@ foo
 enum MyEnum {
     A: (),
     B: felt252,
-    C: Box::<((), felt252)>,
+    C: Box<((), felt252)>,
 }
 
 #[inline(never)]

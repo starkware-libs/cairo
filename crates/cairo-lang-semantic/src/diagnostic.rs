@@ -9,11 +9,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -696,6 +696,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as const."
+                )
+            }
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
@@ -730,6 +738,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::FailedConstantCalculation => {
+                "Failed to calculate constant.".into()
+            }
+            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                "Constant calculation depth exceeded.".into()
+            }
+            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -1016,6 +1031,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
         }
     }
 
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+        if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
+            notes
+        } else {
+            &[]
+        }
+    }
+
     fn error_code(&self) -> Option<ErrorCode> {
         self.kind.error_code()
     }
@@ -1283,6 +1306,10 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    PassConstAsNonConst {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
@@ -1297,6 +1324,9 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
+    FailedConstantCalculation,
+    ConstantCalculationDepthExceeded,
+    InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,

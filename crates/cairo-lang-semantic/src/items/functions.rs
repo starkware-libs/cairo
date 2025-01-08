@@ -749,6 +749,8 @@ pub struct Signature {
     pub implicits: Vec<semantic::TypeId>,
     #[dont_rewrite]
     pub panicable: bool,
+    #[dont_rewrite]
+    pub is_const: bool,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::FunctionSignaturePtr,
@@ -759,11 +761,12 @@ impl Signature {
         diagnostics: &mut SemanticDiagnostics,
         db: &dyn SemanticGroup,
         resolver: &mut Resolver<'_>,
-        signature_syntax: &ast::FunctionSignature,
+        declaration_syntax: &ast::FunctionDeclaration,
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
         let syntax_db = db.upcast();
+        let signature_syntax = declaration_syntax.signature(syntax_db);
         let params = function_signature_params(
             diagnostics,
             db,
@@ -773,15 +776,19 @@ impl Signature {
             environment,
         );
         let return_type =
-            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
+            function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
         let implicits =
-            function_signature_implicit_parameters(diagnostics, db, resolver, signature_syntax);
+            function_signature_implicit_parameters(diagnostics, db, resolver, &signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db.upcast()) {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
         let stable_ptr = signature_syntax.stable_ptr();
-        semantic::Signature { params, return_type, implicits, panicable, stable_ptr }
+        let is_const = matches!(
+            declaration_syntax.optional_const(syntax_db),
+            ast::OptionTerminalConst::TerminalConst(_)
+        );
+        semantic::Signature { params, return_type, implicits, panicable, stable_ptr, is_const }
     }
 }
 

@@ -20,7 +20,7 @@ impl Felt252TryIntoBoundedInt<
     const MIN: felt252, const MAX: felt252,
 > of TryInto<felt252, BoundedInt<MIN, MAX>> {
     fn try_into(self: felt252) -> Option<BoundedInt<MIN, MAX>> {
-        // Using `downcast` is allowed, since `BoundedInt` itself is not `pub`, and only has few
+        // Using `downcast` is allowed, since `BoundedInt` itself is not `pub`, and only has a few
         // specific `pub` instances, such as `u96`, `ConstZero` and `ConstOne`.
         downcast(self)
     }
@@ -233,7 +233,7 @@ impl MulMinus1<
 
 mod minus_1 {
     pub extern type Const<T, const VALUE: felt252>;
-    pub extern fn const_as_immediate<C>() -> super::BoundedInt::<-1, -1> nopanic;
+    pub extern fn const_as_immediate<C>() -> super::BoundedInt<-1, -1> nopanic;
 }
 mod nz_minus_1 {
     pub extern type Const<T, C>;

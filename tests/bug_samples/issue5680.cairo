@@ -9,7 +9,7 @@ mod c1 {
 
     #[storage]
     struct Storage {
-        v1: Map::<felt252, (u32, u32)>,
+        v1: Map<felt252, (u32, u32)>,
     }
 
     #[abi(embed_v0)]

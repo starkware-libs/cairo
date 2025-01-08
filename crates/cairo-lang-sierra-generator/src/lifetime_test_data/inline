@@ -201,13 +201,13 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(data: Array::<felt252>) -> Array::<felt252> {
+fn foo(data: Array<felt252>) -> Array<felt252> {
     bar(data)
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(data: Array::<felt252>) -> Array::<felt252> {
+fn bar(data: Array<felt252>) -> Array<felt252> {
     gas::withdraw_gas().expect('Out of gas');
 
     let mut arr = Default::default();

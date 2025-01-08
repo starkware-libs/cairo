@@ -37,3 +37,26 @@ use crate::gas::GasBuiltin;
 /// }
 /// ```
 pub extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;
+
+/// Returns the amount of gas available in the `GasBuiltin`, as well as the amount of gas unused in
+/// the local wallet.
+///
+/// Useful for asserting that a certain amount of gas used.
+/// Note: This function call costs exactly `2300` gas, so this may be ignored in calculations.
+/// # Examples
+///
+/// ```
+/// use core::testing::get_unspent_gas;
+///
+/// fn gas_heavy_function() {
+///     // ... some gas-intensive code
+/// }
+///
+/// fn test_gas_consumption() {
+///     let gas_before = get_unspent_gas();
+///     gas_heavy_function();
+///     let gas_after = get_unspent_gas();
+///     assert!(gas_after - gas_before < 100_000);
+/// }
+/// ```
+pub extern fn get_unspent_gas() -> u128 implicits(GasBuiltin) nopanic;

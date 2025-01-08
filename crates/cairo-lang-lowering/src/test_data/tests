@@ -254,7 +254,7 @@ foo
 enum MyEnum {
     A: (),
     B: felt252,
-    C: Box::<((), felt252)>,
+    C: Box<((), felt252)>,
 }
 
 //! > semantic_diagnostics
@@ -298,7 +298,7 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo(a: Array::<felt252, 5>) -> felt252 {
+fn foo(a: Array<felt252, 5>) -> felt252 {
     felt252_const::<17>()
 }
 
@@ -366,7 +366,7 @@ End:
 test_function_lowering(expect_diagnostics: true)
 
 //! > function
-fn foo(mut data: Span::<felt252>) -> u128 {
+fn foo(mut data: Span<felt252>) -> u128 {
     serde::Serde::<u128>::deserialize(ref data)
 }
 
@@ -377,9 +377,9 @@ foo
 
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:1:38
-fn foo(mut data: Span::<felt252>) -> u128 {
-                                     ^^^^
+ --> lib.cairo:1:36
+fn foo(mut data: Span<felt252>) -> u128 {
+                                   ^^^^
 
 //! > lowering_diagnostics
 

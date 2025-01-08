@@ -72,7 +72,7 @@ mod test_contract {
         /// An external method that requires the `segment_arena` builtin.
         #[external(v0)]
         fn segment_arena_builtin(ref self: ContractState) {
-            let x: Felt252Dict::<felt252> = Default::default();
+            let x: Felt252Dict<felt252> = Default::default();
             x.squash();
         }
 
