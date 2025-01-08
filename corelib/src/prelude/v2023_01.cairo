@@ -3,7 +3,7 @@ pub use starknet::storage::{
     StoragePointerWriteAccess,
 };
 pub use crate::ops::Deref;
-pub use crate::iter::{FromIterator, IntoIterator, Iterator};
+use crate::iter::{FromIterator, IntoIterator, Iterator};
 use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
 use crate::box::{Box, BoxTrait};
 use crate::byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
