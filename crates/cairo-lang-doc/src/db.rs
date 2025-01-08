@@ -389,20 +389,24 @@ fn extract_item_module_level_documentation_from_file(
 
 /// This function does 2 things to the line of comment:
 /// 1. Removes indentation
-/// 2. If it starts with one of the passed prefixes followed by a whitespace, removes the prefix and
-///    whitespace
+/// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
+///    after the prefix).
+/// 3. If the comment starts with a slash, returns None.
 fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) -> Option<String> {
     // Remove indentation.
     let dedent = line.trim_start();
     // Check if this is a doc comment.
     for comment_marker in comment_markers {
-        // TODO(mkaput): The way how removing this indentation is performed is probably
-        //   wrong. The code should probably learn how many spaces are used at the first
-        //   line of comments block, and then remove the same amount of spaces in the
-        //   block, instead of assuming just one space.
-        // Require a space after the marker (e.g. "/// " or "//! ")
-        if let Some(content) = dedent.strip_prefix(&format!("{} ", comment_marker)) {
-            return Some(content.to_string());
+        if let Some(content) = dedent.strip_prefix(*comment_marker) {
+            // TODO(mkaput): The way how removing this indentation is performed is probably
+            //   wrong. The code should probably learn how many spaces are used at the first
+            //   line of comments block, and then remove the same amount of spaces in the
+            //   block, instead of assuming just one space.
+            // Remove inner indentation if one exists.
+            if content.starts_with('/') {
+                return None;
+            }
+            return Some(content.strip_prefix(' ').unwrap_or(content).to_string());
         }
     }
     None
