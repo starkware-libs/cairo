@@ -855,8 +855,8 @@ impl ConstantEvaluateContext<'_> {
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            // Dignostic can be skipped as we would either have a semantic error for a bad arg for
-            // the function, or the arg itself could'nt have been calculated.
+            // Diagnostic can be skipped as we would either have a semantic error for a bad arg for
+            // the function, or the arg itself couldn't have been calculated.
             None => return ConstValue::Missing(skip_diagnostic()),
         };
         let mut value = match imp.function {

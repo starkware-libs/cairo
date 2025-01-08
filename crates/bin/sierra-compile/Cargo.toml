@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
-description = "Compiler executable for the Sierra intemediate representation"
+description = "Compiler executable for the Sierra intermediate representation"
 
 [dependencies]
 anyhow.workspace = true
