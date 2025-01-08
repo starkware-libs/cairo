@@ -2,13 +2,13 @@
 //!
 //! Implementing these traits allows you to overload certain operators.
 //!
+//! > Note: Other overloadable operators are also defined in the [`core::traits`] module.
+//!
 //! Only operators backed by traits can be overloaded. For
 //! example, the addition assignment operator (`+=`) can be overloaded through the [`AddAssign`]
 //! trait, but since the assignment operator (`=`) has no backing trait, there
 //! is no way of overloading its semantics. Additionally, this module does not
-//! provide any mechanism to create new operators. If traitless overloading or
-//! custom operators are required, you should look toward macros to extend
-//! Cairo's syntax.
+//! provide any mechanism to create new operators.
 //!
 //! Implementations of operator traits should be unsurprising in their
 //! respective contexts, keeping in mind their usual meanings and
@@ -71,4 +71,3 @@ mod range;
 #[allow(unused_imports)]
 use range::RangeOp;
 pub use range::{Range, RangeIterator, RangeTrait};
-
