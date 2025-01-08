@@ -25,7 +25,7 @@
 //!    let value = self.my_vec.at(0).read();
 //!
 //!    // Read element (returns Option)
-//!    let value = self.my_vec.get(0).unwrap_or(0).read();
+//!    let maybe_value: Option<u256> = self.my_vec.get(0).map(|ptr| ptr.read());
 //!    ```
 //!
 //! 2. Mutable access using `MutableVecTrait`:
