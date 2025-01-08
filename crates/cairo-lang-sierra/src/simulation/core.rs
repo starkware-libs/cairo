@@ -117,7 +117,9 @@ pub fn simulate<
             (vec![CoreValue::GasBuiltin(gas_counter), CoreValue::Uint128(gas_counter as u128)], 0)
         }
         CoreConcreteLibfunc::Gas(
-            GasConcreteLibfunc::BuiltinWithdrawGas(_) | GasConcreteLibfunc::GetBuiltinCosts(_),
+            GasConcreteLibfunc::BuiltinWithdrawGas(_)
+            | GasConcreteLibfunc::GetBuiltinCosts(_)
+            | GasConcreteLibfunc::GetUnspentGas(_),
         ) => {
             unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
         }
