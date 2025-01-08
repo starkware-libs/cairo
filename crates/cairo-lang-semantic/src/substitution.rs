@@ -509,14 +509,16 @@ impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             TypeLongId::TraitType(trait_type_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_type_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
-                    *value =
-                        self.db.impl_type_concrete_implized(impl_type_id)?.lookup_intern(self.db);
-                    return Ok(RewriteResult::Modified);
+                    if trait_type_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
+                        *value = self
+                            .db
+                            .impl_type_concrete_implized(impl_type_id)?
+                            .lookup_intern(self.db);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}
@@ -550,18 +552,18 @@ impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             ConstValue::TraitConstant(trait_constant_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_constant_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_const_id =
-                        ImplConstantId::new(*self_impl, *trait_constant_id, self.db);
-                    *value = self
-                        .db
-                        .impl_constant_concrete_implized_value(impl_const_id)?
-                        .lookup_intern(self.db);
+                    if trait_constant_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_const_id =
+                            ImplConstantId::new(*self_impl, *trait_constant_id, self.db);
+                        *value = self
+                            .db
+                            .impl_constant_concrete_implized_value(impl_const_id)?
+                            .lookup_intern(self.db);
 
-                    return Ok(RewriteResult::Modified);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}
@@ -595,15 +597,17 @@ impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             ImplLongId::TraitImpl(trait_impl_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_impl_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
-                    *value =
-                        self.db.impl_impl_concrete_implized(impl_impl_id)?.lookup_intern(self.db);
+                    if trait_impl_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
+                        *value = self
+                            .db
+                            .impl_impl_concrete_implized(impl_impl_id)?
+                            .lookup_intern(self.db);
 
-                    return Ok(RewriteResult::Modified);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}
