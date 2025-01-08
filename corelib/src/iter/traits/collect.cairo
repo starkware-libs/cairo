@@ -96,25 +96,10 @@ impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
     }
 }
 
-impl SnapshotFixedSizeArrayIntoIterator<
-    T, const SIZE: usize, +Drop<T>, impl ToSpan: core::array::ToSpanTrait<[T; SIZE], T>,
-> of IntoIterator<@[T; SIZE]> {
+impl SnapshotIteratorSpanBased<C, T, +Into<@C, Span<T>>> of IntoIterator<@C> {
     type IntoIter = crate::array::SpanIter<T>;
-    fn into_iter(self: @[T; SIZE]) -> Self::IntoIter {
-        ToSpan::span(self).into_iter()
-    }
-}
-
-impl SnapshotSpanIntoIterator<T> of IntoIterator<@Span<T>> {
-    type IntoIter = crate::array::SpanIter<T>;
-    fn into_iter(self: @Span<T>) -> Self::IntoIter {
-        (*self).into_iter()
-    }
-}
-
-impl SnapshotArrayIntoIterator<T> of IntoIterator<@Array<T>> {
-    type IntoIter = crate::array::SpanIter<T>;
-    fn into_iter(self: @Array<T>) -> Self::IntoIter {
-        self.span().into_iter()
+    fn into_iter(self: @C) -> Self::IntoIter {
+        let span: Span<T> = self.into();
+        span.into_iter()
     }
 }
