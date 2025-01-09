@@ -103,7 +103,7 @@ macro_rules! or_an_attribute {
 
 impl<'a> Parser<'a> {
     /// Creates a new parser.
-    fn new(
+    pub fn new(
         db: &'a dyn SyntaxGroup,
         file_id: FileId,
         text: &'a str,
@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Adds a diagnostic to the parser diagnostics collection.
-    fn add_diagnostic(&mut self, kind: ParserDiagnosticKind, span: TextSpan) {
+    pub fn add_diagnostic(&mut self, kind: ParserDiagnosticKind, span: TextSpan) {
         self.diagnostics.add(ParserDiagnostic { file_id: self.file_id, kind, span });
     }
 
@@ -1129,9 +1129,9 @@ impl<'a> Parser<'a> {
         name: TerminalIdentifierGreen,
         bang: TerminalNotGreen,
     ) -> ItemInlineMacroGreen {
-        let arguments = self.parse_wrapped_arg_list();
+        let token_tree_node = self.parse_token_tree_node();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemInlineMacro::new_green(self.db, attributes, name, bang, arguments, semicolon)
+        ItemInlineMacro::new_green(self.db, attributes, name, bang, token_tree_node, semicolon)
     }
 
     // ------------------------------- Expressions -------------------------------
@@ -1430,13 +1430,167 @@ impl<'a> Parser<'a> {
     fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
         let bang = self.take::<TerminalNot>();
         let macro_name = path;
-        let wrapped_expr_list = self.parse_wrapped_arg_list();
-        ExprInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list)
+        let token_tree_node = self.parse_token_tree_node();
+        ExprInlineMacro::new_green(self.db, macro_name, bang, token_tree_node)
     }
 
+    /// Either parses a leaf of the tree (i.e. any non-parenthesis token) or an inner node (i.e. a
+    /// parenthesized stream of tokens).
+    fn parse_token_tree(&mut self) -> TokenTreeGreen {
+        match self.peek().kind {
+            SyntaxKind::TerminalLBrace
+            | SyntaxKind::TerminalLParen
+            | SyntaxKind::TerminalLBrack => self.parse_token_tree_node().into(),
+            _ => self.parse_token_tree_leaf().into(),
+        }
+    }
+
+    fn parse_token_tree_leaf(&mut self) -> TokenTreeLeafGreen {
+        let token_node = self.take_token_node();
+        TokenTreeLeaf::new_green(self.db, token_node)
+    }
+
+    fn parse_token_tree_node(&mut self) -> TokenTreeNodeGreen {
+        let wrapped_token_tree = match self.peek().kind {
+            SyntaxKind::TerminalLBrace => self
+                .expect_wrapped_token_tree::<TerminalLBrace, TerminalRBrace, _, _>(
+                    BracedTokenTree::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLParen => self
+                .expect_wrapped_token_tree::<TerminalLParen, TerminalRParen, _, _>(
+                    ParenthesizedTokenTree::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrack => self
+                .expect_wrapped_token_tree::<TerminalLBrack, TerminalRBrack, _, _>(
+                    BracketedTokenTree::new_green,
+                )
+                .into(),
+            _ => {
+                return self.create_and_report_missing::<TokenTreeNode>(
+                    ParserDiagnosticKind::MissingWrappedArgList,
+                );
+            }
+        };
+        TokenTreeNode::new_green(self.db, wrapped_token_tree)
+    }
+
+    /// Assumes the current token is LTerminal.
+    /// Expected pattern: `[LTerminal](<expr>,)*<expr>?[RTerminal]`
+    /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
+    /// the parsed list and returns the result.
+    fn expect_wrapped_token_tree<
+        LTerminal: syntax::node::Terminal,
+        RTerminal: syntax::node::Terminal,
+        ListGreen,
+        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, TokenListGreen, RTerminal::Green) -> ListGreen,
+    >(
+        &mut self,
+        new_green: NewGreen,
+    ) -> ListGreen {
+        let l_term = self.take::<LTerminal>();
+        let mut tokens: Vec<TokenTreeGreen> = vec![];
+        while !matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalEndOfFile
+        ) {
+            let token_tree = self.parse_token_tree();
+            tokens.push(token_tree);
+        }
+        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
+        new_green(self.db, l_term, TokenList::new_green(self.db, tokens), r_term)
+    }
+
+    /// Takes a TokenNode according to the current SyntaxKind.
+    fn take_token_node(&mut self) -> TokenNodeGreen {
+        match self.peek().kind {
+            SyntaxKind::TerminalIdentifier => self.take::<TerminalIdentifier>().into(),
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
+            SyntaxKind::TerminalString => self.take::<TerminalString>().into(),
+            SyntaxKind::TerminalAs => self.take::<TerminalAs>().into(),
+            SyntaxKind::TerminalConst => self.take::<TerminalConst>().into(),
+            SyntaxKind::TerminalElse => self.take::<TerminalElse>().into(),
+            SyntaxKind::TerminalEnum => self.take::<TerminalEnum>().into(),
+            SyntaxKind::TerminalExtern => self.take::<TerminalExtern>().into(),
+            SyntaxKind::TerminalFalse => self.take::<TerminalFalse>().into(),
+            SyntaxKind::TerminalFunction => self.take::<TerminalFunction>().into(),
+            SyntaxKind::TerminalIf => self.take::<TerminalIf>().into(),
+            SyntaxKind::TerminalWhile => self.take::<TerminalWhile>().into(),
+            SyntaxKind::TerminalFor => self.take::<TerminalFor>().into(),
+            SyntaxKind::TerminalLoop => self.take::<TerminalLoop>().into(),
+            SyntaxKind::TerminalImpl => self.take::<TerminalImpl>().into(),
+            SyntaxKind::TerminalImplicits => self.take::<TerminalImplicits>().into(),
+            SyntaxKind::TerminalLet => self.take::<TerminalLet>().into(),
+            SyntaxKind::TerminalMatch => self.take::<TerminalMatch>().into(),
+            SyntaxKind::TerminalModule => self.take::<TerminalModule>().into(),
+            SyntaxKind::TerminalMut => self.take::<TerminalMut>().into(),
+            SyntaxKind::TerminalNoPanic => self.take::<TerminalNoPanic>().into(),
+            SyntaxKind::TerminalOf => self.take::<TerminalOf>().into(),
+            SyntaxKind::TerminalRef => self.take::<TerminalRef>().into(),
+            SyntaxKind::TerminalContinue => self.take::<TerminalContinue>().into(),
+            SyntaxKind::TerminalReturn => self.take::<TerminalReturn>().into(),
+            SyntaxKind::TerminalBreak => self.take::<TerminalBreak>().into(),
+            SyntaxKind::TerminalStruct => self.take::<TerminalStruct>().into(),
+            SyntaxKind::TerminalTrait => self.take::<TerminalTrait>().into(),
+            SyntaxKind::TerminalTrue => self.take::<TerminalTrue>().into(),
+            SyntaxKind::TerminalType => self.take::<TerminalType>().into(),
+            SyntaxKind::TerminalUse => self.take::<TerminalUse>().into(),
+            SyntaxKind::TerminalPub => self.take::<TerminalPub>().into(),
+            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
+            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
+            SyntaxKind::TerminalArrow => self.take::<TerminalArrow>().into(),
+            SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
+            SyntaxKind::TerminalBadCharacters => self.take::<TerminalBadCharacters>().into(),
+            SyntaxKind::TerminalColon => self.take::<TerminalColon>().into(),
+            SyntaxKind::TerminalColonColon => self.take::<TerminalColonColon>().into(),
+            SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
+            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
+            SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq>().into(),
+            SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
+            SyntaxKind::TerminalEndOfFile => self.take::<TerminalEndOfFile>().into(),
+            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
+            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
+            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
+            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
+            SyntaxKind::TerminalHash => self.take::<TerminalHash>().into(),
+            SyntaxKind::TerminalLBrace => self.take::<TerminalLBrace>().into(),
+            SyntaxKind::TerminalLBrack => self.take::<TerminalLBrack>().into(),
+            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
+            SyntaxKind::TerminalLParen => self.take::<TerminalLParen>().into(),
+            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
+            SyntaxKind::TerminalMatchArrow => self.take::<TerminalMatchArrow>().into(),
+            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
+            SyntaxKind::TerminalMinusEq => self.take::<TerminalMinusEq>().into(),
+            SyntaxKind::TerminalMod => self.take::<TerminalMod>().into(),
+            SyntaxKind::TerminalModEq => self.take::<TerminalModEq>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+            SyntaxKind::TerminalMulEq => self.take::<TerminalMulEq>().into(),
+            SyntaxKind::TerminalNeq => self.take::<TerminalNeq>().into(),
+            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
+            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot>().into(),
+            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
+            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+            SyntaxKind::TerminalPlusEq => self.take::<TerminalPlusEq>().into(),
+            SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark>().into(),
+            SyntaxKind::TerminalRBrace => self.take::<TerminalRBrace>().into(),
+            SyntaxKind::TerminalRBrack => self.take::<TerminalRBrack>().into(),
+            SyntaxKind::TerminalRParen => self.take::<TerminalRParen>().into(),
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
+            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
+            SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
+            _ => unreachable!("Lexer syntax kinds should be a terminal."),
+        }
+    }
     /// Returns a GreenId of a node with an ArgListParenthesized|ArgListBracketed|ArgListBraced kind
     /// or TryParseFailure if such an argument list can't be parsed.
-    fn parse_wrapped_arg_list(&mut self) -> WrappedArgListGreen {
+    pub(crate) fn parse_wrapped_arg_list(&mut self) -> WrappedArgListGreen {
         let current_token = self.peek().kind;
         match current_token {
             SyntaxKind::TerminalLParen => self
@@ -2983,7 +3137,10 @@ impl<'a> Parser<'a> {
     /// Skips terminals until `should_stop` returns `true`.
     ///
     /// Returns the span of the skipped terminals, if any.
-    fn skip_until(&mut self, should_stop: fn(SyntaxKind) -> bool) -> Result<(), SkippedError> {
+    pub(crate) fn skip_until(
+        &mut self,
+        should_stop: fn(SyntaxKind) -> bool,
+    ) -> Result<(), SkippedError> {
         let mut diag_start = None;
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
@@ -3163,7 +3320,7 @@ enum LbraceAllowed {
 }
 
 /// Indicates that [Parser::skip_until] skipped some terminals.
-struct SkippedError(TextSpan);
+pub(crate) struct SkippedError(pub(crate) TextSpan);
 
 /// Defines the parser behavior in the case of a parsing error.
 struct ErrorRecovery {

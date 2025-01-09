@@ -464,8 +464,16 @@ fn compute_expr_inline_macro_semantic(
     });
     let mut diag_added = None;
     for diagnostic in result.diagnostics {
-        diag_added =
-            Some(ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)));
+        diag_added = match diagnostic.inner_span {
+            None => {
+                Some(ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)))
+            }
+            Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
+                diagnostic.stable_ptr,
+                (offset, width),
+                PluginDiagnostic(diagnostic),
+            )),
+        }
     }
 
     let Some(code) = result.code else {

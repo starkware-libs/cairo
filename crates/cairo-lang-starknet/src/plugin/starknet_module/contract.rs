@@ -1,11 +1,14 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use const_format::formatcp;
 use indoc::formatdoc;
@@ -62,7 +65,7 @@ impl ComponentsGenerationData {
         for NestedComponent { component_path, storage_name, event_name, node } in
             self.components.iter()
         {
-            if !self.validate_component(db, diagnostics, storage_name, event_name) {
+            if !self.validate_component(db, diagnostics, storage_name, node, event_name) {
                 // Don't generate the code for the impl of HasComponent.
                 continue;
             }
@@ -125,14 +128,17 @@ impl ComponentsGenerationData {
         db: &dyn SyntaxGroup,
         diagnostics: &mut Vec<PluginDiagnostic>,
         storage_name: &ast::ExprPath,
+        component_macro: &ast::ItemInlineMacro,
         event_name: &ast::ExprPath,
     ) -> bool {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
         if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
-            diagnostics.push(PluginDiagnostic::error(
-                storage_name.stable_ptr().untyped(),
+            diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                db,
+                component_macro.stable_ptr().untyped(),
+                storage_name.as_syntax_node(),
                 format!(
                     "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
@@ -147,8 +153,10 @@ impl ComponentsGenerationData {
 
         let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
         if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
-            diagnostics.push(PluginDiagnostic::error(
-                event_name.stable_ptr().untyped(),
+            diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                db,
+                component_macro.stable_ptr().untyped(),
+                event_name.as_syntax_node(),
                 format!(
                     "`{event_name_str}` is not a nested event in the contract's \
                      `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \
@@ -563,7 +571,12 @@ pub fn handle_component_inline_macro(
     component_macro_ast: &ast::ItemInlineMacro,
     data: &mut ContractSpecificGenerationData,
 ) {
-    let macro_args = match component_macro_ast.arguments(db) {
+    let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
+        diagnostics
+            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr()));
+        return;
+    };
+    let macro_args = match legacy_component_macro_ast.arguments(db) {
         ast::WrappedArgList::ParenthesizedArgList(args) => args.arguments(db),
         _ => {
             diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
@@ -577,9 +590,30 @@ pub fn handle_component_inline_macro(
     };
 
     let (Some(component_path), Some(storage_name), Some(event_name)) = (
-        try_extract_named_macro_argument(db, diagnostics, path_arg, "path", false),
-        try_extract_named_macro_argument(db, diagnostics, storage_arg, "storage", true),
-        try_extract_named_macro_argument(db, diagnostics, event_arg, "event", true),
+        try_extract_named_macro_argument(
+            db,
+            diagnostics,
+            path_arg,
+            "path",
+            false,
+            component_macro_ast,
+        ),
+        try_extract_named_macro_argument(
+            db,
+            diagnostics,
+            storage_arg,
+            "storage",
+            true,
+            component_macro_ast,
+        ),
+        try_extract_named_macro_argument(
+            db,
+            diagnostics,
+            event_arg,
+            "event",
+            true,
+            component_macro_ast,
+        ),
     ) else {
         return;
     };
@@ -648,6 +682,7 @@ fn try_extract_named_macro_argument(
     arg_ast: &ast::Arg,
     arg_name: &str,
     only_simple_identifier: bool,
+    component_macro_stable_ptr: impl Into<SyntaxStablePtrId>,
 ) -> Option<ast::ExprPath> {
     match arg_ast.arg_clause(db) {
         ast::ArgClause::Named(clause) if clause.name(db).text(db) == arg_name => {
@@ -660,8 +695,10 @@ fn try_extract_named_macro_argument(
                     if elements.len() != 1
                         || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
                     {
-                        diagnostics.push(PluginDiagnostic::error(
-                            path.stable_ptr().untyped(),
+                        diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                            db,
+                            component_macro_stable_ptr,
+                            path.as_syntax_node(),
                             format!(
                                 "Component macro argument `{arg_name}` must be a simple \
                                  identifier.",
@@ -672,8 +709,10 @@ fn try_extract_named_macro_argument(
                     Some(path)
                 }
                 value => {
-                    diagnostics.push(PluginDiagnostic::error(
-                        value.stable_ptr().untyped(),
+                    diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                        db,
+                        component_macro_stable_ptr,
+                        value.as_syntax_node(),
                         format!(
                             "Component macro argument `{arg_name}` must be a path expression.",
                         ),
@@ -683,8 +722,10 @@ fn try_extract_named_macro_argument(
             }
         }
         _ => {
-            diagnostics.push(PluginDiagnostic::error(
-                arg_ast.stable_ptr().untyped(),
+            diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                db,
+                component_macro_stable_ptr,
+                arg_ast.as_syntax_node(),
                 format!("Invalid component macro argument. Expected `{0}: <value>`", arg_name),
             ));
             None

@@ -71,6 +71,21 @@ impl SyntaxNode {
         Self(Arc::new(inner))
     }
 
+    pub fn new_root_with_offset(
+        db: &dyn SyntaxGroup,
+        file_id: FileId,
+        green: GreenId,
+        offset: TextOffset,
+    ) -> Self {
+        let inner = SyntaxNodeInner {
+            green,
+            offset,
+            parent: None,
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
+        };
+        Self(Arc::new(inner))
+    }
+
     pub fn offset(&self) -> TextOffset {
         self.0.offset
     }

@@ -3,8 +3,16 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
+<<<<<<< HEAD
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_syntax::node::ast;
+=======
+use cairo_lang_defs::plugin_utils::{
+    PluginResultTrait, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
+    unsupported_bracket_diagnostic,
+};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
+>>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use indoc::{formatdoc, indoc};
@@ -78,8 +86,15 @@ impl InlineMacroExprPlugin for PanicMacro {
         syntax: &ast::ExprInlineMacro,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
-        let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(),
+            ));
+        };
+        let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
+            legacy_inline_macro.arguments(db)
+        else {
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
         };
 
         let mut builder = PatchBuilder::new(db, syntax);

@@ -156,10 +156,11 @@ false
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'some_macro'
     │   │       │   │   │   ├── bang (kind: TokenNot): '!'
-    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
-    │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │       ├── arguments (kind: ArgList) []
-    │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   └── arguments (kind: TokenTreeNode)
+    │   │       │   │   │       └── subtree (kind: ParenthesizedTokenTree)
+    │   │       │   │   │           ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │           ├── tokens (kind: TokenList) []
+    │   │       │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #2 (kind: StatementExpr)
     │   │       │       ├── attributes (kind: AttributeList) []
@@ -753,16 +754,17 @@ false
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenNot): '!'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
-    │   │       │   │   │       ├── lparen (kind: TerminalLParen)
-    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
-    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── arguments (kind: ArgList) []
-    │   │       │   │   │       └── rparen (kind: TerminalRParen)
-    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           ├── token (kind: TokenRParen): ')'
-    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── arguments (kind: TokenTreeNode)
+    │   │       │   │   │       └── subtree (kind: ParenthesizedTokenTree)
+    │   │       │   │   │           ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── tokens (kind: TokenList) []
+    │   │       │   │   │           └── rparen (kind: TerminalRParen)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'

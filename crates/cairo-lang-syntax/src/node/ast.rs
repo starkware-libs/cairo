@@ -5657,6 +5657,7 @@ impl From<&ExprIndexed> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+<<<<<<< HEAD
 pub struct ExprInlineMacro {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -5765,6 +5766,8 @@ impl From<&ExprInlineMacro> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+=======
+>>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
 pub struct ExprFixedSizeArray {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -16645,6 +16648,7 @@ impl From<&ItemImpl> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+<<<<<<< HEAD
 pub struct ItemInlineMacro {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -16765,6 +16769,8 @@ impl From<&ItemInlineMacro> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+=======
+>>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
 pub struct ItemHeaderDoc {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -21459,6 +21465,1338 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
 }
 impl From<&GenericParamNegativeImpl> for SyntaxStablePtrId {
     fn from(node: &GenericParamNegativeImpl) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenList(ElementList<TokenTree, 1>);
+impl Deref for TokenList {
+    type Target = ElementList<TokenTree, 1>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl TokenList {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<TokenTreeGreen>) -> TokenListGreen {
+        let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
+        TokenListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.0).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenListPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenListPtr {
+    type SyntaxNode = TokenList;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenList {
+        TokenList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenListPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenListPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenListGreen(pub GreenId);
+impl TypedSyntaxNode for TokenList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenList);
+    type StablePtr = TokenListPtr;
+    type Green = TokenListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenList,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenListPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenList> for SyntaxStablePtrId {
+    fn from(node: &TokenList) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTreeLeaf {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl TokenTreeLeaf {
+    pub const INDEX_LEAF: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, leaf: TokenNodeGreen) -> TokenTreeLeafGreen {
+        let children: Vec<GreenId> = vec![leaf.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TokenTreeLeafGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeLeaf,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl TokenTreeLeaf {
+    pub fn leaf(&self, db: &dyn SyntaxGroup) -> TokenNode {
+        TokenNode::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeLeafPtr(pub SyntaxStablePtrId);
+impl TokenTreeLeafPtr {}
+impl TypedStablePtr for TokenTreeLeafPtr {
+    type SyntaxNode = TokenTreeLeaf;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTreeLeaf {
+        TokenTreeLeaf::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreeLeafPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreeLeafPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeLeafGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTreeLeaf {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeLeaf);
+    type StablePtr = TokenTreeLeafPtr;
+    type Green = TokenTreeLeafGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeLeafGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeLeaf,
+                details: GreenNodeDetails::Node {
+                    children: vec![TokenNode::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeLeaf,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeLeaf
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreeLeafPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenTreeLeaf> for SyntaxStablePtrId {
+    fn from(node: &TokenTreeLeaf) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTreeNode {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl TokenTreeNode {
+    pub const INDEX_SUBTREE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, subtree: WrappedTokenTreeGreen) -> TokenTreeNodeGreen {
+        let children: Vec<GreenId> = vec![subtree.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TokenTreeNodeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeNode,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl TokenTreeNode {
+    pub fn subtree(&self, db: &dyn SyntaxGroup) -> WrappedTokenTree {
+        WrappedTokenTree::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeNodePtr(pub SyntaxStablePtrId);
+impl TokenTreeNodePtr {}
+impl TypedStablePtr for TokenTreeNodePtr {
+    type SyntaxNode = TokenTreeNode;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
+        TokenTreeNode::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreeNodePtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreeNodePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeNodeGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTreeNode {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeNode);
+    type StablePtr = TokenTreeNodePtr;
+    type Green = TokenTreeNodeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeNodeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeNode,
+                details: GreenNodeDetails::Node {
+                    children: vec![WrappedTokenTree::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeNode,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeNode
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreeNodePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenTreeNode> for SyntaxStablePtrId {
+    fn from(node: &TokenTreeNode) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum TokenTree {
+    Token(TokenTreeLeaf),
+    Subtree(TokenTreeNode),
+    Missing(TokenTreeMissing),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreePtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenTreePtr {
+    type SyntaxNode = TokenTree;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTree {
+        TokenTree::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreePtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreePtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TokenTreeLeafPtr> for TokenTreePtr {
+    fn from(value: TokenTreeLeafPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeNodePtr> for TokenTreePtr {
+    fn from(value: TokenTreeNodePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeMissingPtr> for TokenTreePtr {
+    fn from(value: TokenTreeMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeLeafGreen> for TokenTreeGreen {
+    fn from(value: TokenTreeLeafGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeNodeGreen> for TokenTreeGreen {
+    fn from(value: TokenTreeNodeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeMissingGreen> for TokenTreeGreen {
+    fn from(value: TokenTreeMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = TokenTreePtr;
+    type Green = TokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeGreen(TokenTreeMissing::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TokenTreeLeaf => {
+                TokenTree::Token(TokenTreeLeaf::from_syntax_node(db, node))
+            }
+            SyntaxKind::TokenTreeNode => {
+                TokenTree::Subtree(TokenTreeNode::from_syntax_node(db, node))
+            }
+            SyntaxKind::TokenTreeMissing => {
+                TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenTree"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            TokenTree::Token(x) => x.as_syntax_node(),
+            TokenTree::Subtree(x) => x.as_syntax_node(),
+            TokenTree::Missing(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&TokenTree> for SyntaxStablePtrId {
+    fn from(node: &TokenTree) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl TokenTree {
+    /// Checks if a kind of a variant of [TokenTree].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::TokenTreeLeaf | SyntaxKind::TokenTreeNode | SyntaxKind::TokenTreeMissing
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTreeMissing {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl TokenTreeMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> TokenTreeMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TokenTreeMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl TokenTreeMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeMissingPtr(pub SyntaxStablePtrId);
+impl TokenTreeMissingPtr {}
+impl TypedStablePtr for TokenTreeMissingPtr {
+    type SyntaxNode = TokenTreeMissing;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTreeMissing {
+        TokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreeMissingPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreeMissingPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeMissingGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTreeMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
+    type StablePtr = TokenTreeMissingPtr;
+    type Green = TokenTreeMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeMissing
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreeMissingPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenTreeMissing> for SyntaxStablePtrId {
+    fn from(node: &TokenTreeMissing) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum WrappedTokenTree {
+    Parenthesized(ParenthesizedTokenTree),
+    Braced(BracedTokenTree),
+    Bracketed(BracketedTokenTree),
+    Missing(WrappedTokenTreeMissing),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedTokenTreePtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for WrappedTokenTreePtr {
+    type SyntaxNode = WrappedTokenTree;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedTokenTree {
+        WrappedTokenTree::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<WrappedTokenTreePtr> for SyntaxStablePtrId {
+    fn from(ptr: WrappedTokenTreePtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<ParenthesizedTokenTreePtr> for WrappedTokenTreePtr {
+    fn from(value: ParenthesizedTokenTreePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<BracedTokenTreePtr> for WrappedTokenTreePtr {
+    fn from(value: BracedTokenTreePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<BracketedTokenTreePtr> for WrappedTokenTreePtr {
+    fn from(value: BracketedTokenTreePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<WrappedTokenTreeMissingPtr> for WrappedTokenTreePtr {
+    fn from(value: WrappedTokenTreeMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ParenthesizedTokenTreeGreen> for WrappedTokenTreeGreen {
+    fn from(value: ParenthesizedTokenTreeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<BracedTokenTreeGreen> for WrappedTokenTreeGreen {
+    fn from(value: BracedTokenTreeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<BracketedTokenTreeGreen> for WrappedTokenTreeGreen {
+    fn from(value: BracketedTokenTreeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<WrappedTokenTreeMissingGreen> for WrappedTokenTreeGreen {
+    fn from(value: WrappedTokenTreeMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedTokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedTokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = WrappedTokenTreePtr;
+    type Green = WrappedTokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        WrappedTokenTreeGreen(WrappedTokenTreeMissing::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ParenthesizedTokenTree => {
+                WrappedTokenTree::Parenthesized(ParenthesizedTokenTree::from_syntax_node(db, node))
+            }
+            SyntaxKind::BracedTokenTree => {
+                WrappedTokenTree::Braced(BracedTokenTree::from_syntax_node(db, node))
+            }
+            SyntaxKind::BracketedTokenTree => {
+                WrappedTokenTree::Bracketed(BracketedTokenTree::from_syntax_node(db, node))
+            }
+            SyntaxKind::WrappedTokenTreeMissing => {
+                WrappedTokenTree::Missing(WrappedTokenTreeMissing::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "WrappedTokenTree"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            WrappedTokenTree::Parenthesized(x) => x.as_syntax_node(),
+            WrappedTokenTree::Braced(x) => x.as_syntax_node(),
+            WrappedTokenTree::Bracketed(x) => x.as_syntax_node(),
+            WrappedTokenTree::Missing(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        WrappedTokenTreePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&WrappedTokenTree> for SyntaxStablePtrId {
+    fn from(node: &WrappedTokenTree) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl WrappedTokenTree {
+    /// Checks if a kind of a variant of [WrappedTokenTree].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::ParenthesizedTokenTree
+                | SyntaxKind::BracedTokenTree
+                | SyntaxKind::BracketedTokenTree
+                | SyntaxKind::WrappedTokenTreeMissing
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WrappedTokenTreeMissing {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl WrappedTokenTreeMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> WrappedTokenTreeMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        WrappedTokenTreeMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::WrappedTokenTreeMissing,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl WrappedTokenTreeMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedTokenTreeMissingPtr(pub SyntaxStablePtrId);
+impl WrappedTokenTreeMissingPtr {}
+impl TypedStablePtr for WrappedTokenTreeMissingPtr {
+    type SyntaxNode = WrappedTokenTreeMissing;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedTokenTreeMissing {
+        WrappedTokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<WrappedTokenTreeMissingPtr> for SyntaxStablePtrId {
+    fn from(ptr: WrappedTokenTreeMissingPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedTokenTreeMissingGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedTokenTreeMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
+    type StablePtr = WrappedTokenTreeMissingPtr;
+    type Green = WrappedTokenTreeMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        WrappedTokenTreeMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::WrappedTokenTreeMissing,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::WrappedTokenTreeMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::WrappedTokenTreeMissing
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        WrappedTokenTreeMissingPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&WrappedTokenTreeMissing> for SyntaxStablePtrId {
+    fn from(node: &WrappedTokenTreeMissing) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ParenthesizedTokenTree {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ParenthesizedTokenTree {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_TOKENS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lparen: TerminalLParenGreen,
+        tokens: TokenListGreen,
+        rparen: TerminalRParenGreen,
+    ) -> ParenthesizedTokenTreeGreen {
+        let children: Vec<GreenId> = vec![lparen.0, tokens.0, rparen.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ParenthesizedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ParenthesizedTokenTree,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ParenthesizedTokenTree {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
+        TokenList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ParenthesizedTokenTreePtr(pub SyntaxStablePtrId);
+impl ParenthesizedTokenTreePtr {}
+impl TypedStablePtr for ParenthesizedTokenTreePtr {
+    type SyntaxNode = ParenthesizedTokenTree;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ParenthesizedTokenTree {
+        ParenthesizedTokenTree::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ParenthesizedTokenTreePtr> for SyntaxStablePtrId {
+    fn from(ptr: ParenthesizedTokenTreePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ParenthesizedTokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for ParenthesizedTokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParenthesizedTokenTree);
+    type StablePtr = ParenthesizedTokenTreePtr;
+    type Green = ParenthesizedTokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ParenthesizedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ParenthesizedTokenTree,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalLParen::missing(db).0,
+                        TokenList::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ParenthesizedTokenTree,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ParenthesizedTokenTree
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParenthesizedTokenTreePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ParenthesizedTokenTree> for SyntaxStablePtrId {
+    fn from(node: &ParenthesizedTokenTree) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct BracedTokenTree {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl BracedTokenTree {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_TOKENS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        tokens: TokenListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> BracedTokenTreeGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, tokens.0, rbrace.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        BracedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::BracedTokenTree,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl BracedTokenTree {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
+        TokenList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracedTokenTreePtr(pub SyntaxStablePtrId);
+impl BracedTokenTreePtr {}
+impl TypedStablePtr for BracedTokenTreePtr {
+    type SyntaxNode = BracedTokenTree;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> BracedTokenTree {
+        BracedTokenTree::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<BracedTokenTreePtr> for SyntaxStablePtrId {
+    fn from(ptr: BracedTokenTreePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracedTokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for BracedTokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracedTokenTree);
+    type StablePtr = BracedTokenTreePtr;
+    type Green = BracedTokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        BracedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::BracedTokenTree,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalLBrace::missing(db).0,
+                        TokenList::missing(db).0,
+                        TerminalRBrace::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::BracedTokenTree,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::BracedTokenTree
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        BracedTokenTreePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&BracedTokenTree> for SyntaxStablePtrId {
+    fn from(node: &BracedTokenTree) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct BracketedTokenTree {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl BracketedTokenTree {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_TOKENS: usize = 1;
+    pub const INDEX_RBRACK: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        tokens: TokenListGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> BracketedTokenTreeGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, tokens.0, rbrack.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        BracketedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::BracketedTokenTree,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl BracketedTokenTree {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn tokens(&self, db: &dyn SyntaxGroup) -> TokenList {
+        TokenList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracketedTokenTreePtr(pub SyntaxStablePtrId);
+impl BracketedTokenTreePtr {}
+impl TypedStablePtr for BracketedTokenTreePtr {
+    type SyntaxNode = BracketedTokenTree;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> BracketedTokenTree {
+        BracketedTokenTree::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<BracketedTokenTreePtr> for SyntaxStablePtrId {
+    fn from(ptr: BracketedTokenTreePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracketedTokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for BracketedTokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracketedTokenTree);
+    type StablePtr = BracketedTokenTreePtr;
+    type Green = BracketedTokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        BracketedTokenTreeGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::BracketedTokenTree,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalLBrack::missing(db).0,
+                        TokenList::missing(db).0,
+                        TerminalRBrack::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::BracketedTokenTree,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::BracketedTokenTree
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        BracketedTokenTreePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&BracketedTokenTree> for SyntaxStablePtrId {
+    fn from(node: &BracketedTokenTree) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ExprInlineMacro {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_BANG: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        path: ExprPathGreen,
+        bang: TerminalNotGreen,
+        arguments: TokenTreeNodeGreen,
+    ) -> ExprInlineMacroGreen {
+        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprInlineMacro {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
+        TokenTreeNode::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprInlineMacroPtr(pub SyntaxStablePtrId);
+impl ExprInlineMacroPtr {}
+impl TypedStablePtr for ExprInlineMacroPtr {
+    type SyntaxNode = ExprInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprInlineMacro {
+        ExprInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for ExprInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprInlineMacro);
+    type StablePtr = ExprInlineMacroPtr;
+    type Green = ExprInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        ExprPath::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        TokenTreeNode::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &ExprInlineMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ItemInlineMacro {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_BANG: usize = 2;
+    pub const INDEX_ARGUMENTS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        bang: TerminalNotGreen,
+        arguments: TokenTreeNodeGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> ItemInlineMacroGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ItemInlineMacro {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
+        TokenTreeNode::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroPtr(pub SyntaxStablePtrId);
+impl ItemInlineMacroPtr {}
+impl TypedStablePtr for ItemInlineMacroPtr {
+    type SyntaxNode = ItemInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ItemInlineMacro {
+        ItemInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ItemInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: ItemInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for ItemInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemInlineMacro);
+    type StablePtr = ItemInlineMacroPtr;
+    type Green = ItemInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        AttributeList::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        TokenTreeNode::missing(db).0,
+                        TerminalSemicolon::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ItemInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &ItemInlineMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct LegacyExprInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl LegacyExprInlineMacro {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_BANG: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        path: ExprPathGreen,
+        bang: TerminalNotGreen,
+        arguments: WrappedArgListGreen,
+    ) -> LegacyExprInlineMacroGreen {
+        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        LegacyExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::LegacyExprInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl LegacyExprInlineMacro {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct LegacyExprInlineMacroPtr(pub SyntaxStablePtrId);
+impl LegacyExprInlineMacroPtr {}
+impl TypedStablePtr for LegacyExprInlineMacroPtr {
+    type SyntaxNode = LegacyExprInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> LegacyExprInlineMacro {
+        LegacyExprInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<LegacyExprInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: LegacyExprInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct LegacyExprInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for LegacyExprInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::LegacyExprInlineMacro);
+    type StablePtr = LegacyExprInlineMacroPtr;
+    type Green = LegacyExprInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        LegacyExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::LegacyExprInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        ExprPath::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        WrappedArgList::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::LegacyExprInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::LegacyExprInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        LegacyExprInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&LegacyExprInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &LegacyExprInlineMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct LegacyItemInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl LegacyItemInlineMacro {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_BANG: usize = 2;
+    pub const INDEX_ARGUMENTS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        bang: TerminalNotGreen,
+        arguments: WrappedArgListGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> LegacyItemInlineMacroGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        LegacyItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::LegacyItemInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl LegacyItemInlineMacro {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct LegacyItemInlineMacroPtr(pub SyntaxStablePtrId);
+impl LegacyItemInlineMacroPtr {}
+impl TypedStablePtr for LegacyItemInlineMacroPtr {
+    type SyntaxNode = LegacyItemInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> LegacyItemInlineMacro {
+        LegacyItemInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<LegacyItemInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: LegacyItemInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct LegacyItemInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for LegacyItemInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::LegacyItemInlineMacro);
+    type StablePtr = LegacyItemInlineMacroPtr;
+    type Green = LegacyItemInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        LegacyItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::LegacyItemInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        AttributeList::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        WrappedArgList::missing(db).0,
+                        TerminalSemicolon::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::LegacyItemInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::LegacyItemInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        LegacyItemInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&LegacyItemInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &LegacyItemInlineMacro) -> Self {
         node.stable_ptr().untyped()
     }
 }
