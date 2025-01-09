@@ -27,7 +27,7 @@ pub use crate::zeroable::NonZero;
 pub use crate::{
     RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, starknet, to_byte_array, usize,
 };
-use crate::iter::{FromIterator, IntoIterator, Iterator};
+use crate::iter::{IntoIterator, Iterator};
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]
