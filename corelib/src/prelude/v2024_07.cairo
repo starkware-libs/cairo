@@ -17,6 +17,6 @@ pub use crate::traits::{
     PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
 pub use crate::{assert, bool, felt252, starknet, usize};
-use crate::iter::{FromIterator, IntoIterator, Iterator};
+use crate::iter::{IntoIterator, Iterator};
 
 pub use crate::zeroable::NonZero;
