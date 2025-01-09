@@ -85,3 +85,24 @@ fn test_user_defined_hash() {
         'Bad hash of StructForHash',
     );
 }
+
+#[test]
+fn test_byte_array_hash() {
+    let byte_array: ByteArray = "This is a sentence that is longer than 31 characters.";
+
+    let word_1 = 'This is a sentence that is long';
+    let data_length = 1;
+    let pending_word = 'er than 31 characters.';
+    let pending_word_len = 22;
+
+    assert_eq(
+        @PoseidonTrait::new().update_with(byte_array).finalize(),
+        @PoseidonTrait::new()
+            .update(data_length)
+            .update(word_1)
+            .update(pending_word_len)
+            .update(pending_word)
+            .finalize(),
+        'Bad hash for ByteArray',
+    );
+}
