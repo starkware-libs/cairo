@@ -805,30 +805,21 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'inline_item_macro'
     │   │   ├── bang (kind: TokenNot): '!'
-    │   │   ├── arguments (kind: ArgListParenthesized)
-    │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │   │   ├── arguments (kind: ArgList)
-    │   │   │   │   ├── item #0 (kind: Arg)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │   │       └── value (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'x'
-    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   ├── item #1 (kind: Arg)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │   │       └── value (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TokenIdentifier): 'y'
-    │   │   │   │   ├── separator #1 (kind: TokenComma): ','
-    │   │   │   │   └── item #2 (kind: Arg)
-    │   │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │           └── value (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │                   └── ident (kind: TokenIdentifier): 'z'
-    │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   ├── arguments (kind: TokenTreeNode)
+    │   │   │   └── subtree (kind: ParenthesizedTokenTree)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── tokens (kind: TokenList)
+    │   │   │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TokenIdentifier): 'x'
+    │   │   │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TokenComma): ','
+    │   │   │       │   ├── child #2 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TokenIdentifier): 'y'
+    │   │   │       │   ├── child #3 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TokenComma): ','
+    │   │   │       │   └── child #4 (kind: TokenTreeLeaf)
+    │   │   │       │       └── leaf (kind: TokenIdentifier): 'z'
+    │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   └── child #12: Missing []
     └── eof (kind: TokenEndOfFile).
@@ -2897,53 +2888,44 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenNot): '!'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   ├── arguments (kind: ArgListParenthesized)
-    │   │   │   ├── lparen (kind: TerminalLParen)
-    │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   ├── token (kind: TokenLParen): '('
-    │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   ├── arguments (kind: ArgList)
-    │   │   │   │   ├── item #0 (kind: Arg)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │   │       └── value (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TerminalIdentifier)
-    │   │   │   │   │                   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │                   ├── token (kind: TokenIdentifier): 'x'
-    │   │   │   │   │                   └── trailing_trivia (kind: Trivia) []
-    │   │   │   │   ├── separator #0 (kind: TerminalComma)
-    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   ├── token (kind: TokenComma): ','
-    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │   │   ├── item #1 (kind: Arg)
-    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
-    │   │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │   │       └── value (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │               └── ident (kind: TerminalIdentifier)
-    │   │   │   │   │                   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │                   ├── token (kind: TokenIdentifier): 'y'
-    │   │   │   │   │                   └── trailing_trivia (kind: Trivia) []
-    │   │   │   │   ├── separator #1 (kind: TerminalComma)
-    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   ├── token (kind: TokenComma): ','
-    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │   │   └── item #2 (kind: Arg)
-    │   │   │   │       ├── modifiers (kind: ModifierList) []
-    │   │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │   │   │           └── value (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │                   └── ident (kind: TerminalIdentifier)
-    │   │   │   │                       ├── leading_trivia (kind: Trivia) []
-    │   │   │   │                       ├── token (kind: TokenIdentifier): 'z'
-    │   │   │   │                       └── trailing_trivia (kind: Trivia) []
-    │   │   │   └── rparen (kind: TerminalRParen)
-    │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │   │       ├── token (kind: TokenRParen): ')'
-    │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   ├── arguments (kind: TokenTreeNode)
+    │   │   │   └── subtree (kind: ParenthesizedTokenTree)
+    │   │   │       ├── lparen (kind: TerminalLParen)
+    │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   ├── token (kind: TokenLParen): '('
+    │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       ├── tokens (kind: TokenList)
+    │   │   │       │   ├── child #0 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TerminalIdentifier)
+    │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   │       ├── token (kind: TokenIdentifier): 'x'
+    │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   │       │   ├── child #1 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TerminalComma)
+    │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   │       ├── token (kind: TokenComma): ','
+    │   │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │   │       │   │           └── child #0 (kind: TokenWhitespace).
+    │   │   │       │   ├── child #2 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TerminalIdentifier)
+    │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   │       ├── token (kind: TokenIdentifier): 'y'
+    │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   │       │   ├── child #3 (kind: TokenTreeLeaf)
+    │   │   │       │   │   └── leaf (kind: TerminalComma)
+    │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   │       ├── token (kind: TokenComma): ','
+    │   │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │   │       │   │           └── child #0 (kind: TokenWhitespace).
+    │   │   │       │   └── child #4 (kind: TokenTreeLeaf)
+    │   │   │       │       └── leaf (kind: TerminalIdentifier)
+    │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │   │       │           ├── token (kind: TokenIdentifier): 'z'
+    │   │   │       │           └── trailing_trivia (kind: Trivia) []
+    │   │   │       └── rparen (kind: TerminalRParen)
+    │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │   │           ├── token (kind: TokenRParen): ')'
+    │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenSemicolon): ';'

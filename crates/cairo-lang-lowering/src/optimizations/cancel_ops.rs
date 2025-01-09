@@ -58,7 +58,7 @@ pub struct CancelOpsContext<'a> {
     lowered: &'a FlatLowered,
 
     /// Maps a variable to the use sites of that variable.
-    /// Note that a remapping is cosidered as usage here.
+    /// Note that a remapping is considered as usage here.
     use_sites: UnorderedHashMap<VariableId, Vec<StatementLocation>>,
 
     /// Maps a variable to the variable that it was renamed to.
