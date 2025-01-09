@@ -139,7 +139,6 @@
 //! address (the `sn_keccak` hash of the variable name) combined with the mapping keys or vector
 //! indices.
 //! See their respective module documentation for more details.
-
 use core::hash::HashStateTrait;
 #[allow(unused_imports)]
 use core::pedersen::HashState;
@@ -161,8 +160,11 @@ mod sub_pointers;
 pub use sub_pointers::{SubPointers, SubPointersForward, SubPointersMut, SubPointersMutForward};
 
 mod vec;
-pub use vec::{IntoIterRange, MutableVecTrait, Vec, VecTrait};
-use vec::{MutableVecIndexView, VecIndexView};
+use vec::{
+    MutableVecIndexView, MutableVecIntoIterRange, PathableMutableVecIntoIterRange,
+    PathableVecIntoIterRange, VecIndexView, VecIntoIterRange,
+};
+pub use vec::{MutableVecTrait, Vec, VecTrait};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
@@ -538,4 +540,14 @@ trait MutableTrait<T> {
 
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
+}
+
+/// Trait for turning collection of values into an iterator over a specific range.
+pub trait IntoIterRange<T> {
+    type IntoIter;
+    impl Iterator: Iterator<Self::IntoIter>;
+    /// Creates an iterator over a range from a collection.
+    fn into_iter_range(self: T, range: core::ops::Range<u64>) -> Self::IntoIter;
+    /// Creates an iterator over the full range of a collection.
+    fn into_iter_full_range(self: T) -> Self::IntoIter;
 }
