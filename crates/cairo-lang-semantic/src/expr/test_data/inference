@@ -4,7 +4,7 @@
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<felt252> {
+fn foo() -> Option<felt252> {
     Option::Some(5)
 }
 
@@ -184,7 +184,7 @@ impl MyImpl2 of MyTrait<bool> {
     fn foo(x: bool) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 
 //! > expected_diagnostics
@@ -215,10 +215,10 @@ impl MyImpl2 of MyTrait<felt252> {
     fn foo(x: felt252) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
-    fn foo(x: Option::<bool>) {}
+    fn foo(x: Option<bool>) {}
 }
 
 //! > expected_diagnostics
@@ -254,10 +254,10 @@ impl MyImpl2 of MyTrait<felt252> {
     fn foo(x: felt252) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
-    fn foo(x: Option::<bool>) {}
+    fn foo(x: Option<bool>) {}
 }
 
 //! > expected_diagnostics
@@ -292,10 +292,10 @@ impl MyImpl2 of MyTrait<felt252> {
     fn foo(x: felt252) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
-    fn foo(x: Option::<bool>) {}
+    fn foo(x: Option<bool>) {}
 }
 
 //! > expected_diagnostics
@@ -312,7 +312,7 @@ error: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implemen
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(my_box: Box::<MyStruct>) -> felt252 {
+fn foo(my_box: Box<MyStruct>) -> felt252 {
     box::unbox(my_box).a
 }
 
@@ -381,10 +381,10 @@ impl MyImpl2 of MyTrait<felt252> {
     fn foo(x: felt252) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
-    fn foo(x: Option::<bool>) {}
+    fn foo(x: Option<bool>) {}
 }
 
 //! > expected_diagnostics
@@ -417,10 +417,10 @@ impl MyImpl2 of MyTrait<felt252> {
     fn foo(x: felt252) {}
 }
 impl MyImpl3 of MyTrait<Option<felt252>> {
-    fn foo(x: Option::<felt252>) {}
+    fn foo(x: Option<felt252>) {}
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
-    fn foo(x: Option::<bool>) {}
+    fn foo(x: Option<bool>) {}
 }
 
 //! > expected_diagnostics

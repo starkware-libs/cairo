@@ -83,3 +83,27 @@ error: Parameter of trait function `MyTrait::foo` can't be defined as mutable.
  --> lib.cairo:2:12
     fn foo(mut x: u32) -> u32 {
            ^^^
+
+//! > ==========================================================================
+
+//! > Test default implementation with associated types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait MyTrait {
+    type Associated;
+    fn impl_required() -> Option<Self::Associated>;
+    fn default_impl() -> bool {
+        Self::impl_required().is_some()
+    }
+}
+
+//! > expected_diagnostics

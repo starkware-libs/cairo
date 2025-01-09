@@ -31,8 +31,8 @@ pub mod erc20 {
         pub symbol: felt252,
         pub decimals: u8,
         pub total_supply: u256,
-        pub balances: Map::<ContractAddress, u256>,
-        pub allowances: Map::<(ContractAddress, ContractAddress), u256>,
+        pub balances: Map<ContractAddress, u256>,
+        pub allowances: Map<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]
