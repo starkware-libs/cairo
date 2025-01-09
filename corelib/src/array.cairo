@@ -852,6 +852,13 @@ impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     }
 }
 
+impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
+    type IntoIter = SpanIter<T>;
+    fn into_iter(self: @Array<T>) -> Self::IntoIter {
+        self.span().into_iter()
+    }
+}
+
 /// Information about a fixed-sized array.
 trait FixedSizedArrayInfo<S> {
     /// The type of the elements in the array.
