@@ -56,18 +56,18 @@ mod arith;
 pub use arith::{AddAssign, DivAssign, MulAssign, RemAssign, SubAssign};
 
 mod deref;
+pub use deref::Deref;
 #[feature("deref_mut")]
 pub use deref::DerefMut;
-pub use deref::Deref;
-
-mod range;
-pub use range::{Range, RangeInclusive, RangeInclusiveIterator, RangeIterator, RangeTrait};
-// `RangeOp` and `RangeInclusiveOp` are used internally by the compiler.
-#[allow(unused_imports)]
-use range::{RangeInclusiveOp, RangeOp};
 
 mod function;
 pub use function::{Fn, FnOnce};
 
 pub mod index;
 pub use index::{Index, IndexView};
+
+mod range;
+// `RangeOp` and `RangeInclusiveOp` are used internally by the compiler.
+#[allow(unused_imports)]
+use range::{RangeInclusiveOp, RangeOp};
+pub use range::{Range, RangeInclusive, RangeInclusiveIterator, RangeIterator, RangeTrait};
