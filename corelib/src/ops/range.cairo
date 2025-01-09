@@ -213,7 +213,6 @@ pub impl RangeInclusiveIntoIterator<
     +Drop<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
-    -SierraIntRangeSupport<T>,
 > of IntoIterator<RangeInclusive<T>> {
     type IntoIter = RangeInclusiveIterator<T>;
 
