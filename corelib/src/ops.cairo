@@ -59,7 +59,6 @@ mod deref;
 pub use deref::Deref;
 #[feature("deref_mut")]
 pub use deref::DerefMut;
-pub use deref::{Deref, SnapshotDeref};
 
 mod function;
 pub use function::{Fn, FnOnce};
