@@ -1,18 +1,27 @@
-//! The storage node is a struct that is used to structure the storage of a struct, while taking
-//! into account this structure when computing the address of the struct members in the storage.
-//! The trigger for creating a storage node is the `#[starknet::storage_node]` attribute.
+//! Storage nodes provide a way to structure contract storage data, reflecting their structure in
+//! the storage address computation of their members. They are special structs that can contain any
+//! storeable type and are marked with the `#[starknet::storage_node]` attribute.
 //!
-//! Storage nodes are used in order to structure the storage of a struct, while not enforcing the
-//! struct to be sequential in the storage. This is useful for structs that contains phantom types
-//! such as `Map` and `Vec`. As a result, structs attributed with `#[starknet::storage_node]` are
-//! also considered to be phantom types, although not explicitly annotated as such.
-//! Structs which do not contain phantom types, can still be declared a storage node, and it will
-//! make them a phantom type.
-//! However, it may be preferable to simply make this struct storable (i.e. `#[derive(Store)]')
-//! instead. This will still allow accessing individual members of the struct (see `SubPointers`),
-//! but will not make the struct a phantom type.
+//! # Purpose and Benefits
 //!
-//! For example, given the following struct:
+//! Storage nodes provide a flexible way to structure storage data by allowing non-sequential
+//! storage layouts. They allow the creation of storage-only types, that can contain both
+//! storage-specific types (like `Map` and `Vec`) and regular types - so long as these types are
+//! storable.
+//!
+//! Storage nodes are particularly valuable when defining structs containing phantom types like
+//! `Map` and `Vec`. When a struct is marked with `#[starknet::storage_node]`, it automatically
+//! becomes a phantom type, regardless of whether it was explicitly annotated as such.
+//!
+//! While you can declare any struct as a storage node (even those without phantom types), doing so
+//! will make that struct a phantom type. For structs that don't contain phantom types, it's often
+//! more appropriate to make them storable using `#[derive(Store)]`. This alternative approach
+//! still enables access to individual struct members through `SubPointers` without imposing the
+//! phantom type behavior.
+//!
+//! # Examples
+//!
+//! Here's how to define a storage node:
 //!
 //! ```
 //! #[starknet::storage_node]
@@ -22,7 +31,7 @@
 //! }
 //! ```
 //!
-//! The following storage node struct and impl will be generated:
+//! For the struct above, the following storage node struct and impl will be generated:
 //!
 //! ```
 //! struct MyStructStorageNode {
@@ -62,9 +71,11 @@
 //! }
 //! ```
 //!
-//! If a member is annotated with `#[flat]`, the storage node will be flattened, and the
-//! member name (i.e. `my_struct`) will not affect the address of the storage object.
-//! In the storage example above, it will look like:
+//! # Flattening Storage Nodes
+//!
+//! Storage Nodes members can be annotated with `#[flat]` to flatten the storage hierarchy and not
+//! use the member name in the computation of the storage address for its fields.
+//!
 //! ```
 //! #[storage]
 //! struct Storage {
@@ -72,14 +83,17 @@
 //!    my_struct: MyStruct,
 //!    a: felt52,
 //! }
+//! ```
 //!
-//! In this case, the storage node will be flattened, and both `self.a` and `self.my_struct.a` will
-//! point to the same address. This behavior is rarely intended, and thus `#[flat]` should be used
-//! with caution.
+//! When flattened, the storage node's field name (e.g., `my_struct`) doesn't affect storage address
+//! computation. In the example above, both `self.a` and `self.my_struct.a` will point to the same
+//! address. Use `#[flat]` with caution as this behavior is rarely intended.
 //!
-//! Notice that the members of the storage node are `PendingStoragePath` instances, which are used
-//! to lazily get the updated storage path of the struct members, in this way only members that are
-//! accessed are actually evaluated.
+//! # Performance Considerations
+//!
+//! Storage node members are implemented as `PendingStoragePath` instances, enabling lazy evaluation
+//! of storage paths. This means storage addresses are only computed for members that are actually
+//! accessed.
 
 use super::{Mutable, StoragePath};
 
