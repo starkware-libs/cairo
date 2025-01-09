@@ -23,11 +23,11 @@ pub use crate::traits::{
     Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
+pub use crate::iter::{IntoIterator, Iterator};
 pub use crate::zeroable::NonZero;
 pub use crate::{
     RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, starknet, to_byte_array, usize,
 };
-use crate::iter::{IntoIterator, Iterator};
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]
