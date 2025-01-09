@@ -1,5 +1,4 @@
 use crate::test::test_utils::assert_eq;
-use crate::iter::FromIterator;
 
 #[test]
 fn test_array() {
