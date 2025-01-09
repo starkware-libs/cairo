@@ -1,7 +1,7 @@
 #[derive(Drop)]
 struct Node {
     value: felt252,
-    left: Option::<Box<Node>>,
+    left: Option<Box<Node>>,
 }
 
 #[test]

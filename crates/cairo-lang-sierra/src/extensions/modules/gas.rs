@@ -32,6 +32,7 @@ define_libfunc_hierarchy! {
         WithdrawGas(WithdrawGasLibfunc),
         RedepositGas(RedepositGasLibfunc),
         GetAvailableGas(GetAvailableGasLibfunc),
+        GetUnspentGas(GetUnspentGasLibfunc),
         BuiltinWithdrawGas(BuiltinCostWithdrawGasLibfunc),
         GetBuiltinCosts(BuiltinCostGetBuiltinCostsLibfunc),
     }, GasConcreteLibfunc
@@ -124,6 +125,34 @@ impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
                 },
             ],
             SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for returning the amount of available gas, including gas in local wallet.
+#[derive(Default)]
+pub struct GetUnspentGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
+    const STR_ID: &'static str = "get_unspent_gas";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![gas_builtin_type.clone()],
+            vec![
+                OutputVarInfo {
+                    ty: gas_builtin_type,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }

@@ -25,7 +25,7 @@ use cairo_lang_sierra::extensions::felt252_dict::{
 };
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
+    BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, GetUnspentGas, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
@@ -244,6 +244,13 @@ pub fn core_libfunc_cost(
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![ConstCost::default().into()],
+            GetUnspentGas(_) => vec![
+                ConstCost::steps(
+                    BuiltinCostsType::cost_computation_steps(false, |_| 2).into_or_panic::<i32>()
+                        + 1,
+                )
+                .into(),
+            ],
             BuiltinWithdrawGas(_) => {
                 vec![
                     BranchCost::WithdrawGas(WithdrawGasBranchInfo {
