@@ -1,8 +1,8 @@
 //! Core abstractions for contract storage management.
 //!
 //! This module provides the types and traits for handling contract storage internally
-//! within the Cairo core library. Most developers should not need to implement these traits directly,
-//! as they are primarily used by the storage system implementation.
+//! within the Cairo core library. Most developers should not need to implement these traits
+//! directly, as they are primarily used by the storage system implementation.
 //!
 //! If you're writing a regular Starknet contract, you should use the high-level storage
 //! traits and types, interacting with the members of the storage struct directly.
