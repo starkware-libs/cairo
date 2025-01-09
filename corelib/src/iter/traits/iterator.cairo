@@ -1,8 +1,7 @@
-
-//! Iteratos for for generic and efficient traversal over collections.
+//! Iterators for generic and efficient traversal over collections.
 //!
-//!  The `Iterator` trait is fundamental for implementing iterators, which are used to perform operations like mapping, filtering,
-//! and reducing over collections.
+//! The `Iterator` trait is fundamental for implementing iterators, which are used to perform
+//! operations like mapping, filtering, and reducing over collections.
 //!
 //! # Examples
 //!
