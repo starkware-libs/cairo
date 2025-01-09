@@ -22,7 +22,7 @@ pub enum ProjectError {
     LoadProjectError(DeserializationError),
 }
 
-/// Setup to 'db' to compile the file at the given path.
+/// Set up the 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
 pub fn setup_single_file_project(
     db: &mut dyn SemanticGroup,
