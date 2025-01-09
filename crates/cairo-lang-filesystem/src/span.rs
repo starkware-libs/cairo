@@ -17,6 +17,8 @@ mod test;
 )]
 pub struct TextWidth(u32);
 impl TextWidth {
+    pub const ZERO: Self = Self(0);
+
     pub fn from_char(c: char) -> Self {
         Self(c.len_utf8() as u32)
     }
@@ -29,6 +31,9 @@ impl TextWidth {
     }
     pub fn as_u32(self) -> u32 {
         self.0
+    }
+    pub fn as_offset(self) -> TextOffset {
+        TextOffset::from_start(self)
     }
 }
 impl Add for TextWidth {
@@ -50,6 +55,26 @@ impl Sum for TextWidth {
         Self(iter.map(|x| x.0).sum())
     }
 }
+impl From<TextWidth> for u32 {
+    fn from(width: TextWidth) -> u32 {
+        width.0
+    }
+}
+impl From<u32> for TextWidth {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
+impl From<TextWidth> for usize {
+    fn from(width: TextWidth) -> usize {
+        width.0 as usize
+    }
+}
+impl From<usize> for TextWidth {
+    fn from(value: usize) -> Self {
+        Self(value as u32)
+    }
+}
 
 /// Byte offset inside a utf8 string.
 #[derive(
@@ -57,6 +82,11 @@ impl Sum for TextWidth {
 )]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
+    pub const START: Self = Self(TextWidth::ZERO);
+
+    pub fn from_start(width: TextWidth) -> Self {
+        Self(width)
+    }
     pub fn add_width(self, width: TextWidth) -> Self {
         TextOffset(self.0 + width)
     }
