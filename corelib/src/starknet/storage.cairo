@@ -68,7 +68,6 @@
 //! The generic type of the storage object can also be wrapped with a `Mutable` type, which
 //! indicates that the storage object is mutable, i.e., it was created from a `ref` contract state,
 //! and thus the object can be written to.
-
 use core::hash::HashStateTrait;
 #[allow(unused_imports)]
 use core::pedersen::HashState;
@@ -78,8 +77,11 @@ use starknet::SyscallResult;
 use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_felt252};
 
 mod vec;
-pub use vec::{IntoIterRange, MutableVecTrait, Vec, VecTrait};
-use vec::{MutableVecIndexView, VecIndexView};
+use vec::{
+    MutableVecIndexView, MutableVecIntoIterRange, PathableMutableVecIntoIterRange,
+    PathableVecIntoIterRange, VecIndexView, VecIntoIterRange,
+};
+pub use vec::{MutableVecTrait, Vec, VecTrait};
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
@@ -437,4 +439,14 @@ trait MutableTrait<T> {
 
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
+}
+
+/// Trait for turning collection of values into an iterator over a specific range.
+pub trait IntoIterRange<T> {
+    type IntoIter;
+    impl Iterator: Iterator<Self::IntoIter>;
+    /// Creates an iterator over a range from a collection.
+    fn into_iter_range(self: T, range: core::ops::Range<u64>) -> Self::IntoIter;
+    /// Creates an iterator over the full range of a collection.
+    fn into_iter_full_range(self: T) -> Self::IntoIter;
 }

@@ -77,11 +77,11 @@
 //!     arr
 //! }
 //! ```
-use core::iter::{IntoIterator, Iterator};
 use core::ops::Range;
 use super::{
-    Mutable, StorageAsPath, StorageAsPointer, StoragePath, StoragePathTrait, StoragePathUpdateTrait,
-    StoragePointer0Offset, StoragePointerReadAccess, StoragePointerWriteAccess,
+    IntoIterRange, Mutable, StorageAsPath, StorageAsPointer, StoragePath, StoragePathTrait,
+    StoragePathUpdateTrait, StoragePointer0Offset, StoragePointerReadAccess,
+    StoragePointerWriteAccess,
 };
 
 /// Represents a dynamic array in contract storage.
@@ -397,16 +397,6 @@ pub impl MutableVecIndexView<
     }
 }
 
-/// Turn a collection of values into an iterator over a specific range.
-pub trait IntoIterRange<T> {
-    type IntoIter;
-    impl Iterator: Iterator<Self::IntoIter>;
-    /// Creates an iterator over a range from a collection.
-    fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter;
-    /// Creates an iterator over the full range of a collection.
-    fn into_iter_full_range(self: T) -> Self::IntoIter;
-}
-
 /// An iterator struct over a `Vec` in storage.
 #[derive(Drop)]
 pub struct VecIter<T, impl VecTraitImpl: VecTrait<T>> {
@@ -422,7 +412,7 @@ impl VecIterator<T, impl VecTraitImpl: VecTrait<T>, +Drop<T>, +Copy<T>> of Itera
 }
 
 // Implement `IntoIterRange` for `StoragePath<Vec<T>>`
-impl VecIntoIterRange<
+pub impl VecIntoIterRange<
     T, impl VecTraitImpl: VecTrait<StoragePath<Vec<T>>>,
 > of IntoIterRange<StoragePath<Vec<T>>> {
     type IntoIter = VecIter<StoragePath<Vec<T>>, VecTraitImpl>;
@@ -473,7 +463,7 @@ impl MutableVecIterator<
 }
 
 // Implement `IntoIterRange` for `StoragePath<Mutable<Vec<T>>>`
-impl MutableVecIntoIterRange<
+pub impl MutableVecIntoIterRange<
     T, impl MutVecTraitImpl: MutableVecTrait<StoragePath<Mutable<Vec<T>>>>,
 > of IntoIterRange<StoragePath<Mutable<Vec<T>>>> {
     type IntoIter = MutableVecIter<StoragePath<Mutable<Vec<T>>>, MutVecTraitImpl>;
@@ -489,7 +479,7 @@ impl MutableVecIntoIterRange<
 
 /// Implement `IntoIterRange` for any type that implements StorageAsPath into a storage path
 /// that implements MutableVecTrait.
-impl PathableMutableVecIntoIterRange<
+pub impl PathableMutableVecIntoIterRange<
     T,
     +Destruct<T>,
     impl PathImpl: StorageAsPath<T>,
