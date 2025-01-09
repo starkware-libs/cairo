@@ -1,22 +1,11 @@
 //! Core abstractions for contract storage management.
 //!
-//! This module provides the fundamental types and traits for handling contract storage:
+//! This module provides the types and traits for handling contract storage internally
+//! within the Cairo core library. Most developers should not need to implement these traits directly,
+//! as they are primarily used by the storage system implementation.
 //!
-//! - `StorageBase`: A base storage type that holds an address for storage path initialization
-//! - `FlattenedStorage`: A type for storage objects that don't affect path computation
-//! - Traits for managing storage access and mutability
-//!
-//! # Storage Architecture
-//!
-//! The storage system uses a path-based approach where:
-//! - Storage locations are computed using base addresses
-//! - Members can be accessed through `StorageBase` or `FlattenedStorage`
-//! - Path computation can be customized for different storage layouts
-//!
-//! # Traits
-//!
-//! - `StorageTrait`: Creates storage structs for contract state members
-//! - `StorageTraitMut`: Creates mutable storage structs for contract state
+//! If you're writing a regular Starknet contract, you should use the high-level storage
+//! traits and types, interacting with the members of the storage struct directly.
 
 use super::{Mutable, StorageAsPath, StoragePath, StoragePathTrait};
 
