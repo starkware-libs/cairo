@@ -12,8 +12,13 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
     ErrorCode, Severity, error_code,
 };
+<<<<<<< HEAD
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_syntax::{self as syntax};
+=======
+use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_syntax as syntax;
+>>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -45,6 +50,14 @@ pub trait SemanticDiagnosticsBuilder {
         stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded;
+    /// Report a diagnostic in a sub-span of the location of the given ptr. The inner span is
+    /// specified by an offset from the start of the pointer location and a width.
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded;
 }
 impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
     fn report(
@@ -60,6 +73,17 @@ impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr.into()), kind))
+    }
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.add(SemanticDiagnostic::new(
+            StableLocation::with_inner_span(stable_ptr.into(), inner_span),
+            kind,
+        ))
     }
 }
 
