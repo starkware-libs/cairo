@@ -855,12 +855,6 @@ impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
     }
 }
 
-impl SpanFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Span<T>, T> {
-    fn from_iter<I, +Iterator<I>[Item: T], +Drop<I>>(iter: I) -> Span<T> {
-        ArrayFromIterator::from_iter(iter).span()
-    }
-}
-
 /// Information about a fixed-sized array.
 trait FixedSizedArrayInfo<S> {
     /// The type of the elements in the array.
