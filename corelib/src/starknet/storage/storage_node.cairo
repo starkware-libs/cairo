@@ -1,6 +1,6 @@
 //! Storage nodes provide a way to structure contract storage data, reflecting their structure in
 //! the storage address computation of their members. They are special structs that can contain any
-//! storeable type and are marked with the `#[starknet::storage_node]` attribute.
+//! storable type and are marked with the `#[starknet::storage_node]` attribute.
 //!
 //! # Purpose and Benefits
 //!
