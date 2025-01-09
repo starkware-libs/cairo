@@ -1,15 +1,8 @@
-//! Traits and utilities for iterating over sequences of values.
+
+//! Iteratos for for generic and efficient traversal over collections.
 //!
-//! # Overview
-//!
-//! This module defines the basic abstraction for iteration in Cairo, allowing for generic
-//! and efficient traversal over collections. The `Iterator` trait is fundamental for
-//! implementing iterators, which are used to perform operations like mapping, filtering,
+//!  The `Iterator` trait is fundamental for implementing iterators, which are used to perform operations like mapping, filtering,
 //! and reducing over collections.
-//!
-//! # Traits
-//!
-//! - [`Iterator`]: Defines the method to advance an iterator and retrieve the next value.
 //!
 //! # Examples
 //!
