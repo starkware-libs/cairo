@@ -214,6 +214,13 @@ fn test_empty_fixed_size_array_iterator() {
     assert!(iter.next().is_none());
 }
 
+#[test]
+fn test_array_from_iterator() {
+    let iter = (0..5_u32).into_iter();
+    let v = FromIterator::from_iter(iter);
+    assert_eq!(v, array![0, 1, 2, 3, 4]);
+}
+
 fn test_array_into_span() {
     assert_eq!(array![1, 2, 3].span(), array![1, 2, 3].into())
 }
