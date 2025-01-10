@@ -1,32 +1,54 @@
-//! Collection of common traits and related functionality for working with various types.
+//! Core traits for various operations.
 //!
-//! The main components of this module are:
+//! This module provides a collection of essential traits that define common behavior patterns
+//! for Cairo types.
 //!
-//! - **Copy and Drop Traits**: The `Copy` and `Drop` traits, which define the behavior for
-//!   copying and dropping values of a given type, respectively.
-//! - **Arithmetic Traits**: Traits for standard arithmetic operations, such as `Add`, `Sub`,
-//!   `Mul`, `Div`, `Rem`, and `DivRem`.
-//! - **Comparison Traits**: Traits for comparing values, including `PartialEq` and `PartialOrd`.
-//! - **Conversion Traits**: Traits for converting between types, including `Into` and `TryInto`.
-//! - **Unary Operation Traits**: Traits for unary operations, such as `Neg` and `Not`.
-//! - **Destruct Traits**: Traits for destructing values, including `Destruct` and `PanicDestruct`.
-//! - **Default Trait**: The `Default` trait, which provides a way to create a default value of a
-//!   given type.
-//! - **Felt252Dict Value Trait**: The `Felt252DictValue` trait, which defines the requirements for
-//!   values that can be stored in a `Felt252Dict`.
-//! - **Tuple Traits**: Implementations of various traits (such as `Copy`, `Drop`, `PartialEq`,
-//!   and `Default`) for tuple-like types.
+//! # Main Categories
 //!
-//! These traits and their implementations provide a consistent and type-safe way to work with
-//! values, enabling operations such as arithmetic, comparison, conversion, and destruction.
+//! ## Memory Management
+//! - [`Copy`]: Enables value semantics for types
+//! - [`Drop`]: Allows values to be safely discarded
+//! - [`Destruct`]: Provides custom cleanup behavior for non-droppable types
+//! - [`PanicDestruct`]: Handles destruction during panic scenarios
+//!
+//! ## Arithmetic Operations
+//! - [`Add`], [`Sub`], [`Mul`], [`Div`], [`Rem`]: Standard arithmetic operators (`+`, `-`, `*`,
+//! `/`, `%`)
+//! - [`DivRem`]: Combined division and remainder operation
+//! - [`Neg`]: Unary negation (`-`)
+//!
+//! ## Bitwise Operations
+//! - [`BitAnd`], [`BitOr`], [`BitXor`]: Binary bitwise operations (`&`, `|`, `^`)
+//! - [`BitNot`]: Unary bitwise complement (`~`)
+//!
+//! ## Comparison
+//! - [`PartialEq`]: Equality comparison (`==`, `!=`)
+//! - [`PartialOrd`]: Ordering comparison (`<`, `<=`, `>`, `>=`)
+//!
+//! ## Type Conversion
+//! - [`Into`]: Infallible type conversion
+//! - [`TryInto`]: Fallible type conversion
+//!
+//! ## Utility Traits
+//! - [`Default`]: Creation of default values
+//! - [`Felt252DictValue`]: Support for dictionary value types
 
 use crate::panics::Panic;
 
 /// A trait for copying values.
 ///
-/// By default, variable bindings have 'move semantics'. In other
-/// words:
+/// By default, variables in Cairo have 'move semantics', meaning they are moved when used.
+/// However, types implementing `Copy` have 'copy semantics', allowing the value to be
+/// duplicated instead of moved.
 ///
+/// # Deriving
+///
+/// This trait can be automatically derived using `#[derive(Copy)]`. Most basic types
+/// implement `Copy` by default.
+///
+/// # Examples
+///
+/// Without `Copy` (move semantics):
 /// ```
 /// #[derive(Drop)]
 /// struct Point {
@@ -40,14 +62,10 @@ use crate::panics::Panic;
 ///     foo(p1); // error: Variable was previously moved.
 /// }
 ///
-/// fn foo(p: Point) { // do something with p
-/// }
+/// fn foo(p: Point) {}
 /// ```
 ///
-/// However, if a type implements `Copy`, it instead has 'copy semantics'.
-/// We can derive a `Copy` implementation with the `#[derive(Copy)]` attribute. Most basic types
-/// implement it by default.
-///
+/// With `Copy` (copy semantics):
 /// ```
 /// #[derive(Copy, Drop)]
 /// struct Point {
@@ -58,34 +76,37 @@ use crate::panics::Panic;
 /// fn main() {
 ///     let p1 = Point { x: 5, y: 10 };
 ///     foo(p1);
-///     foo(p1); // no error, `p1` is copied when passed to `foo` at the previous line.
+///     foo(p1); // works: p1 is copied when passed to foo
 /// }
 ///
-/// fn foo(p: Point) { // do something with p
-/// }
+/// fn foo(p: Point) {}
 /// ```
 pub trait Copy<T>;
 
-/// A trait for dropping values.
+/// A trait for types that can be safely dropped.
 ///
-/// Types that implement the `Drop` trait are automatically destroyed when going out of scope.
-/// This destruction does nothing, it is a no-op - simply a hint to the compiler that this type
-/// can safely go out of scope once it's no longer useful. We call this "dropping" a value.
+/// Types implementing `Drop` can be automatically discarded when they go out of scope.
+/// The drop operation is a no-op - it simply indicates to the compiler that this type
+/// can be safely discarded.
 ///
+/// # Deriving
+///
+/// This trait can be automatically derived using `#[derive(Drop)]`. All basic types
+/// implement `Drop` by default, except for `Felt252Dict`.
+///
+/// # Examples
+///
+/// Without `Drop`:
 /// ```
 /// struct Point {
 ///     x: u128,
 ///     y: u128,
 /// }
 ///
-/// fn foo(p: Point) { // do something with p
-/// }
+/// fn foo(p: Point) {} // Error: p cannot be dropped
 /// ```
 ///
-/// This won't compile as `p` is not dropped at the end of `foo`.
-/// We can derive `Drop` on `Point` using the `#[derive(Drop)]` attribute to allow `p` to go out of
-/// scope trivially. All basic types implement the`Drop` trait, except the `Felt252Dict` type.
-///
+/// With `Drop`:
 /// ```
 /// #[derive(Drop)]
 /// struct Point {
@@ -93,11 +114,8 @@ pub trait Copy<T>;
 ///     y: u128,
 /// }
 ///
-/// fn foo(p: Point) { // do something with p
-/// }
+/// fn foo(p: Point) {} // OK: p is dropped at the end of the function
 /// ```
-///
-/// Now `p` derives `Drop`, it can be dropped at the end of the execution of `foo`.
 pub trait Drop<T>;
 
 impl SnapshotCopy<T> of Copy<@T>;
@@ -106,33 +124,45 @@ impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
 /// The addition operator `+`.
+///
+/// Types implementing this trait support the addition operation via the `+` operator.
+///
+/// # Examples
+///
+/// Basic usage with numbers:
+/// ```
+/// assert!(1_u8 + 2_u8 == 3_u8);
+/// ```
+///
+/// Custom implementation for a type:
+/// ```
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+///
+/// impl PointAdd of Add<Point> {
+///     fn add(lhs: Point, rhs: Point) -> Point {
+///         Point {
+///             x: lhs.x + rhs.x,
+///             y: lhs.y + rhs.y,
+///         }
+///     }
+/// }
+///
+/// let p1 = Point { x: 1, y: 0 };
+/// let p2 = Point { x: 2, y: 3 };
+/// let p3 = p1 + p2;
+/// assert!(p3 == Point { x: 3, y: 3 });
+/// ```
 pub trait Add<T> {
     /// Performs the `+` operation.
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
-    /// #[derive(Copy, Drop, PartialEq)]
-    /// struct Point {
-    ///     x: u32,
-    ///     y: u32,
-    /// }
-    ///
-    /// impl PointAdd of Add<Point>{
-    ///     fn add(lhs: Point, rhs: Point) -> Point {
-    ///         Point {
-    ///             x: lhs.x + rhs.x,
-    ///             y: lhs.y + rhs.y,
-    ///         }
-    ///     }
-    /// }
-    ///
-    /// fn main(){
-    ///     let p1 = Point { x: 1, y: 0 };
-    ///     let p2 = Point { x: 2, y: 3 };
-    ///     let p3 = p1 + p2;
-    ///     assert!(p3 == Point { x: 3, y: 3 });
-    /// }
+    /// assert_eq!(12 + 1, 13);
     /// ```
     fn add(lhs: T, rhs: T) -> T;
 }
@@ -240,10 +270,45 @@ pub trait DivRem<T> {
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
-/// A trait for comparisons using the equality operator.
+/// Trait for comparisons using the equality operator.
 ///
 /// Implementing this trait for types provides the `==` and `!=` operators for
 /// those types.
+///
+/// # Derivable
+///
+/// This trait can be used with `#[derive]`. When `derive`d on structs, two
+/// instances are equal if all fields are equal, and not equal if any fields
+/// are not equal. When `derive`d on enums, two instances are equal if they
+/// are the same variant and all fields are equal.
+///
+/// # Examples
+///
+/// Basic usage with built-in types:
+/// ```
+/// assert!(1 == 1);
+/// assert!(1 != 2);
+/// ```
+///
+/// Custom implementation:
+/// ```
+/// #[derive(Copy, Drop)]
+/// struct Point {
+///     x: u32,
+///     y: u32
+/// }
+///
+/// impl PointEq of PartialEq<Point> {
+///     fn eq(lhs: @Point, rhs: @Point) -> bool {
+///         lhs.x == rhs.x && lhs.y == rhs.y
+///     }
+/// }
+///
+/// let p1 = Point { x: 1, y: 2 };
+/// let p2 = Point { x: 1, y: 2 };
+/// assert!(p1 == p2);
+/// assert!(!(p1 != p2));
+/// ```
 pub trait PartialEq<T> {
     /// Returns whether `lhs` and `rhs` equal, and is used by `==`.
     ///
