@@ -1355,7 +1355,7 @@ pub fn priv_trait_function_body_data(
     // Compute declaration semantic.
     let trait_function_declaration_data =
         db.priv_trait_function_declaration_data(trait_function_id)?;
-    let parent_resolver_data = db.trait_resolver_data(trait_id)?;
+    let parent_resolver_data = trait_function_declaration_data.resolver_data;
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::TraitItem(
         TraitItemId::Function(trait_function_id),
     ));
