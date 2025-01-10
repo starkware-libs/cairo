@@ -11,7 +11,7 @@
 //!
 //! Storage nodes are particularly valuable when defining structs containing phantom types like
 //! `Map` and `Vec`. When a struct is marked with `#[starknet::storage_node]`, it automatically
-//! becomes a phantom type, regardless of whether it was explicitly annotated as such.
+//! becomes a phantom type.
 //!
 //! While you can declare any struct as a storage node (even those without phantom types), doing so
 //! will make that struct a phantom type. For structs that don't contain phantom types, it's often
