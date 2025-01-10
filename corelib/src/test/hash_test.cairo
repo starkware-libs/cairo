@@ -1,5 +1,6 @@
 use crate::hash::{HashStateExTrait, HashStateTrait};
 use crate::poseidon::PoseidonTrait;
+use crate::pedersen::PedersenTrait;
 use crate::test::test_utils::assert_eq;
 
 #[test]
@@ -103,6 +104,26 @@ fn test_byte_array_hash() {
             .update(pending_word_len)
             .update(pending_word)
             .finalize(),
-        'Bad hash for ByteArray',
+        'Bad ByteArray hash w/ Poseidon',
+    );
+
+    // Perform same test using Pedersen hashing function
+
+    let byte_array: ByteArray = "This is a sentence that is longer than 31 characters.";
+
+    let word_1 = 'This is a sentence that is long';
+    let data_length = 1;
+    let pending_word = 'er than 31 characters.';
+    let pending_word_len = 22;
+
+    assert_eq(
+        @PedersenTrait::new(0).update_with(byte_array).finalize(),
+        @PedersenTrait::new(0)
+            .update(data_length)
+            .update(word_1)
+            .update(pending_word_len)
+            .update(pending_word)
+            .finalize(),
+        'Bad ByteArray hash w/ Pedersen',
     );
 }
