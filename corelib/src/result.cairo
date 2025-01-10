@@ -283,7 +283,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         }
     }
 
-    /// Returns the contained `Ok`` value or `Default::<T>::default()`.
+    /// Returns the contained `Ok` value or `Default::<T>::default()`.
     ///
     /// # Examples
     ///
