@@ -49,7 +49,7 @@ impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
         let inner = SyntaxNodeInner {
             green,
-            offset: TextOffset::default(),
+            offset: TextOffset::START,
             parent: None,
             stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
@@ -272,11 +272,10 @@ impl SyntaxNode {
         let orig_span = self.span(db);
         assert!(orig_span.contains(span));
         let full_text = self.get_text(db);
-        let zero_offset = TextOffset::default();
 
         let span_in_span = TextSpan {
-            start: zero_offset.add_width(span.start - orig_span.start),
-            end: zero_offset.add_width(span.end - orig_span.start),
+            start: (span.start - orig_span.start).as_offset(),
+            end: (span.end - orig_span.start).as_offset(),
         };
         span_in_span.take(&full_text).to_string()
     }
