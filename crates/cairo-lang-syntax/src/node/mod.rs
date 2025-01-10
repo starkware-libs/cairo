@@ -230,24 +230,21 @@ impl SyntaxNode {
                 for child in db.get_children(self.clone()).iter() {
                     let kind = child.kind(db);
 
-                    if matches!(kind, SyntaxKind::Trivia) {
-                        ast::Trivia::from_syntax_node(db, child.clone())
-                            .elements(db)
-                            .iter()
-                            .for_each(|element| {
-                                if !matches!(
-                                    element,
-                                    ast::Trivium::SingleLineComment(_)
-                                        | ast::Trivium::SingleLineDocComment(_)
-                                        | ast::Trivium::SingleLineInnerComment(_)
-                                ) {
-                                    buffer.push_str(
-                                        &element
-                                            .as_syntax_node()
-                                            .get_text_without_all_comment_trivia(db),
-                                    );
-                                }
-                            });
+                    if let Some(trivia) = ast::Trivia::cast(db, child.clone()) {
+                        trivia.elements(db).iter().for_each(|element| {
+                            if !matches!(
+                                element,
+                                ast::Trivium::SingleLineComment(_)
+                                    | ast::Trivium::SingleLineDocComment(_)
+                                    | ast::Trivium::SingleLineInnerComment(_)
+                            ) {
+                                buffer.push_str(
+                                    &element
+                                        .as_syntax_node()
+                                        .get_text_without_all_comment_trivia(db),
+                                );
+                            }
+                        });
                     } else {
                         buffer
                             .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));

@@ -230,9 +230,9 @@ impl<'a> DocumentationCommentParser<'a> {
         // Get the stack (bottom-up) of submodule names in the file containing the node, in the main
         // module, that lead to the node.
         iter::successors(node.parent(), SyntaxNode::parent)
-            .filter(|node| node.kind(syntax_db) == SyntaxKind::ItemModule)
-            .map(|node| {
-                ItemModule::from_syntax_node(syntax_db, node)
+            .filter_map(|node| ItemModule::cast(syntax_db, node))
+            .map(|item_module| {
+                item_module
                     .stable_ptr()
                     .name_green(syntax_db)
                     .identifier(syntax_db)
