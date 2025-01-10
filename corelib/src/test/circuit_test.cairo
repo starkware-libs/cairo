@@ -123,7 +123,7 @@ fn test_fill_inputs_loop() {
     let in2 = CircuitElement::<CircuitInput<1>> {};
     let add = circuit_add(in1, in2);
 
-    let mut inputs: Array::<[u96; 4]> = array![[1, 0, 0, 0], [2, 0, 0, 0]];
+    let mut inputs: Array<[u96; 4]> = array![[1, 0, 0, 0], [2, 0, 0, 0]];
     let mut circuit_inputs = (add,).new_inputs();
 
     while let Option::Some(input) = inputs.pop_front() {

@@ -10,7 +10,7 @@ pub trait BitSize<T> {
     /// use core::num::traits::BitSize;
     ///
     /// let bits = BitSize::<u8>::bits();
-    /// assert(bits == 8);
+    /// assert!(bits == 8);
     /// ```
     #[must_use]
     fn bits() -> usize;

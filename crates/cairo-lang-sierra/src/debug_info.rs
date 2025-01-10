@@ -31,7 +31,7 @@ pub struct DebugInfo {
         deserialize_with = "deserialize_map::<FunctionId, _>"
     )]
     pub user_func_names: HashMap<FunctionId, SmolStr>,
-    /// Non-crucial information about the program, for use by external libraries and tool.
+    /// Non-crucial information about the program, for use by external libraries and tools.
     ///
     /// See [`Annotations`] type documentation for more information about this field.
     #[serde(default, skip_serializing_if = "Annotations::is_empty")]
@@ -41,7 +41,7 @@ pub struct DebugInfo {
     pub executables: HashMap<SmolStr, Vec<FunctionId>>,
 }
 
-/// Store for non-crucial information about the program, for use by external libraries and tool.
+/// Store for non-crucial information about the program, for use by external libraries and tools.
 ///
 /// Keys represent tool namespaces, and values are tool-specific annotations themselves.
 /// Annotation values are JSON values, so they can be arbitrarily complex.
