@@ -275,6 +275,33 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     fn span(snapshot: @Array<T>) -> Span<T> {
         Span { snapshot }
     }
+
+    /// Returns an array of the same size as `self`, with function `f` applied to each element in order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x = [1, 2, 3];
+    /// let y = x.map(|v| v + 1);
+    /// assert_eq!(y, [2, 3, 4]);
+    ///
+    /// let x = ["Ferris", "Bueller's", "Day", "Off"];
+    /// let y = x.map(|v: ByteArray| v.len());
+    /// assert_eq!(y, [6, 9, 3, 3]);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn map<F, impl func: core::ops::Fn<F, (T,)>, +Drop<T>, +Drop<F>, +Drop<func::Output>>(
+        self: Array<T>, f: F
+    ) -> Array<func::Output> {
+        let mut result = array![];
+
+        for elem in self {
+            result.append(f(elem));
+        };
+
+        result
+    }
 }
 
 impl ArrayDefault<T> of Default<Array<T>> {
