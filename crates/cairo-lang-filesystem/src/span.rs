@@ -79,6 +79,9 @@ impl TextOffset {
     pub fn from_start(width: TextWidth) -> Self {
         Self(width)
     }
+    pub fn end_of(content: &str) -> Self {
+        Self(TextWidth::from_str(content))
+    }
     pub fn add_width(self, width: TextWidth) -> Self {
         TextOffset(self.0 + width)
     }
