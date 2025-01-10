@@ -27,8 +27,8 @@ impl<'a> Lexer<'a> {
         Lexer {
             db,
             text,
-            previous_position: TextOffset::default(),
-            current_position: TextOffset::default(),
+            previous_position: TextOffset::START,
+            current_position: TextOffset::START,
             done: false,
         }
     }

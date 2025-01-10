@@ -14,7 +14,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
 };
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -160,10 +160,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
         let orig_span = node.span(db);
         let code_mappings = |content: &str| {
             vec![CodeMapping {
-                span: TextSpan {
-                    start: TextOffset::default(),
-                    end: TextOffset::default().add_width(TextWidth::from_str(content)),
-                },
+                span: TextSpan::from_str(content),
                 origin: CodeOrigin::Start(orig_span.start),
             }]
         };
