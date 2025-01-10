@@ -317,14 +317,14 @@ impl SyntaxNode {
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
-pub trait TypedSyntaxNode {
+pub trait TypedSyntaxNode: Sized {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr: TypedStablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
-    // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self>;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
