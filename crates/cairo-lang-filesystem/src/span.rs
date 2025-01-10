@@ -29,10 +29,17 @@ impl TextWidth {
     pub fn new_for_testing(value: u32) -> Self {
         Self(value)
     }
+    pub fn at_char_boundary(s: &str, index: usize) -> Self {
+        debug_assert!(
+            s.is_char_boundary(index),
+            "cannot create a TextWidth outside of a char boundary"
+        );
+        Self(index as u32)
+    }
     pub fn as_u32(self) -> u32 {
         self.0
     }
-    pub fn as_offset(self) -> TextOffset {
+    pub fn offset_from_start(self) -> TextOffset {
         TextOffset::from_start(self)
     }
 }
@@ -53,26 +60,6 @@ impl Sub for TextWidth {
 impl Sum for TextWidth {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         Self(iter.map(|x| x.0).sum())
-    }
-}
-impl From<TextWidth> for u32 {
-    fn from(width: TextWidth) -> u32 {
-        width.0
-    }
-}
-impl From<u32> for TextWidth {
-    fn from(value: u32) -> Self {
-        Self(value)
-    }
-}
-impl From<TextWidth> for usize {
-    fn from(width: TextWidth) -> usize {
-        width.0 as usize
-    }
-}
-impl From<usize> for TextWidth {
-    fn from(value: usize) -> Self {
-        Self(value as u32)
     }
 }
 
