@@ -228,8 +228,6 @@ impl SyntaxNode {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in db.get_children(self.clone()).iter() {
-                    let kind = child.kind(db);
-
                     if let Some(trivia) = ast::Trivia::cast(db, child.clone()) {
                         trivia.elements(db).iter().for_each(|element| {
                             if !matches!(

@@ -14,7 +14,6 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedGenericItem, Resolver};
 use cairo_lang_syntax::node::ast::{Expr, ExprPath, ItemModule};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use pulldown_cmark::{

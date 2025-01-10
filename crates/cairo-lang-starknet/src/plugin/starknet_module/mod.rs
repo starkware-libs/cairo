@@ -10,9 +10,8 @@ use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::extract_matches;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
