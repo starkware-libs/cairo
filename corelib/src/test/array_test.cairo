@@ -232,6 +232,7 @@ fn test_array_snap_into_span() {
 fn test_span_into_array_snap() {
     assert_eq!(@array![1, 2, 3], array![1, 2, 3].span().into());
 }
+
 #[test]
 fn nested_for_loop() {
     let mat = array![array![1, 2], array![3, 4], array![5, 6]];
