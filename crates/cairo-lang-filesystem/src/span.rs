@@ -45,7 +45,7 @@ impl TextWidth {
         self.0
     }
     pub fn as_offset(self) -> TextOffset {
-        TextOffset::from_start(self)
+        TextOffset(self)
     }
 }
 impl Add for TextWidth {
@@ -76,9 +76,6 @@ pub struct TextOffset(TextWidth);
 impl TextOffset {
     pub const START: Self = Self(TextWidth::ZERO);
 
-    pub fn from_start(width: TextWidth) -> Self {
-        Self(width)
-    }
     pub fn end_of(content: &str) -> Self {
         Self(TextWidth::from_str(content))
     }
