@@ -76,7 +76,9 @@ pub struct TextOffset(TextWidth);
 impl TextOffset {
     pub const START: Self = Self(TextWidth::ZERO);
 
-    pub fn end_of(content: &str) -> Self {
+    /// Creates a `TextOffset` at the end of a given string.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(content: &str) -> Self {
         Self(TextWidth::from_str(content))
     }
     pub fn add_width(self, width: TextWidth) -> Self {
