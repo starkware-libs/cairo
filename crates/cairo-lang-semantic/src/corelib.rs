@@ -523,6 +523,9 @@ pub fn core_binary_operator(
         BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
         BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
         BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
+        BinaryOperator::DotDotEq(_) => {
+            ("RangeInclusiveOp", "range_inclusive", false, CoreTraitContext::Ops)
+        }
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((

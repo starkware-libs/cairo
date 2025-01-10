@@ -94,6 +94,7 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenColon
         | SyntaxKind::TokenColonColon
         | SyntaxKind::TokenDotDot
+        | SyntaxKind::TokenDotDotEq
         | SyntaxKind::TokenSemicolon
         | SyntaxKind::TokenAnd
         | SyntaxKind::TokenAndAnd

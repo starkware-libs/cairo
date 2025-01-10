@@ -585,6 +585,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::TerminalDotDot => {
             vec![]
         }
+        SyntaxKind::TokenDotDotEq => vec![],
+        SyntaxKind::TerminalDotDotEq => {
+            vec![]
+        }
         SyntaxKind::TokenEndOfFile => vec![],
         SyntaxKind::TerminalEndOfFile => {
             vec![]

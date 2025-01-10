@@ -1,0 +1,68 @@
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    for i in 1..=x {}
+}
+
+//! > top_level_kind
+ExprFor
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprFor
+    ├── for_kw (kind: TokenFor): 'for'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'i'
+    ├── identifier (kind: TokenIdentifier): 'in'
+    ├── expr (kind: ExprBinary)
+    │   ├── lhs (kind: TokenLiteralNumber): '1'
+    │   ├── op (kind: TokenDotDotEq): '..='
+    │   └── rhs (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
+    └── body (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList) []
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test range inclusive operator precedence
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    x += false && true..=1 + 2
+}
+
+//! > top_level_kind
+ExprBinary
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprBinary
+    ├── lhs (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── op (kind: TokenPlusEq): '+='
+    └── rhs (kind: ExprBinary)
+        ├── lhs (kind: ExprBinary)
+        │   ├── lhs (kind: TokenFalse): 'false'
+        │   ├── op (kind: TokenAndAnd): '&&'
+        │   └── rhs (kind: TokenTrue): 'true'
+        ├── op (kind: TokenDotDotEq): '..='
+        └── rhs (kind: ExprBinary)
+            ├── lhs (kind: TokenLiteralNumber): '1'
+            ├── op (kind: TokenPlus): '+'
+            └── rhs (kind: TokenLiteralNumber): '2'
