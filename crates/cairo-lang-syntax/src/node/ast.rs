@@ -77,7 +77,7 @@ impl TypedSyntaxNode for Trivia {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::Trivia { Some(Self(ElementList::new(node))) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -845,7 +845,11 @@ impl TypedSyntaxNode for ExprList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ExprList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -1551,7 +1555,7 @@ impl TypedSyntaxNode for ArgList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ArgList { Some(Self(ElementList::new(node))) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -2206,7 +2210,11 @@ impl TypedSyntaxNode for ExprPath {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ExprPath {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -4201,7 +4209,11 @@ impl TypedSyntaxNode for MatchArms {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::MatchArms {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -7112,7 +7124,11 @@ impl TypedSyntaxNode for StructArgList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::StructArgList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8143,7 +8159,11 @@ impl TypedSyntaxNode for PatternStructParamList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::PatternStructParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8453,7 +8473,11 @@ impl TypedSyntaxNode for PatternList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::PatternList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8551,7 +8575,11 @@ impl TypedSyntaxNode for PatternListOr {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::PatternListOr {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -9998,7 +10026,11 @@ impl TypedSyntaxNode for StatementList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::StatementList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -11388,7 +11420,11 @@ impl TypedSyntaxNode for ModifierList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ModifierList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -11573,7 +11609,11 @@ impl TypedSyntaxNode for ParamList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -11785,7 +11825,11 @@ impl TypedSyntaxNode for ImplicitsList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ImplicitsList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12678,7 +12722,11 @@ impl TypedSyntaxNode for MemberList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::MemberList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12889,7 +12937,11 @@ impl TypedSyntaxNode for VariantList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::VariantList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13287,7 +13339,11 @@ impl TypedSyntaxNode for ModuleItemList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ModuleItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13558,7 +13614,11 @@ impl TypedSyntaxNode for AttributeList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::AttributeList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -15549,7 +15609,11 @@ impl TypedSyntaxNode for TraitItemList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::TraitItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -17025,7 +17089,11 @@ impl TypedSyntaxNode for ImplItemList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::ImplItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18753,7 +18821,11 @@ impl TypedSyntaxNode for UsePathList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::UsePathList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -19722,7 +19794,11 @@ impl TypedSyntaxNode for GenericArgList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::GenericArgList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -20039,7 +20115,11 @@ impl TypedSyntaxNode for AssociatedItemConstraintList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::AssociatedItemConstraintList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -20629,7 +20709,11 @@ impl TypedSyntaxNode for GenericParamList {
         Self(ElementList::new(node))
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        Some(Self::from_syntax_node(db, node))
+        if node.kind(db) == SyntaxKind::GenericParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()

@@ -367,7 +367,11 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
                 Self(ElementList::new(node))
             }
             fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-                Some(Self::from_syntax_node(db, node))
+                if node.kind(db) == SyntaxKind::$name {
+                    Some(Self(ElementList::new(node)))
+                } else {
+                    None
+                }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
