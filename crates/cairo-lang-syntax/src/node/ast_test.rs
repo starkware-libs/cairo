@@ -26,106 +26,86 @@ fn test_ast() {
             .map(|node| (node.kind(db), node.text(db), node.offset(), node.width(db)))
             .collect::<Vec<_>>(),
         vec![
-            (
-                SyntaxKind::ExprBinary,
-                None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(7)
-            ),
-            (
-                SyntaxKind::ExprPath,
-                None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(4)
-            ),
-            (
-                SyntaxKind::PathSegmentSimple,
-                None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(4)
-            ),
+            (SyntaxKind::ExprBinary, None, TextOffset::START, TextWidth::new_for_testing(7)),
+            (SyntaxKind::ExprPath, None, TextOffset::START, TextWidth::new_for_testing(4)),
+            (SyntaxKind::PathSegmentSimple, None, TextOffset::START, TextWidth::new_for_testing(4)),
             (
                 SyntaxKind::TerminalIdentifier,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextOffset::START,
                 TextWidth::new_for_testing(4)
             ),
-            (
-                SyntaxKind::Trivia,
-                None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(0)
-            ),
+            (SyntaxKind::Trivia, None, TextOffset::START, TextWidth::new_for_testing(0)),
             (
                 SyntaxKind::TokenIdentifier,
                 Some("foo".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
+                TextOffset::START,
                 TextWidth::new_for_testing(3)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
+                TextWidth::new_for_testing(3).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
+                TextWidth::new_for_testing(3).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TerminalPlus,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(4).offset_from_start(),
                 TextWidth::new_for_testing(2)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(4).offset_from_start(),
                 TextWidth::new_for_testing(0)
             ),
             (
                 SyntaxKind::TokenPlus,
                 Some("+".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
+                TextWidth::new_for_testing(4).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
+                TextWidth::new_for_testing(5).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
+                TextWidth::new_for_testing(5).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TerminalLiteralNumber,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(6).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(6).offset_from_start(),
                 TextWidth::new_for_testing(0)
             ),
             (
                 SyntaxKind::TokenLiteralNumber,
                 Some("5".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(6).offset_from_start(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(7)),
+                TextWidth::new_for_testing(7).offset_from_start(),
                 TextWidth::new_for_testing(0)
             )
         ]
