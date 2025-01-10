@@ -95,7 +95,7 @@ fn test_token_stream_expr_parser() {
     let token_stream = MockTokenStream {
         tokens: vec![MockToken {
             content: expr_code.to_string(),
-            span: TextSpan { start: TextOffset::default(), end: TextOffset::from_str(expr_code) },
+            span: TextSpan::from_str(expr_code),
         }],
         content_string: expr_code.to_string(),
     };

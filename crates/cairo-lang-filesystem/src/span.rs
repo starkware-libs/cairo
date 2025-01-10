@@ -111,6 +111,11 @@ pub struct TextSpan {
     pub end: TextOffset,
 }
 impl TextSpan {
+    /// Creates a `TextSpan` for the entirety of a given string.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(content: &str) -> Self {
+        Self { start: TextOffset::START, end: TextOffset::from_str(content) }
+    }
     pub fn width(self) -> TextWidth {
         self.end - self.start
     }
