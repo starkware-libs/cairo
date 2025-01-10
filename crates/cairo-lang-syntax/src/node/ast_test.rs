@@ -45,67 +45,67 @@ fn test_ast() {
             (
                 SyntaxKind::Trivia,
                 None,
-                TextWidth::new_for_testing(3).offset_from_start(),
+                TextWidth::new_for_testing(3).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextWidth::new_for_testing(3).offset_from_start(),
+                TextWidth::new_for_testing(3).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TerminalPlus,
                 None,
-                TextWidth::new_for_testing(4).offset_from_start(),
+                TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(2)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextWidth::new_for_testing(4).offset_from_start(),
+                TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(0)
             ),
             (
                 SyntaxKind::TokenPlus,
                 Some("+".into()),
-                TextWidth::new_for_testing(4).offset_from_start(),
+                TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextWidth::new_for_testing(5).offset_from_start(),
+                TextWidth::new_for_testing(5).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextWidth::new_for_testing(5).offset_from_start(),
+                TextWidth::new_for_testing(5).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::TerminalLiteralNumber,
                 None,
-                TextWidth::new_for_testing(6).offset_from_start(),
+                TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextWidth::new_for_testing(6).offset_from_start(),
+                TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(0)
             ),
             (
                 SyntaxKind::TokenLiteralNumber,
                 Some("5".into()),
-                TextWidth::new_for_testing(6).offset_from_start(),
+                TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextWidth::new_for_testing(7).offset_from_start(),
+                TextWidth::new_for_testing(7).as_offset(),
                 TextWidth::new_for_testing(0)
             )
         ]
