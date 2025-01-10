@@ -4,12 +4,14 @@ use cairo_lang_defs::ids::{
     FileIndex, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId, TraitFunctionId,
     TraitId,
 };
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use itertools::chain;
 use smol_str::SmolStr;
 
-use crate::corelib::{core_submodule, get_submodule};
+use crate::corelib::{self, core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
 use crate::items::us::SemanticUseEx;
@@ -244,7 +246,18 @@ pub fn visible_traits_from_module(
     );
     module_visible_traits
         .extend_from_slice(&db.visible_traits_in_module(module_id, module_file_id, true)[..]);
-    for crate_id in db.crates() {
+    let owning_crate_id = module_file_id.0.owning_crate(db.upcast());
+    let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
+    for crate_id in chain!(
+        [owning_crate_id, corelib::core_crate(db)],
+        settings.dependencies.iter().map(|(name, setting)| {
+            CrateLongId::Real {
+                name: name.clone().into(),
+                discriminator: setting.discriminator.clone(),
+            }
+            .intern(db)
+        })
+    ) {
         if crate_id == current_crate_id {
             continue;
         }

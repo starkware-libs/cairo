@@ -795,21 +795,42 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
-                if inference_errors.is_empty() {
-                    format!(
-                        "Method `{}` not found on type `{}`. Did you import the correct trait and \
-                         impl?",
-                        method_name,
-                        ty.format(db)
-                    )
-                } else {
-                    format!(
+            SemanticDiagnosticKind::CannotCallMethod {
+                ty,
+                method_name,
+                inference_errors,
+                relevant_traits,
+            } => {
+                if !inference_errors.is_empty() {
+                    return format!(
                         "Method `{}` could not be called on type `{}`.\n{}",
                         method_name,
                         ty.format(db),
                         inference_errors.format(db)
-                    )
+                    );
+                }
+                match relevant_traits {
+                    trait_suggestions if !trait_suggestions.is_empty() => {
+                        let suggestions = trait_suggestions
+                            .iter()
+                            .map(|trait_path| format!("`{trait_path}`"))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+
+                        format!(
+                            "Method `{}` not found on type `{}`. Consider importing one of the \
+                             following traits: {}.",
+                            method_name,
+                            ty.format(db),
+                            suggestions
+                        )
+                    }
+                    _ => format!(
+                        "Method `{}` not found on type `{}`. Did you import the correct trait and \
+                         impl?",
+                        method_name,
+                        ty.format(db)
+                    ),
                 }
             }
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
@@ -1212,6 +1233,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         method_name: SmolStr,
         inference_errors: TraitInferenceErrors,
+        relevant_traits: Vec<String>,
     },
     NoSuchStructMember {
         struct_id: StructId,
