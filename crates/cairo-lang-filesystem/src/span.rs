@@ -29,7 +29,12 @@ impl TextWidth {
     pub fn new_for_testing(value: u32) -> Self {
         Self(value)
     }
-    pub fn at_char_boundary(s: &str, index: usize) -> Self {
+    /// Creates a `TextWidth` at the given index of a string.
+    ///
+    /// The index is required to be a char boundary.
+    /// This function runs a debug assertion to verify this,
+    /// while retains performance on release builds.
+    pub fn at(s: &str, index: usize) -> Self {
         debug_assert!(
             s.is_char_boundary(index),
             "cannot create a TextWidth outside of a char boundary"
