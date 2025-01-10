@@ -228,26 +228,21 @@ impl SyntaxNode {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in db.get_children(self.clone()).iter() {
-                    let kind = child.kind(db);
-
-                    if matches!(kind, SyntaxKind::Trivia) {
-                        ast::Trivia::from_syntax_node(db, child.clone())
-                            .elements(db)
-                            .iter()
-                            .for_each(|element| {
-                                if !matches!(
-                                    element,
-                                    ast::Trivium::SingleLineComment(_)
-                                        | ast::Trivium::SingleLineDocComment(_)
-                                        | ast::Trivium::SingleLineInnerComment(_)
-                                ) {
-                                    buffer.push_str(
-                                        &element
-                                            .as_syntax_node()
-                                            .get_text_without_all_comment_trivia(db),
-                                    );
-                                }
-                            });
+                    if let Some(trivia) = ast::Trivia::cast(db, child.clone()) {
+                        trivia.elements(db).iter().for_each(|element| {
+                            if !matches!(
+                                element,
+                                ast::Trivium::SingleLineComment(_)
+                                    | ast::Trivium::SingleLineDocComment(_)
+                                    | ast::Trivium::SingleLineInnerComment(_)
+                            ) {
+                                buffer.push_str(
+                                    &element
+                                        .as_syntax_node()
+                                        .get_text_without_all_comment_trivia(db),
+                                );
+                            }
+                        });
                     } else {
                         buffer
                             .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
@@ -317,14 +312,14 @@ impl SyntaxNode {
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
-pub trait TypedSyntaxNode {
+pub trait TypedSyntaxNode: Sized {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr: TypedStablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
-    // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self>;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
@@ -345,6 +340,14 @@ pub trait Terminal: TypedSyntaxNode {
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
+    fn cast_token(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
+            Some(Self::from_syntax_node(db, node.parent()?))
+        } else {
+            None
+        }
+    }
 }
 
 /// Trait for stable pointers to syntax nodes.
