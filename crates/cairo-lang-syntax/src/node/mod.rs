@@ -340,6 +340,14 @@ pub trait Terminal: TypedSyntaxNode {
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
+    fn cast_token(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
+            Some(Self::from_syntax_node(db, node.parent()?))
+        } else {
+            None
+        }
+    }
 }
 
 /// Trait for stable pointers to syntax nodes.
