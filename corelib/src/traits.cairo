@@ -681,6 +681,28 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
 }
 
 /// A trait for conversion between types where the conversion is guaranteed to succeed.
+///
+/// # Examples
+///
+/// An implementation of `Into` from `bool` to a wrapper around `bool`.
+///
+/// ```
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     bool: bool,
+/// }
+///
+/// impl BoolIntoWrapper of Into<bool, Wrapper> {
+///     fn into(self: bool) -> Wrapper {
+///         Wrapper { bool: self }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(true.into() == Wrapper { bool: true });
+///     assert!(false.into() == Wrapper { bool: false });
+/// }
+/// ```
 pub trait Into<T, S> {
     /// Converts a type into another in a safely manner.
     ///
@@ -701,6 +723,34 @@ impl TIntoT<T> of Into<T, T> {
 }
 
 /// A trait for conversion between types where the conversion is not guaranteed to succeed.
+///
+/// # Examples
+///
+/// An implementation of `TryInto` from `u16` to a wrapper around `u8`.
+///
+/// ```
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     u8: u8,
+/// }
+///
+/// impl U16TryIntoWrapper of TryInto<u16, Wrapper> {
+///     fn try_into(self: u16) -> Option<Wrapper> {
+///         if self <= 255 {
+///         Option::Some(Wrapper { u8: self.try_into().unwrap() })
+///         } else {
+///             Option::None
+///         }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(1_u16.try_into().unwrap() == Wrapper { u8: 1 });
+///
+///     let result: Option<Wrapper> = 256_u16.try_into();
+///     assert!(result == Option::None);
+/// }
+/// ```
 pub trait TryInto<T, S> {
     /// Converts a type into another and returns an option of the value if the conversion is
     /// successful, `Option::None` otherwise.
@@ -722,6 +772,28 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
 }
 
 /// A trait for computing the unary negation operator `-`.
+///
+/// # Examples
+///
+/// An implementation of `Neg` for a wrapper around `i8`.
+///
+/// ```
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     i8: i8,
+/// }
+///
+/// impl WrapperNeg of Neg<Wrapper> {
+///     fn neg(a: Wrapper) -> Wrapper {
+///         Wrapper { i8: -a.i8 }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(-Wrapper { i8: -1 } == Wrapper { i8: 1 });
+///     assert!(-Wrapper { i8: 4 } == Wrapper { i8: -4 });
+/// }
+/// ```
 pub trait Neg<T> {
     /// Performs the unary `-` operation.
     ///
@@ -735,6 +807,32 @@ pub trait Neg<T> {
 }
 
 /// A trait for computing the unary logical negation operator `!`.
+///
+/// # Examples
+///
+/// An implementation of `Not` for an `Answer` enum with `Yes` and `No` variants.
+///
+/// ```
+/// #[derive(Drop, PartialEq)]
+/// enum Answer {
+///     Yes,
+///     No,
+/// }
+///
+/// impl AnswerNot of Not<Answer> {
+///     fn not(a: Answer) -> Answer {
+///         match a {
+///             Answer::Yes => Answer::No,
+///             Answer::No => Answer::Yes,
+///         }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(!Answer::Yes == Answer::No);
+///     assert!(!Answer::No == Answer::Yes);
+/// }
+/// ```
 pub trait Not<T> {
     /// Performs the unary `!` operation.
     ///
@@ -841,7 +939,7 @@ pub trait Default<T> {
     /// }
     ///
     /// let dict: Felt252Dict<u8> = Default::default();
-    /// ````
+    /// ```
     #[must_use]
     fn default() -> T;
 }
