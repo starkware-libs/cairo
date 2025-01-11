@@ -19,6 +19,13 @@
 //! still enables access to individual struct members through `SubPointers` without imposing the
 //! phantom type behavior.
 //!
+//! The storage layout differs significantly between these two approaches:
+//! * `#[derive(Store)]`: Members are stored continuously in the same variable space, with a limit
+//!   of 256 field elements.
+//! * Storage node: Each member is stored at a different location. For a storage node member `m`
+//!   within a storage variable `variable_name`, the path to that member is computed as
+//!   `h(sn_keccak(variable_name), sn_keccak(m))`, where `h` is the Pedersen hash.
+//!
 //! # Examples
 //!
 //! Here's how to define a storage node:
