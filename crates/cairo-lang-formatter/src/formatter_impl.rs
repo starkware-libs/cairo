@@ -1081,13 +1081,10 @@ impl<'a> FormatterImpl<'a> {
     /// Returns whether the node has only whitespace trivia.
     fn has_only_whitespace_trivia(&self, node: &SyntaxNode) -> bool {
         node.descendants(self.db).all(|descendant| {
-            if descendant.kind(self.db) == SyntaxKind::Trivia {
-                ast::Trivia::from_syntax_node(self.db, descendant)
-                    .elements(self.db)
-                    .into_iter()
-                    .all(|element| {
-                        matches!(element, ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_))
-                    })
+            if let Some(trivia) = ast::Trivia::cast(self.db, descendant) {
+                trivia.elements(self.db).into_iter().all(|element| {
+                    matches!(element, ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_))
+                })
             } else {
                 true
             }

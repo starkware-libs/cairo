@@ -200,7 +200,7 @@ End:
 test_borrow_check
 
 //! > function
-fn foo(ref self: Query::<felt252>, value: felt252) {
+fn foo(ref self: Query<felt252>, value: felt252) {
     self.data.append(value)
 }
 
@@ -209,7 +209,7 @@ foo
 
 //! > module_code
 struct Query<T> {
-    data: Array::<T>,
+    data: Array<T>,
 }
 
 //! > semantic_diagnostics

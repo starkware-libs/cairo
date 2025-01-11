@@ -4,7 +4,7 @@
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<felt252> {
+fn foo() -> Option<felt252> {
     let x = Option::None;
     let _ = x.is_some();
     x
@@ -33,7 +33,7 @@ impl OtherImpl of AnotherTrait {
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> Option::<felt252> {
+fn foo() -> Option<felt252> {
     let x = Option::None;
     x.is_foo();
     x.is_bla();
@@ -48,8 +48,8 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-    fn is_bla(self: Option::<T>) -> bool;
-    fn is_bar(self: Option::<T>) -> bool;
+    fn is_bla(self: Option<T>) -> bool;
+    fn is_bar(self: Option<T>) -> bool;
 }
 impl MyTraitImpl<T> of MyTrait<T> {
     fn is_bla(self: Option<T>) -> bool {
@@ -58,26 +58,26 @@ impl MyTraitImpl<T> of MyTrait<T> {
             Option::None => false,
         }
     }
-    fn is_bar(self: Option::<T>) -> bool {
+    fn is_bar(self: Option<T>) -> bool {
         true
     }
 }
 impl AnotherMyTraitImpl<T> of MyTrait<felt252> {
-    fn is_bla(self: Option::<felt252>) -> bool {
+    fn is_bla(self: Option<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None => false,
         }
     }
-    fn is_bar(self: Option::<felt252>) -> bool {
+    fn is_bar(self: Option<felt252>) -> bool {
         true
     }
 }
 trait AnotherTrait {
-    fn is_bar(self: Option::<bool>) -> bool;
+    fn is_bar(self: Option<bool>) -> bool;
 }
 impl AnotherTraitImpl of AnotherTrait {
-    fn is_bar(self: Option::<bool>) -> bool {
+    fn is_bar(self: Option<bool>) -> bool {
         false
     }
 }
