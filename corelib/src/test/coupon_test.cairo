@@ -12,7 +12,7 @@ fn arr_sum(arr: Array<(u128, arr_sum::Coupon)>) -> u128 nopanic {
 
 #[test]
 fn test_arr_sum() {
-    let mut arr: Array::<(u128, arr_sum::Coupon)> = array![];
+    let mut arr: Array<(u128, arr_sum::Coupon)> = array![];
     arr.append((3, coupon_buy()));
     arr.append((4, coupon_buy()));
     arr.append((5, coupon_buy()));

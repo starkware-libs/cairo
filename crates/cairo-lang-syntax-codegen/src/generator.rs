@@ -366,6 +366,13 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 Self(ElementList::new(node))
             }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                if node.kind(db) == SyntaxKind::$name {
+                    Some(Self(ElementList::new(node)))
+                } else {
+                    None
+                }
+            }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
             }
@@ -390,6 +397,7 @@ fn gen_enum_code(
     let green_name = format!("{name}Green");
     let mut enum_body = quote! {};
     let mut from_node_body = quote! {};
+    let mut cast_body = quote! {};
     let mut ptr_conversions = quote! {};
     let mut green_conversions = quote! {};
     for variant in &variants {
@@ -401,6 +409,9 @@ fn gen_enum_code(
         });
         from_node_body.extend(quote! {
             SyntaxKind::$k => $(&name)::$n($k::from_syntax_node(db, node)),
+        });
+        cast_body.extend(quote! {
+            SyntaxKind::$k => Some($(&name)::$n($k::from_syntax_node(db, node))),
         });
         let variant_ptr = format!("{k}Ptr");
         ptr_conversions.extend(quote! {
@@ -467,6 +478,13 @@ fn gen_enum_code(
                         "Unexpected syntax kind {:?} when constructing {}.",
                         kind,
                         $[str]($[const](&name))),
+                }
+            }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                let kind = node.kind(db);
+                match kind {
+                    $cast_body
+                    _ => None,
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
@@ -554,6 +572,12 @@ fn gen_token_code(name: String) -> rust::Tokens {
                         "Expected a token {:?}, not an internal node",
                         SyntaxKind::$(&name)
                     ),
+                }
+            }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                match node.0.green.lookup_intern(db).details {
+                    GreenNodeDetails::Token(_) => Some(Self { node }),
+                    GreenNodeDetails::Node { .. } => None,
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
@@ -705,6 +729,14 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
                 let children = db.get_children(node.clone());
                 Self { node, children }
+            }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                let kind = node.kind(db);
+                if kind == SyntaxKind::$(&name) {
+                    Some(Self::from_syntax_node(db, node))
+                } else {
+                    None
+                }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()

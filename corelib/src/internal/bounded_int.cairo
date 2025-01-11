@@ -233,7 +233,7 @@ impl MulMinus1<
 
 mod minus_1 {
     pub extern type Const<T, const VALUE: felt252>;
-    pub extern fn const_as_immediate<C>() -> super::BoundedInt::<-1, -1> nopanic;
+    pub extern fn const_as_immediate<C>() -> super::BoundedInt<-1, -1> nopanic;
 }
 mod nz_minus_1 {
     pub extern type Const<T, C>;

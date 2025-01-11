@@ -235,7 +235,7 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
     /// related to is squashed before going out of scope.
     /// `destruct` is automatically called when a dictionary entry goes out of scope.
     #[inline]
-    fn destruct(self: Felt252DictEntry::<T>) nopanic {
+    fn destruct(self: Felt252DictEntry<T>) nopanic {
         felt252_dict_entry_finalize(self, Felt252DictValue::zero_default());
     }
 }

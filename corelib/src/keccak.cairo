@@ -47,7 +47,7 @@ fn u128_split(input: u128) -> (u64, u64) {
     (u128_to_u64(high), u128_to_u64(low))
 }
 
-fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
+fn keccak_add_u256_le(ref keccak_input: Array<u64>, v: u256) {
     let (high, low) = u128_split(v.low);
     keccak_input.append(low);
     keccak_input.append(high);
@@ -76,7 +76,7 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
 /// 0xf005473605efc7d8ff67d9f23fe2e4a4f23454c12b49b38822ed362e0a92a0a6);
 /// ```
 pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
-    let mut keccak_input: Array::<u64> = Default::default();
+    let mut keccak_input: Array<u64> = Default::default();
 
     loop {
         match input.pop_front() {
@@ -89,7 +89,7 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
 }
 
-fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
+fn keccak_add_u256_be(ref keccak_input: Array<u64>, v: u256) {
     let (high, low) = u128_split(crate::integer::u128_byte_reverse(v.high));
     keccak_input.append(low);
     keccak_input.append(high);
@@ -118,7 +118,7 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
 /// 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
 /// ```
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
-    let mut keccak_input: Array::<u64> = Default::default();
+    let mut keccak_input: Array<u64> = Default::default();
 
     loop {
         match input.pop_front() {

@@ -27,8 +27,8 @@ struct UserInfo {
 
 #[starknet::storage_node]
 struct TransactionInfo {
-    balances: Map::<ContractAddress, u256>,
-    allowances: Map::<ContractAddress, Map<ContractAddress, u256>>,
+    balances: Map<ContractAddress, u256>,
+    allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 }
 
 #[starknet::contract]
