@@ -49,6 +49,7 @@ use crate::panics::Panic;
 /// # Examples
 ///
 /// Without `Copy` (move semantics):
+///
 /// ```
 /// #[derive(Drop)]
 /// struct Point {
@@ -66,6 +67,7 @@ use crate::panics::Panic;
 /// ```
 ///
 /// With `Copy` (copy semantics):
+///
 /// ```
 /// #[derive(Copy, Drop)]
 /// struct Point {
@@ -76,7 +78,7 @@ use crate::panics::Panic;
 /// fn main() {
 ///     let p1 = Point { x: 5, y: 10 };
 ///     foo(p1);
-///     foo(p1); // works: p1 is copied when passed to foo
+///     foo(p1); // works: `p1` is copied when passed to `foo`
 /// }
 ///
 /// fn foo(p: Point) {}
@@ -97,16 +99,18 @@ pub trait Copy<T>;
 /// # Examples
 ///
 /// Without `Drop`:
+///
 /// ```
 /// struct Point {
 ///     x: u128,
 ///     y: u128,
 /// }
 ///
-/// fn foo(p: Point) {} // Error: p cannot be dropped
+/// fn foo(p: Point) {} // Error: `p` cannot be dropped
 /// ```
 ///
 /// With `Drop`:
+///
 /// ```
 /// #[derive(Drop)]
 /// struct Point {
@@ -114,7 +118,7 @@ pub trait Copy<T>;
 ///     y: u128,
 /// }
 ///
-/// fn foo(p: Point) {} // OK: p is dropped at the end of the function
+/// fn foo(p: Point) {} // OK: `p` is dropped at the end of the function
 /// ```
 pub trait Drop<T>;
 
@@ -130,11 +134,13 @@ impl SnapshotDrop<T> of Drop<@T>;
 /// # Examples
 ///
 /// Basic usage with numbers:
+///
 /// ```
 /// assert!(1_u8 + 2_u8 == 3_u8);
 /// ```
 ///
 /// Custom implementation for a type:
+///
 /// ```
 /// #[derive(Copy, Drop, PartialEq)]
 /// struct Point {
@@ -159,10 +165,10 @@ impl SnapshotDrop<T> of Drop<@T>;
 pub trait Add<T> {
     /// Performs the `+` operation.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
-    /// assert_eq!(12 + 1, 13);
+    /// assert!(12 + 1 == 13);
     /// ```
     fn add(lhs: T, rhs: T) -> T;
 }
@@ -176,6 +182,40 @@ pub trait AddEq<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
 /// The subtraction operator `-`.
+///
+/// Types implementing this trait support the subtraction operation via the `-` operator.
+///
+/// # Examples
+///
+/// Basic usage with numbers:
+///
+/// ```
+/// assert!(3_u8 - 2_u8 == 1_u8);
+/// ```
+///
+/// Custom implementation for a type:
+///
+/// ```
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+///
+/// impl PointSub of Sub<Point> {
+///     fn sub(lhs: Point, rhs: Point) -> Point {
+///         Point {
+///             x: lhs.x - rhs.x,
+///             y: lhs.y - rhs.y,
+///         }
+///     }
+/// }
+///
+/// let p1 = Point { x: 2, y: 3 };
+/// let p2 = Point { x: 1, y: 0 };
+/// let p3 = p1 - p2;
+/// assert!(p3 == Point { x: 1, y: 3 });
+/// ```
 pub trait Sub<T> {
     /// Performs the `-` operation.
     ///
@@ -196,6 +236,40 @@ pub trait SubEq<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
 /// The multiplication operator `*`.
+///
+/// Types implementing this trait support the multiplication operation via the `*` operator.
+///
+/// # Examples
+///
+/// Basic usage with numbers:
+///
+/// ```
+/// assert!(3_u8 * 2_u8 == 6_u8);
+/// ```
+///
+/// Custom implementation for a type:
+///
+/// ```
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+///
+/// impl PointMul of Mul<Point> {
+///     fn mul(lhs: Point, rhs: Point) -> Point {
+///         Point {
+///             x: lhs.x * rhs.x,
+///             y: lhs.y * rhs.y,
+///         }
+///     }
+/// }
+///
+/// let p1 = Point { x: 2, y: 3 };
+/// let p2 = Point { x: 1, y: 0 };
+/// let p3 = p1 * p2;
+/// assert!(p3 == Point { x: 2, y: 0 });
+/// ```
 pub trait Mul<T> {
     /// Performs the `*` operation.
     ///
@@ -216,6 +290,40 @@ pub trait MulEq<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait Div<X, Y>.
 /// The division operator `/`.
+///
+/// Types implementing this trait support the division operation via the `/` operator.
+///
+/// # Examples
+///
+/// Basic usage with numbers:
+///
+/// ```
+/// assert!(4_u8 / 2_u8 == 2_u8);
+/// ```
+///
+/// Custom implementation for a type:
+///
+/// ```
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+///
+/// impl PointDiv of Div<Point> {
+///     fn div(lhs: Point, rhs: Point) -> Point {
+///         Point {
+///             x: lhs.x / rhs.x,
+///             y: lhs.y / rhs.y,
+///         }
+///     }
+/// }
+///
+/// let p1 = Point { x: 2, y: 4 };
+/// let p2 = Point { x: 2, y: 2 };
+/// let p3 = p1 / p2;
+/// assert!(p3 == Point { x: 1, y: 2 });
+/// ```
 pub trait Div<T> {
     /// Performs the `/` operation.
     ///
@@ -236,13 +344,23 @@ pub trait DivEq<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
 /// The remainder operator `%`.
+///
+/// Types implementing this trait support the remainder operation via the `%` operator.
+///
+/// # Examples
+///
+/// Basic usage with numbers:
+///
+/// ```
+/// assert!(3_u8 % 2_u8 == 1_u8);
+/// ```
 pub trait Rem<T> {
     /// Performs the `%` operation.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(12 % 10 == 2);
+    /// assert!(12_u8 % 10_u8 == 2_u8);
     /// ```
     fn rem(lhs: T, rhs: T) -> T;
 }
@@ -285,12 +403,14 @@ pub trait DivRem<T> {
 /// # Examples
 ///
 /// Basic usage with built-in types:
+///
 /// ```
 /// assert!(1 == 1);
 /// assert!(1 != 2);
 /// ```
 ///
 /// Custom implementation:
+///
 /// ```
 /// #[derive(Copy, Drop)]
 /// struct Point {
@@ -339,6 +459,33 @@ impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
 /// A trait for computing the bitwise AND operator `&`.
+///
+/// # Examples
+///
+/// An implementation of `BitAnd` for a wrapper around `bool`.
+///
+/// ```
+/// use core::traits::BitAnd;
+///
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     bool: bool,
+/// }
+///
+/// impl BitAndWrapper of BitAnd<Wrapper> {
+///     #[inline]
+///     fn bitand(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
+///         Wrapper { bool: lhs.bool & rhs.bool }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(Wrapper { bool: true } & Wrapper { bool: true } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: true } & Wrapper { bool: false } == Wrapper { bool: false });
+///     assert!(Wrapper { bool: false } & Wrapper { bool: true } == Wrapper { bool: false });
+///     assert!(Wrapper { bool: false } & Wrapper { bool: false } == Wrapper { bool: false });
+/// }
+/// ```
 pub trait BitAnd<T> {
     /// Computes the result of the AND operation between two values of the same type.
     ///
@@ -352,6 +499,33 @@ pub trait BitAnd<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait BitOr<X, Y>.
 /// A trait for computing the bitwise OR operator `|`.
+///
+/// # Examples
+///
+/// An implementation of `BitOr` for a wrapper around `bool`.
+///
+/// ```
+/// use core::traits::BitOr;
+///
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     bool: bool,
+/// }
+///
+/// impl BitOrWrapper of BitOr<Wrapper> {
+///     #[inline]
+///     fn bitor(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
+///         Wrapper { bool: lhs.bool | rhs.bool }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(Wrapper { bool: true } | Wrapper { bool: true } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: true } | Wrapper { bool: false } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: false } | Wrapper { bool: true } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: false } | Wrapper { bool: false } == Wrapper { bool: false });
+/// }
+/// ```
 pub trait BitOr<T> {
     /// Computes the result of the OR operation between two values of the same type.
     ///
@@ -365,6 +539,33 @@ pub trait BitOr<T> {
 
 // TODO(spapini): When associated types are supported, support the general trait BitXor<X, Y>.
 /// A trait for computing the bitwise XOR operator `^`.
+///
+/// # Examples
+///
+/// An implementation of `BitXor` for a wrapper around `bool`.
+///
+/// ```
+/// use core::traits::BitXor;
+///
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     bool: bool,
+/// }
+///
+/// impl BitXorWrapper of BitXor<Wrapper> {
+///     #[inline]
+///     fn bitxor(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
+///         Wrapper { bool: lhs.bool ^ rhs.bool }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(Wrapper { bool: true } ^ Wrapper { bool: true } == Wrapper { bool: false });
+///     assert!(Wrapper { bool: true } ^ Wrapper { bool: false } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: false } ^ Wrapper { bool: true } == Wrapper { bool: true });
+///     assert!(Wrapper { bool: false } ^ Wrapper { bool: false } == Wrapper { bool: false });
+/// }
+/// ```
 pub trait BitXor<T> {
     /// Computes the result of the XOR operation between two values of the same type.
     ///
@@ -377,6 +578,31 @@ pub trait BitXor<T> {
 }
 
 /// A trait for computing the bitwise NOT operator `~`.
+///
+/// # Examples
+///
+/// An implementation of `BitNot` for a wrapper around `u8`.
+///
+/// ```
+/// use core::traits::BitNot;
+///
+/// #[derive(Drop, PartialEq)]
+/// struct Wrapper {
+///     u8: u8,
+/// }
+///
+/// impl BitNotWrapper of BitNot<Wrapper> {
+///     #[inline]
+///     fn bitnot(a: Wrapper) -> Wrapper {
+///         Wrapper { u8: ~a.u8 }
+///     }
+/// }
+///
+/// fn main() {
+///     assert!(~Wrapper { u8: 0 } == Wrapper { u8 : 255 });
+///     assert!(~Wrapper { u8: 1 } == Wrapper { u8 : 254 });
+/// }
+/// ```
 pub trait BitNot<T> {
     /// Computes the result of the NOT operation between two values of the same type.
     ///
