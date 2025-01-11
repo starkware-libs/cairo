@@ -2,7 +2,7 @@
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
     lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
-) -> CircuitElement::<AddModGate<Lhs, Rhs>> {
+) -> CircuitElement<AddModGate<Lhs, Rhs>> {
     CircuitElement::<AddModGate<Lhs, Rhs>> {}
 }
 
@@ -11,7 +11,7 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 /// the `submod` operation to the two input circuits.
 pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
     lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
-) -> CircuitElement::<SubModGate<Lhs, Rhs>> {
+) -> CircuitElement<SubModGate<Lhs, Rhs>> {
     CircuitElement::<SubModGate<Lhs, Rhs>> {}
 }
 
@@ -19,7 +19,7 @@ pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 /// the inverse operation on the input circuit.
 pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
     input: CircuitElement<Input>,
-) -> CircuitElement::<InverseGate<Input>> {
+) -> CircuitElement<InverseGate<Input>> {
     CircuitElement::<InverseGate<Input>> {}
 }
 
@@ -27,7 +27,7 @@ pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
 /// the `mul` operation to the two input circuits.
 pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
     lhs: CircuitElement<Lhs>, rhs: CircuitElement<Rhs>,
-) -> CircuitElement::<MulModGate<Lhs, Rhs>> {
+) -> CircuitElement<MulModGate<Lhs, Rhs>> {
     CircuitElement::<MulModGate<Lhs, Rhs>> {}
 }
 
