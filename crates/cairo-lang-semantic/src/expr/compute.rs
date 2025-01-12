@@ -12,8 +12,8 @@ use cairo_lang_defs::db::{get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId,
-    MemberId, ModuleItemId, NamedLanguageElementId, StatementConstLongId, StatementItemId,
-    StatementUseLongId, TraitFunctionId, TraitId, VarId,
+    MemberId, ModuleFileId, ModuleItemId, NamedLanguageElementId, StatementConstLongId,
+    StatementItemId, StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{Maybe, ToOption, skip_diagnostic};
@@ -34,18 +34,17 @@ use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, OptionHelper, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use salsa::InternKey;
 use smol_str::SmolStr;
-use utils::Intern;
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
 use super::inference::infers::InferenceEmbeddings;
-use super::inference::{Inference, InferenceError};
+use super::inference::{Inference, InferenceData, InferenceError};
 use super::objects::*;
 use super::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
@@ -62,11 +61,13 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
-use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -2778,6 +2779,11 @@ fn method_call_expr(
         }
     }
 
+    // Extracting the possible traits that should be imported, in order to use the method.
+    let module_file_id = ctx.resolver.module_file_id;
+    let lookup_context = ctx.resolver.impl_lookup_context();
+    let lexpr_clone = lexpr.clone();
+    let db = ctx.db;
     let (function_id, actual_trait_id, fixed_lexpr, mutability) =
         compute_method_function_call_data(
             ctx,
@@ -2787,7 +2793,19 @@ fn method_call_expr(
             path.stable_ptr().untyped(),
             generic_args_syntax,
             |ty, method_name, inference_errors| {
-                Some(CannotCallMethod { ty, method_name, inference_errors })
+                let relevant_traits = if !inference_errors.is_empty() {
+                    vec![]
+                } else {
+                    match_method_to_traits(
+                        db,
+                        ty,
+                        &method_name,
+                        lookup_context.clone(),
+                        module_file_id,
+                        lexpr_clone.stable_ptr().untyped(),
+                    )
+                };
+                Some(CannotCallMethod { ty, method_name, inference_errors, relevant_traits })
             },
             |_, trait_function_id0, trait_function_id1| {
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
@@ -3800,4 +3818,46 @@ fn function_parameter_types(
     let signature = ctx.db.concrete_function_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
+}
+
+/// Finds traits which contain a method matching the given name and type.
+/// This function checks for visible traits in the specified module file and filters
+/// methods based on their association with the given type and method name.
+fn match_method_to_traits(
+    db: &dyn SemanticGroup,
+    ty: semantic::TypeId,
+    method_name: &SmolStr,
+    lookup_context: ImplLookupContext,
+    module_file_id: ModuleFileId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Vec<String> {
+    let visible_traits = db
+        .visible_traits_from_module(module_file_id)
+        .unwrap_or_else(|| Arc::new(OrderedHashMap::default()));
+
+    visible_traits
+        .iter()
+        .filter_map(|(trait_id, path)| {
+            let mut data = InferenceData::new(InferenceId::NoContext);
+            let mut inference = data.inference(db);
+            let trait_function =
+                db.trait_function_by_name(*trait_id, method_name.clone()).ok()??;
+            let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self(
+                trait_function,
+                ty,
+                &lookup_context,
+                Some(stable_ptr),
+                |_| {},
+            )?;
+            inference.solve().ok();
+            match inference.trait_solution_set(
+                concrete_trait_id,
+                ImplVarTraitItemMappings::default(),
+                lookup_context.clone(),
+            ) {
+                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => Some(path.clone()),
+                _ => None,
+            }
+        })
+        .collect()
 }
