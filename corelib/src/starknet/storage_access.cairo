@@ -132,6 +132,22 @@ impl LowerHexStorageBaseAddress of core::fmt::LowerHex<StorageBaseAddress> {
 }
 
 /// Trait for types that can be used as a value in Starknet storage variables.
+///
+/// The `Store` trait enables types to be stored in and retrieved from Starknet contract storage. It
+/// is implemented by default for most basic types.
+/// It can be automatically derived for custom types using `#[derive(Store)]`, as long as members of
+/// the type implement `Store`.
+///
+/// # Derivation
+///
+/// To make a type storable in contract storage, simply derive the `Store` trait:
+///
+/// ```
+/// #[derive(Store)]
+/// struct MyStruct {
+///     value: felt252,
+/// }
+/// ```
 pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
@@ -154,8 +170,42 @@ pub trait Store<T> {
     fn size() -> u8;
 }
 
-/// Trait for easier implementation of `Store` used for packing and unpacking values into values
-/// that already implement `Store`, and having `Store` implemented using this conversion.
+/// Trait for easier implementation of `Store` used for packing and unpacking values into values of
+/// another type that already implement `Store`, and having `Store` implemented using this
+/// conversion.
+///
+/// `StorePacking` enables custom types to be stored in contract storage by converting
+/// them to and from types that already implement `Store`. This is particularly useful
+/// for types that need special serialization.
+///
+/// # Usage
+///
+/// 1. Implement `StorePacking` for your type
+/// 2. `StoreUsingPacking` implementation automatically implement `Store` for the type
+///
+/// # Implementation
+///
+/// To implement `StorePacking` for a custom type:
+///
+/// ```
+/// // 1. Define your type
+/// #[derive(Copy, Drop)]
+/// struct CustomType {
+///     value: u8,
+/// }
+///
+/// // 2. Implement `StorePacking` to convert to/from a storable type
+/// impl CustomTypeStorePacking of StorePacking<CustomType, felt252> {
+///     fn pack(value: CustomType) -> felt252 {
+///         value.value.into()
+///     }
+///
+///     fn unpack(packed: felt252) -> CustomType {
+///         CustomType { value: packed.try_into().unwrap() }
+///     }
+/// }
+///
+/// `Store` implementation is then automatically provided by `StoreUsingPacking` implementation.
 pub trait StorePacking<T, PackedT> {
     /// Packs a value of type `T` into a value of type `PackedT`.
     fn pack(value: T) -> PackedT;
