@@ -21,7 +21,7 @@ pub fn get_location_marks(
         .start
         .position_in_file(db, location.file_id)
         .expect("Failed to find location in file.");
-    if span.end.as_u32() <= summary.last_offset.as_u32() {
+    if span.end <= summary.last_offset {
         let TextPosition { line: last_line_idx, col: _ } = span
             .end
             .position_in_file(db, location.file_id)

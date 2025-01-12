@@ -76,7 +76,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn test() {
-    let expensive_closure =  || -> u32 {
+    let expensive_closure = || -> u32 {
         let x = num + 5;
         x
     };
@@ -126,7 +126,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn test() {
-    let expensive_closure =  || {
+    let expensive_closure = || {
         x
     };
 }
@@ -162,7 +162,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn test() {
-    let expensive_closure =  || 3;
+    let expensive_closure = || 3;
 }
 
 //! > top_level_kind

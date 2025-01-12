@@ -7,7 +7,6 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 #[derive(Debug, Default)]
@@ -160,10 +159,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         for node in
                             db.get_children(signature.parameters(db).node.clone()).iter().cloned()
                         {
-                            if node.kind(db) != SyntaxKind::Param {
-                                builder.add_node(node);
-                            } else {
-                                let param = ast::Param::from_syntax_node(db, node);
+                            if let Some(param) = ast::Param::cast(db, node.clone()) {
                                 for modifier in param.modifiers(db).elements(db) {
                                     // `mut` modifiers are only relevant for impls, not traits.
                                     if !matches!(modifier, ast::Modifier::Mut(_)) {
@@ -172,6 +168,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                                 }
                                 builder.add_node(param.name(db).as_syntax_node());
                                 builder.add_node(param.type_clause(db).as_syntax_node());
+                            } else {
+                                builder.add_node(node);
                             }
                         }
                         let rparen = signature.rparen(db);

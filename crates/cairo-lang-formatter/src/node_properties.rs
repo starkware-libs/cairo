@@ -46,6 +46,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::TokenOr => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
             }
+            SyntaxKind::TokenOrOr => {
+                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
             SyntaxKind::TokenLBrack
                 if !matches!(
                     grandparent_kind(db, self),
@@ -111,6 +114,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             ),
             SyntaxKind::TokenOr => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
+            SyntaxKind::TokenOrOr => {
+                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
@@ -716,7 +722,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalOrOr => {
+                SyntaxKind::TerminalOrOr
+                    if !matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure)) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         12,
                         BreakLinePointIndentation::Indented,

@@ -334,8 +334,8 @@ fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
 }
 fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
     let content = db.file_content(file)?;
-    let mut line_offsets = vec![TextOffset::default()];
-    let mut offset = TextOffset::default();
+    let mut line_offsets = vec![TextOffset::START];
+    let mut offset = TextOffset::START;
     for ch in content.chars() {
         offset = offset.add_width(TextWidth::from_char(ch));
         if ch == '\n' {
