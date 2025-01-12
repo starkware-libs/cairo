@@ -389,7 +389,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     ApChange::Known(1 + if libfunc.boundary.is_zero() { 0 } else { 1 }),
                 ]
             }
-            BoundedIntConcreteLibfunc::Trim(libfunc) => {
+            BoundedIntConcreteLibfunc::TrimMin(libfunc)
+            | BoundedIntConcreteLibfunc::TrimMax(libfunc) => {
                 let ap_change = if libfunc.trimmed_value.is_zero() { 0 } else { 1 };
                 vec![ApChange::Known(ap_change), ApChange::Known(ap_change)]
             }

@@ -113,56 +113,49 @@ extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHel
     value: T,
 ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
 
-/// A helper trait for trimming a `BoundedInt` instance.
-pub trait TrimHelper<T, const TRIMMED_VALUE: felt252> {
+/// A helper trait for trimming a `BoundedInt` instance min value.
+pub trait TrimMinHelper<T> {
+    type Target;
+}
+/// A helper trait for trimming a `BoundedInt` instance max value.
+pub trait TrimMaxHelper<T> {
     type Target;
 }
 mod trim_impl {
-    pub impl Impl<
-        T, const TRIMMED_VALUE: felt252, const MIN: felt252, const MAX: felt252,
-    > of super::TrimHelper<T, TRIMMED_VALUE> {
+    pub impl Min<T, const MIN: felt252, const MAX: felt252> of super::TrimMinHelper<T> {
+        type Target = super::BoundedInt<MIN, MAX>;
+    }
+    pub impl Max<T, const MIN: felt252, const MAX: felt252> of super::TrimMaxHelper<T> {
         type Target = super::BoundedInt<MIN, MAX>;
     }
 }
-impl U8TrimBelow = trim_impl::Impl<u8, 0, 1, 0xff>;
-impl U8TrimAbove = trim_impl::Impl<u8, 0xff, 0, 0xfe>;
-impl I8TrimBelow = trim_impl::Impl<i8, -0x80, -0x7f, 0x7f>;
-impl I8TrimAbove = trim_impl::Impl<i8, 0x7f, -0x80, 0x7e>;
-impl U16TrimBelow = trim_impl::Impl<u16, 0, 1, 0xffff>;
-impl U16TrimAbove = trim_impl::Impl<u16, 0xffff, 0, 0xfffe>;
-impl I16TrimBelow = trim_impl::Impl<i16, -0x8000, -0x7fff, 0x7fff>;
-impl I16TrimAbove = trim_impl::Impl<i16, 0x7fff, -0x8000, 0x7ffe>;
-impl U32TrimBelow = trim_impl::Impl<u32, 0, 1, 0xffffffff>;
-impl U32TrimAbove = trim_impl::Impl<u32, 0xffffffff, 0, 0xfffffffe>;
-impl I32TrimBelow = trim_impl::Impl<i32, -0x80000000, -0x7fffffff, 0x7fffffff>;
-impl I32TrimAbove = trim_impl::Impl<i32, 0x7fffffff, -0x80000000, 0x7ffffffe>;
-impl U64TrimBelow = trim_impl::Impl<u64, 0, 1, 0xffffffffffffffff>;
-impl U64TrimAbove = trim_impl::Impl<u64, 0xffffffffffffffff, 0, 0xfffffffffffffffe>;
-impl I64TrimBelow =
-    trim_impl::Impl<i64, -0x8000000000000000, -0x7fffffffffffffff, 0x7fffffffffffffff>;
-impl I64TrimAbove =
-    trim_impl::Impl<i64, 0x7fffffffffffffff, -0x8000000000000000, 0x7ffffffffffffffe>;
-impl U128TrimBelow = trim_impl::Impl<u128, 0, 1, 0xffffffffffffffffffffffffffffffff>;
-impl U128TrimAbove =
-    trim_impl::Impl<
-        u128, 0xffffffffffffffffffffffffffffffff, 0, 0xfffffffffffffffffffffffffffffffe,
-    >;
+impl U8TrimBelow = trim_impl::Min<u8, 1, 0xff>;
+impl U8TrimAbove = trim_impl::Max<u8, 0, 0xfe>;
+impl I8TrimBelow = trim_impl::Min<i8, -0x7f, 0x7f>;
+impl I8TrimAbove = trim_impl::Max<i8, -0x80, 0x7e>;
+impl U16TrimBelow = trim_impl::Min<u16, 1, 0xffff>;
+impl U16TrimAbove = trim_impl::Max<u16, 0, 0xfffe>;
+impl I16TrimBelow = trim_impl::Min<i16, -0x7fff, 0x7fff>;
+impl I16TrimAbove = trim_impl::Max<i16, -0x8000, 0x7ffe>;
+impl U32TrimBelow = trim_impl::Min<u32, 1, 0xffffffff>;
+impl U32TrimAbove = trim_impl::Max<u32, 0, 0xfffffffe>;
+impl I32TrimBelow = trim_impl::Min<i32, -0x7fffffff, 0x7fffffff>;
+impl I32TrimAbove = trim_impl::Max<i32, -0x80000000, 0x7ffffffe>;
+impl U64TrimBelow = trim_impl::Min<u64, 1, 0xffffffffffffffff>;
+impl U64TrimAbove = trim_impl::Max<u64, 0, 0xfffffffffffffffe>;
+impl I64TrimBelow = trim_impl::Min<i64, -0x7fffffffffffffff, 0x7fffffffffffffff>;
+impl I64TrimAbove = trim_impl::Max<i64, -0x8000000000000000, 0x7ffffffffffffffe>;
+impl U128TrimBelow = trim_impl::Min<u128, 1, 0xffffffffffffffffffffffffffffffff>;
+impl U128TrimAbove = trim_impl::Max<u128, 0, 0xfffffffffffffffffffffffffffffffe>;
 impl I128TrimBelow =
-    trim_impl::Impl<
-        i128,
-        -0x80000000000000000000000000000000,
-        -0x7fffffffffffffffffffffffffffffff,
-        0x7fffffffffffffffffffffffffffffff,
-    >;
+    trim_impl::Min<i128, -0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>;
 impl I128TrimAbove =
-    trim_impl::Impl<
-        i128,
-        0x7fffffffffffffffffffffffffffffff,
-        -0x80000000000000000000000000000000,
-        0x7ffffffffffffffffffffffffffffffe,
-    >;
+    trim_impl::Max<i128, -0x80000000000000000000000000000000, 0x7ffffffffffffffffffffffffffffffe>;
 
-extern fn bounded_int_trim<T, const TRIMMED_VALUE: felt252, impl H: TrimHelper<T, TRIMMED_VALUE>>(
+extern fn bounded_int_trim_min<T, impl H: TrimMinHelper<T>>(
+    value: T,
+) -> core::internal::OptionRev<H::Target> nopanic;
+extern fn bounded_int_trim_max<T, impl H: TrimMaxHelper<T>>(
     value: T,
 ) -> core::internal::OptionRev<H::Target> nopanic;
 
@@ -272,5 +265,6 @@ impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<
 pub use {
     bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
     bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
-    bounded_int_is_zero as is_zero, bounded_int_trim as trim,
+    bounded_int_is_zero as is_zero, bounded_int_trim_min as trim_min,
+    bounded_int_trim_max as trim_max,
 };
