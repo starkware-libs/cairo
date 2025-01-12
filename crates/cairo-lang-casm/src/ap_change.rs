@@ -52,9 +52,7 @@ pub trait ApplyApChange: Sized {
         match ap_change {
             ApChange::Unknown if self.can_apply_unknown() => Ok(self),
             ApChange::Unknown => Err(ApChangeError::UnknownApChange),
-            ApChange::Known(ap_change) => {
-                self.apply_known_ap_change(ap_change).ok_or(ApChangeError::OffsetOverflow)
-            }
+            ApChange::Known(ap_change) => self.apply_known_ap_change(ap_change).ok_or(ApChangeError::OffsetOverflow)
         }
     }
 

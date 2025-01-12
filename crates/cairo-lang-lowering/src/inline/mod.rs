@@ -279,10 +279,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 // TODO: Implement better logic to avoid inlining of destructors that call
                 // themselves.
                 if called_func != self.calling_function_id
+                    && self.block_queue.flat_blocks.len() + self.block_queue.flat_blocks.len() < 10000
                     && self.variables.db.priv_should_inline(called_func)?
                 {
                     return self.inline_function(called_func, stmt);
-                }
+            }
             }
         }
 

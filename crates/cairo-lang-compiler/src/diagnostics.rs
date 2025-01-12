@@ -164,7 +164,7 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let ignore_warnings_in_crate = true;
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {

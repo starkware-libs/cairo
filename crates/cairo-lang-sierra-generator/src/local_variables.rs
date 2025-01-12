@@ -71,6 +71,24 @@ pub fn analyze_ap_changes(
     let mut ctx = analysis.analyzer;
     let peeled_used_after_revoke: OrderedHashSet<_> =
         ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
+
+    // if !root_info.known_ap_change {
+       
+
+    //     // Find all the variables that need ap alignment.
+    //     for (_, mut info) in std::mem::take(&mut ctx.block_callers) {
+    //         if info.caller_count <= 1 {
+    //             continue;
+    //         }
+    //         info.demand.variables_introduced(&mut ctx, &info.introduced_vars, ());
+    //         for var in info.demand.vars.keys() {
+    //             if ctx.might_be_revoked(&peeled_used_after_revoke, var) {
+    //                 ctx.used_after_revoke.insert(*var);
+    //             }
+    //         }
+    //     }
+    // }
+
     // Any used after revoke variable that might be revoked should be a local.
     let locals: OrderedHashSet<VariableId> = ctx
         .used_after_revoke

@@ -92,6 +92,20 @@ pub enum AnnotationError {
     },
 }
 
+impl AnnotationError {
+   pub fn stmt_indices(&self) -> Vec<StatementIdx> {
+        match self {
+            AnnotationError::ApChangeError{ 
+                source_statement_idx,
+                destination_statement_idx, ..
+    } => vec![*source_statement_idx, *destination_statement_idx],
+            _ => vec![],
+        }
+    }
+}
+
+
+
 /// Error representing an inconsistency in the references annotations.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum InconsistentReferenceError {
