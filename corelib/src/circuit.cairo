@@ -126,7 +126,6 @@ pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
     CircuitElement::<SubModGate<Lhs, Rhs>> {}
 }
 
-
 /// Creates a new circuit element representing the multiplicative inverse modulo p of an input
 /// circuit.
 ///
@@ -153,7 +152,6 @@ pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
 ) -> CircuitElement<InverseGate<Input>> {
     CircuitElement::<InverseGate<Input>> {}
 }
-
 
 /// Creates a new circuit element representing multiplication modulo p of two input circuits.
 ///
@@ -195,16 +193,16 @@ pub struct u384 {
     pub limb3: u96,
 }
 
-/// A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic
+/// A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic.
 pub type u96 = crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
 
-/// Range check builtin for 96-bit operations
+/// Range check builtin for 96-bit operations.
 pub extern type RangeCheck96;
 
-/// Builtin for modular addition operations
+/// Builtin for modular addition operations.
 pub extern type AddMod;
 
-/// Builtin for modular multiplication operations
+/// Builtin for modular multiplication operations.
 pub extern type MulMod;
 
 /// A type that can be used as a circuit modulus (a u384 that is not zero or one).
@@ -308,9 +306,9 @@ extern fn add_circuit_input<C>(
 /// This enum represents the state of input filling process, indicating whether
 /// all inputs have been provided or more are needed.
 pub enum AddInputResult<C> {
-    /// All inputs have been filled and the circuit data is complete
+    /// All inputs have been filled and the circuit data is complete.
     Done: CircuitData<C>,
-    /// More inputs are needed to complete the circuit instance's data
+    /// More inputs are needed to complete the circuit instance's data.
     More: CircuitInputAccumulator<C>,
 }
 
@@ -390,7 +388,7 @@ impl MulModCircuitElement<
 /// The `CES` type parameter represents a tuple of `CircuitElement`s that together
 /// define the circuit's structure.
 pub trait CircuitDefinition<CES> {
-    /// The internal circuit type representing a tuple of `CircuitElement`s
+    /// The internal circuit type representing a tuple of `CircuitElement`s.
     type CircuitType;
 }
 
@@ -462,7 +460,7 @@ pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
     ///
     /// # Returns
     ///
-    /// An `AddInputResult` that can be used to add input values to the circuit.
+    /// An `AddInputResult` that can be used to add input values to the circuit
     #[inline]
     fn new_inputs<impl CD: CircuitDefinition<CES>, +Drop<CES>>(
         self: CES,
