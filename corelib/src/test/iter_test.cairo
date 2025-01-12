@@ -1,8 +1,6 @@
 #[test]
 fn test_iterator_enumerate() {
-    let a = array!['a', 'b', 'c'];
-
-    let mut iter = a.into_iter().enumerate();
+    let mut iter = array!['a', 'b', 'c'].into_iter().enumerate();
 
     assert_eq!(iter.next(), Option::Some((0, 'a')));
     assert_eq!(iter.next(), Option::Some((1, 'b')));
