@@ -4,7 +4,7 @@
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(a: A::<felt252>) -> felt252 {
+fn foo(a: A<felt252>) -> felt252 {
     a.a
 }
 

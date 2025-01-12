@@ -24,8 +24,8 @@ impl DiagnosticEntry for SimpleDiag {
         DiagnosticLocation {
             file_id: self.file_id,
             span: TextSpan {
-                start: TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                end: TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                start: TextOffset::START,
+                end: TextWidth::new_for_testing(6).as_offset(),
             },
         }
     }

@@ -25,6 +25,7 @@ pub fn build(
         GasConcreteLibfunc::WithdrawGas(_) => build_withdraw_gas(builder),
         GasConcreteLibfunc::RedepositGas(_) => build_redeposit_gas(builder),
         GasConcreteLibfunc::GetAvailableGas(_) => misc::build_dup(builder),
+        GasConcreteLibfunc::GetUnspentGas(_) => build_get_unspent_gas(builder),
         GasConcreteLibfunc::BuiltinWithdrawGas(_) => build_builtin_withdraw_gas(builder),
         GasConcreteLibfunc::GetBuiltinCosts(_) => build_get_builtin_costs(builder),
     }
@@ -135,6 +136,48 @@ fn build_redeposit_gas(
         casm_builder,
         [("Fallthrough", &[&[updated_gas]], None)],
         CostValidationInfo { builtin_infos: vec![], extra_costs: Some([requested_count as i32]) },
+        pre_instructions,
+    ))
+}
+
+/// Handles the get_unspent_gas invocation.
+fn build_get_unspent_gas(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [gas_counter] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref gas_counter;
+    };
+    let (pre_instructions, cost_builtin_ptr) = add_cost_builtin_ptr_fetch_code(&mut casm_builder);
+
+    let get_token_count = |token: CostTokenType| {
+        if let GasWallet::Value(wallet) = &builder.environment.gas_wallet {
+            wallet.get(&token).copied().unwrap_or_default()
+        } else {
+            0
+        }
+    };
+    casm_build_extend! {casm_builder,
+        tempvar builtin_cost = cost_builtin_ptr;
+        const const_count = get_token_count(CostTokenType::Const);
+        tempvar total_unspent = gas_counter + const_count;
+    };
+    let mut total_unspent = total_unspent;
+    for token_type in CostTokenType::iter_precost() {
+        let index = token_type.offset_in_builtin_costs();
+        casm_build_extend! {casm_builder,
+            tempvar single_cost = builtin_cost[index];
+            const count = get_token_count(*token_type);
+            tempvar multi_cost = single_cost * count;
+            tempvar updated_total_unspent = total_unspent + multi_cost;
+        };
+        total_unspent = updated_total_unspent;
+    }
+    Ok(builder.build_from_casm_builder_ex(
+        casm_builder,
+        [("Fallthrough", &[&[gas_counter], &[total_unspent]], None)],
+        Default::default(),
         pre_instructions,
     ))
 }

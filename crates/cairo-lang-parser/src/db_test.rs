@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
     ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
@@ -9,7 +9,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use indoc::indoc;
-use num_traits::ToPrimitive;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;
@@ -96,11 +95,7 @@ fn test_token_stream_expr_parser() {
     let token_stream = MockTokenStream {
         tokens: vec![MockToken {
             content: expr_code.to_string(),
-            span: TextSpan {
-                start: TextOffset::default(),
-                end: TextOffset::default()
-                    .add_width(TextWidth::new_for_testing(expr_code.len().to_u32().unwrap())),
-            },
+            span: TextSpan::from_str(expr_code),
         }],
         content_string: expr_code.to_string(),
     };

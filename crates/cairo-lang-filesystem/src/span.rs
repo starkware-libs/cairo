@@ -17,6 +17,8 @@ mod test;
 )]
 pub struct TextWidth(u32);
 impl TextWidth {
+    pub const ZERO: Self = Self(0);
+
     pub fn from_char(c: char) -> Self {
         Self(c.len_utf8() as u32)
     }
@@ -27,8 +29,23 @@ impl TextWidth {
     pub fn new_for_testing(value: u32) -> Self {
         Self(value)
     }
+    /// Creates a `TextWidth` at the given index of a string.
+    ///
+    /// The index is required to be a char boundary.
+    /// This function runs a debug assertion to verify this,
+    /// while retains performance on release builds.
+    pub fn at(s: &str, index: usize) -> Self {
+        debug_assert!(
+            s.is_char_boundary(index),
+            "cannot create a TextWidth outside of a char boundary"
+        );
+        Self(index as u32)
+    }
     pub fn as_u32(self) -> u32 {
         self.0
+    }
+    pub fn as_offset(self) -> TextOffset {
+        TextOffset(self)
     }
 }
 impl Add for TextWidth {
@@ -57,6 +74,13 @@ impl Sum for TextWidth {
 )]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
+    pub const START: Self = Self(TextWidth::ZERO);
+
+    /// Creates a `TextOffset` at the end of a given string.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(content: &str) -> Self {
+        Self(TextWidth::from_str(content))
+    }
     pub fn add_width(self, width: TextWidth) -> Self {
         TextOffset(self.0 + width)
     }
@@ -87,6 +111,11 @@ pub struct TextSpan {
     pub end: TextOffset,
 }
 impl TextSpan {
+    /// Creates a `TextSpan` for the entirety of a given string.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(content: &str) -> Self {
+        Self { start: TextOffset::START, end: TextOffset::from_str(content) }
+    }
     pub fn width(self) -> TextWidth {
         self.end - self.start
     }

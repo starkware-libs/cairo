@@ -5,11 +5,11 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 extern type A<S>;
-extern fn bar<T>(x: T) -> A::<T> nopanic;
+extern fn bar<T>(x: T) -> A<T> nopanic;
 
-fn foo(a: A::<felt252>) -> A::<A<felt252>> {
+fn foo(a: A<felt252>) -> A<A<felt252>> {
     let res = bar::<A<felt252>>(a);
-    let _bad: A::<A<bool>> = res;
+    let _bad: A<A<bool>> = res;
     res
 }
 
@@ -20,9 +20,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
- --> lib.cairo:6:30
-    let _bad: A::<A<bool>> = res;
-                             ^^^
+ --> lib.cairo:6:28
+    let _bad: A<A<bool>> = res;
+                           ^^^
 
 //! > ==========================================================================
 
@@ -699,8 +699,8 @@ fn new<const N: felt252>() -> MyStruct<N> {
     MyStruct::<N> {}
 }
 
-fn bar1(s: MyStruct::<1>) {}
-fn bar2(s: MyStruct::<2>) {}
+fn bar1(s: MyStruct<1>) {}
+fn bar2(s: MyStruct<2>) {}
 
 //! > function_body
 
