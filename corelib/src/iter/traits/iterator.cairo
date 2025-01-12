@@ -66,7 +66,7 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.advance_by(0), Result::Ok(()));
     /// assert_eq!(iter.advance_by(100), Result::Err(99));
     /// ```
-    fn advance_by<+Destruct<T>, +Drop<Self::Item>>(
+    fn advance_by<+Destruct<T>, +Destruct<Self::Item>>(
         ref self: T, n: usize,
     ) -> Result<
         (), NonZero<usize>,
@@ -74,11 +74,12 @@ pub trait Iterator<T> {
         let mut n = n;
         let mut res = Result::Ok(());
         while let Option::Some(nz_n) = n.try_into() {
-            if Self::next(ref self).is_none() {
+            if let Option::Some(_) = Self::next(ref self) {
+                n -= 1;
+            } else {
                 res = Result::Err(nz_n);
                 break;
-            };
-            n -= 1;
+            }
         };
         res
     }
