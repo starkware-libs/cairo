@@ -102,11 +102,12 @@ use super::{
 ///
 /// ```
 /// use core::starknet::ContractAddress;
-/// use core::starknet::storage::{Map, StorageMapReadAccess};
+/// use core::starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry};
 ///
 /// #[storage]
 /// struct Storage {
 ///     balances: Map<ContractAddress, u256>,
+///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
 /// fn read_storage(self: @ContractState, address: ContractAddress) {
@@ -130,11 +131,12 @@ pub trait StorageMapReadAccess<TMemberState> {
 ///
 /// ```
 /// use core::starknet::ContractAddress;
-/// use core::starknet::storage::{Map, StorageMapWriteAccess};
+/// use core::starknet::storage::{Map, StorageMapWriteAccess, StoragePathEntry};
 ///
 /// #[storage]
 /// struct Storage {
 ///     balances: Map<ContractAddress, u256>,
+///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
 /// fn write_storage(ref self: ContractState, address: ContractAddress) {
