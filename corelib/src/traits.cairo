@@ -129,17 +129,15 @@ impl SnapshotDrop<T> of Drop<@T>;
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
 /// The addition operator `+`.
 ///
-/// Types implementing this trait support the addition operation via the `+` operator.
-///
 /// # Examples
 ///
-/// Basic usage with numbers:
+/// `Add`able types:
 ///
 /// ```
 /// assert!(1_u8 + 2_u8 == 3_u8);
 /// ```
 ///
-/// Custom implementation for a type:
+/// Implementing `Add` for a type:
 ///
 /// ```
 /// #[derive(Copy, Drop, PartialEq)]
@@ -183,17 +181,15 @@ pub trait AddEq<T> {
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
 /// The subtraction operator `-`.
 ///
-/// Types implementing this trait support the subtraction operation via the `-` operator.
-///
 /// # Examples
 ///
-/// Basic usage with numbers:
+/// `Sub`tractable types:
 ///
 /// ```
 /// assert!(3_u8 - 2_u8 == 1_u8);
 /// ```
 ///
-/// Custom implementation for a type:
+/// Implementing `Sub` for a type:
 ///
 /// ```
 /// #[derive(Copy, Drop, PartialEq)]
@@ -237,17 +233,15 @@ pub trait SubEq<T> {
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
 /// The multiplication operator `*`.
 ///
-/// Types implementing this trait support the multiplication operation via the `*` operator.
-///
 /// # Examples
 ///
-/// Basic usage with numbers:
+/// `Mul`tipliable types:
 ///
 /// ```
 /// assert!(3_u8 * 2_u8 == 6_u8);
 /// ```
 ///
-/// Custom implementation for a type:
+/// Implementing `Mul` for a type:
 ///
 /// ```
 /// #[derive(Copy, Drop, PartialEq)]
@@ -295,13 +289,13 @@ pub trait MulEq<T> {
 ///
 /// # Examples
 ///
-/// Basic usage with numbers:
+/// `Div`isible types:
 ///
 /// ```
 /// assert!(4_u8 / 2_u8 == 2_u8);
 /// ```
 ///
-/// Custom implementation for a type:
+/// Implementing `Div` for a type:
 ///
 /// ```
 /// #[derive(Copy, Drop, PartialEq)]
@@ -349,8 +343,6 @@ pub trait DivEq<T> {
 ///
 /// # Examples
 ///
-/// Basic usage with numbers:
-///
 /// ```
 /// assert!(3_u8 % 2_u8 == 1_u8);
 /// ```
@@ -373,16 +365,23 @@ pub trait RemEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// This trait provides a way to compute both division and remainder in a single operation,
-/// which can be more efficient than computing them separately.
+/// Performs truncated division and remainder.
+///
+/// This trait provides a way to efficiently compute both the quotient and remainder in a single
+/// operation. The division truncates towards zero, matching the behavior of the `/` and `%`
+/// operators.
+///
+/// # Examples
+///
+/// ```
+/// assert!(DivRem::div_rem(7_u32, 3) == (2, 1));
+/// ```
 pub trait DivRem<T> {
     /// Performs the `/` and the `%` operations, returning both the quotient and remainder.
     ///
     /// # Examples
     ///
     /// ```
-    /// use core::traits::DivRem;
-    ///
     /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
     /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
@@ -400,16 +399,9 @@ pub trait DivRem<T> {
 /// are not equal. When `derive`d on enums, two instances are equal if they
 /// are the same variant and all fields are equal.
 ///
-/// # Examples
+/// # Implementing `PartialEq`
 ///
-/// Basic usage with built-in types:
-///
-/// ```
-/// assert!(1 == 1);
-/// assert!(1 != 2);
-/// ```
-///
-/// Custom implementation:
+/// An example in which two points are equal if their x and y coordinates are equal.
 ///
 /// ```
 /// #[derive(Copy, Drop)]
@@ -458,7 +450,7 @@ impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
-/// A trait for computing the bitwise AND operator `&`.
+/// The bitwise AND operator `&`.
 ///
 /// # Examples
 ///
@@ -468,37 +460,36 @@ impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
 /// use core::traits::BitAnd;
 ///
 /// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     bool: bool,
+/// struct Scalar {
+///     inner: bool,
 /// }
 ///
-/// impl BitAndWrapper of BitAnd<Wrapper> {
-///     #[inline]
-///     fn bitand(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
-///         Wrapper { bool: lhs.bool & rhs.bool }
+/// impl BitAndScalar of BitAnd<Scalar> {
+///     fn bitand(lhs: Scalar, rhs: Scalar) -> Scalar {
+///        Scalar { inner: lhs.inner & rhs.inner }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(Wrapper { bool: true } & Wrapper { bool: true } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: true } & Wrapper { bool: false } == Wrapper { bool: false });
-///     assert!(Wrapper { bool: false } & Wrapper { bool: true } == Wrapper { bool: false });
-///     assert!(Wrapper { bool: false } & Wrapper { bool: false } == Wrapper { bool: false });
-/// }
+/// assert!(Scalar { inner: true } & Scalar { inner: true } == Scalar { inner: true });
+/// assert!(Scalar { inner: true } & Scalar { inner: false } == Scalar { inner: false });
+/// assert!(Scalar { inner: false } & Scalar { inner: true } == Scalar { inner: false });
+/// assert!(Scalar { inner: false } & Scalar { inner: false } == Scalar { inner: false });
 /// ```
 pub trait BitAnd<T> {
-    /// Computes the result of the AND operation between two values of the same type.
+    /// Performs the `&` operation.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(1_u8 & 2_u8 == 0);
-    /// ```
+    /// assert_eq!(true & false, false);
+    /// assert_eq!(5_u8 & 1_u8, 1);
+    /// assert_eq!(true & true, true);
+    /// assert_eq!(5_u8 & 2_u8, 0);
     fn bitand(lhs: T, rhs: T) -> T;
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitOr<X, Y>.
-/// A trait for computing the bitwise OR operator `|`.
+/// The bitwise OR operator `|`.
 ///
 /// # Examples
 ///
@@ -508,26 +499,23 @@ pub trait BitAnd<T> {
 /// use core::traits::BitOr;
 ///
 /// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     bool: bool,
+/// struct Scalar {
+///     inner: bool,
 /// }
 ///
-/// impl BitOrWrapper of BitOr<Wrapper> {
-///     #[inline]
-///     fn bitor(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
-///         Wrapper { bool: lhs.bool | rhs.bool }
+/// impl BitOrScalar of BitOr<Scalar> {
+///     fn bitor(lhs: Scalar, rhs: Scalar) -> Scalar {
+///         Scalar { inner: lhs.inner | rhs.inner }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(Wrapper { bool: true } | Wrapper { bool: true } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: true } | Wrapper { bool: false } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: false } | Wrapper { bool: true } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: false } | Wrapper { bool: false } == Wrapper { bool: false });
-/// }
+/// assert!(Scalar { inner: true } | Scalar { inner: true } == Scalar { inner: true });
+/// assert!(Scalar { inner: true } | Scalar { inner: false } == Scalar { inner: true });
+/// assert!(Scalar { inner: false } | Scalar { inner: true } == Scalar { inner: true });
+/// assert!(Scalar { inner: false } | Scalar { inner: false } == Scalar { inner: false });
 /// ```
 pub trait BitOr<T> {
-    /// Computes the result of the OR operation between two values of the same type.
+    /// Performs the `|` operation.
     ///
     /// # Examples
     ///
@@ -538,7 +526,7 @@ pub trait BitOr<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitXor<X, Y>.
-/// A trait for computing the bitwise XOR operator `^`.
+/// The bitwise XOR operator `^`.
 ///
 /// # Examples
 ///
@@ -548,26 +536,23 @@ pub trait BitOr<T> {
 /// use core::traits::BitXor;
 ///
 /// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     bool: bool,
+/// struct Scalar {
+///     inner: bool,
 /// }
 ///
-/// impl BitXorWrapper of BitXor<Wrapper> {
-///     #[inline]
-///     fn bitxor(lhs: Wrapper, rhs: Wrapper) -> Wrapper {
-///         Wrapper { bool: lhs.bool ^ rhs.bool }
+/// impl BitXorScalar of BitXor<Scalar> {
+///     fn bitxor(lhs: Scalar, rhs: Scalar) -> Scalar {
+///         Scalar { inner: lhs.inner ^ rhs.inner }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(Wrapper { bool: true } ^ Wrapper { bool: true } == Wrapper { bool: false });
-///     assert!(Wrapper { bool: true } ^ Wrapper { bool: false } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: false } ^ Wrapper { bool: true } == Wrapper { bool: true });
-///     assert!(Wrapper { bool: false } ^ Wrapper { bool: false } == Wrapper { bool: false });
-/// }
+/// assert!(Scalar { inner: true } ^ Scalar { inner: true } == Scalar { inner: false });
+/// assert!(Scalar { inner: true } ^ Scalar { inner: false } == Scalar { inner: true });
+/// assert!(Scalar { inner: false } ^ Scalar { inner: true } == Scalar { inner: true });
+/// assert!(Scalar { inner: false } ^ Scalar { inner: false } == Scalar { inner: false });
 /// ```
 pub trait BitXor<T> {
-    /// Computes the result of the XOR operation between two values of the same type.
+    /// Performs the `^` operation.
     ///
     /// # Examples
     ///
@@ -577,7 +562,7 @@ pub trait BitXor<T> {
     fn bitxor(lhs: T, rhs: T) -> T;
 }
 
-/// A trait for computing the bitwise NOT operator `~`.
+/// The bitwise NOT operator `~`.
 ///
 /// # Examples
 ///
@@ -592,19 +577,16 @@ pub trait BitXor<T> {
 /// }
 ///
 /// impl BitNotWrapper of BitNot<Wrapper> {
-///     #[inline]
 ///     fn bitnot(a: Wrapper) -> Wrapper {
 ///         Wrapper { u8: ~a.u8 }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(~Wrapper { u8: 0 } == Wrapper { u8 : 255 });
-///     assert!(~Wrapper { u8: 1 } == Wrapper { u8 : 254 });
-/// }
+/// assert!(~Wrapper { u8: 0 } == Wrapper { u8 : 255 });
+/// assert!(~Wrapper { u8: 1 } == Wrapper { u8 : 254 });
 /// ```
 pub trait BitNot<T> {
-    /// Computes the result of the NOT operation between two values of the same type.
+    /// Performs the `~` operation.
     ///
     /// # Examples
     ///
@@ -614,48 +596,96 @@ pub trait BitNot<T> {
     fn bitnot(a: T) -> T;
 }
 
-/// A trait for types that form a partial order.
+/// Trait for comparing types that form a [partial
+/// order](https://en.wikipedia.org/wiki/Partial_order).
 ///
 /// The `lt`, `le`, `gt`, and `ge` methods of this trait can be called using the `<`, `<=`, `>`, and
 /// `>=` operators, respectively.
+///
+/// PartialOrd is not derivable, but can be implemented manually
+///
+/// # Implementing `PartialOrd`
+///
+/// Here's how to implement `PartialOrd` for a custom type. This example implements
+/// comparison operations for a 2D point where points are compared based on their
+/// squared Euclidean distance from the origin (0,0):
+///
+/// ```
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+///
+/// impl PointPartialOrd of PartialOrd<Point> {
+///     fn lt(lhs: Point, rhs: Point) -> bool {
+///         let lhs_dist = lhs.x * lhs.x + lhs.y * lhs.y;
+///         let rhs_dist = rhs.x * rhs.x + rhs.y * rhs.y;
+///         lhs_dist < rhs_dist
+///     }
+/// }
+///
+/// let p1 = Point { x: 1, y: 1 }; // distance = 2
+/// let p2 = Point { x: 2, y: 2 }; // distance = 8
+///
+/// assert!(p1 < p2);
+/// assert!(p1 <= p2);
+/// assert!(p2 > p1);
+/// assert!(p2 >= p1);
+/// ```
+///
+/// Note that only the `lt` method needs to be implemented. The other comparison
+/// operations (`le`, `gt`, `ge`) are automatically derived from `lt`. However,
+/// you can override them for better performance if needed.
 pub trait PartialOrd<T> {
-    /// Returns whether `lhs` is lower than `rhs` as a boolean.
+    /// Tests less than (for `self` and `other`) and is used by the `<` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(0_u8 < 1_u8);
+    /// assert_eq!(1 < 1, false);
+    /// assert_eq!(1 < 2, true);
+    /// assert_eq!(2 < 1, false);
     /// ```
     fn lt(lhs: T, rhs: T) -> bool;
 
-    /// Returns whether `lhs` is greater than or equal to `rhs` as a boolean.
+    /// Tests less than or equal to (for `self` and `other`) and is used by the
+    /// `<=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(1_u8 >= 1_u8);
+    /// assert_eq!(1 <= 1, true);
+    /// assert_eq!(1 <= 2, true);
+    /// assert_eq!(2 <= 1, false);
     /// ```
     fn ge(lhs: T, rhs: T) -> bool {
         !Self::lt(lhs, rhs)
     }
 
-    /// Returns whether `lhs` is greater than `rhs` as a boolean.
+    /// Tests greater than (for `self` and `other`) and is used by the `>`
+    /// operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(1_u8 > 0_u8);
+    /// assert_eq!(1 > 1, false);
+    /// assert_eq!(1 > 2, false);
+    /// assert_eq!(2 > 1, true);
     /// ```
     fn gt(lhs: T, rhs: T) -> bool {
         Self::lt(rhs, lhs)
     }
 
-    /// Returns whether `lhs` is lower than or equal to `rhs` as a boolean.
+    /// Tests greater than or equal to (for `self` and `other`) and is used by
+    /// the `>=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert!(1_u8 <= 1_u8);
+    /// assert_eq!(1 >= 1, true);
+    /// assert_eq!(1 >= 2, false);
+    /// assert_eq!(2 >= 1, true);
     /// ```
     fn le(lhs: T, rhs: T) -> bool {
         Self::ge(rhs, lhs)
@@ -680,31 +710,41 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
     }
 }
 
-/// A trait for conversion between types where the conversion is guaranteed to succeed.
+/// A value-to-value conversion that consumes the input value.
+///
+/// **Note: This trait must not fail**. If the conversion can fail, use [`TryInto`].
+///
+/// # Generic Implementations
+///
+/// - [`Into`] is reflexive, which means that `Into<T, T>` is implemented
 ///
 /// # Examples
 ///
-/// An implementation of `Into` from `bool` to a wrapper around `bool`.
+/// Converting from RGB components to a packed color value:
 ///
 /// ```
-/// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     bool: bool,
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Color {
+///     // Packed as 0x00RRGGBB
+///     value: u32,
 /// }
 ///
-/// impl BoolIntoWrapper of Into<bool, Wrapper> {
-///     fn into(self: bool) -> Wrapper {
-///         Wrapper { bool: self }
+/// impl RGBIntoColor of Into<(u8, u8, u8), Color> {
+///     fn into(self: (u8, u8, u8)) -> Color {
+///         let (r, g, b) = self;
+///         let value = (r.into() * 0x10000_u32) +
+///                    (g.into() * 0x100_u32) +
+///                    b.into();
+///         Color { value }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(true.into() == Wrapper { bool: true });
-///     assert!(false.into() == Wrapper { bool: false });
-/// }
+/// // Convert RGB(255, 128, 0) to 0x00FF8000
+/// let orange: Color = (255_u8, 128_u8, 0_u8).into();
+/// assert!(orange == Color { value: 0x00FF8000_u32 });
 /// ```
 pub trait Into<T, S> {
-    /// Converts a type into another in a safely manner.
+    /// Converts the input type T into the output type S.
     ///
     /// # Examples
     ///
@@ -722,45 +762,76 @@ impl TIntoT<T> of Into<T, T> {
     }
 }
 
-/// A trait for conversion between types where the conversion is not guaranteed to succeed.
+/// Simple and safe type conversions that may fail in a controlled way under
+/// some circumstances.
+///
+/// This is useful when you are doing a type conversion that may trivially succeed but may also need
+/// special handling. For example, there is no way to convert an [`i64`] into an [`i32`] using the
+/// [`Into`] trait, because an [`i64`] may contain a value that an [`i32`] cannot represent and so
+/// the conversion would lose data.  This might be handled by truncating the [`i64`] to an [`i32`]
+/// or by simply returning [`Bounded::<i32>::max()`], or by some other method. The [`Into`] trait
+/// is intended for perfect conversions, so the `TryInto` trait informs the programmer when a type
+/// conversion could go bad and lets them decide how to handle it.
+///
+/// # Generic Implementations
+///
+/// - [`TryInto`] is reflexive, which means that `TryInto<T, T>` is implemented
+/// - [`TryInto`] is implemented for all types that implement [`Into`]
 ///
 /// # Examples
 ///
-/// An implementation of `TryInto` from `u16` to a wrapper around `u8`.
+/// Converting chess coordinates (like 'e4') into a validated position:
 ///
 /// ```
-/// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     u8: u8,
-/// }
+/// #[derive(Copy, Drop, PartialEq)]
+///  struct Position {
+///      file: u8, // Column a-h (0-7)
+///      rank: u8, // Row 1-8 (0-7)
+///  }
 ///
-/// impl U16TryIntoWrapper of TryInto<u16, Wrapper> {
-///     fn try_into(self: u16) -> Option<Wrapper> {
-///         if self <= 255 {
-///         Option::Some(Wrapper { u8: self.try_into().unwrap() })
-///         } else {
-///             Option::None
+///  impl TupleTryIntoPosition of TryInto<(u8, u8), Position> {
+///     fn try_into(self: (u8, u8)) -> Option<Position> {
+///         let (file_char, rank) = self;
+///
+///         // Validate rank is between 1 and 8
+///         if rank < 1 || rank > 8 {
+///             return Option::None;
 ///         }
+///
+///         // Validate and convert file character (a-h) to number (0-7)
+///         if file_char < 'a' || file_char > 'h' {
+///             return Option::None;
+///         }
+///         let file = file_char - 'a';
+///
+///         Option::Some(Position {
+///             file,
+///             rank: rank - 1 // Convert 1-8 (chess notation) to 0-7 (internal index)
+///         })
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(1_u16.try_into().unwrap() == Wrapper { u8: 1 });
+/// // Valid positions
+/// let e4 = ('e', 4).try_into();
+/// assert!(e4 == Option::Some(Position { file: 4, rank: 3 }));
 ///
-///     let result: Option<Wrapper> = 256_u16.try_into();
-///     assert!(result == Option::None);
-/// }
+/// // Invalid positions
+/// let invalid_file = ('x', 4).try_into();
+/// let invalid_rank = ('a', 9).try_into();
+/// assert!(invalid_file == Option::None);
+/// assert!(invalid_rank == Option::None);
 /// ```
 pub trait TryInto<T, S> {
-    /// Converts a type into another and returns an option of the value if the conversion is
-    /// successful, `Option::None` otherwise.
+    /// Attempts to convert the input type T into the output type S.
+    /// In the event of a conversion error, returns [`Option::None`].
     ///
     /// # Examples
     ///
     /// ```
-    /// let a: u16 = 1;
-    /// let b: u8 = a.try_into().unwrap();
-    /// assert! (b == 1);
+    /// let a: Option<u8> = 1_u16.try_into();
+    /// assert!(a == Option::Some(1));
+    /// let b: Option<u8> = 256_u16.try_into();
+    /// assert!(b == Option::None);
     /// ```
     fn try_into(self: T) -> Option<S>;
 }
@@ -771,28 +842,37 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
     }
 }
 
-/// A trait for computing the unary negation operator `-`.
+/// The unary negation operator `-`.
 ///
 /// # Examples
 ///
-/// An implementation of `Neg` for a wrapper around `i8`.
+/// An implementation of `Neg` for `Sign`, which allows the use of `-` to
+/// negate its value.
 ///
 /// ```
-/// #[derive(Drop, PartialEq)]
-/// struct Wrapper {
-///     i8: i8,
+/// #[derive(Copy, Drop, PartialEq)]
+/// enum Sign {
+///     Negative,
+///     Zero,
+///     Positive,
 /// }
 ///
-/// impl WrapperNeg of Neg<Wrapper> {
-///     fn neg(a: Wrapper) -> Wrapper {
-///         Wrapper { i8: -a.i8 }
+/// impl SignNeg of Neg<Sign> {
+///     fn neg(a: Sign) -> Sign {
+///         match a {
+///             Sign::Negative => Sign::Positive,
+///             Sign::Zero => Sign::Zero,
+///             Sign::Positive => Sign::Negative,
+///         }
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(-Wrapper { i8: -1 } == Wrapper { i8: 1 });
-///     assert!(-Wrapper { i8: 4 } == Wrapper { i8: -4 });
-/// }
+/// // A negative positive is a negative
+/// assert!(-Sign::Positive == Sign::Negative);
+/// // A double negative is a positive
+/// assert!(-Sign::Negative == Sign::Positive);
+/// // Zero is its own negation
+/// assert!(-Sign::Zero == Sign::Zero);
 /// ```
 pub trait Neg<T> {
     /// Performs the unary `-` operation.
@@ -806,11 +886,12 @@ pub trait Neg<T> {
     fn neg(a: T) -> T;
 }
 
-/// A trait for computing the unary logical negation operator `!`.
+/// The unary logical negation operator `!`.
 ///
 /// # Examples
 ///
-/// An implementation of `Not` for an `Answer` enum with `Yes` and `No` variants.
+/// An implementation of `Not` for `Answer`, which enables the use of `!` to
+/// invert its value.
 ///
 /// ```
 /// #[derive(Drop, PartialEq)]
@@ -828,10 +909,8 @@ pub trait Neg<T> {
 ///     }
 /// }
 ///
-/// fn main() {
-///     assert!(!Answer::Yes == Answer::No);
-///     assert!(!Answer::No == Answer::Yes);
-/// }
+/// assert!(!Answer::Yes == Answer::No);
+/// assert!(!Answer::No == Answer::Yes);
 /// ```
 pub trait Not<T> {
     /// Performs the unary `!` operation.
@@ -839,8 +918,8 @@ pub trait Not<T> {
     /// # Examples
     ///
     /// ```
-    /// let bool = false;
-    /// assert!(!bool);
+    /// assert!(!true == false);
+    /// assert!(!false == true);
     /// ```
     fn not(a: T) -> T;
 }
@@ -864,26 +943,50 @@ pub trait Index<C, I, V> {
 
 /// A trait that allows for custom destruction behavior of a type.
 ///
-/// Types implementing this trait will have their `destruct` method called
-/// automatically when they go out of scope.
+/// In Cairo, values must be explicitly handled - they cannot be silently dropped.
+/// Types can only go out of scope in two ways:
+/// 1. Implement `Drop` - for types that can be discarded trivially
+/// 2. Implement `Destruct` - for types that need cleanup when destroyed. Typically, any type that
+/// contains
+///    a `Felt252Dict` must implement `Destruct`, as the `Felt252Dict` needs to be "squashed" when
+///    going
+/// out of scope to ensure a program is sound.
 ///
-/// This trait is particularly important for types that need to perform
-/// cleanup operations or side-effects when being destroyed, such as
-/// the `Felt252Dict` type that needs to be "squashed" before going out of scope.
+/// Generally, `Destruct` does not need to be implemented manually. It can be derived from the
+/// `Drop` and `Destruct` implementations of the type's fields.
+///
+/// # Examples
+///
+/// Here's a simple type that wraps a `Felt252Dict` and needs to be destructed:
+///
+/// ```
+/// use core::dict::Felt252Dict;
+///
+/// // A struct containing a Felt252Dict must implement Destruct
+/// #[derive(Destruct, Default)]
+/// struct ResourceManager {
+///     resources: Felt252Dict<u32>,
+///     count: u32,
+/// }
+///
+/// #[generate_trait]
+/// impl ResourceManagerImpl of ResourceManagerTrait{
+///    fn add_resource(ref self: ResourceManager, resource_id: felt252, amount: u32){
+///        assert!(self.resources.get(resource_id) == 0, "Resource already exists");
+///        self.resources.insert(resource_id, amount);
+///        self.count += amount;
+///    }
+/// }
+///
+/// let mut manager = Default::default();
+///
+/// // Add some resources
+/// manager.add_resource(1, 100);
+///
+/// // When manager goes out of scope here, Destruct is automatically called,
+/// // which ensures the dictionary is properly squashed
+/// ```
 pub trait Destruct<T> {
-    /// Destroys the value, performing any necessary cleanup operations.
-    ///
-    /// This method is called automatically when the value goes out of scope,
-    /// allowing for custom destruction behavior.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use core::dict::Felt252Dict;
-    ///
-    /// let dict: Felt252Dict<u8> = Default::default();
-    /// dict.destruct(); // Manual destruction during execution
-    /// ```
     fn destruct(self: T) nopanic;
 }
 
@@ -907,38 +1010,72 @@ pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     }
 }
 
-/// A trait for giving a default value to a type.
+/// A trait for giving a type a useful default value.
 ///
-/// This trait is implemented for all primitive types in the core library.
+/// Cairo implements `Default` for various primitives types.
 ///
-/// It is possible to implement it on a custom type using the `#[derive(Default)]` attribute if all
-/// its elements already implement `Default`.
+/// # Derivable
 ///
-/// It is also possible to implement it on enum types, declaring the default value of the enum by
-/// using the `#[default]` attribute on one of its variants.
+/// This trait can be used with `#[derive]` if all of the type's fields implement
+/// `Default`. When `derive`d, it will use the default value for each field's type.
+///
+/// ## `enum`s
+///
+/// When using `#[derive(Default)]` on an `enum`, you need to choose which unit variant will be
+/// default. You do this by placing the `#[default]` attribute on the variant.
+///
+/// ```
+/// #[derive(Default)]
+/// enum Kind {
+///     #[default]
+///     A,
+///     B,
+///     C,
+/// }
+/// ```
+///
+/// You can even use the `#[default]` attribute even on non-unit variants, provided that the
+/// associated type implements `Default`.
+///
+/// # How can I implement `Default`?
+///
+/// Provide an implementation for the `default()` method that returns the value of
+/// your type that should be the default:
+///
+/// ```
+/// #[derive(Copy, Drop)]
+/// enum Kind {
+///     A,
+///     B,
+///     C,
+/// }
+///
+/// impl DefaultKind of Default<Kind> {
+///     fn default() -> Kind { Kind::A }
+/// }
+/// ```
+///
+/// # Examples
+///
+/// #[derive(Drop, Default, PartialEq)]
+/// struct SomeOptions {
+///     foo: i32,
+///     bar: u32,
+/// }
+///
+/// assert!(Default::default() == SomeOptions { foo: 0, bar: 0 });
 pub trait Default<T> {
-    /// Creates a default instance for any type.
+    /// Returns the "default value" for a type.
+    ///
+    /// Default values are often some kind of initial value, identity value, or anything else that
+    /// may make sense as a default.
     ///
     /// # Examples
     ///
     /// ```
-    /// use core::dict::Felt252Dict;
-    ///
-    /// #[derive(Default, Drop)]
-    /// struct A {
-    ///     item1: felt252,
-    ///     item2: u64,
-    /// }
-    ///
-    /// #[derive(Default, Drop)]
-    /// enum CaseWithDefault {
-    ///     A: felt252,
-    ///     B: u128,
-    ///     #[default]
-    ///     C: u64,
-    /// }
-    ///
-    /// let dict: Felt252Dict<u8> = Default::default();
+    /// let i: i8 = Default::default();
+    /// let (x, y): (Option<ByteArray>, u64) = Default::default();
+    /// let (a, b, (c, d)): (i32, u32, (bool, bool)) = Default::default();
     /// ```
     #[must_use]
     fn default() -> T;
@@ -951,12 +1088,48 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
     }
 }
 
-/// A trait that allows to return default values for types used as values in a dictionary.
+/// A trait that must be implemented for any type that will be stored as a value in a `Felt252Dict`.
 ///
-/// This trait must be implemented for any type that will be stored in a dictionary.
+/// When working with dictionaries in Cairo, we need a way to represent "empty" or "uninitialized"
+/// slots. This trait provides a zero-like default value that is returned when accessing a key
+/// that hasn't been explicitly set.
+///
+/// # Why is this needed?
+///
+/// The `Felt252Dict` implementation needs to handle cases where a key hasn't been assigned a value
+/// yet.
+/// Instead of using `Option` or similar constructs, it uses a zero-like value specific to each
+/// type.
+///
+/// This trait is __only__ implemented for primitive scalar types and `Nullable<T>`. It cannot be
+/// implemented manually.
+/// Instead, if you want to use a custom type as a value in a dictionary, you can wrap your type in
+/// a [`Nullable`], which implements `Felt252DictValue` for any wrapped type.
+///
+/// # Examples
+///
+/// ```
+/// use core::dict::Felt252Dict;
+///
+/// #[derive(Copy, Drop, Default)]
+/// struct Counter {
+///     value: u32,
+/// }
+///
+///  // u8 already implements Felt252DictValue
+///  let mut dict: Felt252Dict<u8> = Default::default();
+///  assert!(dict.get(123) == 0);
+///
+///  // Counter is wrapped in a Nullable, as it doesn't implement Felt252DictValue
+///  let mut counters: Felt252Dict<Nullable<Counter>> = Default::default();
+///
+///  // If the key is not set, `deref` would panic. `deref_or` returns the default value.
+///  let maybe_counter: Nullable<Counter> = counters.get(123);
+///  assert!(maybe_counter.deref_or(Default::default()).value == 0);
+/// ```
 pub trait Felt252DictValue<T> {
-    /// Returns the default value for this type as a value in a `Felt252Dict`.
-    /// Should be logically equivalent to 0.
+    /// Returns the default value for this type when used in a `Felt252Dict`.
+    /// This value should be logically equivalent to zero or an "empty" state.
     #[must_use]
     fn zero_default() -> T nopanic;
 }
