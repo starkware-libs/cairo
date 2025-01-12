@@ -489,7 +489,7 @@ impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
 /// This trait provides methods to add input values to a circuit instance and
 /// finalize the input process.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// let a = CircuitElement::<CircuitInput<0>> {};
@@ -579,7 +579,7 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 /// This trait provides methods to evaluate a circuit with given inputs and modulus.
 /// The evaluation can be done with or without an explicit circuit descriptor.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// let a = CircuitElement::<CircuitInput<0>> {};
@@ -635,7 +635,7 @@ pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
 /// This trait provides methods to access the output values of a circuit after
 /// successful evaluation.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// let a = CircuitElement::<CircuitInput<0>> {};
