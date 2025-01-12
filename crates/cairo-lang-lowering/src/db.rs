@@ -732,7 +732,16 @@ fn module_lowering_diagnostics(
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::ImplAlias(_) => {}
-            ModuleItemId::Trait(_) => {}
+            ModuleItemId::Trait(trait_id) => {
+                for trait_func in db.trait_functions(*trait_id)?.values() {
+                    if matches!(db.trait_function_body(*trait_func), Ok(Some(_))) {
+                        let function_id = defs::ids::FunctionWithBodyId::Trait(*trait_func);
+                        diagnostics.extend(
+                            db.semantic_function_with_body_lowering_diagnostics(function_id)?,
+                        );
+                    }
+                }
+            }
             ModuleItemId::Impl(impl_def_id) => {
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = defs::ids::FunctionWithBodyId::Impl(*impl_func);
