@@ -42,12 +42,12 @@ fn test_option_none_unwrap_or_default() {
 
 #[test]
 fn test_option_some_unwrap_or_else() {
-    assert!(Option::Some(42).unwrap_or_else( || 0) == 42);
+    assert!(Option::Some(42).unwrap_or_else(|| 0) == 42);
 }
 
 #[test]
 fn test_option_none_unwrap_or_else() {
-    assert!(Option::None.unwrap_or_else( || 0) == 0);
+    assert!(Option::None.unwrap_or_else(|| 0) == 0);
 }
 
 #[test]
@@ -95,13 +95,13 @@ fn test_option_none_ok_or() {
 
 #[test]
 fn test_option_some_ok_or_else() {
-    assert_eq!(Option::Some('foo').ok_or_else( || 0), Result::Ok('foo'));
+    assert_eq!(Option::Some('foo').ok_or_else(|| 0), Result::Ok('foo'));
 }
 
 #[test]
 fn test_option_none_ok_or_else() {
     let option: Option<felt252> = Option::None;
-    assert_eq!(option.ok_or_else( || 0), Result::Err(0));
+    assert_eq!(option.ok_or_else(|| 0), Result::Err(0));
 }
 
 #[test]
@@ -159,8 +159,8 @@ fn test_option_or() {
 
 #[test]
 fn test_option_or_else() {
-    let nobody =  || Option::<ByteArray>::None;
-    let vikings =  || Option::<ByteArray>::Some("vikings");
+    let nobody = || Option::<ByteArray>::None;
+    let vikings = || Option::<ByteArray>::Some("vikings");
 
     assert_eq!(Option::Some("barbarians").or_else(vikings), Option::Some("barbarians"));
     assert_eq!(Option::None.or_else(vikings), Option::Some("vikings"));
@@ -234,14 +234,14 @@ fn test_option_none_map_or() {
 fn test_option_some_map_or_else() {
     let k = 21;
     let x = Option::Some("foo");
-    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 3);
+    assert_eq!(x.map_or_else(|| 2 * k, |v: ByteArray| v.len()), 3);
 }
 
 #[test]
 fn test_option_none_map_or_else() {
     let k = 21;
     let x: Option<ByteArray> = Option::None;
-    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
+    assert_eq!(x.map_or_else(|| 2 * k, |v: ByteArray| v.len()), 42);
 }
 
 fn test_option_some_into_iter() {

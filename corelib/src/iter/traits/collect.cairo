@@ -4,8 +4,8 @@
 /// converted to an iterator. This is common for types which describe a
 /// collection of some kind.
 ///
-/// One benefit of implementing `IntoIterator` is that your type will [work
-/// with Cairo's `for` loop syntax](crate::iter#for-loops-and-intoiterator).
+/// One benefit of implementing `IntoIterator` is that your type will work
+/// with Cairo's `for` loop syntax.
 ///
 /// # Examples
 ///
@@ -14,15 +14,16 @@
 /// ```
 /// let mut iter = array![1, 2, 3].into_iter();
 ///
-/// assert_eq!(Option::Some(1), iter.next());
-/// assert_eq!(Option::Some(2), iter.next());
-/// assert_eq!(Option::Some(3), iter.next());
-/// assert_eq!(Option::None, iter.next());
+/// assert!(Option::Some(1) == iter.next());
+/// assert!(Option::Some(2) == iter.next());
+/// assert!(Option::Some(3) == iter.next());
+/// assert!(Option::None == iter.next());
 /// ```
+///
 /// Implementing `IntoIterator` for your type:
 ///
 /// ```
-/// // A sample collection, that's just a wrapper over Array<u32>
+/// // A sample collection, that's just a wrapper over `Array<u32>`
 /// #[derive(Drop, Debug)]
 /// struct MyCollection {
 ///     arr: Array<u32>
@@ -43,9 +44,9 @@
 ///     }
 /// }
 ///
-/// // and we'll implement IntoIterator
+/// // and we'll implement `IntoIterator`
 /// impl MyCollectionIntoIterator of IntoIterator<MyCollection> {
-///     type IntoIter = crate::array::ArrayIter<u32>;
+///     type IntoIter = core::array::ArrayIter<u32>;
 ///     fn into_iter(self: MyCollection) -> Self::IntoIter {
 ///         self.arr.into_iter()
 ///     }
@@ -59,10 +60,10 @@
 /// c.add(1);
 /// c.add(2);
 ///
-/// // ... and then turn it into an Iterator:
+/// // ... and then turn it into an `Iterator`:
 /// let mut n = 0;
 /// for i in c {
-///     assert_eq!(i, n);
+///     assert!(i == n);
 ///     n += 1;
 /// };
 /// ```
@@ -70,6 +71,7 @@ pub trait IntoIterator<T> {
     /// The iterator type that will be created.
     type IntoIter;
     impl Iterator: Iterator<Self::IntoIter>;
+
     /// Creates an iterator from a value.
     ///
     /// See the [module-level documentation] for more.

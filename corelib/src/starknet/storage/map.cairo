@@ -61,12 +61,16 @@
 //! Basic usage with a single mapping:
 //!
 //! ```
+//! use core::starknet::ContractAddress;
+//! use core::starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry,
+//! StoragePointerReadAccess};
+//!
 //! #[storage]
 //! struct Storage {
 //!     balances: Map<ContractAddress, u256>,
 //! }
 //!
-//! fn read_storage(self: @ContractState) {
+//! fn read_storage(self: @ContractState, address: ContractAddress) {
 //!     let balance = self.balances.read(address);
 //!     let balance = self.balances.entry(address).read();
 //! }
@@ -80,9 +84,9 @@
 //!     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 //! }
 //!
-//! fn read_storage(self: @ContractState) {
+//! fn read_storage(self: @ContractState, owner: ContractAddress, spender: ContractAddress) {
 //!     let allowance = self.allowances.entry(owner).entry(spender).read();
-//!     let allowance = self.allowances.read(owner, spender);
+//!     let allowance = self.allowances.entry(owner).read(spender);
 //! }
 //! ```
 
@@ -97,18 +101,20 @@ use super::{
 /// # Examples
 ///
 /// ```
+/// use core::starknet::ContractAddress;
+/// use core::starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry};
+///
 /// #[storage]
 /// struct Storage {
 ///     balances: Map<ContractAddress, u256>,
 ///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
-/// fn read_storage(self: @ContractState) {
+/// fn read_storage(self: @ContractState, address: ContractAddress) {
 ///     // Read from single mapping
 ///     let balance = self.balances.read(address);
-///
 ///     // Read from nested mapping
-///     let allowance = self.allowances.read(owner, spender);
+///     let allowance = self.allowances.entry(owner).read(spender);
 /// }
 /// ```
 pub trait StorageMapReadAccess<TMemberState> {
@@ -124,18 +130,20 @@ pub trait StorageMapReadAccess<TMemberState> {
 /// # Examples
 ///
 /// ```
+/// use core::starknet::ContractAddress;
+/// use core::starknet::storage::{Map, StorageMapWriteAccess, StoragePathEntry};
+///
 /// #[storage]
 /// struct Storage {
 ///     balances: Map<ContractAddress, u256>,
 ///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
-/// fn write_storage(ref self: ContractState) {
+/// fn write_storage(ref self: ContractState, address: ContractAddress) {
 ///     // Write to single mapping
 ///     self.balances.write(address, 100);
-///
 ///     // Write to nested mapping
-///     self.allowances.write(owner, spender, 50);
+///     self.allowances.entry(owner).write(spender, 50);
 /// }
 /// ```
 pub trait StorageMapWriteAccess<TMemberState> {
@@ -153,6 +161,9 @@ pub trait StorageMapWriteAccess<TMemberState> {
 /// # Examples
 ///
 /// ```
+/// use core::starknet::ContractAddress;
+/// use core::starknet::storage::{Map, StoragePathEntry};
+///
 /// #[storage]
 /// struct Storage {
 ///     balances: Map<ContractAddress, u256>,

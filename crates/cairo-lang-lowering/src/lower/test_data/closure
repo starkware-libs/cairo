@@ -214,7 +214,7 @@ test_generated_function
 
 //! > function
 fn foo(a: u32) {
-    let c =  || a;
+    let c = || a;
     identity(c);
     identity(c);
 }
@@ -237,9 +237,9 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:14: 6:16}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
-  (v3: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+  (v1: {closure@lib.cairo:6:13: 6:15}) <- struct_construct(v0)
+  (v2: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
+  (v3: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -249,18 +249,18 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:14: 6:16}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
-  (v3: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+  (v1: {closure@lib.cairo:6:13: 6:15}) <- struct_construct(v0)
+  (v2: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
+  (v3: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
 End:
   Return()
 
 
 Generated core::traits::Destruct::destruct lowering for source location:
-    let c =  || a;
-             ^^
+    let c = || a;
+            ^^
 
-Parameters: v0: {closure@lib.cairo:6:14: 6:16}
+Parameters: v0: {closure@lib.cairo:6:13: 6:15}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -270,7 +270,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:6:14: 6:16}
+Parameters: v0: {closure@lib.cairo:6:13: 6:15}
 blk0 (root):
 Statements:
 End:
@@ -278,13 +278,13 @@ End:
 
 
 Generated core::ops::function::Fn::call lowering for source location:
-    let c =  || a;
-             ^^
+    let c = || a;
+            ^^
 
-Parameters: v0: @{closure@lib.cairo:6:14: 6:16}, v2: ()
+Parameters: v0: @{closure@lib.cairo:6:13: 6:15}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:14: 6:16}) <- desnap(v0)
+  (v1: {closure@lib.cairo:6:13: 6:15}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   () <- struct_destructure(v2)
 End:
@@ -292,10 +292,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:6:14: 6:16}, v1: ()
+Parameters: v0: @{closure@lib.cairo:6:13: 6:15}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:6:14: 6:16}) <- desnap(v0)
+  (v2: {closure@lib.cairo:6:13: 6:15}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
