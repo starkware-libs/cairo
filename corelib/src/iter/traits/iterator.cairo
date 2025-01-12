@@ -23,9 +23,7 @@ pub trait Iterator<T> {
     /// # Examples
     ///
     /// ```
-    /// let a = [1, 2, 3].span();
-    ///
-    /// let mut iter = a.into_iter();
+    /// let mut iter = [1, 2, 3].span().into_iter();
     ///
     /// // A call to next() returns the next value...
     /// assert_eq!(Option::Some(@1), iter.next());
