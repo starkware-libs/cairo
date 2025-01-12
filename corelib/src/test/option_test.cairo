@@ -257,3 +257,16 @@ fn test_option_none_into_iter() {
     let mut x_iter = x.into_iter();
     assert!(x_iter.next() == Option::None);
 }
+
+#[test]
+fn test_option_take() {
+    let mut x = Option::Some(2);
+    let y = x.take();
+    assert_eq!(x, Option::None);
+    assert_eq!(y, Option::Some(2));
+
+    let mut x: Option<u32> = Option::None;
+    let y = x.take();
+    assert_eq!(x, Option::None);
+    assert_eq!(y, Option::None);
+}
