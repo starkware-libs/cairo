@@ -76,7 +76,7 @@
 //! }
 //! ```
 //!
-//! For nested mappings, only path-based access is available:
+//! Nested mappings:
 //!
 //! ```
 //! #[storage]
@@ -86,6 +86,7 @@
 //!
 //! fn read_storage(self: @ContractState, owner: ContractAddress, spender: ContractAddress) {
 //!     let allowance = self.allowances.entry(owner).entry(spender).read();
+//!     let allowance = self.allowances.entry(owner).read(spender);
 //! }
 //! ```
 
@@ -111,6 +112,8 @@ use super::{
 /// fn read_storage(self: @ContractState, address: ContractAddress) {
 ///     // Read from single mapping
 ///     let balance = self.balances.read(address);
+///     // Read from nested mapping
+///     let allowance = self.allowances.entry(owner).read(spender);
 /// }
 /// ```
 pub trait StorageMapReadAccess<TMemberState> {
@@ -137,6 +140,8 @@ pub trait StorageMapReadAccess<TMemberState> {
 /// fn write_storage(ref self: ContractState, address: ContractAddress) {
 ///     // Write to single mapping
 ///     self.balances.write(address, 100);
+///     // Write to nested mapping
+///     self.allowances.entry(owner).write(spender, 50);
 /// }
 /// ```
 pub trait StorageMapWriteAccess<TMemberState> {
