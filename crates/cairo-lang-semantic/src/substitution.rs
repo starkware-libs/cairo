@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
@@ -28,7 +29,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -198,18 +202,31 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
     }
 }
 
-impl<T: Clone, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+impl<T: Clone + Hash + Eq, V: Clone, E, TRewriter: SemanticRewriter<V, E> + SemanticRewriter<T, E>>
     SemanticRewriter<OrderedHashMap<T, V>, E> for TRewriter
 {
     fn internal_rewrite(&mut self, value: &mut OrderedHashMap<T, V>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
-        for el in value.iter_mut() {
-            match self.internal_rewrite(el.1)? {
+        let mut changed_key = Vec::new();
+        for (k, v) in value.iter_mut() {
+            let mut temp_key = k.clone();
+            match self.internal_rewrite(&mut temp_key)? {
+                RewriteResult::Modified => {
+                    changed_key.push((k.clone(), temp_key));
+                    result = RewriteResult::Modified;
+                }
+                RewriteResult::NoChange => {}
+            }
+            match self.internal_rewrite(v)? {
                 RewriteResult::Modified => {
                     result = RewriteResult::Modified;
                 }
                 RewriteResult::NoChange => {}
             }
+        }
+        for (old_key, new_key) in changed_key {
+            let v = value.swap_remove(&old_key).unwrap();
+            value.insert(new_key, v);
         }
 
         Ok(result)
@@ -344,6 +361,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteExternTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
@@ -490,14 +509,16 @@ impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             TypeLongId::TraitType(trait_type_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_type_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
-                    *value =
-                        self.db.impl_type_concrete_implized(impl_type_id)?.lookup_intern(self.db);
-                    return Ok(RewriteResult::Modified);
+                    if trait_type_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
+                        *value = self
+                            .db
+                            .impl_type_concrete_implized(impl_type_id)?
+                            .lookup_intern(self.db);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}
@@ -531,18 +552,18 @@ impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             ConstValue::TraitConstant(trait_constant_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_constant_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_const_id =
-                        ImplConstantId::new(*self_impl, *trait_constant_id, self.db);
-                    *value = self
-                        .db
-                        .impl_constant_concrete_implized_value(impl_const_id)?
-                        .lookup_intern(self.db);
+                    if trait_constant_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_const_id =
+                            ImplConstantId::new(*self_impl, *trait_constant_id, self.db);
+                        *value = self
+                            .db
+                            .impl_constant_concrete_implized_value(impl_const_id)?
+                            .lookup_intern(self.db);
 
-                    return Ok(RewriteResult::Modified);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}
@@ -576,15 +597,17 @@ impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
             }
             ImplLongId::TraitImpl(trait_impl_id) => {
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    assert_eq!(
-                        trait_impl_id.trait_id(self.db.upcast()),
-                        self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    );
-                    let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
-                    *value =
-                        self.db.impl_impl_concrete_implized(impl_impl_id)?.lookup_intern(self.db);
+                    if trait_impl_id.trait_id(self.db.upcast())
+                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
+                    {
+                        let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
+                        *value = self
+                            .db
+                            .impl_impl_concrete_implized(impl_impl_id)?
+                            .lookup_intern(self.db);
 
-                    return Ok(RewriteResult::Modified);
+                        return Ok(RewriteResult::Modified);
+                    }
                 }
             }
             _ => {}

@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
@@ -49,9 +49,8 @@ impl TestFileRunner for ExpandContractTestRunner {
 
         for file_id in files {
             let content = db.file_content(file_id).unwrap();
-            let start = TextOffset::default();
-            let end = start.add_width(TextWidth::from_str(&content));
-            let content_location = DiagnosticLocation { file_id, span: TextSpan { start, end } };
+            let content_location =
+                DiagnosticLocation { file_id, span: TextSpan::from_str(&content) };
             let original_location = content_location.user_location(db.upcast());
             let origin = (content_location != original_location)
                 .then(|| format!("{:?}\n", original_location.debug(db.upcast())))

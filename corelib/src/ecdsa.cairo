@@ -13,10 +13,10 @@
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
-use crate::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
+use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
+use crate::{ec, math};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::math;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
@@ -173,7 +173,7 @@ pub fn recover_public_key(
 ) -> Option<felt252> {
     let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
     let y: u256 = signature_r_point.try_into()?.y().into();
-    // If the actual the parity of the actual y is different than requested, flip the parity.
+    // If the actual parity of the actual y is different than requested, flip the parity.
     if (y.low & 1 == 1) != y_parity {
         signature_r_point = -signature_r_point;
     }

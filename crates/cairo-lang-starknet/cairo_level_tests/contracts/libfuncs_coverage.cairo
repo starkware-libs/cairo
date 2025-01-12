@@ -1,7 +1,5 @@
 use core::dict::{Felt252Dict, Felt252DictEntryTrait};
-use starknet::storage::StoragePathEntry;
-use starknet::storage::StoragePointerWriteAccess;
-use starknet::storage::StoragePointerReadAccess;
+use starknet::storage::{StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess};
 
 #[starknet::contract]
 mod libfuncs_coverage {
@@ -233,7 +231,6 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
     }
 }
-
 use core::num::traits::Sqrt;
 use core::traits::{BitAnd, BitOr, BitXor};
 
@@ -405,11 +402,10 @@ fn nullable_libfuncs<T, +Destruct<Nullable<T>>, +Destruct<T>>(libfuncs: Nullable
         NullableLibfuncs::Deref(nullable) => use_and_panic(nullable.deref()),
     }
 }
-
 use core::circuit::{
-    circuit_add, circuit_inverse, circuit_mul, circuit_sub, u384, AddInputResultTrait,
-    CircuitElement, CircuitInput, CircuitInputs, CircuitModulus, CircuitOutputsTrait,
-    EvalCircuitTrait,
+    AddInputResultTrait, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
+    CircuitOutputsTrait, EvalCircuitTrait, circuit_add, circuit_inverse, circuit_mul, circuit_sub,
+    u384,
 };
 
 fn circuit_libfuncs(n: u384, input0: u384, input1: u384) {
@@ -431,8 +427,7 @@ fn circuit_libfuncs(n: u384, input0: u384, input1: u384) {
         .unwrap();
     use_and_panic(outputs.get_output(add));
 }
-
-use starknet::secp256_trait::{Secp256Trait, Secp256PointTrait, is_valid_signature, Signature};
+use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait, Signature, is_valid_signature};
 
 fn secp_libfuncs<
     Secp256Point,
@@ -451,7 +446,6 @@ fn secp_libfuncs<
 trait Foo<TContractState> {
     fn foo(ref self: TContractState);
 }
-
 use starknet::syscalls;
 
 fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
@@ -495,9 +489,9 @@ extern fn i32_const<const VALUE: i32>() -> i32 nopanic;
 extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
 extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
 extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
-use starknet::storage_access::storage_base_address_const;
-use starknet::contract_address::contract_address_const;
 use starknet::class_hash::class_hash_const;
+use starknet::contract_address::contract_address_const;
+use starknet::storage_access::storage_base_address_const;
 
 fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
     match libfuncs {

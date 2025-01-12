@@ -23,7 +23,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -85,7 +88,7 @@ impl CanonicalImpl {
 }
 
 /// Mapping between canonical space and inference space.
-/// Created by a either canonicalizing or embedding a trait.
+/// Created by either canonicalizing or embedding a trait.
 #[derive(Debug)]
 pub struct CanonicalMapping {
     to_canonic: VarMapping,

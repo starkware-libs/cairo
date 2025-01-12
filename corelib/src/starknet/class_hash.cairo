@@ -14,9 +14,9 @@
 //! let hash = 0x123.try_into().unwrap();
 //! ```
 
+use core::RangeCheck;
 #[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
-use core::RangeCheck;
 use core::serde::Serde;
 
 /// Represents a Starknet contract class hash.

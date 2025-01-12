@@ -36,20 +36,19 @@ struct UserInfo {
 
 #[starknet::storage_node]
 struct TransactionInfo {
-    balances: Map::<ContractAddress, u256>,
-    allowances: Map::<ContractAddress, Map<ContractAddress, u256>>,
+    balances: Map<ContractAddress, u256>,
+    allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 }
 
 #[starknet::contract]
 mod storage_accesses {
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::ContractAddress;
-    use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_caller_address};
+    use super::{TransactionInfo, UserInfo};
 
     #[storage]
     struct Storage {
@@ -207,9 +206,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1398,8 +1397,8 @@ impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct TransactionInfoStorageBase {
-    balances: starknet::storage::StorageBase<Map::<ContractAddress, u256>>,
-    allowances: starknet::storage::StorageBase<Map::<ContractAddress, Map<ContractAddress, u256>>>,
+    balances: starknet::storage::StorageBase<Map<ContractAddress, u256>>,
+    allowances: starknet::storage::StorageBase<Map<ContractAddress, Map<ContractAddress, u256>>>,
 }
 #[doc(hidden)]
 impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionInfo> {
@@ -1416,8 +1415,8 @@ impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionIn
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct TransactionInfoStorageBaseMut {
-    balances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
-    allowances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
+    balances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map<ContractAddress, u256>>>,
+    allowances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map<ContractAddress, Map<ContractAddress, u256>>>>,
 }
 #[doc(hidden)]
 impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<TransactionInfo> {
@@ -1434,8 +1433,8 @@ impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<Transac
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct TransactionInfoStorageNode {
-    balances: starknet::storage::PendingStoragePath<Map::<ContractAddress, u256>>,
-    allowances: starknet::storage::PendingStoragePath<Map::<ContractAddress, Map<ContractAddress, u256>>>,
+    balances: starknet::storage::PendingStoragePath<Map<ContractAddress, u256>>,
+    allowances: starknet::storage::PendingStoragePath<Map<ContractAddress, Map<ContractAddress, u256>>>,
 }
 #[doc(hidden)]
 impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<TransactionInfo> {
@@ -1458,8 +1457,8 @@ impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<Transactio
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct TransactionInfoStorageNodeMut {
-    balances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
-    allowances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
+    balances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map<ContractAddress, u256>>>,
+    allowances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map<ContractAddress, Map<ContractAddress, u256>>>>,
 }
 #[doc(hidden)]
 impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<TransactionInfo> {
@@ -1845,13 +1844,12 @@ impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDi
 impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::ContractAddress;
-    use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_caller_address};
+    use super::{TransactionInfo, UserInfo};
 
     #[storage]
     struct Storage {
@@ -2009,9 +2007,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

@@ -24,7 +24,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
+use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -163,6 +163,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::constant::constant_const_type)]
     #[salsa::cycle(items::constant::constant_const_type_cycle)]
     fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;
+    /// Returns information required for const calculations.
+    #[salsa::invoke(items::constant::const_calc_info)]
+    fn const_calc_info(&self) -> Arc<ConstCalcInfo>;
 
     // Use.
     // ====

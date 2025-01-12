@@ -1,5 +1,4 @@
 use core::num::traits::Zero;
-
 use super::utils::serialized;
 
 #[starknet::interface]
@@ -9,15 +8,15 @@ trait ITestContract<T> {}
 mod test_contract {
     use starknet::StorageAddress;
     use starknet::storage::{
-        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
 
     #[storage]
     struct Storage {
         value: felt252,
-        mapping: Map::<u128, bool>,
-        large_mapping: Map::<u256, u256>,
+        mapping: Map<u128, bool>,
+        large_mapping: Map<u256, u256>,
     }
 
     #[external(v0)]

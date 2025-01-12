@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::indoc;
@@ -45,10 +45,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         InlinePluginResult {
             code: code.map(|x| {
                 let content = x.to_string();
-                let span = TextSpan {
-                    start: TextOffset::default(),
-                    end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                };
+                let span = TextSpan::from_str(&content);
                 PluginGeneratedFile {
                     name: "consteval_int_inline_macro".into(),
                     content,

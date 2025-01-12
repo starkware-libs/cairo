@@ -417,7 +417,7 @@ impl MyImpl of MyTrait {
     fn foo1() -> S<AnotherTrait::X> {
         S {}
     }
-    fn foo2(x: S::<Self::Y>) {}
+    fn foo2(x: S<Self::Y>) {}
 }
 
 //! > expected_diagnostics

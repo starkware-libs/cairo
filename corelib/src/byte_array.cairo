@@ -43,19 +43,19 @@
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
+use crate::clone::Clone;
+use crate::cmp::min;
+use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
     one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
 };
-use crate::clone::Clone;
-use crate::cmp::min;
 #[allow(unused_imports)]
-use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
-use crate::option::OptionTrait;
+use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
@@ -153,7 +153,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ba.append(@"2");
     /// assert!(ba == "12");
     /// ```
-    fn append(ref self: ByteArray, mut other: @ByteArray) {
+    fn append(ref self: ByteArray, other: @ByteArray) {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
@@ -488,5 +488,28 @@ impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
 pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
+    }
+}
+
+// TODO: Implement a more efficient version of this iterator.
+/// An iterator struct over a ByteArray.
+#[derive(Drop, Clone)]
+pub struct ByteArrayIter {
+    ba: ByteArray,
+    current_index: crate::ops::RangeIterator<usize>,
+}
+
+impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
+    type Item = u8;
+    fn next(ref self: ByteArrayIter) -> Option<u8> {
+        self.ba.at(self.current_index.next()?)
+    }
+}
+
+impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
+    type IntoIter = ByteArrayIter;
+    #[inline]
+    fn into_iter(self: ByteArray) -> Self::IntoIter {
+        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }

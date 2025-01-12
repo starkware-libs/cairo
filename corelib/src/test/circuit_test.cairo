@@ -1,9 +1,8 @@
 use crate::circuit::{
-    RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
-    circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
-    AddInputResultTrait, CircuitInputs,
+    AddInputResultTrait, AddMod, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
+    CircuitOutputsTrait, EvalCircuitTrait, MulMod, RangeCheck96, circuit_add, circuit_inverse,
+    circuit_mul, circuit_sub, u384, u96,
 };
-
 use crate::num::traits::Zero;
 use crate::traits::TryInto;
 
@@ -124,7 +123,7 @@ fn test_fill_inputs_loop() {
     let in2 = CircuitElement::<CircuitInput<1>> {};
     let add = circuit_add(in1, in2);
 
-    let mut inputs: Array::<[u96; 4]> = array![[1, 0, 0, 0], [2, 0, 0, 0]];
+    let mut inputs: Array<[u96; 4]> = array![[1, 0, 0, 0], [2, 0, 0, 0]];
     let mut circuit_inputs = (add,).new_inputs();
 
     while let Option::Some(input) = inputs.pop_front() {

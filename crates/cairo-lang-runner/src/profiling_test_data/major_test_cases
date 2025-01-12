@@ -818,10 +818,8 @@ trait IERC20<TContractState> {
 #[starknet::contract]
 mod erc_20 {
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::contract_address_const;
-    use starknet::ContractAddress;
     use starknet::storage::Map;
+    use starknet::{ContractAddress, contract_address_const, get_caller_address};
 
 
     #[storage]
@@ -830,8 +828,8 @@ mod erc_20 {
         symbol: felt252,
         decimals: u8,
         total_supply: u256,
-        balances: Map::<ContractAddress, u256>,
-        allowances: Map::<(ContractAddress, ContractAddress), u256>,
+        balances: Map<ContractAddress, u256>,
+        allowances: Map<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]

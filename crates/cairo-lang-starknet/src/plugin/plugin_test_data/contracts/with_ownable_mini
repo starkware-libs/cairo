@@ -9,12 +9,12 @@ cairo_level_tests/contracts/with_ownable_mini.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod ownable_mini_contract {
-    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
+    use crate::components::ownable_mini;
 
     #[storage]
     struct Storage {
@@ -106,9 +106,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -262,12 +262,12 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
-    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
+    use crate::components::ownable_mini;
 
     #[storage]
     struct Storage {
@@ -359,9 +359,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

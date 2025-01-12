@@ -41,6 +41,20 @@ fn panicable_closure() {
     assert_eq!(c(2), 5);
 }
 
+struct Callable<F, +core::ops::Fn<F, ()>> {
+    f: F,
+}
+
+#[test]
+fn closure_snapshot_call() {
+    let callable = Callable { f: || 10_u8 };
+    assert_eq!(core::ops::FnOnce::call(callable.f, ()), 10);
+    assert_eq!(core::ops::Fn::call(@callable.f, ()), 10);
+    // With snapshot
+    assert_eq!(core::ops::FnOnce::call(@callable.f, ()), 10);
+    assert_eq!(core::ops::Fn::call(@@callable.f, ()), 10);
+}
+
 fn option_map<T, F, +core::ops::FnOnce<F, (T,)>, +Drop<F>>(
     opt: Option<T>, f: F,
 ) -> Option<core::ops::FnOnce::<F, (T,)>::Output> {
@@ -57,7 +71,9 @@ fn option_map_test() {
     assert_eq!(option_map(Option::Some(2), |x| Option::Some(x)), Option::Some(Option::Some(2)));
 }
 
-fn array_map<T, F, impl Fn: core::ops::Fn<F, (T,)>, +Drop<T>, +Drop<F>, +Drop<Fn::Output>>(
+fn fix_sized_array_map<
+    T, F, impl Fn: core::ops::Fn<F, (T,)>, +Drop<T>, +Drop<F>, +Drop<Fn::Output>,
+>(
     arr: [T; 2], f: F,
 ) -> [core::ops::Fn::<F, (T,)>::Output; 2] {
     let [a, b] = arr;
@@ -65,7 +81,26 @@ fn array_map<T, F, impl Fn: core::ops::Fn<F, (T,)>, +Drop<T>, +Drop<F>, +Drop<Fn
 }
 
 #[test]
-fn array_map_test() {
-    assert_eq!(array_map([2, 3], |x| x + 3), [5, 6]);
+fn fix_sized_array_map_test() {
+    assert_eq!(fix_sized_array_map([2, 3], |x| x + 3), [5, 6]);
 }
 
+#[generate_trait]
+impl ArrayExt of ArrayExtTrait {
+    fn map<T, +Drop<T>, F, +Drop<F>, impl func: core::ops::Fn<F, (T,)>, +Drop<func::Output>>(
+        self: Array<T>, f: F,
+    ) -> Array<func::Output> {
+        let mut output: Array<func::Output> = array![];
+        for elem in self {
+            output.append(f(elem));
+        };
+        output
+    }
+}
+
+#[test]
+fn array_map_test() {
+    let arr = array![1, 2, 3];
+    let result = arr.map(|x| x + 1);
+    assert_eq!(result, array![2, 3, 4]);
+}

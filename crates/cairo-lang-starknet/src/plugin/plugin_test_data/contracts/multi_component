@@ -16,8 +16,8 @@ pub trait GetSupply<TContractState> {
 pub mod contract_with_4_components {
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
-    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::mintable::mintable as mintable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::upgradable::upgradable as upgradable_comp;
     #[storage]
     struct Storage {
@@ -153,9 +153,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -932,8 +932,8 @@ impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupply
 
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
-    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::mintable::mintable as mintable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::upgradable::upgradable as upgradable_comp;
     #[storage]
     struct Storage {
@@ -1069,9 +1069,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

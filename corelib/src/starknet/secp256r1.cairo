@@ -16,9 +16,9 @@
 use core::gas::GasBuiltin;
 use core::option::OptionTrait;
 #[allow(unused_imports)]
-use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait,
-};
+use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait};
+#[allow(unused_imports)]
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
 /// Represents a point on the secp256r1 elliptic curve.
 #[derive(Copy, Drop)]

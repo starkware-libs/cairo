@@ -14,12 +14,12 @@
 //! assert!(value[0] == 0xbb);
 //! ```
 
+use crate::traits::{Into, TryInto};
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::RangeCheck;
-use crate::traits::{Into, TryInto};
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -126,7 +126,7 @@ pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
 /// 2. `index <= len`.
 /// 3. `len <= BYTES_IN_BYTES31`.
 /// If these assumptions are not met, it can corrupt the `byte31`s. Thus, this should be a
-/// private function. We could add masking/assertions but it would be more expansive.
+/// private function. We could add masking/assertions but it would be more expensive.
 pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {
         return (0, word);
@@ -232,7 +232,7 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{DivRemHelper, BoundedInt, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, div_rem};
 
     impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;

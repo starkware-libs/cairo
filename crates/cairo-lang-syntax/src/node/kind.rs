@@ -85,6 +85,7 @@ pub enum SyntaxKind {
     ImplicitsList,
     OptionImplicitsClauseEmpty,
     OptionTerminalNoPanicEmpty,
+    OptionTerminalConstEmpty,
     FunctionSignature,
     Member,
     MemberList,

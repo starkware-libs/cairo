@@ -61,19 +61,17 @@
 //!
 //! [`append`]: ArrayTrait::append
 
-#[feature("deprecated-index-traits")]
-use crate::traits::IndexView;
-
 use crate::box::BoxTrait;
+use crate::iter::Iterator;
+use crate::metaprogramming::TypeEqual;
+use crate::serde::Serde;
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::serde::Serde;
-use crate::metaprogramming::TypeEqual;
-use crate::iter::Iterator;
-use crate::RangeCheck;
-
+#[feature("deprecated-index-traits")]
+use crate::traits::IndexView;
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -813,7 +811,7 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
-    fn into_iter(self: Span<T>) -> SpanIter<T> {
+    fn into_iter(self: Span<T>) -> Self::IntoIter {
         SpanIter { span: self }
     }
 }
@@ -842,7 +840,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    fn into_iter(self: Array<T>) -> ArrayIter<T> {
+    fn into_iter(self: Array<T>) -> Self::IntoIter {
         ArrayIter { array: self }
     }
 }

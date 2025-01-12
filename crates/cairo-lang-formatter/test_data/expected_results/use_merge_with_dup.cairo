@@ -21,7 +21,8 @@ mod e;
 use a::b;
 use a::b::c;
 use a::b::c::d;
-use a::b::c::d::{e, f::g};
+use a::b::c::d::e;
+use a::b::c::d::f::g;
 /// Testing not merging with trivia.
 mod t;
 // This is a comment for a::b.

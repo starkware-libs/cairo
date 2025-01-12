@@ -16,9 +16,9 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
@@ -133,9 +133,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1000,9 +1000,9 @@ impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICoun
 impl ICounterContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
 impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
@@ -1117,9 +1117,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

@@ -6,7 +6,7 @@ The docs are written in [AsciiDoc](https://asciidoc.org/)(`.adoc`). You can view
 
 ## View on IDE
 
-- Install `AsciiDoc`plugins in `VsCode` or `Intellij IDEA`
+- Install `AsciiDoc`plugins in `VSCode` or `Intellij IDEA`
 
 ## View in HTML
 ### Install `asciidoctor`
@@ -22,7 +22,7 @@ apt-get install asciidoctor
 ```
 
 ### Convert to HTML
-> Tips:`pwd` is `cairo/docs/reference`
+> Tip:`pwd` is `cairo/docs/reference`
 
 - Convert a single file
 ```bash
@@ -51,7 +51,7 @@ apt-get install asciidoctor
 ```
 
 ### Convert to PDF
-> Tips: `pwd` is `cairo/docs/reference`
+> Tip: `pwd` is `cairo/docs/reference`
 
 - Convert a single file
 ```bash

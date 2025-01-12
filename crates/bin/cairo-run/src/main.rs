@@ -8,6 +8,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::ProfilingInfoProcessor;
 use cairo_lang_runner::{ProfilingInfoCollectionConfig, SierraCasmRunner, StarknetState};
@@ -51,7 +52,9 @@ fn main() -> anyhow::Result<()> {
     let mut db_builder = RootDatabase::builder();
     db_builder.detect_corelib();
     if args.available_gas.is_none() {
-        db_builder.skip_auto_withdraw_gas();
+        db_builder
+            .skip_auto_withdraw_gas()
+            .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]));
     }
     let db = &mut db_builder.build()?;
 
@@ -123,8 +126,8 @@ fn main() -> anyhow::Result<()> {
             while let Some(item) = format_next_item(&mut felts) {
                 if !first {
                     print!(", ");
-                    first = false;
                 }
+                first = false;
                 print!("{}", item.quote_if_string());
             }
             println!("].")

@@ -9,9 +9,9 @@ cairo_level_tests/contracts/with_erc20_mini.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod erc20_mini_contract {
-    use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
+    use crate::components::erc20_mini;
     #[storage]
     struct Storage {
         #[flat]
@@ -96,9 +96,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -240,9 +240,9 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
-    use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
+    use crate::components::erc20_mini;
     #[storage]
     struct Storage {
         #[flat]
@@ -327,9 +327,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
