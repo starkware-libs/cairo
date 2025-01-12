@@ -422,7 +422,7 @@ pub impl VecIntoIterRange<
     }
     #[inline]
     fn into_iter_full_range(self: StoragePath<Vec<T>>) -> Self::IntoIter {
-        VecIter { current_index: (0..VecTraitImpl::len(self)).into_iter(), vec: self }
+        VecIter { current_index: (0..core::num::traits::Bounded::MAX).into_iter(), vec: self }
     }
 }
 
@@ -442,7 +442,7 @@ pub impl PathableVecIntoIterRange<
     #[inline]
     fn into_iter_full_range(self: T) -> Self::IntoIter {
         let vec = self.as_path();
-        VecIter { current_index: (0..vec.len()).into_iter(), vec }
+        VecIter { current_index: (0..core::num::traits::Bounded::MAX).into_iter(), vec }
     }
 }
 
@@ -473,7 +473,9 @@ pub impl MutableVecIntoIterRange<
     }
     #[inline]
     fn into_iter_full_range(self: StoragePath<Mutable<Vec<T>>>) -> Self::IntoIter {
-        MutableVecIter { current_index: (0..MutVecTraitImpl::len(self)).into_iter(), vec: self }
+        MutableVecIter {
+            current_index: (0..core::num::traits::Bounded::MAX).into_iter(), vec: self,
+        }
     }
 }
 
@@ -493,6 +495,6 @@ pub impl PathableMutableVecIntoIterRange<
     #[inline]
     fn into_iter_full_range(self: T) -> Self::IntoIter {
         let vec = self.as_path();
-        MutableVecIter { current_index: (0..vec.len()).into_iter(), vec }
+        MutableVecIter { current_index: (0..core::num::traits::Bounded::MAX).into_iter(), vec }
     }
 }
