@@ -131,86 +131,149 @@ impl LowerHexStorageBaseAddress of core::fmt::LowerHex<StorageBaseAddress> {
     }
 }
 
-/// Trait for types that can be used as a value in Starknet storage variables.
+/// Trait for types that can be stored in Starknet contract storage.
 ///
-/// The `Store` trait enables types to be stored in and retrieved from Starknet contract storage. It
-/// is implemented by default for most basic types.
-/// It can be automatically derived for custom types using `#[derive(Store)]`, as long as members of
-/// the type implement `Store`.
+/// The `Store` trait enables types to be stored in and retrieved from Starknet's contract storage.
+/// Cairo implements `Store` for most primitive types. However, collection types (arrays, dicts,
+/// etc.) do not implement `Store` directly. Instead, use specialized storage types, such as [`Vec`]
+/// or [`Map`].
+///
+/// [`Map`]: crate::starknet::storage::Map
+/// [`Vec`]: crate::starknet::storage::Vec
 ///
 /// # Derivation
 ///
 /// To make a type storable in contract storage, simply derive the `Store` trait:
 ///
 /// ```
-/// #[derive(Store)]
-/// struct MyStruct {
-///     value: felt252,
+/// #[derive(Drop, starknet::Store)]
+/// struct Sizes {
+///     tiny: u8,    // 8 bits
+///     small: u32,  // 32 bits
+///     medium: u64, // 64 bits
 /// }
 /// ```
+///
+/// This allows the `Size` struct to be stored in a contract's storage.
+///
+/// There's no real reason to implement this trait yourself, as it can be trivially derived.
+/// For efficiency purposes, consider manually implementing [`StorePacking`] to optimize storage
+/// usage.
 pub trait Store<T> {
-    /// Reads a value from storage from domain `address_domain` and base address `base`.
+    /// Reads a value from storage at the given domain and base address.
+    ///
+    /// # Arguments
+    ///
+    /// * `address_domain` - The storage domain (currently only 0 is supported)
+    /// * `base` - The base storage address to read from
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
 
-    /// Writes a value to storage to domain `address_domain` and base address `base`.
+    /// Writes a value to storage at the given domain and base address.
+    ///
+    /// # Arguments
+    ///
+    /// * `address_domain` - The storage domain (currently only 0 is supported)
+    /// * `base` - The base storage address to write to
+    /// * `value` - The value to store
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
 
-    /// Reads a value from storage from domain `address_domain` and base address `base` at offset
-    /// `offset`.
+    /// Reads a value from storage at a base address plus an offset.
+    ///
+    /// # Arguments
+    ///
+    /// * `address_domain` - The storage domain (currently only 0 is supported)
+    /// * `base` - The base storage address
+    /// * `offset` - The offset from the base address where the value should be read
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T>;
 
-    /// Writes a value to storage to domain `address_domain` and base address `base` at offset
-    /// `offset`.
+    /// Writes a value to storage at a base address plus an offset.
+    ///
+    /// # Arguments
+    ///
+    /// * `address_domain` - The storage domain (currently only 0 is supported)
+    /// * `base` - The base storage address
+    /// * `offset` - The offset from the base address where the value should be written
+    /// * `value` - The value to store
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()>;
 
+    /// Returns the size in storage for this type.
+    ///
+    /// This is bounded to 255, as the offset is a u8. As such, a single type can only take up to
+    /// 255 slots in storage.
     fn size() -> u8;
 }
 
-/// Trait for easier implementation of `Store` used for packing and unpacking values into values of
-/// another type that already implement `Store`, and having `Store` implemented using this
-/// conversion.
+/// Trait for efficient packing of values into optimized storage representations.
 ///
-/// `StorePacking` enables custom types to be stored in contract storage by converting
-/// them to and from types that already implement `Store`. This is particularly useful
-/// for types that need special serialization.
+/// This trait enables bit-packing of complex types into simpler storage types to reduce gas costs
+/// by minimizing the number of storage slots used. When a type implements `StorePacking`, the
+/// compiler automatically uses [`StoreUsingPacking`] to handle storage operations. As such, a type
+/// cannot implement both `Store` and `StorePacking`.
 ///
-/// # Usage
+/// # Storage Optimization
 ///
-/// 1. Implement `StorePacking` for your type
-/// 2. `StoreUsingPacking` implementation automatically implement `Store` for the type
+/// Each storage slot in Starknet is a `felt252`, and storage operations are expensive. By packing
+/// multiple values into fewer slots, you can significantly reduce gas costs. For example:
+/// - Multiple small integers can be packed into a single `felt252`
+/// - Structs with several fields can be compressed into a single storage slot
 ///
-/// # Implementation
+/// # Implementation Requirements
 ///
-/// To implement `StorePacking` for a custom type:
+/// To implement `StorePacking`, ensure that the `PackedT` type implements [`Store`]. The packed
+/// representation must preserve all necessary information to allow unpacking back to the original
+/// type. Additionally, the `pack` and `unpack` operations must be reversible, meaning that packing
+/// followed by unpacking should return the original value.
+///
+/// # Example
+///
+/// Packing multiple integer fields into a single storage slot:
 ///
 /// ```
-/// // 1. Define your type
-/// #[derive(Copy, Drop)]
-/// struct CustomType {
-///     value: u8,
+/// use core::starknet::storage_access::StorePacking;
+///
+/// #[derive(Drop)]
+/// struct Sizes {
+///     tiny: u8,    // 8 bits
+///     small: u32,  // 32 bits
+///     medium: u64, // 64 bits
 /// }
 ///
-/// // 2. Implement `StorePacking` to convert to/from a storable type
-/// impl CustomTypeStorePacking of StorePacking<CustomType, felt252> {
-///     fn pack(value: CustomType) -> felt252 {
-///         value.value.into()
+/// const TWO_POW_8: u128 = 0x100;
+/// const TWO_POW_40: u128 = 0x10000000000;
+///
+/// impl SizesStorePacking of StorePacking<Sizes, u128> {
+///     fn pack(value: Sizes) -> u128 {
+///         value.tiny.into() +
+///         (value.small.into() * TWO_POW_8) +
+///         (value.medium.into() * TWO_POW_40)
 ///     }
 ///
-///     fn unpack(packed: felt252) -> CustomType {
-///         CustomType { value: packed.try_into().unwrap() }
+///     fn unpack(value: u128) -> Sizes {
+///         let tiny = value & 0xff;
+///         let small = (value / TWO_POW_8) & 0xffffffff;
+///         let medium = (value / TWO_POW_40);
+///
+///         Sizes {
+///             tiny: tiny.try_into().unwrap(),
+///             small: small.try_into().unwrap(),
+///             medium: medium.try_into().unwrap(),
+///         }
 ///     }
 /// }
+/// ```
 ///
-/// `Store` implementation is then automatically provided by `StoreUsingPacking` implementation.
+/// By implementing `StorePacking` for `Sizes`, the `Sizes` will be stored in it's packed form,
+/// using a single storage slot instead of 3. When retrieved, it will automatically be unpacked back
+/// into the original type.
 pub trait StorePacking<T, PackedT> {
-    /// Packs a value of type `T` into a value of type `PackedT`.
+    /// Packs a value into its optimized storage representation.
     fn pack(value: T) -> PackedT;
 
-    /// Unpacks a value of type `PackedT` into a value of type `T`.
+    /// Unpacks a storage representation back into the original type.
     fn unpack(value: PackedT) -> T;
 }
 
