@@ -40,9 +40,8 @@
 ///     println!("Consumed: {}", func());
 ///
 ///     println!("Delicious!");
-///     // Attempting to invoke `func()` again will throw a `Variable was previously moved.` error
-///     for
-/// // `func`.
+///     // Attempting to invoke `func()` again will throw a `Variable was previously moved.`
+///     // error for `func`.
 /// }
 ///
 ///   let x: ByteArray = "x";
