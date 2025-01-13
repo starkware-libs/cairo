@@ -159,7 +159,7 @@ pub struct RangeInclusiveIterator<T> {
     //  - `false` when iteration has yielded an element and the iterator is not exhausted
     //  - `true` when iteration has been used to exhaust the iterator
     //
-    // This is required to differentiate bewteen the last element and the end of the range.
+    // This is required to differentiate between the last element and the end of the range.
     pub(crate) exhausted: bool,
 }
 

@@ -67,7 +67,7 @@ pub mod index;
 pub use index::{Index, IndexView};
 
 mod range;
+pub use range::{Range, RangeInclusive, RangeInclusiveIterator, RangeIterator, RangeTrait};
 // `RangeOp` and `RangeInclusiveOp` are used internally by the compiler.
 #[allow(unused_imports)]
 use range::{RangeInclusiveOp, RangeOp};
-pub use range::{Range, RangeInclusive, RangeInclusiveIterator, RangeIterator, RangeTrait};
