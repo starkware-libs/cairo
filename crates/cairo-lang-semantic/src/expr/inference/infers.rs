@@ -92,7 +92,7 @@ pub trait InferenceEmbeddings {
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> GenericFunctionId;
+    ) -> ImplGenericFunctionId;
     fn infer_trait_type(
         &mut self,
         concrete_trait_type: ConcreteTraitTypeId,
@@ -402,8 +402,11 @@ impl InferenceEmbeddings for Inference<'_> {
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> InferenceResult<FunctionId> {
-        let generic_function =
-            self.infer_trait_generic_function(concrete_trait_function, lookup_context, stable_ptr);
+        let generic_function = GenericFunctionId::Impl(self.infer_trait_generic_function(
+            concrete_trait_function,
+            lookup_context,
+            stable_ptr,
+        ));
         self.infer_generic_function(generic_function, lookup_context, stable_ptr)
     }
 
@@ -430,16 +433,13 @@ impl InferenceEmbeddings for Inference<'_> {
         concrete_trait_function: ConcreteTraitGenericFunctionId,
         lookup_context: &ImplLookupContext,
         stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> GenericFunctionId {
+    ) -> ImplGenericFunctionId {
         let impl_id = self.new_impl_var(
             concrete_trait_function.concrete_trait(self.db),
             stable_ptr,
             lookup_context.clone(),
         );
-        GenericFunctionId::Impl(ImplGenericFunctionId {
-            impl_id,
-            function: concrete_trait_function.trait_function(self.db),
-        })
+        ImplGenericFunctionId { impl_id, function: concrete_trait_function.trait_function(self.db) }
     }
 
     /// Infers the impl to be substituted instead of a trait for a given trait type.
