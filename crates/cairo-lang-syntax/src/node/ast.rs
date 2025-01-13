@@ -3149,6 +3149,9 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalDotDot => {
                 Some(BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node)))
             }
+            SyntaxKind::TerminalDotDotEq => {
+                Some(BinaryOperator::DotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -30299,6 +30302,12 @@ impl TypedSyntaxNode for TokenDotDotEq {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30400,6 +30409,14 @@ impl TypedSyntaxNode for TerminalDotDotEq {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDotDotEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -38578,6 +38595,9 @@ impl TypedSyntaxNode for TokenNode {
             }
             SyntaxKind::TerminalDotDot => {
                 Some(TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDotDotEq => {
+                Some(TokenNode::TerminalDotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
             }
             SyntaxKind::TerminalEndOfFile => {
                 Some(TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node)))
