@@ -595,6 +595,24 @@ pub trait OptionTrait<T> {
     /// assert_eq!(y, Option::None);
     /// ```
     fn take(ref self: Option<T>) -> Option<T>;
+
+    /// Inserts a value computed from `f` into the option if it is [`None`],
+    /// then returns the contained value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let mut x = Option::None;
+    /// let y = x.get_or_insert_with(|| 5);
+    /// assert_eq!(y, 5);
+    ///
+    /// let mut x = Option::Some(2);
+    /// let y = x.get_or_insert_with(|| 5);
+    /// assert_eq!(y, 2);
+    /// ```
+    fn get_or_insert_with<F, +core::ops::FnOnce<F, ()>[Output: T], +Drop<F>, +Copy<T>, +Drop<T>>(
+        ref self: Option<T>, f: F,
+    ) -> T;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -781,6 +799,17 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         let value = self;
         self = Option::None;
         value
+    }
+
+    #[inline]
+    fn get_or_insert_with<F, +core::ops::FnOnce<F, ()>[Output: T], +Drop<F>, +Copy<T>, +Drop<T>>(
+        ref self: Option<T>, f: F,
+    ) -> T {
+        if self.is_none() {
+            self = Option::Some(f());
+        };
+
+        self.unwrap()
     }
 }
 

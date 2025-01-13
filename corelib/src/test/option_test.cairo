@@ -270,3 +270,14 @@ fn test_option_take() {
     assert_eq!(x, Option::None);
     assert_eq!(y, Option::None);
 }
+
+#[test]
+fn test_option_get_or_insert_with() {
+    let mut x: Option<u8> = Option::None;
+    let y = x.get_or_insert_with(|| 5);
+    assert_eq!(y, 5);
+
+    let mut x = Option::Some(2);
+    let y = x.get_or_insert_with(|| 5);
+    assert_eq!(y, 2);
+}
