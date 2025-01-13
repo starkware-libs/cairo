@@ -701,6 +701,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
 impl ResultIntoIterator<
     T, E, +Destruct<T>, +Destruct<E>,
 > of crate::iter::IntoIterator<Result<T, E>> {
+    type Item = T;
     type IntoIter = crate::option::OptionIter<T>;
 
     /// Returns a consuming iterator over the possibly contained value.

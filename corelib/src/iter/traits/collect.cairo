@@ -46,6 +46,7 @@
 ///
 /// // and we'll implement `IntoIterator`
 /// impl MyCollectionIntoIterator of IntoIterator<MyCollection> {
+///     type Item = u32;
 ///     type IntoIter = core::array::ArrayIter<u32>;
 ///     fn into_iter(self: MyCollection) -> Self::IntoIter {
 ///         self.arr.into_iter()
@@ -68,6 +69,9 @@
 /// };
 /// ```
 pub trait IntoIterator<T> {
+    /// The type of the elements being iterated over.
+    type Item;
+
     /// The iterator type that will be created.
     type IntoIter;
     impl Iterator: Iterator<Self::IntoIter>;
@@ -91,7 +95,8 @@ pub trait IntoIterator<T> {
     fn into_iter(self: T) -> Self::IntoIter;
 }
 
-impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
+impl IteratorIntoIterator<T, impl IterT: Iterator<T>> of IntoIterator<T> {
+    type Item = IterT::Item;
     type IntoIter = T;
     fn into_iter(self: T) -> T {
         self
@@ -101,6 +106,7 @@ impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
 impl SnapshotFixedSizeArrayIntoIterator<
     T, const SIZE: usize, +Drop<T>, impl ToSpan: core::array::ToSpanTrait<[T; SIZE], T>,
 > of IntoIterator<@[T; SIZE]> {
+    type Item = @T;
     type IntoIter = crate::array::SpanIter<T>;
     fn into_iter(self: @[T; SIZE]) -> Self::IntoIter {
         ToSpan::span(self).into_iter()

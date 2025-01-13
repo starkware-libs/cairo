@@ -19,29 +19,34 @@ pub fn chained_iterator<A, B>(a: A, b: B) -> Chain<A, B> {
 
 /// Converts the arguments to iterators and links them together, in a chain.
 ///
+/// Arguments do not have to be of the same type as long as the underlying iterated
+/// over items are.
+///
 /// # Examples
 ///
 /// ```
 /// use core::iter::chain;
 ///
-/// let a = [1, 2, 3];
-/// let b = [4, 5, 6];
+/// let a: Array<u8> = array![7, 8, 9];
+/// let b: Range<u8> = 0..5;
 ///
 /// let mut iter = chain(a, b);
 ///
-/// assert_eq!(iter.next(), Some(1));
-/// assert_eq!(iter.next(), Some(2));
-/// assert_eq!(iter.next(), Some(3));
-/// assert_eq!(iter.next(), Some(4));
-/// assert_eq!(iter.next(), Some(5));
-/// assert_eq!(iter.next(), Some(6));
-/// assert_eq!(iter.next(), None);
+/// assert_eq!(iter.next(), Option::Some(7));
+/// assert_eq!(iter.next(), Option::Some(8));
+/// assert_eq!(iter.next(), Option::Some(9));
+/// assert_eq!(iter.next(), Option::Some(0));
+/// assert_eq!(iter.next(), Option::Some(1));
+/// assert_eq!(iter.next(), Option::Some(2));
+/// assert_eq!(iter.next(), Option::Some(3));
+/// assert_eq!(iter.next(), Option::Some(4));
+/// assert_eq!(iter.next(), Option::None);
 /// ```
 pub fn chain<
     A,
     B,
     impl IntoIterA: IntoIterator<A>,
-    impl IntoIterB: IntoIterator<B>[IntoIter: IntoIterA::IntoIter],
+    impl IntoIterB: IntoIterator<B>[Item: IntoIterA::Item],
     +Drop<A>,
     +Drop<B>,
     +Drop<IntoIterA::IntoIter>,
