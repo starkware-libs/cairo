@@ -12357,6 +12357,7 @@ impl From<&OptionTerminalConst> for SyntaxStablePtrId {
 }
 impl OptionTerminalConst {
     /// Checks if a kind of a variant of [OptionTerminalConst].
+
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(kind, SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::TerminalConst)
     }
