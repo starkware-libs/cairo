@@ -95,6 +95,8 @@ pub trait IntoIterator<T> {
     fn into_iter(self: T) -> Self::IntoIter;
 }
 
+/// Trying to convert an already existing iterator into an iterator
+/// just returns the iterator itself
 impl IteratorIntoIterator<T, impl IterT: Iterator<T>> of IntoIterator<T> {
     type Item = IterT::Item;
     type IntoIter = T;
