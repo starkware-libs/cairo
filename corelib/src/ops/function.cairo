@@ -1,52 +1,22 @@
-//! Function call traits for flexible function invocation.
+//! Function traits and types.
 //!
-//! This module defines traits for different styles of function calling in Cairo, providing
-//! mechanisms for invoking functions with varying ownership and mutability semantics.
+//! This module defines traits for function-like types that can be called.
+//! The two main traits are:
 //!
-//! The module provides two main traits:
-//! - [`FnOnce`]: For functions that consume their captured variables
-//! - [`Fn`]: For functions that can be called multiple times using snapshots
-//!
-//! # Key Concepts
-//!
-//! - `FnOnce` represents functions that can be called once, consuming the function value
-//! - `Fn` represents functions that can be called multiple times through snapshots
-//!
-//! Both traits are automatically implemented for appropriate closure types. `Fn` implementations
-//! can be used where `FnOnce` is expected.
+//! * [`FnOnce`] - For single-use functions that consume their environment
+//! * [`Fn`] - For reusable functions that can be called multiple times
 //!
 //! # Examples
 //!
-//! Basic usage with closures using a `map` function that maps over an array using a function:
-//!
 //! ```
-//! // A function that maps over an array using a function
-//! #[generate_trait]
-//! impl ArrayExt of ArrayExtTrait {
-//!     // Needed in Cairo 2.9.2 because of a bug in inlining analysis.
-//!     #[inline(never)]
-//!     fn map<T, +Drop<T>, F, +Drop<F>, impl func: core::ops::Fn<F, (T,)>, +Drop<func::Output>>(
-//!         self: Array<T>, f: F,
-//!     ) -> Array<func::Output> {
-//!         let mut output: Array<func::Output> = array![];
-//!         for elem in self {
-//!             output.append(f(elem));
-//!         };
-//!         output
-//!     }
+//! // Using Fn for a reusable operation
+//! fn apply_twice<F, +Drop<F>, +core::ops::Fn<F, (u32,)>[Output: u32]>(f: F, x: u32) -> u32 {
+//!     f(f(x))
 //! }
 //!
-//! fn main () {
-//!    let double = array![1, 2, 3].map(|item: u32| item * 2);
-//!    println!("double: {:?}", double);
-//! }
+//! let double = |x| x * 2;
+//! assert!(apply_twice(double, 2) == 8);
 //! ```
-//!
-//! The example demonstrates why [`Fn`] is required for operations like `map`. Since `map` needs to
-//! apply the function `f` to each element in the array, the function must be callable multiple
-//! times. Using [`FnOnce`] would not work here because:
-//! 1. `FnOnce` functions are consumed when called, as they take ownership of their captured
-//! variables 2. After the first iteration, `f` would be consumed and unavailable
 
 /// The version of the call operator that takes a by-value receiver.
 ///
