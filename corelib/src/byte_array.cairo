@@ -507,7 +507,6 @@ impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
 }
 
 impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
-    type Item = u8;
     type IntoIter = ByteArrayIter;
     #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {

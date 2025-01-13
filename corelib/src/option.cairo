@@ -785,7 +785,6 @@ impl OptionIterator<T> of crate::iter::Iterator<OptionIter<T>> {
 }
 
 impl OptionIntoIterator<T> of crate::iter::IntoIterator<Option<T>> {
-    type Item = T;
     type IntoIter = OptionIter<T>;
     #[inline]
     fn into_iter(self: Option<T>) -> Self::IntoIter {

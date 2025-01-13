@@ -126,7 +126,6 @@ impl RangeIntoIterator<
     +PartialOrd<T>,
     -SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
-    type Item = T;
     type IntoIter = RangeIterator<T>;
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         let start = self.start;
@@ -174,7 +173,6 @@ trait SierraIntRangeSupport<T>;
 impl SierraRangeIntoIterator<
     T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
-    type Item = T;
     type IntoIter = internal::IntRange<T>;
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         match internal::int_range_try_new(self.start, self.end) {
