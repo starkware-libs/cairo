@@ -1,103 +1,144 @@
 //! Storage-related types and traits for Cairo contracts.
 //!
-//! This module implements a storage system for Starknet contracts, providing high-level
-//! abstractions for persistent data storage with deterministic address calculation. It also
-//! provides abstractions for reading and writing to Starknet storage with
-//! [`StoragePointerReadAccess`] and [`StoragePointerWriteAccess`] traits, respectively.
+//! This module implements the storage system for Starknet contracts, providing high-level
+//! abstractions for persistent data storage. It offers a type-safe interface for reading and
+//! writing to Starknet storage through the [`StoragePointerReadAccess`] and
+//! [`StoragePointerWriteAccess`] traits, along with useful storage-only collection types like
+//! [`Vec`] and [`Map`].
 //!
-//! # Storage System Overview
+//! [`Vec`]: crate::starknet::storage::vec::Vec
+//! [`Map`]: crate::starknet::storage::map::Map
 //!
-//! Storage in Starknet contracts is managed through a hash-based addressing scheme that ensures
-//! deterministic and collision-resistant storage locations. The module provides intuitive
-//! high-level abstractions while maintaining security and efficiency.
+//! # Overview
 //!
-//! ## Basic Usage
+//! The storage system in Starknet contracts is built on a key-value store where each storage slot
+//! is identified by a 251-bit address. The storage system allows interactions with storage using
+//! state variables, which are declared inside a `Storage` struct annotated with the `#[storage]`
+//! attribute. This ensures type-safe storage access and simplifies the process of reading and
+//! writing to storage.
+//!
+//! # Using the Storage System
 //!
 //! Storage is typically declared using the `#[storage]` attribute on a struct:
 //!
 //! ```
 //! #[storage]
 //! struct Storage {
-//!     balance: felt252,
-//!     users: Map<felt252, User>,
-//!     nested_data: Map<felt252, Map<felt252, felt252>>,
+//!     balance: u256,
+//!     users: Map<ContractAddress, User>,
+//!     nested_data: Map<ContractAddress, Map<ContractAddress, u8>>,
+//!     collection: Vec<u8>,
 //! }
 //! ```
 //!
-//! Accessing storage members is straightforward:
+//! Any type that implements the `Store` trait (or it's optimized `StorePacked` variant) can be used
+//! in storage.  This type can simply be derived using `#[derive(Store)]` - provided that all of the
+//! members of the type also implement `Store`.
 //!
 //! ```
-//! fn use_storage(self: @ContractState, ...) {
+//! #[derive(Copy, Default, Drop, Store)]
+//! struct User {
+//!     name: felt252,
+//!     age: u8,
+//! }
+//! ```
+//!
+//! Interaction with storage is made through a set of traits, depending on the type interacted
+//! with:
+//!
+//! - [`StoragePointerReadAccess`] and [`StoragePointerWriteAccess`] allow for reading and writing
+//! storable types.
+//! - [`StorageMapReadAccess`] and [`StorageMapWriteAccess`] allow for reading and writing to
+//! storage [`Map`]s.
+//! - [`StoragePathEntry`] allows for accessing a specific entry in a [`Map`], and can be combined
+//! with the `StoragePointer` traits to read and write in these entries.
+//! - [`VecTrait`] and [`MutableVecTrait`] allow for interacting with storage [`Vec`]s.
+//!
+//! [`VecTrait`]: crate::starknet::storage::vec::VecTrait
+//! [`MutableVecTrait`]: crate::starknet::storage::vec::MutableVecTrait
+//! [`StorageMapReadAccess`]: crate::starknet::storage::map::StorageMapReadAccess
+//! [`StorageMapWriteAccess`]: crate::starknet::storage::map::StorageMapWriteAccess
+//! [`StoragePathEntry`]: crate::starknet::storage::map::StoragePathEntry
+//!
+//! ## Examples
+//!
+//! ```
+//! fn use_storage(self: @ContractState) {
+//!     let address = 'address'.try_into().unwrap();
 //!     // Reading values
 //!     let balance = self.balance.read();
-//!     // For a `Map`, the user can use the `entry` method to access the value at a specific key:
-//!     let user = self.users.entry(user_id).read();
-//!     // Accessing a nested `Map` must be done using the `entry` method multiple times:
-//!     let nested = self.nested_data.entry(key1).entry(key2).read();
+//!     // For a `Map`, use the `entry` method to access values at specific keys:
+//!     let user = self.users.entry(address).read();
+//!     // Accessing nested `Map`s requires chaining `entry` calls:
+//!     let nested = self.nested_data.entry(address).entry(address).read();
+//!     // Accessing a specific index in a `Vec` requires using the `index` method:
+//!     let element = self.collection[index];
 //!
 //!     // Writing values
-//!     self.balance.write(new_balance);
-//!     self.users.entry(user_id).write(new_user);
-//!     self.nested_data.entry(key1).entry(key2).write(new_value);
+//!     self.balance.write(100);
+//!     self.users.entry(address).write(Default::default());
+//!     self.nested_data.entry(address).entry(address).write(10);
+//!     self.collection[index].write(20);
 //! }
 //! ```
 //!
-//! # Implementation Details
+//! # Storage Lifecycle
 //!
-//! ## Storage Layout
+//! When you access a storage variable, it goes through several transformations:
 //!
-//! The storage system is built on several abstraction layers:
+//! 1. **FlattenedStorage**: The starting point is your contract's storage struct. Each member is
+//!    represented either as a `StorageBase` or another `FlattenedStorage` (for `#[substorage(v0)]`
+//!    or `#[flat]` members).
 //!
-//! 1. `FlattenedStorage`: The top-level representation of contract storage that contains either
-//!    `StorageBase` instances or nested `FlattenedStorage` instances. It handles storage
-//!    organization based on attributes like `#[substorage(v0)]` or `#[flat]`.
+//! 2. **StorageBase**: For simple variables, this holds the `sn_keccak` hash of the variable name,
+//!    which becomes the storage address. For example:
+//!    ```
+//!    #[storage]
+//!    struct Storage {
+//!        balance: u128,  // Stored at sn_keccak('balance')
+//!    }
+//!    ```
+//! 3. **StoragePath**: For complex types, a `StoragePath` represents an un-finalized path to a
+//!     specific entry in storage. For example, a `StoragePath` for a `Map` can be updated with
+//!     specific keys to point to a specific entry in the map.
 //!
-//! 2. `StorageBase`: Represents single `felt252` values, using the Keccak hash of the member's
-//!    name as the storage address.
+//! 4. **StoragePointer**: The final form, pointing to the actual storage location. For multi-slot
+//!    values (like structs), values are stored sequentially from this address.
 //!
-//! 3. `StoragePath`: `StorageBase` members are converted to `StoragePath` instances, which are
-//!    essentially a wrapper around `HashState` that accumulates components for final address
-//!    calculation, supporting both simple and complex storage types.
+//! # Storage Collections
 //!
-//! 4. `StoragePointer`: The final representation pointing to a storage location, supporting both
-//!    direct and offset-based access for reading and writing values.
+//! Cairo's memory collection types, like [`Felt252Dict`] and [`Array`], can not be used in storage.
+//! Consequently, any type that contains these types can not be used in storage either.
+//! Instead, Cairo has two storage-only collection types: [`Map`] and [`Vec`].
 //!
-//! ## Address Calculation
+//! Instead of storing these _memory_ collections directly, you will need to reflect them into
+//! storage using the [`Map`] and [`Vec`] types.
+//!
+//! # Address Calculation
 //!
 //! Storage addresses are calculated deterministically:
 //!
-//! * If the variable is a single value, the address is the `sn_keccak` hash of the ASCII encoding
-//! of the variable's name. `sn_keccak` is Starknet's version of the Keccak-256 hash function, whose
-//! output is truncated to 250 bits.
+//! * For a single value variable, the address is the `sn_keccak` hash of the variable name's ASCII
+//! encoding. `sn_keccak` is Starknet's version of the Keccak-256 hash function, with its output
+//! truncated to 250 bits.
 //!
-//! * If the variable is composed of multiple values (i.e., a tuple, a struct or an enum), we also
-//! use the `sn_keccak` hash of the ASCII encoding of the variable's name to determine the base
-//! address in storage. Then, depending on the type, the storage layout will differ.
+//! * For variables composed of multiple values (tuples, structs, or enums), the base storage
+//! address is also the `sn_keccak` hash of the variable name's ASCII encoding. The storage layout
+//! then varies depending on the specific type. A struct will store its members as a sequence of
+//! primitive types, while an enum will store its variant index, followed by the members of the
+//! variant.
 //!
-//! * If the variable is part of a storage node, its address is based on a chain of hashes that
-//! reflects the structure of the node. For a storage node member m within a storage variable
-//! variable_name, the path to that member is computed as h(sn_keccak(variable_name), sn_keccak(m)),
-//! where h is the Pedersen hash. This process continues for nested storage nodes, building a chain
-//! of hashes that represents the path to a leaf node. Once a leaf node is reached, the storage
-//! calculation proceeds as it normally would for that type of variable.
+//! * For variables within a storage node, the address is calculated using a chain of hashes that
+//! represents the node structure. Given a member `m` within a storage variable `variable_name`,
+//! the path is computed as `h(sn_keccak(variable_name), sn_keccak(m))`, where `h` is the Pedersen
+//! hash. For nested storage nodes, this process repeats, creating a hash chain representing the
+//! path to each leaf node. At the leaf node, the storage calculation follows the standard rules for
+//! that variable type.
 //!
-//! * If the variable is a `Map` or a `Vec`, the address is computed relative to the storage base
-//! address, which is the `sn_keccak` hash of the variable's name, and the keys of the mapping or
-//! indexes in the `Vec`.
-//!
-//! ## Storage Collections
-//!
-//! The module provides two primary collection types:
-//!
-//! ### Maps
-//! - Key-value storage with deterministic addressing
-//! - Support for nested mappings
-//! - Efficient key-based lookups
-//!
-//! ### Vectors
-//! - Sequential storage with dynamic size
-//! - Index-based address calculation
-//! - Automatic length management
+//! * For [`Map`] or [`Vec`] variables, the address is calculated relative to the storage base
+//! address (the `sn_keccak` hash of the variable name) combined with the mapping keys or vector
+//! indices.
+//! See their respective module documentation for more details.
 
 use core::hash::HashStateTrait;
 #[allow(unused_imports)]
