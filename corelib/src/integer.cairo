@@ -52,9 +52,9 @@
 //! Checked operations:
 //!
 //! ```
-//! use core::traits::CheckedAdd;
+//! use core::num::traits::{CheckedAdd, Bounded};
 //!
-//! let max: u8 = Bounded::max();
+//! let max: u8 = Bounded::MAX;
 //! assert!(max.checked_add(1_u8).is_none());
 //! ```
 //!

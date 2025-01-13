@@ -32,24 +32,6 @@ trait T {
     ) -> Option<U>;
 }
 
-//! > expected_item_0
-Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `Option::None` (if `None`).
-
-# Examples
-
-```
-let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
-// `Option::map` takes self *by value*, consuming `maybe_some_string`
-let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
-assert!(maybe_some_len == Option::Some(13));
-
-let x: Option<ByteArray> = Option::None;
-assert!(x.map(|s: ByteArray| s.len()) == Option::None);
-```
-
-//! > expected_signature_0
-fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(self: Option<T>, f: F) -> Option<U>
-
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -69,7 +51,10 @@ fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
 ) -> Option<U>
 
 //! > Item documentation #3
-Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `Option::None` (if `None`).  # Examples  
+Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `Option::None` (if `None`).
+
+# Examples
+
 ```cairo
 let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
 // `Option::map` takes self *by value*, consuming `maybe_some_string`
@@ -91,7 +76,8 @@ Content(") or returns ")
 Content("`Option::None`")
 Content(" (if ")
 Content("`None`")
-Content(").  # Examples")
+Content(").")
+Content("Examples")
 Content("\n```cairo\n")
 Content("let maybe_some_string: Option<ByteArray> = Option::Some(\"Hello, World!\");\n// `Option::map` takes self *by value*, consuming `maybe_some_string`\nlet maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());\nassert!(maybe_some_len == Option::Some(13));\n\nlet x: Option<ByteArray> = Option::None;\nassert!(x.map(|s: ByteArray| s.len()) == Option::None);\n")
 Content("```")

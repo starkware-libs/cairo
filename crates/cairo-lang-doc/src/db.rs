@@ -430,26 +430,15 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
             (line.starts_with("    ") || line.starts_with("\t")) && !in_code_block;
         let contains_delimiter = trimmed_line.starts_with("```") || is_indented_code_line;
 
-        if is_indented_code_line && !in_code_block {
-            // We are at the start of an indented code block, add an extra newline
-            result.push('\n');
-        }
-
         if contains_delimiter {
             // If we stumble upon the opening of a code block, we have to make a newline.
-            if !in_code_block {
+            if !in_code_block && !result.ends_with('\n') {
                 result.push('\n');
             }
             in_code_block = !in_code_block;
 
             result.push_str(line);
             result.push('\n');
-
-            // If we just closed an indented code block, add an extra newline.
-            if !in_code_block && is_indented_code_line {
-                result.push('\n');
-            }
-
             continue;
         }
 
@@ -457,8 +446,15 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
             result.push_str(line);
             result.push('\n');
         } else {
-            result.push_str(line);
-            result.push(' ');
+            // Outside code blocks, handle paragraph breaks identified by empty lines.
+            if trimmed_line.is_empty() {
+                result.push_str("\n\n");
+            } else {
+                if !result.is_empty() && !result.ends_with("\n\n") && !result.ends_with('\n') {
+                    result.push(' ');
+                }
+                result.push_str(trimmed_line);
+            }
         }
     }
     result.trim_end().to_string()
