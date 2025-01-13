@@ -1,70 +1,103 @@
 //! Storage-related types and traits for Cairo contracts.
 //!
-//! This module provides abstractions for reading and writing to Starknet storage.
+//! This module implements a storage system for Starknet contracts, providing high-level
+//! abstractions for persistent data storage with deterministic address calculation. It also
+//! provides abstractions for reading and writing to Starknet storage with
+//! [`StoragePointerReadAccess`] and [`StoragePointerWriteAccess`] traits, respectively.
 //!
-//! The front facing interface for the user is simple and intuitive, for example consider the
-//! following storage struct:
+//! # Storage System Overview
+//!
+//! Storage in Starknet contracts is managed through a hash-based addressing scheme that ensures
+//! deterministic and collision-resistant storage locations. The module provides intuitive
+//! high-level abstractions while maintaining security and efficiency.
+//!
+//! ## Basic Usage
+//!
+//! Storage is typically declared using the `#[storage]` attribute on a struct:
 //!
 //! ```
 //! #[storage]
 //! struct Storage {
-//!     a: felt252,
-//!     b: Map<felt252, felt52>,
-//!     c: Map<felt52, Map<felt52, felt52>>,
+//!     balance: felt252,
+//!     users: Map<felt252, User>,
+//!     nested_data: Map<felt252, Map<felt252, felt252>>,
 //! }
 //! ```
 //!
-//! The user can access the storage members `a` and `b` using the following code:
+//! Accessing storage members is straightforward:
 //!
 //! ```
-//! fn use_storage(self: @ContractState) {
-//!     let a_value = self.a.read();
+//! fn use_storage(self: @ContractState, ...) {
+//!     // Reading values
+//!     let balance = self.balance.read();
 //!     // For a `Map`, the user can use the `entry` method to access the value at a specific key:
-//!     let b_value = self.b.entry(42).read();
+//!     let user = self.users.entry(user_id).read();
 //!     // Accessing a nested `Map` must be done using the `entry` method multiple times:
-//!     let c_value = self.c.entry(42).entry(43).read()
+//!     let nested = self.nested_data.entry(key1).entry(key2).read();
+//!
+//!     // Writing values
+//!     self.balance.write(new_balance);
+//!     self.users.entry(user_id).write(new_user);
+//!     self.nested_data.entry(key1).entry(key2).write(new_value);
 //! }
-//!  ```
+//! ```
 //!
-//! Under the hood, the storage access is more complex. The life cycle of a storage object is as
-//! follows:
-//! 1. The storage struct of a contract is represented by a `FlattenedStorage` struct, which
-//!    can be derefed into a struct containing a member for each storage member of the contract.
-//!    This member can be either a `StorageBase` or a `FlattenedStorage` instance. Members are
-//!    represented as a `FlattenedStorage` if the storage member is attributed with either
-//!    `#[substorage(v0)]` (for backward compatibility) or `#[flat]`. `FlattenedStorage` is used to
-//!    structure the storage access; however, it does not affect the address of the storage object.
-//! 2. `StorageBase` members of a `FlattenedStorage` struct hold a single `felt252` value, which is
-//!    the Keccak hash of the name of the member. For simple types, this value will be the address
-//!    of the member in the storage.
-//! 3. `StorageBase` members are then converted to `StoragePath` instances, which are essentially
-//!    a wrapper around a `HashState` instance, used to account for more values when computing the
-//!    address of the storage object. `StoragePath` instances can be updated with values coming from
-//!    two sources:
-//!     - Storage nodes, which are structs that represent another struct with all its members
-//!       in the storage, similar to `FlattenedStorage`. However, unlike `FlattenedStorage`, the
-//!       path to the storage node does affect the address of the storage object. See `StorageNode`
-//!       for more details.
-//!     - Storage collections, specifically `Map` and `Vec`, simulate the behavior of collections by
-//!       updating the hash state with the key or index of the collection member.
-//! 4. After finishing the updates, the `StoragePath` instance is finalized, resulting in a
-//!    `StoragePointer0Offset` instance, which is a pointer to the address of the storage object. If
-//!    the pointer is to an object of size greater than 1, the object is stored in a sequential
-//!    manner starting from the address of the pointer. The whole object can be read or written
-//!    using `read` and `write` methods, and specific members can also be accessed in the case of a
-//!    struct. See `SubPointers` for more details.
+//! # Implementation Details
 //!
-//! The transitioning between the different types of storage objects is also called from the
-//! `Deref` trait, and thus, allowing an access to the members of the storage object in a simple
-//! way.
+//! ## Storage Layout
 //!
-//! The types mentioned above are generic in the stored object type. This is done to provide
-//! specific behavior for each type of stored object, e.g., a `StoragePath` of `Map` type will have
-//! an `entry` method, but it won't have a `read` or `write` method, as `Map` is not storable by
-//! itself, only its values are.
-//! The generic type of the storage object can also be wrapped with a `Mutable` type, which
-//! indicates that the storage object is mutable, i.e., it was created from a `ref` contract state,
-//! and thus the object can be written to.
+//! The storage system is built on several abstraction layers:
+//!
+//! 1. `FlattenedStorage`: The top-level representation of contract storage that contains either
+//!    `StorageBase` instances or nested `FlattenedStorage` instances. It handles storage
+//!    organization based on attributes like `#[substorage(v0)]` or `#[flat]`.
+//!
+//! 2. `StorageBase`: Represents single `felt252` values, using the Keccak hash of the member's
+//!    name as the storage address.
+//!
+//! 3. `StoragePath`: `StorageBase` members are converted to `StoragePath` instances, which are
+//!    essentially a wrapper around `HashState` that accumulates components for final address
+//!    calculation, supporting both simple and complex storage types.
+//!
+//! 4. `StoragePointer`: The final representation pointing to a storage location, supporting both
+//!    direct and offset-based access for reading and writing values.
+//!
+//! ## Address Calculation
+//!
+//! Storage addresses are calculated deterministically:
+//!
+//! * If the variable is a single value, the address is the `sn_keccak` hash of the ASCII encoding
+//! of the variable's name. `sn_keccak` is Starknet's version of the Keccak-256 hash function, whose
+//! output is truncated to 250 bits.
+//!
+//! * If the variable is composed of multiple values (i.e., a tuple, a struct or an enum), we also
+//! use the `sn_keccak` hash of the ASCII encoding of the variable's name to determine the base
+//! address in storage. Then, depending on the type, the storage layout will differ.
+//!
+//! * If the variable is part of a storage node, its address is based on a chain of hashes that
+//! reflects the structure of the node. For a storage node member m within a storage variable
+//! variable_name, the path to that member is computed as h(sn_keccak(variable_name), sn_keccak(m)),
+//! where h is the Pedersen hash. This process continues for nested storage nodes, building a chain
+//! of hashes that represents the path to a leaf node. Once a leaf node is reached, the storage
+//! calculation proceeds as it normally would for that type of variable.
+//!
+//! * If the variable is a `Map` or a `Vec`, the address is computed relative to the storage base
+//! address, which is the `sn_keccak` hash of the variable's name, and the keys of the mapping or
+//! indexes in the `Vec`.
+//!
+//! ## Storage Collections
+//!
+//! The module provides two primary collection types:
+//!
+//! ### Maps
+//! - Key-value storage with deterministic addressing
+//! - Support for nested mappings
+//! - Efficient key-based lookups
+//!
+//! ### Vectors
+//! - Sequential storage with dynamic size
+//! - Index-based address calculation
+//! - Automatic length management
 
 use core::hash::HashStateTrait;
 #[allow(unused_imports)]
@@ -121,12 +154,42 @@ pub trait StorageAsPointer<TMemberState> {
 }
 
 /// Trait for accessing the values in storage using a `StoragePointer`.
+///
+/// # Examples
+///
+//! ```
+//! use core::starknet::storage::StoragePointerReadAccess;
+//!
+//! #[storage]
+//! struct Storage {
+//!     element: felt252,
+//! }
+//!
+//! fn read_storage(self: @ContractState) -> felt252 {
+//!     self.element.read()
+//! }
+//! ```
 pub trait StoragePointerReadAccess<T> {
     type Value;
     fn read(self: @T) -> Self::Value;
 }
 
 /// Trait for writing values to storage using a `StoragePointer`.
+///
+/// # Examples
+///
+//! ```
+//! use core::starknet::storage::StoragePointerWriteAccess;
+//!
+//! #[storage]
+//! struct Storage {
+//!     element: felt252,
+//! }
+//!
+//! fn write_storage(self: @ContractState) {
+//!     self.element.write(1);
+//! }
+//! ```
 pub trait StoragePointerWriteAccess<T> {
     type Value;
     fn write(self: T, value: Self::Value);
