@@ -24,14 +24,13 @@ impl EnumerateIterator<
     /// # Overflow Behavior
     ///
     /// The method does no guarding against overflows, so enumerating more than
-    /// `Bounded::<usize>::MAX` elements either produces the wrong result or panics. If
-    /// debug assertions are enabled, a panic is guaranteed.
+    /// `Bounded::<usize>::MAX` elements will always panic.
     ///
     /// [`Bounded`]: core::num::traits::Bounded
     ///
     /// # Panics
     ///
-    /// Might panic if the index of the element overflows a `usize`.
+    /// Will panic if the index of the element overflows a `usize`.
     #[inline]
     fn next(ref self: Enumerate<I>) -> Option<Self::Item> {
         let a = self.iter.next()?;
