@@ -462,7 +462,7 @@ return();
 foo@0([1]: felt252) -> ();
 
 //! > error
-#2->#3: Got 'Unknown ap change' error while moving [1].
+#2->#3: Got 'Unknown ap change' error while moving [1] introduced at #0->#1[0] .
 
 //! > ==========================================================================
 
