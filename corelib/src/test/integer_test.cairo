@@ -926,7 +926,7 @@ fn cast_subtype_valid<
         && max_sub_as_super.try_into().unwrap() == max_sub
 }
 
-/// Checks that `A::max()` is castable to `B`, and `A::max() + 1` is in `B`s range, and not
+/// Checks that `A::MAX` is castable to `B`, and `A::MAX + 1` is in `B`s range, and not
 /// castable back to `A`.
 fn validate_max_strictly_contained<
     A,
