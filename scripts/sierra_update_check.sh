@@ -5,7 +5,7 @@ HEAD_BRANCH=$2
 
 # Assuming all updates are provided as inputs - finding if they are in any of the relevant crates.
 MERGE_BASE=$(git merge-base $BASE_BRANCH $HEAD_BRANCH)
-git diff --name-only $MERGE_BASE $HEAD_BRANCH | grep \
+git diff --name-only $MERGE_BASE..$HEAD_BRANCH | grep \  
     -e 'crate/cairo-lang-sierra/' \
     -e 'crate/cairo-lang-sierra-gas/' \
     -e 'crate/cairo-lang-sierra-ap-change/' \
