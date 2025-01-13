@@ -769,7 +769,7 @@ impl TIntoT<T> of Into<T, T> {
 /// special handling. For example, there is no way to convert an [`i64`] into an [`i32`] using the
 /// [`Into`] trait, because an [`i64`] may contain a value that an [`i32`] cannot represent and so
 /// the conversion would lose data.  This might be handled by truncating the [`i64`] to an [`i32`]
-/// or by simply returning [`Bounded::<i32>::max()`], or by some other method. The [`Into`] trait
+/// or by simply returning [`Bounded::<i32>::MAX`], or by some other method. The [`Into`] trait
 /// is intended for perfect conversions, so the `TryInto` trait informs the programmer when a type
 /// conversion could go bad and lets them decide how to handle it.
 ///
