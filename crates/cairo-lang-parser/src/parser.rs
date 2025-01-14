@@ -41,6 +41,8 @@ pub struct Parser<'a> {
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
     /// An accumulating vector of pending skipped tokens diagnostics.
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
+    /// An indicator of whether to allow placeholders exprs.
+    allow_placeholder_exprs: bool,
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -120,6 +122,7 @@ impl<'a> Parser<'a> {
             last_trivia_length: Default::default(),
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
+            allow_placeholder_exprs: false,
         }
     }
 
@@ -242,6 +245,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalUse => Ok(self.expect_item_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_item_trait(attributes, visibility).into()),
             SyntaxKind::TerminalImpl => Ok(self.expect_module_item_impl(attributes, visibility)),
+            SyntaxKind::TerminalMacro => {
+                Ok(self.expect_item_macro_declaration(attributes, visibility).into())
+            }
             SyntaxKind::TerminalIdentifier => {
                 // We take the identifier to check if the next token is a `!`. If it is, we assume
                 // that a macro is following and handle it similarly to any other module item. If
@@ -564,6 +570,48 @@ impl<'a> Parser<'a> {
         let use_path = self.parse_use_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ItemUse::new_green(self.db, attributes, visibility, use_kw, use_path, semicolon)
+    }
+
+    /// Assumes the current token is Macro.
+    /// Expected pattern: `macro<Identifier>{<MacroRulesList>}`
+    fn expect_item_macro_declaration(
+        &mut self,
+        attributes: AttributeListGreen,
+        visibility: VisibilityGreen,
+    ) -> ItemMacroDeclarationGreen {
+        let macro_kw = self.take::<TerminalMacro>();
+        let name = self.parse_identifier();
+        let lbrace = self.parse_token::<TerminalLBrace>();
+        let macro_rules = MacroRulesList::new_green(
+            self.db,
+            self.parse_list(Self::try_parse_macro_rule, is_of_kind!(rbrace), "macro rule"),
+        );
+        let rbrace = self.parse_token::<TerminalRBrace>();
+        ItemMacroDeclaration::new_green(
+            self.db,
+            attributes,
+            visibility,
+            macro_kw,
+            name,
+            lbrace,
+            macro_rules,
+            rbrace,
+        )
+    }
+
+    /// Returns a GreenId of a node with a MacroRule kind or TryParseFailure if a macro rule can't
+    /// be parsed.
+    fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen> {
+        match self.peek().kind {
+            SyntaxKind::TerminalLParen => {
+                let lhs = self.parse_token_tree_node();
+                let arrow = self.parse_token::<TerminalMatchArrow>();
+                let rhs = self.parse_block_with_placeholders();
+                let semicolon = self.parse_token::<TerminalSemicolon>();
+                Ok(MacroRule::new_green(self.db, lhs, arrow, rhs, semicolon))
+            }
+            _ => Err(TryParseFailure::SkipToken),
+        }
     }
 
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
@@ -1244,7 +1292,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalOrOr if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_closure_expr_nullary().into())
             }
-
+            SyntaxKind::TerminalDollar if self.allow_placeholder_exprs => {
+                Ok(self.expect_placeholder_expr().into())
+            }
             _ => {
                 // TODO(yuval): report to diagnostics.
                 Err(TryParseFailure::SkipToken)
@@ -1434,6 +1484,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
             SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
             SyntaxKind::TerminalDivEq => self.take::<TerminalDivEq>().into(),
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
             SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             SyntaxKind::TerminalEndOfFile => self.take::<TerminalEndOfFile>().into(),
@@ -1805,6 +1856,15 @@ impl<'a> Parser<'a> {
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
 
+    /// Parses an expr block, while allowing placeholder expressions. Restores the previous
+    /// placeholder expression setting after parsing.
+    fn parse_block_with_placeholders(&mut self) -> ExprBlockGreen {
+        let prev_allow_placeholder_exprs = self.allow_placeholder_exprs;
+        self.allow_placeholder_exprs = true;
+        let block = self.parse_block();
+        self.allow_placeholder_exprs = prev_allow_placeholder_exprs;
+        block
+    }
     /// Assumes the current token is `Match`.
     /// Expected pattern: `match <expr> \{<MatchArm>*\}`
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
@@ -1969,6 +2029,14 @@ impl<'a> Parser<'a> {
             size_green,
             rbrack,
         )
+    }
+
+    /// Assumes the current token is Dollar.
+    /// Expected pattern: `$<identifier>`.
+    fn expect_placeholder_expr(&mut self) -> ExprPlaceholderGreen {
+        let dollar = self.take::<TerminalDollar>();
+        let name = self.parse_identifier();
+        ExprPlaceholder::new_green(self.db, dollar, name)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be

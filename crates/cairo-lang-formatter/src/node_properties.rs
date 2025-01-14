@@ -98,7 +98,8 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
-            | SyntaxKind::TokenImplicits => true,
+            | SyntaxKind::TokenImplicits
+            | SyntaxKind::TokenDollar => true,
             SyntaxKind::TerminalDotDot
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
@@ -430,6 +431,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                     BreakLinePointIndentation::NotIndented,
                     false,
                     false,
+                ))
+            }
+            Some(SyntaxKind::MacroRulesList) => {
+                BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    21,
+                    BreakLinePointIndentation::IndentedWithTail,
+                    false,
+                    true,
                 ))
             }
             _ => match self.kind(db) {

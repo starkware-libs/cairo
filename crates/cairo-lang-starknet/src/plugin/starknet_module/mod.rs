@@ -279,6 +279,7 @@ fn maybe_add_extra_use(
         | ast::ModuleItem::Missing(_)
         | ast::ModuleItem::InlineMacro(_)
         | ast::ModuleItem::HeaderDoc(_) => None,
+        ast::ModuleItem::MacroDeclaration(_) => todo!(),
     } {
         extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
     }
