@@ -464,7 +464,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionId
+    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionId GenericFunctionWithBodyId
 );
 
 impl SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'_> {
@@ -628,6 +628,24 @@ impl SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewrit
                     return Ok(RewriteResult::Modified);
                 }
                 return Ok(id_rewritten);
+            }
+        }
+        value.default_rewrite(self)
+    }
+}
+impl SemanticRewriter<GenericFunctionWithBodyId, DiagnosticAdded> for SubstitutionRewriter<'_> {
+    fn internal_rewrite(&mut self, value: &mut GenericFunctionWithBodyId) -> Maybe<RewriteResult> {
+        if let GenericFunctionWithBodyId::Trait(id) = value {
+            if let Some(self_impl) = &self.substitution.self_impl {
+                if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {
+                    if id.concrete_trait(self.db.upcast()) == self_impl.concrete_trait(self.db)? {
+                        *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                            concrete_impl_id,
+                            function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
+                        });
+                        return Ok(RewriteResult::Modified);
+                    }
+                }
             }
         }
         value.default_rewrite(self)
