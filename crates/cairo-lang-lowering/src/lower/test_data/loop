@@ -1527,3 +1527,82 @@ Statements:
   (v27: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- PanicResult::Err(v26)
 End:
   Return(v6, v7, v27)
+
+//! > ==========================================================================
+
+//! > Test default implementation with loop.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    MyTrait::impl_in_trait();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn impl_in_impl(x: u8) -> bool;
+    fn impl_in_trait() -> u8 {
+        let mut i = 0;
+        loop {
+            if Self::impl_in_impl(i) {
+                break;
+            }
+            i += 1;
+        };
+        i
+    }
+}
+
+impl MyImpl of MyTrait {
+    fn impl_in_impl(x: u8) -> bool {
+        x == 30
+    }
+}
+
+//! > expected_diagnostics
+
+//! > semantic_diagnostics
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- test::MyImpl::impl_in_trait()
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::integer::u8) <- 0
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[expr9](v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: ((),)) <- struct_construct(v8)
+  (v10: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v9)
+End:
+  Return(v3, v4, v10)
+
+blk2:
+Statements:
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v11)
+
+//! > lowering_diagnostics
