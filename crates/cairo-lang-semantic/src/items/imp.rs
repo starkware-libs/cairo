@@ -44,8 +44,8 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{
-    GenericArgumentHead, GenericParamImpl, GenericParamsData, generic_params_to_args,
-    semantic_generic_params,
+    GenericArgumentHead, GenericParamImpl, GenericParamsData, fmt_generic_args,
+    generic_params_to_args, semantic_generic_params,
 };
 use super::impl_alias::{
     ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
@@ -118,17 +118,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.impl_def_id.full_path(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}", arg.format(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 impl ConcreteImplId {

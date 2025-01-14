@@ -23,7 +23,7 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::generic_params_to_args;
+use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -605,17 +605,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{:?}", self.generic_function.name(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
@@ -726,17 +716,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.generic_function.format(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 

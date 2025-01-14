@@ -643,3 +643,22 @@ fn impl_generic_param_semantic(
 
     GenericParamImpl { id, concrete_trait, type_constraints }
 }
+
+/// Formats a list of generic arguments.
+pub fn fmt_generic_args(
+    generic_args: &[GenericArgumentId],
+    f: &mut std::fmt::Formatter<'_>,
+    db: &(dyn SemanticGroup + 'static),
+) -> std::fmt::Result {
+    if !generic_args.is_empty() {
+        write!(f, "::<")?;
+        for (i, arg) in generic_args.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", arg.format(db))?;
+        }
+        write!(f, ">")?;
+    }
+    Ok(())
+}
