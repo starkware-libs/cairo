@@ -63,9 +63,7 @@ pub trait Iterator<T> {
     /// Basic usage:
     ///
     /// ```
-    /// let a = array![1, 2, 3];
-    ///
-    /// let mut iter = a.into_iter().map(|x| 2 * x);
+    /// let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
     ///
     /// assert!(iter.next() == Option::Some(2));
     /// assert!(iter.next() == Option::Some(4));
