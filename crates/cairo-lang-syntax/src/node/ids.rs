@@ -78,4 +78,15 @@ impl SyntaxStablePtrId {
         let SyntaxStablePtr::Child { kind, .. } = self.lookup_intern(db) else { panic!() };
         kind
     }
+    pub fn recursively_print(&self, db: &dyn SyntaxGroup) -> String {
+        let ptr = self.lookup_intern(db);
+        match ptr {
+            SyntaxStablePtr::Root(file_id, _) => {
+                format!("Root({:?})", file_id.full_path(db.upcast()))
+            }
+            SyntaxStablePtr::Child { parent, kind, .. } => {
+                format!("Child({:?}, {:?})", parent.recursively_print(db), kind)
+            }
+        }
+    }
 }

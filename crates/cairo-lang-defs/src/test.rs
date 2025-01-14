@@ -162,6 +162,7 @@ fn test_module_file() {
 }
 
 fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
+    println!("Setting content of file '{}'", path);
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
     db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
 }

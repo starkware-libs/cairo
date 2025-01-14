@@ -1,26 +1,23 @@
 //! Internal debug utility for printing lowering phases.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::{fmt, fs};
 
 use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::{
-    FlatLoweredSerializable, LoweredFormatter, SemanticSerializationContext, SerializationContext,
+    DefsFunctionWithBodyIdSerializable, LoweredFormatter, MultiLoweringSerializable,
+    SerializationContext,
 };
-use cairo_lang_lowering::ids::{
-    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
-    GeneratedFunctionKey,
-};
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_semantic as semantic;
@@ -31,7 +28,7 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -186,7 +183,9 @@ fn get_all_funcs(
 
             let impl_ids = db.module_impls_ids(*module_id).unwrap();
             for impl_def_id in impl_ids.iter() {
-                let impl_funcs = db.impl_functions(*impl_def_id).unwrap();
+                let Ok(impl_funcs) = db.impl_functions(*impl_def_id) else {
+                    panic!();
+                };
                 for impl_func in impl_funcs.values() {
                     res.insert(
                         impl_func.full_path(db.upcast()),
@@ -239,41 +238,42 @@ fn main() -> anyhow::Result<()> {
     let db = &db_val;
 
     let res = if let Some(function_path) = args.function_path {
-        let mut function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
-        if let Some(expr_id) = args.expr_id {
-            let multi = db
-                .priv_function_with_body_multi_lowering(
-                    function_id.function_with_body_id(db).base_semantic_function(db),
-                )
-                .unwrap();
-            let key = *multi
-                .generated_lowerings
-                .keys()
-                .find(|key| match key {
-                    GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
-                    // TODO(ilya): Support other types of generated functions.
-                    _ => false,
-                })
-                .with_context(|| {
-                    format!(
-                        "expr_id not found - available expr_ids: {:?}",
-                        multi
-                            .generated_lowerings
-                            .keys()
-                            .filter_map(|key| match key {
-                                GeneratedFunctionKey::Loop(id) => Some(id.index()),
-                                _ => None,
-                            })
-                            .collect_vec()
-                    )
-                })?;
-            function_id = db.intern_lowering_concrete_function_with_body(
-                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
-                    parent: function_id.base_semantic_function(db),
-                    key,
-                }),
-            );
-        }
+        let function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
+        // if let Some(expr_id) = args.expr_id {
+        //     let multi = db
+        //         .priv_function_with_body_multi_lowering(
+        //             function_id.function_with_body_id(db).base_semantic_function(db),
+        //         )
+        //         .unwrap();
+        //     db.function_body(function_id).unwrap().arenas.exprs.get(expr_id);
+        //     let key = *multi
+        //         .generated_lowerings
+        //         .keys()
+        //         .find(|key| match key {
+        //             GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
+        //             // TODO(ilya): Support other types of generated functions.
+        //             _ => false,
+        //         })
+        //         .with_context(|| {
+        //             format!(
+        //                 "expr_id not found - available expr_ids: {:?}",
+        //                 multi
+        //                     .generated_lowerings
+        //                     .keys()
+        //                     .filter_map(|key| match key {
+        //                         GeneratedFunctionKey::Loop(id) => Some(id.index()),
+        //                         _ => None,
+        //                     })
+        //                     .collect_vec()
+        //             )
+        //         })?;
+        //     function_id = db.intern_lowering_concrete_function_with_body(
+        //         ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+        //             parent: function_id.base_semantic_function(db),
+        //             key,
+        //         }),
+        //     );
+        // }
 
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
@@ -297,21 +297,57 @@ fn main() -> anyhow::Result<()> {
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
         let mut ctx = SerializationContext::new(db);
-        let mut lowereds = Vec::new();
-        for (count, function_id) in funcs.iter().enumerate() {
-            // println!("{}:  {:?}", count, function_id.name(db));
-            let multi = db
-                .priv_function_with_body_multi_lowering(
-                    function_id.function_with_body_id(db).base_semantic_function(db),
-                )
-                .unwrap();
+        let lowereds: Vec<_> = funcs
+            .iter()
+            .filter_map(|function_id| {
+                let semantic_id = function_id.function_with_body_id(db).base_semantic_function(db);
+                // if ![
+                //     "array",
+                //     "fmt",
+                //     "to_byte_array",
+                //     "byte_array",
+                //     "metaprogramming",
+                //     "traits",
+                //     "integer",
+                //     "result",
+                // ]
+                // .contains(&(semantic_id.parent_module(db).name(db).as_str()))
+                // {
+                //     return None;
+                // }
+                if semantic_id.parent_module(db).full_path(db.upcast()).contains("account") {
+                    return None;
+                }
+                println!("{:?}", semantic_id.name(db.upcast()));
 
-            lowereds.push(FlatLoweredSerializable::new(multi.main_lowering.clone(), &mut ctx));
-            for (key, generated) in multi.generated_lowerings.clone() {
-                lowereds.push(FlatLoweredSerializable::new(generated, &mut ctx));
-            }
+                let multi = db.priv_function_with_body_multi_lowering(semantic_id).unwrap();
+                Some((
+                    DefsFunctionWithBodyIdSerializable::new(semantic_id, &mut ctx.semantic_ctx),
+                    MultiLoweringSerializable::new((*multi).clone(), &mut ctx),
+                ))
+            })
+            .collect();
+        // for (count, function_id) in funcs.iter().enumerate() {
+
+        //     // println!("{}:  {:?}", count, function_id.name(db));
+        //     let multi = db
+        //         .priv_function_with_body_multi_lowering(
+        //             function_id.function_with_body_id(db).base_semantic_function(db),
+        //         )
+        //         .unwrap();
+
+        //     lowereds.insert(MultiLoweringSerializable::new(multi, &mut ctx);
+        //     lowereds.push(FlatLoweredSerializable::new(multi.main_lowering.clone(), &mut ctx));
+        //     for (key, generated) in multi.generated_lowerings.clone() {
+        //         lowereds.push(FlatLoweredSerializable::new(generated, &mut ctx));
+        //     }
+        // }
+        let s = bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, lowereds)).unwrap();
+        match args.output {
+            Some(path) => fs::write(path, &s).with_context(|| "Failed to write output.")?,
+            None => panic!(),
         }
-        serde_json::to_string_pretty(&lowereds).unwrap()
+        return Ok(());
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
     };

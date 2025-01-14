@@ -1044,6 +1044,13 @@ pub fn compute_root_expr(
     return_type: TypeId,
 ) -> Maybe<ExprId> {
     // Conform TypeEqual constraints for Associated type bounds.
+    // if core_submodule(ctx.db, "array") == ctx.resolver.module_file_id.0 {
+    //     panic!("array");
+    // }
+    // println!("module {:?}", ctx.resolver.module_file_id.0.debug(ctx.db.upcast()));
+    // if let ContextFunction::Function(Ok(function_id)) = ctx.function_id {
+    //     println!("function {:?}", function_id.debug(ctx.db.elongate()));
+    // }
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
         let Ok(GenericParam::Impl(imp)) = ctx.db.generic_param_semantic(*param) else {

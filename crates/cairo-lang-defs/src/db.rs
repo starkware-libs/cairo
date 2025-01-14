@@ -302,6 +302,55 @@ fn declared_phantom_type_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<St
 
 fn is_submodule_inline(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> Maybe<bool> {
     let parent = submodule_id.parent_module(db);
+    // if !&db.priv_module_data(parent)?.submodules.contains_key(&submodule_id) {
+    //     println!(
+    //         "Submodule not found: {:?} {:?} {:?}",
+    //         submodule_id.full_path(db),
+    //         submodule_id.lookup_intern(db).0,
+    //         submodule_id.lookup_intern(db).1.0.lookup_intern(db)
+    //     );
+    //     if let SyntaxStablePtr::Child { parent, kind, key_fields, index } =
+    //         submodule_id.lookup_intern(db).1.0.lookup_intern(db)
+    //     {
+    //         if let SyntaxStablePtr::Child { parent, kind, key_fields, index } =
+    //             parent.lookup_intern(db)
+    //         {
+    //             println!("Parent: {:?}", parent.lookup_intern(db));
+    //             if let SyntaxStablePtr::Root(file_id, green_id) = parent.lookup_intern(db) {
+    //                 println!(
+    //                     "Parent Parent: {:?} {:?}",
+    //                     file_id.kind(db.upcast()),
+    //                     file_id.full_path(db.upcast())
+    //                 );
+    //             }
+    //         }
+    //     }
+    //     for (submodule, _) in db.priv_module_data(parent)?.submodules.iter() {
+    //         println!(
+    //             "Submodule: {:?} {:?} {:?} -- {:?}",
+    //             submodule.full_path(db),
+    //             submodule.lookup_intern(db).0 == submodule_id.lookup_intern(db).0,
+    //             submodule.lookup_intern(db).1.0.lookup_intern(db),
+    //             submodule.module_file_id(db).file_id(db).unwrap().full_path(db.upcast())
+    //         );
+    //         if let SyntaxStablePtr::Child { parent, kind, key_fields, index } =
+    //             submodule.lookup_intern(db).1.0.lookup_intern(db)
+    //         {
+    //             if let SyntaxStablePtr::Child { parent, kind, key_fields, index } =
+    //                 parent.lookup_intern(db)
+    //             {
+    //                 println!("Parent: {:?}", parent.lookup_intern(db));
+    //                 if let SyntaxStablePtr::Root(file_id, green_id) = parent.lookup_intern(db) {
+    //                     println!(
+    //                         "Parent Parent: {:?} {:?}",
+    //                         file_id.kind(db.upcast()),
+    //                         file_id.full_path(db.upcast())
+    //                     );
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
     let item_module_ast = &db.priv_module_data(parent)?.submodules[&submodule_id];
     match item_module_ast.body(db.upcast()) {
         MaybeModuleBody::Some(_) => Ok(true),

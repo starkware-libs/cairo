@@ -315,6 +315,7 @@ impl MutableStorableStoragePointerReadAccess<
     }
 }
 
+
 /// Simple implementation of `StoragePointerWriteAccess` for any mutable type that implements
 /// `Store` for any offset.
 impl MutableStorableStoragePointerWriteAccess<

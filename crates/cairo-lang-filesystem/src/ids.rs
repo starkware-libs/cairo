@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
@@ -78,14 +79,14 @@ pub enum FileLongId {
     External(salsa::InternId),
 }
 /// Whether the file holds syntax for a module or for an expression.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FileKind {
     Module,
     Expr,
 }
 
 /// A mapping for a code rewrite.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CodeMapping {
     pub span: TextSpan,
     pub origin: CodeOrigin,
@@ -108,7 +109,7 @@ impl CodeMapping {
 }
 
 /// The origin of a code mapping.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CodeOrigin {
     /// The origin is a copied node staring at the given offset.
     Start(TextOffset),
@@ -151,6 +152,7 @@ impl VirtualFile {
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file, intern_file);
 impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
+        // println!("FileId::new: path = {:?}", path);
         FileLongId::OnDisk(path.clean()).intern(db)
     }
     pub fn file_name(self, db: &dyn FilesGroup) -> String {
