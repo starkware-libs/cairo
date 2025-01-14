@@ -1064,7 +1064,7 @@ Statements:
   (v1: test::T) <- struct_construct(v0)
   (v2: test::S) <- struct_destructure(v1)
   (v3: test::S, v4: @test::S) <- snapshot(v2)
-  (v5: ()) <- test::foo[expr7](v4)
+  (v5: ()) <- test::foo[expr8](v4)
   (v6: ()) <- test::STT::f1oo(v4)
   (v7: ()) <- struct_construct()
 End:
@@ -1158,7 +1158,7 @@ Statements:
   (v4: test::B, v5: @test::B) <- snapshot(v3)
   (v6: core::integer::u32) <- struct_destructure(v4)
   (v7: test::B) <- struct_construct(v6)
-  (v8: ()) <- test::foo[expr16](v6, v5)
+  (v8: ()) <- test::foo[expr18](v6, v5)
   (v9: ()) <- struct_construct()
 End:
   Return(v9)
@@ -1214,7 +1214,7 @@ Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
 Statements:
   () <- test::ex1(v1)
-  (v2: ()) <- test::foo[expr14](v0)
+  (v2: ()) <- test::foo[expr16](v0)
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -1282,7 +1282,7 @@ Statements:
   (v1: test::B) <- struct_construct(v0)
   (v2: test::A) <- struct_construct(v1)
   (v3: test::B) <- struct_destructure(v2)
-  (v4: ()) <- test::foo[expr16](v3)
+  (v4: ()) <- test::foo[expr18](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1339,7 +1339,7 @@ Statements:
   () <- test::ex1(v0)
   (v1: core::integer::u32) <- struct_destructure(v0)
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  (v4: ()) <- test::foo[expr14](v3)
+  (v4: ()) <- test::foo[expr16](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1399,7 +1399,7 @@ Statements:
   (v0: core::felt252) <- 0
   (v1: test::A) <- struct_construct(v0)
   (v2: core::felt252) <- 0
-  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[expr19](v2, v1)
+  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[expr20](v2, v1)
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
@@ -1412,7 +1412,7 @@ Statements:
   (v2: core::felt252) <- 0
   (v3: core::felt252) <- 0
   (v4: test::A) <- struct_construct(v2)
-  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v0, v1, v3, v4)
+  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr20](v0, v1, v3, v4)
 End:
   Match(match_enum(v7) {
     PanicResult::Ok(v8) => blk1,
@@ -1462,7 +1462,7 @@ Statements:
   () <- test::use_a(v12)
   (v13: core::felt252) <- 1
   (v15: core::felt252, v14: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2, v13)
-  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[expr19](v15, v11)
+  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[expr20](v15, v11)
 End:
   Goto(blk3, {v17 -> v21, v18 -> v22, v16 -> v20})
 
@@ -1513,7 +1513,7 @@ Statements:
   () <- test::use_a(v16)
   (v17: core::felt252) <- 1
   (v18: core::felt252) <- core::felt252_add(v2, v17)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v4, v5, v18, v15)
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr20](v4, v5, v18, v15)
 End:
   Return(v19, v20, v21)
 
@@ -1584,7 +1584,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::integer::u8) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[expr9](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[expr10](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
