@@ -72,16 +72,15 @@ pub trait Iterator<T> {
         (), NonZero<usize>,
     > {
         let mut n = n;
-        let mut res = Result::Ok(());
-        while let Option::Some(nz_n) = n.try_into() {
+        if let Option::Some(nz_n) = n.try_into() {
             if let Option::Some(_) = Self::next(ref self) {
-                n -= 1;
+                return Self::advance_by(ref self, n - 1);
             } else {
-                res = Result::Err(nz_n);
-                break;
+                Result::Err(nz_n)
             }
-        };
-        res
+        } else {
+            Result::Ok(())
+        }
     }
 
     /// Takes a closure and creates an iterator which calls that closure on each
