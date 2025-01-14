@@ -26,7 +26,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
-use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
+use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
@@ -1430,6 +1430,22 @@ pub trait SemanticGroup:
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
+
+    /// Returns a mapping of closure types to their associated parameter types for a concrete
+    /// function.
+    #[salsa::invoke(items::functions::concrete_function_closure_params)]
+    fn concrete_function_closure_params(
+        &self,
+        function_id: FunctionId,
+    ) -> Maybe<OrderedHashMap<semantic::TypeId, semantic::TypeId>>;
+
+    /// Returns a mapping of closure types to their associated parameter types for a generic
+    /// function.
+    #[salsa::invoke(items::functions::get_closure_params)]
+    fn get_closure_params(
+        &self,
+        generic_function_id: GenericFunctionId,
+    ) -> Maybe<OrderedHashMap<TypeId, TypeId>>;
 
     // Generic type.
     // =============
