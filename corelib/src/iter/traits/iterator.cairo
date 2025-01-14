@@ -121,14 +121,25 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.next(), Option::None);
     /// ```
     ///
+    /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
+    /// anything that can be converted into an [`Iterator`], not just an
+    /// [`Iterator`] itself. For example:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
+    ///
+    /// assert_eq!(iter.next(), Option::Some((1, 4)));
+    /// assert_eq!(iter.next(), Option::Some((2, 5)));
+    /// assert_eq!(iter.next(), Option::Some((3, 6)));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ``
+    ///
     /// [`enumerate`]: Iterator::enumerate
     /// [`next`]: Iterator::next
     #[inline]
-    fn zip<U, +Iterator<U> //, +IntoIterator<U>
-    >(
+    fn zip<U, impl UIntoIter: IntoIterator<U>, +Destruct<T>>(
         self: T, other: U,
-    ) -> Zip<T, U> {
-        zipped_iterator(self, other //.into_iter()
-        )
+    ) -> Zip<T, UIntoIter::IntoIter> {
+        zipped_iterator(self, other.into_iter())
     }
 }
