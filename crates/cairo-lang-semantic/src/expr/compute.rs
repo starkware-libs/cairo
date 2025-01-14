@@ -1663,6 +1663,11 @@ fn compute_expr_closure_semantic(
         } else {
             vec![]
         };
+
+        new_ctx
+            .semantic_defs
+            .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
+
         let return_type = match syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_with_environment(
                 new_ctx.db,
