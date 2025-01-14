@@ -150,53 +150,16 @@ pub trait Iterator<T> {
     /// Basic usage:
     ///
     /// ```
-    /// let a1 = array![1, 2, 3];
-    /// let a2 = array![4, 5, 6];
-    ///
-    /// let mut iter = a1.into_iter().zip(a2.into_iter());
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
     ///
     /// assert_eq!(iter.next(), Option::Some((1, 4)));
     /// assert_eq!(iter.next(), Option::Some((2, 5)));
     /// assert_eq!(iter.next(), Option::Some((3, 6)));
     /// assert_eq!(iter.next(), Option::None);
-    /// ```
-    ///
-    /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
-    /// anything that can be converted into an [`Iterator`], not just an
-    /// [`Iterator`] itself. For example:
-    ///
-    /// ```
-    /// let a1 = array![1, 2, 3];
-    /// let a2 = array![4, 5, 6];
-    ///
-    /// let mut iter = a1.into_iter().zip(a2);
-    ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
-    /// ```
-    ///
-    /// If both iterators have roughly equivalent syntax, it may be more readable to use [`zip`]:
-    ///
-    /// ```
-    /// use core::iter::zip;
-    ///
-    /// let a = array![1, 2, 3];
-    /// let b = array![2, 3, 4];
-    ///
-    /// let mut zipped = zip(a, b);
-    ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
-    /// );
     /// ```
     ///
     /// [`enumerate`]: Iterator::enumerate
     /// [`next`]: Iterator::next
-    /// [`zip`]: core::iter::zip
     #[inline]
     fn zip<U, +Iterator<U> //, +IntoIterator<U>
     >(
