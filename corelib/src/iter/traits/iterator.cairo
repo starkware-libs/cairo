@@ -1,4 +1,4 @@
-use core::iter::adapters::{Chain, chained_iterator};
+use core::iter::{Chain, chained_iterator};
 use core::metaprogramming::TypeEqual;
 
 /// A trait for dealing with iterators.
