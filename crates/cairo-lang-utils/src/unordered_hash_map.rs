@@ -345,3 +345,11 @@ impl<Key: Hash + Eq, Value, const N: usize, BH: BuildHasher + Default> From<[(Ke
         Self(HashMap::from_iter(items))
     }
 }
+
+impl<Key: Hash + Eq, Value, BH: BuildHasher> Extend<(Key, Value)>
+    for UnorderedHashMap<Key, Value, BH>
+{
+    fn extend<T: IntoIterator<Item = (Key, Value)>>(&mut self, iter: T) {
+        self.0.extend(iter)
+    }
+}
