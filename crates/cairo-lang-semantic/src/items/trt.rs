@@ -25,7 +25,8 @@ use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
 };
 use super::generics::{
-    GenericParamsData, generic_params_to_args, semantic_generic_params, semantic_generic_params_ex,
+    GenericParamsData, fmt_generic_args, generic_params_to_args, semantic_generic_params,
+    semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::{SemanticGroup, get_resolver_data_options};
@@ -58,17 +59,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.trait_id.full_path(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
