@@ -5,16 +5,16 @@
 #[derive(Drop)]
 pub struct Chain<A, B> {
     // These are "fused" with `Option` so we don't need separate state to track which part is
-    // already exhausted, and we may also get niche layout for `None`.
+    // already exhausted.
     //
-    // Only the "first" iterator is actually set `None` when exhausted.
+    // The "first" iterator is actually set to `Option::None` when exhausted.
     a: Option<A>,
-    b: Option<B>,
+    b: B,
 }
 
 #[inline]
 pub fn chained_iterator<A, B>(a: A, b: B) -> Chain<A, B> {
-    Chain { a: Option::Some(a), b: Option::Some(b) }
+    Chain { a: Option::Some(a), b }
 }
 
 impl ChainIterator<
@@ -22,6 +22,7 @@ impl ChainIterator<
     B,
     impl IterA: Iterator<A>,
     +Iterator<B>[Item: IterA::Item],
+    +Copy<A>,
     +Drop<A>,
     +Drop<B>,
     +Drop<IterA::Item>,
@@ -29,23 +30,17 @@ impl ChainIterator<
     type Item = IterA::Item;
 
     fn next(ref self: Chain<A, B>) -> Option<Self::Item> {
-        // First iterate over first container values
-        if self.a.is_some() {
-            let mut first_container = self.a.unwrap();
-            let value = first_container.next();
-            if value.is_some() {
-                self.a = Option::Some(first_container);
-                return value;
+        // First iterate over first container values.
+        if let Option::Some(mut first) = self.a {
+            if let Option::Some(value) = first.next() {
+                self.a = Option::Some(first);
+                return Option::Some(value);
             } else {
                 self.a = Option::None;
             }
         }
 
-        // Then iterate over second container values
-        let mut second_container = self.b.unwrap();
-        let value = second_container.next();
-        self.b = Option::Some(second_container);
-
-        value
+        // Then iterate over second container values.
+        self.b.next()
     }
 }
