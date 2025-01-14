@@ -95,7 +95,7 @@ impl ApplyApChange for CellRef {
         Some(match &self.register {
             Register::AP => CellRef {
                 register: Register::AP,
-                offset: self.offset.checked_sub(ap_change.into_or_panic())?,
+                offset: self.offset.checked_sub(ap_change.try_into().ok()?)?,
             },
             Register::FP => self,
         })
