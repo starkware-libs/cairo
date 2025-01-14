@@ -578,6 +578,23 @@ pub trait OptionTrait<T> {
     >(
         self: Option<T>, default: D, f: F,
     ) -> U;
+
+    /// Takes the value out of the option, leaving a [`Option::None`] in its place.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut x = Option::Some(2);
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::Some(2));
+    ///
+    /// let mut x: Option<u32> = Option::None;
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::None);
+    /// ```
+    fn take(ref self: Option<T>) -> Option<T>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -758,6 +775,12 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
             Option::Some(x) => f(x),
             Option::None => default(),
         }
+    }
+
+    fn take(ref self: Option<T>) -> Option<T> {
+        let value = self;
+        self = Option::None;
+        value
     }
 }
 
