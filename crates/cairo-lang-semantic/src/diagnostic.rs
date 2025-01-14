@@ -997,6 +997,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()
             }
+            SemanticDiagnosticKind::RefClosureParam => {
+                "Closure parameters cannot be references".into()
+            }
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
@@ -1422,7 +1425,9 @@ pub enum SemanticDiagnosticKind {
         shadowed_function_name: SmolStr,
     },
     RefClosureArgument,
+    RefClosureParam,
     MutableCapturedVariable,
+
     NonTraitTypeConstrained {
         identifier: SmolStr,
         concrete_trait_id: ConcreteTraitId,
