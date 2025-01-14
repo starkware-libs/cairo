@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -14,6 +13,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{
     Intern, LookupIntern, OptionFrom, define_short_id, require, try_extract_matches,
 };
@@ -27,7 +27,7 @@ use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::{panic_destruct_trait_fn, unit_ty};
+use crate::corelib::{fn_traits, panic_destruct_trait_fn, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
@@ -35,8 +35,8 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericParam, SemanticDiagnostic,
-    TypeId, semantic, semantic_object_for_id,
+    ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericArgumentId, GenericParam,
+    SemanticDiagnostic, TypeId, semantic, semantic_object_for_id,
 };
 
 /// A generic function of an impl.
@@ -124,6 +124,42 @@ impl GenericFunctionId {
             }
         }
     }
+
+    /// This function retrieves a mapping of closure types to their associated parameter types.
+    /// It analyzes the generic parameters of the current context
+    /// to identify any closures and their respective parameter types. It checks
+    /// for `Fn`, `FnMut`, or `FnOnce` traits among the generic parameters and
+    /// returns a `HashMap` where the key is the closure type, and the value is a
+    /// vector of parameter types.
+    pub fn get_closure_params(
+        &self,
+        db: &dyn SemanticGroup,
+    ) -> Maybe<OrderedHashMap<TypeId, TypeId>> {
+        let mut closure_params_map = OrderedHashMap::default();
+        let generic_params = self.generic_params(db)?;
+
+        for param in generic_params {
+            if let GenericParam::Impl(generic_param_impl) = param {
+                let trait_id = generic_param_impl.concrete_trait?.trait_id(db);
+
+                if fn_traits(db).contains(&trait_id) {
+                    if let Ok(concrete_trait) = generic_param_impl.concrete_trait {
+                        let [
+                            GenericArgumentId::Type(closure_type),
+                            GenericArgumentId::Type(params_type),
+                        ] = *concrete_trait.generic_args(db)
+                        else {
+                            unreachable!()
+                        };
+
+                        closure_params_map.insert(closure_type, params_type);
+                    }
+                }
+            }
+        }
+        Ok(closure_params_map)
+    }
+
     pub fn generic_signature(&self, db: &dyn SemanticGroup) -> Maybe<Signature> {
         match *self {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
@@ -146,8 +182,11 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(id) => db.extern_function_declaration_generic_params(id),
             GenericFunctionId::Impl(id) => {
                 let concrete_trait_id = db.impl_concrete_trait(id.impl_id)?;
-                let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
-                db.concrete_trait_function_generic_params(id)
+                let concrete_id =
+                    ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
+                let substitution = GenericSubstitution::from_impl(id.impl_id);
+                let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
+                rewriter.rewrite(db.concrete_trait_function_generic_params(concrete_id)?)
             }
             GenericFunctionId::Trait(id) => db.concrete_trait_function_generic_params(id),
         }
@@ -858,6 +897,19 @@ pub fn concrete_function_signature(
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
+pub fn concrete_function_closure_params(
+    db: &dyn SemanticGroup,
+    function_id: FunctionId,
+) -> Maybe<OrderedHashMap<semantic::TypeId, semantic::TypeId>> {
+    let ConcreteFunction { generic_function, generic_args, .. } =
+        function_id.lookup_intern(db).function;
+    let generic_params = generic_function.generic_params(db)?;
+    let generic_closure_params = generic_function.get_closure_params(db)?;
+    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_closure_params)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

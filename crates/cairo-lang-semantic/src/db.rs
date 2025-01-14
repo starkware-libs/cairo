@@ -1431,6 +1431,16 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
 
+    // Concrete function.
+    // =================
+    /// Returns a `HashMap` where the key is the closure type, and the value is a
+    /// vector of parameter types.
+    #[salsa::invoke(items::functions::concrete_function_closure_params)]
+    fn concrete_function_closure_params(
+        &self,
+        function_id: FunctionId,
+    ) -> Maybe<OrderedHashMap<semantic::TypeId, semantic::TypeId>>;
+
     // Generic type.
     // =============
     /// Returns the generic params of a generic type.
