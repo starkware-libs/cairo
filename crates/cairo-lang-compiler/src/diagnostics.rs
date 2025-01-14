@@ -38,7 +38,9 @@ impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
-    /// Ignore warnings in these crates. This should be subset of `crate_ids`.
+    // Ignore warnings in all crates. The `ignore_warnings_crate_ids` is ignored in this case.
+    ignore_warnings: bool,
+    /// Ignore warnings in specific crates. This should be subset of `crate_ids`.
     /// Adding ids that are not in `crate_ids` have no effect.
     ignore_warnings_crate_ids: Vec<CrateId>,
     /// Check diagnostics for these crates only.
@@ -56,6 +58,7 @@ impl DiagnosticsReporter<'static> {
         Self {
             callback: None,
             crate_ids: vec![],
+            ignore_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
             skip_lowering_diagnostics: false,
@@ -100,6 +103,7 @@ impl<'a> DiagnosticsReporter<'a> {
         Self {
             callback: Some(Box::new(callback)),
             crate_ids: vec![],
+            ignore_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
             skip_lowering_diagnostics: false,
@@ -124,6 +128,12 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Allows the compilation to succeed if only warnings are emitted.
     pub fn allow_warnings(mut self) -> Self {
         self.allow_warnings = true;
+        self
+    }
+
+    /// Ignores warnings in all cargo crates.
+    pub fn ignore_warnings(mut self) -> Self {
+        self.ignore_warnings = true;
         self
     }
 
@@ -164,7 +174,8 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let ignore_warnings_in_crate =
+                self.ignore_warnings || self.ignore_warnings_crate_ids.contains(crate_id);
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
