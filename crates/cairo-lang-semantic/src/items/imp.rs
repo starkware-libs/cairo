@@ -135,6 +135,9 @@ impl ConcreteImplId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
     }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
+    }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
         Ok(GenericSubstitution::from_impl(ImplLongId::Concrete(*self).intern(db)).concat(
             GenericSubstitution::new(
