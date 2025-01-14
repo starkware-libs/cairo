@@ -45,7 +45,7 @@ Statements:
   (v16: core::array::Array::<core::felt252>, v17: @core::array::Array::<core::felt252>) <- snapshot(v15)
   (v18: core::array::Span::<core::felt252>) <- core::array::ArrayToSpan::<core::felt252>::span(v17)
   (v19: core::array::SpanIter::<core::felt252>) <- core::array::SpanIntoIterator::<core::felt252>::into_iter(v18)
-  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v20: ()) <- test::foo[expr30](v19, v0, v2)
+  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v20: ()) <- test::foo[expr38](v19, v0, v2)
 End:
   Return(v22)
 
@@ -69,7 +69,7 @@ Statements:
   (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v10)
   (v16: core::array::Span::<core::felt252>) <- struct_construct(v15)
   (v17: core::array::SpanIter::<core::felt252>) <- struct_construct(v16)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v0, v1, v17, v11, v13)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr38](v0, v1, v17, v11, v13)
 End:
   Match(match_enum(v20) {
     PanicResult::Ok(v21) => blk1,
@@ -111,7 +111,7 @@ End:
 blk1:
 Statements:
   (v6: core::felt252) <- core::Felt252Add::add(v1, v2)
-  (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: ()) <- test::foo[expr30](v4, v6, v2)
+  (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: ()) <- test::foo[expr38](v4, v6, v2)
 End:
   Goto(blk3, {v9 -> v12, v8 -> v13, v7 -> v11})
 
@@ -195,7 +195,7 @@ End:
 blk8:
 Statements:
   (v30: core::felt252) <- core::felt252_add(v3, v4)
-  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v5, v6, v27, v30, v4)
+  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr38](v5, v6, v27, v30, v4)
 End:
   Return(v31, v32, v33)
 
