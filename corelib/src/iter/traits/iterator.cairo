@@ -93,4 +93,102 @@ pub trait Iterator<T> {
     ) -> Map<T, F> {
         mapped_iterator(self, f)
     }
+
+    /// Folds every element into an accumulator by applying an operation,
+    /// returning the final result.
+    ///
+    /// `fold()` takes two arguments: an initial value, and a closure with two
+    /// arguments: an 'accumulator', and an element. The closure returns the value that
+    /// the accumulator should have for the next iteration.
+    ///
+    /// The initial value is the value the accumulator will have on the first
+    /// call.
+    ///
+    /// After applying this closure to every element of the iterator, `fold()`
+    /// returns the accumulator.
+    ///
+    /// Folding is useful whenever you have a collection of something, and want
+    /// to produce a single value from it.
+    ///
+    /// Note: `fold()`, and similar methods that traverse the entire iterator,
+    /// might not terminate for infinite iterators, even on traits for which a
+    /// result is determinable in finite time.
+    ///
+    /// Note: `fold()` combines elements in a *left-associative* fashion. For associative
+    /// operators like `+`, the order the elements are combined in is not important, but for
+    /// non-associative operators like `-` the order will affect the final result.
+    ///
+    /// # Note to Implementors
+    ///
+    /// Several of the other (forward) methods have default implementations in
+    /// terms of this one, so try to implement this explicitly if it can
+    /// do something better than the default `for` loop implementation.
+    ///
+    /// In particular, try to have this call `fold()` on the internal parts
+    /// from which this iterator is composed.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    ///
+    /// // the sum of all of the elements of the array
+    /// let sum = iter.fold(0, |acc, x| acc + x);
+    ///
+    /// assert_eq!(sum, 6);
+    /// ```
+    ///
+    /// Let's walk through each step of the iteration here:
+    ///
+    /// | element | acc | x | result |
+    /// |---------|-----|---|--------|
+    /// |         | 0   |   |        |
+    /// | 1       | 0   | 1 | 1      |
+    /// | 2       | 1   | 2 | 3      |
+    /// | 3       | 3   | 3 | 6      |
+    ///
+    /// And so, our final result, `6`.
+    ///
+    /// It's common for people who haven't used iterators a lot to
+    /// use a `for` loop with a list of things to build up a result. Those
+    /// can be turned into `fold()`s:
+    ///
+    /// ```
+    /// let mut numbers = array![1, 2, 3, 4, 5].span();
+    ///
+    /// let mut result = 0;
+    ///
+    /// // for loop:
+    /// for i in numbers{
+    ///     result = result + (*i);
+    /// };
+    ///
+    /// // fold:
+    /// let mut numbers_iter = numbers.into_iter();
+    /// let result2 = numbers_iter.fold(0, |acc, x| acc + (*x));
+    ///
+    /// // they're the same
+    /// assert_eq!(result, result2);
+    /// ```
+    fn fold<
+        B,
+        F,
+        +core::ops::Fn<F, (B, Self::Item)>[Output: B],
+        +Destruct<T>,
+        +Destruct<F>,
+        +Destruct<B>,
+    >(
+        ref self: T, init: B, f: F,
+    ) -> B {
+        let mut accum = init;
+        match Self::next(ref self) {
+            Option::Some(x) => {
+                accum = f(accum, x);
+                Self::fold(ref self, accum, f)
+            },
+            Option::None => { accum },
+        }
+    }
 }

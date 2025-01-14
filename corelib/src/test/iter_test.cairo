@@ -7,3 +7,11 @@ fn test_iter_adapter_map() {
     assert_eq!(iter.next(), Option::Some(6));
     assert_eq!(iter.next(), Option::None);
 }
+
+#[test]
+fn test_iter_adapter_fold() {
+    let mut iter = array![1, 2, 3].into_iter();
+    let sum = iter.fold(0, |acc, x| acc + x);
+
+    assert_eq!(sum, 6);
+}
