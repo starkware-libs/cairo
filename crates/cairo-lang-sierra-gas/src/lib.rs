@@ -13,7 +13,6 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
-use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use compute_costs::PostCostTypeEx;
@@ -71,7 +70,7 @@ impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
     for InvocationCostInfoProviderForEqGen<'_, TokenUsages, ApChangeVarValue>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty].into_or_panic()
+        self.type_sizes[ty].try_into().unwrap()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
@@ -152,7 +151,7 @@ impl ComputeCostInfoProvider {
 /// Implementation of [CostInfoProvider] for [ComputeCostInfoProvider].
 impl CostInfoProvider for ComputeCostInfoProvider {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty].into_or_panic()
+        self.type_sizes[ty].try_into().unwrap()
     }
 
     fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
@@ -209,7 +208,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 &InvocationCostInfoProviderForEqGen {
                     type_sizes: &type_sizes,
                     token_usages: |token_type| {
-                        precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+                        precost_gas_info.variable_values[&(*idx, token_type)].try_into().unwrap()
                     },
                     ap_change_var_value: || ap_change_var_value(*idx),
                 },

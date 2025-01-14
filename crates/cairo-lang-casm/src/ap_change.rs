@@ -1,6 +1,5 @@
 use core::fmt::Display;
 
-use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 

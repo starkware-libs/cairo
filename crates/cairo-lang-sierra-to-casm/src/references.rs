@@ -4,7 +4,6 @@ use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::write_comma_separated;
 use thiserror::Error;
@@ -42,7 +41,7 @@ impl ReferenceValue {
     /// This is just a sanity check, and therefore it panics instead of returning an error.
     pub fn validate(&self, type_sizes: &TypeSizeMap) {
         let size = *type_sizes.get(&self.ty).expect("ReferenceValue has unknown type");
-        let actual_size: i16 = self.expression.cells.len().into_or_panic();
+        let actual_size: i16 = self.expression.cells.len().try_into().unwrap();
         assert_eq!(actual_size, size, "ReferenceValue type size mismatch.");
     }
 }

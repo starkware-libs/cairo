@@ -1,0 +1,3084 @@
+0. before_all:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Span::<core::felt252>, v1: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+  (v8: core::array::Span::<core::felt252>, v7: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v2)
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+1. after_add_withdraw_gas:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Span::<core::felt252>, v1: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+  (v8: core::array::Span::<core::felt252>, v7: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v2)
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+2. after_lower_panics:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Span::<core::felt252>, v1: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+  (v8: core::array::Span::<core::felt252>, v7: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v2)
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+3. after_add_destructs:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Span::<core::felt252>, v1: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+  (v8: core::array::Span::<core::felt252>, v7: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v2)
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+4. scrub_units:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Span::<core::felt252>, v1: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+  (v8: core::array::Span::<core::felt252>, v7: core::option::Option::<core::integer::u128>) <- core::serde::into_felt252_based::SerdeImpl::<core::integer::u128, core::integer::u128Copy, core::integer::U128IntoFelt252, core::integer::Felt252TryIntoU128>::deserialize(v2)
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+5. apply_inlining:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Goto(blk8, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk8:
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk9,
+    Option::None(v18) => blk10,
+  })
+
+blk9:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk11, {v16 -> v20, v19 -> v21})
+
+blk10:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk11, {v18 -> v20, v23 -> v21})
+
+blk11:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk12,
+    Option::None(v25) => blk15,
+  })
+
+blk12:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk13,
+    U128sFromFelt252Result::Wide(v29, v30) => blk14,
+  })
+
+blk13:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v32 -> v2, v31 -> v1})
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v35 -> v2, v34 -> v1})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v38 -> v2, v37 -> v1})
+
+blk16:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk17:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk18,
+    Option::None(v42) => blk19,
+  })
+
+blk18:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk20, {v40 -> v44, v43 -> v45})
+
+blk19:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk20, {v42 -> v44, v47 -> v45})
+
+blk20:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk21,
+    Option::None(v49) => blk24,
+  })
+
+blk21:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk22,
+    U128sFromFelt252Result::Wide(v53, v54) => blk23,
+  })
+
+blk22:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v56 -> v8, v55 -> v7})
+
+blk23:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v59 -> v8, v58 -> v7})
+
+blk24:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v62 -> v8, v61 -> v7})
+
+6. return_optimization:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Goto(blk8, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v6})
+
+blk2:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+blk3:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v9 -> v12})
+
+blk5:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk6:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v6, v12)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk8:
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk9,
+    Option::None(v18) => blk10,
+  })
+
+blk9:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk11, {v16 -> v20, v19 -> v21})
+
+blk10:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk11, {v18 -> v20, v23 -> v21})
+
+blk11:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk12,
+    Option::None(v25) => blk15,
+  })
+
+blk12:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk13,
+    U128sFromFelt252Result::Wide(v29, v30) => blk14,
+  })
+
+blk13:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v32 -> v2, v31 -> v1})
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v35 -> v2, v34 -> v1})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk7, {v38 -> v2, v37 -> v1})
+
+blk16:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk4,
+    Option::None(v10) => blk5,
+  })
+
+blk17:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk18,
+    Option::None(v42) => blk19,
+  })
+
+blk18:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk20, {v40 -> v44, v43 -> v45})
+
+blk19:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk20, {v42 -> v44, v47 -> v45})
+
+blk20:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk21,
+    Option::None(v49) => blk24,
+  })
+
+blk21:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk22,
+    U128sFromFelt252Result::Wide(v53, v54) => blk23,
+  })
+
+blk22:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v56 -> v8, v55 -> v7})
+
+blk23:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v59 -> v8, v58 -> v7})
+
+blk24:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk16, {v62 -> v8, v61 -> v7})
+
+7. reorganize_blocks:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+8. reorder_statements:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+9. branch_inversion:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+10. reorder_statements:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+11. cancel_ops:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+12. const_folding:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+13. optimize_matches:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+  (v32: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v32 -> v2, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+  (v35: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v35 -> v2, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+  (v38: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Goto(blk8, {v38 -> v2, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+  (v39: @core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v39) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+  (v56: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v56 -> v8, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+  (v59: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v59 -> v8, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+  (v62: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Goto(blk17, {v62 -> v8, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+End:
+  Return(v8, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+End:
+  Return(v8, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+End:
+  Return(v2, v5)
+
+14. split_structs:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+End:
+  Goto(blk8, {v20 -> v63, v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+End:
+  Goto(blk8, {v20 -> v63, v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+End:
+  Goto(blk8, {v20 -> v63, v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v63) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+End:
+  Goto(blk17, {v44 -> v64, v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+End:
+  Goto(blk17, {v44 -> v64, v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+End:
+  Goto(blk17, {v44 -> v64, v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v64)
+End:
+  Return(v67, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v64)
+End:
+  Return(v66, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v63)
+End:
+  Return(v65, v5)
+
+15. reorganize_blocks:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+End:
+  Goto(blk8, {v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+End:
+  Goto(blk8, {v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+End:
+  Goto(blk8, {v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+End:
+  Goto(blk17, {v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+End:
+  Goto(blk17, {v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+End:
+  Goto(blk17, {v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v67, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v66, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v65, v5)
+
+16. reorder_statements:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+  (v31: core::option::Option::<core::integer::u128>) <- Option::Some(v28)
+End:
+  Goto(blk8, {v31 -> v1})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::integer::u128>) <- Option::None(v33)
+End:
+  Goto(blk8, {v34 -> v1})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<core::integer::u128>) <- Option::None(v36)
+End:
+  Goto(blk8, {v37 -> v1})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk9,
+    Option::None(v4) => blk20,
+  })
+
+blk9:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+  (v55: core::option::Option::<core::integer::u128>) <- Option::Some(v52)
+End:
+  Goto(blk17, {v55 -> v7})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+  (v58: core::option::Option::<core::integer::u128>) <- Option::None(v57)
+End:
+  Goto(blk17, {v58 -> v7})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+  (v61: core::option::Option::<core::integer::u128>) <- Option::None(v60)
+End:
+  Goto(blk17, {v61 -> v7})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v9) => blk18,
+    Option::None(v10) => blk19,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v67, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v66, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v65, v5)
+
+17. optimize_matches:
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v27) {
+    U128sFromFelt252Result::Narrow(v28) => blk5,
+    U128sFromFelt252Result::Wide(v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk9, {v28 -> v3})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk20, {v33 -> v4})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk20, {v36 -> v4})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v68) => blk21,
+    Option::None(v69) => blk22,
+  })
+
+blk9:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v51) {
+    U128sFromFelt252Result::Narrow(v52) => blk14,
+    U128sFromFelt252Result::Wide(v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+End:
+  Goto(blk18, {v52 -> v9})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk19, {v57 -> v10})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk19, {v60 -> v10})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v70) => blk23,
+    Option::None(v71) => blk24,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v67, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v66, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v65, v5)
+
+blk21:
+Statements:
+End:
+  Goto(blk9, {v68 -> v3})
+
+blk22:
+Statements:
+End:
+  Goto(blk20, {v69 -> v4})
+
+blk23:
+Statements:
+End:
+  Goto(blk18, {v70 -> v9})
+
+blk24:
+Statements:
+End:
+  Goto(blk19, {v71 -> v10})
+
+18. lower_implicits:
+Parameters: v72: core::RangeCheck, v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v72 -> v73, v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v72 -> v73, v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk7,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v73, v27) {
+    U128sFromFelt252Result::Narrow(v74, v28) => blk5,
+    U128sFromFelt252Result::Wide(v75, v29, v30) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk9, {v74 -> v76, v28 -> v3})
+
+blk6:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk20, {v75 -> v82, v33 -> v4})
+
+blk7:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk20, {v73 -> v82, v36 -> v4})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v68) => blk21,
+    Option::None(v69) => blk22,
+  })
+
+blk9:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk10,
+    Option::None(v42) => blk11,
+  })
+
+blk10:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk12, {v76 -> v77, v40 -> v44, v43 -> v45})
+
+blk11:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk12, {v76 -> v77, v42 -> v44, v47 -> v45})
+
+blk12:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk13,
+    Option::None(v49) => blk16,
+  })
+
+blk13:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v77, v51) {
+    U128sFromFelt252Result::Narrow(v78, v52) => blk14,
+    U128sFromFelt252Result::Wide(v79, v53, v54) => blk15,
+  })
+
+blk14:
+Statements:
+End:
+  Goto(blk18, {v78 -> v80, v52 -> v9})
+
+blk15:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk19, {v79 -> v81, v57 -> v10})
+
+blk16:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk19, {v77 -> v81, v60 -> v10})
+
+blk17:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v70) => blk23,
+    Option::None(v71) => blk24,
+  })
+
+blk18:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v3, v9)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v80, v67, v14)
+
+blk19:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v81, v66, v11)
+
+blk20:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v82, v65, v5)
+
+blk21:
+Statements:
+End:
+  Goto(blk9, {v68 -> v3})
+
+blk22:
+Statements:
+End:
+  Goto(blk20, {v69 -> v4})
+
+blk23:
+Statements:
+End:
+  Goto(blk18, {v70 -> v9})
+
+blk24:
+Statements:
+End:
+  Goto(blk19, {v71 -> v10})
+
+19. reorganize_blocks:
+Parameters: v72: core::RangeCheck, v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk15,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v72, v27) {
+    U128sFromFelt252Result::Narrow(v74, v28) => blk5,
+    U128sFromFelt252Result::Wide(v75, v29, v30) => blk14,
+  })
+
+blk5:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk6,
+    Option::None(v42) => blk7,
+  })
+
+blk6:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk8, {v40 -> v44, v43 -> v45})
+
+blk7:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk8, {v42 -> v44, v47 -> v45})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk9,
+    Option::None(v49) => blk12,
+  })
+
+blk9:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v74, v51) {
+    U128sFromFelt252Result::Narrow(v78, v52) => blk10,
+    U128sFromFelt252Result::Wide(v79, v53, v54) => blk11,
+  })
+
+blk10:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v28, v52)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v78, v67, v14)
+
+blk11:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk13, {v79 -> v81, v57 -> v10})
+
+blk12:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk13, {v74 -> v81, v60 -> v10})
+
+blk13:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v81, v66, v11)
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk16, {v75 -> v82, v33 -> v4})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk16, {v72 -> v82, v36 -> v4})
+
+blk16:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v82, v65, v5)
+
+20. cancel_ops:
+Parameters: v72: core::RangeCheck, v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk15,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v72, v27) {
+    U128sFromFelt252Result::Narrow(v74, v28) => blk5,
+    U128sFromFelt252Result::Wide(v75, v29, v30) => blk14,
+  })
+
+blk5:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk6,
+    Option::None(v42) => blk7,
+  })
+
+blk6:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk8, {v40 -> v44, v43 -> v45})
+
+blk7:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk8, {v42 -> v44, v47 -> v45})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk9,
+    Option::None(v49) => blk12,
+  })
+
+blk9:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v74, v51) {
+    U128sFromFelt252Result::Narrow(v78, v52) => blk10,
+    U128sFromFelt252Result::Wide(v79, v53, v54) => blk11,
+  })
+
+blk10:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v28, v52)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v78, v67, v14)
+
+blk11:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk13, {v79 -> v81, v57 -> v10})
+
+blk12:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk13, {v74 -> v81, v60 -> v10})
+
+blk13:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v81, v66, v11)
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk16, {v75 -> v82, v33 -> v4})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk16, {v72 -> v82, v36 -> v4})
+
+blk16:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v82, v65, v5)
+
+21. reorder_statements:
+Parameters: v72: core::RangeCheck, v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk15,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v72, v27) {
+    U128sFromFelt252Result::Narrow(v74, v28) => blk5,
+    U128sFromFelt252Result::Wide(v75, v29, v30) => blk14,
+  })
+
+blk5:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk6,
+    Option::None(v42) => blk7,
+  })
+
+blk6:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk8, {v40 -> v44, v43 -> v45})
+
+blk7:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk8, {v42 -> v44, v47 -> v45})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk9,
+    Option::None(v49) => blk12,
+  })
+
+blk9:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v74, v51) {
+    U128sFromFelt252Result::Narrow(v78, v52) => blk10,
+    U128sFromFelt252Result::Wide(v79, v53, v54) => blk11,
+  })
+
+blk10:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v28, v52)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v78, v67, v14)
+
+blk11:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk13, {v79 -> v81, v57 -> v10})
+
+blk12:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk13, {v74 -> v81, v60 -> v10})
+
+blk13:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v81, v66, v11)
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk16, {v75 -> v82, v33 -> v4})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk16, {v72 -> v82, v36 -> v4})
+
+blk16:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v82, v65, v5)
+
+22. reorganize_blocks:
+Parameters: v72: core::RangeCheck, v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v15: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v15) {
+    Option::Some(v16, v17) => blk1,
+    Option::None(v18) => blk2,
+  })
+
+blk1:
+Statements:
+  (v19: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v17)
+End:
+  Goto(blk3, {v16 -> v20, v19 -> v21})
+
+blk2:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v22)
+End:
+  Goto(blk3, {v18 -> v20, v23 -> v21})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v21) {
+    Option::Some(v24) => blk4,
+    Option::None(v25) => blk15,
+  })
+
+blk4:
+Statements:
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
+  (v27: core::felt252) <- desnap(v26)
+End:
+  Match(match core::integer::u128s_from_felt252(v72, v27) {
+    U128sFromFelt252Result::Narrow(v74, v28) => blk5,
+    U128sFromFelt252Result::Wide(v75, v29, v30) => blk14,
+  })
+
+blk5:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v20) {
+    Option::Some(v40, v41) => blk6,
+    Option::None(v42) => blk7,
+  })
+
+blk6:
+Statements:
+  (v43: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v41)
+End:
+  Goto(blk8, {v40 -> v44, v43 -> v45})
+
+blk7:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v46)
+End:
+  Goto(blk8, {v42 -> v44, v47 -> v45})
+
+blk8:
+Statements:
+End:
+  Match(match_enum(v45) {
+    Option::Some(v48) => blk9,
+    Option::None(v49) => blk12,
+  })
+
+blk9:
+Statements:
+  (v50: @core::felt252) <- core::box::unbox::<@core::felt252>(v48)
+  (v51: core::felt252) <- desnap(v50)
+End:
+  Match(match core::integer::u128s_from_felt252(v74, v51) {
+    U128sFromFelt252Result::Narrow(v78, v52) => blk10,
+    U128sFromFelt252Result::Wide(v79, v53, v54) => blk11,
+  })
+
+blk10:
+Statements:
+  (v13: core::integer::u256) <- struct_construct(v28, v52)
+  (v14: core::option::Option::<core::integer::u256>) <- Option::Some(v13)
+  (v67: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v78, v67, v14)
+
+blk11:
+Statements:
+  (v57: ()) <- struct_construct()
+End:
+  Goto(blk13, {v79 -> v81, v57 -> v10})
+
+blk12:
+Statements:
+  (v60: ()) <- struct_construct()
+End:
+  Goto(blk13, {v74 -> v81, v60 -> v10})
+
+blk13:
+Statements:
+  (v11: core::option::Option::<core::integer::u256>) <- Option::None(v10)
+  (v66: core::array::Span::<core::felt252>) <- struct_construct(v44)
+End:
+  Return(v81, v66, v11)
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+End:
+  Goto(blk16, {v75 -> v82, v33 -> v4})
+
+blk15:
+Statements:
+  (v36: ()) <- struct_construct()
+End:
+  Goto(blk16, {v72 -> v82, v36 -> v4})
+
+blk16:
+Statements:
+  (v5: core::option::Option::<core::integer::u256>) <- Option::None(v4)
+  (v65: core::array::Span::<core::felt252>) <- struct_construct(v20)
+End:
+  Return(v82, v65, v5)
+
+

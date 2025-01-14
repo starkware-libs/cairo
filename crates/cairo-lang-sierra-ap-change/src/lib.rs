@@ -6,7 +6,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
-use cairo_lang_utils::casts::IntoOrPanic;
+
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
@@ -70,7 +70,7 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
     for InvocationApChangeInfoProviderForEqGen<'_, TokenUsages>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.type_sizes[ty].into_or_panic()
+        self.type_sizes[ty].try_into().unwrap()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {

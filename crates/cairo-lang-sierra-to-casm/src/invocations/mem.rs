@@ -6,7 +6,6 @@ use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use itertools::{repeat_n, zip_eq};
 
@@ -154,7 +153,7 @@ fn build_alloc_local(
         allocation_size as usize,
     )?;
     builder.environment.frame_state = frame_state;
-    let slot: i16 = slot.into_or_panic();
+    let slot: i16 = slot.try_into().unwrap();
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression {
             cells: (0..allocation_size)

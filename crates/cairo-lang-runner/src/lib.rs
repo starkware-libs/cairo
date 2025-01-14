@@ -484,7 +484,7 @@ impl SierraCasmRunner {
             .enumerate()
         {
             let mut curr_arg = vec![];
-            let param_size: usize = param_size.into_or_panic();
+            let param_size: usize = param_size.try_into().unwrap();
             expected_arguments_size += param_size;
             let mut taken_size = 0;
             while taken_size < param_size {

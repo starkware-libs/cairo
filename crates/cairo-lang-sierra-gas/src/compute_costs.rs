@@ -4,7 +4,6 @@ use cairo_lang_sierra::algorithm::topological_order::reverse_topological_orderin
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
-use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -874,7 +873,7 @@ impl PostcostContext<'_> {
         info: &WithdrawGasBranchInfo,
     ) -> ConstCost {
         info.const_cost(|token_type| {
-            self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+            self.precost_gas_info.variable_values[&(*idx, token_type)].try_into().unwrap()
         })
     }
 
@@ -882,9 +881,9 @@ impl PostcostContext<'_> {
     fn compute_redeposit_gas_cost(&self, idx: &StatementIdx) -> ConstCost {
         ConstCost::steps(
             BuiltinCostsType::cost_computation_steps(false, |token_type| {
-                self.precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+                self.precost_gas_info.variable_values[&(*idx, token_type)].try_into().unwrap()
             })
-            .into_or_panic(),
+            .try_into().unwrap(),
         )
     }
 }

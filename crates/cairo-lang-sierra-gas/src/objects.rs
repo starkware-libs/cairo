@@ -2,7 +2,6 @@ use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
-use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -137,7 +136,7 @@ impl WithdrawGasBranchInfo {
     ) -> ConstCost {
         let cost_computation: i32 =
             BuiltinCostsType::cost_computation_steps(self.with_builtin_costs, token_usages)
-                .into_or_panic();
+                .try_into().unwrap();
         let mut steps = 3 + cost_computation;
         // Failure branch have some additional costs.
         if !self.success {

@@ -333,7 +333,7 @@ fn add_cost_builtin_ptr_fetch_code(
     (
         pre_instructions,
         casm_builder.add_var(CellExpression::DoubleDeref(
-            CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
+            CellRef { register: Register::AP, offset: (ap_change - 1).try_into().unwrap() },
             0,
         )),
     )

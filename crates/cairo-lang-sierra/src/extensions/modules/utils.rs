@@ -1,6 +1,5 @@
 use std::ops::Shl;
 
-use cairo_lang_utils::casts::IntoOrPanic;
 use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
 use num_traits::One;
@@ -121,7 +120,7 @@ pub fn fixed_size_array_ty(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let args: Vec<GenericArg> = chain!(
         [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
-        repeat_n(GenericArg::Type(ty), size.into_or_panic())
+        repeat_n(GenericArg::Type(ty), size.try_into().unwrap())
     )
     .collect();
     context.get_concrete_type(StructType::id(), &args)

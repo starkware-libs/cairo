@@ -62,7 +62,7 @@ impl State {
     /// Validates that the state is valid, as it had enough ap change.
     fn validate_finality(&self) {
         assert!(
-            self.ap_change >= self.allocated.into_or_panic(),
+            self.ap_change >= self.allocated.try_into().unwrap(),
             "Not enough instructions to update ap. Add an `ap += *` instruction. ap_change: {}, \
              allocated: {}",
             self.ap_change,

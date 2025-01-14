@@ -1,4 +1,5 @@
 pub trait IntoOrPanic: Sized + Copy + core::fmt::Debug {
+    #[inline(always)]
     fn into_or_panic<T>(self) -> T
     where
         T: TryFrom<Self> + core::fmt::Debug,

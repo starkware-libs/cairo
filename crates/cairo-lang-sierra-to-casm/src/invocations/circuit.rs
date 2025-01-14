@@ -7,7 +7,6 @@ use cairo_lang_sierra::extensions::circuit::{
 };
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::casts::IntoOrPanic;
 use itertools::chain;
 
 use super::misc::build_identity;
@@ -193,11 +192,11 @@ fn build_circuit_eval(
     let one = expr_one.try_unpack_single()?;
     let mut casm_builder = CasmBuilder::default();
 
-    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
+    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.try_into().unwrap();
     add_input_variables! {casm_builder,
         buffer(instance_size) add_mod;
         buffer(instance_size) mul_mod;
-        buffer(VALUE_SIZE.into_or_panic()) inputs_end;
+        buffer(VALUE_SIZE.try_into().unwrap()) inputs_end;
         deref add_mod_offsets;
         deref n_adds;
         deref mul_mod_offsets;
@@ -350,9 +349,9 @@ fn build_failure_guarantee_verify(
     let one = expr_one.try_unpack_single()?;
 
     let mut casm_builder = CasmBuilder::default();
-    let rc_usage = (2 + VALUE_SIZE).into_or_panic();
+    let rc_usage = (2 + VALUE_SIZE).try_into().unwrap();
 
-    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
+    let instance_size = MOD_BUILTIN_INSTANCE_SIZE.try_into().unwrap();
     add_input_variables! {casm_builder,
         buffer(rc_usage) rc96;
         buffer(instance_size) mul_mod;

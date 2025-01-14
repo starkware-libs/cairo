@@ -1,5 +1,4 @@
 use cairo_lang_semantic::TypeId;
-use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::db::LoweringGroup;
 use crate::{FlatBlockEnd, FlatLowered, Statement, VarUsage, VariableId};
@@ -85,7 +84,7 @@ impl InlineWeight for ApproxCasmInlineWeight<'_> {
             Statement::Call(statement_call) => self.inputs_size(&statement_call.inputs),
             _ => 0,
         }
-        .into_or_panic()
+        .try_into().unwrap()
     }
 
     fn block_end_weight(&self, block_end: &FlatBlockEnd) -> isize {
@@ -99,6 +98,6 @@ impl InlineWeight for ApproxCasmInlineWeight<'_> {
             FlatBlockEnd::Match { info } => info.arms().len() + self.inputs_size(info.inputs()),
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
         }
-        .into_or_panic()
+        .try_into().unwrap()
     }
 }

@@ -530,7 +530,7 @@ pub fn core_libfunc_cost(
             CircuitConcreteLibfunc::Eval(libfunc) => {
                 let info = info_provider.circuit_info(&libfunc.ty);
 
-                let instance_size: i32 = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
+                let instance_size: i32 = MOD_BUILTIN_INSTANCE_SIZE.try_into().unwrap();
                 let mut steps: i32 = 8 + instance_size;
 
                 if !info.add_offsets.is_empty() {
@@ -542,16 +542,16 @@ pub fn core_libfunc_cost(
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
                         pre_cost: PreCost(OrderedHashMap::from_iter([
-                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                            (CostTokenType::AddMod, info.add_offsets.len().try_into().unwrap()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().try_into().unwrap()),
                         ])),
                     },
                     // Success.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
                         pre_cost: PreCost(OrderedHashMap::from_iter([
-                            (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
-                            (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
+                            (CostTokenType::AddMod, info.add_offsets.len().try_into().unwrap()),
+                            (CostTokenType::MulMod, info.mul_offsets.len().try_into().unwrap()),
                         ])),
                     },
                 ]
@@ -584,7 +584,7 @@ pub fn core_libfunc_cost(
                         steps: 0,
                         holes: 0,
                         range_checks: 0,
-                        range_checks96: info.rc96_usage().into_or_panic(),
+                        range_checks96: info.rc96_usage().try_into().unwrap(),
                     }
                     .into(),
                 ]
@@ -668,7 +668,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     BuiltinCostsType::cost_computation_steps(false, |token_type| {
                         info_provider.token_usages(token_type)
                     })
-                    .into_or_panic(),
+                    .try_into().unwrap(),
                 )),
                 ops.statement_var_cost(CostTokenType::Const),
             ),

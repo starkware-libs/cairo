@@ -358,9 +358,9 @@ fn extract_const_value(
                             get_variant_selector(enm.variants.len(), variant_index).unwrap().into(),
                         );
                         let full_enum_size: usize =
-                            type_sizes[&const_type.inner_ty].into_or_panic();
+                            type_sizes[&const_type.inner_ty].try_into().unwrap();
                         let variant_size: usize =
-                            type_sizes[&enm.variants[variant_index]].into_or_panic();
+                            type_sizes[&enm.variants[variant_index]].try_into().unwrap();
                         // Padding with zeros to full enum size.
                         values.extend(itertools::repeat_n(
                             BigInt::zero(),
