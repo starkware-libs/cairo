@@ -963,7 +963,7 @@ impl ConstantEvaluateContext<'_> {
                 _ => (diagnostic.into(), vec![]),
             };
             notes.push(DiagnosticNote::with_location(
-                format!("In `{}`", concrete_function.full_name(db)),
+                format!("In `{}`", concrete_function.full_path(db)),
                 location,
             ));
             self.diagnostics.report(
