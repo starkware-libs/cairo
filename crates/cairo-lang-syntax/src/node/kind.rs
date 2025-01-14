@@ -43,6 +43,7 @@ pub enum SyntaxKind {
     OptionFixedSizeArraySizeEmpty,
     ExprClosure,
     ClosureParamWrapperNAry,
+    ExprPlaceholder,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
@@ -151,6 +152,9 @@ pub enum SyntaxKind {
     BracketedTokenTree,
     ExprInlineMacro,
     ItemInlineMacro,
+    ItemMacroDeclaration,
+    MacroRulesList,
+    MacroRule,
     LegacyExprInlineMacro,
     LegacyItemInlineMacro,
     TriviumSkippedNode,
@@ -190,6 +194,8 @@ pub enum SyntaxKind {
     TerminalImplicits,
     TokenLet,
     TerminalLet,
+    TokenMacro,
+    TerminalMacro,
     TokenMatch,
     TerminalMatch,
     TokenModule,
@@ -240,6 +246,8 @@ pub enum SyntaxKind {
     TerminalDiv,
     TokenDivEq,
     TerminalDivEq,
+    TokenDollar,
+    TerminalDollar,
     TokenDot,
     TerminalDot,
     TokenDotDot,
@@ -341,6 +349,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMacro
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -366,6 +375,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenComma
                 | SyntaxKind::TokenDiv
                 | SyntaxKind::TokenDivEq
+                | SyntaxKind::TokenDollar
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenEndOfFile
@@ -431,6 +441,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMacro
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
@@ -456,6 +467,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalComma
                 | SyntaxKind::TerminalDiv
                 | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalDollar
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEndOfFile
@@ -510,6 +522,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
+                | SyntaxKind::TokenMacro
                 | SyntaxKind::TokenMatch
                 | SyntaxKind::TokenModule
                 | SyntaxKind::TokenMut
@@ -544,6 +557,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMacro
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
