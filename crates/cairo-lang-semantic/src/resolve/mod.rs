@@ -1437,14 +1437,9 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
-        let substitution = if let GenericFunctionId::Impl(id) = generic_function {
-            GenericSubstitution::from_impl(id.impl_id)
-        } else {
-            GenericSubstitution::default()
-        };
         let generic_args = self.resolve_generic_args(
             diagnostics,
-            substitution,
+            GenericSubstitution::default(),
             &generic_params,
             generic_args,
             stable_ptr,
