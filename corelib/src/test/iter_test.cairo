@@ -1,5 +1,3 @@
-use core::iter::zip;
-
 #[test]
 fn test_iter_adapter_map() {
     let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
@@ -21,15 +19,18 @@ fn test_iterator_enumerate() {
 
 #[test]
 fn test_iterator_zip() {
-    let mut iter = zip(array![1, 2, 3], array![4, 5, 6]);
+    let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
 
     assert_eq!(iter.next(), Option::Some((1, 4)));
     assert_eq!(iter.next(), Option::Some((2, 5)));
     assert_eq!(iter.next(), Option::Some((3, 6)));
     assert_eq!(iter.next(), Option::None);
 
-    // Nested zips are also possible:
-    let mut iter = zip(zip(array![1, 2, 3], array![4, 5, 6]), array![7, 8, 9]);
+    // Nested zips
+    let mut iter = array![1, 2, 3]
+        .into_iter()
+        .zip(array![4, 5, 6].into_iter())
+        .zip(array![7, 8, 9].into_iter());
 
     assert_eq!(iter.next(), Option::Some(((1, 4), 7)));
     assert_eq!(iter.next(), Option::Some(((2, 5), 8)));
