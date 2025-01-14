@@ -54,7 +54,8 @@ impl std::fmt::Display for CompiledFunction {
 pub fn compile_executable(
     path: &Path,
     executable_path: Option<&str>,
-    diagnostics_reporter: DiagnosticsReporter<'_>,
+    mut diagnostics_reporter: DiagnosticsReporter<'_>,
+    ignore_warnings: bool,
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
@@ -64,6 +65,9 @@ pub fn compile_executable(
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
+    if ignore_warnings {
+        diagnostics_reporter = diagnostics_reporter.with_ignore_warnings_crates(&main_crate_ids);
+    }
 
     compile_executable_in_prepared_db(&db, executable_path, main_crate_ids, diagnostics_reporter)
 }

@@ -128,7 +128,7 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
+    pub fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
         if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
     }
 
@@ -164,7 +164,7 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let ignore_warnings_in_crate = true;
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
