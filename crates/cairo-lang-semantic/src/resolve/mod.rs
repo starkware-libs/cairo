@@ -869,11 +869,12 @@ impl<'db> Resolver<'db> {
                             }
                         }
                         let impl_lookup_context = self.impl_lookup_context();
-                        let generic_function = self.inference().infer_trait_generic_function(
-                            concrete_trait_function,
-                            &impl_lookup_context,
-                            Some(identifier_stable_ptr),
-                        );
+                        let generic_function =
+                            GenericFunctionId::Impl(self.inference().infer_trait_generic_function(
+                                concrete_trait_function,
+                                &impl_lookup_context,
+                                Some(identifier_stable_ptr),
+                            ));
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
@@ -1076,6 +1077,7 @@ impl<'db> Resolver<'db> {
                     self.db.module_type_alias_generic_params(module_type_alias_id)?;
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
+                    GenericSubstitution::default(),
                     &generic_params,
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
@@ -1090,6 +1092,7 @@ impl<'db> Resolver<'db> {
                 let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
                 let generic_args = self.resolve_generic_args(
                     diagnostics,
+                    GenericSubstitution::default(),
                     &generic_params,
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
@@ -1364,8 +1367,13 @@ impl<'db> Resolver<'db> {
             .db
             .trait_generic_params(trait_id)
             .map_err(|_| diagnostics.report(stable_ptr, UnknownTrait))?;
-        let generic_args =
-            self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            GenericSubstitution::default(),
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
 
         Ok(ConcreteTraitLongId { trait_id, generic_args }.intern(self.db))
     }
@@ -1383,8 +1391,13 @@ impl<'db> Resolver<'db> {
             .db
             .impl_def_generic_params(impl_def_id)
             .map_err(|_| diagnostics.report(stable_ptr, UnknownImpl))?;
-        let generic_args =
-            self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            GenericSubstitution::default(),
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
 
         Ok(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db))
     }
@@ -1401,6 +1414,7 @@ impl<'db> Resolver<'db> {
             enum_id: variant_id.enum_id(self.db.upcast()),
             generic_args: self.resolve_generic_args(
                 diagnostics,
+                GenericSubstitution::default(),
                 &self.db.enum_generic_params(variant_id.enum_id(self.db.upcast()))?,
                 generic_args,
                 stable_ptr,
@@ -1423,8 +1437,18 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
-        let generic_args =
-            self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
+        let substitution = if let GenericFunctionId::Impl(id) = generic_function {
+            GenericSubstitution::from_impl(id.impl_id)
+        } else {
+            GenericSubstitution::default()
+        };
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            substitution,
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
 
         Ok(FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
             .intern(self.db))
@@ -1442,8 +1466,13 @@ impl<'db> Resolver<'db> {
             .db
             .generic_type_generic_params(generic_type)
             .map_err(|_| diagnostics.report(stable_ptr, UnknownType))?;
-        let generic_args =
-            self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
+        let generic_args = self.resolve_generic_args(
+            diagnostics,
+            GenericSubstitution::default(),
+            &generic_params,
+            generic_args,
+            stable_ptr,
+        )?;
 
         Ok(TypeLongId::Concrete(ConcreteTypeId::new(self.db, generic_type, generic_args))
             .intern(self.db))
@@ -1471,11 +1500,11 @@ impl<'db> Resolver<'db> {
     pub fn resolve_generic_args(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
+        mut substitution: GenericSubstitution,
         generic_params: &[GenericParam],
         generic_args_syntax: &[ast::GenericArg],
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
-        let mut substitution = GenericSubstitution::default();
         let mut resolved_args = vec![];
         let arg_syntax_per_param =
             self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
@@ -1901,6 +1930,7 @@ impl<'db> Resolver<'db> {
         }
         let resolved_args = self.resolve_generic_args(
             diagnostics,
+            GenericSubstitution::default(),
             &generic_params,
             current_segment_generic_args,
             segment_stable_ptr,

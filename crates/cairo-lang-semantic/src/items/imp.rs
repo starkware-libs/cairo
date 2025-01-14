@@ -1942,12 +1942,6 @@ pub fn infer_impl_by_self(
             .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
-    let generic_args = ctx.resolver.resolve_generic_args(
-        ctx.diagnostics,
-        &trait_func_generic_params,
-        &generic_args_syntax.unwrap_or_default(),
-        stable_ptr,
-    )?;
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
@@ -1956,10 +1950,22 @@ pub fn infer_impl_by_self(
         &impl_lookup_context,
         Some(stable_ptr),
     );
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        GenericSubstitution::from_impl(generic_function.impl_id),
+        &trait_func_generic_params,
+        &generic_args_syntax.unwrap_or_default(),
+        stable_ptr,
+    )?;
 
     Ok((
-        FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
-            .intern(ctx.db),
+        FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Impl(generic_function),
+                generic_args,
+            },
+        }
+        .intern(ctx.db),
         n_snapshots,
     ))
 }
