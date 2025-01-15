@@ -71,7 +71,6 @@ pub trait Iterator<T> {
     ) -> Result<
         (), NonZero<usize>,
     > {
-        let mut n = n;
         if let Option::Some(nz_n) = n.try_into() {
             if let Option::Some(_) = Self::next(ref self) {
                 return Self::advance_by(ref self, n - 1);
