@@ -39,7 +39,10 @@ pub fn build(
         BoundedIntConcreteLibfunc::Constrain(libfunc) => {
             build_constrain(builder, &libfunc.boundary)
         }
-        BoundedIntConcreteLibfunc::Trim(libfunc) => build_trim(builder, &libfunc.trimmed_value),
+        BoundedIntConcreteLibfunc::TrimMin(libfunc)
+        | BoundedIntConcreteLibfunc::TrimMax(libfunc) => {
+            build_trim(builder, &libfunc.trimmed_value)
+        }
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
     }
