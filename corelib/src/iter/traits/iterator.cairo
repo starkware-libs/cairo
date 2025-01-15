@@ -312,4 +312,12 @@ pub trait Iterator<T> {
     ) -> Zip<T, UIntoIter::IntoIter> {
         zipped_iterator(self, other.into_iter())
     }
+
+    #[inline]
+    #[must_use]
+    fn collect<B, +FromIterator<B, Self::Item>, +Drop<T>>(
+        self: T,
+    ) -> B {
+        FromIterator::from_iter(self)
+    }
 }
