@@ -1664,6 +1664,10 @@ fn compute_expr_closure_semantic(
             vec![]
         };
 
+        params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
+            new_ctx.diagnostics.report(param.stable_ptr(ctx.db.upcast()), RefClosureParam);
+        });
+
         new_ctx
             .semantic_defs
             .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));

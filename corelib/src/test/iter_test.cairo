@@ -8,6 +8,7 @@ fn test_iter_adapter_map() {
     assert_eq!(iter.next(), Option::None);
 }
 
+#[test]
 fn test_iterator_enumerate() {
     let mut iter = array!['a', 'b', 'c'].into_iter().enumerate();
 
@@ -33,4 +34,12 @@ fn test_iterator_zip() {
     assert_eq!(iter.next(), Option::Some(((2, 5), 8)));
     assert_eq!(iter.next(), Option::Some(((3, 6), 9)));
     assert_eq!(iter.next(), Option::None);
+}
+
+#[test]
+fn test_iter_adapter_fold() {
+    let mut iter = array![1, 2, 3].into_iter();
+    let sum = iter.fold(0, |acc, x| acc + x);
+
+    assert_eq!(sum, 6);
 }
