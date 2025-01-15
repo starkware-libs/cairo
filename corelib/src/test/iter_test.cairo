@@ -34,3 +34,15 @@ fn test_iter_adapter_fold() {
 
     assert_eq!(sum, 6);
 }
+
+#[test]
+fn test_iter_adapter_count() {
+    let mut empty_iter = ArrayTrait::<usize>::new().into_iter();
+    let count = empty_iter.count();
+    assert_eq!(count, 0);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    let count = iter.count();
+
+    assert_eq!(count, 3);
+}
