@@ -18,6 +18,7 @@ fn test_iter_adapter_map() {
     assert_eq!(iter.next(), Option::None);
 }
 
+#[test]
 fn test_iterator_enumerate() {
     let mut iter = array!['a', 'b', 'c'].into_iter().enumerate();
 
