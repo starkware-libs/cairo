@@ -299,3 +299,355 @@ Statements:
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test closure with branching.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo(a: u32) {
+    let f = |a: bool| format!("{a}{a}");
+    let _ = f(false);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:22}) <- struct_construct()
+  (v2: {closure@lib.cairo:2:13: 2:22}, v3: @{closure@lib.cairo:2:13: 2:22}) <- snapshot(v1)
+  (v4: ()) <- struct_construct()
+  (v5: core::bool) <- bool::False(v4)
+  (v6: (core::bool,)) <- struct_construct(v5)
+  (v7: core::byte_array::ByteArray) <- Generated core::ops::function::Fn::<{closure@lib.cairo:2:13: 2:22}, (core::bool,)>::call(v3, v6)
+  (v8: ()) <- struct_construct()
+End:
+  Return(v8)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: {closure@lib.cairo:2:13: 2:22}) <- struct_construct()
+  (v3: {closure@lib.cairo:2:13: 2:22}, v4: @{closure@lib.cairo:2:13: 2:22}) <- snapshot(v2)
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::False(v5)
+  (v7: (core::bool,)) <- struct_construct(v6)
+  (v8: core::RangeCheck, v9: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- Generated core::ops::function::Fn::<{closure@lib.cairo:2:13: 2:22}, (core::bool,)>::call(v0, v4, v7)
+End:
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk1,
+    PanicResult::Err(v11) => blk2,
+  })
+
+blk1:
+Statements:
+  (v12: ()) <- struct_construct()
+  (v13: ((),)) <- struct_construct(v12)
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+End:
+  Return(v8, v14)
+
+blk2:
+Statements:
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
+End:
+  Return(v8, v15)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = |a: bool| format!("{a}{a}");
+            ^^^^^^^^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:22}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:22}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let f = |a: bool| format!("{a}{a}");
+            ^^^^^^^^^
+
+Parameters: v0: @{closure@lib.cairo:2:13: 2:22}, v2: (core::bool,)
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:22}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::bool) <- struct_destructure(v2)
+  (v4: core::fmt::Formatter) <- core::fmt::FormatterDefault::default()
+  (v5: core::bool, v6: @core::bool) <- snapshot(v3)
+  (v8: core::fmt::Formatter, v7: core::result::Result::<(), core::fmt::Error>) <- core::fmt::DisplayBool::fmt(v6, v4)
+End:
+  Match(match_enum(v7) {
+    Result::Ok(v9) => blk1,
+    Result::Err(v10) => blk2,
+  })
+
+blk1:
+Statements:
+  (v11: core::bool, v12: @core::bool) <- snapshot(v5)
+  (v14: core::fmt::Formatter, v13: core::result::Result::<(), core::fmt::Error>) <- core::fmt::DisplayBool::fmt(v12, v8)
+End:
+  Match(match_enum(v13) {
+    Result::Ok(v15) => blk3,
+    Result::Err(v16) => blk4,
+  })
+
+blk2:
+Statements:
+  (v21: core::result::Result::<(), core::fmt::Error>) <- Result::Err(v10)
+End:
+  Goto(blk6, {v5 -> v23, v8 -> v24, v21 -> v22})
+
+blk3:
+Statements:
+  (v17: ()) <- struct_construct()
+  (v18: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v17)
+End:
+  Goto(blk5, {v18 -> v20})
+
+blk4:
+Statements:
+  (v19: core::result::Result::<(), core::fmt::Error>) <- Result::Err(v16)
+End:
+  Goto(blk5, {v19 -> v20})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v11 -> v23, v14 -> v24, v20 -> v22})
+
+blk6:
+Statements:
+  (v25: ()) <- core::result::ResultTraitImpl::<(), core::fmt::Error>::unwrap::<core::traits::DestructFromDrop::<core::fmt::Error, core::fmt::ErrorDrop>>(v22)
+  (v26: core::byte_array::ByteArray) <- struct_destructure(v24)
+End:
+  Return(v26)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @{closure@lib.cairo:2:13: 2:22}, v2: (core::bool,)
+blk0 (root):
+Statements:
+  (v3: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v4: core::bool) <- struct_destructure(v2)
+  (v5: core::felt252) <- 0
+  (v6: core::integer::u32) <- 0
+End:
+  Match(match_enum(v4) {
+    bool::False(v7) => blk1,
+    bool::True(v8) => blk4,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 439721161573
+  (v10: core::integer::u32) <- 5
+  (v11: core::byte_array::ByteArray) <- struct_construct(v3, v5, v6)
+  (v12: core::RangeCheck, v13: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append_word(v0, v11, v9, v10)
+End:
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk2,
+    PanicResult::Err(v15) => blk3,
+  })
+
+blk2:
+Statements:
+  (v16: core::byte_array::ByteArray, v17: ()) <- struct_destructure(v14)
+  (v18: ()) <- struct_construct()
+  (v19: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v18)
+End:
+  Goto(blk6, {v12 -> v20, v16 -> v21, v19 -> v22})
+
+blk3:
+Statements:
+End:
+  Goto(blk24, {v12 -> v23, v15 -> v24})
+
+blk4:
+Statements:
+  (v25: core::felt252) <- 1953658213
+  (v26: core::integer::u32) <- 4
+  (v27: core::byte_array::ByteArray) <- struct_construct(v3, v5, v6)
+  (v28: core::RangeCheck, v29: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append_word(v0, v27, v25, v26)
+End:
+  Match(match_enum(v29) {
+    PanicResult::Ok(v30) => blk5,
+    PanicResult::Err(v31) => blk23,
+  })
+
+blk5:
+Statements:
+  (v32: core::byte_array::ByteArray, v33: ()) <- struct_destructure(v30)
+  (v34: ()) <- struct_construct()
+  (v35: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v34)
+End:
+  Goto(blk6, {v28 -> v20, v32 -> v21, v35 -> v22})
+
+blk6:
+Statements:
+End:
+  Match(match_enum(v22) {
+    Result::Ok(v36) => blk7,
+    Result::Err(v37) => blk19,
+  })
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v4) {
+    bool::False(v38) => blk8,
+    bool::True(v39) => blk11,
+  })
+
+blk8:
+Statements:
+  (v40: core::felt252) <- 439721161573
+  (v41: core::integer::u32) <- 5
+  (v42: core::RangeCheck, v43: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append_word(v20, v21, v40, v41)
+End:
+  Match(match_enum(v43) {
+    PanicResult::Ok(v44) => blk9,
+    PanicResult::Err(v45) => blk10,
+  })
+
+blk9:
+Statements:
+  (v46: core::byte_array::ByteArray, v47: ()) <- struct_destructure(v44)
+  (v48: ()) <- struct_construct()
+  (v49: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v48)
+End:
+  Goto(blk13, {v42 -> v50, v46 -> v51, v49 -> v52})
+
+blk10:
+Statements:
+End:
+  Goto(blk18, {v42 -> v53, v45 -> v54})
+
+blk11:
+Statements:
+  (v55: core::felt252) <- 1953658213
+  (v56: core::integer::u32) <- 4
+  (v57: core::RangeCheck, v58: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append_word(v20, v21, v55, v56)
+End:
+  Match(match_enum(v58) {
+    PanicResult::Ok(v59) => blk12,
+    PanicResult::Err(v60) => blk17,
+  })
+
+blk12:
+Statements:
+  (v61: core::byte_array::ByteArray, v62: ()) <- struct_destructure(v59)
+  (v63: ()) <- struct_construct()
+  (v64: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v63)
+End:
+  Goto(blk13, {v57 -> v50, v61 -> v51, v64 -> v52})
+
+blk13:
+Statements:
+End:
+  Match(match_enum(v52) {
+    Result::Ok(v65) => blk14,
+    Result::Err(v66) => blk15,
+  })
+
+blk14:
+Statements:
+  (v67: ()) <- struct_construct()
+  (v68: core::result::Result::<(), core::fmt::Error>) <- Result::Ok(v67)
+End:
+  Goto(blk16, {v68 -> v69})
+
+blk15:
+Statements:
+  (v70: core::result::Result::<(), core::fmt::Error>) <- Result::Err(v66)
+End:
+  Goto(blk16, {v70 -> v69})
+
+blk16:
+Statements:
+  (v71: core::fmt::Formatter) <- struct_construct(v51)
+End:
+  Goto(blk20, {v50 -> v72, v71 -> v73, v69 -> v74})
+
+blk17:
+Statements:
+End:
+  Goto(blk18, {v57 -> v53, v60 -> v54})
+
+blk18:
+Statements:
+  (v75: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v54)
+End:
+  Return(v53, v75)
+
+blk19:
+Statements:
+  (v76: core::result::Result::<(), core::fmt::Error>) <- Result::Err(v37)
+  (v77: core::fmt::Formatter) <- struct_construct(v21)
+End:
+  Goto(blk20, {v20 -> v72, v77 -> v73, v76 -> v74})
+
+blk20:
+Statements:
+End:
+  Match(match_enum(v74) {
+    Result::Ok(v78) => blk21,
+    Result::Err(v79) => blk22,
+  })
+
+blk21:
+Statements:
+  (v80: core::byte_array::ByteArray) <- struct_destructure(v73)
+  (v81: (core::byte_array::ByteArray,)) <- struct_construct(v80)
+  (v82: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v81)
+End:
+  Return(v72, v82)
+
+blk22:
+Statements:
+  (v83: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v84: core::felt252) <- 30828113188794245257250221355944970489240709081949230
+  (v85: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v83, v84)
+  (v86: core::panics::Panic) <- struct_construct()
+  (v87: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v86, v85)
+  (v88: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v87)
+End:
+  Return(v72, v88)
+
+blk23:
+Statements:
+End:
+  Goto(blk24, {v28 -> v23, v31 -> v24})
+
+blk24:
+Statements:
+  (v89: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v24)
+End:
+  Return(v23, v89)
