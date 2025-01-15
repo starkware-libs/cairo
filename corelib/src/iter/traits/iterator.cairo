@@ -182,13 +182,9 @@ pub trait Iterator<T> {
     >(
         ref self: T, init: B, f: F,
     ) -> B {
-        let mut accum = init;
         match Self::next(ref self) {
-            Option::Some(x) => {
-                accum = f(accum, x);
-                Self::fold(ref self, accum, f)
-            },
-            Option::None => { accum },
+            Option::None => init,
+            Option::Some(x) => Self::fold(ref self, f(init, x), f),
         }
     }
 }
