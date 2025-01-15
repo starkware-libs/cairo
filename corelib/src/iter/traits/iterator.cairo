@@ -93,4 +93,12 @@ pub trait Iterator<T> {
     ) -> Map<T, F> {
         mapped_iterator(self, f)
     }
+
+    #[inline]
+    #[must_use]
+    fn collect<B, +FromIterator<B, Self::Item>, +Drop<T>>(
+        self: T,
+    ) -> B {
+        FromIterator::from_iter(self)
+    }
 }
