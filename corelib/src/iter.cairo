@@ -231,4 +231,5 @@
 //! [`map`]: Iterator::map
 mod adapters;
 mod traits;
+pub use adapters::PeekableTrait;
 pub use traits::{FromIterator, IntoIterator, Iterator};
