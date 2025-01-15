@@ -805,11 +805,14 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     fn get_or_insert_with<F, +core::ops::FnOnce<F, ()>[Output: T], +Drop<F>, +Copy<T>, +Drop<T>>(
         ref self: Option<T>, f: F,
     ) -> T {
-        if self.is_none() {
-            self = Option::Some(f());
-        };
-
-        self.unwrap()
+        match self {
+            Option::Some(value) => value,
+            Option::None => {
+                let value = f();
+                self = Option::Some(value);
+                value
+            }
+        }
     }
 }
 
