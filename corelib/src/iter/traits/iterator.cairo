@@ -41,6 +41,47 @@ pub trait Iterator<T> {
     /// ```
     fn next(ref self: T) -> Option<Self::Item>;
 
+    /// Advances the iterator by `n` elements.
+    ///
+    /// This method will eagerly skip `n` elements by calling [`next`] up to `n`
+    /// times until [`None`] is encountered.
+    ///
+    /// `advance_by(n)` will return `Ok(())` if the iterator successfully advances by
+    /// `n` elements, or a `Err(NonZero<usize>)` with value `k` if [`None`] is encountered,
+    /// where `k` is remaining number of steps that could not be advanced because the iterator ran
+    /// out.
+    /// If `self` is empty and `n` is non-zero, then this returns `Err(n)`.
+    /// Otherwise, `k` is always less than `n`.
+    ///
+    /// [`None`]: Option::None
+    /// [`next`]: Iterator::next
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut iter = array![1_u8, 2, 3, 4].into_iter();
+    ///
+    /// assert_eq!(iter.advance_by(2), Result::Ok(()));
+    /// assert_eq!(iter.next(), Option::Some(3));
+    /// assert_eq!(iter.advance_by(0), Result::Ok(()));
+    /// assert_eq!(iter.advance_by(100), Result::Err(99));
+    /// ```
+    fn advance_by<+Destruct<T>, +Destruct<Self::Item>>(
+        ref self: T, n: usize,
+    ) -> Result<
+        (), NonZero<usize>,
+    > {
+        if let Option::Some(nz_n) = n.try_into() {
+            if let Option::Some(_) = Self::next(ref self) {
+                return Self::advance_by(ref self, n - 1);
+            } else {
+                Result::Err(nz_n)
+            }
+        } else {
+            Result::Ok(())
+        }
+    }
+
     /// Takes a closure and creates an iterator which calls that closure on each
     /// element.
     ///
