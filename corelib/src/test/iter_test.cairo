@@ -10,9 +10,5 @@ fn test_iter_adapter_map() {
 
 #[test]
 fn test_iter_adapter_collect() {
-    let arr: Array<u32> = (0..3_u32).into_iter().collect();
-
-    assert_eq!(*arr[0], 0);
-    assert_eq!(*arr[1], 1);
-    assert_eq!(*arr[2], 2);
+    assert_eq!((0..3_u32).into_iter().collect(), array![0, 1, 2]);
 }
