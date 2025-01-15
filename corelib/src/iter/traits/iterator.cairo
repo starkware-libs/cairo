@@ -1,5 +1,4 @@
-use crate::iter::adapters::{Map, mapped_iterator};
-use crate::iter::adapters::{Enumerate, enumerated_iterator};
+use crate::iter::adapters::{Enumerate, Map, enumerated_iterator, mapped_iterator};
 
 /// A trait for dealing with iterators.
 ///
@@ -107,14 +106,13 @@ pub trait Iterator<T> {
     /// # Overflow Behavior
     ///
     /// The method does no guarding against overflows, so enumerating more than
-    /// [`Bounded::<usize>::MAX`] elements either produces the wrong result or panics.
+    /// `Bounded::<usize>::MAX` elements will always panic.
     ///
     /// [`Bounded`]: core::num::traits::Bounded
     ///
     /// # Panics
     ///
-    /// The returned iterator might panic if the to-be-returned index would
-    /// overflow a [`usize`].
+    /// Will panic if the to-be-returned index overflows a `usize`.
     ///
     /// # Examples
     ///
