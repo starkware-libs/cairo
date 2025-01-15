@@ -158,3 +158,25 @@ fn test_complex_consts() {
     };
     assert_eq!(IF_CONST_FALSE, 7);
 }
+
+mod const_starknet_consts {
+    pub extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<
+        (starknet::ContractAddress, starknet::ClassHash),
+    > nopanic;
+}
+
+#[test]
+fn test_starknet_consts() {
+    assert!(
+        const_starknet_consts::const_as_box::<
+            struct2::Const<
+                (starknet::ContractAddress, starknet::ClassHash),
+                value::Const<starknet::ContractAddress, 1000>,
+                value::Const<starknet::ClassHash, 1001>,
+            >,
+            0,
+        >()
+            .unbox() == (1000.try_into().unwrap(), 1001.try_into().unwrap()),
+    );
+}
+
