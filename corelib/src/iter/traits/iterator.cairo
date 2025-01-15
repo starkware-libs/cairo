@@ -315,7 +315,7 @@ pub trait Iterator<T> {
 
     #[inline]
     #[must_use]
-    fn collect<B, +FromIterator<B, Self::Item>, +Drop<T>>(
+    fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
         self: T,
     ) -> B {
         FromIterator::from_iter(self)
