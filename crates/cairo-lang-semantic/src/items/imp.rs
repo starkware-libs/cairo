@@ -44,8 +44,8 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{
-    GenericArgumentHead, GenericParamImpl, GenericParamsData, generic_params_to_args,
-    semantic_generic_params,
+    GenericArgumentHead, GenericParamImpl, GenericParamsData, fmt_generic_args,
+    generic_params_to_args, semantic_generic_params,
 };
 use super::impl_alias::{
     ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
@@ -118,17 +118,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.impl_def_id.full_path(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}", arg.format(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 impl ConcreteImplId {
@@ -144,6 +134,9 @@ impl ConcreteImplId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
+    }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
         Ok(GenericSubstitution::from_impl(ImplLongId::Concrete(*self).intern(db)).concat(
@@ -1942,12 +1935,6 @@ pub fn infer_impl_by_self(
             .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
-    let generic_args = ctx.resolver.resolve_generic_args(
-        ctx.diagnostics,
-        &trait_func_generic_params,
-        &generic_args_syntax.unwrap_or_default(),
-        stable_ptr,
-    )?;
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
@@ -1956,10 +1943,22 @@ pub fn infer_impl_by_self(
         &impl_lookup_context,
         Some(stable_ptr),
     );
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        GenericSubstitution::from_impl(generic_function.impl_id),
+        &trait_func_generic_params,
+        &generic_args_syntax.unwrap_or_default(),
+        stable_ptr,
+    )?;
 
     Ok((
-        FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
-            .intern(ctx.db),
+        FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Impl(generic_function),
+                generic_args,
+            },
+        }
+        .intern(ctx.db),
         n_snapshots,
     ))
 }
@@ -3031,14 +3030,12 @@ pub fn priv_impl_function_declaration_data(
     diagnostics.extend(generic_params_data.diagnostics);
     resolver.set_feature_config(&impl_function_id, function_syntax, &mut diagnostics);
 
-    let signature_syntax = declaration.signature(syntax_db);
-
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
-        &signature_syntax,
+        &declaration,
         FunctionTitleId::Impl(impl_function_id),
         &mut environment,
     );
@@ -3056,7 +3053,7 @@ pub fn priv_impl_function_declaration_data(
         inference,
         ValidateImplFunctionSignatureParams {
             impl_function_id,
-            signature_syntax: &signature_syntax,
+            signature_syntax: &declaration.signature(syntax_db),
             signature: &signature,
             impl_function_syntax: function_syntax,
             impl_func_generics: &generic_params,
@@ -3301,6 +3298,10 @@ fn validate_impl_function_signature(
 
     if !concrete_trait_signature.panicable && signature.panicable {
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
+    }
+
+    if concrete_trait_signature.is_const && !signature.is_const {
+        diagnostics.report(signature_syntax, PassConstAsNonConst { impl_function_id, trait_id });
     }
 
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();

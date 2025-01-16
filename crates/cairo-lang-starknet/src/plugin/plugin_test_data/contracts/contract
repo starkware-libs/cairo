@@ -40,7 +40,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     struct AwesomeEvent {
         x: felt252,
-        data: Array::<felt252>,
+        data: Array<felt252>,
     }
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
@@ -93,7 +93,7 @@ mod test_contract {
     #[derive(Drop, starknet::Event)]
     struct AwesomeEvent {
         x: felt252,
-        data: Array::<felt252>,
+        data: Array<felt252>,
     }
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
@@ -148,9 +148,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -178,7 +178,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x50afb5642ad6a435e97435ad44ec6060db9755b206a962ddf6d6cbb4a8b99d;
+pub const TEST_CLASS_HASH: felt252 = 0x512a6d7124a897370409ddf4a36e94192a8e84b6eb12aa805962db55776618;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

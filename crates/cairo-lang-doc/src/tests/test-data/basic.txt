@@ -43,7 +43,7 @@ impl TraitTestImpl of TraitTest {
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
-    /// Abote that module there is a [trait](super::TraitTest).
+    /// Above that module there is a [trait](super::TraitTest).
     pub fn inner_test_module_function() -> () {
         //! Just a function inside the test_module.
         println!("inside inner test module inner function");
@@ -187,10 +187,10 @@ Content("Test module used to check if the documentation is being attached to the
 pub fn inner_test_module_function() -> ()
 
 //! > Item documentation #8
-Just a function outside the test_module. Abote that module there is a [trait](super::TraitTest). Just a function inside the test_module.
+Just a function outside the test_module. Above that module there is a [trait](super::TraitTest). Just a function inside the test_module.
 
 //! > Item documentation tokens #8
-Content("Just a function outside the test_module. Abote that module there is a ")
+Content("Just a function outside the test_module. Above that module there is a ")
 CommentLinkToken { label: "trait", path: Some("super::TraitTest"), resolved_item_name: Some("TraitTest") }
 Content(".")
 Content(" ")
@@ -205,7 +205,7 @@ struct Point {
 }
 
 //! > Item documentation #9
-Point struct representing a point in a 2d space. Example usage: 
+Point struct representing a point in a 2d space. Example usage:
 ```cairo
   fn new_Point() {
     Point {x: 12, y: 14}
@@ -278,7 +278,7 @@ Content("No answer variant.")
 struct Circle {}
 
 //! > Item documentation #15
-Example usage: 
+Example usage:
 ```cairo
   fn new_circle() {
     // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
@@ -296,7 +296,7 @@ Content("```")
 struct Square {}
 
 //! > Item documentation #16
-Below there is a code example  
+Below there is a code example
 
     First line of code
     // Comment inside the code block, that should be ignored. [Square] <- it will be ignored as

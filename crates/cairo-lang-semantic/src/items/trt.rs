@@ -25,7 +25,8 @@ use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
 };
 use super::generics::{
-    GenericParamsData, generic_params_to_args, semantic_generic_params, semantic_generic_params_ex,
+    GenericParamsData, fmt_generic_args, generic_params_to_args, semantic_generic_params,
+    semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::{SemanticGroup, get_resolver_data_options};
@@ -58,17 +59,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.trait_id.full_path(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
@@ -1213,13 +1204,12 @@ pub fn priv_trait_function_declaration_data(
     );
     diagnostics.extend(function_generic_params_data.diagnostics);
     resolver.set_feature_config(&trait_function_id, function_syntax, &mut diagnostics);
-    let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
-        &signature_syntax,
+        &declaration_syntax,
         FunctionTitleId::Trait(trait_function_id),
         &mut environment,
     );
@@ -1236,7 +1226,7 @@ pub fn priv_trait_function_declaration_data(
         trait_id,
         trait_function_id,
         &signature,
-        &signature_syntax,
+        &declaration_syntax.signature(syntax_db),
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -1356,7 +1346,7 @@ pub fn priv_trait_function_body_data(
     // Compute declaration semantic.
     let trait_function_declaration_data =
         db.priv_trait_function_declaration_data(trait_function_id)?;
-    let parent_resolver_data = db.trait_resolver_data(trait_id)?;
+    let parent_resolver_data = trait_function_declaration_data.resolver_data;
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::TraitItem(
         TraitItemId::Function(trait_function_id),
     ));

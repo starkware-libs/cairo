@@ -71,6 +71,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalModEq => vec!["%="],
         SyntaxKind::TerminalDot => vec!["."],
         SyntaxKind::TerminalDotDot => vec![".."],
+        SyntaxKind::TerminalDotDotEq => vec!["..="],
         SyntaxKind::TerminalEq => vec!["="],
         SyntaxKind::TerminalEqEq => vec!["=="],
         SyntaxKind::TerminalGE => vec![">="],
@@ -162,6 +163,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalComma,
         SyntaxKind::TerminalDot,
         SyntaxKind::TerminalDotDot,
+        SyntaxKind::TerminalDotDotEq,
         SyntaxKind::TerminalEq,
         SyntaxKind::TerminalSemicolon,
         SyntaxKind::TerminalQuestionMark,
@@ -218,7 +220,7 @@ fn need_separator(
         || (text0 == "." && text1.starts_with('.'))
         || (text0 == "-" && (text1.starts_with('>') || text1.starts_with('=')))
         || ((text0 == "+" || text0 == "*" || text0 == "/" || text0 == "%")
-            && text1.starts_with('='))
+            || (text0 == "..") && text1.starts_with('='))
         || (kind0 == SyntaxKind::TerminalLiteralNumber && kind0 == kind1)
     {
         return true;
@@ -295,7 +297,6 @@ fn test_lex_double_token() {
             for separator in separators {
                 let text = format!("{text0}{separator}{text1}");
                 let mut lexer = Lexer::from_text(db, text.as_str());
-
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
                 assert_eq!(

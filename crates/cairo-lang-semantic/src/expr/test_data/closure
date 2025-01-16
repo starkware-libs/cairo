@@ -79,7 +79,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _x: i32 =  || {
+    let _x: i32 = || {
         let d: u32 = 3;
         d
     };
@@ -91,10 +91,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
- --> lib.cairo:2:20-5:5
-      let _x: i32 =  || {
- ____________________^
+error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:19: 2:21}".
+ --> lib.cairo:2:19-5:5
+      let _x: i32 = || {
+ ___________________^
 | ...
 |     };
 |_____^
@@ -113,23 +113,23 @@ fn foo() {}
 foo
 
 //! > module_code
-const _x: i32 =  || {
+const _x: i32 = || {
     let d: u32 = 3;
     d
 };
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:1:18-4:1
-  const _x: i32 =  || {
- __________________^
+ --> lib.cairo:1:17-4:1
+  const _x: i32 = || {
+ _________________^
 | ...
 | };
 |_^
 
-error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
+error: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer::i32`.
  --> lib.cairo:1:1-4:2
-  const _x: i32 =  || {
+  const _x: i32 = || {
  _^
 | ...
 | };
@@ -144,7 +144,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    bar::<{  || -> u32 {
+    bar::<{ || -> u32 {
         2
     } }>();
 }
@@ -157,16 +157,16 @@ fn bar<const N: u32>() {}
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:3:14-5:5
-      bar::<{  || -> u32 {
- ______________^
+ --> lib.cairo:3:13-5:5
+      bar::<{ || -> u32 {
+ _____________^
 |         2
 |     } }>();
 |_____^
 
-error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
+error: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `core::integer::u32`.
  --> lib.cairo:3:11-5:7
-      bar::<{  || -> u32 {
+      bar::<{ || -> u32 {
  ___________^
 |         2
 |     } }>();
@@ -569,7 +569,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
     loop {
-        let c =  || {
+        let c = || {
             break;
         };
         c();
@@ -597,7 +597,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
     loop {
-        let c =  || {
+        let c = || {
             continue;
         };
         c();
@@ -651,7 +651,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    bar( || {});
+    bar(|| {});
 }
 
 //! > function_name
@@ -671,7 +671,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _y =  || 2;
+    let _y = || 2;
     let x: u32 = 5;
     x()
 }
@@ -697,7 +697,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> u32 {
-    let _y =  || 2;
+    let _y = || 2;
     let x: u32 = 5;
     x()
 }
@@ -718,3 +718,53 @@ error: Trait `core::ops::function::FnOnce` should not be re-implemented.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Mutating non mutable closure param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cannot assign to an immutable variable.
+ --> lib.cairo:3:9
+        a = a + 2
+        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Closures with ref arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |ref a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Closure parameters cannot be references
+ --> lib.cairo:2:14
+    let _ = |ref a| {
+             ^^^^^

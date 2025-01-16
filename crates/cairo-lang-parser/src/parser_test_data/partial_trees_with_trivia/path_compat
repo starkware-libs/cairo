@@ -4,7 +4,7 @@
 test_partial_parser_tree_with_trivia(expect_diagnostics: false)
 
 //! > cairo_code
-fn foo(a: Option::<felt252>) {}
+fn foo(a: Option<felt252>) {}
 
 //! > top_level_kind
 FunctionSignature
@@ -38,10 +38,7 @@ FunctionSignature
     │                   │   ├── leading_trivia (kind: Trivia) []
     │                   │   ├── token (kind: TokenIdentifier): 'Option'
     │                   │   └── trailing_trivia (kind: Trivia) []
-    │                   ├── separator (kind: TerminalColonColon)
-    │                   │   ├── leading_trivia (kind: Trivia) []
-    │                   │   ├── token (kind: TokenColonColon): '::'
-    │                   │   └── trailing_trivia (kind: Trivia) []
+    │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
     │                   └── generic_args (kind: GenericArgs)
     │                       ├── langle (kind: TerminalLT)
     │                       │   ├── leading_trivia (kind: Trivia) []

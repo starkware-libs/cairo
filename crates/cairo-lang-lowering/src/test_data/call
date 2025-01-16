@@ -45,7 +45,7 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<felt252> {
+fn foo() -> Option<felt252> {
     let x = Option::None;
     let _ = x.is_some();
     x

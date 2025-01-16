@@ -23,7 +23,7 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::generic_params_to_args;
+use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -289,8 +289,8 @@ impl FunctionId {
         format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
     }
 
-    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
-        self.get_concrete(db).full_name(db)
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        self.get_concrete(db).full_path(db)
     }
 
     /// Returns true if the function does not depend on any generics.
@@ -594,7 +594,7 @@ impl ConcreteFunctionWithBody {
         self.function_with_body_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        self.generic_function.full_path(db)
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 
@@ -604,18 +604,8 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{:?}", self.generic_function.name(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        write!(f, "{}", self.generic_function.full_path(db))?;
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
@@ -703,20 +693,8 @@ impl ConcreteFunction {
                 .intern(db),
         ))
     }
-    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
-        let maybe_generic_part = if !self.generic_args.is_empty() {
-            let mut generics = String::new();
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    generics.push_str(", ");
-                }
-                generics.push_str(&arg.format(db));
-            }
-            format!("::<{generics}>")
-        } else {
-            "".to_string()
-        };
-        format!("{}{maybe_generic_part}", self.generic_function.format(db.upcast()))
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
@@ -726,17 +704,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.generic_function.format(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
@@ -749,6 +717,8 @@ pub struct Signature {
     pub implicits: Vec<semantic::TypeId>,
     #[dont_rewrite]
     pub panicable: bool,
+    #[dont_rewrite]
+    pub is_const: bool,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::FunctionSignaturePtr,
@@ -759,11 +729,12 @@ impl Signature {
         diagnostics: &mut SemanticDiagnostics,
         db: &dyn SemanticGroup,
         resolver: &mut Resolver<'_>,
-        signature_syntax: &ast::FunctionSignature,
+        declaration_syntax: &ast::FunctionDeclaration,
         function_title_id: FunctionTitleId,
         environment: &mut Environment,
     ) -> Self {
         let syntax_db = db.upcast();
+        let signature_syntax = declaration_syntax.signature(syntax_db);
         let params = function_signature_params(
             diagnostics,
             db,
@@ -773,15 +744,19 @@ impl Signature {
             environment,
         );
         let return_type =
-            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
+            function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
         let implicits =
-            function_signature_implicit_parameters(diagnostics, db, resolver, signature_syntax);
+            function_signature_implicit_parameters(diagnostics, db, resolver, &signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db.upcast()) {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
         let stable_ptr = signature_syntax.stable_ptr();
-        semantic::Signature { params, return_type, implicits, panicable, stable_ptr }
+        let is_const = matches!(
+            declaration_syntax.optional_const(syntax_db),
+            ast::OptionTerminalConst::TerminalConst(_)
+        );
+        semantic::Signature { params, return_type, implicits, panicable, stable_ptr, is_const }
     }
 }
 

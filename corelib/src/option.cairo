@@ -240,7 +240,7 @@ pub trait OptionTrait<T> {
     /// let value = option.expect('no value');
     /// assert!(value == 123);
     /// ```
-    fn expect(self: Option<T>, err: felt252) -> T;
+    const fn expect(self: Option<T>, err: felt252) -> T;
 
     /// Returns the contained `Some` value, consuming the `self` value.
     ///
@@ -255,7 +255,7 @@ pub trait OptionTrait<T> {
     /// let value = option.unwrap();
     /// assert!(value == 123);
     /// ```
-    fn unwrap(self: Option<T>) -> T;
+    const fn unwrap(self: Option<T>) -> T;
 
     /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
     /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
@@ -477,7 +477,7 @@ pub trait OptionTrait<T> {
     /// let option = Option::None;
     /// assert!(option.unwrap_or(456) == 456);
     /// ```
-    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
+    const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
 
     /// Returns the contained `Some` value if `self` is `Option::Some(x)`. Otherwise, returns
     /// `Default::<T>::default()`.
@@ -513,7 +513,7 @@ pub trait OptionTrait<T> {
     /////////////////////////////////////////////////////////////////////////
 
     /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
-    /// or returns `None` (if `None`).
+    /// or returns `Option::None` (if `None`).
     ///
     /// # Examples
     ///
@@ -526,7 +526,7 @@ pub trait OptionTrait<T> {
     /// let x: Option<ByteArray> = Option::None;
     /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
     /// ```
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U>;
 
@@ -578,11 +578,28 @@ pub trait OptionTrait<T> {
     >(
         self: Option<T>, default: D, f: F,
     ) -> U;
+
+    /// Takes the value out of the option, leaving a [`Option::None`] in its place.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut x = Option::Some(2);
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::Some(2));
+    ///
+    /// let mut x: Option<u32> = Option::None;
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::None);
+    /// ```
+    fn take(ref self: Option<T>) -> Option<T>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
-    fn expect(self: Option<T>, err: felt252) -> T {
+    const fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => crate::panic_with_felt252(err),
@@ -590,7 +607,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline(always)]
-    fn unwrap(self: Option<T>) -> T {
+    const fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
 
@@ -694,7 +711,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
+    const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => default,
@@ -722,7 +739,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U> {
         match self {
@@ -759,6 +776,12 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
             Option::None => default(),
         }
     }
+
+    fn take(ref self: Option<T>) -> Option<T> {
+        let value = self;
+        self = Option::None;
+        value
+    }
 }
 
 
@@ -786,9 +809,8 @@ impl OptionIterator<T> of crate::iter::Iterator<OptionIter<T>> {
 
 impl OptionIntoIterator<T> of crate::iter::IntoIterator<Option<T>> {
     type IntoIter = OptionIter<T>;
-
     #[inline]
-    fn into_iter(self: Option<T>) -> OptionIter<T> {
+    fn into_iter(self: Option<T>) -> Self::IntoIter {
         OptionIter { inner: self }
     }
 }

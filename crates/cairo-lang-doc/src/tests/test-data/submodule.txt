@@ -52,7 +52,7 @@ mod inner_sub_module {
 //! > Item signature #1
 
 //! > Item documentation #1
-This is a testing crate file. It's for the tests purposes only. 
+This is a testing crate file. It's for the tests purposes only.
 ```cairo
   let a = 5;
 ```
@@ -68,7 +68,7 @@ Content("This is also testing crate. After the code example. We don't take respo
 //! > Item signature #2
 
 //! > Item documentation #2
-This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only! This one is just a prefix comment for a module. 
+This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only! This one is just a prefix comment for a module.
 ```rust
   let a = String::from("This also works fine");
 ```
@@ -106,7 +106,7 @@ Content("Hello function inside the inner module.")
 fn main()
 
 //! > Item documentation #5
-Main function. Uses [cairo_submodule_code::inner_sub_module]. Empty code example. 
+Main function. Uses [cairo_submodule_code::inner_sub_module]. Empty code example.
 ```rust
 ```
 

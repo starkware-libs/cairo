@@ -9,11 +9,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -696,6 +696,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as const."
+                )
+            }
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
@@ -730,6 +738,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::FailedConstantCalculation => {
+                "Failed to calculate constant.".into()
+            }
+            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                "Constant calculation depth exceeded.".into()
+            }
+            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -780,20 +795,40 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
-                if inference_errors.is_empty() {
+            SemanticDiagnosticKind::CannotCallMethod {
+                ty,
+                method_name,
+                inference_errors,
+                relevant_traits,
+            } => {
+                if !inference_errors.is_empty() {
+                    return format!(
+                        "Method `{}` could not be called on type `{}`.\n{}",
+                        method_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    );
+                }
+                if !relevant_traits.is_empty() {
+                    let suggestions = relevant_traits
+                        .iter()
+                        .map(|trait_path| format!("`{trait_path}`"))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    format!(
+                        "Method `{}` not found on type `{}`. Consider importing one of the \
+                         following traits: {}.",
+                        method_name,
+                        ty.format(db),
+                        suggestions
+                    )
+                } else {
                     format!(
                         "Method `{}` not found on type `{}`. Did you import the correct trait and \
                          impl?",
                         method_name,
                         ty.format(db)
-                    )
-                } else {
-                    format!(
-                        "Method `{}` could not be called on type `{}`.\n{}",
-                        method_name,
-                        ty.format(db),
-                        inference_errors.format(db)
                     )
                 }
             }
@@ -962,6 +997,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()
             }
+            SemanticDiagnosticKind::RefClosureParam => {
+                "Closure parameters cannot be references".into()
+            }
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
@@ -1013,6 +1051,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
+        }
+    }
+
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+        if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
+            notes
+        } else {
+            &[]
         }
     }
 
@@ -1189,6 +1235,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         method_name: SmolStr,
         inference_errors: TraitInferenceErrors,
+        relevant_traits: Vec<String>,
     },
     NoSuchStructMember {
         struct_id: StructId,
@@ -1283,6 +1330,10 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
+    PassConstAsNonConst {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     PanicableFromNonPanicable,
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
@@ -1297,6 +1348,9 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
+    FailedConstantCalculation,
+    ConstantCalculationDepthExceeded,
+    InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
@@ -1371,6 +1425,7 @@ pub enum SemanticDiagnosticKind {
         shadowed_function_name: SmolStr,
     },
     RefClosureArgument,
+    RefClosureParam,
     MutableCapturedVariable,
     NonTraitTypeConstrained {
         identifier: SmolStr,
@@ -1489,7 +1544,7 @@ pub struct TraitInferenceErrors {
 }
 impl TraitInferenceErrors {
     /// Is the error list empty.
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.traits_and_errors.is_empty()
     }
     /// Format the list of errors.

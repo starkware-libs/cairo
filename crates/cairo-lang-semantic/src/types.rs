@@ -196,7 +196,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
                 write!(f, "{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
-            TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_name(db)),
+            TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
                 write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
@@ -655,6 +655,7 @@ pub fn extract_fixed_size_array_size(
                 &size,
                 size_expr_syntax.stable_ptr().untyped(),
                 get_usize_ty(db),
+                false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))

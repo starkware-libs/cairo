@@ -153,10 +153,9 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
 
     #[inline]
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
-        let (entry, prev_value) = felt252_dict_entry_get(self, key);
-        let return_value = prev_value;
-        self = felt252_dict_entry_finalize(entry, prev_value);
-        return_value
+        let (entry, value) = felt252_dict_entry_get(self, key);
+        self = felt252_dict_entry_finalize(entry, value);
+        value
     }
 
     #[inline(never)]
@@ -236,7 +235,7 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
     /// related to is squashed before going out of scope.
     /// `destruct` is automatically called when a dictionary entry goes out of scope.
     #[inline]
-    fn destruct(self: Felt252DictEntry::<T>) nopanic {
+    fn destruct(self: Felt252DictEntry<T>) nopanic {
         felt252_dict_entry_finalize(self, Felt252DictValue::zero_default());
     }
 }

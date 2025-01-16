@@ -13,7 +13,7 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt252>,
+    a: Array<felt252>,
     b: felt252,
 }
 fn bar(a: @Array::<felt252>, b: @felt252) {}

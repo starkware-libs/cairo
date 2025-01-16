@@ -256,6 +256,63 @@ pub fn option_none_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVarian
     )
 }
 
+/// Generates a ConcreteVariant instance for `Result::Ok`.
+pub fn result_ok_variant(db: &dyn SemanticGroup, ok_ty: TypeId, err_ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Ok",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `Result::Err`.
+pub fn result_err_variant(
+    db: &dyn SemanticGroup,
+    ok_ty: TypeId,
+    err_ty: TypeId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Err",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::InRange`.
+pub fn signed_int_result_in_range_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "InRange",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Underflow`.
+pub fn signed_int_result_underflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Underflow",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Overflow`.
+pub fn signed_int_result_overflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Overflow",
+    )
+}
+
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
 /// semantic expression.
 pub fn false_literal_expr(
@@ -466,6 +523,9 @@ pub fn core_binary_operator(
         BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
         BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
         BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
+        BinaryOperator::DotDotEq(_) => {
+            ("RangeInclusiveOp", "range_inclusive", false, CoreTraitContext::Ops)
+        }
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((
@@ -844,7 +904,7 @@ impl LiteralError {
 pub fn validate_literal(
     db: &dyn SemanticGroup,
     ty: TypeId,
-    value: BigInt,
+    value: &BigInt,
 ) -> Result<(), LiteralError> {
     if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
         return if value.is_zero() {
@@ -854,7 +914,7 @@ pub fn validate_literal(
         };
     }
     let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
-        value < min || value > max
+        *value < min || *value > max
     } else if ty == db.core_felt252_ty() {
         value.abs()
             > BigInt::from_str_radix(

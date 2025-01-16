@@ -75,9 +75,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -271,9 +271,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -483,9 +483,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -753,9 +753,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -962,9 +962,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1167,9 +1167,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1397,9 +1397,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1621,9 +1621,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1853,7 +1853,7 @@ mod test_contract {
     // Should generate diagnostic as path resolving is not supported.
     #[external(v0)]
     #[raw_output]
-    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array<felt252> {
         array::array_new()
     }
 
@@ -1891,7 +1891,7 @@ mod test_contract {
     // Should generate diagnostic as path resolving is not supported.
     #[external(v0)]
     #[raw_output]
-    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array<felt252> {
         array::array_new()
     }
 
@@ -1948,9 +1948,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -1978,7 +1978,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1fe1d7e90cfe8c4fc07093ee454571079f241cebea881fdbe6d42ab30f16735;
+pub const TEST_CLASS_HASH: felt252 = 0xe6da8c1c7f4f4eacbcd1e253492a549cdbe26d925524eeed0c44aaaf75d668;
 
 
 pub mod __external {
@@ -2083,8 +2083,8 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:23:53
-    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
-                                                    ^^^^^^^^^^^^^^^^^^^^^^
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array<felt252> {
+                                                    ^^^^^^^^^^^^^^^^^^^^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:31:53
@@ -2175,9 +2175,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -2439,9 +2439,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -3445,9 +3445,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -3760,9 +3760,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -3948,9 +3948,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -7981,9 +7981,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -8228,9 +8228,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -8495,9 +8495,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -9456,9 +9456,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -9603,9 +9603,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -9750,9 +9750,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -10713,9 +10713,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -10860,9 +10860,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -11007,9 +11007,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -11829,9 +11829,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -12662,9 +12662,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -12803,9 +12803,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -13742,9 +13742,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -14569,9 +14569,9 @@ pub struct ComponentState<TContractState> {
 
 impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
  
-impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+impl ComponentStateDeref<TContractState> of core::ops::Deref<@ComponentState<TContractState>> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -14764,9 +14764,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

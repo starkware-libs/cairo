@@ -115,8 +115,9 @@ pub fn compile_executable_in_prepared_db(
 ///
 /// If the executable is not wrapping a function, returns the full path of the executable.
 fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
-    let wrapper_name = wrapper.name(db);
-    let wrapper_full_path = wrapper.base_semantic_function(db).full_path(db.upcast());
+    let semantic = wrapper.base_semantic_function(db);
+    let wrapper_name = semantic.name(db);
+    let wrapper_full_path = semantic.full_path(db.upcast());
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };

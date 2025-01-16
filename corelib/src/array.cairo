@@ -811,8 +811,15 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
-    fn into_iter(self: Span<T>) -> SpanIter<T> {
+    fn into_iter(self: Span<T>) -> Self::IntoIter {
         SpanIter { span: self }
+    }
+}
+
+impl SnapshotSpanIntoIterator<T> of crate::iter::IntoIterator<@Span<T>> {
+    type IntoIter = crate::array::SpanIter<T>;
+    fn into_iter(self: @Span<T>) -> Self::IntoIter {
+        (*self).into_iter()
     }
 }
 
@@ -840,8 +847,25 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    fn into_iter(self: Array<T>) -> ArrayIter<T> {
+    fn into_iter(self: Array<T>) -> Self::IntoIter {
         ArrayIter { array: self }
+    }
+}
+
+impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
+    type IntoIter = SpanIter<T>;
+    fn into_iter(self: @Array<T>) -> Self::IntoIter {
+        self.span().into_iter()
+    }
+}
+
+impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
+    fn from_iter<I, +Iterator<I>[Item: T], +Drop<I>>(mut iter: I) -> Array<T> {
+        let mut arr = array![];
+        for elem in iter {
+            arr.append(elem);
+        };
+        arr
     }
 }
 

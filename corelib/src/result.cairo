@@ -201,6 +201,16 @@
 //! [`Ok`]: Result::Ok
 //! [`Err`]: Result::Err
 //!
+//! ## Iterating over `Result`
+//!
+//! A [`Result`] can be iterated over. This can be helpful if you need an
+//! iterator that is conditionally empty. The iterator will either produce
+//! a single value (when the [`Result`] is [`Ok`]), or produce no values
+//! (when the [`Result`] is [`Err`]). For example, [`into_iter`]
+//! contains [`Some(v)`] if the [`Result`] is [`Ok(v)`], and [`None`] if the
+//! [`Result`] is [`Err`].
+//!
+//! [`into_iter`]: IntoIterator::into_iter
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
@@ -232,7 +242,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Ok(123);
     /// assert!(result.expect('no value') == 123);
     /// ```
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+    const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => crate::panic_with_felt252(err),
@@ -251,7 +261,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Ok(123);
     /// assert!(result.unwrap() == 123);
     /// ```
-    fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
+    const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
 
@@ -266,7 +276,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.unwrap_or(456) == 456);
     /// ```
-    fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
+    const fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => default,
@@ -443,7 +453,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.expect_err('result is ok') == 'no value');
     /// ```
-    fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
+    const fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
             Result::Ok(_) => crate::panic_with_felt252(err),
             Result::Err(x) => x,
@@ -462,7 +472,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.unwrap_err() == 'no value');
     /// ```
-    fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
+    const fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
 
@@ -684,5 +694,32 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Ok(x) => Result::Ok(x),
             Result::Err(e) => Result::Err(op(e)),
         }
+    }
+}
+
+
+impl ResultIntoIterator<
+    T, E, +Destruct<T>, +Destruct<E>,
+> of crate::iter::IntoIterator<Result<T, E>> {
+    type IntoIter = crate::option::OptionIter<T>;
+
+    /// Returns a consuming iterator over the possibly contained value.
+    ///
+    /// The iterator yields one value if the result is [`Result::Ok`], otherwise none.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Ok(5);
+    /// let mut x_iter = x.into_iter();
+    /// assert!(x_iter.next() == Option::Some(5));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("nothing!");
+    /// let mut x_iter = x.into_iter();
+    /// assert!(x_iter.next() == Option::None);
+    /// ```
+    #[inline]
+    fn into_iter(self: Result<T, E>) -> crate::option::OptionIter<T> {
+        self.ok().into_iter()
     }
 }

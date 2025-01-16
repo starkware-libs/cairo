@@ -67,12 +67,13 @@ pub enum AnnotationError {
     ApTrackingAlreadyEnabled { statement_idx: StatementIdx },
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
-         {var_id}."
+         {var_id} introduced at {} .", {introduction_point}
     )]
     ApChangeError {
         var_id: VarId,
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
+        introduction_point: IntroductionPoint,
         error: ApChangeError,
     },
     #[error("#{source_statement_idx} -> #{destination_statement_idx}: Ap tracking error")]
@@ -315,6 +316,7 @@ impl ProgramAnnotations {
                         var_id: var_id.clone(),
                         source_statement_idx,
                         destination_statement_idx,
+                        introduction_point: ref_value.introduction_point.clone(),
                         error,
                     })?;
         }

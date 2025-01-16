@@ -13,7 +13,7 @@ use num_bigint::BigUint;
 use super::write::FELT252_BYTES;
 
 /// Try to generate a simple panic handlic code.
-/// Return true if successful and updates the buiilder if successful.
+/// Return true if successful and updates the builder if successful.
 fn try_handle_simple_panic(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,

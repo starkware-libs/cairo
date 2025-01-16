@@ -462,7 +462,7 @@ return();
 foo@0([1]: felt252) -> ();
 
 //! > error
-#2->#3: Got 'Unknown ap change' error while moving [1].
+#2->#3: Got 'Unknown ap change' error while moving [1] introduced at #0->#1[0] .
 
 //! > ==========================================================================
 
@@ -1079,3 +1079,33 @@ foo@0() -> ();
 
 //! > error
 Code size limit exceeded.
+
+//! > ==========================================================================
+
+//! > ContractAddress out of range.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type ContractAddress = ContractAddress;
+type InRange = Const<ContractAddress, 3618502788666131106986593281521497120414687020801267626233049500247285301247>;
+type OutOfRange = Const<ContractAddress, 3618502788666131106986593281521497120414687020801267626233049500247285301248>;
+
+//! > error
+Error from program registry: Error during type specialization of `OutOfRange`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > ClassHash out of range.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type ClassHash = ClassHash;
+type InRange = Const<ClassHash, 3618502788666131106986593281521497120414687020801267626233049500247285301247>;
+type OutOfRange = Const<ClassHash, 3618502788666131106986593281521497120414687020801267626233049500247285301248>;
+
+//! > error
+Error from program registry: Error during type specialization of `OutOfRange`: Could not specialize type

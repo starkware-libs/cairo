@@ -340,8 +340,8 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
-      fn expect(self: Option<T>, err: felt252) -> T {
- ___________________________________________________^
+      const fn expect(self: Option<T>, err: felt252) -> T {
+ _________________________________________________________^
 | ...
 |     }
 |_____^
@@ -356,8 +356,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
-      fn expect(self: Option<T>, err: felt252) -> T {
- ___________________________________________________^
+      const fn expect(self: Option<T>, err: felt252) -> T {
+ _________________________________________________________^
 | ...
 |     }
 |_____^
@@ -372,8 +372,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
-      fn expect(self: Option<T>, err: felt252) -> T {
- ___________________________________________________^
+      const fn expect(self: Option<T>, err: felt252) -> T {
+ _________________________________________________________^
 | ...
 |     }
 |_____^
@@ -388,8 +388,8 @@ Inlined at:
 In function: lib.cairo::foo
 return([17], [21])
 Originating location:
-      fn expect(self: Option<T>, err: felt252) -> T {
- ___________________________________________________^
+      const fn expect(self: Option<T>, err: felt252) -> T {
+ _________________________________________________________^
 | ...
 |     }
 |_____^
@@ -684,8 +684,8 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-      fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _________________________________________________________________________^
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _______________________________________________________________________________^
 | ...
 |     }
 |_____^
@@ -700,8 +700,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-      fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _________________________________________________________________________^
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _______________________________________________________________________________^
 | ...
 |     }
 |_____^
@@ -716,8 +716,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-      fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _________________________________________________________________________^
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _______________________________________________________________________________^
 | ...
 |     }
 |_____^
@@ -732,8 +732,8 @@ Inlined at:
 In function: lib.cairo::foo
 return([28], [33])
 Originating location:
-      fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _________________________________________________________________________^
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _______________________________________________________________________________^
 | ...
 |     }
 |_____^
