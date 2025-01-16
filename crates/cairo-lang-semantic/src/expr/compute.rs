@@ -66,7 +66,7 @@ use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
-use crate::items::functions::{concrete_function_closure_params, function_signature_params};
+use crate::items::functions::{concrete_function_closure_params, {concrete_function_closure_params, function_signature_params}};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
@@ -84,6 +84,8 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
+    ConcreteEnumId, ConcreteFunction, GenericArgumentId, GenericParam, LocalItem, Member,
+    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
     ConcreteEnumId, ConcreteFunction, GenericArgumentId, GenericParam, LocalItem, Member,
     Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
@@ -424,6 +426,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
+        ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
     }
 }
@@ -883,6 +886,7 @@ fn compute_expr_function_call_semantic(
                 for arg_syntax in args_iter {
                     let stable_ptr = arg_syntax.stable_ptr();
                     let arg = compute_named_argument_clause(ctx, arg_syntax, None);
+                    let arg = compute_named_argument_clause(ctx, arg_syntax, None);
                     if arg.2 != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
                     }
@@ -930,6 +934,7 @@ fn compute_expr_function_call_semantic(
             let named_args: Vec<_> = args_syntax
                 .elements(syntax_db)
                 .into_iter()
+                .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
                 .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
                 .collect();
             if named_args.len() != 1 {
@@ -982,9 +987,17 @@ fn compute_expr_function_call_semantic(
             let ConcreteFunction { .. } = function.lookup_intern(db).function;
             let closure_params = concrete_function_closure_params(db, function)?;
             for ty in function_parameter_types(ctx, function)? {
+            let ConcreteFunction { .. } = function.lookup_intern(db).function;
+            let closure_params = concrete_function_closure_params(db, function)?;
+            for ty in function_parameter_types(ctx, function)? {
                 let Some(arg_syntax) = args_iter.next() else {
                     continue;
                 };
+                named_args.push(compute_named_argument_clause(
+                    ctx,
+                    arg_syntax,
+                    closure_params.get(&ty).cloned(),
+                ));
                 named_args.push(compute_named_argument_clause(
                     ctx,
                     arg_syntax,
@@ -994,6 +1007,7 @@ fn compute_expr_function_call_semantic(
 
             // Maybe coupon
             if let Some(arg_syntax) = args_iter.next() {
+                named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
                 named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
             }
 
@@ -1013,6 +1027,7 @@ pub fn compute_named_argument_clause(
     ctx: &mut ComputationContext<'_>,
     arg_syntax: ast::Arg,
     closure_param_types: Option<TypeId>,
+    closure_param_types: Option<TypeId>,
 ) -> NamedArg {
     let syntax_db = ctx.db.upcast();
 
@@ -1025,6 +1040,38 @@ pub fn compute_named_argument_clause(
     let arg_clause = arg_syntax.arg_clause(syntax_db);
     let (expr, arg_name_identifier) = match arg_clause {
         ast::ArgClause::Unnamed(arg_unnamed) => {
+            let arg_expr = arg_unnamed.value(syntax_db);
+            if let ast::Expr::Closure(expr_closure) = arg_expr {
+                let expr = compute_expr_closure_semantic(ctx, &expr_closure, closure_param_types);
+                let expr = wrap_maybe_with_missing(
+                    ctx,
+                    expr,
+                    ast::ExprPtr::from(expr_closure.stable_ptr()),
+                );
+                let id = ctx.arenas.exprs.alloc(expr.clone());
+                (ExprAndId { expr, id }, None)
+            } else {
+                (compute_expr_semantic(ctx, &arg_unnamed.value(syntax_db)), None)
+            }
+        }
+        ast::ArgClause::Named(arg_named) => {
+            let arg_expr = arg_named.value(syntax_db);
+            if let ast::Expr::Closure(expr_closure) = arg_expr {
+                let expr = compute_expr_closure_semantic(ctx, &expr_closure, closure_param_types);
+                let expr = wrap_maybe_with_missing(
+                    ctx,
+                    expr,
+                    ast::ExprPtr::from(expr_closure.stable_ptr()),
+                );
+                let id = ctx.arenas.exprs.alloc(expr.clone());
+                (ExprAndId { expr, id }, None)
+            } else {
+                (
+                    compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
+                    Some(arg_named.name(syntax_db)),
+                )
+            }
+        }
             let arg_expr = arg_unnamed.value(syntax_db);
             if let ast::Expr::Closure(expr_closure) = arg_expr {
                 let expr = compute_expr_closure_semantic(ctx, &expr_closure, closure_param_types);
@@ -1678,6 +1725,7 @@ fn compute_loop_body_semantic(
 fn compute_expr_closure_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprClosure,
+    param_types: Option<TypeId>,
     param_types: Option<TypeId>,
 ) -> Maybe<Expr> {
     ctx.are_closures_in_context = true;
@@ -2879,9 +2927,17 @@ fn method_call_expr(
     let ConcreteFunction { .. } = function_id.lookup_intern(ctx.db).function;
     let closure_params = concrete_function_closure_params(ctx.db, function_id)?;
     for ty in function_parameter_types(ctx, function_id)?.skip(1) {
+    let ConcreteFunction { .. } = function_id.lookup_intern(ctx.db).function;
+    let closure_params = concrete_function_closure_params(ctx.db, function_id)?;
+    for ty in function_parameter_types(ctx, function_id)?.skip(1) {
         let Some(arg_syntax) = args_iter.next() else {
             break;
         };
+        named_args.push(compute_named_argument_clause(
+            ctx,
+            arg_syntax,
+            closure_params.get(&ty).cloned(),
+        ));
         named_args.push(compute_named_argument_clause(
             ctx,
             arg_syntax,
@@ -2891,6 +2947,7 @@ fn method_call_expr(
 
     // Maybe coupon
     if let Some(arg_syntax) = args_iter.next() {
+        named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
         named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
     }
 
