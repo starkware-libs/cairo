@@ -4,7 +4,8 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, VarId,
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId,
+    VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
@@ -921,10 +922,10 @@ impl ConstantEvaluateContext<'_> {
         let db = self.db;
         if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
             let expr_ty = self.rewriter().rewrite(expr.ty).ok()?;
-            if extern_fn == self.upcast_fn {
+            if self.upcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 return Some(ConstValue::Int(value.clone(), expr_ty));
-            } else if extern_fn == self.downcast_fn {
+            } else if self.downcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
                 else {
@@ -945,6 +946,11 @@ impl ConstantEvaluateContext<'_> {
                         success_ty.format(db)
                     ),
                 });
+            } else {
+                unreachable!(
+                    "Unexpected extern function in constant lowering: `{}`",
+                    extern_fn.full_path(db.upcast())
+                );
             }
         }
         let body_id = concrete_function.body(db).ok()??;
@@ -1240,9 +1246,9 @@ pub struct ConstCalcInfo {
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
     /// The integer `upcast` function.
-    upcast_fn: ExternFunctionId,
+    upcast_fns: UnorderedHashSet<ExternFunctionId>,
     /// The integer `downcast` function.
-    downcast_fn: ExternFunctionId,
+    downcast_fns: UnorderedHashSet<ExternFunctionId>,
 }
 
 impl ConstCalcInfo {
@@ -1306,8 +1312,37 @@ impl ConstCalcInfo {
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
-            upcast_fn: integer.extern_function_id("upcast"),
-            downcast_fn: integer.extern_function_id("downcast"),
+            upcast_fns: [
+                "upcast",
+                "u8_to_felt252",
+                "u16_to_felt252",
+                "u32_to_felt252",
+                "u64_to_felt252",
+                "u128_to_felt252",
+                "i8_to_felt252",
+                "i16_to_felt252",
+                "i32_to_felt252",
+                "i64_to_felt252",
+                "i128_to_felt252",
+            ]
+            .into_iter()
+            .map(|n| integer.extern_function_id(n))
+            .collect(),
+            downcast_fns: [
+                "downcast",
+                "u8_try_from_felt252",
+                "u16_try_from_felt252",
+                "u32_try_from_felt252",
+                "u64_try_from_felt252",
+                "i8_try_from_felt252",
+                "i16_try_from_felt252",
+                "i32_try_from_felt252",
+                "i64_try_from_felt252",
+                "i128_try_from_felt252",
+            ]
+            .into_iter()
+            .map(|n| integer.extern_function_id(n))
+            .collect(),
         }
     }
 }
