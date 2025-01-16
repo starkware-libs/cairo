@@ -47,9 +47,7 @@ pub impl PeekableTraitImpl<
     /// Basic usage:
     ///
     /// ```
-    /// let xs = array![1, 2, 3];
-    ///
-    /// let mut iter = xs.into_iter().peekable();
+    /// let mut iter = (1..4_u8).into_iter().peekable();
     ///
     /// // peek() lets us see one step into the future
     /// assert_eq!(iter.peek(), Some(1));
