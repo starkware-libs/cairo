@@ -2,7 +2,7 @@
 use crate::integer::{u512, u512_safe_div_rem_by_u256};
 #[feature("deprecated-bounded-int-trait")]
 use crate::integer;
-use crate::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
+use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
 
 #[test]
@@ -2237,4 +2237,98 @@ fn test_downcast_in_const() {
     const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
     assert_eq!(IN_RANGE_AS_U8, Option::Some(10));
     assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+}
+
+#[test]
+fn test_const_into_felt252_casts() {
+    const U8: u8 = 0;
+    const U8_AS_FELT: felt252 = U8.into();
+    assert_eq!(U8_AS_FELT, 0);
+
+    const U16: u16 = 0;
+    const U16_AS_FELT: felt252 = U16.into();
+    assert_eq!(U16_AS_FELT, 0);
+
+    const U32: u32 = 0;
+    const U32_AS_FELT: felt252 = U32.into();
+    assert_eq!(U32_AS_FELT, 0);
+
+    const U64: u64 = 0;
+    const U64_AS_FELT: felt252 = U64.into();
+    assert_eq!(U64_AS_FELT, 0);
+
+    const U128: u128 = 0;
+    const U128_AS_FELT: felt252 = U128.into();
+    assert_eq!(U128_AS_FELT, 0);
+
+    const I8: u8 = 0;
+    const I8_AS_FELT: felt252 = I8.into();
+    assert_eq!(I8_AS_FELT, 0);
+
+    const I16: i16 = 0;
+    const I16_AS_FELT: felt252 = I16.into();
+    assert_eq!(I16_AS_FELT, 0);
+
+    const I32: i32 = 0;
+    const I32_AS_FELT: felt252 = I32.into();
+    assert_eq!(I32_AS_FELT, 0);
+
+    const I64: i64 = 0;
+    const I64_AS_FELT: felt252 = I64.into();
+    assert_eq!(I64_AS_FELT, 0);
+
+    const I128: i128 = 0;
+    const I128_AS_FELT: felt252 = I128.into();
+    assert_eq!(I128_AS_FELT, 0);
+}
+
+#[test]
+fn test_const_from_felt252_casts() {
+    const IN_RANGE: felt252 = 0;
+    const OUT_OF_RANGE: felt252 = 2_felt252.pow(200);
+
+    const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U8, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+
+    const IN_RANGE_AS_U16: Option<u16> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U16: Option<u16> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U16, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U16, Option::None);
+
+    const IN_RANGE_AS_U32: Option<u32> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U32: Option<u32> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U32, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U32, Option::None);
+
+    const IN_RANGE_AS_U64: Option<u64> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U64: Option<u64> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U64, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U64, Option::None);
+
+    const IN_RANGE_AS_I8: Option<i8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I8: Option<i8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I8, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I8, Option::None);
+
+    const IN_RANGE_AS_I16: Option<i16> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I16: Option<i16> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I16, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I16, Option::None);
+
+    const IN_RANGE_AS_I32: Option<i32> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I32: Option<i32> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I32, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I32, Option::None);
+
+    const IN_RANGE_AS_I64: Option<i64> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I64: Option<i64> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I64, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I64, Option::None);
+
+    const IN_RANGE_AS_I128: Option<i128> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I128: Option<i128> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I128, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I128, Option::None);
 }

@@ -104,7 +104,7 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
     }
 }
 
-pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
+pub(crate) extern const fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
 #[deprecated(
     feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead",
@@ -306,10 +306,10 @@ pub extern type u8;
 
 impl NumericLiteralu8 of NumericLiteral<u8>;
 
-extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
+extern const fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
 #[panic_with('u8_from Overflow', u8_from_felt252)]
-extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
+extern const fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 
@@ -460,10 +460,10 @@ pub extern type u16;
 
 impl NumericLiteralu16 of NumericLiteral<u16>;
 
-extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
+extern const fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
 #[panic_with('u16_from Overflow', u16_from_felt252)]
-extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
+extern const fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 
@@ -620,10 +620,10 @@ pub extern type u32;
 
 impl NumericLiteralu32 of NumericLiteral<u32>;
 
-extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
+extern const fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
 #[panic_with('u32_from Overflow', u32_from_felt252)]
-extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
+extern const fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 
@@ -780,10 +780,10 @@ pub extern type u64;
 
 impl NumericLiteralu64 of NumericLiteral<u64>;
 
-extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
+extern const fn u64_to_felt252(a: u64) -> felt252 nopanic;
 
 #[panic_with('u64_from Overflow', u64_from_felt252)]
-extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
+extern const fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 
@@ -1229,7 +1229,7 @@ extern fn u512_safe_divmod_by_u256(
 ) implicits(RangeCheck) nopanic;
 
 impl U512TryIntoU256 of TryInto<u512, u256> {
-    fn try_into(self: u512) -> Option<u256> {
+    const fn try_into(self: u512) -> Option<u256> {
         if self.limb2 != 0 || self.limb3 != 0 {
             Option::None
         } else {
@@ -1281,49 +1281,49 @@ impl BoundedI128 = bounded_int_impls::ByBounded<i128>;
 
 /// Conversions.
 pub(crate) impl Felt252TryIntoU8 of TryInto<felt252, u8> {
-    fn try_into(self: felt252) -> Option<u8> {
+    const fn try_into(self: felt252) -> Option<u8> {
         u8_try_from_felt252(self)
     }
 }
 
 pub(crate) impl U8IntoFelt252 of Into<u8, felt252> {
-    fn into(self: u8) -> felt252 {
+    const fn into(self: u8) -> felt252 {
         u8_to_felt252(self)
     }
 }
 
 pub(crate) impl Felt252TryIntoU16 of TryInto<felt252, u16> {
-    fn try_into(self: felt252) -> Option<u16> {
+    const fn try_into(self: felt252) -> Option<u16> {
         u16_try_from_felt252(self)
     }
 }
 
 pub(crate) impl U16IntoFelt252 of Into<u16, felt252> {
-    fn into(self: u16) -> felt252 {
+    const fn into(self: u16) -> felt252 {
         u16_to_felt252(self)
     }
 }
 
 pub(crate) impl Felt252TryIntoU32 of TryInto<felt252, u32> {
-    fn try_into(self: felt252) -> Option<u32> {
+    const fn try_into(self: felt252) -> Option<u32> {
         u32_try_from_felt252(self)
     }
 }
 
 pub(crate) impl U32IntoFelt252 of Into<u32, felt252> {
-    fn into(self: u32) -> felt252 {
+    const fn into(self: u32) -> felt252 {
         u32_to_felt252(self)
     }
 }
 
 pub(crate) impl Felt252TryIntoU64 of TryInto<felt252, u64> {
-    fn try_into(self: felt252) -> Option<u64> {
+    const fn try_into(self: felt252) -> Option<u64> {
         u64_try_from_felt252(self)
     }
 }
 
 pub(crate) impl U64IntoFelt252 of Into<u64, felt252> {
-    fn into(self: u64) -> felt252 {
+    const fn into(self: u64) -> felt252 {
         u64_to_felt252(self)
     }
 }
@@ -1335,7 +1335,7 @@ pub(crate) impl Felt252TryIntoU128 of TryInto<felt252, u128> {
 }
 
 pub(crate) impl U128IntoFelt252 of Into<u128, felt252> {
-    fn into(self: u128) -> felt252 {
+    const fn into(self: u128) -> felt252 {
         u128_to_felt252(self)
     }
 }
@@ -1347,79 +1347,76 @@ pub(crate) impl Felt252IntoU256 of Into<felt252, u256> {
 }
 
 pub(crate) impl U256TryIntoFelt252 of TryInto<u256, felt252> {
-    fn try_into(self: u256) -> Option<felt252> {
-        let FELT252_PRIME_HIGH = 0x8000000000000110000000000000000_u128;
+    const fn try_into(self: u256) -> Option<felt252> {
+        let FELT252_PRIME_HIGH: u128 = 0x8000000000000110000000000000000;
         if self.high > FELT252_PRIME_HIGH {
-            return Option::None;
+            Option::None
+        } else if self.high == FELT252_PRIME_HIGH && self.low != 0 {
+            Option::None
+        } else {
+            Option::Some(
+                self.high.into() * 0x100000000000000000000000000000000_felt252 + self.low.into(),
+            )
         }
-        if self.high == FELT252_PRIME_HIGH {
-            // since FELT252_PRIME_LOW is 1.
-            if self.low != 0 {
-                return Option::None;
-            }
-        }
-        Option::Some(
-            self.high.into() * 0x100000000000000000000000000000000_felt252 + self.low.into(),
-        )
     }
 }
 
 impl Felt252TryIntoI8 of TryInto<felt252, i8> {
-    fn try_into(self: felt252) -> Option<i8> {
+    const fn try_into(self: felt252) -> Option<i8> {
         i8_try_from_felt252(self)
     }
 }
 
 pub(crate) impl I8IntoFelt252 of Into<i8, felt252> {
-    fn into(self: i8) -> felt252 {
+    const fn into(self: i8) -> felt252 {
         i8_to_felt252(self)
     }
 }
 
 impl Felt252TryIntoI16 of TryInto<felt252, i16> {
-    fn try_into(self: felt252) -> Option<i16> {
+    const fn try_into(self: felt252) -> Option<i16> {
         i16_try_from_felt252(self)
     }
 }
 
 pub(crate) impl I16IntoFelt252 of Into<i16, felt252> {
-    fn into(self: i16) -> felt252 {
+    const fn into(self: i16) -> felt252 {
         i16_to_felt252(self)
     }
 }
 
 impl Felt252TryIntoI32 of TryInto<felt252, i32> {
-    fn try_into(self: felt252) -> Option<i32> {
+    const fn try_into(self: felt252) -> Option<i32> {
         i32_try_from_felt252(self)
     }
 }
 
 pub(crate) impl I32IntoFelt252 of Into<i32, felt252> {
-    fn into(self: i32) -> felt252 {
+    const fn into(self: i32) -> felt252 {
         i32_to_felt252(self)
     }
 }
 
 impl Felt252TryIntoI64 of TryInto<felt252, i64> {
-    fn try_into(self: felt252) -> Option<i64> {
+    const fn try_into(self: felt252) -> Option<i64> {
         i64_try_from_felt252(self)
     }
 }
 
 pub(crate) impl I64IntoFelt252 of Into<i64, felt252> {
-    fn into(self: i64) -> felt252 {
+    const fn into(self: i64) -> felt252 {
         i64_to_felt252(self)
     }
 }
 
 impl Felt252TryIntoI128 of TryInto<felt252, i128> {
-    fn try_into(self: felt252) -> Option<i128> {
+    const fn try_into(self: felt252) -> Option<i128> {
         i128_try_from_felt252(self)
     }
 }
 
 pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
-    fn into(self: i128) -> felt252 {
+    const fn into(self: i128) -> felt252 {
         i128_to_felt252(self)
     }
 }
@@ -1619,14 +1616,14 @@ impl U8IntoU256 of Into<u8, u256> {
 }
 
 impl U256TryIntoU8 of TryInto<u256, u8> {
-    fn try_into(self: u256) -> Option<u8> {
+    const fn try_into(self: u256) -> Option<u8> {
         let u256 { low, high } = self;
 
         if high != 0 {
-            return Option::None;
+            Option::None
+        } else {
+            low.try_into()
         }
-
-        low.try_into()
     }
 }
 
@@ -1637,14 +1634,14 @@ impl U16IntoU256 of Into<u16, u256> {
 }
 
 impl U256TryIntoU16 of TryInto<u256, u16> {
-    fn try_into(self: u256) -> Option<u16> {
+    const fn try_into(self: u256) -> Option<u16> {
         let u256 { low, high } = self;
 
         if high != 0 {
-            return Option::None;
+            Option::None
+        } else {
+            low.try_into()
         }
-
-        low.try_into()
     }
 }
 
@@ -1655,14 +1652,14 @@ impl U32IntoU256 of Into<u32, u256> {
 }
 
 impl U256TryIntoU32 of TryInto<u256, u32> {
-    fn try_into(self: u256) -> Option<u32> {
+    const fn try_into(self: u256) -> Option<u32> {
         let u256 { low, high } = self;
 
         if high != 0 {
-            return Option::None;
+            Option::None
+        } else {
+            low.try_into()
         }
-
-        low.try_into()
     }
 }
 
@@ -1673,32 +1670,32 @@ impl U64IntoU256 of Into<u64, u256> {
 }
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
-    fn try_into(self: u256) -> Option<u64> {
+    const fn try_into(self: u256) -> Option<u64> {
         let u256 { low, high } = self;
 
         if high != 0 {
-            return Option::None;
+            Option::None
+        } else {
+            low.try_into()
         }
-
-        low.try_into()
     }
 }
 
 impl U128IntoU256 of Into<u128, u256> {
-    fn into(self: u128) -> u256 {
+    const fn into(self: u128) -> u256 {
         u256 { low: self, high: 0_u128 }
     }
 }
 
 impl U256TryIntoU128 of TryInto<u256, u128> {
-    fn try_into(self: u256) -> Option<u128> {
+    const fn try_into(self: u256) -> Option<u128> {
         let u256 { low, high } = self;
 
         if high != 0 {
-            return Option::None;
+            Option::None
+        } else {
+            Option::Some(low)
         }
-
-        Option::Some(low)
     }
 }
 
@@ -1934,8 +1931,8 @@ pub extern type i8;
 
 impl NumericLiterali8 of NumericLiteral<i8>;
 
-extern fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
-extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
+extern const fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
+extern const fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
@@ -2019,8 +2016,8 @@ pub extern type i16;
 
 impl NumericLiterali16 of NumericLiteral<i16>;
 
-extern fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
-extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
+extern const fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
+extern const fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
@@ -2105,8 +2102,8 @@ pub extern type i32;
 
 impl NumericLiterali32 of NumericLiteral<i32>;
 
-extern fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
-extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
+extern const fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
+extern const fn i32_to_felt252(a: i32) -> felt252 nopanic;
 
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
@@ -2191,8 +2188,8 @@ pub extern type i64;
 
 impl NumericLiterali64 of NumericLiteral<i64>;
 
-extern fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
-extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
+extern const fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
+extern const fn i64_to_felt252(a: i64) -> felt252 nopanic;
 
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
@@ -2277,8 +2274,8 @@ pub extern type i128;
 
 impl NumericLiterali128 of NumericLiteral<i128>;
 
-extern fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
-extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
+extern const fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
+extern const fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
