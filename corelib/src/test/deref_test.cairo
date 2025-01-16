@@ -16,14 +16,14 @@ struct S3 {
 }
 
 
-impl S2Deref of crate::ops::deref::Deref<S2> {
+impl S2Deref of crate::ops::Deref<S2> {
     type Target = S1;
     fn deref(self: S2) -> S1 {
         self.inner
     }
 }
 
-impl S3Deref of crate::ops::deref::Deref<S3> {
+impl S3Deref of crate::ops::Deref<S3> {
     type Target = S2;
     fn deref(self: S3) -> S2 {
         self.inner
@@ -50,7 +50,7 @@ enum E1 {
     V2: S1,
 }
 
-impl E1Deref of crate::ops::deref::Deref<E1> {
+impl E1Deref of crate::ops::Deref<E1> {
     type Target = S1;
     fn deref(self: E1) -> S1 {
         match self {
@@ -74,7 +74,7 @@ enum E3 {
     V2: S3,
 }
 
-impl E3Deref of crate::ops::deref::Deref<E3> {
+impl E3Deref of crate::ops::Deref<E3> {
     type Target = S3;
     fn deref(self: E3) -> S3 {
         match self {
@@ -103,7 +103,7 @@ struct S4 {
     a: usize,
 }
 
-impl S4Deref of crate::ops::deref::Deref<S4> {
+impl S4Deref of crate::ops::Deref<S4> {
     type Target = E3;
     fn deref(self: S4) -> E3 {
         self.e3
@@ -132,7 +132,7 @@ struct ArithOps {
     div: usize,
 }
 
-impl UsizeTupleDeref of crate::ops::deref::Deref<(usize, usize)> {
+impl UsizeTupleDeref of crate::ops::Deref<(usize, usize)> {
     type Target = ArithOps;
     fn deref(self: (usize, usize)) -> ArithOps {
         let (x, y) = self;
@@ -140,7 +140,7 @@ impl UsizeTupleDeref of crate::ops::deref::Deref<(usize, usize)> {
     }
 }
 
-impl UsizeFixedSizeArrayDeref of crate::ops::deref::Deref<[usize; 2]> {
+impl UsizeFixedSizeArrayDeref of crate::ops::Deref<[usize; 2]> {
     type Target = ArithOps;
     fn deref(self: [usize; 2]) -> ArithOps {
         let [x, y] = self;
