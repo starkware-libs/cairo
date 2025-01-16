@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
+    ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
     NamedLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
@@ -44,8 +44,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericParam, LogicalOperator, Pattern, PatternId, SemanticDiagnostic, Statement,
-    TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericArgumentId, GenericParam, LogicalOperator, Pattern, PatternId,
+    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -918,6 +918,18 @@ impl ConstantEvaluateContext<'_> {
         stable_ptr: SyntaxStablePtrId,
     ) -> Option<ConstValue> {
         let db = self.db;
+        if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
+            if extern_fn == self.upcast_fn {
+                let (
+                    [ConstValue::Int(value, _)],
+                    [GenericArgumentId::Type(_in_ty), GenericArgumentId::Type(out_ty)],
+                ) = (args, &concrete_function.generic_args[..])
+                else {
+                    return None;
+                };
+                return Some(ConstValue::Int(value.clone(), *out_ty));
+            }
+        }
         let body_id = concrete_function.body(db).ok()??;
         let concrete_body_id = body_id.function_with_body_id(db);
         let signature = db.function_with_body_signature(concrete_body_id).ok()?;
@@ -1210,6 +1222,8 @@ pub struct ConstCalcInfo {
     false_const: ConstValue,
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
+    /// The integer `upcast` function.
+    upcast_fn: ExternFunctionId,
 }
 
 impl ConstCalcInfo {
@@ -1233,6 +1247,7 @@ impl ConstCalcInfo {
         };
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         let core = ModuleHelper::core(db);
+        let integer = core.submodule("integer");
         Self {
             const_traits: [
                 neg_trait,
@@ -1272,6 +1287,7 @@ impl ConstCalcInfo {
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
+            upcast_fn: integer.extern_function_id("upcast"),
         }
     }
 }

@@ -11,7 +11,7 @@ impl NumericLiteralBoundedInt<
 impl BoundedIntIntoFelt252<
     const MIN: felt252, const MAX: felt252,
 > of Into<BoundedInt<MIN, MAX>, felt252> {
-    fn into(self: BoundedInt<MIN, MAX>) -> felt252 {
+    const fn into(self: BoundedInt<MIN, MAX>) -> felt252 {
         upcast(self)
     }
 }
