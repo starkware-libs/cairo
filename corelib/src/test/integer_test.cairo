@@ -2228,3 +2228,13 @@ fn test_upcast_in_const() {
     const AS_U16: u16 = AS_U8.into();
     assert_eq!(AS_U16, 10);
 }
+
+#[test]
+fn test_downcast_in_const() {
+    const IN_RANGE: u16 = 10;
+    const OUT_OF_RANGE: u16 = 300;
+    const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U8, Option::Some(10));
+    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+}

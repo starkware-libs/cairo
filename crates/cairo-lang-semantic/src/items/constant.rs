@@ -27,7 +27,8 @@ use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
     CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    get_core_ty_by_name, option_none_variant, option_some_variant, true_variant,
+    try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -928,6 +929,28 @@ impl ConstantEvaluateContext<'_> {
                     return None;
                 };
                 return Some(ConstValue::Int(value.clone(), *out_ty));
+            } else if extern_fn == self.downcast_fn {
+                let (
+                    [ConstValue::Int(value, _)],
+                    [GenericArgumentId::Type(_in_ty), GenericArgumentId::Type(out_ty)],
+                ) = (args, &concrete_function.generic_args[..])
+                else {
+                    return None;
+                };
+                return Some(match validate_literal(db, *out_ty, value) {
+                    Ok(()) => ConstValue::Enum(
+                        option_some_variant(db, *out_ty),
+                        ConstValue::Int(value.clone(), *out_ty).into(),
+                    ),
+                    Err(LiteralError::OutOfRange(_)) => ConstValue::Enum(
+                        option_none_variant(db, *out_ty),
+                        self.unit_const.clone().into(),
+                    ),
+                    Err(LiteralError::InvalidTypeForLiteral(_)) => unreachable!(
+                        "`downcast` is only allowed into types that can be literals. Got `{}`.",
+                        out_ty.format(db)
+                    ),
+                });
             }
         }
         let body_id = concrete_function.body(db).ok()??;
@@ -1224,6 +1247,8 @@ pub struct ConstCalcInfo {
     panic_with_felt252: FunctionId,
     /// The integer `upcast` function.
     upcast_fn: ExternFunctionId,
+    /// The integer `downcast` function.
+    downcast_fn: ExternFunctionId,
 }
 
 impl ConstCalcInfo {
@@ -1288,6 +1313,7 @@ impl ConstCalcInfo {
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
             upcast_fn: integer.extern_function_id("upcast"),
+            downcast_fn: integer.extern_function_id("downcast"),
         }
     }
 }
