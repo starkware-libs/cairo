@@ -27,8 +27,7 @@ use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
     CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, option_none_variant, option_some_variant, true_variant,
-    try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -38,6 +37,7 @@ use crate::expr::compute::{
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
+use crate::items::enm::SemanticEnumEx;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -45,8 +45,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericArgumentId, GenericParam, LogicalOperator, Pattern, PatternId,
-    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericParam, LogicalOperator, Pattern, PatternId, SemanticDiagnostic, Statement,
+    TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -832,7 +832,7 @@ impl ConstantEvaluateContext<'_> {
             Err(err) => return ConstValue::Missing(err),
         };
         if let Some(calc_result) =
-            self.evaluate_const_function_call(&concrete_function, &args, expr.stable_ptr.untyped())
+            self.evaluate_const_function_call(&concrete_function, &args, expr)
         {
             return calc_result;
         }
@@ -916,39 +916,33 @@ impl ConstantEvaluateContext<'_> {
         &mut self,
         concrete_function: &ConcreteFunction,
         args: &[ConstValue],
-        stable_ptr: SyntaxStablePtrId,
+        expr: &ExprFunctionCall,
     ) -> Option<ConstValue> {
         let db = self.db;
         if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
+            let expr_ty = self.rewriter().rewrite(expr.ty).ok()?;
             if extern_fn == self.upcast_fn {
-                let (
-                    [ConstValue::Int(value, _)],
-                    [GenericArgumentId::Type(_in_ty), GenericArgumentId::Type(out_ty)],
-                ) = (args, &concrete_function.generic_args[..])
-                else {
-                    return None;
-                };
-                return Some(ConstValue::Int(value.clone(), *out_ty));
+                let [ConstValue::Int(value, _)] = args else { return None };
+                return Some(ConstValue::Int(value.clone(), expr_ty));
             } else if extern_fn == self.downcast_fn {
-                let (
-                    [ConstValue::Int(value, _)],
-                    [GenericArgumentId::Type(_in_ty), GenericArgumentId::Type(out_ty)],
-                ) = (args, &concrete_function.generic_args[..])
+                let [ConstValue::Int(value, _)] = args else { return None };
+                let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
                 else {
                     return None;
                 };
-                return Some(match validate_literal(db, *out_ty, value) {
-                    Ok(()) => ConstValue::Enum(
-                        option_some_variant(db, *out_ty),
-                        ConstValue::Int(value.clone(), *out_ty).into(),
-                    ),
-                    Err(LiteralError::OutOfRange(_)) => ConstValue::Enum(
-                        option_none_variant(db, *out_ty),
-                        self.unit_const.clone().into(),
-                    ),
+                let (some, none) =
+                    db.concrete_enum_variants(enm).ok()?.into_iter().collect_tuple()?;
+                let success_ty = some.ty;
+                return Some(match validate_literal(db, success_ty, value) {
+                    Ok(()) => {
+                        ConstValue::Enum(some, ConstValue::Int(value.clone(), success_ty).into())
+                    }
+                    Err(LiteralError::OutOfRange(_)) => {
+                        ConstValue::Enum(none, self.unit_const.clone().into())
+                    }
                     Err(LiteralError::InvalidTypeForLiteral(_)) => unreachable!(
                         "`downcast` is only allowed into types that can be literals. Got `{}`.",
-                        out_ty.format(db)
+                        success_ty.format(db)
                     ),
                 });
             }
@@ -961,10 +955,10 @@ impl ConstantEvaluateContext<'_> {
         let body = db.function_body(concrete_body_id).ok()?;
         const MAX_CONST_EVAL_DEPTH: usize = 100;
         if self.depth > MAX_CONST_EVAL_DEPTH {
-            return Some(ConstValue::Missing(
-                self.diagnostics
-                    .report(stable_ptr, SemanticDiagnosticKind::ConstantCalculationDepthExceeded),
-            ));
+            return Some(ConstValue::Missing(self.diagnostics.report(
+                expr.stable_ptr,
+                SemanticDiagnosticKind::ConstantCalculationDepthExceeded,
+            )));
         }
         let mut diagnostics = SemanticDiagnostics::default();
         let mut inner = ConstantEvaluateContext {
@@ -987,7 +981,7 @@ impl ConstantEvaluateContext<'_> {
             let (inner_diag, mut notes) = match diagnostic.kind {
                 SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
                     self.diagnostics.report(
-                        stable_ptr,
+                        expr.stable_ptr,
                         SemanticDiagnosticKind::ConstantCalculationDepthExceeded,
                     );
                     continue;
@@ -1002,7 +996,7 @@ impl ConstantEvaluateContext<'_> {
                 location,
             ));
             self.diagnostics.report(
-                stable_ptr,
+                expr.stable_ptr,
                 SemanticDiagnosticKind::InnerFailedConstantCalculation(inner_diag, notes),
             );
         }
