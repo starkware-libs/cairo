@@ -26,9 +26,8 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant,
-    get_core_function_id, get_core_trait, get_core_ty_by_name, true_variant,
-    try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
+    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -37,6 +36,7 @@ use crate::expr::compute::{
 };
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
+use crate::helper::ModuleHelper;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -1232,6 +1232,7 @@ impl ConstCalcInfo {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
+        let core = ModuleHelper::core(db);
         Self {
             const_traits: [
                 neg_trait,
@@ -1270,7 +1271,7 @@ impl ConstCalcInfo {
             true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
-            panic_with_felt252: get_core_function_id(db, "panic_with_felt252".into(), vec![]),
+            panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
         }
     }
 }
