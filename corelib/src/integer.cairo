@@ -1426,7 +1426,7 @@ pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-pub(crate) extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
+pub(crate) extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
@@ -1599,7 +1599,7 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
 }
 
 impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
-    fn into(self: From) -> To {
+    const fn into(self: From) -> To {
         upcast(self)
     }
 }
@@ -1613,7 +1613,7 @@ impl DowncastableIntTryInto<
 }
 
 impl U8IntoU256 of Into<u8, u256> {
-    fn into(self: u8) -> u256 {
+    const fn into(self: u8) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
 }
@@ -1631,7 +1631,7 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
 }
 
 impl U16IntoU256 of Into<u16, u256> {
-    fn into(self: u16) -> u256 {
+    const fn into(self: u16) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
 }
@@ -1649,7 +1649,7 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
 }
 
 impl U32IntoU256 of Into<u32, u256> {
-    fn into(self: u32) -> u256 {
+    const fn into(self: u32) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
 }
@@ -1667,7 +1667,7 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
 }
 
 impl U64IntoU256 of Into<u64, u256> {
-    fn into(self: u64) -> u256 {
+    const fn into(self: u64) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
 }

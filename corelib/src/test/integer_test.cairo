@@ -2221,3 +2221,10 @@ mod bounded_int {
         assert!(bounded_int::trim_max::<i128>(1) == OptionRev::Some(1));
     }
 }
+
+#[test]
+fn test_upcast_in_const() {
+    const AS_U8: u8 = 10;
+    const AS_U16: u16 = AS_U8.into();
+    assert_eq!(AS_U16, 10);
+}
