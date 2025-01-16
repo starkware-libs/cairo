@@ -1430,7 +1430,7 @@ pub(crate) extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopan
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-pub(crate) extern fn downcast<FromType, ToType>(
+pub(crate) extern const fn downcast<FromType, ToType>(
     x: FromType,
 ) -> Option<ToType> implicits(RangeCheck) nopanic;
 
@@ -1607,7 +1607,7 @@ impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
 impl DowncastableIntTryInto<
     From, To, +DowncastableInt<From>, +DowncastableInt<To>, -Into<From, To>,
 > of TryInto<From, To> {
-    fn try_into(self: From) -> Option<To> {
+    const fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
 }
