@@ -440,7 +440,7 @@ pub fn value_as_const_value(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<ConstValue, LiteralError> {
-    validate_literal(db.upcast(), ty, value.clone())?;
+    validate_literal(db.upcast(), ty, value)?;
     let get_basic_const_value = |ty| {
         let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
 
@@ -501,7 +501,7 @@ impl ConstantEvaluateContext<'_> {
             }
             Expr::FunctionCall(expr) => {
                 if let Some(value) = try_extract_minus_literal(self.db, &self.arenas.exprs, expr) {
-                    if let Err(err) = validate_literal(self.db, expr.ty, value) {
+                    if let Err(err) = validate_literal(self.db, expr.ty, &value) {
                         self.diagnostics.report(
                             expr.stable_ptr.untyped(),
                             SemanticDiagnosticKind::LiteralError(err),
@@ -531,7 +531,7 @@ impl ConstantEvaluateContext<'_> {
                 }
             }
             Expr::Literal(expr) => {
-                if let Err(err) = validate_literal(self.db, expr.ty, expr.value.clone()) {
+                if let Err(err) = validate_literal(self.db, expr.ty, &expr.value) {
                     self.diagnostics.report(
                         expr.stable_ptr.untyped(),
                         SemanticDiagnosticKind::LiteralError(err),

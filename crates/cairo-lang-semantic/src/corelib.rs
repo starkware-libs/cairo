@@ -904,7 +904,7 @@ impl LiteralError {
 pub fn validate_literal(
     db: &dyn SemanticGroup,
     ty: TypeId,
-    value: BigInt,
+    value: &BigInt,
 ) -> Result<(), LiteralError> {
     if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
         return if value.is_zero() {
@@ -914,7 +914,7 @@ pub fn validate_literal(
         };
     }
     let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
-        value < min || value > max
+        *value < min || *value > max
     } else if ty == db.core_felt252_ty() {
         value.abs()
             > BigInt::from_str_radix(
