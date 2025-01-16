@@ -123,7 +123,7 @@ fn get_contract_internal_module_abi_functions(
         .with_context(|| "Generics are not allowed in wrapper functions")
 }
 
-/// Returns a list of functions in a given module with their aliases.
+/// Returns the list of functions in a given module with their aliases.
 /// Assumes the given module is a generated module containing `use` items pointing to wrapper ABI
 /// functions.
 fn get_module_aliased_functions(
@@ -291,7 +291,7 @@ pub struct ContractInfo {
     pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 
-/// Returns a list of functions in a given module.
+/// Returns the list of functions in a given module.
 pub fn get_contracts_info<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     contracts: Vec<ContractDeclaration>,
