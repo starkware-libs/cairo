@@ -4,7 +4,8 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
+use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
@@ -17,10 +18,9 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::Zero;
-use smol_str::SmolStr;
 
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::{FunctionId, SemanticFunctionIdEx};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -276,10 +276,14 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function = ModuleHelper { db: self.db, id: self.storage_access_module }
-                    .function_id("storage_base_address_const", vec![GenericArgumentId::Constant(
-                        ConstValue::Int(val.clone(), *ty).intern(self.db),
-                    )]);
+                stmt.function =
+                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
+                        .function_id("storage_base_address_const", vec![
+                            GenericArgumentId::Constant(
+                                ConstValue::Int(val.clone(), *ty).intern(self.db),
+                            ),
+                        ])
+                        .lowered(self.db);
             }
             None
         } else if id == self.into_box {
@@ -479,8 +483,9 @@ impl ConstFoldingContext<'_> {
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function = ModuleHelper { db: self.db, id: self.array_module }
-                        .function_id("array_snapshot_pop_front", generic_args);
+                    info.function = ModuleHelper { db: self.db.upcast(), id: self.array_module }
+                        .function_id("array_snapshot_pop_front", generic_args)
+                        .lowered(self.db);
                     success.var_ids.insert(0, unused_arr_output0);
                     failure.var_ids.insert(0, unused_arr_output1);
                 }
@@ -539,52 +544,6 @@ pub fn priv_const_folding_info(
     Arc::new(ConstFoldingLibfuncInfo::new(db))
 }
 
-/// Helper for getting functions in the corelib.
-struct ModuleHelper<'a> {
-    /// The db.
-    db: &'a dyn LoweringGroup,
-    /// The current module id.
-    id: ModuleId,
-}
-impl<'a> ModuleHelper<'a> {
-    /// Returns a helper for the core module.
-    fn core(db: &'a dyn LoweringGroup) -> Self {
-        Self { db, id: corelib::core_module(db.upcast()) }
-    }
-    /// Returns a helper for a submodule named `name` of the current module.
-    fn submodule(&self, name: &str) -> Self {
-        let id = corelib::get_submodule(self.db.upcast(), self.id, name).unwrap_or_else(|| {
-            panic!("`{name}` missing in `{}`.", self.id.full_path(self.db.upcast()))
-        });
-        Self { db: self.db, id }
-    }
-    /// Returns the id of an extern function named `name` in the current module.
-    fn extern_function_id(&self, name: impl Into<SmolStr>) -> ExternFunctionId {
-        let name = name.into();
-        let Ok(Some(ModuleItemId::ExternFunction(id))) =
-            self.db.module_item_by_name(self.id, name.clone())
-        else {
-            panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db.upcast()));
-        };
-        id
-    }
-    /// Returns the id of a function named `name` in the current module, with the given
-    /// `generic_args`.
-    fn function_id(
-        &self,
-        name: impl Into<SmolStr>,
-        generic_args: Vec<GenericArgumentId>,
-    ) -> FunctionId {
-        FunctionLongId::Semantic(corelib::get_function_id(
-            self.db.upcast(),
-            self.id,
-            name.into(),
-            generic_args,
-        ))
-        .intern(self.db)
-    }
-}
-
 /// Holds static information about libfuncs required for the optimization.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstFoldingLibfuncInfo {
@@ -633,7 +592,7 @@ pub struct ConstFoldingLibfuncInfo {
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
-        let core = ModuleHelper::core(db);
+        let core = ModuleHelper::core(db.upcast());
         let felt_sub = core.extern_function_id("felt252_sub");
         let box_module = core.submodule("box");
         let into_box = box_module.extern_function_id("into_box");
@@ -707,7 +666,9 @@ impl ConstFoldingLibfuncInfo {
                 let info = TypeInfo {
                     min,
                     max,
-                    is_zero: integer_module.function_id(format!("{ty}_is_zero"), vec![]),
+                    is_zero: integer_module
+                        .function_id(format!("{ty}_is_zero"), vec![])
+                        .lowered(db),
                 };
                 (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), info)
             }),
