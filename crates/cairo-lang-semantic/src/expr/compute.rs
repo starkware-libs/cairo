@@ -1934,7 +1934,7 @@ fn compute_method_function_call_data(
         self_ty,
         candidate_traits,
         func_name.clone(),
-        self_expr.stable_ptr().untyped(),
+        method_syntax,
     );
     let trait_function_id = match candidates[..] {
         [] => {
