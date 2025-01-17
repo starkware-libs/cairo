@@ -20,7 +20,7 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
             .skip_auto_withdraw_gas()
             .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
             .detect_corelib()
-            .with_plugin_suite(executable_plugin_suite())
+            .with_default_plugin_suite(executable_plugin_suite())
             .build()
             .unwrap(),
     )
