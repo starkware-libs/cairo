@@ -595,6 +595,28 @@ pub trait OptionTrait<T> {
     /// assert_eq!(y, Option::None);
     /// ```
     fn take(ref self: Option<T>) -> Option<T>;
+
+    /// Returns [`None`] if the option is [`None`], otherwise calls `predicate`
+    /// with the wrapped value and returns:
+    ///
+    /// - [`Some(t)`] if `predicate` returns `true` (where `t` is the wrapped
+    ///   value), and
+    /// - [`None`] if `predicate` returns `false`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let is_even = |n: u32| -> bool {
+    ///     n % 2 == 0
+    /// };
+    ///
+    /// assert_eq!(Option::None.filter(is_even), Option::None);
+    /// assert_eq!(Option::Some(3).filter(is_even), Option::None);
+    /// assert_eq!(Option::Some(4).filter(is_even), Option::Some(4));
+    /// ```
+    fn filter<P, +core::ops::FnOnce<P, (T,)>[Output: bool], +Drop<T>, +Drop<P>, +Copy<T>>(
+        self: Option<T>, predicate: P,
+    ) -> Option<T>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -781,6 +803,18 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         let value = self;
         self = Option::None;
         value
+    }
+
+    fn filter<P, +core::ops::FnOnce<P, (T,)>[Output: bool], +Drop<T>, +Drop<P>, +Copy<T>>(
+        self: Option<T>, predicate: P,
+    ) -> Option<T> {
+        if let Option::Some(value) = self {
+            if predicate(value) {
+                return Option::Some(value);
+            }
+        }
+
+        Option::None
     }
 }
 

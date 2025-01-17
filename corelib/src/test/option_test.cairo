@@ -270,3 +270,14 @@ fn test_option_take() {
     assert_eq!(x, Option::None);
     assert_eq!(y, Option::None);
 }
+
+#[test]
+fn test_option_filter() {
+    let is_even = |x: u32| -> bool {
+        x % 2 == 0
+    };
+
+    assert!(Option::None.filter(is_even) == Option::None);
+    assert!(Option::Some(3).filter(is_even) == Option::None);
+    assert!(Option::Some(4).filter(is_even) == Option::Some(4));
+}
