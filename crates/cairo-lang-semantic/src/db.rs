@@ -1569,8 +1569,6 @@ pub trait SemanticGroup:
 
     // Analyzer plugins.
     // ========
-    #[salsa::input]
-    fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
     #[salsa::input]
     fn default_analyzer_plugins(&self) -> Arc<[AnalyzerPluginId]>;
@@ -1589,7 +1587,7 @@ pub trait SemanticGroup:
 
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
-    fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
+    fn declared_allows(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
 
     // Helpers for language server.
     // ============================
@@ -1729,7 +1727,10 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin in db.analyzer_plugins().iter() {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
+    {
+        let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
+
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
                 StableLocation::new(diag.stable_ptr),
@@ -1748,9 +1749,11 @@ fn crate_analyzer_plugins(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<[Ana
         .unwrap_or_else(|| db.default_analyzer_plugins())
 }
 
-fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
+fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<OrderedHashSet<String>> {
     Arc::new(OrderedHashSet::from_iter(
-        db.analyzer_plugins().into_iter().flat_map(|plugin| plugin.declared_allows()),
+        db.crate_analyzer_plugins(crate_id)
+            .iter()
+            .flat_map(|plugin| db.lookup_intern_analyzer_plugin(*plugin).declared_allows()),
     ))
 }
 
@@ -1916,11 +1919,6 @@ pub trait PluginSuiteInput: SemanticGroup {
     fn intern_plugin_suite(&mut self, suite: PluginSuite) -> InternedPluginSuite {
         let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
 
-        // NOTE: kept for compatibility and testing, removed later in the stack.
-        self.set_macro_plugins(plugins.clone());
-        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins.clone()));
-        self.set_analyzer_plugins(analyzer_plugins.clone());
-
         let macro_plugins = plugins
             .into_iter()
             .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
@@ -1951,28 +1949,6 @@ pub trait PluginSuiteInput: SemanticGroup {
     /// [`SemanticGroup::default_analyzer_plugins`].
     fn set_default_plugins_from_suite(&mut self, suite: InternedPluginSuite) {
         let InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins } = suite;
-
-        // NOTE: kept here for compatibility, removed in the last PR
-        // ---
-        let raw_macro_plugins = macro_plugins
-            .iter()
-            .cloned()
-            .map(|id| self.lookup_intern_macro_plugin(id).0)
-            .collect::<Vec<_>>();
-        let raw_inline_macro_plugins = inline_macro_plugins
-            .iter()
-            .map(|(name, id)| (name.clone(), self.lookup_intern_inline_macro_plugin(*id).0))
-            .collect::<OrderedHashMap<_, _>>();
-        let raw_analyzer_plugins = analyzer_plugins
-            .iter()
-            .cloned()
-            .map(|id| self.lookup_intern_analyzer_plugin(id).0)
-            .collect::<Vec<_>>();
-
-        self.set_macro_plugins(raw_macro_plugins);
-        self.set_inline_macro_plugins(Arc::new(raw_inline_macro_plugins));
-        self.set_analyzer_plugins(raw_analyzer_plugins);
-        // ---
 
         self.set_default_macro_plugins(macro_plugins);
         self.set_default_inline_macro_plugins(inline_macro_plugins);
