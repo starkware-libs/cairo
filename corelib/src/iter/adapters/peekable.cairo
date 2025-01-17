@@ -13,7 +13,7 @@ pub struct Peekable<I, R> {
     peeked: Option<Option<R>>,
 }
 
-pub fn peekable_iterator<I, impl IterI: Iterator<I>>(iter: I) -> Peekable<I, IterI::Item> {
+pub fn peekable_iterator<I, R>(iter: I) -> Peekable<I, R> {
     Peekable { iter, peeked: Option::None }
 }
 
