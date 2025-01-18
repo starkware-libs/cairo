@@ -18,16 +18,17 @@ pub fn peekable_iterator<I, R>(iter: I) -> Peekable<I, R> {
 }
 
 impl PeekableIterator<
-    I, impl IterI: Iterator<I>, +Drop<I>, +Drop<IterI::Item>,
+    I, impl IterI: Iterator<I>, +Destruct<I>, +Destruct<IterI::Item>,
 > of Iterator<Peekable<I, IterI::Item>> {
     type Item = IterI::Item;
 
     fn next(ref self: Peekable<I, IterI::Item>) -> Option<Self::Item> {
-        // `take()` makes sure that if a value was already peeked, `peeked` will be reset to None
-        match self.peeked.take() {
+        let next_value = match self.peeked {
             Option::Some(v) => v,
             Option::None => self.iter.next(),
-        }
+        };
+        self.peeked = Option::None;
+        next_value
     }
 }
 
