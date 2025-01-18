@@ -3,11 +3,10 @@ use std::fmt::Write;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::get_location_marks;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
@@ -38,6 +37,7 @@ fn test_generated_function(
         inputs["module_code"].as_str(),
     )
     .split();
+    println!("test_function:\n{}", semantic_diagnostics);
 
     let mut writer = String::new();
     if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(test_function.function_id)
@@ -73,12 +73,7 @@ fn test_generated_function(
 
             let func_description = match key {
                 crate::ids::GeneratedFunctionKey::Loop(_) => "loop".into(),
-                crate::ids::GeneratedFunctionKey::TraitFunc(func, _) => extract_matches!(
-                    func.lookup_intern(db).function.generic_function,
-                    GenericFunctionId::Impl
-                )
-                .function
-                .full_path(db),
+                crate::ids::GeneratedFunctionKey::TraitFunc(func, _) => func.full_path(db),
             };
 
             writeln!(
