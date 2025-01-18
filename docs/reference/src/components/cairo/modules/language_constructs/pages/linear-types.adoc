@@ -37,7 +37,7 @@ fn main() {
 Note: the snapshot operator `@` (See the docs about snapshot) is considered not moving a value.
 
 == Clone
-Sometime a value can't be trivially copied, but we can still use code to build a copy of it.
+Sometimes a value can't be trivially copied, but we can still use code to build a copy of it.
 For example, a value containing an `Array` cannot be copied, but we can still clone it by cloning
 the array it contains with `.clone()`.
 This can be done by implementing or deriving the `Clone` trait. The derived implementation requires
@@ -71,7 +71,7 @@ fn main() {
 ----
 
 == Destructors
-Sometime a value must not be dropped, but we can still use code to get rid of it.
+Sometimes a value must not be dropped, but we can still use code to get rid of it.
 For example, a value containing a `Dict` cannot be dropped, but we can still deconstruct it by
 destructing the dict it contains with `.destruct()`.
 This can be done by implementing or deriving the `Destruct` trait, which will be called

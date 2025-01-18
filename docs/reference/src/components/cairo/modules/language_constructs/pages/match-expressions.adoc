@@ -44,8 +44,8 @@ match enum_var {
 }
 ----
 
-Where `enum_var` is an instance of some xref:enums.adoc[enum] and `variant_0``, `variant_1`, ...,
-`variant_k`` are all the variants of the said enum, order in the way that they were declared.
+Where `enum_var` is an instance of some xref:enums.adoc[enum] and `variant_0`, `variant_1`, ...,
+`variant_k` are all the variants of the said enum, order in the way that they were declared.
 
 === Match on an felt252.
 

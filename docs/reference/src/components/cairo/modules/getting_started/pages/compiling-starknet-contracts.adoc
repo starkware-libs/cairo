@@ -17,5 +17,5 @@ Compile the ContractClass of a CompiledClass:
 
 [source,bash]
 ----
-cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm'
+cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ----

@@ -90,7 +90,7 @@ In the example above, the return type is of type `T`.
 
 The function body is the code that is executed when the function is called.
 It is enclosed by the curly braces (`{...}`) and consists of a list of 0 or
-more xref:statements.adoc[statements], and an then an optional xref:expressions.adoc[expression]
+more xref:statements.adoc[statements], and then an optional xref:expressions.adoc[expression]
 which is called the "tail expression".
 
 The statements are executed one after the other in the defined order.
