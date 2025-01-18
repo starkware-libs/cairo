@@ -338,7 +338,7 @@ Statements:
   (v2: {closure@lib.cairo:2:13: 2:25}, v3: @{closure@lib.cairo:2:13: 2:25}) <- snapshot(v1)
   (v4: core::felt252) <- 0
   (v5: (core::felt252,)) <- struct_construct(v4)
-  (v6: ()) <- Generated core::ops::function::Fn::<{closure@lib.cairo:2:13: 2:25}, (core::felt252,)>::call(v3, v5)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:13: 2:25}(v3, v5)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)

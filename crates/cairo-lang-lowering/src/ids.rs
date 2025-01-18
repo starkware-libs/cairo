@@ -1,5 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::UnstableSalsaId;
+use cairo_lang_defs::ids::{
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
+};
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
@@ -7,9 +9,7 @@ use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
-use cairo_lang_utils::{
-    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
 use semantic::items::functions::GenericFunctionId;
@@ -106,12 +106,7 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: _,
                 key: GeneratedFunctionKey::TraitFunc(function, _),
-            }) => Ok(extract_matches!(
-                function.get_concrete(db.upcast()).generic_function,
-                GenericFunctionId::Impl
-            )
-            .function
-                == panic_destruct_trait_fn(db.upcast())),
+            }) => Ok(function == panic_destruct_trait_fn(db.upcast())),
             _ => Ok(false),
         }
     }
@@ -287,7 +282,7 @@ impl FunctionLongId {
                         return Ok(Some(
                             GeneratedFunction {
                                 parent,
-                                key: GeneratedFunctionKey::TraitFunc(id, ty.wrapper_location),
+                                key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
                             }
                             .body(db),
                         ));
@@ -385,7 +380,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
 pub enum GeneratedFunctionKey {
     /// Generated loop functions are identified by the loop expr_id.
     Loop(semantic::ExprId),
-    TraitFunc(semantic::FunctionId, StableLocation),
+    TraitFunc(TraitFunctionId, StableLocation),
 }
 
 /// Generated function.
@@ -396,17 +391,11 @@ pub struct GeneratedFunction {
 }
 impl GeneratedFunction {
     pub fn body(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyId {
-        let GeneratedFunction { parent, key } = *self;
-        let long_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key });
+        let long_id = ConcreteFunctionWithBodyLongId::Generated(*self);
         long_id.intern(db)
     }
     pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
-        match self.key {
-            GeneratedFunctionKey::Loop(expr_id) => {
-                format!("{}[expr{}]", self.parent.full_path(db.upcast()), expr_id.index())
-            }
-            GeneratedFunctionKey::TraitFunc(trait_func, _) => trait_func.full_path(db.upcast()),
-        }
+        format!("{:?}", self.debug(db))
     }
 }
 impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for GeneratedFunction {
@@ -419,8 +408,15 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for GeneratedFunction {
             GeneratedFunctionKey::Loop(expr_id) => {
                 write!(f, "{:?}[expr{}]", self.parent.debug(db), expr_id.index())
             }
-            GeneratedFunctionKey::TraitFunc(trait_func, _) => {
-                write!(f, "{:?}", trait_func.debug(db))
+            GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
+                let trait_id = trait_func.trait_id(db.upcast());
+                write!(
+                    f,
+                    "Generated `{}::{}` for {{closure@{:?}}}",
+                    trait_id.full_path(db.upcast()),
+                    trait_func.name(db.upcast()),
+                    loc.debug(db.upcast()),
+                )
             }
         }
     }
