@@ -273,8 +273,8 @@ fn test_option_take() {
 
 #[test]
 fn test_option_filter() {
-    let is_even = |x: u32| -> bool {
-        x % 2 == 0
+    let is_even = |x: @u32| -> bool {
+        *x % 2 == 0
     };
 
     assert!(Option::None.filter(is_even) == Option::None);

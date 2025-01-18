@@ -606,15 +606,15 @@ pub trait OptionTrait<T> {
     /// # Example
     ///
     /// ```
-    /// let is_even = |n: u32| -> bool {
-    ///     n % 2 == 0
+    /// let is_even = |n: @u32| -> bool {
+    ///     *n % 2 == 0
     /// };
     ///
     /// assert_eq!(Option::None.filter(is_even), Option::None);
     /// assert_eq!(Option::Some(3).filter(is_even), Option::None);
     /// assert_eq!(Option::Some(4).filter(is_even), Option::Some(4));
     /// ```
-    fn filter<P, +core::ops::FnOnce<P, (T,)>[Output: bool], +Drop<T>, +Drop<P>, +Copy<T>>(
+    fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
         self: Option<T>, predicate: P,
     ) -> Option<T>;
 }
@@ -805,11 +805,11 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         value
     }
 
-    fn filter<P, +core::ops::FnOnce<P, (T,)>[Output: bool], +Drop<T>, +Drop<P>, +Copy<T>>(
+    fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
         self: Option<T>, predicate: P,
     ) -> Option<T> {
         if let Option::Some(value) = self {
-            if predicate(value) {
+            if predicate(@value) {
                 return Option::Some(value);
             }
         }
