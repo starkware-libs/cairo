@@ -176,9 +176,23 @@ pub struct StoragePointer<T> {
 impl StoragePointerCopy<T> of Copy<StoragePointer<T>> {}
 impl StoragePointerDrop<T> of Drop<StoragePointer<T>> {}
 
-/// StoragePointer can be dereferenced into a sub-pointers type, this import allows the impl to be
-/// found next to the type.
-use sub_pointers::{SubPointersDeref, SubPointersMutDeref};
+/// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
+pub impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer<T>> {
+    type Target = SubPointers::<T>::SubPointersType;
+    fn deref(self: StoragePointer<T>) -> Self::Target {
+        self.sub_pointers()
+    }
+}
+
+/// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
+pub impl SubPointersMutDeref<
+    T, +SubPointersMut<T>,
+> of core::ops::Deref<StoragePointer<Mutable<T>>> {
+    type Target = SubPointersMut::<T>::SubPointersType;
+    fn deref(self: StoragePointer<Mutable<T>>) -> Self::Target {
+        self.sub_pointers_mut()
+    }
+}
 
 
 /// Same as `StoragePointer`, but with `offset` 0, which allows for some optimizations.
@@ -348,9 +362,21 @@ type StoragePathHashState = core::pedersen::HashState;
 impl StoragePathCopy<T> of core::traits::Copy<StoragePath<T>> {}
 impl StoragePathDrop<T> of core::traits::Drop<StoragePath<T>> {}
 
-/// StoragePath can be dereferenced into a storage node, this import allows the impl to be found
-/// next to the type.
-use storage_node::{StorageNodeDeref, StorageNodeMutDeref};
+/// This makes the storage node members directly accessible from a path to the parent struct.
+pub impl StorageNodeDeref<T, +StorageNode<T>> of core::ops::Deref<StoragePath<T>> {
+    type Target = StorageNode::<T>::NodeType;
+    fn deref(self: StoragePath<T>) -> Self::Target {
+        self.storage_node()
+    }
+}
+
+/// This makes the storage node members directly accessible from a path to the parent struct.
+pub impl StorageNodeMutDeref<T, +StorageNodeMut<T>> of core::ops::Deref<StoragePath<Mutable<T>>> {
+    type Target = StorageNodeMut::<T>::NodeType;
+    fn deref(self: StoragePath<Mutable<T>>) -> Self::Target {
+        self.storage_node_mut()
+    }
+}
 
 /// Trait for StoragePath operations.
 trait StoragePathTrait<T> {
