@@ -2,13 +2,9 @@
 use crate::integer::{u512, u512_safe_div_rem_by_u256};
 #[feature("deprecated-bounded-int-trait")]
 use crate::integer;
-// use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
-use crate::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
-
+use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
-/// comment on use pow
-/// // or use pow in integer_test
-/// integer::super::num::traits::Pow 
+
 #[test]
 fn test_u8_operators() {
     assert_eq(@1_u8, @1_u8, '1 == 1');

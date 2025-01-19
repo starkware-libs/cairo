@@ -1027,12 +1027,6 @@ impl FromIterator<TypeId> for ImplicitPrecedence {
     }
 }
 
-/// This function retrieves a mapping of closure types to their associated parameter types.
-/// It analyzes the generic parameters of the current context
-/// to identify any closures and their respective parameter types. It checks
-/// for `Fn`, `FnMut`, or `FnOnce` traits among the generic parameters and
-/// returns a `HashMap` where the key is the closure type, and the value is a
-/// vector of parameter types.
 /// Query implementation of [crate::db::SemanticGroup::get_closure_params].
 pub fn get_closure_params(
     db: &dyn SemanticGroup,
