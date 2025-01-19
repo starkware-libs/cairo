@@ -26,6 +26,7 @@ cairo_lang_test_utils::test_file_test!(
     diagnostics,
     "src/diagnostic_test_data",
     {
+        deref: "deref",
         tests: "tests",
         not_found: "not_found",
         missing: "missing",
