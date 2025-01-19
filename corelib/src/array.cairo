@@ -860,7 +860,7 @@ impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
 }
 
 impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
-    fn from_iter<I, +Iterator<I>[Item: T], +Drop<I>>(mut iter: I) -> Array<T> {
+    fn from_iter<I, +Iterator<I>[Item: T], +Destruct<I>>(mut iter: I) -> Array<T> {
         let mut arr = array![];
         for elem in iter {
             arr.append(elem);
