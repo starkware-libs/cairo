@@ -7,3 +7,8 @@ mod enumerate;
 pub use enumerate::Enumerate;
 #[allow(unused_imports)]
 pub(crate) use enumerate::enumerated_iterator;
+
+mod zip;
+pub use zip::Zip;
+#[allow(unused_imports)]
+pub(crate) use zip::zipped_iterator;

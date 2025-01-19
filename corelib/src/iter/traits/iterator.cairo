@@ -1,4 +1,6 @@
-use crate::iter::adapters::{Enumerate, Map, enumerated_iterator, mapped_iterator};
+use crate::iter::adapters::{
+    Enumerate, Map, Zip, enumerated_iterator, mapped_iterator, zipped_iterator,
+};
 
 /// A trait for dealing with iterators.
 ///
@@ -262,5 +264,54 @@ pub trait Iterator<T> {
             Option::None => init,
             Option::Some(x) => Self::fold(ref self, f(init, x), f),
         }
+    }
+
+    /// 'Zips up' two iterators into a single iterator of pairs.
+    ///
+    /// `zip()` returns a new iterator that will iterate over two other
+    /// iterators, returning a tuple where the first element comes from the
+    /// first iterator, and the second element comes from the second iterator.
+    ///
+    /// In other words, it zips two iterators together, into a single one.
+    ///
+    /// If either iterator returns [`Option::None`], [`next`] from the zipped iterator
+    /// will return [`Option::None`].
+    /// If the zipped iterator has no more elements to return then each further attempt to advance
+    /// it will first try to advance the first iterator at most one time and if it still yielded an
+    /// item try to advance the second iterator at most one time.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
+    ///
+    /// assert_eq!(iter.next(), Option::Some((1, 4)));
+    /// assert_eq!(iter.next(), Option::Some((2, 5)));
+    /// assert_eq!(iter.next(), Option::Some((3, 6)));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    ///
+    /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
+    /// anything that can be converted into an [`Iterator`], not just an
+    /// [`Iterator`] itself. For example:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
+    ///
+    /// assert_eq!(iter.next(), Option::Some((1, 4)));
+    /// assert_eq!(iter.next(), Option::Some((2, 5)));
+    /// assert_eq!(iter.next(), Option::Some((3, 6)));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ``
+    ///
+    /// [`enumerate`]: Iterator::enumerate
+    /// [`next`]: Iterator::next
+    #[inline]
+    fn zip<U, impl UIntoIter: IntoIterator<U>, +Destruct<T>>(
+        self: T, other: U,
+    ) -> Zip<T, UIntoIter::IntoIter> {
+        zipped_iterator(self, other.into_iter())
     }
 }
