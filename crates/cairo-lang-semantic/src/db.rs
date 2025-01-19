@@ -24,6 +24,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
+use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
@@ -1571,6 +1572,21 @@ pub trait SemanticGroup:
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
+    #[salsa::input]
+    fn default_analyzer_plugins(&self) -> Arc<[AnalyzerPluginId]>;
+
+    #[salsa::input]
+    fn analyzer_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[AnalyzerPluginId]>>>;
+
+    #[salsa::interned]
+    fn intern_analyzer_plugin(&self, plugin: AnalyzerPluginLongId) -> AnalyzerPluginId;
+
+    /// Returns [`AnalyzerPluginId`]s of the plugins set for the crate with [`CrateId`].
+    /// Returns
+    /// [`SemanticGroupEx::set_override_crate_analyzer_plugins`] if it has been set,
+    /// or the ([`SemanticGroup::default_analyzer_plugins`]) otherwise.
+    fn crate_analyzer_plugins(&self, crate_id: CrateId) -> Arc<[AnalyzerPluginId]>;
+
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
     fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
@@ -1615,6 +1631,11 @@ pub trait SemanticGroup:
         crate_id: CrateId,
         user_module_file_id: ModuleFileId,
     ) -> Arc<[(TraitId, String)]>;
+}
+
+/// Initializes the [`SemanticGroup`] database to a proper state.
+pub fn init_semantic_group(db: &mut dyn SemanticGroup) {
+    db.set_analyzer_plugin_overrides(Arc::new(OrderedHashMap::default()));
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
@@ -1718,6 +1739,13 @@ fn module_semantic_diagnostics(
     }
 
     Ok(diagnostics.build())
+}
+
+fn crate_analyzer_plugins(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<[AnalyzerPluginId]> {
+    db.analyzer_plugin_overrides()
+        .get(&crate_id)
+        .cloned()
+        .unwrap_or_else(|| db.default_analyzer_plugins())
 }
 
 fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
@@ -1864,3 +1892,20 @@ pub fn get_resolver_data_options(
     .flatten()
     .collect()
 }
+
+pub trait SemanticGroupEx: SemanticGroup {
+    /// Overrides the default analyzer plugins available for [`CrateId`] with `plugins`.
+    ///
+    /// *Note*: Sets the following Salsa input: `SemanticGroup::analyzer_plugin_overrides`.
+    fn set_override_crate_analyzer_plugins(
+        &mut self,
+        crate_id: CrateId,
+        plugins: Arc<[AnalyzerPluginId]>,
+    ) {
+        let mut overrides = self.analyzer_plugin_overrides().as_ref().clone();
+        overrides.insert(crate_id, plugins);
+        self.set_analyzer_plugin_overrides(Arc::new(overrides));
+    }
+}
+
+impl<T: SemanticGroup + ?Sized> SemanticGroupEx for T {}
