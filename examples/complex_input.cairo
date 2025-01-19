@@ -17,7 +17,7 @@ fn complex_input(
     r += a_input.val;
     while let Option::Some(x) = a_input.arr.pop_front() {
         r += x;
-    };
+    }
     while let Option::Some(mut a) = a_arr_input.pop_front() {
         r += a.val;
         while let Option::Some(x) = a.arr.pop_front() {
