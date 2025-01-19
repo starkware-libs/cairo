@@ -86,7 +86,7 @@ error: Parameter of trait function `MyTrait::foo` can't be defined as mutable.
 
 //! > ==========================================================================
 
-//! > Test default implementation with associated types.
+//! > Test default implementation with using `Self` as an outside impl.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -98,12 +98,12 @@ fn foo() {}
 foo
 
 //! > module_code
-pub trait MyTrait {
-    type Associated;
-    fn impl_required() -> Option<Self::Associated>;
-    fn default_impl() -> bool {
-        Self::impl_required().is_some()
+trait MyTrait {
+    fn default_impl() {
+        bar::<Self>();
     }
 }
+
+fn bar<+MyTrait>() {}
 
 //! > expected_diagnostics
