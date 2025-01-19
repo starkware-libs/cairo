@@ -768,3 +768,23 @@ error: Closure parameters cannot be references
  --> lib.cairo:2:14
     let _ = |ref a| {
              ^^^^^
+
+//! > ==========================================================================
+
+//! > Passing closures as args with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<u32> {
+    let x: Option<Array<i32>> = Option::Some(array![1, 2, 3]);
+    x.map(|x| x.len())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

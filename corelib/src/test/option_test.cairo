@@ -209,7 +209,7 @@ fn test_default_for_option() {
 #[test]
 fn test_option_some_map() {
     let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
-    let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+    let maybe_some_len = maybe_some_string.map(|s| s.len());
     assert!(maybe_some_len == Option::Some(13));
 }
 
