@@ -10,7 +10,6 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
 use itertools::{Itertools, zip_eq};
 use num_traits::ToPrimitive;
-use semantic::corelib::unit_ty;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
@@ -673,7 +672,7 @@ pub(crate) fn lower_expr_match(
     let matched_expr = ctx.function_body.arenas.exprs[expr.matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_felt252_ty() {
+    if ty == ctx.felt252_ty {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder, None);
     }
@@ -1176,7 +1175,7 @@ fn lower_expr_felt252_arm(
         )));
     };
 
-    let felt252_ty = ctx.db.core_felt252_ty();
+    let felt252_ty = ctx.felt252_ty;
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
@@ -1272,8 +1271,7 @@ fn lower_expr_match_index_enum(
     branches_block_builders: &mut Vec<MatchLeafBuilder>,
 ) -> LoweringResult<MatchInfo> {
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let semantic_db = ctx.db.upcast();
-    let unit_type = unit_ty(semantic_db);
+    let unit_type = ctx.unit_ty;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
 
@@ -1413,7 +1411,7 @@ fn lower_expr_match_felt252(
         location,
     });
 
-    let felt252_ty = ctx.db.core_felt252_ty();
+    let felt252_ty = ctx.felt252_ty;
 
     // max +2 is the number of arms in the match.
     if max + 2 < numeric_match_optimization_threshold(ctx, convert_function.is_some()) {

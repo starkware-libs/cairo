@@ -48,8 +48,7 @@ pub fn lower_expr_if_bool(
 
     // The condition cannot be unit.
     let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
-    let semantic_db = ctx.db.upcast();
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let unit_ty = ctx.unit_ty;
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
@@ -74,16 +73,16 @@ pub fn lower_expr_if_bool(
         .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: ctx.bool_enum,
         input: condition,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(ctx.false_variant.clone()),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(ctx.true_variant.clone()),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -108,7 +107,7 @@ pub fn lower_expr_if_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_felt252_ty()
+    if ty == ctx.felt252_ty
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(

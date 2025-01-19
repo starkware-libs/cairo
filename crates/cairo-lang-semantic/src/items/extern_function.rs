@@ -6,12 +6,10 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 
 use super::function_with_body::get_inline_config;
-use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
+use super::functions::{FunctionDeclarationData, InlineConfiguration};
 use super::generics::{GenericParamsData, semantic_generic_params};
-use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -163,14 +161,8 @@ pub fn priv_extern_function_declaration_data(
         &mut environment,
     );
 
-    if signature.panicable {
-        let panic_function = extract_matches!(
-            get_core_generic_function_id(db.upcast(), "panic".into()),
-            GenericFunctionId::Extern
-        );
-        if extern_function_id != panic_function {
-            diagnostics.report(&extern_function_syntax, PanicableExternFunction);
-        }
+    if signature.panicable && extern_function_id != db.defs_info().panic_fn {
+        diagnostics.report(&extern_function_syntax, PanicableExternFunction);
     }
 
     let attributes = extern_function_syntax.attributes(syntax_db).structurize(syntax_db);

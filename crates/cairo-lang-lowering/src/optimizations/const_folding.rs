@@ -276,14 +276,11 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function =
-                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
-                        .function_id("storage_base_address_const", vec![
-                            GenericArgumentId::Constant(
-                                ConstValue::Int(val.clone(), *ty).intern(self.db),
-                            ),
-                        ])
-                        .lowered(self.db);
+                stmt.function = ModuleHelper::new(self.db.upcast(), self.storage_access_module)
+                    .function_id("storage_base_address_const", vec![GenericArgumentId::Constant(
+                        ConstValue::Int(val.clone(), *ty).intern(self.db),
+                    )])
+                    .lowered(self.db);
             }
             None
         } else if id == self.into_box {
@@ -483,7 +480,7 @@ impl ConstFoldingContext<'_> {
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function = ModuleHelper { db: self.db.upcast(), id: self.array_module }
+                    info.function = ModuleHelper::new(self.db.upcast(), self.array_module)
                         .function_id("array_snapshot_pop_front", generic_args)
                         .lowered(self.db);
                     success.var_ids.insert(0, unused_arr_output0);
@@ -690,9 +687,9 @@ impl ConstFoldingLibfuncInfo {
             bounded_int_add,
             bounded_int_sub,
             bounded_int_constrain,
-            array_module: array_module.id,
+            array_module: array_module.id(),
             array_get,
-            storage_access_module: storage_access_module.id,
+            storage_access_module: storage_access_module.id(),
             storage_base_address_from_felt252,
             type_value_ranges,
         }

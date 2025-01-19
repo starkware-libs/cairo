@@ -147,6 +147,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;
         };
+        let info = db.defs_info();
         for (id, item) in free_functions.iter() {
             if !item.has_attr(syntax_db, EXECUTABLE_RAW_ATTR) {
                 continue;
@@ -154,7 +155,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             let Ok(signature) = db.free_function_signature(*id) else {
                 continue;
             };
-            if signature.return_type != corelib::unit_ty(db) {
+            if signature.return_type != info.unit_ty {
                 diagnostics.push(PluginDiagnostic::error(
                     &signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db),
                     "Invalid return type for `#[executable_raw]` function, expected `()`."
@@ -171,7 +172,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             };
             if input.ty
                 != corelib::get_core_ty_by_name(db, "Span".into(), vec![GenericArgumentId::Type(
-                    db.core_felt252_ty(),
+                    info.felt252_ty,
                 )])
             {
                 diagnostics.push(PluginDiagnostic::error(
@@ -189,7 +190,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
                         .to_string(),
                 ));
             }
-            if output.ty != corelib::core_array_felt252_ty(db) {
+            if output.ty != info.array_felt252_ty {
                 diagnostics.push(PluginDiagnostic::error(
                     output.stable_ptr.untyped(),
                     "Invalid second param type for `#[executable_raw]` function, expected \

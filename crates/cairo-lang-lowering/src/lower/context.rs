@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::corelib::DefsInfoEx;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
@@ -103,6 +104,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     pub usages: Usages,
     /// Lowerings of generated functions.
     pub lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
+    pub base_info: Arc<DefsInfoEx>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
@@ -119,7 +121,15 @@ impl<'db> EncapsulatingLoweringContext<'db> {
             expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
             usages,
             lowerings: Default::default(),
+            base_info: db.defs_info_ex(),
         })
+    }
+}
+impl Deref for EncapsulatingLoweringContext<'_> {
+    type Target = DefsInfoEx;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base_info
     }
 }
 

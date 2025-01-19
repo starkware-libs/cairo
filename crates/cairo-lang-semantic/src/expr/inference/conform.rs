@@ -11,7 +11,6 @@ use super::{
     ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
     InferenceVar, LocalTypeVarId, TypeVar,
 };
-use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
@@ -87,7 +86,7 @@ impl InferenceConform for Inference<'_> {
     ) -> InferenceResult<(TypeId, usize)> {
         let ty0 = self.rewrite(ty0).no_err();
         let ty1 = self.rewrite(ty1).no_err();
-        if ty0 == never_ty(self.db) || ty0.is_missing(self.db) {
+        if ty0 == self.info.never_ty || ty0.is_missing(self.db) {
             return Ok((ty1, 0));
         }
         if ty0 == ty1 {

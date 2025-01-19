@@ -23,7 +23,7 @@ use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
 use semantic::corelib::{
-    core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
+    core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
 };
 use semantic::items::constant::{ConstValue, value_as_const_value};
 use semantic::literals::try_extract_minus_literal;
@@ -201,7 +201,7 @@ pub fn lower_for_loop(
     let next_value_type = some_variant.ty;
     builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
     let pattern = ctx.function_body.arenas.patterns[loop_expr.pattern].clone();
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let unit_ty = ctx.unit_ty;
     let some_block: cairo_lang_semantic::ExprBlock =
         extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
             .clone();
@@ -289,8 +289,7 @@ pub fn lower_while_loop(
         }
     };
     let condition = lower_expr_to_var_usage(ctx, builder, semantic_condition)?;
-    let semantic_db = ctx.db.upcast();
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let unit_ty = ctx.unit_ty;
     let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
 
     // Main block.
@@ -331,16 +330,16 @@ pub fn lower_while_loop(
     .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: ctx.bool_enum,
         input: condition,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(ctx.false_variant.clone()),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(ctx.true_variant.clone()),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -366,7 +365,7 @@ pub fn lower_expr_while_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_felt252_ty()
+    if ty == ctx.felt252_ty
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
@@ -514,7 +513,7 @@ fn wrap_sealed_block_as_function(
     };
     let location = ctx.get_location(stable_ptr);
     match &expr {
-        Some(expr) if ctx.variables[expr.var_id].ty == never_ty(ctx.db.upcast()) => {
+        Some(expr) if ctx.variables[expr.var_id].ty == ctx.never_ty => {
             // If the expression is of type never, then the block is unreachable, so add a match on
             // never to make it a viable block end.
             let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
@@ -536,12 +535,8 @@ fn wrap_sealed_block_as_function(
         _ => {
             // Convert to a return.
             let var_usage = expr.unwrap_or_else(|| {
-                generators::StructConstruct {
-                    inputs: vec![],
-                    ty: unit_ty(ctx.db.upcast()),
-                    location,
-                }
-                .add(ctx, &mut builder.statements)
+                generators::StructConstruct { inputs: vec![], ty: ctx.unit_ty, location }
+                    .add(ctx, &mut builder.statements)
             });
             builder.ret(ctx, var_usage, location)
         }
@@ -1040,20 +1035,20 @@ fn add_pending_word(
 ) -> (VarUsage, VarUsage) {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
-    let felt252_ty = ctx.db.core_felt252_ty();
-
     let pending_word_usage = generators::Const {
-        value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
-        ty: felt252_ty,
+        value: ConstValue::Int(
+            BigInt::from_bytes_be(Sign::Plus, pending_word_bytes),
+            ctx.felt252_ty,
+        ),
+        ty: ctx.felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
 
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
-        value: ConstValue::Int(pending_word_len.into(), u32_ty),
-        ty: u32_ty,
+        value: ConstValue::Int(pending_word_len.into(), ctx.u32_ty),
+        ty: ctx.u32_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
@@ -1299,7 +1294,7 @@ fn perform_function_call(
         }
         .add(ctx, &mut builder.statements);
 
-        if ret_ty == never_ty(ctx.db.upcast()) {
+        if ret_ty == ctx.never_ty {
             // If the function returns never, the control flow is not allowed to continue.
             // This special case is required because without it the following code:
             // ```
@@ -1760,12 +1755,9 @@ fn get_destruct_lowering(
         .collect_vec();
 
     builder.destructure_closure(&mut ctx, location_id, parameters[0], closure_info);
-    let var_usage = generators::StructConstruct {
-        inputs: vec![],
-        ty: unit_ty(ctx.db.upcast()),
-        location: location_id,
-    }
-    .add(&mut ctx, &mut builder.statements);
+    let var_usage =
+        generators::StructConstruct { inputs: vec![], ty: ctx.unit_ty, location: location_id }
+            .add(&mut ctx, &mut builder.statements);
     builder.ret(&mut ctx, var_usage, location_id)?;
     let lowered_impl = FlatLowered {
         diagnostics: ctx.diagnostics.build(),
