@@ -23,7 +23,7 @@ use cairo_lang_utils::{
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::{CoreTraitContext, get_core_trait, numeric_literal_trait};
+use crate::corelib::{CoreTraitContext, DefsInfo, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -211,7 +211,7 @@ impl InferenceError {
             }
             InferenceError::NoImplsFound(concrete_trait_id) => {
                 let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == numeric_literal_trait(db) {
+                if trait_id == db.defs_info().numeric_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -462,6 +462,7 @@ impl InferenceData {
 pub struct Inference<'db> {
     db: &'db dyn SemanticGroup,
     pub data: &'db mut InferenceData,
+    pub info: Arc<DefsInfo>,
 }
 
 impl Deref for Inference<'_> {
@@ -486,7 +487,7 @@ impl std::fmt::Debug for Inference<'_> {
 
 impl<'db> Inference<'db> {
     fn new(db: &'db dyn SemanticGroup, data: &'db mut InferenceData) -> Self {
-        Self { db, data }
+        Self { db, data, info: db.defs_info() }
     }
 
     /// Getter for an [ImplVar].
@@ -676,16 +677,13 @@ impl<'db> Inference<'db> {
             return Err((ErrorSet, None));
         }
 
-        let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_felt252_ty();
-
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
             self.solve_ex()?;
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
-                if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
+                if impl_var.concrete_trait_id.trait_id(self.db) != self.info.numeric_literal_trt {
                     continue;
                 }
                 // Uninferred numeric trait. Resolve as felt252.
@@ -693,10 +691,10 @@ impl<'db> Inference<'db> {
                     impl_var.concrete_trait_id.generic_args(self.db)[0],
                     GenericArgumentId::Type
                 );
-                if self.rewrite(ty).no_err() == felt_ty {
+                if self.rewrite(ty).no_err() == self.info.felt252_ty {
                     continue;
                 }
-                self.conform_ty(ty, felt_ty).map_err(|err_set| {
+                self.conform_ty(ty, self.info.felt252_ty).map_err(|err_set| {
                     (err_set, self.stable_ptrs.get(&InferenceVar::Impl(impl_var.id)).copied())
                 })?;
                 changed = true;

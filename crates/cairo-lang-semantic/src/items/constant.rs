@@ -27,8 +27,8 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    DefsInfoEx, LiteralError, core_box_ty, core_nonzero_ty, get_core_ty_by_name,
+    try_extract_nz_wrapped_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -369,7 +369,7 @@ pub fn validate_const_expr(ctx: &mut ComputationContext<'_>, expr_id: ExprId) {
     let info = ctx.db.const_calc_info();
     let mut eval_ctx = ConstantEvaluateContext {
         db: ctx.db,
-        info: info.as_ref(),
+        info: &info,
         arenas: &ctx.arenas,
         vars: Default::default(),
         generic_substitution: Default::default(),
@@ -721,8 +721,8 @@ impl ConstantEvaluateContext<'_> {
                 let lhs = self.evaluate(expr.lhs);
                 if let ConstValue::Enum(v, _) = &lhs {
                     let early_return_variant = match expr.op {
-                        LogicalOperator::AndAnd => false_variant(self.db),
-                        LogicalOperator::OrOr => true_variant(self.db),
+                        LogicalOperator::AndAnd => self.false_variant.clone(),
+                        LogicalOperator::OrOr => self.true_variant.clone(),
                     };
                     if *v == early_return_variant { lhs } else { self.evaluate(expr.lhs) }
                 } else {
@@ -765,7 +765,7 @@ impl ConstantEvaluateContext<'_> {
                     let ConstValue::Enum(variant, _) = condition else {
                         return ConstValue::Missing(skip_diagnostic());
                     };
-                    if variant == true_variant(self.db) {
+                    if variant == self.true_variant {
                         self.evaluate(expr.if_block)
                     } else if let Some(else_block) = expr.else_block {
                         self.evaluate(else_block)
@@ -889,7 +889,7 @@ impl ConstantEvaluateContext<'_> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_felt252_ty() {
+        if expr.ty == self.felt252_ty {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",
@@ -1242,29 +1242,32 @@ pub struct ConstCalcInfo {
     upcast_fns: UnorderedHashSet<ExternFunctionId>,
     /// The integer `downcast` function.
     downcast_fns: UnorderedHashSet<ExternFunctionId>,
+    /// Information from corelib definitions.
+    base_info: Arc<DefsInfoEx>,
 }
 
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
     fn new(db: &dyn SemanticGroup) -> Self {
-        let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
-        let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
-        let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
-        let mul_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into());
-        let div_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Div".into());
-        let rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into());
-        let div_rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "DivRem".into());
-        let bit_and_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into());
-        let bit_or_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into());
-        let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
-        let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
-        let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
-        let not_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Not".into());
+        let core = ModuleHelper::core(db);
+        let neg_trait = core.trait_id("Neg");
+        let add_trait = core.trait_id("Add");
+        let sub_trait = core.trait_id("Sub");
+        let mul_trait = core.trait_id("Mul");
+        let div_trait = core.trait_id("Div");
+        let rem_trait = core.trait_id("Rem");
+        let div_rem_trait = core.trait_id("DivRem");
+        let bit_and_trait = core.trait_id("BitAnd");
+        let bit_or_trait = core.trait_id("BitOr");
+        let bit_xor_trait = core.trait_id("BitXor");
+        let partial_eq_trait = core.trait_id("PartialEq");
+        let partial_ord_trait = core.trait_id("PartialOrd");
+        let not_trait = core.trait_id("Not");
         let trait_fn = |trait_id, name: &str| {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
-        let unit_const = ConstValue::Struct(vec![], unit_ty(db));
-        let core = ModuleHelper::core(db);
+        let base_info = db.defs_info_ex();
+        let unit_const = ConstValue::Struct(vec![], base_info.unit_ty);
         let integer = core.submodule("integer");
         Self {
             const_traits: [
@@ -1301,8 +1304,11 @@ impl ConstCalcInfo {
             gt_fn: trait_fn(partial_ord_trait, "gt"),
             ge_fn: trait_fn(partial_ord_trait, "ge"),
             not_fn: trait_fn(not_trait, "not"),
-            true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
-            false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
+            true_const: ConstValue::Enum(base_info.true_variant.clone(), unit_const.clone().into()),
+            false_const: ConstValue::Enum(
+                base_info.false_variant.clone(),
+                unit_const.clone().into(),
+            ),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
             upcast_fns: [
@@ -1336,6 +1342,14 @@ impl ConstCalcInfo {
             .into_iter()
             .map(|n| integer.extern_function_id(n))
             .collect(),
+            base_info,
         }
+    }
+}
+impl std::ops::Deref for ConstCalcInfo {
+    type Target = DefsInfoEx;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base_info
     }
 }

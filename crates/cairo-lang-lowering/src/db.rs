@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -492,7 +492,8 @@ pub(crate) fn get_direct_callees(
     if lowered_function.blocks.is_empty() {
         return direct_callees;
     }
-    let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast())
+    let info = db.defs_info();
+    let withdraw_gas_fns = [info.withdraw_gas_fn, info.withdraw_gas_all_fn]
         .map(|id| FunctionLongId::Semantic(id).intern(db));
     let mut visited = vec![false; lowered_function.blocks.len()];
     let mut stack = vec![BlockId(0)];

@@ -51,9 +51,9 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    CoreTraitContext, core_binary_operator, core_bool_ty, core_unary_operator, deref_mut_trait,
-    deref_trait, false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
-    true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    CoreTraitContext, DefsInfoEx, core_binary_operator, core_unary_operator, deref_mut_trait,
+    deref_trait, false_literal_expr, get_core_trait, true_literal_expr, try_get_core_ty_by_name,
+    unit_expr, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -154,6 +154,7 @@ pub struct ComputationContext<'ctx> {
     /// whether to look for closures when calling variables.
     /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
     are_closures_in_context: bool,
+    base_info: Arc<DefsInfoEx>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -180,6 +181,7 @@ impl<'ctx> ComputationContext<'ctx> {
             inner_ctx: None,
             cfg_set,
             are_closures_in_context: false,
+            base_info: db.defs_info_ex(),
         }
     }
 
@@ -278,6 +280,14 @@ impl<'ctx> ComputationContext<'ctx> {
             None | Some(InnerContext::Closure { .. }) => false,
             Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => true,
         }
+    }
+}
+
+impl Deref for ComputationContext<'_> {
+    type Target = DefsInfoEx;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base_info
     }
 }
 
@@ -629,7 +639,7 @@ fn compute_expr_binary_semantic(
             Ok(Expr::Assignment(ExprAssignment {
                 ref_arg: member_path,
                 rhs: rexpr.id,
-                ty: unit_ty(db),
+                ty: ctx.unit_ty,
                 stable_ptr,
             }))
         }
@@ -643,8 +653,8 @@ fn compute_expr_binary_semantic(
                 _ => unreachable!(),
             };
 
+            let bool_ty = ctx.bool_ty;
             let inference = &mut ctx.resolver.inference();
-            let bool_ty = core_bool_ty(db);
             if let Err((err_set, actual_ty, expected_ty)) =
                 inference.conform_ty_for_diag(lexpr.expr.ty(), bool_ty)
             {
@@ -768,7 +778,7 @@ fn compute_expr_fixed_size_array_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     let exprs = syntax.exprs(syntax_db).elements(syntax_db);
-    let size_ty = get_usize_ty(db);
+    let size_ty = ctx.usize_ty;
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
     {
@@ -1125,12 +1135,12 @@ pub fn compute_expr_block_semantic(
             if let Statement::Return(_) | Statement::Break(_) =
                 &new_ctx.arenas.statements[*statement]
             {
-                never_ty(new_ctx.db)
+                new_ctx.never_ty
             } else {
-                unit_ty(db)
+                new_ctx.unit_ty
             }
         } else {
-            unit_ty(db)
+            new_ctx.unit_ty
         };
         Ok(Expr::Block(ExprBlock {
             statements: statements_semantic,
@@ -1151,13 +1161,8 @@ struct FlowMergeTypeHelper {
     had_merge_error: bool,
 }
 impl FlowMergeTypeHelper {
-    fn new(db: &dyn SemanticGroup, multi_arm_expr_kind: MultiArmExprKind) -> Self {
-        Self {
-            multi_arm_expr_kind,
-            never_type: never_ty(db),
-            final_type: None,
-            had_merge_error: false,
-        }
+    fn new(multi_arm_expr_kind: MultiArmExprKind, never_type: TypeId) -> Self {
+        Self { multi_arm_expr_kind, never_type, final_type: None, had_merge_error: false }
     }
 
     /// Merge a type into the helper. Returns false on error or if had a previous error.
@@ -1322,7 +1327,7 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
+    let mut helper = FlowMergeTypeHelper::new(MultiArmExprKind::Match, ctx.never_ty);
     for (_, expr) in patterns_and_exprs.iter() {
         let expr_ty = ctx.reduce_ty(expr.ty());
         if !helper.try_merge_types(
@@ -1381,7 +1386,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     };
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
-        ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
+        ast::OptionElseClause::Empty(_) => (None, ctx.unit_ty),
         ast::OptionElseClause::ElseClause(else_clause) => {
             match else_clause.else_block_or_if(syntax_db) {
                 BlockOrIf::Block(block) => {
@@ -1396,7 +1401,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If);
+    let mut helper = FlowMergeTypeHelper::new(MultiArmExprKind::If, ctx.never_ty);
     let if_block_ty = ctx.reduce_ty(if_block.ty());
     let else_block_ty = ctx.reduce_ty(else_block_ty);
     let inference = &mut ctx.resolver.inference();
@@ -1421,7 +1426,7 @@ fn compute_expr_loop_semantic(
 
     let (body, inner_ctx) =
         compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContext::Loop {
-            type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop),
+            type_merger: FlowMergeTypeHelper::new(MultiArmExprKind::Loop, ctx.never_ty),
         });
     Ok(Expr::Loop(ExprLoop {
         body,
@@ -1471,7 +1476,7 @@ fn compute_expr_while_semantic(
     Ok(Expr::While(ExprWhile {
         condition,
         body,
-        ty: unit_ty(ctx.db),
+        ty: ctx.unit_ty,
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -1488,8 +1493,7 @@ fn compute_expr_for_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let expr_id = expr.id;
 
-    let into_iterator_trait =
-        get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
+    let into_iterator_trait = ctx.into_iter_trt;
 
     let (into_iterator_function_id, _, fixed_into_iter_var, into_iter_mutability) =
         compute_method_function_call_data(
@@ -1538,7 +1542,7 @@ fn compute_expr_for_semantic(
     });
     let into_iter_expr_id = ctx.arenas.exprs.alloc(into_iter_expr.clone());
 
-    let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
+    let iterator_trait = ctx.iterator_trt;
 
     let (next_function_id, _, _, _) = compute_method_function_call_data(
         ctx,
@@ -1591,7 +1595,7 @@ fn compute_expr_for_semantic(
         expr_id,
         pattern,
         body: body_id,
-        ty: unit_ty(ctx.db),
+        ty: ctx.unit_ty,
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -1624,7 +1628,8 @@ fn compute_loop_body_semantic(
             .collect();
         let tail = tail.map(|tail| compute_expr_semantic(new_ctx, &tail));
         if let Some(tail) = &tail {
-            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
+            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != new_ctx.never_ty
+            {
                 new_ctx.diagnostics.report(tail.deref(), TailExpressionNotAllowedInLoop);
             }
         }
@@ -1633,7 +1638,7 @@ fn compute_loop_body_semantic(
         let body = new_ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
-            ty: unit_ty(db),
+            ty: new_ctx.unit_ty,
             stable_ptr: syntax.stable_ptr().into(),
         }));
 
@@ -1780,12 +1785,12 @@ fn compute_closure_body_semantic(
         t.ty()
     } else if let Some(statement) = statements_semantic.last() {
         if let Statement::Return(_) | Statement::Break(_) = &ctx.arenas.statements[*statement] {
-            never_ty(ctx.db)
+            ctx.never_ty
         } else {
-            unit_ty(ctx.db)
+            ctx.unit_ty
         }
     } else {
-        unit_ty(ctx.db)
+        ctx.unit_ty
     };
     ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
         statements: statements_semantic,
@@ -2635,7 +2640,7 @@ fn new_literal_expr(
     };
 
     // Numeric trait.
-    let trait_id = numeric_literal_trait(ctx.db);
+    let trait_id = ctx.numeric_literal_trt;
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
@@ -3178,7 +3183,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             stable_ptr: path.stable_ptr().into(),
         })),
 
-        ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
+        ResolvedConcreteItem::Variant(variant) if variant.ty == ctx.unit_ty => {
             let stable_ptr = path.stable_ptr().into();
             let concrete_enum_id = variant.concrete_enum_id;
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
@@ -3541,7 +3546,7 @@ pub fn compute_statement_semantic(
 
             let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(empty_clause) => {
-                    (None, unit_ty(db), empty_clause.stable_ptr().untyped())
+                    (None, ctx.unit_ty, empty_clause.stable_ptr().untyped())
                 }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
                     let expr_syntax = expr_clause.expr(syntax_db);
@@ -3582,7 +3587,7 @@ pub fn compute_statement_semantic(
         ast::Statement::Break(break_syntax) => {
             let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(expr_empty) => {
-                    (None, unit_ty(db), expr_empty.stable_ptr().untyped())
+                    (None, ctx.unit_ty, expr_empty.stable_ptr().untyped())
                 }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
                     let expr_syntax = expr_clause.expr(syntax_db);
@@ -3774,9 +3779,9 @@ fn compute_bool_condition_semantic(
     condition_syntax: &ast::Expr,
 ) -> ExprAndId {
     let condition = compute_expr_semantic(ctx, condition_syntax);
+    let bool_ty = ctx.bool_ty;
     let inference = &mut ctx.resolver.inference();
-    if let Err((err_set, condition_ty, _)) =
-        inference.conform_ty_for_diag(condition.ty(), core_bool_ty(ctx.db))
+    if let Err((err_set, condition_ty, _)) = inference.conform_ty_for_diag(condition.ty(), bool_ty)
     {
         let diag_added = ctx.diagnostics.report(condition.deref(), ConditionNotBool(condition_ty));
         inference.consume_reported_error(err_set, diag_added);
