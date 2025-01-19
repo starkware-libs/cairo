@@ -15,7 +15,6 @@ use smol_str::SmolStr;
 use super::attribute::SemanticQueryAttrs;
 use super::feature_kind::extract_item_feature_config;
 use super::generics::{GenericParamsData, semantic_generic_params};
-use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -216,7 +215,7 @@ pub fn priv_enum_definition_data(
             .override_with(extract_item_feature_config(db, &variant, &mut diagnostics));
         let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
         let ty = match variant.type_clause(syntax_db) {
-            ast::OptionTypeClause::Empty(_) => unit_ty(db),
+            ast::OptionTypeClause::Empty(_) => db.defs_info().unit_ty,
             ast::OptionTypeClause::TypeClause(type_clause) => {
                 resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db.upcast()))
             }

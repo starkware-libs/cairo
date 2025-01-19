@@ -22,6 +22,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
+use crate::corelib::{DefsInfo, DefsInfoEx};
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -1563,8 +1564,12 @@ pub trait SemanticGroup:
     fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
-    #[salsa::invoke(corelib::core_felt252_ty)]
-    fn core_felt252_ty(&self) -> semantic::TypeId;
+    /// Returns basic definitions from the corelib, without any requiring `Resolver` usages.
+    #[salsa::invoke(corelib::defs_info)]
+    fn defs_info(&self) -> Arc<DefsInfo>;
+    /// Returns basic definitions from the corelib, with requiring some `Resolver` usages.
+    #[salsa::invoke(corelib::defs_info_ex)]
+    fn defs_info_ex(&self) -> Arc<DefsInfoEx>;
 
     // Analyzer plugins.
     // ========

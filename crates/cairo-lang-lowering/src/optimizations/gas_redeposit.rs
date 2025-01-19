@@ -4,7 +4,6 @@ mod test;
 
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib;
 use itertools::Itertools;
 
 use crate::db::LoweringGroup;
@@ -35,25 +34,19 @@ pub fn gas_redeposit(
     ) {
         return;
     }
-    let gb_ty = corelib::get_core_ty_by_name(db.upcast(), "GasBuiltin".into(), vec![]);
+    let info = db.defs_info();
     // Checking if the implicits of this function past lowering includes `GasBuiltin`.
     if let Ok(implicits) = db.function_with_body_implicits(function_id) {
-        if !implicits.into_iter().contains(&gb_ty) {
+        if !implicits.into_iter().contains(&info.gas_builtin_ty) {
             return;
         }
     }
     assert!(
-        lowered.parameters.iter().all(|p| lowered.variables[*p].ty != gb_ty),
+        lowered.parameters.iter().all(|p| lowered.variables[*p].ty != info.gas_builtin_ty),
         "`GasRedeposit` stage must be called before `LowerImplicits` stage"
     );
 
-    let redeposit_gas = corelib::get_function_id(
-        db.upcast(),
-        corelib::core_submodule(db.upcast(), "gas"),
-        "redeposit_gas".into(),
-        vec![],
-    )
-    .lowered(db);
+    let redeposit_gas = info.redeposit_gas_fn.lowered(db);
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     let mut redeposit_commands = vec![];
