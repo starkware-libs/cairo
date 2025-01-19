@@ -110,3 +110,43 @@ core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core
 | ...
 | }
 |_^
+
+//! > ==========================================================================
+
+//! > Test deref not next to trait or type.
+
+//! > test_comments
+// TODO(spapini): Remove duplicated diagnostics.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+    let a: u32 = 1;
+    a.b
+}
+
+//! > module_code
+impl U32Deref of core::ops::Deref<u32> {
+    type Target = u16;
+    fn deref(self: u32) -> Self::Target {
+        1
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: `Deref` must be defined next to type or trait.
+ --> lib.cairo:1:1-6:1
+  impl U32Deref of core::ops::Deref<u32> {
+ _^
+| ...
+| }
+|_^
+
+error: Type "core::integer::u32" has no member "b"
+ --> lib.cairo:10:7
+    a.b
+      ^

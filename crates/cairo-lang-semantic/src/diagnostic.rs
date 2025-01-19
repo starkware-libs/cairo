@@ -1000,6 +1000,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefClosureParam => {
                 "Closure parameters cannot be references".into()
             }
+            SemanticDiagnosticKind::MustBeNextToTypeOrTrait { trait_id } => {
+                format!("`{}` must be defined next to type or trait.", trait_id.name(db.upcast()))
+            }
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
@@ -1426,6 +1429,9 @@ pub enum SemanticDiagnosticKind {
     },
     RefClosureArgument,
     RefClosureParam,
+    MustBeNextToTypeOrTrait {
+        trait_id: TraitId,
+    },
     MutableCapturedVariable,
     NonTraitTypeConstrained {
         identifier: SmolStr,
