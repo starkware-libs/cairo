@@ -50,7 +50,6 @@ pub enum TypeLongId {
         size: ConstValueId,
     },
     ImplType(ImplTypeId),
-    TraitType(TraitTypeId),
     Closure(ClosureTypeLongId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
@@ -134,7 +133,6 @@ impl TypeLongId {
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::TraitType(_)
             | TypeLongId::Closure(_) => {
                 return None;
             }
@@ -165,7 +163,6 @@ impl TypeLongId {
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::Coupon(_)
-            | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Closure(_) => false,
@@ -200,14 +197,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
                 write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
-            }
-            TypeLongId::TraitType(trait_type_id) => {
-                write!(
-                    f,
-                    "{}::{}",
-                    trait_type_id.trait_id(def_db).name(def_db),
-                    trait_type_id.name(def_db)
-                )
             }
             TypeLongId::Closure(closure) => {
                 write!(f, "{:?}", closure.debug(db.elongate()))
@@ -759,7 +748,6 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_)
         | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
@@ -846,7 +834,6 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Closure(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -897,8 +884,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_) => false,
+        | TypeLongId::ImplType(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
@@ -916,7 +902,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
         TypeLongId::Var(_) => false,
-        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) | TypeLongId::TraitType(_) => true,
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)

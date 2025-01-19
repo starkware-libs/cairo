@@ -464,7 +464,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionId GenericFunctionWithBodyId
+    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionWithBodyId
 );
 
 impl SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'_> {
@@ -507,20 +507,6 @@ impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
                     return Ok(impl_type_id_rewrite_result);
                 }
             }
-            TypeLongId::TraitType(trait_type_id) => {
-                if let Some(self_impl) = &self.substitution.self_impl {
-                    if trait_type_id.trait_id(self.db.upcast())
-                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    {
-                        let impl_type_id = ImplTypeId::new(*self_impl, *trait_type_id, self.db);
-                        *value = self
-                            .db
-                            .impl_type_concrete_implized(impl_type_id)?
-                            .lookup_intern(self.db);
-                        return Ok(RewriteResult::Modified);
-                    }
-                }
-            }
             _ => {}
         }
         value.default_rewrite(self)
@@ -548,22 +534,6 @@ impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> 
                     return Ok(RewriteResult::Modified);
                 } else {
                     return Ok(impl_const_id_rewrite_result);
-                }
-            }
-            ConstValue::TraitConstant(trait_constant_id) => {
-                if let Some(self_impl) = &self.substitution.self_impl {
-                    if trait_constant_id.trait_id(self.db.upcast())
-                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    {
-                        let impl_const_id =
-                            ImplConstantId::new(*self_impl, *trait_constant_id, self.db);
-                        *value = self
-                            .db
-                            .impl_constant_concrete_implized_value(impl_const_id)?
-                            .lookup_intern(self.db);
-
-                        return Ok(RewriteResult::Modified);
-                    }
                 }
             }
             _ => {}
@@ -595,40 +565,18 @@ impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> 
                     return Ok(impl_impl_id_rewrite_result);
                 }
             }
-            ImplLongId::TraitImpl(trait_impl_id) => {
+            ImplLongId::SelfImpl(concrete_trait_id) => {
+                let rewrite_result = self.internal_rewrite(concrete_trait_id)?;
                 if let Some(self_impl) = &self.substitution.self_impl {
-                    if trait_impl_id.trait_id(self.db.upcast())
-                        == self_impl.concrete_trait(self.db)?.trait_id(self.db)
-                    {
-                        let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
-                        *value = self
-                            .db
-                            .impl_impl_concrete_implized(impl_impl_id)?
-                            .lookup_intern(self.db);
-
+                    if *concrete_trait_id == self_impl.concrete_trait(self.db)? {
+                        *value = self_impl.lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
+                } else {
+                    return Ok(rewrite_result);
                 }
             }
             _ => {}
-        }
-        value.default_rewrite(self)
-    }
-}
-impl SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewriter<'_> {
-    fn internal_rewrite(&mut self, value: &mut GenericFunctionId) -> Maybe<RewriteResult> {
-        if let GenericFunctionId::Trait(id) = value {
-            if let Some(self_impl) = &self.substitution.self_impl {
-                let id_rewritten = self.internal_rewrite(id)?;
-                if id.concrete_trait(self.db.upcast()) == self_impl.concrete_trait(self.db)? {
-                    *value = GenericFunctionId::Impl(ImplGenericFunctionId {
-                        impl_id: *self_impl,
-                        function: id.trait_function(self.db),
-                    });
-                    return Ok(RewriteResult::Modified);
-                }
-                return Ok(id_rewritten);
-            }
         }
         value.default_rewrite(self)
     }

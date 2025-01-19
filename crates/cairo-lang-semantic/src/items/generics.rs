@@ -13,7 +13,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use syntax::node::TypedStablePtr;
 use syntax::node::db::SyntaxGroup;
 
@@ -583,10 +583,9 @@ fn impl_generic_param_semantic(
 ) -> GenericParamImpl {
     let concrete_trait = resolver
         .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
-        .and_then(|resolved_item| {
-            try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait).ok_or_else(|| {
-                diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)
-            })
+        .and_then(|resolved_item| match resolved_item {
+            ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
+            _ => Err(diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)),
         });
     let type_constraints = concrete_trait
         .ok()

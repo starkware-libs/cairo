@@ -196,11 +196,6 @@ impl InferenceConform for Inference<'_> {
             TypeLongId::GenericParameter(_) => {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
-            TypeLongId::TraitType(_) => {
-                // This should never happen as the trait type should be implized when conformed, but
-                // don't panic in case of a bug.
-                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
-            }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, 0)),
             TypeLongId::ImplType(impl_type) => {
                 if let Some(ty) = self.impl_type_bounds.get(&impl_type.into()) {
@@ -385,7 +380,7 @@ impl InferenceConform for Inference<'_> {
             }
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_)
+            | ImplLongId::SelfImpl(_)
             | ImplLongId::GeneratedImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
@@ -467,7 +462,10 @@ impl InferenceConform for Inference<'_> {
                 &concrete_impl_id.lookup_intern(self.db).generic_args,
                 var,
             ),
-            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::SelfImpl(concrete_trait_id) => {
+                self.generic_args_contain_var(&concrete_trait_id.generic_args(self.db), var)
+            }
+            ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(new_var) => {
                 let new_var_long_id = new_var.lookup_intern(self.db);
                 let new_var_local_id = new_var_long_id.id;
@@ -695,9 +693,7 @@ impl Inference<'_> {
                 false
             }
             TypeLongId::ImplType(id) => self.impl_contains_var(id.impl_id(), var),
-            TypeLongId::TraitType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => {
-                false
-            }
+            TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => false,
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)

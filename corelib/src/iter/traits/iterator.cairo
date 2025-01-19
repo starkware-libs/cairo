@@ -127,9 +127,7 @@ pub trait Iterator<T> {
     /// }
     /// ```
     #[inline]
-    fn map<
-        B, F, impl TIter: Self, +core::ops::Fn<F, (TIter::Item,)>[Output: B], +Drop<T>, +Drop<F>,
-    >(
+    fn map<B, F, +core::ops::Fn<F, (Self::Item,)>[Output: B], +Drop<T>, +Drop<F>>(
         self: T, f: F,
     ) -> Map<T, F> {
         mapped_iterator(self, f)

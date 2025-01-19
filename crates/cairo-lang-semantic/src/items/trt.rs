@@ -16,19 +16,20 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use smol_str::SmolStr;
 
 use super::TraitOrImplContext;
 use super::function_with_body::{FunctionBodyData, get_implicit_precedence, get_inline_config};
 use super::functions::{
-    FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
+    FunctionDeclarationData, GenericFunctionId, ImplGenericFunctionId, ImplicitPrecedence,
+    InlineConfiguration,
 };
 use super::generics::{
     GenericParamsData, fmt_generic_args, generic_params_to_args, semantic_generic_params,
     semantic_generic_params_ex,
 };
-use super::imp::{GenericsHeadFilter, TraitFilter};
+use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -1041,10 +1042,9 @@ pub fn priv_trait_impl_data(
         Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id));
     let concrete_trait = resolver
         .resolve_concrete_path(&mut diagnostics, &trait_path, NotFoundItemType::Trait)
-        .and_then(|resolved_item: crate::resolve::ResolvedConcreteItem| {
-            try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait).ok_or_else(|| {
-                diagnostics.report(&trait_path, SemanticDiagnosticKind::UnknownTrait)
-            })
+        .and_then(|resolved_item: crate::resolve::ResolvedConcreteItem| match resolved_item {
+            ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
+            _ => Err(diagnostics.report(&trait_path, SemanticDiagnosticKind::UnknownTrait)),
         });
     let attributes = impl_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -1362,13 +1362,10 @@ pub fn priv_trait_function_body_data(
             generic_args: generic_params_to_args(&generic_parameters, db),
         }
         .intern(db);
-        let generic_function = GenericFunctionId::Trait(
-            ConcreteTraitGenericFunctionLongId {
-                concrete_trait,
-                trait_function: trait_function_id,
-            }
-            .intern(db),
-        );
+        let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
+            impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+            function: trait_function_id,
+        });
 
         Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
     })();
