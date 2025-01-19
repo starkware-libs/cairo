@@ -222,8 +222,7 @@ fn const_type_id(
                 ConstValue::Generic(_)
                 | ConstValue::Var(_, _)
                 | ConstValue::Missing(_)
-                | ConstValue::ImplConstant(_)
-                | ConstValue::TraitConstant(_) => {
+                | ConstValue::ImplConstant(_) => {
                     unreachable!("Should be caught by the lowering.")
                 }
             },

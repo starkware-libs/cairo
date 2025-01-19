@@ -1062,7 +1062,7 @@ impl<'db> Inference<'db> {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => Ok(SolutionSet::Unique(canonical_impl)),
+            | ImplLongId::SelfImpl(_) => Ok(SolutionSet::Unique(canonical_impl)),
         }
     }
 
@@ -1230,7 +1230,7 @@ impl SemanticRewriter<TypeLongId, NoError> for Inference<'_> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
+                    ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) => {
                         impl_type_id_rewrite_result
                     }
                     ImplLongId::ImplImpl(impl_impl) => {
@@ -1296,7 +1296,7 @@ impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
                 let trait_constant = impl_constant_id.trait_constant_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
-                    | ImplLongId::TraitImpl(_)
+                    | ImplLongId::SelfImpl(_)
                     | ImplLongId::GeneratedImpl(_) => impl_constant_id_rewrite_result,
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,
@@ -1349,7 +1349,7 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                 let impl_id = impl_impl_id.impl_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
-                    | ImplLongId::TraitImpl(_)
+                    | ImplLongId::SelfImpl(_)
                     | ImplLongId::GeneratedImpl(_) => impl_impl_id_rewrite_result,
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,

@@ -2948,9 +2948,6 @@ fn member_access_expr(
             .diagnostics
             .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
         TypeLongId::Missing(diag_added) => Err(*diag_added),
-        TypeLongId::TraitType(_) => {
-            panic!("Trait types should only appear in traits, where there are no function bodies.")
-        }
     }
 }
 
@@ -3691,7 +3688,6 @@ pub fn compute_statement_semantic(
                             }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
-                            | ResolvedGenericItem::TraitFunction(_)
                             | ResolvedGenericItem::GenericTypeAlias(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)

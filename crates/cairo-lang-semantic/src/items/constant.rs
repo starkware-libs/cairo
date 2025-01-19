@@ -116,7 +116,6 @@ pub enum ConstValue {
     Boxed(Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
     ImplConstant(ImplConstantId),
-    TraitConstant(TraitConstantId),
     Var(ConstVar, TypeId),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
@@ -136,8 +135,7 @@ impl ConstValue {
                 ConstValue::Generic(_)
                 | ConstValue::Var(_, _)
                 | ConstValue::Missing(_)
-                | ConstValue::ImplConstant(_)
-                | ConstValue::TraitConstant(_) => false,
+                | ConstValue::ImplConstant(_) => false,
             }
     }
 
@@ -145,10 +143,7 @@ impl ConstValue {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         self.ty(db).unwrap().is_var_free(db)
             && match self {
-                ConstValue::Int(_, _)
-                | ConstValue::Generic(_)
-                | ConstValue::Missing(_)
-                | ConstValue::TraitConstant(_) => true,
+                ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
                 ConstValue::Struct(members, _) => {
                     members.iter().all(|member| member.is_var_free(db))
                 }
@@ -178,7 +173,6 @@ impl ConstValue {
             ConstValue::ImplConstant(impl_constant_id) => {
                 db.impl_constant_concrete_implized_type(*impl_constant_id)?
             }
-            ConstValue::TraitConstant(trait_constant) => db.trait_constant_type(*trait_constant)?,
         })
     }
 
@@ -610,7 +604,6 @@ impl ConstantEvaluateContext<'_> {
                 }
                 self.db.trait_function_signature(id.function)
             }
-            GenericFunctionId::Trait(id) => db.trait_function_signature(id.trait_function(db)),
         })();
         if signature.map(|s| s.is_const) == Ok(true) {
             return true;
