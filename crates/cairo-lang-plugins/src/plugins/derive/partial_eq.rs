@@ -44,7 +44,7 @@ pub fn handle_partial_eq(
             } else {
                 members
                     .iter()
-                    .map(|member| format!("lhs.{member} == rhs.{member}", member = member.name))
+                    .map(|member| format!("lhs.{member} == rhs.{member}", member = member.name)
                     .join(" && ")
             }
         }
