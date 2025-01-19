@@ -85,6 +85,15 @@ pub enum CompilationError {
     MetadataNegativeGasVariable,
 }
 
+impl CompilationError {
+    pub fn stmt_indices(&self) -> Vec<StatementIdx> {
+        match self {
+            CompilationError::AnnotationError(err) => err.stmt_indices(),
+            _ => vec![],
+        }
+    }
+}
+
 /// Configuration for the Sierra to CASM compilation.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct SierraToCasmConfig {
