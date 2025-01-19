@@ -49,6 +49,9 @@ struct BuildArgs {
     /// Allows the compilation to succeed with warnings.
     #[arg(long, conflicts_with = "prebuilt")]
     allow_warnings: bool,
+    /// Allow warnings and don't print them (implies allow_warnings).
+    #[arg(long, conflicts_with = "prebuilt")]
+    ignore_warnings: bool,
     /// Path to the executable function.
     #[arg(long, conflicts_with = "prebuilt")]
     executable: Option<String>,
@@ -133,6 +136,10 @@ fn main() -> anyhow::Result<()> {
             if args.build.allow_warnings {
                 reporter = reporter.allow_warnings();
             }
+            if args.build.ignore_warnings {
+                reporter = reporter.ignore_all_warnings();
+            }
+
             Executable::new(compile_executable(
                 &args.path,
                 args.build.executable.as_deref(),
