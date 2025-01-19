@@ -154,14 +154,12 @@ fn visible_traits_in_module_ex(
             _ => continue,
         }
     }
-    // Traverse the submodules of the current module.
     for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
         if !is_visible(submodule_id.name(db.upcast()))? {
             continue;
         }
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
-    // Add the traits of the current module.
     for trait_id in db.module_traits_ids(module_id).ok()?.iter().copied() {
         if !is_visible(trait_id.name(db.upcast()))? {
             continue;
@@ -170,14 +168,9 @@ fn visible_traits_in_module_ex(
     }
 
     for submodule in modules_to_visit {
-        for (trait_id, path) in visible_traits_in_module_ex(
-            db,
-            submodule,
-            user_module_file_id,
-            include_parent,
-            visited_modules,
-        )?
-        .iter()
+        for (trait_id, path) in
+            visible_traits_in_module_ex(db, submodule, user_module_file_id, false, visited_modules)?
+                .iter()
         {
             result.push((*trait_id, format!("{}::{}", submodule.name(db.upcast()), path)));
         }
@@ -210,8 +203,9 @@ pub fn visible_traits_in_crate(
     db: &dyn SemanticGroup,
     crate_id: CrateId,
     user_module_file_id: ModuleFileId,
+    is_current_crate: bool,
 ) -> Arc<[(TraitId, String)]> {
-    let crate_name = crate_id.name(db.upcast());
+    let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db.upcast()) };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_traits_in_module(crate_as_module, user_module_file_id, false)
         .iter()
@@ -242,11 +236,11 @@ pub fn visible_traits_from_module(
     let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
 
     let mut module_visible_traits = Vec::new();
+    // Collect traits from the prelude.
     module_visible_traits.extend_from_slice(
         &db.visible_traits_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
-    module_visible_traits
-        .extend_from_slice(&db.visible_traits_in_module(module_id, module_file_id, true)[..]);
+    // Collect traits from all visible crates, including the current crate.
     let settings = db.crate_config(current_crate_id).map(|c| c.settings).unwrap_or_default();
     for crate_id in chain!(
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
@@ -258,12 +252,19 @@ pub fn visible_traits_from_module(
             .intern(db)
         })
     ) {
-        if crate_id == current_crate_id {
-            continue;
-        }
-        module_visible_traits
-            .extend_from_slice(&db.visible_traits_in_crate(crate_id, module_file_id)[..]);
+        module_visible_traits.extend_from_slice(
+            &db.visible_traits_in_crate(crate_id, module_file_id, crate_id == current_crate_id)[..],
+        );
     }
+
+    // Collect traits visible in the current module.
+    module_visible_traits
+        .extend_from_slice(&db.visible_traits_in_module(module_id, module_file_id, true)[..]);
+
+    // Deduplicate traits, preferring shorter paths.
+    // This is the reason for searching in the crates before the current module- to prioritize
+    // shorter, canonical paths prefixed with `crate::` over paths using `super::` or local
+    // imports.
     let mut result: OrderedHashMap<TraitId, String> = OrderedHashMap::default();
     for (trait_id, path) in module_visible_traits {
         match result.entry(trait_id) {

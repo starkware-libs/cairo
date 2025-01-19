@@ -1614,6 +1614,7 @@ pub trait SemanticGroup:
         &self,
         crate_id: CrateId,
         user_module_file_id: ModuleFileId,
+        is_current_crate: bool,
     ) -> Arc<[(TraitId, String)]>;
 }
 
