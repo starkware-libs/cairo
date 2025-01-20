@@ -23,12 +23,24 @@ use num_bigint::BigInt;
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The Cairo project path to compile and run.
-    path: PathBuf,
+    /// The basic input path for the run.
+    /// If `--prebuilt` is provided, this is the path to the prebuilt executable.
+    /// Else, if `--single-file` is provided, this is the path to a single cairo file to compile
+    /// for execution. Otherwise, this is the path of the Cairo project - the directory
+    /// containing the `cairo_project.toml` file.
+    input_path: PathBuf,
 
     /// Whether to only build and save into the given path.
-    #[clap(long)]
-    build_only: Option<PathBuf>,
+    #[clap(long, requires = "output_path")]
+    build_only: bool,
+
+    /// The path to save the result of the run.
+    ///
+    /// In `--build-only` this would be the executable artifact.
+    /// In bootloader mode it will be the resulting cairo PIE file.
+    /// In standalone mode this parameter is disallowed.
+    #[clap(long, required_if_eq("standalone", "false"))]
+    output_path: Option<PathBuf>,
 
     /// Whether to only run a prebuilt executable.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
@@ -52,7 +64,10 @@ struct BuildArgs {
     /// Allow warnings and don't print them (implies allow_warnings).
     #[arg(long, conflicts_with = "prebuilt")]
     ignore_warnings: bool,
-    /// Path to the executable function.
+    /// The path to the executable function.
+    ///
+    /// Not required if there is only a single executable function in the project.
+    /// If not provided but required, a list of the available executable functions is printed.
     #[arg(long, conflicts_with = "prebuilt")]
     executable: Option<String>,
 }
@@ -74,20 +89,22 @@ struct RunArgs {
     // TODO(orizi): Actually use this input when updating to the new VM version.
     #[clap(long, required_if_eq("layout", "dynamic"))]
     cairo_layout_params_file: Option<PathBuf>,
-    /// If set, the program will be run in proof mode.
-    #[clap(long, default_value_t = false, conflicts_with = "build_only", requires_all=["trace_file", "memory_file", "air_public_input", "air_private_input"])]
-    proof_mode: bool,
+    /// If set, the program will be run in standalone mode.
+    #[clap(
+        long,
+        default_value_t = false,
+        conflicts_with_all = ["build_only", "output_path"],
+        requires_all=["trace_file", "memory_file", "air_public_input", "air_private_input"],
+    )]
+    standalone: bool,
     /// If set, the program will be run in secure mode.
     #[clap(long, conflicts_with = "build_only")]
     secure_run: Option<bool>,
-    /// The resulting cairo PIE file.
-    #[clap(long, conflicts_with_all = ["proof_mode", "build_only"])]
-    cairo_pie_output: Option<PathBuf>,
     /// Can we allow for missing builtins.
     #[clap(long)]
     allow_missing_builtins: Option<bool>,
     #[clap(flatten)]
-    proof: ProofModeArgs,
+    standalone_outputs: StandaloneOutputArgs,
 }
 
 #[derive(Parser, Debug)]
@@ -107,18 +124,18 @@ struct SerializedArgs {
 }
 
 #[derive(Parser, Debug)]
-struct ProofModeArgs {
+struct StandaloneOutputArgs {
     /// The resulting trace file.
-    #[clap(long, conflicts_with = "build_only", requires = "proof_mode")]
+    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
     trace_file: Option<PathBuf>,
     /// The resulting memory file.
-    #[clap(long, conflicts_with = "build_only", requires = "proof_mode")]
+    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
     memory_file: Option<PathBuf>,
     /// The resulting AIR public input file.
-    #[clap(long, conflicts_with = "build_only", requires = "proof_mode")]
+    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
     air_public_input: Option<PathBuf>,
     /// The resulting AIR private input file.
-    #[clap(long, conflicts_with = "build_only", requires = "proof_mode")]
+    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
     air_private_input: Option<PathBuf>,
 }
 
@@ -127,11 +144,11 @@ fn main() -> anyhow::Result<()> {
 
     let executable = {
         if args.prebuilt {
-            serde_json::from_reader(std::fs::File::open(&args.path)?)
+            serde_json::from_reader(std::fs::File::open(&args.input_path)?)
                 .with_context(|| "Failed reading prebuilt executable.")?
         } else {
             // Check if args.path is a file or a directory.
-            check_compiler_path(args.build.single_file, &args.path)?;
+            check_compiler_path(args.build.single_file, &args.input_path)?;
             let mut reporter = DiagnosticsReporter::stderr();
             if args.build.allow_warnings {
                 reporter = reporter.allow_warnings();
@@ -141,13 +158,14 @@ fn main() -> anyhow::Result<()> {
             }
 
             Executable::new(compile_executable(
-                &args.path,
+                &args.input_path,
                 args.build.executable.as_deref(),
                 reporter,
             )?)
         }
     };
-    if let Some(path) = &args.build_only {
+    if args.build_only {
+        let path = args.output_path.with_context(|| "No output path provided.")?;
         serde_json::to_writer(std::fs::File::create(path)?, &executable)
             .with_context(|| "Failed writing executable.")?;
         return Ok(());
@@ -156,7 +174,7 @@ fn main() -> anyhow::Result<()> {
     let data =
         executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
     let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
-    let program = if args.run.proof_mode {
+    let program = if args.run.standalone {
         let entrypoint = executable
             .entrypoints
             .iter()
@@ -212,10 +230,10 @@ fn main() -> anyhow::Result<()> {
     };
 
     let cairo_run_config = CairoRunConfig {
-        trace_enabled: args.run.proof_mode,
-        relocate_mem: args.run.proof_mode,
+        trace_enabled: args.run.standalone,
+        relocate_mem: args.run.standalone,
         layout: args.run.layout,
-        proof_mode: args.run.proof_mode,
+        proof_mode: args.run.standalone,
         secure_run: args.run.secure_run,
         allow_missing_builtins: args.run.allow_missing_builtins,
         ..Default::default()
@@ -239,7 +257,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    if let Some(trace_path) = &args.run.proof.trace_file {
+    if let Some(trace_path) = &args.run.standalone_outputs.trace_file {
         let relocated_trace =
             runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
         let mut writer = FileWriter::new(3 * 1024 * 1024, trace_path)?;
@@ -247,20 +265,22 @@ fn main() -> anyhow::Result<()> {
         writer.flush()?;
     }
 
-    if let Some(memory_path) = &args.run.proof.memory_file {
+    if let Some(memory_path) = &args.run.standalone_outputs.memory_file {
         let mut writer = FileWriter::new(5 * 1024 * 1024, memory_path)?;
         cairo_run::write_encoded_memory(&runner.relocated_memory, &mut writer)?;
         writer.flush()?;
     }
 
-    if let Some(file_path) = args.run.proof.air_public_input {
+    if let Some(file_path) = args.run.standalone_outputs.air_public_input {
         let json = runner.get_air_public_input()?.serialize_json()?;
         std::fs::write(file_path, json)?;
     }
 
-    if let (Some(file_path), Some(trace_file), Some(memory_file)) =
-        (args.run.proof.air_private_input, args.run.proof.trace_file, args.run.proof.memory_file)
-    {
+    if let (Some(file_path), Some(trace_file), Some(memory_file)) = (
+        args.run.standalone_outputs.air_private_input,
+        args.run.standalone_outputs.trace_file,
+        args.run.standalone_outputs.memory_file,
+    ) {
         let absolute = |path_buf: PathBuf| {
             path_buf.as_path().canonicalize().unwrap_or(path_buf).to_string_lossy().to_string()
         };
@@ -272,7 +292,7 @@ fn main() -> anyhow::Result<()> {
         std::fs::write(file_path, json)?;
     }
 
-    if let Some(file_name) = args.run.cairo_pie_output {
+    if let Some(file_name) = args.output_path {
         runner
             .get_cairo_pie()
             .with_context(|| "Failed getting cairo pie")?
