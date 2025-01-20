@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId, UnstableSalsaId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId,
+    NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -166,6 +166,40 @@ impl TypeLongId {
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Closure(_) => false,
+        }
+    }
+
+    pub fn module_id(&self, db: &dyn SemanticGroup) -> Option<ModuleId> {
+        match self {
+            TypeLongId::Concrete(concrete) => {
+                Some(concrete.generic_type(db).module_file_id(db.upcast()).0)
+            }
+            TypeLongId::Snapshot(ty) => {
+                let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
+                inner_ty.module_id(db)
+            }
+            TypeLongId::GenericParameter(_) => None,
+            TypeLongId::Var(_) => None,
+            TypeLongId::Coupon(function_id) => function_id
+                .get_concrete(db)
+                .generic_function
+                .module_file_id(db)
+                .map(|module_file_id| module_file_id.0),
+            TypeLongId::Missing(_) => None,
+            TypeLongId::Tuple(_) => None,
+            TypeLongId::ImplType(_) => None,
+            TypeLongId::FixedSizeArray { .. } => None,
+            TypeLongId::Closure(closure) => {
+                if let Ok(function_id) = closure.parent_function {
+                    function_id
+                        .get_concrete(db)
+                        .generic_function
+                        .module_file_id(db.upcast())
+                        .map(|module_file_id| module_file_id.0)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
