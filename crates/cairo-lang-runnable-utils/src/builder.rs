@@ -461,7 +461,7 @@ pub fn create_entry_code_from_params(
                 };
                 output_ptr_end
             } else {
-                panic!("Unexpected output size: {size}",);
+                panic!("Unexpected output type: {:?}", ret_ty.0);
             };
             *builtin_vars.get_mut(&BuiltinName::output).unwrap() = new_output_ptr;
         } else {
