@@ -299,3 +299,157 @@ Statements:
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test closure with branching.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo(a: u32) {
+    let f = |a: felt252| {
+        let mut b = @0;
+        if 1 == 2 {
+            b = @a;
+        } else {
+            b = @a;
+        }
+    };
+    let _ = f(0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:25}) <- struct_construct()
+  (v2: {closure@lib.cairo:2:13: 2:25}, v3: @{closure@lib.cairo:2:13: 2:25}) <- snapshot(v1)
+  (v4: core::felt252) <- 0
+  (v5: (core::felt252,)) <- struct_construct(v4)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:13: 2:25}(v3, v5)
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- 2
+  (v3: core::felt252) <- core::felt252_sub(v1, v2)
+End:
+  Match(match core::felt252_is_zero(v3) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Return()
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = |a: felt252| {
+            ^^^^^^^^^^^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:25}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:25}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let f = |a: felt252| {
+            ^^^^^^^^^^^^
+
+Parameters: v0: @{closure@lib.cairo:2:13: 2:25}, v2: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:25}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::felt252) <- struct_destructure(v2)
+  (v4: core::felt252) <- 0
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252, v9: @core::felt252) <- snapshot(v7)
+  (v10: core::felt252) <- 2
+  (v11: core::felt252, v12: @core::felt252) <- snapshot(v10)
+  (v13: core::bool) <- core::Felt252PartialEq::eq(v9, v12)
+End:
+  Match(match_enum(v13) {
+    bool::False(v17) => blk2,
+    bool::True(v14) => blk1,
+  })
+
+blk1:
+Statements:
+  (v15: core::felt252, v16: @core::felt252) <- snapshot(v3)
+End:
+  Goto(blk3, {v15 -> v20, v16 -> v21})
+
+blk2:
+Statements:
+  (v18: core::felt252, v19: @core::felt252) <- snapshot(v3)
+End:
+  Goto(blk3, {v18 -> v20, v19 -> v21})
+
+blk3:
+Statements:
+  (v22: ()) <- struct_construct()
+End:
+  Return(v22)
+
+
+Final lowering:
+Parameters: v0: @{closure@lib.cairo:2:13: 2:25}, v1: (core::felt252,)
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- 2
+  (v4: core::felt252) <- core::felt252_sub(v2, v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Return()

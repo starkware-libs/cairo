@@ -139,6 +139,88 @@ impl RangeIntoIterator<
     }
 }
 
+/// Represents the range [start, end].
+#[derive(Clone, Drop, PartialEq)]
+pub struct RangeInclusive<T> {
+    /// The lower bound of the range (inclusive).
+    pub start: T,
+    /// The upper bound of the range (inclusive).
+    pub end: T,
+}
+
+#[derive(Clone, Drop)]
+pub struct RangeInclusiveIterator<T> {
+    /// The current value of the iterator.
+    pub(crate) cur: T,
+    /// The upper bound of the range (inclusive).
+    pub(crate) end: T,
+    // This field is:
+    //  - `false` upon construction
+    //  - `false` when iteration has yielded an element and the iterator is not exhausted
+    //  - `true` when iteration has been used to exhaust the iterator
+    //
+    // This is required to differentiate between the last element and the end of the range.
+    pub(crate) exhausted: bool,
+}
+
+/// Handles the range inclusive operator (`..=`).
+#[generate_trait]
+pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
+    /// Handles the `..=` operator. Returns the value of the expression `start..=end`.
+    fn range_inclusive(start: T, end: T) -> RangeInclusive<T> {
+        RangeInclusive { start, end }
+    }
+}
+
+impl RangeInclusiveDebug<
+    T, impl TDebug: crate::fmt::Debug<T>,
+> of crate::fmt::Debug<RangeInclusive<T>> {
+    fn fmt(
+        self: @RangeInclusive<T>, ref f: crate::fmt::Formatter,
+    ) -> Result<(), crate::fmt::Error> {
+        self.start.fmt(ref f)?;
+        write!(f, "..=")?;
+        self.end.fmt(ref f)?;
+        Result::Ok(())
+    }
+}
+
+impl RangeInclusiveIteratorImpl<
+    T, +One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>,
+> of Iterator<RangeInclusiveIterator<T>> {
+    type Item = T;
+
+    fn next(ref self: RangeInclusiveIterator<T>) -> Option<T> {
+        if self.exhausted {
+            return Option::None;
+        }
+
+        let current = self.cur;
+
+        // If this is the last element, mark as exhausted for next iteration
+        if current == self.end {
+            self.exhausted = true;
+            return Option::Some(current);
+        }
+
+        // We know current < self.end here, because the iterator is not exhausted
+        self.cur = current + One::one();
+        Option::Some(current)
+    }
+}
+
+pub impl RangeInclusiveIntoIterator<
+    T, +One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>,
+> of IntoIterator<RangeInclusive<T>> {
+    type IntoIter = RangeInclusiveIterator<T>;
+
+    fn into_iter(self: RangeInclusive<T>) -> Self::IntoIter {
+        let exhausted = self.start > self.end;
+        Self::IntoIter { cur: self.start, end: self.end, exhausted }
+    }
+}
+
+
 // Sierra optimization.
 
 mod internal {

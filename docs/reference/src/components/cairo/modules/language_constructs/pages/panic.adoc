@@ -41,14 +41,14 @@ An example for such a function is `Add` trait `add` function, which is _nopanic_
 == `panic_with` macro
 
 A function returning an `Option` or `Result` may be marked with the `panic_with` macro.
-This macro takes two arguments, which is the data that is passed as the panic reason as well as the
+This macro takes two arguments: the data that is passed as the panic reason as well as the
 name for a wrapping function.
 If the function returns `None` or `Err`, _panic_ function will be called with the given data.
 
 [source,rust]
 ----
 #[panic_with('got none value', unwrap)]
-fn identity(value: Option<u128>) -> Option<u128> { a }
+fn identity(value: Option<u128>) -> Option<u128> { value }
 ----
 
 Some `fn unwrap(value: Option<u128>) -> u128` that internally may panic may be created.

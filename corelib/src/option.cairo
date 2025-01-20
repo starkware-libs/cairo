@@ -513,7 +513,7 @@ pub trait OptionTrait<T> {
     /////////////////////////////////////////////////////////////////////////
 
     /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
-    /// or returns `None` (if `None`).
+    /// or returns `Option::None` (if `None`).
     ///
     /// # Examples
     ///
@@ -526,7 +526,7 @@ pub trait OptionTrait<T> {
     /// let x: Option<ByteArray> = Option::None;
     /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
     /// ```
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U>;
 
@@ -578,6 +578,45 @@ pub trait OptionTrait<T> {
     >(
         self: Option<T>, default: D, f: F,
     ) -> U;
+
+    /// Takes the value out of the option, leaving a [`Option::None`] in its place.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut x = Option::Some(2);
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::Some(2));
+    ///
+    /// let mut x: Option<u32> = Option::None;
+    /// let y = x.take();
+    /// assert_eq!(x, Option::None);
+    /// assert_eq!(y, Option::None);
+    /// ```
+    fn take(ref self: Option<T>) -> Option<T>;
+
+    /// Returns [`None`] if the option is [`None`], otherwise calls `predicate`
+    /// with the wrapped value and returns:
+    ///
+    /// - [`Some(t)`] if `predicate` returns `true` (where `t` is the wrapped
+    ///   value), and
+    /// - [`None`] if `predicate` returns `false`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let is_even = |n: @u32| -> bool {
+    ///     *n % 2 == 0
+    /// };
+    ///
+    /// assert_eq!(Option::None.filter(is_even), Option::None);
+    /// assert_eq!(Option::Some(3).filter(is_even), Option::None);
+    /// assert_eq!(Option::Some(4).filter(is_even), Option::Some(4));
+    /// ```
+    fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
+        self: Option<T>, predicate: P,
+    ) -> Option<T>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -722,7 +761,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U> {
         match self {
@@ -758,6 +797,24 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
             Option::Some(x) => f(x),
             Option::None => default(),
         }
+    }
+
+    fn take(ref self: Option<T>) -> Option<T> {
+        let value = self;
+        self = Option::None;
+        value
+    }
+
+    fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
+        self: Option<T>, predicate: P,
+    ) -> Option<T> {
+        if let Option::Some(value) = self {
+            if predicate(@value) {
+                return Option::Some(value);
+            }
+        }
+
+        Option::None
     }
 }
 

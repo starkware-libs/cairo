@@ -21,9 +21,7 @@ use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{
-    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
 use itertools::{Itertools, chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -44,8 +42,8 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{
-    GenericArgumentHead, GenericParamImpl, GenericParamsData, generic_params_to_args,
-    semantic_generic_params,
+    GenericArgumentHead, GenericParamImpl, GenericParamsData, fmt_generic_args,
+    generic_params_to_args, semantic_generic_params,
 };
 use super::impl_alias::{
     ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
@@ -118,17 +116,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.impl_def_id.full_path(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{}", arg.format(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 impl ConcreteImplId {
@@ -144,6 +132,9 @@ impl ConcreteImplId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.impl_def_id(db).name(db.upcast())
+    }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
     pub fn substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
         Ok(GenericSubstitution::from_impl(ImplLongId::Concrete(*self).intern(db)).concat(
@@ -177,7 +168,7 @@ pub enum ImplLongId {
     GenericParameter(GenericParamId),
     ImplVar(ImplVarId),
     ImplImpl(ImplImplId),
-    TraitImpl(TraitImplId),
+    SelfImpl(ConcreteTraitId),
     GeneratedImpl(GeneratedImplId),
 }
 impl ImplLongId {
@@ -188,7 +179,7 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_)
+            | ImplLongId::SelfImpl(_)
             | ImplLongId::GeneratedImpl(_) => {
                 return None;
             }
@@ -211,7 +202,7 @@ impl ImplLongId {
                     .unwrap_or_else(|_| "_".into())
             )
             .into(),
-            ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ImplLongId::SelfImpl(trait_impl) => trait_impl.name(db.upcast()),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 format!("{:?}", generated_impl.debug(db.elongate())).into()
             }
@@ -227,7 +218,9 @@ impl ImplLongId {
             }
             ImplLongId::ImplVar(var) => format!("{var:?}"),
             ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
-            ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
+            ImplLongId::SelfImpl(concrete_trait_id) => {
+                format!("{:?}", concrete_trait_id.debug(db.elongate()))
+            }
             ImplLongId::GeneratedImpl(generated_impl) => {
                 format!("{:?}", generated_impl.debug(db.elongate()))
             }
@@ -238,7 +231,8 @@ impl ImplLongId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_var_free(db),
-            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
+            ImplLongId::SelfImpl(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            ImplLongId::GenericParameter(_) => true,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
             ImplLongId::GeneratedImpl(generated_impl) => {
@@ -259,7 +253,7 @@ impl ImplLongId {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
-            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::ImplImpl(_) | ImplLongId::SelfImpl(_) => false,
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_fully_concrete(db)
                     && generated_impl
@@ -283,7 +277,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
-            ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
+            ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 write!(f, "{:?}", generated_impl.debug(db))
             }
@@ -597,7 +591,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         }
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl),
-        ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
+        ImplLongId::SelfImpl(concrete_trait_id) => Ok(concrete_trait_id),
         ImplLongId::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
 }
@@ -651,15 +645,12 @@ pub fn priv_impl_declaration_data_inner(
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
     let concrete_trait = if resolve_trait {
-        match resolver.resolve_concrete_path(
-            &mut diagnostics,
-            &trait_path_syntax,
-            NotFoundItemType::Trait,
-        ) {
-            Ok(resolved_item) => try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait)
-                .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait)),
-            Err(err) => Err(err),
-        }
+        resolver
+            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
+            .and_then(|resolved_item| match resolved_item {
+                ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
+                _ => Err(diagnostics.report(&trait_path_syntax, SemanticDiagnosticKind::NotATrait)),
+            })
     } else {
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
@@ -1313,7 +1304,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) | TypeLongId::TraitType(_) | TypeLongId::ImplType(_) => {
+        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
             panic!("Types should be fully resolved at this point.")
         }
         TypeLongId::Coupon(_) => vec![],
@@ -1942,12 +1933,6 @@ pub fn infer_impl_by_self(
             .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
-    let generic_args = ctx.resolver.resolve_generic_args(
-        ctx.diagnostics,
-        &trait_func_generic_params,
-        &generic_args_syntax.unwrap_or_default(),
-        stable_ptr,
-    )?;
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
@@ -1956,10 +1941,22 @@ pub fn infer_impl_by_self(
         &impl_lookup_context,
         Some(stable_ptr),
     );
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        GenericSubstitution::from_impl(generic_function.impl_id),
+        &trait_func_generic_params,
+        &generic_args_syntax.unwrap_or_default(),
+        stable_ptr,
+    )?;
 
     Ok((
-        FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
-            .intern(ctx.db),
+        FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Impl(generic_function),
+                generic_args,
+            },
+        }
+        .intern(ctx.db),
         n_snapshots,
     ))
 }
@@ -2200,7 +2197,7 @@ pub fn impl_type_concrete_implized(
             };
             concrete_impl
         }
-        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
+        ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
         ImplLongId::GeneratedImpl(generated) => {
@@ -2463,7 +2460,7 @@ pub fn impl_constant_concrete_implized_type(
         }
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
-        ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl)?,
+        ImplLongId::SelfImpl(concrete_trait_id) => concrete_trait_id,
         ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
     };
 

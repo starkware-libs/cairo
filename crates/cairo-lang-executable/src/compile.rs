@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -115,8 +116,9 @@ pub fn compile_executable_in_prepared_db(
 ///
 /// If the executable is not wrapping a function, returns the full path of the executable.
 fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
-    let wrapper_name = wrapper.name(db);
-    let wrapper_full_path = wrapper.base_semantic_function(db).full_path(db.upcast());
+    let semantic = wrapper.base_semantic_function(db);
+    let wrapper_name = semantic.name(db);
+    let wrapper_full_path = semantic.full_path(db.upcast());
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
@@ -141,13 +143,30 @@ pub fn compile_executable_function_in_prepared_db(
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
     diagnostics_reporter.ensure(db)?;
-    let SierraProgramWithDebug { program: sierra_program, debug_info: _ } = Arc::unwrap_or_clone(
+    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(vec![executable])
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
+
     let executable_func = sierra_program.funcs[0].clone();
-    let builder = RunnableBuilder::new(sierra_program, None)?;
+    let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
+        let mut locs = vec![];
+        for stmt_idx in err.stmt_indices() {
+            // Note that the `last` is used here as the call site is the most relevant location.
+            if let Some(loc) = debug_info
+                .statements_locations
+                .locations
+                .get(&stmt_idx)
+                .and_then(|stmt_locs| stmt_locs.last())
+            {
+                locs.push(format!("#{stmt_idx} {:?}", loc.diagnostic_location(db).debug(db)))
+            }
+        }
+
+        anyhow::anyhow!("Failed to create runnable builder: {}\n{}", err, locs.join("\n"))
+    })?;
+
     let wrapper = builder.create_wrapper_info(&executable_func, EntryCodeConfig::executable())?;
     Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
 }

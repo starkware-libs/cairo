@@ -718,3 +718,53 @@ error: Trait `core::ops::function::FnOnce` should not be re-implemented.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Mutating non mutable closure param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cannot assign to an immutable variable.
+ --> lib.cairo:3:9
+        a = a + 2
+        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Closures with ref arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |ref a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Closure parameters cannot be references
+ --> lib.cairo:2:14
+    let _ = |ref a| {
+             ^^^^^

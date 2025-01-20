@@ -155,7 +155,7 @@ ExprBlock
 
 //! > ==========================================================================
 
-//! > Test if-let boolean opperators
+//! > Test if-let boolean operators
 
 //! > test_runner_name
 test_partial_parser_tree(expect_diagnostics: false)

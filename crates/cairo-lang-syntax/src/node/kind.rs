@@ -240,6 +240,8 @@ pub enum SyntaxKind {
     TerminalDot,
     TokenDotDot,
     TerminalDotDot,
+    TokenDotDotEq,
+    TerminalDotDotEq,
     TokenEndOfFile,
     TerminalEndOfFile,
     TokenEq,
@@ -364,6 +366,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenDivEq
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
+                | SyntaxKind::TokenDotDotEq
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenEq
                 | SyntaxKind::TokenEqEq
@@ -454,6 +457,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalDivEq
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalDotDotEq
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalEq
                 | SyntaxKind::TerminalEqEq

@@ -456,10 +456,6 @@ pub fn unwrap_error_propagation_type(
         | TypeLongId::Missing(_)
         | TypeLongId::FixedSizeArray { .. }
         | TypeLongId::Closure(_) => None,
-        // TODO(yuval): for trait function default implementation, this may need to change.
-        TypeLongId::TraitType(_) => {
-            panic!("Trait types should only appear in traits, where there are no function bodies.")
-        }
     }
 }
 
@@ -523,6 +519,9 @@ pub fn core_binary_operator(
         BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
         BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
         BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
+        BinaryOperator::DotDotEq(_) => {
+            ("RangeInclusiveOp", "range_inclusive", false, CoreTraitContext::Ops)
+        }
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((
@@ -901,7 +900,7 @@ impl LiteralError {
 pub fn validate_literal(
     db: &dyn SemanticGroup,
     ty: TypeId,
-    value: BigInt,
+    value: &BigInt,
 ) -> Result<(), LiteralError> {
     if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
         return if value.is_zero() {
@@ -911,7 +910,7 @@ pub fn validate_literal(
         };
     }
     let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
-        value < min || value > max
+        *value < min || *value > max
     } else if ty == db.core_felt252_ty() {
         value.abs()
             > BigInt::from_str_radix(

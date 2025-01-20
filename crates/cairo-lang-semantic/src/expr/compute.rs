@@ -1663,6 +1663,15 @@ fn compute_expr_closure_semantic(
         } else {
             vec![]
         };
+
+        params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
+            new_ctx.diagnostics.report(param.stable_ptr(ctx.db.upcast()), RefClosureParam);
+        });
+
+        new_ctx
+            .semantic_defs
+            .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
+
         let return_type = match syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_with_environment(
                 new_ctx.db,
@@ -1934,7 +1943,7 @@ fn compute_method_function_call_data(
         self_ty,
         candidate_traits,
         func_name.clone(),
-        self_expr.stable_ptr().untyped(),
+        method_syntax,
     );
     let trait_function_id = match candidates[..] {
         [] => {
@@ -2939,9 +2948,6 @@ fn member_access_expr(
             .diagnostics
             .report(&rhs_syntax, TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name })),
         TypeLongId::Missing(diag_added) => Err(*diag_added),
-        TypeLongId::TraitType(_) => {
-            panic!("Trait types should only appear in traits, where there are no function bodies.")
-        }
     }
 }
 
@@ -3682,7 +3688,6 @@ pub fn compute_statement_semantic(
                             }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
-                            | ResolvedGenericItem::TraitFunction(_)
                             | ResolvedGenericItem::GenericTypeAlias(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)

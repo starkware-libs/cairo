@@ -1719,7 +1719,7 @@ fn add_capture_destruct_impl(
     let signature =
         Signature::from_semantic(ctx.db, semantic_db.concrete_function_signature(function)?);
 
-    let func_key = GeneratedFunctionKey::TraitFunc(function, location);
+    let func_key = GeneratedFunctionKey::TraitFunc(trait_function, location);
     let function_id =
         FunctionWithBodyLongId::Generated { parent: ctx.semantic_function_id, key: func_key }
             .intern(ctx.db);
@@ -1824,7 +1824,7 @@ fn add_closure_call_function(
     .intern(semantic_db);
     let function_with_body_id = FunctionWithBodyLongId::Generated {
         parent: encapsulated_ctx.semantic_function_id,
-        key: GeneratedFunctionKey::TraitFunc(function, closure_ty.wrapper_location),
+        key: GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
     }
     .intern(encapsulated_ctx.db);
     let signature = Signature::from_semantic(
@@ -1889,6 +1889,8 @@ fn add_closure_call_function(
     .add(&mut ctx, &mut builder.statements);
     for (param_var, param) in param_vars.into_iter().zip(expr.params.iter()) {
         builder.semantics.introduce((&parameter_as_member_path(param.clone())).into(), param_var);
+        ctx.semantic_defs
+            .insert(semantic::VarId::Param(param.id), semantic::Binding::Param(param.clone()));
     }
     let lowered_expr = lower_expr(&mut ctx, &mut builder, expr.body);
     let maybe_sealed_block = lowered_expr_to_block_scope_end(&mut ctx, builder, lowered_expr);
@@ -1907,9 +1909,10 @@ fn add_closure_call_function(
         signature: ctx.signature.clone(),
         parameters,
     };
-    encapsulated_ctx
-        .lowerings
-        .insert(GeneratedFunctionKey::TraitFunc(function, closure_ty.wrapper_location), lowered);
+    encapsulated_ctx.lowerings.insert(
+        GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
+        lowered,
+    );
     Ok(())
 }
 

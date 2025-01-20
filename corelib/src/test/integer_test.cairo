@@ -2,7 +2,7 @@
 use crate::integer::{u512, u512_safe_div_rem_by_u256};
 #[feature("deprecated-bounded-int-trait")]
 use crate::integer;
-use crate::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
+use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
 
 #[test]
@@ -926,7 +926,7 @@ fn cast_subtype_valid<
         && max_sub_as_super.try_into().unwrap() == max_sub
 }
 
-/// Checks that `A::max()` is castable to `B`, and `A::max() + 1` is in `B`s range, and not
+/// Checks that `A::MAX` is castable to `B`, and `A::MAX + 1` is in `B`s range, and not
 /// castable back to `A`.
 fn validate_max_strictly_contained<
     A,
@@ -2161,81 +2161,174 @@ mod bounded_int {
     #[test]
     fn test_trim() {
         use core::internal::OptionRev;
-        assert!(bounded_int::trim::<u8, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u8, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u8, 0xff>(0xff) == OptionRev::None);
-        assert!(bounded_int::trim::<u8, 0xff>(0xfe) == OptionRev::Some(0xfe));
-        assert!(bounded_int::trim::<i8, -0x80>(-0x80) == OptionRev::None);
-        assert!(bounded_int::trim::<i8, -0x80>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i8, 0x7f>(0x7f) == OptionRev::None);
-        assert!(bounded_int::trim::<i8, 0x7f>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<u8>(0) == OptionRev::None);
+        assert!(bounded_int::trim_min::<u8>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<u8>(0xff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<u8>(0xfe) == OptionRev::Some(0xfe));
+        assert!(bounded_int::trim_min::<i8>(-0x80) == OptionRev::None);
+        assert!(bounded_int::trim_min::<i8>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<i8>(0x7f) == OptionRev::None);
+        assert!(bounded_int::trim_max::<i8>(1) == OptionRev::Some(1));
 
-        assert!(bounded_int::trim::<u16, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u16, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u16, 0xffff>(0xffff) == OptionRev::None);
-        assert!(bounded_int::trim::<u16, 0xffff>(0xfffe) == OptionRev::Some(0xfffe));
-        assert!(bounded_int::trim::<i16, -0x8000>(-0x8000) == OptionRev::None);
-        assert!(bounded_int::trim::<i16, -0x8000>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i16, 0x7fff>(0x7fff) == OptionRev::None);
-        assert!(bounded_int::trim::<i16, 0x7fff>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<u16>(0) == OptionRev::None);
+        assert!(bounded_int::trim_min::<u16>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<u16>(0xffff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<u16>(0xfffe) == OptionRev::Some(0xfffe));
+        assert!(bounded_int::trim_min::<i16>(-0x8000) == OptionRev::None);
+        assert!(bounded_int::trim_min::<i16>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<i16>(0x7fff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<i16>(1) == OptionRev::Some(1));
 
-        assert!(bounded_int::trim::<u32, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u32, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u32, 0xffffffff>(0xffffffff) == OptionRev::None);
-        assert!(bounded_int::trim::<u32, 0xffffffff>(0xfffffffe) == OptionRev::Some(0xfffffffe));
-        assert!(bounded_int::trim::<i32, -0x80000000>(-0x80000000) == OptionRev::None);
-        assert!(bounded_int::trim::<i32, -0x80000000>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i32, 0x7fffffff>(0x7fffffff) == OptionRev::None);
-        assert!(bounded_int::trim::<i32, 0x7fffffff>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<u32>(0) == OptionRev::None);
+        assert!(bounded_int::trim_min::<u32>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<u32>(0xffffffff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<u32>(0xfffffffe) == OptionRev::Some(0xfffffffe));
+        assert!(bounded_int::trim_min::<i32>(-0x80000000) == OptionRev::None);
+        assert!(bounded_int::trim_min::<i32>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<i32>(0x7fffffff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<i32>(1) == OptionRev::Some(1));
 
-        assert!(bounded_int::trim::<u64, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u64, 0>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<u64>(0) == OptionRev::None);
+        assert!(bounded_int::trim_min::<u64>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<u64>(0xffffffffffffffff) == OptionRev::None);
         assert!(
-            bounded_int::trim::<u64, 0xffffffffffffffff>(0xffffffffffffffff) == OptionRev::None,
+            bounded_int::trim_max::<u64>(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe),
         );
-        assert!(
-            bounded_int::trim::<
-                u64, 0xffffffffffffffff,
-            >(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe),
-        );
-        assert!(
-            bounded_int::trim::<i64, -0x8000000000000000>(-0x8000000000000000) == OptionRev::None,
-        );
-        assert!(bounded_int::trim::<i64, -0x8000000000000000>(1) == OptionRev::Some(1));
-        assert!(
-            bounded_int::trim::<i64, 0x7fffffffffffffff>(0x7fffffffffffffff) == OptionRev::None,
-        );
-        assert!(bounded_int::trim::<i64, 0x7fffffffffffffff>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<i64>(-0x8000000000000000) == OptionRev::None);
+        assert!(bounded_int::trim_min::<i64>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_max::<i64>(0x7fffffffffffffff) == OptionRev::None);
+        assert!(bounded_int::trim_max::<i64>(1) == OptionRev::Some(1));
 
-        assert!(bounded_int::trim::<u128, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u128, 0>(1) == OptionRev::Some(1));
+        assert!(bounded_int::trim_min::<u128>(0) == OptionRev::None);
+        assert!(bounded_int::trim_min::<u128>(1) == OptionRev::Some(1));
         assert!(
-            bounded_int::trim::<
-                u128, 0xffffffffffffffffffffffffffffffff,
-            >(0xffffffffffffffffffffffffffffffff) == OptionRev::None,
+            bounded_int::trim_max::<u128>(0xffffffffffffffffffffffffffffffff) == OptionRev::None,
         );
         assert!(
-            bounded_int::trim::<
-                u128, 0xffffffffffffffffffffffffffffffff,
+            bounded_int::trim_max::<
+                u128,
             >(
                 0xfffffffffffffffffffffffffffffffe,
             ) == OptionRev::Some(0xfffffffffffffffffffffffffffffffe),
         );
         assert!(
-            bounded_int::trim::<
-                i128, -0x80000000000000000000000000000000,
-            >(-0x80000000000000000000000000000000) == OptionRev::None,
+            bounded_int::trim_min::<i128>(-0x80000000000000000000000000000000) == OptionRev::None,
         );
+        assert!(bounded_int::trim_min::<i128>(1) == OptionRev::Some(1));
         assert!(
-            bounded_int::trim::<i128, -0x80000000000000000000000000000000>(1) == OptionRev::Some(1),
+            bounded_int::trim_max::<i128>(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
         );
-        assert!(
-            bounded_int::trim::<
-                i128, 0x7fffffffffffffffffffffffffffffff,
-            >(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
-        );
-        assert!(
-            bounded_int::trim::<i128, 0x7fffffffffffffffffffffffffffffff>(1) == OptionRev::Some(1),
-        );
+        assert!(bounded_int::trim_max::<i128>(1) == OptionRev::Some(1));
     }
+}
+
+#[test]
+fn test_upcast_in_const() {
+    const AS_U8: u8 = 10;
+    const AS_U16: u16 = AS_U8.into();
+    assert_eq!(AS_U16, 10);
+}
+
+#[test]
+fn test_downcast_in_const() {
+    const IN_RANGE: u16 = 10;
+    const OUT_OF_RANGE: u16 = 300;
+    const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U8, Option::Some(10));
+    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+}
+
+#[test]
+fn test_const_into_felt252_casts() {
+    const U8: u8 = 0;
+    const U8_AS_FELT: felt252 = U8.into();
+    assert_eq!(U8_AS_FELT, 0);
+
+    const U16: u16 = 0;
+    const U16_AS_FELT: felt252 = U16.into();
+    assert_eq!(U16_AS_FELT, 0);
+
+    const U32: u32 = 0;
+    const U32_AS_FELT: felt252 = U32.into();
+    assert_eq!(U32_AS_FELT, 0);
+
+    const U64: u64 = 0;
+    const U64_AS_FELT: felt252 = U64.into();
+    assert_eq!(U64_AS_FELT, 0);
+
+    const U128: u128 = 0;
+    const U128_AS_FELT: felt252 = U128.into();
+    assert_eq!(U128_AS_FELT, 0);
+
+    const I8: u8 = 0;
+    const I8_AS_FELT: felt252 = I8.into();
+    assert_eq!(I8_AS_FELT, 0);
+
+    const I16: i16 = 0;
+    const I16_AS_FELT: felt252 = I16.into();
+    assert_eq!(I16_AS_FELT, 0);
+
+    const I32: i32 = 0;
+    const I32_AS_FELT: felt252 = I32.into();
+    assert_eq!(I32_AS_FELT, 0);
+
+    const I64: i64 = 0;
+    const I64_AS_FELT: felt252 = I64.into();
+    assert_eq!(I64_AS_FELT, 0);
+
+    const I128: i128 = 0;
+    const I128_AS_FELT: felt252 = I128.into();
+    assert_eq!(I128_AS_FELT, 0);
+}
+
+#[test]
+fn test_const_from_felt252_casts() {
+    const IN_RANGE: felt252 = 0;
+    const OUT_OF_RANGE: felt252 = 2_felt252.pow(200);
+
+    const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U8, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+
+    const IN_RANGE_AS_U16: Option<u16> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U16: Option<u16> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U16, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U16, Option::None);
+
+    const IN_RANGE_AS_U32: Option<u32> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U32: Option<u32> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U32, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U32, Option::None);
+
+    const IN_RANGE_AS_U64: Option<u64> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_U64: Option<u64> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_U64, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U64, Option::None);
+
+    const IN_RANGE_AS_I8: Option<i8> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I8: Option<i8> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I8, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I8, Option::None);
+
+    const IN_RANGE_AS_I16: Option<i16> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I16: Option<i16> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I16, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I16, Option::None);
+
+    const IN_RANGE_AS_I32: Option<i32> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I32: Option<i32> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I32, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I32, Option::None);
+
+    const IN_RANGE_AS_I64: Option<i64> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I64: Option<i64> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I64, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I64, Option::None);
+
+    const IN_RANGE_AS_I128: Option<i128> = IN_RANGE.try_into();
+    const OUT_OF_RANGE_AS_I128: Option<i128> = OUT_OF_RANGE.try_into();
+    assert_eq!(IN_RANGE_AS_I128, Option::Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I128, Option::None);
 }

@@ -23,7 +23,7 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::generic_params_to_args;
+use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -58,7 +58,7 @@ impl ImplGenericFunctionId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_)
+            | ImplLongId::SelfImpl(_)
             | ImplLongId::GeneratedImpl(_) => Ok(None),
         }
     }
@@ -85,7 +85,6 @@ pub enum GenericFunctionId {
     Extern(ExternFunctionId),
     /// A generic function of an impl.
     Impl(ImplGenericFunctionId),
-    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn from_generic_with_body(
@@ -104,7 +103,12 @@ impl GenericFunctionId {
                 };
                 GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function })
             }
-            GenericFunctionWithBodyId::Trait(id) => GenericFunctionId::Trait(id),
+            GenericFunctionWithBodyId::Trait(id) => {
+                GenericFunctionId::Impl(ImplGenericFunctionId {
+                    impl_id: ImplLongId::SelfImpl(id.concrete_trait(db)).intern(db),
+                    function: id.trait_function(db),
+                })
+            }
         })
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -114,13 +118,6 @@ impl GenericFunctionId {
             GenericFunctionId::Extern(id) => id.full_path(defs_db),
             GenericFunctionId::Impl(id) => {
                 format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
-            }
-            GenericFunctionId::Trait(id) => {
-                format!(
-                    "{}::{}",
-                    id.concrete_trait(db).full_path(db),
-                    id.trait_function(db).name(defs_db)
-                )
             }
         }
     }
@@ -137,7 +134,6 @@ impl GenericFunctionId {
                 let substitution = &GenericSubstitution::from_impl(id.impl_id);
                 SubstitutionRewriter { db, substitution }.rewrite(signature)
             }
-            GenericFunctionId::Trait(id) => db.concrete_trait_function_signature(id),
         }
     }
     pub fn generic_params(&self, db: &dyn SemanticGroup) -> Maybe<Vec<GenericParam>> {
@@ -149,7 +145,6 @@ impl GenericFunctionId {
                 let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
                 db.concrete_trait_function_generic_params(id)
             }
-            GenericFunctionId::Trait(id) => db.concrete_trait_function_generic_params(id),
         }
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -157,9 +152,6 @@ impl GenericFunctionId {
             GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
             GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
             GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
-            GenericFunctionId::Trait(trait_function) => {
-                trait_function.trait_function(db).name(db.upcast())
-            }
         }
     }
     /// Returns the ModuleFileId of the function's definition if possible.
@@ -181,9 +173,6 @@ impl GenericFunctionId {
                     None
                 }
             }
-            GenericFunctionId::Trait(trait_function) => Some(
-                trait_function.trait_function(db).trait_id(db.upcast()).module_file_id(db.upcast()),
-            ),
         }
     }
     /// Returns whether the function has the `#[must_use]` attribute.
@@ -191,7 +180,6 @@ impl GenericFunctionId {
         match self {
             GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
             GenericFunctionId::Impl(id) => id.function.has_attr(db, MUST_USE_ATTR),
-            GenericFunctionId::Trait(id) => id.trait_function(db).has_attr(db, MUST_USE_ATTR),
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
@@ -202,7 +190,6 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_generic_function) => {
                 impl_generic_function.impl_id.is_fully_concrete(db)
             }
-            GenericFunctionId::Trait(_) => false,
         }
     }
     /// Returns true if the function does not depend on impl or type variables.
@@ -212,7 +199,6 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(impl_generic_function) => {
                 impl_generic_function.impl_id.is_var_free(db)
             }
-            GenericFunctionId::Trait(_) => false,
         }
     }
 }
@@ -245,7 +231,6 @@ impl DebugWithDb<dyn SemanticGroup> for GenericFunctionId {
             GenericFunctionId::Free(func) => write!(f, "{:?}", func.debug(db)),
             GenericFunctionId::Extern(func) => write!(f, "{:?}", func.debug(db)),
             GenericFunctionId::Impl(func) => write!(f, "{:?}", func.debug(db)),
-            GenericFunctionId::Trait(func) => write!(f, "{:?}", func.debug(db)),
         }
     }
 }
@@ -289,8 +274,8 @@ impl FunctionId {
         format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
     }
 
-    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
-        self.get_concrete(db).full_name(db)
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        self.get_concrete(db).full_path(db)
     }
 
     /// Returns true if the function does not depend on any generics.
@@ -391,7 +376,6 @@ impl GenericFunctionWithBodyId {
                     },
                 })
             }
-            GenericFunctionId::Trait(id) => GenericFunctionWithBodyId::Trait(id),
             _ => return Ok(None),
         }))
     }
@@ -594,7 +578,7 @@ impl ConcreteFunctionWithBody {
         self.function_with_body_id(db).name(db.upcast())
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        self.generic_function.full_path(db)
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 
@@ -604,18 +588,8 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{:?}", self.generic_function.name(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        write!(f, "{}", self.generic_function.full_path(db))?;
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 
@@ -703,20 +677,8 @@ impl ConcreteFunction {
                 .intern(db),
         ))
     }
-    pub fn full_name(&self, db: &dyn SemanticGroup) -> String {
-        let maybe_generic_part = if !self.generic_args.is_empty() {
-            let mut generics = String::new();
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    generics.push_str(", ");
-                }
-                generics.push_str(&arg.format(db));
-            }
-            format!("::<{generics}>")
-        } else {
-            "".to_string()
-        };
-        format!("{}{maybe_generic_part}", self.generic_function.format(db.upcast()))
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
@@ -726,17 +688,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.generic_function.format(db.upcast()))?;
-        if !self.generic_args.is_empty() {
-            write!(f, "::<")?;
-            for (i, arg) in self.generic_args.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:?}", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        fmt_generic_args(&self.generic_args, f, db)
     }
 }
 

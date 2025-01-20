@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, VarId,
+    ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId,
+    VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
@@ -26,9 +27,8 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant,
-    get_core_function_id, get_core_trait, get_core_ty_by_name, true_variant,
-    try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
+    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -37,6 +37,8 @@ use crate::expr::compute::{
 };
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
+use crate::helper::ModuleHelper;
+use crate::items::enm::SemanticEnumEx;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -114,7 +116,6 @@ pub enum ConstValue {
     Boxed(Box<ConstValue>),
     Generic(#[dont_rewrite] GenericParamId),
     ImplConstant(ImplConstantId),
-    TraitConstant(TraitConstantId),
     Var(ConstVar, TypeId),
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
@@ -134,8 +135,7 @@ impl ConstValue {
                 ConstValue::Generic(_)
                 | ConstValue::Var(_, _)
                 | ConstValue::Missing(_)
-                | ConstValue::ImplConstant(_)
-                | ConstValue::TraitConstant(_) => false,
+                | ConstValue::ImplConstant(_) => false,
             }
     }
 
@@ -143,10 +143,7 @@ impl ConstValue {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         self.ty(db).unwrap().is_var_free(db)
             && match self {
-                ConstValue::Int(_, _)
-                | ConstValue::Generic(_)
-                | ConstValue::Missing(_)
-                | ConstValue::TraitConstant(_) => true,
+                ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::Missing(_) => true,
                 ConstValue::Struct(members, _) => {
                     members.iter().all(|member| member.is_var_free(db))
                 }
@@ -176,7 +173,6 @@ impl ConstValue {
             ConstValue::ImplConstant(impl_constant_id) => {
                 db.impl_constant_concrete_implized_type(*impl_constant_id)?
             }
-            ConstValue::TraitConstant(trait_constant) => db.trait_constant_type(*trait_constant)?,
         })
     }
 
@@ -440,7 +436,7 @@ pub fn value_as_const_value(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<ConstValue, LiteralError> {
-    validate_literal(db.upcast(), ty, value.clone())?;
+    validate_literal(db.upcast(), ty, value)?;
     let get_basic_const_value = |ty| {
         let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
 
@@ -501,7 +497,7 @@ impl ConstantEvaluateContext<'_> {
             }
             Expr::FunctionCall(expr) => {
                 if let Some(value) = try_extract_minus_literal(self.db, &self.arenas.exprs, expr) {
-                    if let Err(err) = validate_literal(self.db, expr.ty, value) {
+                    if let Err(err) = validate_literal(self.db, expr.ty, &value) {
                         self.diagnostics.report(
                             expr.stable_ptr.untyped(),
                             SemanticDiagnosticKind::LiteralError(err),
@@ -531,7 +527,7 @@ impl ConstantEvaluateContext<'_> {
                 }
             }
             Expr::Literal(expr) => {
-                if let Err(err) = validate_literal(self.db, expr.ty, expr.value.clone()) {
+                if let Err(err) = validate_literal(self.db, expr.ty, &expr.value) {
                     self.diagnostics.report(
                         expr.stable_ptr.untyped(),
                         SemanticDiagnosticKind::LiteralError(err),
@@ -608,7 +604,6 @@ impl ConstantEvaluateContext<'_> {
                 }
                 self.db.trait_function_signature(id.function)
             }
-            GenericFunctionId::Trait(id) => db.trait_function_signature(id.trait_function(db)),
         })();
         if signature.map(|s| s.is_const) == Ok(true) {
             return true;
@@ -831,7 +826,7 @@ impl ConstantEvaluateContext<'_> {
             Err(err) => return ConstValue::Missing(err),
         };
         if let Some(calc_result) =
-            self.evaluate_const_function_call(&concrete_function, &args, expr.stable_ptr.untyped())
+            self.evaluate_const_function_call(&concrete_function, &args, expr)
         {
             return calc_result;
         }
@@ -915,9 +910,42 @@ impl ConstantEvaluateContext<'_> {
         &mut self,
         concrete_function: &ConcreteFunction,
         args: &[ConstValue],
-        stable_ptr: SyntaxStablePtrId,
+        expr: &ExprFunctionCall,
     ) -> Option<ConstValue> {
         let db = self.db;
+        if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
+            let expr_ty = self.rewriter().rewrite(expr.ty).ok()?;
+            if self.upcast_fns.contains(&extern_fn) {
+                let [ConstValue::Int(value, _)] = args else { return None };
+                return Some(ConstValue::Int(value.clone(), expr_ty));
+            } else if self.downcast_fns.contains(&extern_fn) {
+                let [ConstValue::Int(value, _)] = args else { return None };
+                let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
+                else {
+                    return None;
+                };
+                let (some, none) =
+                    db.concrete_enum_variants(enm).ok()?.into_iter().collect_tuple()?;
+                let success_ty = some.ty;
+                return Some(match validate_literal(db, success_ty, value) {
+                    Ok(()) => {
+                        ConstValue::Enum(some, ConstValue::Int(value.clone(), success_ty).into())
+                    }
+                    Err(LiteralError::OutOfRange(_)) => {
+                        ConstValue::Enum(none, self.unit_const.clone().into())
+                    }
+                    Err(LiteralError::InvalidTypeForLiteral(_)) => unreachable!(
+                        "`downcast` is only allowed into types that can be literals. Got `{}`.",
+                        success_ty.format(db)
+                    ),
+                });
+            } else {
+                unreachable!(
+                    "Unexpected extern function in constant lowering: `{}`",
+                    extern_fn.full_path(db.upcast())
+                );
+            }
+        }
         let body_id = concrete_function.body(db).ok()??;
         let concrete_body_id = body_id.function_with_body_id(db);
         let signature = db.function_with_body_signature(concrete_body_id).ok()?;
@@ -926,10 +954,10 @@ impl ConstantEvaluateContext<'_> {
         let body = db.function_body(concrete_body_id).ok()?;
         const MAX_CONST_EVAL_DEPTH: usize = 100;
         if self.depth > MAX_CONST_EVAL_DEPTH {
-            return Some(ConstValue::Missing(
-                self.diagnostics
-                    .report(stable_ptr, SemanticDiagnosticKind::ConstantCalculationDepthExceeded),
-            ));
+            return Some(ConstValue::Missing(self.diagnostics.report(
+                expr.stable_ptr,
+                SemanticDiagnosticKind::ConstantCalculationDepthExceeded,
+            )));
         }
         let mut diagnostics = SemanticDiagnostics::default();
         let mut inner = ConstantEvaluateContext {
@@ -952,7 +980,7 @@ impl ConstantEvaluateContext<'_> {
             let (inner_diag, mut notes) = match diagnostic.kind {
                 SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
                     self.diagnostics.report(
-                        stable_ptr,
+                        expr.stable_ptr,
                         SemanticDiagnosticKind::ConstantCalculationDepthExceeded,
                     );
                     continue;
@@ -963,11 +991,11 @@ impl ConstantEvaluateContext<'_> {
                 _ => (diagnostic.into(), vec![]),
             };
             notes.push(DiagnosticNote::with_location(
-                format!("In `{}`", concrete_function.full_name(db)),
+                format!("In `{}`", concrete_function.full_path(db)),
                 location,
             ));
             self.diagnostics.report(
-                stable_ptr,
+                expr.stable_ptr,
                 SemanticDiagnosticKind::InnerFailedConstantCalculation(inner_diag, notes),
             );
         }
@@ -1210,6 +1238,10 @@ pub struct ConstCalcInfo {
     false_const: ConstValue,
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
+    /// The integer `upcast` function.
+    upcast_fns: UnorderedHashSet<ExternFunctionId>,
+    /// The integer `downcast` function.
+    downcast_fns: UnorderedHashSet<ExternFunctionId>,
 }
 
 impl ConstCalcInfo {
@@ -1232,6 +1264,8 @@ impl ConstCalcInfo {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
+        let core = ModuleHelper::core(db);
+        let integer = core.submodule("integer");
         Self {
             const_traits: [
                 neg_trait,
@@ -1270,7 +1304,38 @@ impl ConstCalcInfo {
             true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
-            panic_with_felt252: get_core_function_id(db, "panic_with_felt252".into(), vec![]),
+            panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
+            upcast_fns: [
+                "upcast",
+                "u8_to_felt252",
+                "u16_to_felt252",
+                "u32_to_felt252",
+                "u64_to_felt252",
+                "u128_to_felt252",
+                "i8_to_felt252",
+                "i16_to_felt252",
+                "i32_to_felt252",
+                "i64_to_felt252",
+                "i128_to_felt252",
+            ]
+            .into_iter()
+            .map(|n| integer.extern_function_id(n))
+            .collect(),
+            downcast_fns: [
+                "downcast",
+                "u8_try_from_felt252",
+                "u16_try_from_felt252",
+                "u32_try_from_felt252",
+                "u64_try_from_felt252",
+                "i8_try_from_felt252",
+                "i16_try_from_felt252",
+                "i32_try_from_felt252",
+                "i64_try_from_felt252",
+                "i128_try_from_felt252",
+            ]
+            .into_iter()
+            .map(|n| integer.extern_function_id(n))
+            .collect(),
         }
     }
 }
