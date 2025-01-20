@@ -6,7 +6,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
@@ -90,6 +90,26 @@ pub enum AnnotationError {
         expected: ApTracking,
         actual: ApTracking,
     },
+}
+
+impl AnnotationError {
+    pub fn stmt_indices(&self) -> Vec<StatementIdx> {
+        match self {
+            AnnotationError::ApChangeError {
+                source_statement_idx,
+                destination_statement_idx,
+                introduction_point,
+                ..
+            } => chain!(
+                [source_statement_idx, destination_statement_idx],
+                &introduction_point.source_statement_idx,
+                [&introduction_point.destination_statement_idx]
+            )
+            .cloned()
+            .collect(),
+            _ => vec![],
+        }
+    }
 }
 
 /// Error representing an inconsistency in the references annotations.
