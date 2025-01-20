@@ -2,8 +2,6 @@
 #[path = "scrub_units_test.rs"]
 mod test;
 
-use cairo_lang_semantic::corelib;
-
 use crate::db::LoweringGroup;
 use crate::{
     FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementStructConstruct,
@@ -16,7 +14,7 @@ pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
 
-    let unit_ty = corelib::unit_ty(db.upcast());
+    let unit_ty = db.defs_info().unit_ty;
 
     let mut fixes = vec![];
     for block in lowered.blocks.iter_mut() {

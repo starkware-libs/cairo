@@ -1,5 +1,3 @@
-use cairo_lang_semantic::GenericArgumentId;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::extensions::lib_func::{
@@ -28,12 +26,10 @@ use crate::test_utils::{
 /// felt252s.
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = libfunc.lookup_intern(db);
-    let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+    let info = db.defs_info();
+    let felt252_ty = db.get_concrete_type_id(info.felt252_ty).expect("Can't find core::felt252.");
     let array_ty = db
-        .get_concrete_type_id(get_core_ty_by_name(db.upcast(), "Array".into(), vec![
-            GenericArgumentId::Type(db.core_felt252_ty()),
-        ]))
+        .get_concrete_type_id(info.array_felt252_ty)
         .expect("Can't find core::Array<core::felt252>.");
     let name = libfunc_long_id.generic_id.0;
     match name.as_str() {
@@ -225,8 +221,8 @@ fn test_add_store_statements(
     local_variables: LocalVariables,
     params: &[&str],
 ) -> Vec<String> {
-    let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+    let info = db.defs_info();
+    let felt252_ty = db.get_concrete_type_id(info.felt252_ty).expect("Can't find core::felt252.");
     add_store_statements(
         db,
         statements,

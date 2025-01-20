@@ -27,7 +27,7 @@ use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::{panic_destruct_trait_fn, unit_ty};
+use crate::corelib::panic_destruct_trait_fn;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
@@ -36,7 +36,7 @@ use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRew
 use crate::types::resolve_type;
 use crate::{
     ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericParam, SemanticDiagnostic,
-    TypeId, semantic, semantic_object_for_id,
+    TypeId, TypeLongId, semantic, semantic_object_for_id,
 };
 
 /// A generic function of an impl.
@@ -744,7 +744,7 @@ impl Signature {
     }
 }
 
-pub fn function_signature_return_type(
+fn function_signature_return_type(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
@@ -752,7 +752,7 @@ pub fn function_signature_return_type(
 ) -> semantic::TypeId {
     let ty_syntax = match sig.ret_ty(db.upcast()) {
         ast::OptionReturnTypeClause::Empty(_) => {
-            return unit_ty(db);
+            return TypeLongId::Tuple(vec![]).intern(db);
         }
         ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
             ret_type_clause.ty(db.upcast())

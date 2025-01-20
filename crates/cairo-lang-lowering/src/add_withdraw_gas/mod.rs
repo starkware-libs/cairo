@@ -1,7 +1,6 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
-    core_array_felt252_ty, core_module, core_submodule, get_function_id, get_ty_by_name,
-    option_none_variant, option_some_variant, unit_ty,
+    core_module, get_function_id, get_ty_by_name, option_none_variant, option_some_variant,
 };
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
@@ -41,6 +40,7 @@ fn add_withdraw_gas_to_function(
     let location = LocationId::from_stable_location(db, function.stable_location(db)?)
         .with_auto_generation_note(db, "withdraw_gas");
     let panic_block = create_panic_block(db, function, lowered, location)?;
+    let info = db.defs_info();
 
     let old_root_block = lowered.blocks.root_block()?.clone();
     let old_root_new_id = lowered.blocks.push(old_root_block);
@@ -49,19 +49,13 @@ fn add_withdraw_gas_to_function(
         statements: vec![],
         end: FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
-                function: get_function_id(
-                    db.upcast(),
-                    core_submodule(db.upcast(), "gas"),
-                    "withdraw_gas".into(),
-                    vec![],
-                )
-                .lowered(db),
+                function: info.withdraw_gas_fn.lowered(db),
                 inputs: vec![],
                 arms: vec![
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_some_variant(
                             db.upcast(),
-                            unit_ty(db.upcast()),
+                            info.unit_ty,
                         )),
                         block_id: old_root_new_id,
                         var_ids: vec![],
@@ -69,7 +63,7 @@ fn add_withdraw_gas_to_function(
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_none_variant(
                             db.upcast(),
-                            unit_ty(db.upcast()),
+                            info.unit_ty,
                         )),
                         block_id: panic_block_id,
                         var_ids: vec![],
@@ -97,23 +91,20 @@ fn create_panic_block(
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
-    let new_array_var =
-        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
-    let out_of_gas_err_var = variables.new_var(VarRequest { ty: db.core_felt252_ty(), location });
+    let info = db.defs_info();
+    let new_array_var = variables.new_var(VarRequest { ty: info.array_felt252_ty, location });
+    let out_of_gas_err_var = variables.new_var(VarRequest { ty: info.felt252_ty, location });
     let panic_instance_var = variables.new_var(VarRequest {
         ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
         location,
     });
-    let panic_data_var =
-        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
+    let panic_data_var = variables.new_var(VarRequest { ty: info.array_felt252_ty, location });
     let err_data_var = variables.new_var(VarRequest {
         ty: TypeLongId::Tuple(vec![variables[panic_instance_var].ty, variables[panic_data_var].ty])
             .intern(db),
         location,
     });
     lowered.variables = variables.variables;
-
-    let array_module = core_submodule(db.upcast(), "array");
 
     let add_location = |var_id| VarUsage { var_id, location };
 
@@ -122,8 +113,8 @@ fn create_panic_block(
     Ok(FlatBlock {
         statements: vec![
             Statement::Call(StatementCall {
-                function: get_function_id(db.upcast(), array_module, "array_new".into(), vec![
-                    GenericArgumentId::Type(db.core_felt252_ty()),
+                function: get_function_id(db.upcast(), info.array_mod, "array_new".into(), vec![
+                    GenericArgumentId::Type(info.felt252_ty),
                 ])
                 .lowered(db),
                 inputs: vec![],
@@ -134,14 +125,17 @@ fn create_panic_block(
             Statement::Const(StatementConst {
                 value: ConstValue::Int(
                     BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
-                    db.core_felt252_ty(),
+                    info.felt252_ty,
                 ),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {
-                function: get_function_id(db.upcast(), array_module, "array_append".into(), vec![
-                    GenericArgumentId::Type(db.core_felt252_ty()),
-                ])
+                function: get_function_id(
+                    db.upcast(),
+                    info.array_mod,
+                    "array_append".into(),
+                    vec![GenericArgumentId::Type(info.felt252_ty)],
+                )
                 .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var]
                     .into_iter()

@@ -7,7 +7,7 @@
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_semantic::corelib::{core_module, get_ty_by_name, unit_ty};
+use cairo_lang_semantic::corelib::{core_module, get_ty_by_name};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
@@ -311,6 +311,7 @@ pub fn add_destructs(
         lowered.variables.clone(),
     )
     .unwrap();
+    let unit_ty = db.defs_info().unit_ty;
 
     let plain_trait_function = destruct_trait_fn(db.upcast());
     let panic_trait_function = panic_destruct_trait_fn(db.upcast());
@@ -355,7 +356,7 @@ pub fn add_destructs(
         let mut last_panic_var = first_panic_var;
 
         for destruction in destructions {
-            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
+            let output_var = variables.new_var(VarRequest { ty: unit_ty, location });
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {

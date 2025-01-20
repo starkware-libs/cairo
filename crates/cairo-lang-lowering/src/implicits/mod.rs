@@ -116,15 +116,14 @@ fn block_body_implicits(
             )
         })
         .clone();
-    let require_implicits_libfunc_id =
-        semantic::corelib::internal_require_implicit(ctx.db.upcast());
+    let require_implicits_id = ctx.db.defs_info().require_implicit_fn;
     let mut remove = vec![];
     for (i, statement) in ctx.lowered.blocks[block_id].statements.iter_mut().enumerate() {
         if let Statement::Call(stmt) = statement {
             if matches!(
                 stmt.function.lookup_intern(ctx.db),
                 FunctionLongId::Semantic(func_id)
-                    if func_id.get_concrete(ctx.db.upcast()).generic_function == require_implicits_libfunc_id
+                    if func_id.get_concrete(ctx.db.upcast()).generic_function == require_implicits_id
             ) {
                 remove.push(i);
                 continue;
