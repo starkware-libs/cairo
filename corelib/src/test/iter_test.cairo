@@ -53,3 +53,8 @@ fn test_iter_adapter_fold() {
 
     assert_eq!(sum, 6);
 }
+
+#[test]
+fn test_iter_adapter_collect() {
+    assert_eq!((0..3_u32).into_iter().collect(), array![0, 1, 2]);
+}
