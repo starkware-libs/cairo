@@ -238,3 +238,28 @@ error: Plugin diagnostic: Invalid second param mutability for `#[executable_raw]
  --> lib.cairo:2:36
 fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
                                    ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test executable with ref arg.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable]
+fn with_ref_arg(ref a: felt252) {
+    a += 1;
+}
+
+//! > generated_cairo_code
+#[executable]
+fn with_ref_arg(ref a: felt252) {
+    a += 1;
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Parameters of an `#[executable]` function can't be `ref`.
+ --> lib.cairo:2:17
+fn with_ref_arg(ref a: felt252) {
+                ^^^
