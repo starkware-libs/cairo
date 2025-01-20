@@ -1,6 +1,8 @@
 use crate::iter::adapters::{
-    Enumerate, Map, Zip, enumerated_iterator, mapped_iterator, zipped_iterator,
+    Chain, Enumerate, Map, Zip, chained_iterator, enumerated_iterator, mapped_iterator,
+    zipped_iterator,
 };
+use crate::metaprogramming::TypeEqual;
 
 /// A trait for dealing with iterators.
 ///
