@@ -81,7 +81,7 @@ pub trait FromIterator<T, A> {
     ///
     /// assert_eq!(v, array![0, 1, 2, 3, 4]);
     /// ```
-    fn from_iter<I, +Iterator<I>[Item: A], +Drop<I>>(iter: I) -> T;
+    fn from_iter<I, +Iterator<I>[Item: A], +Destruct<I>>(iter: I) -> T;
 }
 
 /// Conversion into an [`Iterator`].

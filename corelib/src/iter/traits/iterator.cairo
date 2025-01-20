@@ -318,6 +318,6 @@ pub trait Iterator<T> {
     fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
         self: T,
     ) -> B {
-        FromIterator::from_iter(self)
+        FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
     }
 }
