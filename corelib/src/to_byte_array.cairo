@@ -145,39 +145,42 @@ fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T,
     let base: T = base_nz.into();
     let base: u8 = base.try_into().unwrap();
     assert(base > 1, 'base must be > 1');
-    assert(base <= 36, 'base must be <= 36');
 
-    let mut reversed_digits = array![];
+    if (*value).is_zero() {
+        byte_array.append_byte('0');
+        return;
+    };
 
     if base <= 10 {
-        loop {
-            let (new_value, digit) = DivRem::div_rem(*value, base_nz);
-            value = @new_value;
-            let digit_as_u8: u8 = digit.try_into().unwrap();
-            reversed_digits.append(digit_as_u8 + '0');
-            if (*value).is_zero() {
-                break;
-            };
-        }
+        append_small_digits_util(value, ref byte_array, base_nz);
     } else {
-        loop {
-            let (new_value, digit) = DivRem::div_rem(*value, base_nz);
-            value = @new_value;
-            let digit_as_u8: u8 = digit.try_into().unwrap();
-            reversed_digits.append(get_big_base_digit_representation(:digit_as_u8));
-            if (*value).is_zero() {
-                break;
-            };
-        };
+        assert(base <= 36, 'base must be <= 36');
+        append_big_digits_util(value, ref byte_array, base_nz);
     }
+}
 
-    let mut span = reversed_digits.span();
-    loop {
-        match span.pop_back() {
-            Option::Some(byte) => { byte_array.append_byte(*byte); },
-            Option::None => { break; },
-        };
+/// Appends ascii representation of value in base_nz to byte_array for single digit base.
+fn append_small_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
+    mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
+) {
+    let (new_value, digit) = DivRem::div_rem(*value, base_nz);
+    let digit_as_u8: u8 = digit.try_into().unwrap();
+    if !new_value.is_zero() {
+        append_big_digits_util(@new_value, ref byte_array, base_nz);
     };
+    byte_array.append_byte(digit_as_u8 + '0');
+}
+
+/// Appends ascii representation of value in base_nz to byte_array for any base.
+fn append_big_digits_util<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,>(
+    mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
+) {
+    let (new_value, digit) = DivRem::div_rem(*value, base_nz);
+    let digit_as_u8: u8 = digit.try_into().unwrap();
+    if !new_value.is_zero() {
+        append_big_digits_util(@new_value, ref byte_array, base_nz);
+    };
+    byte_array.append_byte(get_big_base_digit_representation(:digit_as_u8));
 }
 
 // Converts a digit (0-9, A-Z) to its ASCII representation in a base > 10.
