@@ -2,7 +2,7 @@ use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 #[cfg(feature = "lean")]
-use cairo_lang_casm::builder::CasmBuilderAuxiliaryInfo;
+use cairo_lang_casm::builder_aux_info::CasmBuilderAuxiliaryInfo;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};

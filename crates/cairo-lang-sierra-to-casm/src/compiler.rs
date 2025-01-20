@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 #[cfg(feature = "lean")]
-use cairo_lang_casm::builder::CasmBuilderAuxiliaryInfo;
+use cairo_lang_casm::builder_aux_info::CasmBuilderAuxiliaryInfo;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};

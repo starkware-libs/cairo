@@ -9,7 +9,7 @@ use num_traits::cast::ToPrimitive;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use cairo_lang_casm::builder::{
+use cairo_lang_casm::builder_aux_info::{
     AssertDesc, CasmBuilderAuxiliaryInfo, ExprDesc, JumpDesc, LibfuncAlgTypeDesc, RetBranchDesc, StatementDesc, VarBaseDesc, VarDesc
 };
 use cairo_lang_casm::instructions::{InstructionBody, Instruction, AddApInstruction};

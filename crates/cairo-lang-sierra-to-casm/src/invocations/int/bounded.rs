@@ -2,7 +2,7 @@ use std::ops::Shl;
 
 use cairo_lang_casm::builder::CasmBuilder;
 #[cfg(feature = "lean")]
-use cairo_lang_casm::builder::LibfuncAlgTypeDesc;
+use cairo_lang_casm::builder_aux_info::LibfuncAlgTypeDesc;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
