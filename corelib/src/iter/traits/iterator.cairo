@@ -97,8 +97,7 @@ pub trait Iterator<T> {
     /// ```
     fn chain<U, impl IntoIterU: IntoIterator<U>, +TypeEqual<Self::Item, IntoIterU::Iterator::Item>>(
         self: T, other: U,
-    ) -> Chain<T, IntoIterU::IntoIter>
-    {
+    ) -> Chain<T, IntoIterU::IntoIter> {
         chained_iterator(self, other.into_iter())
     }
 }
