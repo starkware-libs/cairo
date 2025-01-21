@@ -45,7 +45,6 @@
 use crate::array::{ArrayTrait, SpanTrait};
 use crate::clone::Clone;
 use crate::cmp::min;
-use crate::option::OptionTrait;
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::bytes_31::{
@@ -511,5 +510,15 @@ impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {
         ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+    }
+}
+
+impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
+    fn from_iter<I, +Iterator<I>[Item: u8], +Destruct<I>>(mut iter: I) -> ByteArray {
+        let mut ba = Default::default();
+        for byte in iter {
+            ba.append_byte(byte);
+        };
+        ba
     }
 }
