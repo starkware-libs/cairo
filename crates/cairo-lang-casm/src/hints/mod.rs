@@ -354,6 +354,9 @@ pub enum ExternalHint {
     /// Writes a run argument of number `index` to `dst` and on.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     WriteRunParam { index: ResOperand, dst: CellRef },
+    /// Writes a marker into the VM. Useful for debugging.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
+    SetMarker { marker: ResOperand },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -849,6 +852,10 @@ impl PythonicHint for ExternalHint {
             Self::WriteRunParam { index, dst } => {
                 let index = ResOperandAsIntegerFormatter(index);
                 format!(r#"raise NotImplementedError("memory{dst}.. = params[{index}])")"#)
+            }
+            Self::SetMarker { marker } => {
+                let marker = ResOperandAsAddressFormatter(marker);
+                format!(r#"raise NotImplementedError("marker = {}")"#, marker)
             }
         }
     }
