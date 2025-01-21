@@ -232,4 +232,4 @@
 mod adapters;
 mod traits;
 pub use adapters::PeekableTrait;
-pub use traits::{FromIterator, IntoIterator, Iterator, Product, Sum};
+pub use traits::{Extend, FromIterator, IntoIterator, Iterator};
