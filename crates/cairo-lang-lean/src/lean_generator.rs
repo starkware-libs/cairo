@@ -1982,7 +1982,7 @@ trait LeanGenerator {
         indent: usize,
     );
 
-    /// Gnerates a variable which is used but was not yet defined. This function
+    /// Generates a variable which is used but was not yet defined. This function
     /// determines whether this should be a 'let' or 'tempvar' and then adds
     /// the required code.
     fn generate_implicit_var(
@@ -3552,7 +3552,7 @@ struct CompletenessProof {
     /// The variables which were ranged checked at different offsets from the rc pointer.
     rc_vals: Vec<String>,
 
-    /// The rcases statment(s) that prepare the the specs to be used for constructing
+    /// The rcases statement(s) that prepare the the specs to be used for constructing
     /// the local assignment.
     spec_rcases: Vec<String>,
 
@@ -3956,7 +3956,7 @@ impl CompletenessProof {
         rc_check_offset: Option<BigInt>,
         // The spec hypothesis that applies to this assert.
         assert_hyp: &str,
-        // Simplifications that need to be applied ot the assert hypothesis
+        // Simplifications that need to be applied to the assert hypothesis.
         assert_simps: Option<&Vec<String>>,
         pc: usize,
         op_size: usize,
@@ -4269,7 +4269,7 @@ impl CompletenessProof {
                 &format!("apply {codes}", codes = self.make_codes(pc, last_instr.op_size())),
             );
         } else {
-            panic!("Unexpected instruction at end of reutrn block.");
+            panic!("Unexpected instruction at end of return block.");
         }
     }
 
