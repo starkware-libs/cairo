@@ -14,6 +14,8 @@ use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
 use crate::ap_change::ApplyApChange;
+#[cfg(feature = "lean")]
+use crate::builder_aux_info::CasmBuilderAuxiliaryInfo;
 use crate::cell_expression::{CellExpression, CellOperator};
 use crate::deref_or_immediate;
 use crate::hints::Hint;
@@ -22,9 +24,6 @@ use crate::instructions::{
     JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
-#[cfg(feature = "lean")]
-use crate::builder_aux_info::CasmBuilderAuxiliaryInfo;
-
 
 #[cfg(test)]
 #[path = "builder_test.rs"]
@@ -734,7 +733,13 @@ impl CasmBuilder {
     }
 
     #[cfg(feature = "lean")]
-    pub fn aux_info_add_assert_var_eq(&mut self, dst_name: &str, dst: Var, res_name: &str, res: Var) {
+    pub fn aux_info_add_assert_var_eq(
+        &mut self,
+        dst_name: &str,
+        dst: Var,
+        res_name: &str,
+        res: Var,
+    ) {
         let dst_expr = self.get_value(dst, false);
         let res_expr = self.get_value(res, false);
         let ap_change = self.get_ap_change();
@@ -790,10 +795,10 @@ impl CasmBuilder {
                 expr_str,
                 aux_info.make_var_desc(a_name, a, a_expr),
                 match op {
-                   CellOperator::Add => "+",
-                   CellOperator::Sub => "-",
-                   CellOperator::Mul => "*",
-                   CellOperator::Div => "/",
+                    CellOperator::Add => "+",
+                    CellOperator::Sub => "-",
+                    CellOperator::Mul => "*",
+                    CellOperator::Div => "/",
                 },
                 Some(aux_info.make_var_desc(b_name, b, b_expr)),
                 ap_change,
@@ -824,10 +829,10 @@ impl CasmBuilder {
                 expr_str,
                 aux_info.make_var_desc(a_name, a, a_expr),
                 match op {
-                   CellOperator::Add => "+",
-                   CellOperator::Sub => "-",
-                   CellOperator::Mul => "*",
-                   CellOperator::Div => "/",
+                    CellOperator::Add => "+",
+                    CellOperator::Sub => "-",
+                    CellOperator::Mul => "*",
+                    CellOperator::Div => "/",
                 },
                 Some(aux_info.make_var_desc(b_name, b, b_expr)),
                 ap_change,
@@ -842,7 +847,7 @@ impl CasmBuilder {
         dst: Var,
         buffer_name: &str,
         buffer: Var,
-        offset_str: Option<&str>
+        offset_str: Option<&str>,
     ) {
         let dst_expr = self.get_value(dst, false);
         let buffer_expr = self.get_value(buffer, false);
@@ -936,7 +941,6 @@ impl CasmBuilder {
             aux_info.add_fail();
         }
     }
-
 }
 
 impl Default for CasmBuilder {

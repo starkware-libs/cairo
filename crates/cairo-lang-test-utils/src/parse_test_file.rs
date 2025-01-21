@@ -8,16 +8,13 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use cairo_lang_formatter::CairoFormatter;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use colored::Colorize;
 #[cfg(feature = "lean")]
 use cairo_lang_lean::lean_generator::{
-    write_lean_soundness_spec_file,
-    write_lean_soundness_file,
-    write_lean_completeness_spec_file,
-    write_lean_completeness_file,
-    write_lean_code_file,
+    write_lean_code_file, write_lean_completeness_file, write_lean_completeness_spec_file,
+    write_lean_soundness_file, write_lean_soundness_spec_file,
 };
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use colored::Colorize;
 
 const TAG_PREFIX: &str = "//! > ";
 const TEST_SEPARATOR: &str =
@@ -167,7 +164,12 @@ impl TestBuilder {
         self.close_open_tag();
         let name = self.current_test_name.as_ref().expect("No name found for test.");
         #[cfg(feature = "lean")]
-        self.current_test.as_mut().expect("No test found.").attributes.entry("test_name".into()).or_insert(name.into());
+        self.current_test
+            .as_mut()
+            .expect("No test found.")
+            .attributes
+            .entry("test_name".into())
+            .or_insert(name.into());
         let old_test =
             self.tests.insert(name.clone(), std::mem::take(&mut self.current_test).unwrap());
         assert!(old_test.is_none(), "Found two tests named {name}.");
@@ -372,14 +374,14 @@ pub fn run_test_file(
     #[cfg(feature = "lean")]
     let gen_lean_mode = std::env::var("CAIRO_GEN_LEAN") == Ok("1".into());
     #[cfg(feature = "lean")]
-    let lean_outputs = vec!(
+    let lean_outputs = vec![
         "lean_func_name",
         "lean_soundness_spec",
         "lean_soundness",
         "lean_completeness_spec",
         "lean_completeness",
         "lean_code",
-    );
+    ];
     let tests = parse_test_file(path)?;
 
     let mut new_tests = OrderedHashMap::<String, Test>::default();
@@ -438,11 +440,24 @@ pub fn run_test_file(
 
         #[cfg(feature = "lean")]
         if gen_lean_mode {
-            let lean_func_name = result.outputs.get("lean_func_name").expect("Lean function name missing.");
-            write_lean_soundness_spec_file(&path, lean_func_name, result.outputs.get("lean_soundness_spec"))?;
+            let lean_func_name =
+                result.outputs.get("lean_func_name").expect("Lean function name missing.");
+            write_lean_soundness_spec_file(
+                &path,
+                lean_func_name,
+                result.outputs.get("lean_soundness_spec"),
+            )?;
             write_lean_soundness_file(&path, lean_func_name, result.outputs.get("lean_soundness"))?;
-            write_lean_completeness_spec_file(&path, lean_func_name, result.outputs.get("lean_completeness_spec"))?;
-            write_lean_completeness_file(&path, lean_func_name, result.outputs.get("lean_completeness"))?;
+            write_lean_completeness_spec_file(
+                &path,
+                lean_func_name,
+                result.outputs.get("lean_completeness_spec"),
+            )?;
+            write_lean_completeness_file(
+                &path,
+                lean_func_name,
+                result.outputs.get("lean_completeness"),
+            )?;
             write_lean_code_file(&path, lean_func_name, result.outputs.get("lean_code"))?;
             test.attributes.shift_remove("test_name");
         }

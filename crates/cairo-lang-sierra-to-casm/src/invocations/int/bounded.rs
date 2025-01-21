@@ -65,19 +65,17 @@ pub fn build_div_rem(
 
     #[cfg(feature = "lean")]
     if let Some(aux_info) = &mut casm_builder.aux_info {
-        aux_info.set_alg_type(
-            match &alg {
-                BoundedIntDivRemAlgorithm::KnownSmallLhs { lhs_upper_sqrt } => {
-                    LibfuncAlgTypeDesc::DivRemKnownSmallLhs { lhs_upper_sqrt: lhs_upper_sqrt.clone() }
-                },
-                BoundedIntDivRemAlgorithm::KnownSmallRhs => {
-                    LibfuncAlgTypeDesc::DivRemKnownSmallRhs
-                },
-                BoundedIntDivRemAlgorithm::KnownSmallQuotient { q_upper_bound } => {
-                    LibfuncAlgTypeDesc::DivRemKnownSmallQuotient { q_upper_bound: q_upper_bound.clone() }
+        aux_info.set_alg_type(match &alg {
+            BoundedIntDivRemAlgorithm::KnownSmallLhs { lhs_upper_sqrt } => {
+                LibfuncAlgTypeDesc::DivRemKnownSmallLhs { lhs_upper_sqrt: lhs_upper_sqrt.clone() }
+            }
+            BoundedIntDivRemAlgorithm::KnownSmallRhs => LibfuncAlgTypeDesc::DivRemKnownSmallRhs,
+            BoundedIntDivRemAlgorithm::KnownSmallQuotient { q_upper_bound } => {
+                LibfuncAlgTypeDesc::DivRemKnownSmallQuotient {
+                    q_upper_bound: q_upper_bound.clone(),
                 }
             }
-        );
+        });
     }
 
     let rc_slack = match &alg {

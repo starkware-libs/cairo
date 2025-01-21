@@ -292,7 +292,10 @@ pub struct CompiledInvocation {
 
 #[cfg(feature = "lean")]
 impl CompiledInvocation {
-    pub fn add_aux_info(mut self, aux_info: Option<CasmBuilderAuxiliaryInfo>) -> CompiledInvocation {
+    pub fn add_aux_info(
+        mut self,
+        aux_info: Option<CasmBuilderAuxiliaryInfo>,
+    ) -> CompiledInvocation {
         self.aux_info = aux_info;
         self
     }
@@ -512,10 +515,8 @@ impl CompiledInvocationBuilder<'_> {
     /// `pre_instructions` - Instructions to execute before the ones created by the builder.
     fn build_from_casm_builder_ex<const BRANCH_COUNT: usize>(
         self,
-        #[cfg(not(feature = "lean"))]
-        casm_builder: CasmBuilder,
-        #[cfg(feature = "lean")]
-        mut casm_builder: CasmBuilder,
+        #[cfg(not(feature = "lean"))] casm_builder: CasmBuilder,
+        #[cfg(feature = "lean")] mut casm_builder: CasmBuilder,
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
         cost_validation: CostValidationInfo<BRANCH_COUNT>,
         pre_instructions: InstructionsWithRelocations,
@@ -608,8 +609,8 @@ impl CompiledInvocationBuilder<'_> {
                     info.add_return_branch(branch.0, branch.1);
                 }
                 Some(info)
-            },
-            _ => None
+            }
+            _ => None,
         };
 
         let compilation_invocation = self.build(

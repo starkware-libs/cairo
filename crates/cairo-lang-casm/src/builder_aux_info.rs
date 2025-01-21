@@ -1,6 +1,8 @@
 use std::collections::HashMap;
+
 use num_bigint::BigInt;
-use crate::builder::{Var, CasmBuilder};
+
+use crate::builder::{CasmBuilder, Var};
 use crate::cell_expression::CellExpression;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -79,9 +81,9 @@ impl RetBranchDesc {
     /// name, 1 the one before it, etc.
     pub fn get_expr_at_pos_from_end(&self, pos: usize, ignore_at_start: usize) -> Option<String> {
         if ignore_at_start != 0 {
-            let arg_num:usize = self.exprs.iter().fold(0, |a, e| { a + e.names.len() });
+            let arg_num: usize = self.exprs.iter().fold(0, |a, e| a + e.names.len());
             if arg_num < ignore_at_start || arg_num - ignore_at_start <= pos {
-                return None
+                return None;
             }
         }
         let mut skipped: usize = 0;
@@ -146,8 +148,8 @@ impl CasmBuilderAuxiliaryInfo {
             // Heuristic: check that this block is not simply a non-conditional 'jump'
             // Where such blocks come from is not yet clear to me.
             match &self.statements[0] {
-                StatementDesc::Jump(jmp) => { !jmp.cond_var.is_none() },
-                _ => true
+                StatementDesc::Jump(jmp) => !jmp.cond_var.is_none(),
+                _ => true,
             }
         } else {
             true
@@ -162,35 +164,48 @@ impl CasmBuilderAuxiliaryInfo {
     pub fn add_return_branch(&mut self, branch_name: &str, vars: &[&[Var]]) {
         self.return_branches.push(RetBranchDesc {
             name: String::from(branch_name),
-            exprs: vars.iter().map(|v| RetExprDesc {
-                names: v.iter().map(
-                    |var| self.var_names.get(var).unwrap_or(&String::from("ρ")).clone()).collect(),
-            }).collect(),
+            exprs: vars
+                .iter()
+                .map(|v| RetExprDesc {
+                    names: v
+                        .iter()
+                        .map(|var| self.var_names.get(var).unwrap_or(&String::from("ρ")).clone())
+                        .collect(),
+                })
+                .collect(),
         });
     }
 
-    pub fn add_tempvar(&mut self, var_name: &str, var: Var, var_expr: CellExpression, ap_change: usize) {
+    pub fn add_tempvar(
+        &mut self,
+        var_name: &str,
+        var: Var,
+        var_expr: CellExpression,
+        ap_change: usize,
+    ) {
         self.var_names.insert(var, String::from(var_name));
-        self.statements.push(StatementDesc::TempVar(
-            VarDesc {
-                name: String::from(var_name),
-                var_expr: var_expr,
-                expr: None,
-                ap_change: ap_change,
-            }
-        ));
+        self.statements.push(StatementDesc::TempVar(VarDesc {
+            name: String::from(var_name),
+            var_expr,
+            expr: None,
+            ap_change,
+        }));
     }
 
-    pub fn add_localvar(&mut self, var_name: &str, var: Var, var_expr: CellExpression, ap_change: usize) {
+    pub fn add_localvar(
+        &mut self,
+        var_name: &str,
+        var: Var,
+        var_expr: CellExpression,
+        ap_change: usize,
+    ) {
         self.var_names.insert(var, String::from(var_name));
-        self.statements.push(StatementDesc::LocalVar(
-            VarDesc {
-                name: String::from(var_name),
-                var_expr: var_expr,
-                expr: None,
-                ap_change: ap_change,
-            }
-        ));
+        self.statements.push(StatementDesc::LocalVar(VarDesc {
+            name: String::from(var_name),
+            var_expr,
+            expr: None,
+            ap_change,
+        }));
     }
 
     pub fn add_const(&mut self, var_name: &str, var: Var, expr: &str, value: CellExpression) {
@@ -198,7 +213,7 @@ impl CasmBuilderAuxiliaryInfo {
         self.consts.push(ConstDesc {
             name: String::from(var_name),
             expr: String::from(expr),
-            value: value,
+            value,
         });
     }
 
@@ -213,18 +228,11 @@ impl CasmBuilderAuxiliaryInfo {
         ap_change: usize,
     ) {
         self.var_names.insert(lhs_id, String::from(&lhs.name));
-        self.statements.push(StatementDesc::Let(
-            AssertDesc {
-                lhs: lhs,
-                expr: ExprDesc {
-                    expr: String::from(expr),
-                    var_a: var_a,
-                    op: String::from(op),
-                    var_b: var_b,
-                },
-                ap_change: ap_change,
-            }
-        ));
+        self.statements.push(StatementDesc::Let(AssertDesc {
+            lhs,
+            expr: ExprDesc { expr: String::from(expr), var_a, op: String::from(op), var_b },
+            ap_change,
+        }));
     }
 
     pub fn add_ap_plus(&mut self, step_size: usize) {
@@ -232,10 +240,7 @@ impl CasmBuilderAuxiliaryInfo {
     }
 
     pub fn make_var_desc(&self, name: &str, id: Var, expr: CellExpression) -> VarBaseDesc {
-        VarBaseDesc {
-            name: name.into(),
-            var_expr: expr,
-        }
+        VarBaseDesc { name: name.into(), var_expr: expr }
     }
 
     pub fn add_assert(
@@ -248,49 +253,43 @@ impl CasmBuilderAuxiliaryInfo {
         ap_change: usize,
     ) {
         match self.statements.last_mut() {
-            Some(StatementDesc::TempVar(tv)) =>  {
+            Some(StatementDesc::TempVar(tv)) => {
                 if tv.name == lhs.name && tv.expr.is_none() {
                     tv.expr = Some(ExprDesc {
                         expr: String::from(rhs),
-                        var_a: var_a,
+                        var_a,
                         op: String::from(op),
-                        var_b: var_b,
+                        var_b,
                     });
                     return;
                 }
-            },
+            }
             Some(StatementDesc::LocalVar(lv)) => {
                 if lv.name == lhs.name && lv.expr.is_none() {
                     lv.expr = Some(ExprDesc {
                         expr: String::from(rhs),
-                        var_a: var_a,
+                        var_a,
                         op: String::from(op),
-                        var_b: var_b,
+                        var_b,
                     });
                     return;
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
-        self.statements.push(StatementDesc::Assert(
-            AssertDesc {
-                lhs: lhs,
-                expr: ExprDesc {
-                    expr: String::from(rhs),
-                    var_a: var_a,
-                    op: String::from(op),
-                    var_b: var_b,
-                },
-                ap_change: ap_change,
-            }));
+        self.statements.push(StatementDesc::Assert(AssertDesc {
+            lhs,
+            expr: ExprDesc { expr: String::from(rhs), var_a, op: String::from(op), var_b },
+            ap_change,
+        }));
     }
 
     pub fn add_jump(&mut self, label: &str, ap_change: usize) {
         self.statements.push(StatementDesc::Jump(JumpDesc {
             target: String::from(label),
             cond_var: None,
-            ap_change: ap_change,
+            ap_change,
         }));
     }
 
@@ -298,17 +297,13 @@ impl CasmBuilderAuxiliaryInfo {
         self.statements.push(StatementDesc::Jump(JumpDesc {
             target: String::from(label),
             cond_var: Some(cond_var),
-            ap_change: ap_change,
+            ap_change,
         }));
     }
 
     pub fn add_label(&mut self, label: &str, ap_change: usize) {
-        self.statements.push(StatementDesc::Label(
-            LabelDesc {
-                label: String::from(label),
-                ap_change: ap_change
-            }
-        ));
+        self.statements
+            .push(StatementDesc::Label(LabelDesc { label: String::from(label), ap_change }));
     }
 
     pub fn add_fail(&mut self) {
@@ -339,4 +334,3 @@ impl Default for CasmBuilderAuxiliaryInfo {
         }
     }
 }
-

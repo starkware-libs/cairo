@@ -665,7 +665,7 @@ pub fn compile(
         consts_info,
         debug_info: CairoProgramDebugInfo { sierra_statement_info },
         #[cfg(feature = "lean")]
-        aux_infos: aux_infos,
+        aux_infos,
     })
 }
 
