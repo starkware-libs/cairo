@@ -330,7 +330,7 @@ impl PanicDestructCircuitInputAccumulator<C> = internal::PanicDestructCircuitInp
 /// Type for accumulating inputs into the circuit instance's data.
 extern type CircuitInputAccumulator<C>;
 
-/// A type representing a circuit instance data with all the inputs addeded.
+/// A type representing a circuit instance data with all the inputs added.
 extern type CircuitData<C>;
 
 /// A type representing a circuit instance where the outputs are filled.
