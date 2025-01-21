@@ -1410,24 +1410,6 @@ impl<'a> LeanFuncInfo<'a> {
         self.casm_instructions[0..casm_pos].iter().fold(0, |len, instr| len + instr.body.op_size())
     }
 
-    // pub fn get_ap_at(&self, casm_pos: usize) -> BigInt {
-    // self.casm_instructions[0..casm_pos].iter().fold(0.into(),
-    // |offset: BigInt, instr: &Instruction| {
-    // match &instr.body {
-    // InstructionBody::AddAp(body) => {
-    // if let ResOperand::Immediate(step) = &body.operand {
-    // offset + &step.value
-    // } else {
-    // Other options not supported, need to fix manually.
-    // offset
-    // }
-    // },
-    // _ => offset + if instr.inc_ap { BigInt::from(1) } else { 0.into() }
-    // }
-    // }
-    // )
-    // }
-
     /// Returns the number of positions by which to increase casm instruction position to reach
     /// the target of the jump, where jump_pos and target are the positions of the instruction
     /// descriptions of the jump and the target, respectively.
@@ -1612,147 +1594,6 @@ impl<'a> LeanFuncInfo<'a> {
         }
 
         block_args
-    }
-
-    /// Given the start position of a block, returns all variable names used in the block before
-    /// being defined. These variables include both variables which are input arguments to the block
-    /// and variables which are implicitly defined in the block (variables which are not defined
-    /// using a declaration through the casm builder).
-    /// xxxxxxxxxxxxx remove this.
-    fn get_block_uninitialized_vars(&self, block_start: usize) -> HashSet<String> {
-        let mut vars = HashSet::new();
-        let mut declared: HashSet<String> = HashSet::new();
-
-        for statement in self.aux_info.statements[block_start..].iter() {
-            match statement {
-                StatementDesc::TempVar(var) | StatementDesc::LocalVar(var) => {
-                    if let Some(expr) = &var.expr {
-                        let name = &expr.var_a.name;
-                        if !declared.contains(name) && !self.is_const(name) {
-                            vars.insert(name.clone());
-                        }
-                        if let Some(expr_b) = &expr.var_b {
-                            let name = &expr_b.name;
-                            if !declared.contains(name) && !self.is_const(name) {
-                                vars.insert(name.clone());
-                            }
-                        }
-                    }
-                    declared.insert(var.name.clone());
-                }
-                StatementDesc::Let(assign) => {
-                    let name = &assign.expr.var_a.name;
-                    if !declared.contains(name) && !self.is_const(name) {
-                        vars.insert(name.clone());
-                    }
-                    if let Some(expr_b) = &assign.expr.var_b {
-                        let name = &expr_b.name;
-                        if !declared.contains(name) && !self.is_const(name) {
-                            vars.insert(name.clone());
-                        }
-                    }
-                    declared.insert(assign.lhs.name.clone());
-                }
-                StatementDesc::Assert(assign) => {
-                    let mut names: Vec<&String> = vec![&assign.lhs.name, &assign.expr.var_a.name];
-                    if let Some(expr_b) = &assign.expr.var_b {
-                        names.push(&expr_b.name);
-                    }
-                    for name in names {
-                        if !declared.contains(name) && !self.is_const(name) {
-                            vars.insert(name.clone());
-                        }
-                    }
-                }
-                StatementDesc::Jump(jump) => {
-                    if let Some(target) = self.get_jump_target_pos(jump) {
-                        let branch_args = self.get_block_uninitialized_vars(target + 1);
-                        // Add the variables used in the branch before being declared.
-                        for name in branch_args {
-                            if !declared.contains(&name) {
-                                vars.insert(name);
-                            }
-                        }
-                    } else {
-                        // jump to a return label
-                        self.add_uninitialized_ret_args(&jump.target, &declared, &mut vars);
-                    }
-                    if jump.cond_var.is_none() {
-                        return vars;
-                    }
-                }
-                StatementDesc::Fail => {
-                    return vars;
-                }
-                StatementDesc::ApPlus(_) => {}
-                StatementDesc::Label(_) => {}
-            }
-        }
-
-        // Handle the Fallthrough return block.
-        self.add_uninitialized_ret_args("Fallthrough", &declared, &mut vars);
-
-        vars
-    }
-
-    /// Returns the list of block arguments. These are the variables which are declared
-    /// before the block and used inside the block. The function arguments are considered
-    /// to be declared before the block.
-    /// xxxxxxxxxxxxx remove this and the functions it calls.
-    fn get_sorted_block_args_old(&self, block_start: usize, label: &String) -> Vec<String> {
-        // Variables used in the block before being defined.
-        let vars = self.get_block_uninitialized_vars(block_start);
-        // Variables declared/used before the block.
-        let bindings =
-            self.get_rebinds_before_label(label, 0, None).expect("Block unreachable from start.");
-
-        let mut vars_with_ref: Vec<(String, Option<(String, i16)>)> = Vec::from_iter(
-            // Only variables which are bound before the block are arguments of the block.
-            vars.iter().filter(|name| bindings.has_var_name(name)).map(|name| {
-                if let Some(expr) = bindings.get_expr(name) {
-                    (name.clone(), get_ref_from_deref(&expr))
-                } else {
-                    (name.clone(), None)
-                }
-            }),
-        );
-
-        // Sort by the reference ('fp' before 'ap' with increasing offset). If could not find the
-        // reference, sort alphabetically after the variables with a reference.
-        vars_with_ref.sort_by(|a, b| {
-            if let Some(a_ref) = &a.1 {
-                if let Some(b_ref) = &b.1 {
-                    if a_ref.0 == b_ref.0 { a_ref.1.cmp(&b_ref.1) } else { b_ref.0.cmp(&a_ref.0) }
-                } else {
-                    Ordering::Less
-                }
-            } else if b.1.is_none() {
-                // Reverse the comparison, as we want 'fp' before 'ap'
-                a.0.cmp(&b.0)
-            } else {
-                Ordering::Greater
-            }
-        });
-
-        vars_with_ref.iter().map(|v| v.0.clone()).collect()
-    }
-
-    // xxxxxxxxxxxx remove this.
-    fn add_uninitialized_ret_args(
-        &self,
-        label: &str,
-        declared: &HashSet<String>,
-        uninitialized: &mut HashSet<String>,
-    ) {
-        if let Some(branch) =
-            self.aux_info.return_branches.iter().filter(|b| b.name == *label).next()
-        {
-            for name in branch.flat_exprs() {
-                if !declared.contains(&name) {
-                    uninitialized.insert(name);
-                }
-            }
-        }
     }
 
     fn make_main_block_args(&self) -> BlockArgs {
@@ -2460,15 +2301,6 @@ impl AutoSpecs {
                 }
             ),
         );
-
-        // let (var_name, expr) = rebind_var_assignment(var, rebind);
-        // self.push_spec(
-        // indent,
-        // &format!("∃ {var_name} : {var_type},{expr}",
-        // var_type = self.var_type(),
-        // expr = if let Some(expr_str) = &expr {
-        // format!(" {var_name} = {expr_str}")
-        // } else { String::new() }));
     }
 }
 
@@ -4137,8 +3969,8 @@ impl CompletenessProof {
             &format!("vm_step_assert_eq {codes}", codes = self.make_codes(pc, op_size)),
         );
         self.push_main(indent, "constructor");
-        // Simplify numeric expressions.
-        self.push_main(indent, "· try simp only [neg_clip_checked', ←Int.sub_eq_add_neg]"); // xxxxxxxxx remove ?
+        // Simplify numeric expressions. (TODO: this may be redundant).
+        self.push_main(indent, "· try simp only [neg_clip_checked', ←Int.sub_eq_add_neg]");
         let indent = indent + 2;
         self.push_main(indent, "try norm_num1");
         // Convert fp references to ap references (if needed).
@@ -4297,29 +4129,6 @@ impl CompletenessProof {
                 self.ap_assignments.push("val 0".into());
             }
         }
-
-        // Add the implicit arguments (only the range check argument is handled properly).
-        //        let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
-        // for arg_name in
-        // lean_info.get_arg_names()[..lean_info.ret_args.num_implicit_ret_args].iter() { if
-        // *arg_name == rc_arg_name { let max_rc_count =
-        // *lean_info.max_rc_counts.get(ret_block_name).unwrap_or(&0); self.ap_assignments.
-        // push(format!("rc ({rc_arg_name} + {max_rc_count})")); } else {
-        // self.ap_assignments.push("val 0".into());
-        // }
-        // }
-        //
-        // Add the explicit arguments.
-        // let ret_arg_name = &lean_info.get_explicit_ret_arg_names();
-        // let ret_arg_names =
-        // &lean_info.get_all_ret_arg_names()[lean_info.ret_args.num_implicit_ret_args..];
-        //
-        //
-        // Add the return variables (pushed on the stack).
-        // for var_name in ret_arg_names {
-        // self.spec_rcases.push(format!("h_{var_name}"));
-        // self.ap_assignments.push(format!("val {var_name}"));
-        // }
     }
 
     /// Generates the main proof steps for the return block.
@@ -5857,38 +5666,6 @@ fn generate_auto_ret_block(
         indent,
     );
 }
-
-// fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program:
-// &CairoProgram) -> bool {
-//
-// if !test_name.ends_with("libfunc") {
-// return false;
-// }
-//
-// !cairo_program.instructions.iter().any(
-// |instr| match instr.body {
-// InstructionBody::Call(_) => true,
-// _ => false
-// }
-// )
-// }
-
-/// Find the start offset (in the casm) of the different functions.
-// fn find_func_offsets_old(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
-// let mut offsets: Vec<(usize, usize)> = Vec::new();
-//
-// let mut start_pos: usize = 0;
-// let mut pos: usize = 0;
-//
-// for instr in &cairo_program.instructions {
-// pos += 1;
-// if match instr.body { InstructionBody::Ret(_) => true, _ => false } {
-// offsets.push((start_pos, pos));
-// start_pos = pos;
-// }
-// }
-// offsets
-// }
 
 /// Find the start (and end) offsets (in the casm) of the different functions.
 fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
