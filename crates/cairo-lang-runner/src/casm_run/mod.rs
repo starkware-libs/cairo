@@ -102,6 +102,8 @@ pub struct CairoHintProcessor<'a> {
     pub syscalls_used_resources: StarknetExecutionResources,
     /// Avoid allocating memory segments so finalization of segment arena may not occur.
     pub no_temporary_segments: bool,
+    /// A set of markers created by the run.
+    pub markers: Vec<Relocatable>,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -1306,15 +1308,15 @@ impl CairoHintProcessor<'_> {
 
     /// Executes an external hint.
     fn execute_external_hint(
-        &self,
+        &mut self,
         vm: &mut VirtualMachine,
         core_hint: &ExternalHint,
     ) -> Result<(), HintError> {
         match core_hint {
-            ExternalHint::AddRelocationRule { src, dst } => Ok(vm.add_relocation_rule(
+            ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
                 extract_relocatable(vm, dst)?,
-            )?),
+            )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
                 let mut stack = vec![(cell_ref_to_relocatable(dst, vm), &self.user_args[index])];
@@ -1336,9 +1338,12 @@ impl CairoHintProcessor<'_> {
                         }
                     }
                 }
-                Ok(())
+            }
+            ExternalHint::SetMarker { marker } => {
+                self.markers.push(extract_relocatable(vm, marker)?);
             }
         }
+        Ok(())
     }
 }
 
@@ -2376,6 +2381,20 @@ where
         }
     }
     Some(FormattedItem { item: format_short_string(&first_felt), is_string: false })
+}
+
+/// Formats the given felts as a panic string.
+pub fn format_for_panic<T>(mut felts: T) -> String
+where
+    T: Iterator<Item = Felt252> + Clone,
+{
+    let mut items = Vec::new();
+    while let Some(item) = format_next_item(&mut felts) {
+        items.push(item.quote_if_string());
+    }
+    let panic_values_string =
+        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
+    format!("Panicked with {panic_values_string}.")
 }
 
 /// Formats a `Felt252`, as a short string if possible.

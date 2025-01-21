@@ -420,34 +420,40 @@ pub fn create_entry_code_from_params(
     }
     casm_build_extend! (ctx, let () = call FUNCTION;);
     let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
+    let mut next_unprocessed_deref = || {
+        let deref_cell = CellExpression::Deref(deref!([ap - unprocessed_return_size]));
+        unprocessed_return_size -= 1;
+        deref_cell
+    };
     let mut return_data = vec![];
     for (ret_ty, size) in return_types {
         if let Some(name) = builtin_ty_to_vm_name.get(ret_ty) {
-            *builtin_vars.get_mut(name).unwrap() =
-                ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
-            unprocessed_return_size -= 1;
+            *builtin_vars.get_mut(name).unwrap() = ctx.add_var(next_unprocessed_deref());
         } else if config.outputting_function {
             if ret_ty == &GasBuiltinType::ID {
-                unprocessed_return_size -= 1;
+                next_unprocessed_deref();
                 continue;
             }
             let output_ptr_var = builtin_vars[&BuiltinName::output];
             // The output builtin values.
             let new_output_ptr = if *size == 3 {
-                let panic_indicator =
-                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
-                unprocessed_return_size -= 2;
-                // The output ptr in the case of successful run.
-                let output_ptr_end =
-                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
-                unprocessed_return_size -= 1;
+                let panic_indicator = ctx.add_var(next_unprocessed_deref());
+                // The start ptr of the output in the case of successful run,
+                // or the panic data in case of a failure.
+                let ptr_start = ctx.add_var(next_unprocessed_deref());
+                // The end ptr of the output in the case of successful run,
+                // or the panic data in case of a failure.
+                let ptr_end = ctx.add_var(next_unprocessed_deref());
                 casm_build_extend! {ctx,
                     tempvar new_output_ptr;
                     jump PANIC if panic_indicator != 0;
                     // SUCCESS:
-                    assert new_output_ptr = output_ptr_end;
+                    assert new_output_ptr = ptr_end;
                     jump AFTER_PANIC_HANDLING;
                     PANIC:
+                    // Marking the panic message in case of a panic.
+                    hint ExternalHint::SetMarker { marker: ptr_start };
+                    hint ExternalHint::SetMarker { marker: ptr_end };
                     const one = 1;
                     // In the case of an error, we assume no values are written to the output_ptr.
                     assert new_output_ptr = output_ptr_var + one;
@@ -457,10 +463,8 @@ pub fn create_entry_code_from_params(
                 new_output_ptr
             } else if *size == 2 {
                 // No panic possible.
-                unprocessed_return_size -= 1;
-                let output_ptr_end =
-                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
-                unprocessed_return_size -= 1;
+                next_unprocessed_deref();
+                let output_ptr_end = ctx.add_var(next_unprocessed_deref());
                 casm_build_extend! {ctx,
                     const czero = 0;
                     tempvar zero = czero;
@@ -473,10 +477,7 @@ pub fn create_entry_code_from_params(
             *builtin_vars.get_mut(&BuiltinName::output).unwrap() = new_output_ptr;
         } else {
             for _ in 0..*size {
-                return_data.push(
-                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size]))),
-                );
-                unprocessed_return_size -= 1;
+                return_data.push(ctx.add_var(next_unprocessed_deref()));
             }
         }
     }
