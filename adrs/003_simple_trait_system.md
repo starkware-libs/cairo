@@ -27,7 +27,7 @@ Note that there is no `Self` or a type this trait is `for`. It is stand alone.
 ```
 impl MyImpl<A> for MyTrait<A, felt252> {
   type T = A;
-  fn f(a: A, b: felt252) -> T { ... }
+  fn f(a: A, t: T) -> (T, felt252) { ... }
 }
 ```
 This item introduces an implementation for this trait.
