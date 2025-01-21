@@ -50,6 +50,8 @@ pub enum BuildError {
     SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
+    #[error("Emulated builtin `{0}` not allowed for executable.")]
+    DisallowedBuiltinForExecutable(GenericTypeId),
 }
 
 impl BuildError {
@@ -369,6 +371,10 @@ pub fn create_entry_code_from_params(
             let var = builtin_vars[&name];
             casm_build_extend!(ctx, tempvar _builtin = var;);
         } else if emulated_builtins.contains(generic_ty) {
+            if config.outputting_function {
+                // Emulated builtins are not supported in compilation for executable.
+                return Err(BuildError::DisallowedBuiltinForExecutable(generic_ty.clone()));
+            }
             casm_build_extend! {ctx,
                 tempvar system;
                 hint AllocSegment into {dst: system};
