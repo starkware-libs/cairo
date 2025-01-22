@@ -38,7 +38,7 @@
 //!
 //! ```
 //! let mut ba: ByteArray = "ABC";
-//! let first_bytes = ba[0]
+//! let first_byte = ba[0]
 //! assert!(first_byte == 0x41);
 //! ```
 
