@@ -13,8 +13,8 @@ use smol_str::{SmolStr, ToSmolStr};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId,
-    FlagLongId, VirtualFile,
+    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId,
+    FileLongId, FlagId, FlagLongId, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -50,11 +50,12 @@ pub struct CrateConfiguration {
     /// The root directory of the crate.
     pub root: Directory,
     pub settings: CrateSettings,
+    pub precompute_file: Option<BlobId>,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root, settings: CrateSettings::default() }
+        Self { root, settings: CrateSettings::default(), precompute_file: None }
     }
 }
 
@@ -182,6 +183,8 @@ pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_file(&self, file: FileLongId) -> FileId;
     #[salsa::interned]
+    fn intern_blob(&self, blob: BlobLongId) -> BlobId;
+    #[salsa::interned]
     fn intern_flag(&self, flag: FlagLongId) -> FlagId;
 
     /// Main input of the project. Lists all the crates configurations.
@@ -215,6 +218,8 @@ pub trait FilesGroup: ExternalFiles {
     fn file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 
+    /// Query for the blob content.
+    fn blob_content(&self, blob_id: BlobId) -> Option<Arc<[u8]>>;
     /// Query to get a compilation flag by its ID.
     fn get_flag(&self, id: FlagId) -> Option<Arc<Flag>>;
 }
@@ -244,6 +249,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                     coupons: true,
                 },
             },
+            precompute_file: None,
         }),
     );
 }
@@ -302,13 +308,17 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match crt.lookup_intern(db) {
         CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, file_id, settings } => Some(CrateConfiguration {
-            root: Directory::Virtual {
-                files: BTreeMap::from([("lib.cairo".into(), file_id)]),
-                dirs: Default::default(),
-            },
-            settings: toml::from_str(&settings).expect("Failed to parse virtual crate settings."),
-        }),
+        CrateLongId::Virtual { name: _, file_id, settings, precompute_file } => {
+            Some(CrateConfiguration {
+                root: Directory::Virtual {
+                    files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+                    dirs: Default::default(),
+                },
+                settings: toml::from_str(&settings)
+                    .expect("Failed to parse virtual crate settings."),
+                precompute_file,
+            })
+        }
     }
 }
 
@@ -346,6 +356,22 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
 }
 fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+fn blob_content(db: &dyn FilesGroup, blob: BlobId) -> Option<Arc<[u8]>> {
+    match blob.lookup_intern(db) {
+        BlobLongId::OnDisk(path) => {
+            // This does not result in performance cost due to OS caching and the fact that salsa
+            // will re-execute only this single query if the file content did not change.
+            db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+            match fs::read(path) {
+                Ok(content) => Some(content.into()),
+                Err(_) => None,
+            }
+        }
+        BlobLongId::Virtual(content) => Some(content.into()),
+    }
 }
 
 /// Returns the location of the originating user code.

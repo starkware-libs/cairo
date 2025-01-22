@@ -3,23 +3,24 @@
 use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 
+// aa
 use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId, TopLevelLanguageElementId};
+use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
-use cairo_lang_lowering::fmt::{
-    DefsFunctionWithBodyIdSerializable, LoweredFormatter, MultiLoweringSerializable,
-    SerializationContext,
-};
+use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
+use cairo_lang_lowering::precompute::{
+    DefsFunctionWithBodyIdSerializable, MultiLoweringSerializable, SerializationContext,
+};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_semantic::items::functions::{
@@ -301,24 +302,6 @@ fn main() -> anyhow::Result<()> {
             .iter()
             .filter_map(|function_id| {
                 let semantic_id = function_id.function_with_body_id(db).base_semantic_function(db);
-                // if ![
-                //     "array",
-                //     "fmt",
-                //     "to_byte_array",
-                //     "byte_array",
-                //     "metaprogramming",
-                //     "traits",
-                //     "integer",
-                //     "result",
-                // ]
-                // .contains(&(semantic_id.parent_module(db).name(db).as_str()))
-                // {
-                //     return None;
-                // }
-                if semantic_id.parent_module(db).full_path(db.upcast()).contains("account") {
-                    return None;
-                }
-                println!("{:?}", semantic_id.name(db.upcast()));
 
                 let multi = db.priv_function_with_body_multi_lowering(semantic_id).unwrap();
                 Some((
@@ -327,21 +310,6 @@ fn main() -> anyhow::Result<()> {
                 ))
             })
             .collect();
-        // for (count, function_id) in funcs.iter().enumerate() {
-
-        //     // println!("{}:  {:?}", count, function_id.name(db));
-        //     let multi = db
-        //         .priv_function_with_body_multi_lowering(
-        //             function_id.function_with_body_id(db).base_semantic_function(db),
-        //         )
-        //         .unwrap();
-
-        //     lowereds.insert(MultiLoweringSerializable::new(multi, &mut ctx);
-        //     lowereds.push(FlatLoweredSerializable::new(multi.main_lowering.clone(), &mut ctx));
-        //     for (key, generated) in multi.generated_lowerings.clone() {
-        //         lowereds.push(FlatLoweredSerializable::new(generated, &mut ctx));
-        //     }
-        // }
         let s = bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, lowereds)).unwrap();
         match args.output {
             Some(path) => fs::write(path, &s).with_context(|| "Failed to write output.")?,

@@ -1,11 +1,10 @@
-use std::fs::File;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
@@ -23,10 +22,6 @@ use crate::borrow_check::{PotentialDestructCalls, borrow_check};
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::fmt::{
-    DefsFunctionWithBodyIdSerializable, DesSerializationContext, MultiLoweringSerializable,
-    SemanticSerializationLookups, SerializationLookups,
-};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunctionKey, LocationId};
 use crate::inline::get_inline_diagnostics;
@@ -35,6 +30,10 @@ use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
+use crate::precompute::{
+    DefsFunctionWithBodyIdSerializable, DesSerializationContext, MultiLoweringSerializable,
+    SemanticSerializationLookups, SerializationLookups,
+};
 use crate::utils::InliningStrategy;
 use crate::{
     BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement, ids,
@@ -71,7 +70,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     fn load_serielized_multi_lowerings(
         &self,
-    ) -> OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>;
+        file_id: cairo_lang_filesystem::ids::CrateId,
+    ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>>;
 
     /// Computes the lowered representation of a function with a body before borrow checking.
     fn priv_function_with_body_lowering(
@@ -393,11 +393,19 @@ fn priv_function_with_body_multi_lowering(
     db: &dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<Arc<MultiLowering>> {
-    let map = db.load_serielized_multi_lowerings();
-    if let Some(multi_lowering) = map.get(&function_id) {
-        // println!("{:?} saved {:?}", map.len(), function_id.debug(db));
-        return Ok(Arc::new(multi_lowering.clone()));
-    }
+    println!("111cached {:?}", function_id.debug(db));
+    let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
+    if let Some(map) = db.load_serielized_multi_lowerings(crate_id) {
+        if let Some(multi_lowering) = map.get(&function_id) {
+            println!("cached {:?}", function_id.debug(db));
+            return Ok(Arc::new(multi_lowering.clone()));
+        } else {
+            println!("notcached {:?}", function_id.debug(db));
+            println!("{:?}", map.len());
+            panic!("function not found in precomputed lowering {:?}", function_id.debug(db));
+        }
+    };
+
     //  else {
     //     for (k, v) in map.iter() {
     //         if k.name(db.upcast()) == function_id.name(db.upcast()) {
@@ -430,32 +438,41 @@ fn priv_function_with_body_multi_lowering(
 }
 fn load_serielized_multi_lowerings(
     db: &dyn LoweringGroup,
-) -> OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering> {
+    self_crate_id: cairo_lang_filesystem::ids::CrateId,
+) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
+    let blob_id = db.crate_config(self_crate_id)?.precompute_file?;
+    let Some(content) = db.blob_content(blob_id) else {
+        return Default::default();
+    };
     let (lookups, semantic_lookups, lowerings): (
         SerializationLookups,
         SemanticSerializationLookups,
         Vec<(DefsFunctionWithBodyIdSerializable, MultiLoweringSerializable)>,
-    ) = bincode::deserialize_from(File::open("bb/out.json").unwrap()).unwrap_or_default();
+    ) = bincode::deserialize(&content).unwrap_or_default();
+    println!("lowerings len: {:?}", lowerings.len());
     // return Default::default();
-    let mut ctx = DesSerializationContext::new(db, lookups, semantic_lookups);
+    let mut ctx = DesSerializationContext::new(db, lookups, semantic_lookups, self_crate_id);
 
-    lowerings
-        .into_iter()
-        .map(|(function_id, lowering)| {
-            let function_id = function_id.embed(&mut ctx.semantic_ctx);
+    Some(
+        lowerings
+            .into_iter()
+            .map(|(function_id, lowering)| {
+                let function_id = function_id.embed(&mut ctx.semantic_ctx);
 
-            // println!("{:?}", function_id.debug(db));
-            // println!(
-            //     "cached {:?}",
-            //     function_id.module_file_id(db.upcast()).file_id(db.upcast()).unwrap().debug(db)
-            // );
-            let lowering = lowering.embed(
-                &mut ctx,
-                LocationId::from_stable_location(db, function_id.stable_location(db.upcast())),
-            );
-            (function_id, lowering)
-        })
-        .collect()
+                // println!("{:?}", function_id.debug(db));
+                // println!(
+                //     "cached {:?}",
+                //     function_id.module_file_id(db.upcast()).file_id(db.upcast()).unwrap().
+                // debug(db) );
+                let lowering = lowering.embed(
+                    &mut ctx,
+                    LocationId::from_stable_location(db, function_id.stable_location(db.upcast())),
+                );
+                (function_id, lowering)
+            })
+            .collect::<OrderedHashMap<_, _>>()
+            .into(),
+    )
 }
 
 // * Borrow checking.

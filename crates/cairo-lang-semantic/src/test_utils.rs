@@ -8,7 +8,9 @@ use cairo_lang_filesystem::db::{
     FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    BlobId, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
+};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -131,6 +133,7 @@ pub fn setup_test_crate_ex(
     db: &dyn SemanticGroup,
     content: &str,
     crate_settings: Option<&str>,
+    precompute_file: Option<BlobId>,
 ) -> CrateId {
     let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
@@ -162,13 +165,14 @@ pub fn setup_test_crate_ex(
         name: "test".into(),
         file_id,
         settings: toml::to_string_pretty(&settings).unwrap(),
+        precompute_file,
     }
     .intern(db)
 }
 
 /// See [setup_test_crate_ex].
 pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
-    setup_test_crate_ex(db, content, None)
+    setup_test_crate_ex(db, content, None, None)
 }
 
 /// Sets up a module with given content, and returns its module id.
@@ -176,8 +180,9 @@ pub fn setup_test_module_ex(
     db: &(dyn SemanticGroup + 'static),
     content: &str,
     crate_settings: Option<&str>,
+    precompute_crate: Option<BlobId>,
 ) -> WithStringDiagnostics<TestModule> {
-    let crate_id = setup_test_crate_ex(db, content, crate_settings);
+    let crate_id = setup_test_crate_ex(db, content, crate_settings, precompute_crate);
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
@@ -195,7 +200,7 @@ pub fn setup_test_module(
     db: &(dyn SemanticGroup + 'static),
     content: &str,
 ) -> WithStringDiagnostics<TestModule> {
-    setup_test_module_ex(db, content, None)
+    setup_test_module_ex(db, content, None, None)
 }
 
 /// Helper struct for the return value of [setup_test_function].
@@ -216,13 +221,15 @@ pub fn setup_test_function_ex(
     function_name: &str,
     module_code: &str,
     crate_settings: Option<&str>,
+    precompute_crate: Option<BlobId>,
 ) -> WithStringDiagnostics<TestFunction> {
     let content = if module_code.is_empty() {
         function_code.to_string()
     } else {
         format!("{module_code}\n{function_code}")
     };
-    let (test_module, diagnostics) = setup_test_module_ex(db, &content, crate_settings).split();
+    let (test_module, diagnostics) =
+        setup_test_module_ex(db, &content, crate_settings, precompute_crate).split();
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
@@ -253,7 +260,7 @@ pub fn setup_test_function(
     function_name: &str,
     module_code: &str,
 ) -> WithStringDiagnostics<TestFunction> {
-    setup_test_function_ex(db, function_code, function_name, module_code, None)
+    setup_test_function_ex(db, function_code, function_name, module_code, None, None)
 }
 
 /// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
@@ -277,7 +284,7 @@ pub fn setup_test_expr(
 ) -> WithStringDiagnostics<TestExpr> {
     let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
-        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings)
+        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings, None)
             .split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
@@ -353,6 +360,7 @@ pub fn test_function_diagnostics(
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         inputs.get("crate_settings").map(|x| x.as_str()),
+        None,
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);

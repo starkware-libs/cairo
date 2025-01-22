@@ -39,7 +39,8 @@ impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
 }
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
-        let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+        let mut res: LoweringDatabaseForTesting =
+            LoweringDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         let suite = get_default_plugin_suite();
         res.set_macro_plugins(suite.plugins);

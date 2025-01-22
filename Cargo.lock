@@ -700,7 +700,9 @@ dependencies = [
  "pretty_assertions",
  "rust-analyzer-salsa",
  "serde",
+ "serde_json",
  "smol_str",
+ "tempfile",
  "test-log",
 ]
 

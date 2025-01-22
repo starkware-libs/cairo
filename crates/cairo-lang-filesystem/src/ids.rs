@@ -18,7 +18,7 @@ pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, file_id: FileId, settings: String },
+    Virtual { name: SmolStr, file_id: FileId, settings: String, precompute_file: Option<BlobId> },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
@@ -214,5 +214,19 @@ impl Directory {
                 }
             }
         }
+    }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum BlobLongId {
+    OnDisk(PathBuf),
+    Virtual(Arc<[u8]>),
+}
+
+define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
+
+impl BlobId {
+    pub fn new(db: &dyn FilesGroup, path: PathBuf) -> BlobId {
+        BlobLongId::OnDisk(path.clean()).intern(db)
     }
 }
