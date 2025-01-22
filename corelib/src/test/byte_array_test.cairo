@@ -494,7 +494,7 @@ fn test_into_iterator() {
 
 #[test]
 fn test_from_iterator() {
-    let ba: ByteArray = FromIterator::from_iter(array!['h', 'e', 'l', 'l', 'o'].into_iter());
+    let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
 }
 

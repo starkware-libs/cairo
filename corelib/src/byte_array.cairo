@@ -514,7 +514,7 @@ impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
 }
 
 impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
-    fn from_iter<I, +Iterator<I>[Item: u8], +Destruct<I>>(mut iter: I) -> ByteArray {
+    fn from_iter<I, +Iterator<I>[Item: u8], +Destruct<I>>(iter: I) -> ByteArray {
         let mut ba = Default::default();
         for byte in iter {
             ba.append_byte(byte);
