@@ -21,9 +21,7 @@ use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{
-    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
-};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
 use itertools::{Itertools, chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -170,7 +168,7 @@ pub enum ImplLongId {
     GenericParameter(GenericParamId),
     ImplVar(ImplVarId),
     ImplImpl(ImplImplId),
-    TraitImpl(TraitImplId),
+    SelfImpl(ConcreteTraitId),
     GeneratedImpl(GeneratedImplId),
 }
 impl ImplLongId {
@@ -181,7 +179,7 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_)
+            | ImplLongId::SelfImpl(_)
             | ImplLongId::GeneratedImpl(_) => {
                 return None;
             }
@@ -204,7 +202,7 @@ impl ImplLongId {
                     .unwrap_or_else(|_| "_".into())
             )
             .into(),
-            ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ImplLongId::SelfImpl(trait_impl) => trait_impl.name(db.upcast()),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 format!("{:?}", generated_impl.debug(db.elongate())).into()
             }
@@ -220,7 +218,9 @@ impl ImplLongId {
             }
             ImplLongId::ImplVar(var) => format!("{var:?}"),
             ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
-            ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
+            ImplLongId::SelfImpl(concrete_trait_id) => {
+                format!("{:?}", concrete_trait_id.debug(db.elongate()))
+            }
             ImplLongId::GeneratedImpl(generated_impl) => {
                 format!("{:?}", generated_impl.debug(db.elongate()))
             }
@@ -231,7 +231,8 @@ impl ImplLongId {
     pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
         match self {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_var_free(db),
-            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
+            ImplLongId::SelfImpl(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            ImplLongId::GenericParameter(_) => true,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
             ImplLongId::GeneratedImpl(generated_impl) => {
@@ -252,7 +253,7 @@ impl ImplLongId {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.is_fully_concrete(db),
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
-            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::ImplImpl(_) | ImplLongId::SelfImpl(_) => false,
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_fully_concrete(db)
                     && generated_impl
@@ -276,7 +277,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
-            ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
+            ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 write!(f, "{:?}", generated_impl.debug(db))
             }
@@ -590,7 +591,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         }
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl),
-        ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
+        ImplLongId::SelfImpl(concrete_trait_id) => Ok(concrete_trait_id),
         ImplLongId::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
 }
@@ -644,15 +645,12 @@ pub fn priv_impl_declaration_data_inner(
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
     let concrete_trait = if resolve_trait {
-        match resolver.resolve_concrete_path(
-            &mut diagnostics,
-            &trait_path_syntax,
-            NotFoundItemType::Trait,
-        ) {
-            Ok(resolved_item) => try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait)
-                .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait)),
-            Err(err) => Err(err),
-        }
+        resolver
+            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
+            .and_then(|resolved_item| match resolved_item {
+                ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
+                _ => Err(diagnostics.report(&trait_path_syntax, SemanticDiagnosticKind::NotATrait)),
+            })
     } else {
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
@@ -760,27 +758,51 @@ pub fn impl_semantic_definition_diagnostics(
     }
     // Diagnostics for special traits.
     if diagnostics.error_count == 0 {
-        let trait_id = db
-            .priv_impl_declaration_data(impl_def_id)
-            .unwrap()
-            .concrete_trait
-            .unwrap()
-            .trait_id(db);
+        let concrete_trait =
+            db.priv_impl_declaration_data(impl_def_id).unwrap().concrete_trait.unwrap();
+
+        let trait_id = concrete_trait.trait_id(db);
         if trait_id == deref_trait(db) {
-            handle_deref_impl(db, impl_def_id, &mut diagnostics);
+            deref_impl_diagnostics(db, impl_def_id, concrete_trait, &mut diagnostics);
         }
     }
     diagnostics.build()
 }
 
-/// Checks that there are no cycles of Deref impls.
-fn handle_deref_impl(
+/// Reports diagnostic for a deref impl.
+fn deref_impl_diagnostics(
     db: &dyn SemanticGroup,
     mut impl_def_id: ImplDefId,
+    concrete_trait: ConcreteTraitId,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
     let mut visited_impls: OrderedHashSet<ImplDefId> = OrderedHashSet::default();
-    let deref_trait_id = deref_trait(db);
+    let deref_trait_id = concrete_trait.trait_id(db);
+
+    let defs_db = db.upcast();
+    let impl_module = impl_def_id.module_file_id(defs_db).0;
+
+    let mut impl_in_valid_location = false;
+    if impl_module == deref_trait_id.module_file_id(defs_db).0 {
+        impl_in_valid_location = true;
+    }
+
+    let gargs = concrete_trait.generic_args(db);
+    let deref_ty = extract_matches!(gargs[0], GenericArgumentId::Type);
+    if let Some(module_id) = deref_ty.lookup_intern(db).module_id(db) {
+        if module_id == impl_module {
+            impl_in_valid_location = true;
+        }
+    }
+
+    if !impl_in_valid_location {
+        diagnostics.report(
+            impl_def_id.stable_ptr(db.upcast()),
+            SemanticDiagnosticKind::MustBeNextToTypeOrTrait { trait_id: deref_trait_id },
+        );
+        return;
+    }
+
     loop {
         let Ok(impl_id) = get_impl_based_on_single_impl_type(db, impl_def_id, |ty| {
             ConcreteTraitLongId {
@@ -793,6 +815,7 @@ fn handle_deref_impl(
             // for cycles.
             return;
         };
+
         impl_def_id = match impl_id.lookup_intern(db) {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.impl_def_id(db),
             _ => return,
@@ -834,6 +857,7 @@ fn get_impl_based_on_single_impl_type(
         );
     }
     let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
     let generic_params_ids =
@@ -1306,7 +1330,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) | TypeLongId::TraitType(_) | TypeLongId::ImplType(_) => {
+        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
             panic!("Types should be fully resolved at this point.")
         }
         TypeLongId::Coupon(_) => vec![],
@@ -2199,7 +2223,7 @@ pub fn impl_type_concrete_implized(
             };
             concrete_impl
         }
-        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
+        ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
         ImplLongId::GeneratedImpl(generated) => {
@@ -2462,7 +2486,7 @@ pub fn impl_constant_concrete_implized_type(
         }
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
-        ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl)?,
+        ImplLongId::SelfImpl(concrete_trait_id) => concrete_trait_id,
         ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
     };
 

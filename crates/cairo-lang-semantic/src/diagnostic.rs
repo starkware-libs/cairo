@@ -1000,6 +1000,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefClosureParam => {
                 "Closure parameters cannot be references".into()
             }
+            SemanticDiagnosticKind::MustBeNextToTypeOrTrait { trait_id } => {
+                format!(
+                    "'{}' implementation must be defined in the same module as either the type \
+                     being dereferenced or the trait itself",
+                    trait_id.name(db.upcast())
+                )
+            }
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
@@ -1426,6 +1433,9 @@ pub enum SemanticDiagnosticKind {
     },
     RefClosureArgument,
     RefClosureParam,
+    MustBeNextToTypeOrTrait {
+        trait_id: TraitId,
+    },
     MutableCapturedVariable,
     NonTraitTypeConstrained {
         identifier: SmolStr,
@@ -1481,7 +1491,6 @@ pub enum ElementKind {
     Variable,
     Module,
     Function,
-    TraitFunction,
     Type,
     Variant,
     Trait,
@@ -1493,10 +1502,11 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Constant(_) => ElementKind::Constant,
             ResolvedConcreteItem::Module(_) => ElementKind::Module,
             ResolvedConcreteItem::Function(_) => ElementKind::Function,
-            ResolvedConcreteItem::TraitFunction(_) => ElementKind::TraitFunction,
             ResolvedConcreteItem::Type(_) => ElementKind::Type,
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
-            ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
+            ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
+                ElementKind::Trait
+            }
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
         }
     }
@@ -1507,7 +1517,6 @@ impl From<&ResolvedGenericItem> for ElementKind {
             ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
             ResolvedGenericItem::Module(_) => ElementKind::Module,
             ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
-            ResolvedGenericItem::TraitFunction(_) => ElementKind::TraitFunction,
             ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
                 ElementKind::Type
             }
@@ -1527,7 +1536,6 @@ impl Display for ElementKind {
             ElementKind::Variable => "variable",
             ElementKind::Module => "module",
             ElementKind::Function => "function",
-            ElementKind::TraitFunction => "function",
             ElementKind::Type => "type",
             ElementKind::Variant => "variant",
             ElementKind::Trait => "trait",

@@ -65,7 +65,7 @@
 ///
 /// assert_eq!(c.arr, array![0, 1, 2, 3, 4]);
 /// ```
-pub trait FromIterator<T, G> {
+pub trait FromIterator<T, A> {
     /// Creates a value from an iterator.
     ///
     /// See the [module-level documentation] for more.
@@ -81,7 +81,7 @@ pub trait FromIterator<T, G> {
     ///
     /// assert_eq!(v, array![0, 1, 2, 3, 4]);
     /// ```
-    fn from_iter<I, +Iterator<I>[Item: G], +Drop<I>>(iter: I) -> T;
+    fn from_iter<I, +Iterator<I>[Item: A], +Destruct<I>>(iter: I) -> T;
 }
 
 /// Conversion into an [`Iterator`].

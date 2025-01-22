@@ -1,4 +1,6 @@
-use crate::iter::adapters::{Enumerate, Map, enumerated_iterator, mapped_iterator};
+use crate::iter::adapters::{
+    Enumerate, Map, Zip, enumerated_iterator, mapped_iterator, zipped_iterator,
+};
 
 /// A trait for dealing with iterators.
 ///
@@ -167,9 +169,7 @@ pub trait Iterator<T> {
     /// }
     /// ```
     #[inline]
-    fn map<
-        B, F, impl TIter: Self, +core::ops::Fn<F, (TIter::Item,)>[Output: B], +Drop<T>, +Drop<F>,
-    >(
+    fn map<B, F, +core::ops::Fn<F, (Self::Item,)>[Output: B], +Drop<T>, +Drop<F>>(
         self: T, f: F,
     ) -> Map<T, F> {
         mapped_iterator(self, f)
@@ -302,5 +302,109 @@ pub trait Iterator<T> {
             Option::None => init,
             Option::Some(x) => Self::fold(ref self, f(init, x), f),
         }
+    }
+
+    /// 'Zips up' two iterators into a single iterator of pairs.
+    ///
+    /// `zip()` returns a new iterator that will iterate over two other
+    /// iterators, returning a tuple where the first element comes from the
+    /// first iterator, and the second element comes from the second iterator.
+    ///
+    /// In other words, it zips two iterators together, into a single one.
+    ///
+    /// If either iterator returns [`Option::None`], [`next`] from the zipped iterator
+    /// will return [`Option::None`].
+    /// If the zipped iterator has no more elements to return then each further attempt to advance
+    /// it will first try to advance the first iterator at most one time and if it still yielded an
+    /// item try to advance the second iterator at most one time.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
+    ///
+    /// assert_eq!(iter.next(), Option::Some((1, 4)));
+    /// assert_eq!(iter.next(), Option::Some((2, 5)));
+    /// assert_eq!(iter.next(), Option::Some((3, 6)));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    ///
+    /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
+    /// anything that can be converted into an [`Iterator`], not just an
+    /// [`Iterator`] itself. For example:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
+    ///
+    /// assert_eq!(iter.next(), Option::Some((1, 4)));
+    /// assert_eq!(iter.next(), Option::Some((2, 5)));
+    /// assert_eq!(iter.next(), Option::Some((3, 6)));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ``
+    ///
+    /// [`enumerate`]: Iterator::enumerate
+    /// [`next`]: Iterator::next
+    #[inline]
+    fn zip<U, impl UIntoIter: IntoIterator<U>, +Destruct<T>>(
+        self: T, other: U,
+    ) -> Zip<T, UIntoIter::IntoIter> {
+        zipped_iterator(self, other.into_iter())
+    }
+
+    /// Transforms an iterator into a collection.
+    ///
+    /// `collect()` can take anything iterable, and turn it into a relevant
+    /// collection. This is one of the more powerful methods in the core
+    /// library, used in a variety of contexts.
+    ///
+    /// The most basic pattern in which `collect()` is used is to turn one
+    /// collection into another. You take a collection, call [`iter`] on it,
+    /// do a bunch of transformations, and then `collect()` at the end.
+    ///
+    /// `collect()` can also create instances of types that are not typical
+    /// collections.
+    ///
+    /// Because `collect()` is so general, it can cause problems with type
+    /// inference. As such, `collect()` is one of the few times you'll see
+    /// the syntax affectionately known as the 'turbofish': `::<>`. This
+    /// helps the inference algorithm understand specifically which collection
+    /// you're trying to collect into.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let doubled: Array<u32> = array![1, 2, 3].into_iter().map(|x| x * 2).collect();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Note that we needed the `: Array<u32>` on the left-hand side.
+    ///
+    /// Using the 'turbofish' instead of annotating `doubled`:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<u32>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Because `collect()` only cares about what you're collecting into, you can
+    /// still use a partial type hint, `_`, with the turbofish:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<_>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
+        self: T,
+    ) -> B {
+        FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
     }
 }

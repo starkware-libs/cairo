@@ -202,10 +202,11 @@
 //! often called 'iterator adapters', as they're a form of the 'adapter
 //! pattern'.
 //!
-//! The only adapter for now is [`map`].
-//! For more, see the [`map`] documentation.
+//! Common iterators adapters include [`map`], [`enumerate`] and [`zip`].
 //!
 //! [`map`]: Iterator::map
+//! [`enumerate`]: Iterator::enumerate
+//! [`zip`]: Iterator::zip
 //!
 //! # Laziness
 //!

@@ -150,23 +150,14 @@ fn enrich_lookup_context_with_ty(
     lookup_context: &mut ImplLookupContext,
 ) {
     match ty.lookup_intern(db) {
-        TypeLongId::Concrete(concrete) => {
-            lookup_context.insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);
-        }
-        TypeLongId::Coupon(function_id) => {
-            if let Some(module_file_id) =
-                function_id.get_concrete(db).generic_function.module_file_id(db)
-            {
-                lookup_context.insert_module(module_file_id.0);
-            }
-        }
         TypeLongId::ImplType(impl_type_id) => {
             lookup_context.insert_impl(impl_type_id.impl_id());
         }
-        TypeLongId::Snapshot(ty) => {
-            enrich_lookup_context_with_ty(db, ty, lookup_context);
+        long_ty => {
+            if let Some(module_id) = long_ty.module_id(db) {
+                lookup_context.insert_module(module_id);
+            }
         }
-        _ => (),
     }
 }
 

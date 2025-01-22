@@ -16,7 +16,9 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
-use cairo_lang_sierra::program::{ConcreteTypeLongId, Function, Program as SierraProgram};
+use cairo_lang_sierra::program::{
+    ConcreteTypeLongId, Function, Program as SierraProgram, StatementIdx,
+};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_gas::CostError;
@@ -48,6 +50,15 @@ pub enum BuildError {
     SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
+}
+
+impl BuildError {
+    pub fn stmt_indices(&self) -> Vec<StatementIdx> {
+        match self {
+            BuildError::SierraCompilationError(err) => err.stmt_indices(),
+            _ => vec![],
+        }
+    }
 }
 
 /// Builder for creating a runnable CASM program from Sierra code.
@@ -450,7 +461,7 @@ pub fn create_entry_code_from_params(
                 };
                 output_ptr_end
             } else {
-                panic!("Unexpected output size: {size}",);
+                panic!("Unexpected output type: {:?}", ret_ty.0);
             };
             *builtin_vars.get_mut(&BuiltinName::output).unwrap() = new_output_ptr;
         } else {

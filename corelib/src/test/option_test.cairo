@@ -209,7 +209,7 @@ fn test_default_for_option() {
 #[test]
 fn test_option_some_map() {
     let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
-    let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+    let maybe_some_len = maybe_some_string.map(|s| s.len());
     assert!(maybe_some_len == Option::Some(13));
 }
 
@@ -269,4 +269,15 @@ fn test_option_take() {
     let y = x.take();
     assert_eq!(x, Option::None);
     assert_eq!(y, Option::None);
+}
+
+#[test]
+fn test_option_filter() {
+    let is_even = |x: @u32| -> bool {
+        *x % 2 == 0
+    };
+
+    assert!(Option::None.filter(is_even) == Option::None);
+    assert!(Option::Some(3).filter(is_even) == Option::None);
+    assert!(Option::Some(4).filter(is_even) == Option::Some(4));
 }

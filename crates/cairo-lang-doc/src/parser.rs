@@ -306,9 +306,6 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
                 Some(DocumentableItemId::Crate(id))
             }
             ResolvedGenericItem::Variant(variant) => Some(DocumentableItemId::Variant(variant.id)),
-            ResolvedGenericItem::TraitFunction(id) => Some(DocumentableItemId::LookupItem(
-                LookupItemId::TraitItem(TraitItemId::Function(id)),
-            )),
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(generic_impl_func)) => {
                 if let Some(impl_function) = generic_impl_func.impl_function(db).ok().flatten() {
                     Some(DocumentableItemId::LookupItem(LookupItemId::ImplItem(
@@ -319,11 +316,6 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
                         TraitItemId::Function(generic_impl_func.function),
                     )))
                 }
-            }
-            ResolvedGenericItem::GenericFunction(GenericFunctionId::Trait(trait_func)) => {
-                Some(DocumentableItemId::LookupItem(LookupItemId::TraitItem(
-                    TraitItemId::Function(trait_func.trait_function(db)),
-                )))
             }
             ResolvedGenericItem::Variable(_) => None,
         }

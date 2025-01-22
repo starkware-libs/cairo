@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId, UnstableSalsaId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId,
+    NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -50,7 +50,6 @@ pub enum TypeLongId {
         size: ConstValueId,
     },
     ImplType(ImplTypeId),
-    TraitType(TraitTypeId),
     Closure(ClosureTypeLongId),
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
@@ -134,7 +133,6 @@ impl TypeLongId {
             | TypeLongId::Var(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
-            | TypeLongId::TraitType(_)
             | TypeLongId::Closure(_) => {
                 return None;
             }
@@ -165,10 +163,44 @@ impl TypeLongId {
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::Coupon(_)
-            | TypeLongId::TraitType(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Closure(_) => false,
+        }
+    }
+
+    /// Returns the module id of the given type if applicable.
+    pub fn module_id(&self, db: &dyn SemanticGroup) -> Option<ModuleId> {
+        match self {
+            TypeLongId::Concrete(concrete) => {
+                Some(concrete.generic_type(db).module_file_id(db.upcast()).0)
+            }
+            TypeLongId::Snapshot(ty) => {
+                let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
+                inner_ty.module_id(db)
+            }
+            TypeLongId::GenericParameter(_) => None,
+            TypeLongId::Var(_) => None,
+            TypeLongId::Coupon(function_id) => function_id
+                .get_concrete(db)
+                .generic_function
+                .module_file_id(db)
+                .map(|module_file_id| module_file_id.0),
+            TypeLongId::Missing(_) => None,
+            TypeLongId::Tuple(_) => None,
+            TypeLongId::ImplType(_) => None,
+            TypeLongId::FixedSizeArray { .. } => None,
+            TypeLongId::Closure(closure) => {
+                if let Ok(function_id) = closure.parent_function {
+                    function_id
+                        .get_concrete(db)
+                        .generic_function
+                        .module_file_id(db.upcast())
+                        .map(|module_file_id| module_file_id.0)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -200,14 +232,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
                 write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
-            }
-            TypeLongId::TraitType(trait_type_id) => {
-                write!(
-                    f,
-                    "{}::{}",
-                    trait_type_id.trait_id(def_db).name(def_db),
-                    trait_type_id.name(def_db)
-                )
             }
             TypeLongId::Closure(closure) => {
                 write!(f, "{:?}", closure.debug(db.elongate()))
@@ -759,7 +783,6 @@ pub fn single_value_type(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<bool> {
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_)
         | TypeLongId::Closure(_) => false,
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.single_value_type(type_id)?
@@ -846,7 +869,6 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::TraitType(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Closure(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -897,8 +919,7 @@ pub fn priv_type_is_fully_concrete(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_)
-        | TypeLongId::ImplType(_)
-        | TypeLongId::TraitType(_) => false,
+        | TypeLongId::ImplType(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_fully_concrete(db) && size.is_fully_concrete(db)
@@ -916,7 +937,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
         TypeLongId::Var(_) => false,
-        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) | TypeLongId::TraitType(_) => true,
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
             type_id.is_var_free(db) && size.is_var_free(db)
