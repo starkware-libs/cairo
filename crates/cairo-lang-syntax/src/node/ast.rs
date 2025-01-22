@@ -277,6 +277,7 @@ pub enum Expr {
     Indexed(ExprIndexed),
     InlineMacro(ExprInlineMacro),
     FixedSizeArray(ExprFixedSizeArray),
+    Placeholder(ExprPlaceholder),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -415,6 +416,11 @@ impl From<ExprFixedSizeArrayPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprPlaceholderPtr> for ExprPtr {
+    fn from(value: ExprPlaceholderPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -540,6 +546,11 @@ impl From<ExprFixedSizeArrayGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprPlaceholderGreen> for ExprGreen {
+    fn from(value: ExprPlaceholderGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -601,6 +612,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprPlaceholder => {
+                Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -631,6 +645,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
+            Expr::Placeholder(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -672,6 +687,7 @@ impl Expr {
                 | SyntaxKind::ExprIndexed
                 | SyntaxKind::ExprInlineMacro
                 | SyntaxKind::ExprFixedSizeArray
+                | SyntaxKind::ExprPlaceholder
                 | SyntaxKind::ExprMissing
         )
     }
@@ -5796,6 +5812,100 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
 }
 impl From<&ClosureParamWrapperNAry> for SyntaxStablePtrId {
     fn from(node: &ClosureParamWrapperNAry) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprPlaceholder {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ExprPlaceholder {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        name: TerminalIdentifierGreen,
+    ) -> ExprPlaceholderGreen {
+        let children: Vec<GreenId> = vec![dollar.0, name.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprPlaceholderGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPlaceholder,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprPlaceholder {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPlaceholderPtr(pub SyntaxStablePtrId);
+impl ExprPlaceholderPtr {}
+impl TypedStablePtr for ExprPlaceholderPtr {
+    type SyntaxNode = ExprPlaceholder;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprPlaceholder {
+        ExprPlaceholder::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprPlaceholderPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprPlaceholderPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPlaceholderGreen(pub GreenId);
+impl TypedSyntaxNode for ExprPlaceholder {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPlaceholder);
+    type StablePtr = ExprPlaceholderPtr;
+    type Green = ExprPlaceholderGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprPlaceholderGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPlaceholder,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprPlaceholder,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprPlaceholder
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprPlaceholderPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprPlaceholder> for SyntaxStablePtrId {
+    fn from(node: &ExprPlaceholder) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -11589,6 +11699,7 @@ pub enum ModuleItem {
     Enum(ItemEnum),
     TypeAlias(ItemTypeAlias),
     InlineMacro(ItemInlineMacro),
+    MacroDeclaration(ItemMacroDeclaration),
     HeaderDoc(ItemHeaderDoc),
     Missing(ModuleItemMissing),
 }
@@ -11673,6 +11784,11 @@ impl From<ItemInlineMacroPtr> for ModuleItemPtr {
         Self(value.0)
     }
 }
+impl From<ItemMacroDeclarationPtr> for ModuleItemPtr {
+    fn from(value: ItemMacroDeclarationPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemHeaderDocPtr> for ModuleItemPtr {
     fn from(value: ItemHeaderDocPtr) -> Self {
         Self(value.0)
@@ -11748,6 +11864,11 @@ impl From<ItemInlineMacroGreen> for ModuleItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemMacroDeclarationGreen> for ModuleItemGreen {
+    fn from(value: ItemMacroDeclarationGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemHeaderDocGreen> for ModuleItemGreen {
     fn from(value: ItemHeaderDocGreen) -> Self {
         Self(value.0)
@@ -11797,6 +11918,9 @@ impl TypedSyntaxNode for ModuleItem {
             SyntaxKind::ItemInlineMacro => {
                 ModuleItem::InlineMacro(ItemInlineMacro::from_syntax_node(db, node))
             }
+            SyntaxKind::ItemMacroDeclaration => {
+                ModuleItem::MacroDeclaration(ItemMacroDeclaration::from_syntax_node(db, node))
+            }
             SyntaxKind::ItemHeaderDoc => {
                 ModuleItem::HeaderDoc(ItemHeaderDoc::from_syntax_node(db, node))
             }
@@ -11821,6 +11945,7 @@ impl TypedSyntaxNode for ModuleItem {
             ModuleItem::Enum(x) => x.as_syntax_node(),
             ModuleItem::TypeAlias(x) => x.as_syntax_node(),
             ModuleItem::InlineMacro(x) => x.as_syntax_node(),
+            ModuleItem::MacroDeclaration(x) => x.as_syntax_node(),
             ModuleItem::HeaderDoc(x) => x.as_syntax_node(),
             ModuleItem::Missing(x) => x.as_syntax_node(),
         }
@@ -11852,6 +11977,7 @@ impl ModuleItem {
                 | SyntaxKind::ItemEnum
                 | SyntaxKind::ItemTypeAlias
                 | SyntaxKind::ItemInlineMacro
+                | SyntaxKind::ItemMacroDeclaration
                 | SyntaxKind::ItemHeaderDoc
                 | SyntaxKind::ModuleItemMissing
         )
@@ -19812,6 +19938,315 @@ impl From<&ItemInlineMacro> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemMacroDeclaration {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ItemMacroDeclaration {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_VISIBILITY: usize = 1;
+    pub const INDEX_MACRO_KW: usize = 2;
+    pub const INDEX_NAME: usize = 3;
+    pub const INDEX_LBRACE: usize = 4;
+    pub const INDEX_RULES: usize = 5;
+    pub const INDEX_RBRACE: usize = 6;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        visibility: VisibilityGreen,
+        macro_kw: TerminalMacroGreen,
+        name: TerminalIdentifierGreen,
+        lbrace: TerminalLBraceGreen,
+        rules: MacroRulesListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> ItemMacroDeclarationGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, visibility.0, macro_kw.0, name.0, lbrace.0, rules.0, rbrace.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ItemMacroDeclarationGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemMacroDeclaration,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ItemMacroDeclaration {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
+        Visibility::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn macro_kw(&self, db: &dyn SyntaxGroup) -> TerminalMacro {
+        TerminalMacro::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn rules(&self, db: &dyn SyntaxGroup) -> MacroRulesList {
+        MacroRulesList::from_syntax_node(db, self.children[5].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[6].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemMacroDeclarationPtr(pub SyntaxStablePtrId);
+impl ItemMacroDeclarationPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = self.0.lookup_intern(db);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
+impl TypedStablePtr for ItemMacroDeclarationPtr {
+    type SyntaxNode = ItemMacroDeclaration;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ItemMacroDeclaration {
+        ItemMacroDeclaration::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ItemMacroDeclarationPtr> for SyntaxStablePtrId {
+    fn from(ptr: ItemMacroDeclarationPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemMacroDeclarationGreen(pub GreenId);
+impl TypedSyntaxNode for ItemMacroDeclaration {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemMacroDeclaration);
+    type StablePtr = ItemMacroDeclarationPtr;
+    type Green = ItemMacroDeclarationGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemMacroDeclarationGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemMacroDeclaration,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        AttributeList::missing(db).0,
+                        Visibility::missing(db).0,
+                        TerminalMacro::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                        TerminalLBrace::missing(db).0,
+                        MacroRulesList::missing(db).0,
+                        TerminalRBrace::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemMacroDeclaration,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemMacroDeclaration
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemMacroDeclarationPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ItemMacroDeclaration> for SyntaxStablePtrId {
+    fn from(node: &ItemMacroDeclaration) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroRulesList(ElementList<MacroRule, 1>);
+impl Deref for MacroRulesList {
+    type Target = ElementList<MacroRule, 1>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl MacroRulesList {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<MacroRuleGreen>) -> MacroRulesListGreen {
+        let width = children.iter().map(|id| id.0.lookup_intern(db).width()).sum();
+        MacroRulesListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRulesList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.0).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRulesListPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for MacroRulesListPtr {
+    type SyntaxNode = MacroRulesList;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRulesList {
+        MacroRulesList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRulesListPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRulesListPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRulesListGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRulesList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRulesList);
+    type StablePtr = MacroRulesListPtr;
+    type Green = MacroRulesListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRulesListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRulesList,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRulesListPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroRulesList> for SyntaxStablePtrId {
+    fn from(node: &MacroRulesList) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroRule {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroRule {
+    pub const INDEX_LHS: usize = 0;
+    pub const INDEX_FAT_ARROW: usize = 1;
+    pub const INDEX_RHS: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lhs: TokenTreeNodeGreen,
+        fat_arrow: TerminalMatchArrowGreen,
+        rhs: ExprBlockGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> MacroRuleGreen {
+        let children: Vec<GreenId> = vec![lhs.0, fat_arrow.0, rhs.0, semicolon.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroRuleGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRule,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroRule {
+    pub fn lhs(&self, db: &dyn SyntaxGroup) -> TokenTreeNode {
+        TokenTreeNode::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn fat_arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
+        TerminalMatchArrow::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rhs(&self, db: &dyn SyntaxGroup) -> ExprBlock {
+        ExprBlock::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRulePtr(pub SyntaxStablePtrId);
+impl MacroRulePtr {}
+impl TypedStablePtr for MacroRulePtr {
+    type SyntaxNode = MacroRule;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRule {
+        MacroRule::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRulePtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRulePtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRuleGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRule {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRule);
+    type StablePtr = MacroRulePtr;
+    type Green = MacroRuleGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRuleGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRule,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TokenTreeNode::missing(db).0,
+                        TerminalMatchArrow::missing(db).0,
+                        ExprBlock::missing(db).0,
+                        TerminalSemicolon::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRule,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRule
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRulePtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroRule> for SyntaxStablePtrId {
+    fn from(node: &MacroRule) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LegacyExprInlineMacro {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -23373,6 +23808,183 @@ impl TypedSyntaxNode for TerminalLet {
 }
 impl From<&TerminalLet> for SyntaxStablePtrId {
     fn from(node: &TerminalLet) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenMacro {
+    node: SyntaxNode,
+}
+impl Token for TokenMacro {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMacro,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenMacroPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenMacroPtr {
+    type SyntaxNode = TokenMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenMacro {
+        TokenMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenMacroGreen(pub GreenId);
+impl TokenMacroGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMacro);
+    type StablePtr = TokenMacroPtr;
+    type Green = TokenMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMacro)
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenMacro> for SyntaxStablePtrId {
+    fn from(node: &TokenMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl Terminal for TerminalMacro {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMacro;
+    type TokenType = TokenMacro;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalMacro as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalMacro {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMacro {
+        TokenMacro::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalMacroPtr(pub SyntaxStablePtrId);
+impl TerminalMacroPtr {}
+impl TypedStablePtr for TerminalMacroPtr {
+    type SyntaxNode = TerminalMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalMacro {
+        TerminalMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalMacroGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMacro);
+    type StablePtr = TerminalMacroPtr;
+    type Green = TerminalMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenMacro::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TerminalMacro> for SyntaxStablePtrId {
+    fn from(node: &TerminalMacro) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -27799,6 +28411,183 @@ impl TypedSyntaxNode for TerminalDivEq {
 }
 impl From<&TerminalDivEq> for SyntaxStablePtrId {
     fn from(node: &TerminalDivEq) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenDollar {
+    node: SyntaxNode,
+}
+impl Token for TokenDollar {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenDollarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenDollar,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenDollarPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenDollarPtr {
+    type SyntaxNode = TokenDollar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenDollar {
+        TokenDollar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenDollarPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenDollarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenDollarGreen(pub GreenId);
+impl TokenDollarGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenDollar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDollar);
+    type StablePtr = TokenDollarPtr;
+    type Green = TokenDollarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenDollarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDollar)
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenDollarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenDollar> for SyntaxStablePtrId {
+    fn from(node: &TokenDollar) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalDollar {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl Terminal for TerminalDollar {
+    const KIND: SyntaxKind = SyntaxKind::TerminalDollar;
+    type TokenType = TokenDollar;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalDollar as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalDollarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalDollar,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalDollar {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDollar {
+        TokenDollar::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalDollarPtr(pub SyntaxStablePtrId);
+impl TerminalDollarPtr {}
+impl TypedStablePtr for TerminalDollarPtr {
+    type SyntaxNode = TerminalDollar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalDollarPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalDollarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalDollarGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalDollar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDollar);
+    type StablePtr = TerminalDollarPtr;
+    type Green = TerminalDollarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalDollarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalDollar,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenDollar::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalDollar,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalDollar
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalDollarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TerminalDollar> for SyntaxStablePtrId {
+    fn from(node: &TerminalDollar) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -34636,6 +35425,7 @@ pub enum TokenNode {
     TerminalImpl(TerminalImpl),
     TerminalImplicits(TerminalImplicits),
     TerminalLet(TerminalLet),
+    TerminalMacro(TerminalMacro),
     TerminalMatch(TerminalMatch),
     TerminalModule(TerminalModule),
     TerminalMut(TerminalMut),
@@ -34661,6 +35451,7 @@ pub enum TokenNode {
     TerminalComma(TerminalComma),
     TerminalDiv(TerminalDiv),
     TerminalDivEq(TerminalDivEq),
+    TerminalDollar(TerminalDollar),
     TerminalDot(TerminalDot),
     TerminalDotDot(TerminalDotDot),
     TerminalEndOfFile(TerminalEndOfFile),
@@ -34803,6 +35594,11 @@ impl From<TerminalLetPtr> for TokenNodePtr {
         Self(value.0)
     }
 }
+impl From<TerminalMacroPtr> for TokenNodePtr {
+    fn from(value: TerminalMacroPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalMatchPtr> for TokenNodePtr {
     fn from(value: TerminalMatchPtr) -> Self {
         Self(value.0)
@@ -34925,6 +35721,11 @@ impl From<TerminalDivPtr> for TokenNodePtr {
 }
 impl From<TerminalDivEqPtr> for TokenNodePtr {
     fn from(value: TerminalDivEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDollarPtr> for TokenNodePtr {
+    fn from(value: TerminalDollarPtr) -> Self {
         Self(value.0)
     }
 }
@@ -35193,6 +35994,11 @@ impl From<TerminalLetGreen> for TokenNodeGreen {
         Self(value.0)
     }
 }
+impl From<TerminalMacroGreen> for TokenNodeGreen {
+    fn from(value: TerminalMacroGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalMatchGreen> for TokenNodeGreen {
     fn from(value: TerminalMatchGreen) -> Self {
         Self(value.0)
@@ -35315,6 +36121,11 @@ impl From<TerminalDivGreen> for TokenNodeGreen {
 }
 impl From<TerminalDivEqGreen> for TokenNodeGreen {
     fn from(value: TerminalDivEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDollarGreen> for TokenNodeGreen {
+    fn from(value: TerminalDollarGreen) -> Self {
         Self(value.0)
     }
 }
@@ -35555,6 +36366,9 @@ impl TypedSyntaxNode for TokenNode {
             SyntaxKind::TerminalLet => {
                 TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalMacro => {
+                TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalMatch => {
                 TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node))
             }
@@ -35625,6 +36439,9 @@ impl TypedSyntaxNode for TokenNode {
             }
             SyntaxKind::TerminalDivEq => {
                 TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDollar => {
+                TokenNode::TerminalDollar(TerminalDollar::from_syntax_node(db, node))
             }
             SyntaxKind::TerminalDot => {
                 TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node))
@@ -35742,6 +36559,7 @@ impl TypedSyntaxNode for TokenNode {
             TokenNode::TerminalImpl(x) => x.as_syntax_node(),
             TokenNode::TerminalImplicits(x) => x.as_syntax_node(),
             TokenNode::TerminalLet(x) => x.as_syntax_node(),
+            TokenNode::TerminalMacro(x) => x.as_syntax_node(),
             TokenNode::TerminalMatch(x) => x.as_syntax_node(),
             TokenNode::TerminalModule(x) => x.as_syntax_node(),
             TokenNode::TerminalMut(x) => x.as_syntax_node(),
@@ -35767,6 +36585,7 @@ impl TypedSyntaxNode for TokenNode {
             TokenNode::TerminalComma(x) => x.as_syntax_node(),
             TokenNode::TerminalDiv(x) => x.as_syntax_node(),
             TokenNode::TerminalDivEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalDollar(x) => x.as_syntax_node(),
             TokenNode::TerminalDot(x) => x.as_syntax_node(),
             TokenNode::TerminalDotDot(x) => x.as_syntax_node(),
             TokenNode::TerminalEndOfFile(x) => x.as_syntax_node(),
@@ -35836,6 +36655,7 @@ impl TokenNode {
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMacro
                 | SyntaxKind::TerminalMatch
                 | SyntaxKind::TerminalModule
                 | SyntaxKind::TerminalMut
@@ -35861,6 +36681,7 @@ impl TokenNode {
                 | SyntaxKind::TerminalComma
                 | SyntaxKind::TerminalDiv
                 | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalDollar
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEndOfFile

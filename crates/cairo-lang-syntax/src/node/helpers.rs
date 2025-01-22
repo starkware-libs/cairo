@@ -4,11 +4,11 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
-    TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
+    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemMacroDeclaration, ItemModule, ItemStruct,
+    ItemTrait, ItemTypeAlias, ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized,
+    Statement, StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
+    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -275,6 +275,11 @@ impl QueryAttrs for ItemTypeAlias {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for ItemMacroDeclaration {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for TraitItemFunction {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
@@ -331,6 +336,9 @@ impl QueryAttrs for ModuleItem {
             ModuleItem::InlineMacro(item) => item.attributes_elements(db),
             ModuleItem::Missing(_) => vec![],
             ModuleItem::HeaderDoc(_) => vec![],
+            ModuleItem::MacroDeclaration(macro_declaration) => {
+                macro_declaration.attributes_elements(db)
+            }
         }
     }
 }
