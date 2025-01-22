@@ -158,3 +158,9 @@ fn test_dict_from_iterator() {
     assert_eq!(dict[3], 3);
     assert_eq!(dict[4], 4);
 }
+
+#[test]
+fn test_dict_from_iterator_with_duplicate_keys() {
+    let mut dict = array![(0, 1_u32), (0, 2_u32)].into_iter().collect::<Felt252Dict<_>>();
+    assert_eq!(dict[0], 2);
+}
