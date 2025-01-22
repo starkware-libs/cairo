@@ -43,6 +43,46 @@ pub trait Iterator<T> {
     /// ```
     fn next(ref self: T) -> Option<Self::Item>;
 
+    /// Consumes the iterator, counting the number of iterations and returning it.
+    ///
+    /// This method will call [`next`] repeatedly until [`None`] is encountered,
+    /// returning the number of times it saw [`Some`]. Note that [`next`] has to be
+    /// called at least once even if the iterator does not have any elements.
+    ///
+    /// [`next`]: Iterator::next
+    ///
+    /// # Overflow Behavior
+    ///
+    /// The method does no guarding against overflows, so counting elements of
+    /// an iterator with more than [`Bounded::<usize>::MAX`] elements either produces the
+    /// wrong result or panics.
+    ///
+    /// [`Bounded::<usize>::MAX`]: core::num::traits::Bounded
+    ///
+    /// # Panics
+    ///
+    /// This function might panic if the iterator has more than [`Bounded::<usize>::MAX`]
+    /// elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = array![1, 2, 3].into_iter();
+    /// assert_eq!(a.count(), 3);
+    ///
+    /// let mut a = array![1, 2, 3, 4, 5].into_iter();
+    /// assert_eq!(a.count(), 5);
+    /// ```
+    #[inline]
+    fn count<+Destruct<T>, +Destruct<Self::Item>>(
+        self: T,
+    ) -> usize {
+        let mut self = self;
+        Self::fold(ref self, 0_usize, |count, _x| {
+            count + 1
+        })
+    }
+
     /// Advances the iterator by `n` elements.
     ///
     /// This method will eagerly skip `n` elements by calling [`next`] up to `n`

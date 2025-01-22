@@ -1,4 +1,16 @@
 #[test]
+fn test_iter_count() {
+    let mut empty_iter = ArrayTrait::<usize>::new().into_iter();
+    let count = empty_iter.count();
+    assert_eq!(count, 0);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    let count = iter.count();
+
+    assert_eq!(count, 3);
+}
+
+#[test]
 fn test_advance_by() {
     let mut iter = array![1_u8, 2, 3, 4].into_iter();
 
