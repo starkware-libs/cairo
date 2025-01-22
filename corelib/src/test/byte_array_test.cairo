@@ -1,4 +1,3 @@
-use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -482,7 +481,7 @@ fn test_serde() {
 }
 
 #[test]
-fn test_iterator() {
+fn test_into_iterator() {
     let ba: ByteArray = "hello";
     let mut iter = ba.into_iter();
     assert_eq!(iter.next(), Option::Some('h'));
@@ -491,6 +490,12 @@ fn test_iterator() {
     assert_eq!(iter.next(), Option::Some('l'));
     assert_eq!(iter.next(), Option::Some('o'));
     assert_eq!(iter.next(), Option::None);
+}
+
+#[test]
+fn test_from_iterator() {
+    let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
+    assert_eq!(ba, "hello");
 }
 
 // ========= Test helper functions =========

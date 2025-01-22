@@ -44,6 +44,46 @@ pub trait Iterator<T> {
     /// ```
     fn next(ref self: T) -> Option<Self::Item>;
 
+    /// Consumes the iterator, counting the number of iterations and returning it.
+    ///
+    /// This method will call [`next`] repeatedly until [`None`] is encountered,
+    /// returning the number of times it saw [`Some`]. Note that [`next`] has to be
+    /// called at least once even if the iterator does not have any elements.
+    ///
+    /// [`next`]: Iterator::next
+    ///
+    /// # Overflow Behavior
+    ///
+    /// The method does no guarding against overflows, so counting elements of
+    /// an iterator with more than [`Bounded::<usize>::MAX`] elements either produces the
+    /// wrong result or panics.
+    ///
+    /// [`Bounded::<usize>::MAX`]: core::num::traits::Bounded
+    ///
+    /// # Panics
+    ///
+    /// This function might panic if the iterator has more than [`Bounded::<usize>::MAX`]
+    /// elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = array![1, 2, 3].into_iter();
+    /// assert_eq!(a.count(), 3);
+    ///
+    /// let mut a = array![1, 2, 3, 4, 5].into_iter();
+    /// assert_eq!(a.count(), 5);
+    /// ```
+    #[inline]
+    fn count<+Destruct<T>, +Destruct<Self::Item>>(
+        self: T,
+    ) -> usize {
+        let mut self = self;
+        Self::fold(ref self, 0_usize, |count, _x| {
+            count + 1
+        })
+    }
+
     /// Advances the iterator by `n` elements.
     ///
     /// This method will eagerly skip `n` elements by calling [`next`] up to `n`
@@ -312,6 +352,61 @@ pub trait Iterator<T> {
         self: T, other: U,
     ) -> Zip<T, UIntoIter::IntoIter> {
         zipped_iterator(self, other.into_iter())
+    }
+
+    /// Transforms an iterator into a collection.
+    ///
+    /// `collect()` can take anything iterable, and turn it into a relevant
+    /// collection. This is one of the more powerful methods in the core
+    /// library, used in a variety of contexts.
+    ///
+    /// The most basic pattern in which `collect()` is used is to turn one
+    /// collection into another. You take a collection, call [`iter`] on it,
+    /// do a bunch of transformations, and then `collect()` at the end.
+    ///
+    /// `collect()` can also create instances of types that are not typical
+    /// collections.
+    ///
+    /// Because `collect()` is so general, it can cause problems with type
+    /// inference. As such, `collect()` is one of the few times you'll see
+    /// the syntax affectionately known as the 'turbofish': `::<>`. This
+    /// helps the inference algorithm understand specifically which collection
+    /// you're trying to collect into.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let doubled: Array<u32> = array![1, 2, 3].into_iter().map(|x| x * 2).collect();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Note that we needed the `: Array<u32>` on the left-hand side.
+    ///
+    /// Using the 'turbofish' instead of annotating `doubled`:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<u32>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Because `collect()` only cares about what you're collecting into, you can
+    /// still use a partial type hint, `_`, with the turbofish:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<_>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
+        self: T,
+    ) -> B {
+        FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
     }
 
     /// Creates an iterator which can use the [`peek`] method to look at the next element of the

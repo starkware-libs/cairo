@@ -758,27 +758,51 @@ pub fn impl_semantic_definition_diagnostics(
     }
     // Diagnostics for special traits.
     if diagnostics.error_count == 0 {
-        let trait_id = db
-            .priv_impl_declaration_data(impl_def_id)
-            .unwrap()
-            .concrete_trait
-            .unwrap()
-            .trait_id(db);
+        let concrete_trait =
+            db.priv_impl_declaration_data(impl_def_id).unwrap().concrete_trait.unwrap();
+
+        let trait_id = concrete_trait.trait_id(db);
         if trait_id == deref_trait(db) {
-            handle_deref_impl(db, impl_def_id, &mut diagnostics);
+            deref_impl_diagnostics(db, impl_def_id, concrete_trait, &mut diagnostics);
         }
     }
     diagnostics.build()
 }
 
-/// Checks that there are no cycles of Deref impls.
-fn handle_deref_impl(
+/// Reports diagnostic for a deref impl.
+fn deref_impl_diagnostics(
     db: &dyn SemanticGroup,
     mut impl_def_id: ImplDefId,
+    concrete_trait: ConcreteTraitId,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
     let mut visited_impls: OrderedHashSet<ImplDefId> = OrderedHashSet::default();
-    let deref_trait_id = deref_trait(db);
+    let deref_trait_id = concrete_trait.trait_id(db);
+
+    let defs_db = db.upcast();
+    let impl_module = impl_def_id.module_file_id(defs_db).0;
+
+    let mut impl_in_valid_location = false;
+    if impl_module == deref_trait_id.module_file_id(defs_db).0 {
+        impl_in_valid_location = true;
+    }
+
+    let gargs = concrete_trait.generic_args(db);
+    let deref_ty = extract_matches!(gargs[0], GenericArgumentId::Type);
+    if let Some(module_id) = deref_ty.lookup_intern(db).module_id(db) {
+        if module_id == impl_module {
+            impl_in_valid_location = true;
+        }
+    }
+
+    if !impl_in_valid_location {
+        diagnostics.report(
+            impl_def_id.stable_ptr(db.upcast()),
+            SemanticDiagnosticKind::MustBeNextToTypeOrTrait { trait_id: deref_trait_id },
+        );
+        return;
+    }
+
     loop {
         let Ok(impl_id) = get_impl_based_on_single_impl_type(db, impl_def_id, |ty| {
             ConcreteTraitLongId {
@@ -791,6 +815,7 @@ fn handle_deref_impl(
             // for cycles.
             return;
         };
+
         impl_def_id = match impl_id.lookup_intern(db) {
             ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id.impl_def_id(db),
             _ => return,
@@ -832,6 +857,7 @@ fn get_impl_based_on_single_impl_type(
         );
     }
     let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
     let generic_params_ids =
