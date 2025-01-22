@@ -2788,7 +2788,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
     let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
         let imp = resolver.inference().new_impl_var(concrete_trait_id, None, impl_lookup_context);
         if let Err((err_set, _)) = resolver.inference().finalize_without_reporting() {
-            diagnostics.report(
+            let diag = diagnostics.report(
                 impl_def_id.stable_ptr(db.upcast()).untyped(),
                 ImplicitImplNotInferred { trait_impl_id, concrete_trait_id },
             );
@@ -2797,6 +2797,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
                 &mut diagnostics,
                 impl_def_id.stable_ptr(db.upcast()).untyped(),
             );
+            return Err(diag);
         };
         resolver.inference().rewrite(imp).map_err(|_| skip_diagnostic())
     });
