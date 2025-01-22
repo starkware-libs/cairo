@@ -51,7 +51,7 @@ use starknet::eth_address::U256IntoEthAddress;
 #[allow(unused_imports)]
 use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
-/// Represents a Secp256{k/r}1 ECDSA signature.
+/// Represents a Secp256k1 ECDSA signature.
 ///
 /// This struct holds the components of an ECDSA signature: `r`, `s`, and `y_parity`.
 #[derive(Copy, Drop, Debug, PartialEq, Serde, Hash)]
