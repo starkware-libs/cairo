@@ -424,7 +424,12 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
+<<<<<<< HEAD
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
+=======
+        ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr),
+        ast::Expr::Placeholder(_) => todo!(),
+>>>>>>> cb8bb6241 (Add macro declaration syntax. (#7075))
     }
 }
 
@@ -3807,6 +3812,7 @@ pub fn compute_statement_semantic(
                 ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
                 ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
                 ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                ast::ModuleItem::MacroDeclaration(_) => todo!(),
             }
             semantic::Statement::Item(semantic::StatementItem { stable_ptr: syntax.stable_ptr() })
         }
