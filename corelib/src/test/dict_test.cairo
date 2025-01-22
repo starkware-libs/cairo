@@ -150,14 +150,11 @@ fn test_array_dict() {
 
 #[test]
 fn test_dict_from_iterator() {
-    let mut dict: Felt252Dict<u32> = (0..5_u32)
-        .into_iter()
-        .map(|x| (Into::<u32, felt252>::into(x), x))
-        .collect();
+    let mut dict: Felt252Dict<u32> = (0..5_u32).into_iter().map(|x| (x.into(), x)).collect();
 
-    assert_eq!(@dict[0], @0);
-    assert_eq!(@dict[1], @1);
-    assert_eq!(@dict[2], @2);
-    assert_eq!(@dict[3], @3);
-    assert_eq!(@dict[4], @4);
+    assert_eq!(dict[0], 0);
+    assert_eq!(dict[1], 1);
+    assert_eq!(dict[2], 2);
+    assert_eq!(dict[3], 3);
+    assert_eq!(dict[4], 4);
 }
