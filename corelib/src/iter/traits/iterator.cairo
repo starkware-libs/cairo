@@ -2,7 +2,7 @@ use crate::iter::adapters::{
     Enumerate, Map, Peekable, Zip, enumerated_iterator, mapped_iterator, peekable_iterator,
     zipped_iterator,
 };
-use crate::iter::traits::Product;
+use crate::iter::traits::{Product, Sum};
 
 /// A trait for dealing with iterators.
 ///
@@ -471,6 +471,34 @@ pub trait Iterator<T> {
     #[must_use]
     fn peekable(self: T) -> Peekable<T, Self::Item> {
         peekable_iterator(self)
+    }
+
+    /// Sums the elements of an iterator.
+    ///
+    /// Takes each element, adds them together, and returns the result.
+    ///
+    /// An empty iterator returns the zero value of the type.
+    ///
+    /// `sum()` can be used to sum any type implementing [`Sum`][`core::iter::Sum`],
+    /// including [`Option`][`Option::sum`] and [`Result`][`Result::sum`].
+    ///
+    /// # Panics
+    ///
+    /// When calling `sum()` and a primitive integer type is being returned, this
+    /// method will panic if the computation overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// let sum: usize = iter.sum();
+    ///
+    /// assert_eq!(sum, 6);
+    /// ```
+    fn sum<+Destruct<T>, +Destruct<Self::Item>, +Sum<Self::Item>>(
+        self: T,
+    ) -> Self::Item {
+        Sum::<Self::Item>::sum::<T, Self>(self)
     }
 
     /// Iterates over the entire iterator, multiplying all the elements

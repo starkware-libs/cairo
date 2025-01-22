@@ -99,6 +99,18 @@ fn test_iter_adapter_peekable() {
 }
 
 #[test]
+fn test_iter_accum_sum() {
+    let mut iter = array![1, 2, 3].into_iter();
+    let sum: usize = iter.sum();
+
+    assert_eq!(sum, 6);
+
+    let mut iter = array![].into_iter();
+    let sum: usize = iter.sum();
+    assert_eq!(sum, 0);
+}
+
+#[test]
 fn test_iter_accum_product() {
     assert_eq!((1_usize..=0).into_iter().product(), 1);
     assert_eq!((1_usize..=1).into_iter().product(), 1);
