@@ -11,6 +11,15 @@ fn test_iter_count() {
 }
 
 #[test]
+fn test_iter_last() {
+    let mut a = array![1_u8, 2, 3].into_iter();
+    assert_eq!(a.last(), Option::Some(3));
+
+    let mut a = ArrayTrait::<u8>::new().into_iter();
+    assert_eq!(a.last(), Option::None);
+}
+
+#[test]
 fn test_advance_by() {
     let mut iter = array![1_u8, 2, 3, 4].into_iter();
 
