@@ -8,8 +8,19 @@
 #[must_use]
 #[derive(Drop, Debug)]
 pub struct Peekable<I, R> {
+    /// This field stores the underlying iterator the `Peekable` struct wraps,
+    /// providing it the ability to peek at the next element.
     iter: I,
-    /// Remember a peeked value, even if it was None.
+    /// Caches the next value of the iterator when `peek()` is called,
+    /// consuming the iterator only once even when several consecutive calls
+    /// to `peek()` are made.
+    ///
+    /// - `None`: Indicates that no peek has been performed.
+    /// - `Some(None)`: Indicates that a peek has been performed but the iterator is exhausted.
+    /// - `Some(Some(R))`: Contains the next element in the iterator, ready to be returned by
+    /// `peek()`.
+    ///
+    /// `peeked` is reset to `None` when `next()` is called.
     peeked: Option<Option<R>>,
 }
 
