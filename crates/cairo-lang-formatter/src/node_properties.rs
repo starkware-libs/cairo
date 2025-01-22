@@ -102,8 +102,14 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
+<<<<<<< HEAD
             | SyntaxKind::TokenImplicits => true,
             SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
+=======
+            | SyntaxKind::TokenImplicits
+            | SyntaxKind::TokenDollar => true,
+            SyntaxKind::TerminalDotDot
+>>>>>>> cb8bb6241 (Add macro declaration syntax. (#7075))
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
@@ -500,6 +506,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                     BreakLinePointIndentation::NotIndented,
                     false,
                     false,
+                ))
+            }
+            Some(SyntaxKind::MacroRulesList) => {
+                BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    21,
+                    BreakLinePointIndentation::IndentedWithTail,
+                    false,
+                    true,
                 ))
             }
             _ => match self.kind(db) {

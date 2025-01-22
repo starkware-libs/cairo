@@ -1259,7 +1259,7 @@ test_partial_parser_tree_with_trivia(expect_diagnostics: *)
 //! > cairo_code
 // TODO(Gil): handle multiline diagnostics.
 #[bbb]
-macro
+a_macro
 
 //! > top_level_kind
 
@@ -1308,7 +1308,7 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
         │   │           │           └── trailing_trivia (kind: Trivia) []
         │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │   │           └── rbrack (kind: TerminalRBrack) <ignored>
-        │   └── child #1 (kind: TokenSkipped): 'macro'
+        │   └── child #1 (kind: TokenSkipped): 'a_macro'
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
 
@@ -1365,7 +1365,7 @@ pub // trailing.
 test_partial_parser_tree_with_trivia(expect_diagnostics: *)
 
 //! > cairo_code
-pub macro
+pub a_macro
 
 //! > top_level_kind
 
@@ -1381,8 +1381,13 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:4
+<<<<<<< HEAD
 pub macro
    ^^^^^^
+=======
+pub a_macro
+   ^******^
+>>>>>>> cb8bb6241 (Add macro declaration syntax. (#7075))
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1397,7 +1402,7 @@ pub macro
         │   │       │   └── trailing_trivia (kind: Trivia)
         │   │       │       └── child #0 (kind: TokenWhitespace).
         │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
-        │   └── child #1 (kind: TokenSkipped): 'macro'
+        │   └── child #1 (kind: TokenSkipped): 'a_macro'
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
 
@@ -1475,7 +1480,7 @@ test_partial_parser_tree_with_trivia(expect_diagnostics: *)
 
 //! > cairo_code
 #[attr]
-pub macro
+pub a_macro
 
 //! > top_level_kind
 
@@ -1525,6 +1530,6 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
         │   │       │   └── trailing_trivia (kind: Trivia)
         │   │       │       └── child #0 (kind: TokenWhitespace).
         │   │       └── argument_clause (kind: OptionVisibilityPubArgumentClauseEmpty) []
-        │   └── child #2 (kind: TokenSkipped): 'macro'
+        │   └── child #2 (kind: TokenSkipped): 'a_macro'
         ├── token (kind: TokenEndOfFile).
         └── trailing_trivia (kind: Trivia) []
