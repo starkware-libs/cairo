@@ -7,7 +7,7 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable]
 fn main() {}
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -59,7 +59,7 @@ fn main(a: felt252, b: felt252) -> felt252 {
     a + b
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -147,7 +147,7 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
     }
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output, range_check
 # header #
 [ap + 0] = [fp + -3], ap++;
@@ -386,7 +386,7 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable_raw]
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -423,7 +423,7 @@ fn require_gas() -> felt252 {
     }
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -477,7 +477,7 @@ fn use_dict() {
     let _dict: Felt252Dict<u8> = Default::default();
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output, range_check
 # header #
 ap += 2;
@@ -790,5 +790,23 @@ ret;
 ret;
 # footer #
 ret;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use System implicit.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn use_system() {
+    core::keccak::compute_keccak_byte_array(@"not allowed without starknet.");
+}
+
+//! > result
+Emulated builtin `System` not allowed for executable.
 
 //! > expected_diagnostics

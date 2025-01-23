@@ -78,11 +78,12 @@ impl TestFileRunner for CompileExecutableTestRunner {
             vec![test_module.crate_id],
             DiagnosticsReporter::stderr(),
         )
-        .unwrap();
+        .map(|compiled| compiled.to_string())
+        .unwrap_or_else(|e| e.to_string());
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
         TestRunnerResult {
             outputs: OrderedHashMap::from([
-                ("generated_casm_code".into(), result.to_string()),
+                ("result".into(), result),
                 ("expected_diagnostics".into(), semantic_diagnostics),
             ]),
             error,
