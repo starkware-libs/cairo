@@ -1,5 +1,3 @@
-use crate::metaprogramming::TypeEqual;
-
 /// Conversion from an [`Iterator`].
 ///
 /// By implementing `FromIterator` for a type, you define how it will be
@@ -220,14 +218,6 @@ impl SnapshotFixedSizeArrayIntoIterator<
 /// ```
 pub trait Extend<T, A> {
     /// Extends a collection with the contents of an iterator.
-    fn extend<
-        I,
-        impl IntoIter: IntoIterator<I>,
-        +TypeEqual<IntoIter::Iterator::Item, A>,
-        +Destruct<IntoIter::IntoIter>,
-        +Destruct<I>,
-    >(
-        ref self: T, iter: I,
-    );
+    fn extend<I, +Iterator<I>[Item: A], +Destruct<I>>(ref self: T, iter: I);
 }
 
