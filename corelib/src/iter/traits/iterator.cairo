@@ -105,15 +105,8 @@ pub trait Iterator<T> {
         Self::Item,
     > {
         let mut self = self;
-        let some = |acc: Option<Self::Item>, x: Self::Item| {
-            // Hack to use `Destruct<T>` directly, instead of `Destruct<Option<T>>`.
-            match acc {
-                Option::Some(_) | Option::None => {},
-            };
-            Option::Some(x)
-        };
-
-        Self::fold(ref self, Option::None, some)
+        let next = Self::next(ref self)?;
+        Option::Some(Self::last(self).unwrap_or(next))
     }
 
     /// Advances the iterator by `n` elements.
