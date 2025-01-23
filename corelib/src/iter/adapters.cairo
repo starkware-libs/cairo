@@ -12,3 +12,8 @@ mod zip;
 pub use zip::Zip;
 #[allow(unused_imports)]
 pub(crate) use zip::zipped_iterator;
+
+mod filter;
+pub use filter::Filter;
+#[allow(unused_imports)]
+pub(crate) use filter::filter_iterator;
