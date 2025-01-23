@@ -110,3 +110,14 @@ fn test_iter_accum_product() {
     assert_eq!((1_usize..=1).into_iter().product(), 1);
     assert_eq!((1_usize..=5).into_iter().product(), 120);
 }
+
+#[test]
+fn test_iter_find() {
+    let mut iter = array![1, 2, 3].into_iter();
+    assert_eq!(iter.find(|x| x == 2), Option::Some(2));
+    assert_eq!(iter.find(|x| x == 5), Option::None);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert_eq!(iter.find(|x| x == 2), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+}
