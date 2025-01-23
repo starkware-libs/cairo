@@ -94,7 +94,7 @@ struct RunArgs {
         long,
         default_value_t = false,
         conflicts_with_all = ["build_only", "output_path"],
-        requires_all=["trace_file", "memory_file", "air_public_input", "air_private_input"],
+        requires_all=["air_public_input", "air_private_input"],
     )]
     standalone: bool,
     /// If set, the program will be run in secure mode.
@@ -104,7 +104,7 @@ struct RunArgs {
     #[clap(long)]
     allow_missing_builtins: Option<bool>,
     #[clap(flatten)]
-    standalone_outputs: StandaloneOutputArgs,
+    proof_outputs: ProofOutputArgs,
 }
 
 #[derive(Parser, Debug)]
@@ -124,18 +124,18 @@ struct SerializedArgs {
 }
 
 #[derive(Parser, Debug)]
-struct StandaloneOutputArgs {
+struct ProofOutputArgs {
     /// The resulting trace file.
-    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
+    #[clap(long, conflicts_with = "build_only")]
     trace_file: Option<PathBuf>,
     /// The resulting memory file.
-    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
+    #[clap(long, conflicts_with = "build_only")]
     memory_file: Option<PathBuf>,
     /// The resulting AIR public input file.
-    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
+    #[clap(long, conflicts_with = "build_only")]
     air_public_input: Option<PathBuf>,
     /// The resulting AIR private input file.
-    #[clap(long, conflicts_with = "build_only", requires = "standalone")]
+    #[clap(long, conflicts_with = "build_only", requires_all=["trace_file", "memory_file"])]
     air_private_input: Option<PathBuf>,
 }
 
@@ -257,7 +257,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    if let Some(trace_path) = &args.run.standalone_outputs.trace_file {
+    if let Some(trace_path) = &args.run.proof_outputs.trace_file {
         let relocated_trace =
             runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
         let mut writer = FileWriter::new(3 * 1024 * 1024, trace_path)?;
@@ -265,21 +265,21 @@ fn main() -> anyhow::Result<()> {
         writer.flush()?;
     }
 
-    if let Some(memory_path) = &args.run.standalone_outputs.memory_file {
+    if let Some(memory_path) = &args.run.proof_outputs.memory_file {
         let mut writer = FileWriter::new(5 * 1024 * 1024, memory_path)?;
         cairo_run::write_encoded_memory(&runner.relocated_memory, &mut writer)?;
         writer.flush()?;
     }
 
-    if let Some(file_path) = args.run.standalone_outputs.air_public_input {
+    if let Some(file_path) = args.run.proof_outputs.air_public_input {
         let json = runner.get_air_public_input()?.serialize_json()?;
         std::fs::write(file_path, json)?;
     }
 
     if let (Some(file_path), Some(trace_file), Some(memory_file)) = (
-        args.run.standalone_outputs.air_private_input,
-        args.run.standalone_outputs.trace_file,
-        args.run.standalone_outputs.memory_file,
+        args.run.proof_outputs.air_private_input,
+        args.run.proof_outputs.trace_file,
+        args.run.proof_outputs.memory_file,
     ) {
         let absolute = |path_buf: PathBuf| {
             path_buf.as_path().canonicalize().unwrap_or(path_buf).to_string_lossy().to_string()
