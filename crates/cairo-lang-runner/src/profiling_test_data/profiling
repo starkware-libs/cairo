@@ -45,62 +45,51 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 18: 4 (store_temp<test::MyEnum>([4]) -> ([4]))
-  statement 19: 4 (store_temp<test::MyEnum>([8]) -> ([8]))
-  statement 20: 4 (store_temp<test::MyEnum>([13]) -> ([13]))
-  statement 21: 4 (store_temp<test::MyEnum>([18]) -> ([18]))
-  statement 89: 4 (u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) 135([70], [71]) })
-  statement 113: 4 (u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) 123([88], [89]) })
-  statement 121: 3 (store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93]))
-  statement 46: 2 (enum_match<test::MyEnum>([8]) { fallthrough([37]) 50([38]) 54([39]) 60([40]) })
-  statement 70: 2 (enum_match<test::MyEnum>([13]) { fallthrough([55]) 74([56]) 78([57]) 84([58]) })
-  statement 94: 2 (enum_match<test::MyEnum>([18]) { fallthrough([73]) 98([74]) 102([75]) 108([76]) })
-  statement 22: 1 (enum_match<test::MyEnum>([4]) { fallthrough([19]) 26([20]) 30([21]) 36([22]) })
-  statement 23: 1 (branch_align() -> ())
-  statement 25: 1 (jump() { 28() })
-  statement 28: 1 (store_temp<RangeCheck>([0]) -> ([23]))
-  statement 29: 1 (jump() { 46() })
-  statement 50: 1 (branch_align() -> ())
-  statement 52: 1 (store_temp<RangeCheck>([23]) -> ([41]))
-  statement 53: 1 (jump() { 70() })
-  statement 81: 1 (store_temp<u8>([60]) -> ([63]))
-  statement 82: 1 (store_temp<u8>([62]) -> ([64]))
-  statement 83: 1 (jump() { 89() })
-  statement 93: 1 (store_temp<RangeCheck>([68]) -> ([59]))
-  statement 111: 1 (store_temp<u8>([83]) -> ([81]))
-  statement 112: 1 (store_temp<u8>([85]) -> ([82]))
-  statement 114: 1 (branch_align() -> ())
-  statement 117: 1 (store_temp<RangeCheck>([86]) -> ([77]))
-  statement 122: 1 (return([77], [93]))
+  statement 10: 4 (store_temp<test::MyEnum>([10]) -> ([10]))
+  statement 11: 4 (store_temp<test::MyEnum>([5]) -> ([5]))
+  statement 31: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 77([26], [27]) })
+  statement 55: 4 (u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) 65([44], [45]) })
+  statement 63: 3 (store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49]))
+  statement 12: 2 (enum_match<test::MyEnum>([10]) { fallthrough([11]) 16([12]) 20([13]) 26([14]) })
+  statement 36: 2 (enum_match<test::MyEnum>([5]) { fallthrough([29]) 40([30]) 44([31]) 50([32]) })
+  statement 23: 1 (store_temp<u8>([16]) -> ([19]))
+  statement 24: 1 (store_temp<u8>([18]) -> ([20]))
+  statement 25: 1 (jump() { 31() })
+  statement 35: 1 (store_temp<RangeCheck>([24]) -> ([15]))
+  statement 53: 1 (store_temp<u8>([39]) -> ([37]))
+  statement 54: 1 (store_temp<u8>([41]) -> ([38]))
+  statement 56: 1 (branch_align() -> ())
+  statement 59: 1 (store_temp<RangeCheck>([42]) -> ([33]))
+  statement 64: 1 (return([33], [49]))
 Weight by concrete libfunc:
-  libfunc store_temp<test::MyEnum>: 16
+  libfunc store_temp<test::MyEnum>: 8
   libfunc u8_overflowing_add: 8
-  libfunc enum_match<test::MyEnum>: 7
-  libfunc jump: 4
-  libfunc store_temp<RangeCheck>: 4
+  libfunc enum_match<test::MyEnum>: 4
   libfunc store_temp<u8>: 4
-  libfunc branch_align: 3
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
+  libfunc store_temp<RangeCheck>: 2
+  libfunc branch_align: 1
+  libfunc jump: 1
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 27
+  libfunc store_temp: 17
   libfunc u8_overflowing_add: 8
-  libfunc enum_match: 7
-  libfunc jump: 4
-  libfunc branch_align: 3
+  libfunc enum_match: 4
+  libfunc branch_align: 1
+  libfunc jump: 1
   return: 1
 Weight by user function (inc. generated):
-  function test::main: 50
+  function test::main: 32
 Weight by original user function (exc. generated):
-  function test::main: 50
+  function test::main: 32
 Weight by Cairo function:
-  function lib.cairo::foo: 31
+  function lib.cairo::foo: 17
   function core::integer::U8Add::add: 11
-  function lib.cairo::main: 8
+  function lib.cairo::main: 4
 Weight by Sierra stack trace:
-  test::main: 50
+  test::main: 32
 Weight by Cairo stack trace:
-  test::main: 50
+  test::main: 32
 
 //! > ==========================================================================
 

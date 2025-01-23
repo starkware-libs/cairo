@@ -5495,11 +5495,11 @@ branch_align() -> (); // 3552
 store_temp<RangeCheck>([52]) -> ([56]); // 3553
 store_temp<u128>([54]) -> ([57]); // 3554
 store_temp<u128>([53]) -> ([58]); // 3555
-const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>() -> ([59]); // 3556
-struct_construct<core::integer::u256>([57], [58]) -> ([60]); // 3557
-store_temp<felt252>([59]) -> ([59]); // 3558
-store_temp<core::integer::u256>([60]) -> ([60]); // 3559
-u128s_from_felt252([56], [59]) { fallthrough([61], [62]) 3567([63], [64], [65]) }; // 3560
+struct_construct<core::integer::u256>([57], [58]) -> ([59]); // 3556
+const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>() -> ([60]); // 3557
+store_temp<felt252>([60]) -> ([60]); // 3558
+store_temp<core::integer::u256>([59]) -> ([59]); // 3559
+u128s_from_felt252([56], [60]) { fallthrough([61], [62]) 3567([63], [64], [65]) }; // 3560
 branch_align() -> (); // 3561
 const_as_immediate<Const<u128, 0>>() -> ([66]); // 3562
 store_temp<RangeCheck>([61]) -> ([67]); // 3563
@@ -5518,7 +5518,7 @@ drop<EcPoint>([49]) -> (); // 3575
 drop<felt252>([3]) -> (); // 3576
 drop<EcPoint>([44]) -> (); // 3577
 drop<felt252>([5]) -> (); // 3578
-drop<core::integer::u256>([60]) -> (); // 3579
+drop<core::integer::u256>([59]) -> (); // 3579
 struct_construct<Unit>() -> ([72]); // 3580
 enum_init<core::option::Option::<core::felt252>, 1>([72]) -> ([73]); // 3581
 store_temp<RangeCheck>([67]) -> ([67]); // 3582
@@ -5528,7 +5528,7 @@ store_temp<core::option::Option::<core::felt252>>([73]) -> ([73]); // 3585
 return([67], [1], [26], [73]); // 3586
 branch_align() -> (); // 3587
 dup<NonZero<core::integer::u256>>([71]) -> ([71], [74]); // 3588
-u256_guarantee_inv_mod_n([67], [60], [74]) { fallthrough([75], [76], [77], [78], [79], [80], [81], [82], [83], [84]) 3861([85], [86], [87]) }; // 3589
+u256_guarantee_inv_mod_n([67], [59], [74]) { fallthrough([75], [76], [77], [78], [79], [80], [81], [82], [83], [84]) 3861([85], [86], [87]) }; // 3589
 branch_align() -> (); // 3590
 u128_mul_guarantee_verify([75], [84]) -> ([88]); // 3591
 u128_mul_guarantee_verify([88], [83]) -> ([89]); // 3592

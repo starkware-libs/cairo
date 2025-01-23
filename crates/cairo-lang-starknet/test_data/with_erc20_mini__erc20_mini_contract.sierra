@@ -3372,20 +3372,20 @@ function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core:
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) 3173([25]) }; // 3071
 branch_align() -> (); // 3072
 struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]); // 3073
-const_as_immediate<Const<u128, 340282366920938463463374607431768211455>>() -> ([27]); // 3074
-struct_deconstruct<core::integer::u256>([26]) -> ([28], [29]); // 3075
-dup<u128>([28]) -> ([28], [30]); // 3076
-dup<u128>([27]) -> ([27], [31]); // 3077
+struct_deconstruct<core::integer::u256>([26]) -> ([27], [28]); // 3074
+const_as_immediate<Const<u128, 340282366920938463463374607431768211455>>() -> ([29]); // 3075
+dup<u128>([27]) -> ([27], [30]); // 3076
+dup<u128>([29]) -> ([29], [31]); // 3077
 u128_eq([30], [31]) { fallthrough() 3082() }; // 3078
 branch_align() -> (); // 3079
-drop<u128>([27]) -> (); // 3080
+drop<u128>([29]) -> (); // 3080
 jump() { 3086() }; // 3081
 branch_align() -> (); // 3082
-dup<u128>([29]) -> ([29], [32]); // 3083
-u128_eq([32], [27]) { fallthrough() 3158() }; // 3084
+dup<u128>([28]) -> ([28], [32]); // 3083
+u128_eq([32], [29]) { fallthrough() 3158() }; // 3084
 branch_align() -> (); // 3085
 struct_deconstruct<core::integer::u256>([7]) -> ([33], [34]); // 3086
-u128_overflowing_sub([19], [29], [34]) { fallthrough([35], [36]) 3095([37], [38]) }; // 3087
+u128_overflowing_sub([19], [28], [34]) { fallthrough([35], [36]) 3095([37], [38]) }; // 3087
 branch_align() -> (); // 3088
 struct_construct<Unit>() -> ([39]); // 3089
 enum_init<core::bool, 0>([39]) -> ([40]); // 3090
@@ -3399,7 +3399,7 @@ enum_init<core::bool, 1>([44]) -> ([45]); // 3097
 store_temp<RangeCheck>([37]) -> ([41]); // 3098
 store_temp<u128>([38]) -> ([42]); // 3099
 store_temp<core::bool>([45]) -> ([43]); // 3100
-u128_overflowing_sub([41], [28], [33]) { fallthrough([46], [47]) 3107([48], [49]) }; // 3101
+u128_overflowing_sub([41], [27], [33]) { fallthrough([46], [47]) 3107([48], [49]) }; // 3101
 branch_align() -> (); // 3102
 store_temp<RangeCheck>([46]) -> ([50]); // 3103
 store_temp<u128>([47]) -> ([51]); // 3104
@@ -3457,10 +3457,10 @@ store_temp<System>([22]) -> ([22]); // 3155
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([72]) -> ([72]); // 3156
 return([66], [20], [21], [22], [72]); // 3157
 branch_align() -> (); // 3158
-drop<u128>([28]) -> (); // 3159
+drop<u128>([27]) -> (); // 3159
 drop<ContractAddress>([6]) -> (); // 3160
 drop<ContractAddress>([5]) -> (); // 3161
-drop<u128>([29]) -> (); // 3162
+drop<u128>([28]) -> (); // 3162
 drop<core::integer::u256>([7]) -> (); // 3163
 struct_construct<Unit>() -> ([73]); // 3164
 struct_construct<Tuple<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, Unit>>([4], [73]) -> ([74]); // 3165
