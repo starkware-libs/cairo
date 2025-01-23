@@ -89,24 +89,24 @@ assert_matches = "1.5"
 bimap = "0.6.3"
 cairo-vm = { version = "1.0.1", features = ["mod_builtin"] }
 clap = { version = "4.5.4", features = ["derive"] }
-colored = "2.1.0"
+colored = "3"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.32"
-convert_case = "0.6.0"
+convert_case = "0.7.0"
 derivative = "2.2.0"
-diffy = "0.3.0"
+diffy = "0.4.0"
 env_logger = "0.11.3"
 genco = "0.17.8"
 good_lp = { version = "1.8.1", features = ["minilp"], default-features = false }
-hashbrown = "0.14.5"
+hashbrown = "0.15"
 id-arena = "2.2.1"
 ignore = "0.4.22"
 indent = "0.1.1"
 indexmap = { version = "2.2.6", default-features = false }
 indoc = "2.0.5"
-itertools = { version = "0.12.1", default-features = false }
+itertools = { version = "0.14", default-features = false }
 keccak = "0.1.5"
-lalrpop-util = { version = "0.20.2", features = ["lexer"] }
+lalrpop-util = { version = "0.22", features = ["lexer"] }
 log = "0.4.21"
 num-bigint = { version = "0.4.5", default-features = false }
 num-integer = "0.1.46"
@@ -120,7 +120,7 @@ proc-macro2 = "1.0.82"
 quote = "1.0.36"
 rand = "0.8.5"
 rayon = "1.10.0"
-rstest = "0.19.0"
+rstest = "0.24"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 schemars = { version = "0.8.19", features = ["preserve_order"] }
 semver = { version = "1.0.23", features = ["serde"] }
@@ -128,7 +128,7 @@ serde = { version = "1.0.200", default-features = false, features = ["derive"] }
 serde_json = "1.0.116"
 sha2 = "0.10.8"
 sha3 = "0.10.8"
-smol_str = { version = "0.2.0", features = ["serde"] }
+smol_str = { version = "0.3", features = ["serde"] }
 starknet-types-core = { version = "0.1.0", features = [
     "hash",
     "prime-bigint",
@@ -138,7 +138,7 @@ syn = { version = "2.0.61", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
 test-log = "0.2.16"
-thiserror = "1.0.60"
+thiserror = "2"
 time = { version = "0.3.36", features = [
     "formatting",
     "macros",
