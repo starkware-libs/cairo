@@ -13,9 +13,7 @@ fn test_iter_count() {
 #[test]
 fn test_iter_last() {
     assert_eq!(array![1_u8, 2, 3].into_iter().last(), Option::Some(3));
-
-    let arr: Array<u8> = array![];
-    assert_eq!(arr.into_iter().last(), Option::None);
+    assert_eq!(array![].into_iter().last(), Option::<u8>::None);
 }
 
 #[test]
