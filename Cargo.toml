@@ -106,6 +106,7 @@ indexmap = { version = "2.2.6", default-features = false }
 indoc = "2.0.5"
 itertools = { version = "0.14", default-features = false }
 keccak = "0.1.5"
+lalrpop = "0.22"
 lalrpop-util = { version = "0.22", features = ["lexer"] }
 log = "0.4.21"
 num-bigint = { version = "0.4.5", default-features = false }
