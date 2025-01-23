@@ -1,3 +1,4 @@
+use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_test_plugin::test_config::TestExpectation;
 use cairo_lang_test_plugin::{TestCompilationMetadata, TestConfig, TestsCompilationConfig};
@@ -5,7 +6,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 
-use crate::{TestCompilation, TestCompiler, filter_test_cases, format_for_panic};
+use crate::{TestCompilation, TestCompiler, filter_test_cases};
 
 #[test]
 fn test_compiled_serialization() {
