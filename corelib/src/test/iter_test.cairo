@@ -73,12 +73,6 @@ fn test_iter_adapter_collect() {
 
 #[test]
 fn test_iter_accum_sum() {
-    let mut iter = array![1, 2, 3].into_iter();
-    let sum: usize = iter.sum();
-
-    assert_eq!(sum, 6);
-
-    let mut iter = array![].into_iter();
-    let sum: usize = iter.sum();
-    assert_eq!(sum, 0);
+    assert_eq!(array![1, 2, 3].into_iter().sum(), 6);
+    assert_eq!(array![].into_iter().sum(), 0);
 }
