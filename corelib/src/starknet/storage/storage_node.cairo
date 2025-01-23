@@ -56,7 +56,7 @@
 //! }
 //! ```
 //!
-//! For a type `T` that implements `StorageNode` (e.g. `MyStruct` in the example above),
+//! For a type `T` that implement `StorageNode` (e.g. `MyStruct` in the example above),
 //! `Deref<StoragePath<T>>` is implemented as simply calling `storage_node`, and thus exposing the
 //! members of the storage node (`a` and `b` in the example above).
 //! For example, given the following storage:
