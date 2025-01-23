@@ -12,11 +12,10 @@ fn test_iter_count() {
 
 #[test]
 fn test_iter_last() {
-    let mut a = array![1_u8, 2, 3].into_iter();
-    assert_eq!(a.last(), Option::Some(3));
+    assert_eq!(array![1_u8, 2, 3].into_iter().last(), Option::Some(3));
 
-    let mut a = ArrayTrait::<u8>::new().into_iter();
-    assert_eq!(a.last(), Option::None);
+    let arr: Array<u8> = array![];
+    assert_eq!(arr.into_iter().last(), Option::None);
 }
 
 #[test]

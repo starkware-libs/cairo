@@ -105,7 +105,11 @@ pub trait Iterator<T> {
         Self::Item,
     > {
         let mut self = self;
-        let some = |_acc: Option<Self::Item>, x: Self::Item| {
+        let some = |acc: Option<Self::Item>, x: Self::Item| {
+            // Hack to use `Destruct<T>` directly, instead of `Destruct<Option<T>>`.
+            match acc {
+                Option::Some(_) | Option::None => {},
+            };
             Option::Some(x)
         };
 
