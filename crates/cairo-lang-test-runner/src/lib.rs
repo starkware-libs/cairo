@@ -1,6 +1,5 @@
 use std::path::Path;
 use std::sync::Mutex;
-use std::vec::IntoIter;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
@@ -8,7 +7,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_runner::casm_run::format_next_item;
+use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
@@ -163,17 +162,6 @@ impl CompiledTestRunner {
             );
         }
     }
-}
-
-/// Formats the given felts as a panic string.
-fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
-    let mut items = Vec::new();
-    while let Some(item) = format_next_item(&mut felts) {
-        items.push(item.quote_if_string());
-    }
-    let panic_values_string =
-        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
-    format!("Panicked with {panic_values_string}.")
 }
 
 /// Whether to run the profiler, and what results to produce.
