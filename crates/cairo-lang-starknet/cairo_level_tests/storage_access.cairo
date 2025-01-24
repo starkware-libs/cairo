@@ -310,6 +310,26 @@ fn write_read_byte_arrays() {
 }
 
 #[test]
+fn test_scrub_clears_memory() {
+    let mut state = contract_with_vec::contract_state_for_testing();
+    state.simple.push(100);
+    state.simple.push(200);
+    state.simple.push(300);
+    assert_eq!(state.simple.len(), 3);
+    assert_eq!(state.simple.at(0).read(), 100);
+    assert_eq!(state.simple.at(1).read(), 200);
+    assert_eq!(state.simple.at(2).read(), 300);
+    assert_eq!(state.simple.pop(), Some(300));
+    assert_eq!(state.simple.append().read(), 0);
+    assert_eq!(state.simple.pop(), Some(200));
+    assert_eq!(state.simple.append().read(), 0);
+    assert_eq!(state.simple.pop(), Some(100));
+    assert_eq!(state.simple.append().read(), 0);
+    assert_eq!(state.simple.len(), 0);
+    assert_eq!(state.simple.pop(), None);
+}
+
+#[test]
 fn test_read_write_non_zero() {
     let x = NonZeros {
         value_u8: 1_u8.try_into().unwrap(),
