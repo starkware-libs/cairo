@@ -118,6 +118,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
                 }
             }
         }
+
         // Analyze all the enums in the module.
         if let Ok(module_enums) = db.module_enums(module_id) {
             for (id, item) in module_enums.iter() {
