@@ -321,6 +321,55 @@ pub trait MutableVecTrait<T> {
     /// }
     /// ```
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>>;
+
+    /// Pushes a new value onto the vector.
+    ///
+    /// This operation:
+    /// 1. Increments the vector's length.
+    /// 2. Writes the provided value to the new storage location at the end of the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<u256>,
+    /// }
+    ///
+    /// fn push_number(ref self: ContractState, number: u256) {
+    ///     self.numbers.push(number);
+    /// }
+    /// ```
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T, value: Self::ElementType,
+    );
+
+    /// Pops the last value off the vector.
+    ///
+    /// This operation:
+    /// 1. Retrieves the value stored at the last position in the vector.
+    /// 2. Decrements the vector's length.
+    /// 3. Returns the retrieved value or `None` if the vector is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<u256>,
+    /// }
+    ///
+    /// fn pop_number(ref self: ContractState) -> Option<u256> {
+    ///     self.numbers.pop()
+    /// }
+    /// ```
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T,
+    ) -> Option<Self::ElementType>;
 }
 
 /// Implement `MutableVecTrait` for `StoragePath<Mutable<Vec<T>>`.
@@ -350,6 +399,25 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         self.as_ptr().write(vec_len + 1);
         self.update(vec_len)
     }
+
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: StoragePath<Mutable<Vec<T>>>, value: Self::ElementType,
+    ) {
+        let storage_path = self.append();
+        storage_path.write(value);
+    }
+
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: StoragePath<Mutable<Vec<T>>>,
+    ) -> Option<Self::ElementType> {
+        let vec_len: u64 = self.len();
+        if vec_len == 0 {
+            return Option::None;
+        }
+        let last_element = self.at(vec_len - 1).read();
+        self.as_ptr().write(vec_len - 1);
+        Option::Some(last_element)
+    }
 }
 
 /// Implement `MutableVecTrait` for any type that implements StorageAsPath into a storage
@@ -376,6 +444,18 @@ impl PathableMutableVecImpl<
 
     fn append(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
         self.as_path().append()
+    }
+
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T, value: Self::ElementType,
+    ) {
+        self.as_path().push(value)
+    }
+
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T,
+    ) -> Option<Self::ElementType> {
+        self.as_path().pop()
     }
 }
 
