@@ -18,5 +18,6 @@ pub use crate::traits::{
 };
 pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 pub use crate::{assert, bool, felt252, starknet, usize};
+use crate::option::Option::{None, Some};
 
 pub use crate::zeroable::NonZero;
