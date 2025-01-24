@@ -335,9 +335,9 @@ pub trait Iterator<T> {
     /// Searches for an element of an iterator that satisfies a predicate.
     ///
     /// `find()` takes a closure that returns `true` or `false`. It applies
-    /// this closure to each element of the iterator, and if any of them return
-    /// `true`, then `find()` returns [`Some(element)`]. If they all return
-    /// `false`, it returns [`None`].
+    /// this closure to each element of the iterator as a snapshot, and if
+    /// any of them return `true`, then `find()` returns [`Some(element)`].
+    /// If they all return `false`, it returns [`None`].
     ///
     /// `find()` is short-circuiting; in other words, it will stop processing
     /// as soon as the closure returns `true`.
@@ -349,9 +349,9 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter();
     ///
-    /// assert_eq!(iter.find(|x| x == 2), Option::Some(2));
+    /// assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
     ///
-    /// assert_eq!(iter.find(|x| x == 5), Option::None);
+    /// assert_eq!(iter.find(|x| *x == 5), Option::None);
     /// ```
     ///
     /// Stopping at the first `true`:
@@ -359,17 +359,16 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter();
     ///
-    /// assert_eq!(iter.find(|x| x == 2), Option::Some(2));
+    /// assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
     ///
     /// // we can still use `iter`, as there are more elements.
     /// assert_eq!(iter.next(), Option::Some(3));
     /// ```
     fn find<
         P,
-        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
         +Destruct<P>,
         +Destruct<T>,
-        +Copy<Self::Item>,
         +Destruct<Self::Item>,
     >(
         ref self: T, predicate: P,
@@ -378,7 +377,7 @@ pub trait Iterator<T> {
     > {
         match Self::next(ref self) {
             Option::None => Option::None,
-            Option::Some(x) => if predicate(x) {
+            Option::Some(x) => if predicate(@x) {
                 Option::Some(x)
             } else {
                 Self::find(ref self, predicate)

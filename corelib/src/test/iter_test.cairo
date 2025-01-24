@@ -114,10 +114,10 @@ fn test_iter_accum_product() {
 #[test]
 fn test_iter_find() {
     let mut iter = array![1, 2, 3].into_iter();
-    assert_eq!(iter.find(|x| x == 2), Option::Some(2));
-    assert_eq!(iter.find(|x| x == 5), Option::None);
+    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
+    assert_eq!(iter.find(|x| *x == 5), Option::None);
 
     let mut iter = array![1, 2, 3].into_iter();
-    assert_eq!(iter.find(|x| x == 2), Option::Some(2));
+    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
     assert_eq!(iter.next(), Option::Some(3));
 }
