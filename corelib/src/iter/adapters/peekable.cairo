@@ -8,8 +8,7 @@
 #[must_use]
 #[derive(Drop, Debug)]
 pub struct Peekable<I, R> {
-    /// This field stores the underlying iterator the `Peekable` struct wraps,
-    /// providing it the ability to peek at the next element.
+    /// The underlying iterator.
     iter: I,
     /// Caches the next value of the iterator when `peek()` is called,
     /// consuming the iterator only once even when several consecutive calls
