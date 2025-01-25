@@ -1,6 +1,7 @@
 use crate::iter::adapters::{
     Enumerate, Map, Zip, enumerated_iterator, mapped_iterator, zipped_iterator,
 };
+use crate::iter::traits::Product;
 
 /// A trait for dealing with iterators.
 ///
@@ -406,5 +407,30 @@ pub trait Iterator<T> {
         self: T,
     ) -> B {
         FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
+    }
+
+    /// Iterates over the entire iterator, multiplying all the elements
+    ///
+    /// An empty iterator returns the one value of the type.
+    ///
+    /// # Panics
+    ///
+    /// When calling `product()` and a primitive integer type is being returned, this
+    /// method will panic if the computation overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// fn factorial(n: u32) -> u32 {
+    ///     (1..=n).into_iter().product()
+    /// }
+    /// assert_eq!(factorial(0), 1);
+    /// assert_eq!(factorial(1), 1);
+    /// assert_eq!(factorial(5), 120);
+    /// ```
+    fn product<+Destruct<T>, +Destruct<Self::Item>, +Product<Self::Item>>(
+        self: T,
+    ) -> Self::Item {
+        Product::<Self::Item>::product::<T, Self>(self)
     }
 }
