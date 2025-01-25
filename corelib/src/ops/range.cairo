@@ -172,6 +172,42 @@ pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
     }
 }
 
+#[generate_trait]
+pub impl RangeInclusiveImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeInclusiveTrait<T> {
+    /// Returns `true` if `item` is contained in the range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3..=5).contains(@2));
+    /// assert!( (3..=5).contains(@3));
+    /// assert!( (3..=5).contains(@4));
+    /// assert!( (3..=5).contains(@5));
+    /// assert!(!(3..=5).contains(@6));
+    ///
+    /// assert!( (3..=3).contains(@3));
+    /// assert!(!(3..=2).contains(@3));
+    /// ```
+    fn contains(self: @RangeInclusive<T>, item: @T) -> bool {
+        self.start <= item && item <= self.end
+    }
+
+    /// Returns `true` if the range contains no items.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3_u8..=5_u8).is_empty());
+    /// assert!(!(3_u8..=3_u8).is_empty());
+    /// assert!( (3_u8..=2_u8).is_empty());
+    /// ```
+    #[inline]
+    fn is_empty(self: @RangeInclusive<T>) -> bool {
+        !(self.start <= self.end)
+    }
+}
+
+
 impl RangeInclusiveDebug<
     T, impl TDebug: crate::fmt::Debug<T>,
 > of crate::fmt::Debug<RangeInclusive<T>> {

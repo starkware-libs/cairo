@@ -1,4 +1,4 @@
-use core::ops::RangeTrait;
+use core::ops::{RangeInclusiveTrait, RangeTrait};
 
 #[test]
 fn test_range_is_empty() {
@@ -47,4 +47,20 @@ fn test_range_inclusive_empty_ranges() {
     assert!(iter.next() == Option::None);
     let mut iter = (255_u8..=0).into_iter();
     assert!(iter.next() == Option::None);
+}
+
+#[test]
+fn test_range_inclusive_contains() {
+    assert!(!(3_u8..=5).contains(@2));
+    assert!((3_u8..=5).contains(@3));
+    assert!((3_u8..=5).contains(@4));
+    assert!((3_u8..=5).contains(@5));
+    assert!(!(3_u8..=5).contains(@6));
+}
+
+#[test]
+fn test_range_inclusive_is_empty() {
+    assert!(!(3_u8..=5).is_empty());
+    assert!(!(3_u8..=3).is_empty());
+    assert!((3_u8..=2).is_empty());
 }
