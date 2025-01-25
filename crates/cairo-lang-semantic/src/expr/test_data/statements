@@ -147,7 +147,7 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() {
     // `if` without ';' in the end
     if true {}
-    let opt = Option::Some(3);
+    let opt = Some(3);
     // `match` without ';' in the end
     match opt {
         Some(_) => {},

@@ -79,13 +79,13 @@ fn test_flow_safe_dispatcher() {
     let mut contract = IContractSafeDispatcher { contract_address };
 
     // Interact.
-    assert_eq!(contract.foo(300), Result::Ok(100));
+    assert_eq!(contract.foo(300), Ok(100));
 
     // Library calls.
     let mut library = IContractSafeLibraryDispatcher {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
     };
-    assert_eq!(library.foo(300), Result::Ok(0));
+    assert_eq!(library.foo(300), Ok(0));
 }
 
 // If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
@@ -102,7 +102,7 @@ fn test_flow_out_of_gas() {
 fn test_class_hash_not_found() {
     assert_eq!(
         deploy_syscall(5.try_into().unwrap(), 0, [100].span(), false),
-        Result::Err(array!['CLASS_HASH_NOT_FOUND']),
+        Err(array!['CLASS_HASH_NOT_FOUND']),
     );
 }
 

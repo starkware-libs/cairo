@@ -12,10 +12,12 @@ pub use crate::gas::GasBuiltin;
 pub use crate::integer::{Bitwise, i128, i16, i32, i64, i8, u128, u16, u256, u32, u64, u8};
 pub use crate::nullable::{Nullable, NullableTrait};
 pub use crate::ops::Deref;
+pub use crate::option::Option::{None, Some};
 pub use crate::option::{Option, OptionTrait};
 pub use crate::panics::{Panic, PanicResult, panic};
 pub use crate::pedersen::Pedersen;
 pub use crate::poseidon::Poseidon;
+pub use crate::result::Result::{Err, Ok};
 pub use crate::result::{Result, ResultTrait};
 pub use crate::serde::Serde;
 pub use crate::starknet::System;
@@ -63,5 +65,3 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
-use crate::option::Option::{None, Some};
-use crate::result::Result::{Err, Ok};

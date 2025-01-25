@@ -669,7 +669,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    MyImpl::foo(Option::Some(3));
+    MyImpl::foo(Some(3));
 }
 
 //! > function_name
@@ -1447,7 +1447,7 @@ fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
     };
 }
 fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 
 //! > expected_diagnostics
@@ -1510,7 +1510,7 @@ fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
     };
 }
 fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 
 //! > expected_diagnostics
@@ -1579,7 +1579,7 @@ impl MyImpl of MyTrait {
     type MyType4 = u32;
 }
 fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
@@ -1639,7 +1639,7 @@ impl MyImpl of MyTrait {
     type MyType4 = u32;
 }
 fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
@@ -1893,7 +1893,7 @@ impl MyImpl of MyTrait {
     type MyType1 = Option<()>;
     type MyType2 = Option<()>;
     fn bar(x: Self::MyType1) -> Self::MyType2 {
-        Option::Some(x?)
+        Some(x?)
     }
 }
 

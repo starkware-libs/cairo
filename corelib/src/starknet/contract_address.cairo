@@ -79,9 +79,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
-        Option::Some(
-            contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?,
-        )
+        Some(contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
 }
 

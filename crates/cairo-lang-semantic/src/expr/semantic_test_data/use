@@ -1460,7 +1460,6 @@ EnumVariantCtor(
 test_expr_semantics(expect_diagnostics: true)
 
 //! > module_code
-use Option::Some;
 
 //! > function_body
 
@@ -1475,10 +1474,10 @@ Missing(
 )
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
- --> lib.cairo:3:13
-Some::<i64>(3_u32)
-            ^^^^^
+error: Identifier not found.
+ --> lib.cairo:1:5
+use Some;
+    ^^^^
 
 //! > ==========================================================================
 

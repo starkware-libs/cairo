@@ -489,9 +489,9 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo() {
     let bar = |a: Option<u32>| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
 }
 
@@ -513,12 +513,12 @@ test_function_diagnostics(expect_diagnostics: true)
 //TODO(Tomer): Add support for inference of Option type in closures.
 fn foo() {
     let bar1 = |a| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
     let bar2 = |b: Option<u32>| {
-        Option::Some(b?)
+        Some(b?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
     let _f: u32 = bar2(a).unwrap();
 }
@@ -530,14 +530,14 @@ foo
 
 //! > expected_diagnostics
 error: Type "?0" can not error propagate
- --> lib.cairo:4:22
-        Option::Some(a?)
-                     ^^
+ --> lib.cairo:4:14
+        Some(a?)
+             ^^
 
 error: `?` can only be used in a function with `Option` or `Result` return type.
- --> lib.cairo:7:22
-        Option::Some(b?)
-                     ^^
+ --> lib.cairo:7:14
+        Some(b?)
+             ^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
@@ -778,7 +778,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<u32> {
-    let x: Option<Array<i32>> = Option::Some(array![1, 2, 3]);
+    let x: Option<Array<i32>> = Some(array![1, 2, 3]);
     x.map(|x| x.len())
 }
 

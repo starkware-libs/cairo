@@ -77,8 +77,8 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo(a: OptionFelt252) -> felt252 {
     match a {
-        Option::Some(v) => v,
-        Option::None => 1,
+        Some(v) => v,
+        None => 1,
     }
 }
 

@@ -87,8 +87,8 @@ for example:
 [source]
 ----
 match opt {
-    Option::Some(x) => x,
-    Option::None => 0,
+    Some(x) => x,
+    None => 0,
 }
 ----
 

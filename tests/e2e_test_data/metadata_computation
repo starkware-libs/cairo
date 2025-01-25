@@ -402,21 +402,21 @@ fn foo(x: felt252) {
     // The excess created by the external branch_align should be pushed to the next (inner)
     // statements.
     match gas::withdraw_gas() {
-        Option::Some(_) => {
+        Some(_) => {
             if x == 0 {
                 // Here we don't need to withdraw gas, since we have excess created by the external
                 // failing branch.
                 match gas::withdraw_gas() {
-                    Option::Some(_) => {
+                    Some(_) => {
                         bar();
                     },
-                    Option::None(_) => {},
+                    None(_) => {},
                 }
             } else {
                 bar();
             }
         },
-        Option::None(_) => {
+        None(_) => {
             bar();
             bar();
         },
@@ -596,16 +596,16 @@ fn foo(x: felt252) {
         // Excess is created by the external `else` branch. Therefore, we don't need to withdraw
         // gas here.
         match gas::withdraw_gas() {
-            Option::Some(_) => {
+            Some(_) => {
                 // Here we have used the excess and we need to withdraw gas.
                 match gas::withdraw_gas() {
-                    Option::Some(_) => {
+                    Some(_) => {
                         bar();
                     },
-                    Option::None(_) => {},
+                    None(_) => {},
                 }
             },
-            Option::None(_) => {},
+            None(_) => {},
         }
     } else {
         bar();
@@ -925,8 +925,8 @@ SmallE2ETestRunnerMetadataComputation
 //! > cairo
 fn foo() -> u128 {
     match core::gas::withdraw_gas() {
-        Option::None => 2,
-        Option::Some(_) => 3_u128 & 1,
+        None => 2,
+        Some(_) => 3_u128 & 1,
     }
 }
 

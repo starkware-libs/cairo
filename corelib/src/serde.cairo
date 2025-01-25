@@ -77,7 +77,7 @@ use crate::array::{ArrayTrait, SpanTrait};
 ///         let x = (*serialized.pop_front()?).try_into()?;
 ///         let y = (*serialized.pop_front()?).try_into()?;
 ///
-///         Option::Some(Point { x, y })
+///         Some(Point { x, y })
 ///     }
 /// }
 /// ```
@@ -95,7 +95,7 @@ pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
 
     /// Deserializes a value from a sequence of `felt252`s.
-    /// If the value cannot be deserialized, returns `Option::None`.
+    /// If the value cannot be deserialized, returns `None`.
     ///
     /// # Examples
     ///
@@ -148,7 +148,7 @@ impl SerializeTupleBaseTuple of SerializeTuple<()> {
 // Base implementation of `DeserializeTuple` for tuples.
 impl DeserializeTupleBaseTuple of DeserializeTuple<()> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<()> {
-        Option::Some(())
+        Some(())
     }
 }
 
@@ -160,7 +160,7 @@ impl SerializeTupleBaseFixedSizedArray<T> of SerializeTuple<[@T; 0]> {
 // Base implementation of `DeserializeTuple` for fixed sized arrays.
 impl DeserializeTupleBaseFixedSizedArray<T> of DeserializeTuple<[T; 0]> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<[T; 0]> {
-        Option::Some([])
+        Some([])
     }
 }
 
@@ -190,7 +190,7 @@ impl DeserializeTupleNext<
     fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
         let head = Serde::<TS::Head>::deserialize(ref serialized)?;
         let rest = DeserializeTuple::<TS::Rest>::deserialize(ref serialized)?;
-        Option::Some(TS::reconstruct(head, rest))
+        Some(TS::reconstruct(head, rest))
     }
 }
 
@@ -214,7 +214,7 @@ pub mod into_felt252_based {
 
         #[inline]
         fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
-            Option::Some((*serialized.pop_front()?).try_into()?)
+            Some((*serialized.pop_front()?).try_into()?)
         }
     }
 }

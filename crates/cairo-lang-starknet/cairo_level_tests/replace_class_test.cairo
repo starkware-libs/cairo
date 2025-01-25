@@ -100,17 +100,16 @@ fn test_class_hash_at_syscall() {
     )
         .unwrap();
 
-    assert_eq!(get_class_hash_at_syscall(address0), Result::Ok(a_class_hash));
+    assert_eq!(get_class_hash_at_syscall(address0), Ok(a_class_hash));
     // Replace its class hash to Class B.
     let b_class_hash = class_hash_const::<contract_b::TEST_CLASS_HASH>();
     IWithReplaceDispatcher { contract_address: address0 }.replace(b_class_hash);
-    assert_eq!(get_class_hash_at_syscall(address0), Result::Ok(b_class_hash));
+    assert_eq!(get_class_hash_at_syscall(address0), Ok(b_class_hash));
 }
 
 #[test]
 fn test_class_hash_at_syscall_undeployed_contract() {
     assert_eq!(
-        get_class_hash_at_syscall(contract_address_const::<123456>()),
-        Result::Ok(class_hash_const::<0>()),
+        get_class_hash_at_syscall(contract_address_const::<123456>()), Ok(class_hash_const::<0>()),
     );
 }
