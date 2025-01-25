@@ -47,7 +47,7 @@ pub fn egcd<
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
-    let r = if let Option::Some(r) = r.try_into() {
+    let r = if let Some(r) = r.try_into() {
         r
     } else {
         return (b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false);
@@ -66,7 +66,7 @@ pub fn egcd<
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
 /// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
-/// `Option::None` if `gcd(a,n) > 1` (inverse doesn't exist).
+/// `None` if `gcd(a,n) > 1` (inverse doesn't exist).
 ///
 /// # Examples
 ///
@@ -74,7 +74,7 @@ pub fn egcd<
 /// use core::math::inv_mod;
 ///
 /// let inv = inv_mod::<u32>(3, 7);
-/// assert!(inv == Option::Some(5));
+/// assert!(inv == Some(5));
 /// ```
 pub fn inv_mod<
     T,
@@ -91,7 +91,7 @@ pub fn inv_mod<
     a: NonZero<T>, n: NonZero<T>,
 ) -> Option<T> {
     if core::num::traits::One::<T>::is_one(@n.into()) {
-        return Option::Some(core::num::traits::Zero::zero());
+        return Some(core::num::traits::Zero::zero());
     }
     let (g, s, _, sub_direction) = egcd(a, n);
     if g.is_one() {
@@ -100,14 +100,14 @@ pub fn inv_mod<
         // With n > 1 and gcd = 1, `s` can't be 0.
         if sub_direction {
             // `s` is the Bezout coefficient, `0 < s < n`.
-            Option::Some(s)
+            Some(s)
         } else {
             // `-s` is the Bezout coefficient.
             // `-n < -s < 0 => 0 < n - s < n`, and `n - s = -s (mod n)`.
-            Option::Some(n.into() - s)
+            Some(n.into() - s)
         }
     } else {
-        Option::None
+        None
     }
 }
 
@@ -143,13 +143,13 @@ extern fn u256_guarantee_inv_mod_n(
 /// use core::math::u256_inv_mod;
 ///
 /// let inv = u256_inv_mod(3, 17);
-/// assert!(inv == Option::Some(6));
+/// assert!(inv == Some(6));
 /// ```
 #[inline]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
-        Result::Ok((inv_a, _, _, _, _, _, _, _, _)) => Option::Some(inv_a),
-        Result::Err(_) => Option::None(()),
+        Ok((inv_a, _, _, _, _, _, _, _, _)) => Some(inv_a),
+        Err(_) => None(()),
     }
 }
 
@@ -161,10 +161,10 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
 /// use core::math::u256_inv_mod;
 ///
 /// let result = u256_div_mod_n(17, 7, 29);
-/// assert!(result == Option::Some(19));
+/// assert!(result == Some(19));
 /// ```
 pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
-    Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
+    Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
 }
 
 /// Returns `a * b (mod n)`.

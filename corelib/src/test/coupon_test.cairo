@@ -3,10 +3,10 @@ extern fn coupon_buy<T>() -> T nopanic;
 #[feature("corelib-internal-use")]
 fn arr_sum(arr: Array<(u128, arr_sum::Coupon)>) -> u128 nopanic {
     match arr.pop_front_consume() {
-        Option::Some((
+        Some((
             rem, (elm, coupon),
         )) => crate::integer::u128_wrapping_add(elm, arr_sum(rem, __coupon__: coupon)),
-        Option::None => 0,
+        None => 0,
     }
 }
 

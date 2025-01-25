@@ -8,11 +8,11 @@ struct Node {
 fn traverse(node: Node) {
     let Node { value: _, left, right } = node;
     match left {
-        Option::Some(x) => traverse(x.unbox()),
-        Option::None => {},
+        Some(x) => traverse(x.unbox()),
+        None => {},
     }
     match right {
-        Option::Some(x) => traverse(x.unbox()),
-        Option::None => {},
+        Some(x) => traverse(x.unbox()),
+        None => {},
     }
 }

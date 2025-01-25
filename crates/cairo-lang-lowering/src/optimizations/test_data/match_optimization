@@ -7,8 +7,8 @@ test_match_optimizer
 fn foo() -> Option<u16> {
     let v = get_option();
     match v {
-        Option::Some(_) => Option::Some(1_u16),
-        Option::None => Option::None,
+        Some(_) => Some(1_u16),
+        None => None,
     }
 }
 
@@ -144,13 +144,13 @@ fn foo(a: felt252) -> Option<u16> {
     // The following instruction should block the optimization.
     core::internal::revoke_ap_tracking();
     let v1 = match v {
-        Option::Some(_) => Option::Some(1_u16),
-        Option::None => Option::None,
+        Some(_) => Some(1_u16),
+        None => None,
     };
     match v1 {
         // v1 is used after the match.
-        Option::Some(_) => v1,
-        Option::None => Option::Some(2_u16),
+        Some(_) => v1,
+        None => Some(2_u16),
     }
 }
 
@@ -317,8 +317,8 @@ test_match_optimizer
 fn foo() -> felt252 {
     let opt = get_option();
     match opt {
-        Option::Some(x) => Option::Some(x + 3),
-        Option::None => Option::None,
+        Some(x) => Some(x + 3),
+        None => None,
     }.unwrap()
 }
 
@@ -1169,7 +1169,7 @@ test_match_optimizer
 fn foo(ref a: Array<felt252>, ref b: Array<felt252>) -> Option<()> {
     let _ = double_merge(ref a, ref b)?;
     let _ = double_merge(ref a, ref b)?;
-    Option::Some(())
+    Some(())
 }
 
 //! > function_name
@@ -1177,9 +1177,9 @@ foo
 
 //! > module_code
 fn double_merge(ref a: Array<felt252>, ref b: Array<felt252>) -> Option<felt252> {
-    if let Option::Some(q) = a.pop_front() {
+    if let Some(q) = a.pop_front() {
         if q == 0 {
-            return Option::Some(q);
+            return Some(q);
         }
     }
     b.pop_front()

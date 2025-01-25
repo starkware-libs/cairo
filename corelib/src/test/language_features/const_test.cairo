@@ -136,10 +136,10 @@ fn test_two_complex_enums() {
 #[test]
 fn test_complex_consts() {
     const VAR_AND_MATCH_CONST: felt252 = {
-        let x = Option::Some((1, 2_u8));
+        let x = Some((1, 2_u8));
         match x {
-            Option::Some((v, _)) => v,
-            Option::None => 3,
+            Some((v, _)) => v,
+            None => 3,
         }
     };
     assert_eq!(VAR_AND_MATCH_CONST, 1);

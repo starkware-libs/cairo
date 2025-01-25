@@ -418,8 +418,8 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable]
 fn require_gas() -> felt252 {
     match core::gas::withdraw_gas() {
-        Option::Some(()) => 1,
-        Option::None => 2,
+        Some(()) => 1,
+        None => 2,
     }
 }
 

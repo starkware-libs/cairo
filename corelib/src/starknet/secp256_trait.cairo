@@ -329,7 +329,7 @@ pub fn recover_public_key<
 
     let point2 = r_point.mul(u2).unwrap_syscall();
 
-    Option::Some(minus_point1.add(point2).unwrap_syscall())
+    Some(minus_point1.add(point2).unwrap_syscall())
 }
 
 /// Computes the negation of a scalar modulo N (the size of the curve).

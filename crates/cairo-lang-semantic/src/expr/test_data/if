@@ -68,7 +68,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
-    let x = Option::Some(7_u64);
+    let x = Some(7_u64);
     if let MyEnum::A(y) = x {
         return y == 9;
     } else {
@@ -104,7 +104,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
-    let x = Option::Some(7_u64);
+    let x = Some(7_u64);
     if let Some(y) = x || true {
         return y == 9;
     } else {
