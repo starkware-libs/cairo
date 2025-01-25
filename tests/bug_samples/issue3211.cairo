@@ -4,7 +4,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         if (self.high == 0) {
             self.low.try_into()
         } else {
-            Option::None
+            None
         }
     }
 }

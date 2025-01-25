@@ -19,8 +19,8 @@ pub struct BuiltinCosts {}
 pub extern type GasBuiltin;
 
 /// Withdraws gas from the `GasBuiltin` to handle the success case flow.
-/// Returns `Option::Some(())` if there is sufficient gas to handle the success case, otherwise
-/// returns `Option::None`.
+/// Returns `Some(())` if there is sufficient gas to handle the success case, otherwise
+/// returns `None`.
 ///
 /// # Examples
 ///
@@ -33,8 +33,8 @@ pub extern type GasBuiltin;
 /// ```
 /// // Direct handling of `withdraw_gas`.
 /// match withdraw_gas() {
-///     Option::Some(()) => success_case(),
-///     Option::None => cheap_not_enough_gas_case(),
+///     Some(()) => success_case(),
+///     None => cheap_not_enough_gas_case(),
 /// }
 /// ```
 #[cfg(not(gas: "disabled"))]
@@ -43,7 +43,7 @@ pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nop
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas() -> Option<()> nopanic {
-    Option::Some(())
+    Some(())
 }
 
 /// Same as `withdraw_gas`, but directly receives `BuiltinCosts`, which enables optimizations
@@ -58,7 +58,7 @@ pub extern fn withdraw_gas_all(
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas_all(costs: BuiltinCosts) -> Option<()> nopanic {
-    Option::Some(())
+    Some(())
 }
 
 /// Returns unused gas into the gas builtin.

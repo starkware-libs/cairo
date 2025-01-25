@@ -300,7 +300,6 @@ fn f5() -> felt252 {
 }
 
 //! > expanded_cairo_code
-
 #[cfg(and(a, b))]
 fn f4() -> felt252 {
     0
@@ -365,7 +364,6 @@ fn f_complex_evaluation() -> felt252 {
 }
 
 //! > expanded_cairo_code
-
 #[cfg(or(and(a, b), and(k: "a", not(k: "b"))))]
 fn f_nested_or_and() -> felt252 {
     0

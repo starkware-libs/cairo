@@ -32,6 +32,6 @@ impl ZipIterator<
     fn next(ref self: Zip<A, B>) -> Option<Self::Item> {
         let a = self.a.next()?;
         let b = self.b.next()?;
-        Option::Some((a, b))
+        Some((a, b))
     }
 }

@@ -103,10 +103,10 @@ pub trait FromIterator<T, A> {
 /// ```
 /// let mut iter = array![1, 2, 3].into_iter();
 ///
-/// assert!(Option::Some(1) == iter.next());
-/// assert!(Option::Some(2) == iter.next());
-/// assert!(Option::Some(3) == iter.next());
-/// assert!(Option::None == iter.next());
+/// assert!(Some(1) == iter.next());
+/// assert!(Some(2) == iter.next());
+/// assert!(Some(3) == iter.next());
+/// assert!(None == iter.next());
 /// ```
 ///
 /// Implementing `IntoIterator` for your type:
@@ -172,10 +172,10 @@ pub trait IntoIterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter();
     ///
-    /// assert_eq!(Option::Some(1), iter.next());
-    /// assert_eq!(Option::Some(2), iter.next());
-    /// assert_eq!(Option::Some(3), iter.next());
-    /// assert_eq!(Option::None, iter.next());
+    /// assert_eq!(Some(1), iter.next());
+    /// assert_eq!(Some(2), iter.next());
+    /// assert_eq!(Some(3), iter.next());
+    /// assert_eq!(None, iter.next());
     /// ```
     fn into_iter(self: T) -> Self::IntoIter;
 }

@@ -187,9 +187,9 @@ impl VecImpl<T> of VecTrait<StoragePath<Vec<T>>> {
     fn get(self: StoragePath<Vec<T>>, index: u64) -> Option<StoragePath<T>> {
         let vec_len = self.len();
         if index < vec_len {
-            Option::Some(self.update(index))
+            Some(self.update(index))
         } else {
-            Option::None
+            None
         }
     }
 
@@ -247,7 +247,7 @@ pub trait MutableVecTrait<T> {
     /// }
     ///
     /// fn set_number(ref self: ContractState, index: u64, number: u256) -> bool {
-    ///     if let Option::Some(ptr) = self.numbers.get(index) {
+    ///     if let Some(ptr) = self.numbers.get(index) {
     ///         ptr.write(number);
     ///         true
     ///     } else {
@@ -330,9 +330,9 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
     fn get(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> Option<StoragePath<Mutable<T>>> {
         let vec_len = self.len();
         if index < vec_len {
-            Option::Some(self.update(index))
+            Some(self.update(index))
         } else {
-            Option::None
+            None
         }
     }
 

@@ -36,6 +36,6 @@ impl EnumerateIterator<
         let a = self.iter.next()?;
         let i = self.count;
         self.count += 1;
-        Option::Some((i, a))
+        Some((i, a))
     }
 }

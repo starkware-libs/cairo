@@ -21,8 +21,8 @@ pub trait Iterator<T> {
     /// again may or may not eventually start returning [`Some(Item)`] again at some
     /// point.
     ///
-    /// [`Some(Item)`]: Option::Some
-    /// [`None`]: Option::None
+    /// [`Some(Item)`]: Some
+    /// [`None`]: None
     ///
     /// # Examples
     ///
@@ -30,16 +30,16 @@ pub trait Iterator<T> {
     /// let mut iter = [1, 2, 3].span().into_iter();
     ///
     /// // A call to next() returns the next value...
-    /// assert_eq!(Option::Some(@1), iter.next());
-    /// assert_eq!(Option::Some(@2), iter.next());
-    /// assert_eq!(Option::Some(@3), iter.next());
+    /// assert_eq!(Some(@1), iter.next());
+    /// assert_eq!(Some(@2), iter.next());
+    /// assert_eq!(Some(@3), iter.next());
     ///
     /// // ... and then None once it's over.
-    /// assert_eq!(Option::None, iter.next());
+    /// assert_eq!(None, iter.next());
     ///
     /// // More calls may or may not return `None`. Here, they always will.
-    /// assert_eq!(Option::None, iter.next());
-    /// assert_eq!(Option::None, iter.next());
+    /// assert_eq!(None, iter.next());
+    /// assert_eq!(None, iter.next());
     /// ```
     fn next(ref self: T) -> Option<Self::Item>;
 
@@ -95,7 +95,7 @@ pub trait Iterator<T> {
     /// If `self` is empty and `n` is non-zero, then this returns `Err(n)`.
     /// Otherwise, `k` is always less than `n`.
     ///
-    /// [`None`]: Option::None
+    /// [`None`]: None
     /// [`next`]: Iterator::next
     ///
     /// # Examples
@@ -103,24 +103,24 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1_u8, 2, 3, 4].into_iter();
     ///
-    /// assert_eq!(iter.advance_by(2), Result::Ok(()));
-    /// assert_eq!(iter.next(), Option::Some(3));
-    /// assert_eq!(iter.advance_by(0), Result::Ok(()));
-    /// assert_eq!(iter.advance_by(100), Result::Err(99));
+    /// assert_eq!(iter.advance_by(2), Ok(()));
+    /// assert_eq!(iter.next(), Some(3));
+    /// assert_eq!(iter.advance_by(0), Ok(()));
+    /// assert_eq!(iter.advance_by(100), Err(99));
     /// ```
     fn advance_by<+Destruct<T>, +Destruct<Self::Item>>(
         ref self: T, n: usize,
     ) -> Result<
         (), NonZero<usize>,
     > {
-        if let Option::Some(nz_n) = n.try_into() {
-            if let Option::Some(_) = Self::next(ref self) {
+        if let Some(nz_n) = n.try_into() {
+            if let Some(_) = Self::next(ref self) {
                 return Self::advance_by(ref self, n - 1);
             } else {
-                Result::Err(nz_n)
+                Err(nz_n)
             }
         } else {
-            Result::Ok(())
+            Ok(())
         }
     }
 
@@ -148,10 +148,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
     ///
-    /// assert!(iter.next() == Option::Some(2));
-    /// assert!(iter.next() == Option::Some(4));
-    /// assert!(iter.next() == Option::Some(6));
-    /// assert!(iter.next() == Option::None);
+    /// assert!(iter.next() == Some(2));
+    /// assert!(iter.next() == Some(4));
+    /// assert!(iter.next() == Some(6));
+    /// assert!(iter.next() == None);
     /// ```
     ///
     /// If you're doing some sort of side effect, prefer `for` to `map()`:
@@ -200,10 +200,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array!['a', 'b', 'c'].into_iter().enumerate();
     ///
-    /// assert_eq!(iter.next(), Option::Some((0, 'a')));
-    /// assert_eq!(iter.next(), Option::Some((1, 'b')));
-    /// assert_eq!(iter.next(), Option::Some((2, 'c')));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((0, 'a')));
+    /// assert_eq!(iter.next(), Some((1, 'b')));
+    /// assert_eq!(iter.next(), Some((2, 'c')));
+    /// assert_eq!(iter.next(), None);
     /// ```
     #[inline]
     fn enumerate(self: T) -> Enumerate<T> {
@@ -299,8 +299,8 @@ pub trait Iterator<T> {
         ref self: T, init: B, f: F,
     ) -> B {
         match Self::next(ref self) {
-            Option::None => init,
-            Option::Some(x) => Self::fold(ref self, f(init, x), f),
+            None => init,
+            Some(x) => Self::fold(ref self, f(init, x), f),
         }
     }
 
@@ -312,8 +312,8 @@ pub trait Iterator<T> {
     ///
     /// In other words, it zips two iterators together, into a single one.
     ///
-    /// If either iterator returns [`Option::None`], [`next`] from the zipped iterator
-    /// will return [`Option::None`].
+    /// If either iterator returns [`None`], [`next`] from the zipped iterator
+    /// will return [`None`].
     /// If the zipped iterator has no more elements to return then each further attempt to advance
     /// it will first try to advance the first iterator at most one time and if it still yielded an
     /// item try to advance the second iterator at most one time.
@@ -325,10 +325,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
     ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
     /// ```
     ///
     /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
@@ -338,10 +338,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
     ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
     /// ``
     ///
     /// [`enumerate`]: Iterator::enumerate

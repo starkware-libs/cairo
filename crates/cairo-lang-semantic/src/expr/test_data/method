@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<felt252> {
-    let x = Option::None;
+    let x = None;
     let _ = x.is_some();
     x
 }
@@ -34,10 +34,10 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option<felt252> {
-    let x = Option::None;
+    let x = None;
     x.is_foo();
     x.is_bla();
-    let y = Option::Some(true);
+    let y = Some(true);
     y.is_bar();
     y.SomeOtherPrefix::is_bar();
     x
@@ -54,8 +54,8 @@ trait MyTrait<T> {
 impl MyTraitImpl<T> of MyTrait<T> {
     fn is_bla(self: Option<T>) -> bool {
         match self {
-            Option::Some(_) => true,
-            Option::None => false,
+            Some(_) => true,
+            None => false,
         }
     }
     fn is_bar(self: Option<T>) -> bool {
@@ -65,8 +65,8 @@ impl MyTraitImpl<T> of MyTrait<T> {
 impl AnotherMyTraitImpl<T> of MyTrait<felt252> {
     fn is_bla(self: Option<felt252>) -> bool {
         match self {
-            Option::Some(_) => true,
-            Option::None => false,
+            Some(_) => true,
+            None => false,
         }
     }
     fn is_bar(self: Option<felt252>) -> bool {

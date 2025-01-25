@@ -7,8 +7,8 @@ fn use_v(v: NonZero<felt252>) {
 #[test]
 fn test_revoked_local() {
     let v: NonZero<felt252> = match core::felt252_is_zero(16) {
-        core::zeroable::IsZeroResult::Zero => Option::None,
-        core::zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
+        core::zeroable::IsZeroResult::Zero => None,
+        core::zeroable::IsZeroResult::NonZero(x) => Some(x),
     }.unwrap();
     use_v(v);
     use_v(v);

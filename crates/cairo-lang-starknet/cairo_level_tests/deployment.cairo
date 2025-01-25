@@ -51,6 +51,6 @@ fn test_redeploy_in_construct() {
     assert!(
         deploy_syscall(
             self_caller::TEST_CLASS_HASH.try_into().unwrap(), 0, [].span(), false,
-        ) == Result::Err(array!['CONTRACT_ALREADY_DEPLOYED']),
+        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
     );
 }

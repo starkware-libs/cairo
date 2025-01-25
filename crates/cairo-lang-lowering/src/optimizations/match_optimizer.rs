@@ -28,7 +28,7 @@ pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 /// ```plain
 /// blk0:
 /// Statements:
-/// (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+/// (v1: core::option::Option::<core::integer::u32>) <- Some(v0)
 /// End:
 /// Goto(blk1, {v1-> v2})
 ///
@@ -36,8 +36,8 @@ pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 /// Statements:
 /// End:
 /// Match(match_enum(v2) {
-///   Option::Some(v3) => blk4,
-///   Option::None(v4) => blk5,
+///   Some(v3) => blk4,
+///   None(v4) => blk5,
 /// })
 /// ```
 ///
