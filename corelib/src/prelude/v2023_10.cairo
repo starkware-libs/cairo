@@ -63,3 +63,5 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
+use crate::option::Option::{None, Some};
+use crate::result::Result::{Err, Ok};

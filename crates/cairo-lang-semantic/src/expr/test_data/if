@@ -128,10 +128,10 @@ error: Logical operator not allowed in if-let.
     if let Some(y) = x || true {
                      ^^^^^^^^^
 
-error: Identifier not found.
+error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
  --> lib.cairo:3:12
     if let Some(y) = x || true {
-           ^^^^
+           ^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:4:16
