@@ -13,6 +13,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
+use cairo_vm::hint_processor::builtin_hint_processor::blake2s_hash::blake2s_compress;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
@@ -433,7 +434,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
                 );
             }
             Hint::External(hint) => {
-                return self.execute_external_hint(vm, hint);
+                return self.execute_external_hint(vm, exec_scopes, hint);
             }
         };
         match hint {
@@ -1310,6 +1311,7 @@ impl CairoHintProcessor<'_> {
     fn execute_external_hint(
         &mut self,
         vm: &mut VirtualMachine,
+        exec_scopes: &mut ExecutionScopes,
         core_hint: &ExternalHint,
     ) -> Result<(), HintError> {
         match core_hint {
@@ -1342,6 +1344,50 @@ impl CairoHintProcessor<'_> {
             ExternalHint::SetMarker { marker } => {
                 self.markers.push(extract_relocatable(vm, marker)?);
             }
+            ExternalHint::Blake2sCompress { state, byte_count, message, output } => {
+            let state = extract_relocatable(vm, state)?;
+            let byte_count = get_val(vm, byte_count)?;
+            let message = extract_relocatable(vm, message)?;
+            let felt_to_u32 = |value: Felt252| value.to_le_digits()[0].try_into().ok();
+
+            let into_u32 = |opt: Option<Cow<'_, _>>| match opt {
+                Some(val) => {
+                    if let MaybeRelocatable::Int(value) = *val {
+                        value.to_le_digits()[0].try_into().ok()
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            };
+
+            let state = vm
+                .get_range(state, 8)
+                .into_iter()
+                .map(into_u32)
+                .collect::<Option<Vec<u32>>>()
+                .unwrap();
+            let state: [u32; 8] = state[0..8].try_into().unwrap();
+
+            eprintln!("message");
+            let message = vm
+                .get_range(message, 16)
+                .into_iter()
+                .map(into_u32)
+                .collect::<Option<Vec<u32>>>()
+                .unwrap();
+
+            let new_state =
+                blake2s_compress(&state, &message.try_into().unwrap(), felt_to_u32(byte_count).unwrap(), 0, 0, 0);
+
+            let res = alloc_memory(exec_scopes, vm, 9)?;
+
+            for (i, &val) in new_state.iter().enumerate() {
+                vm.insert_value((res + i)?, MaybeRelocatable::Int(Felt252::from(val)))?;
+            }
+
+            insert_value_to_cellref!(vm, output, res)?;
+        }
         }
         Ok(())
     }

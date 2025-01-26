@@ -126,3 +126,16 @@ pub fn fixed_size_array_ty(
     .collect();
     context.get_concrete_type(StructType::id(), &args)
 }
+
+/// Returns a fixed type array of the given type and size.
+pub fn tuple_ty(
+    context: &dyn SignatureSpecializationContext,
+    types: impl Iterator<Item = ConcreteTypeId>,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let args: Vec<GenericArg> = chain!(
+        [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+        types.map(GenericArg::Type),
+    )
+    .collect();
+    context.get_concrete_type(StructType::id(), &args)
+}

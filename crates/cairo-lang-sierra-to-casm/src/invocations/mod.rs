@@ -4,6 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_sierra::extensions::blake::BlakeConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
@@ -36,6 +37,7 @@ use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntr
 
 mod array;
 mod bitwise;
+mod blake;
 mod boolean;
 mod boxing;
 mod bytes31;
@@ -715,6 +717,9 @@ pub fn compile_invocation(
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
         Circuit(libfunc) => circuit::build(libfunc, builder),
         IntRange(libfunc) => range::build(libfunc, builder),
+        Blake(libfunc) => match libfunc {
+            BlakeConcreteLibfunc::Blake2sCompress(_) => blake::build(libfunc, builder),
+        },
     }
 }
 

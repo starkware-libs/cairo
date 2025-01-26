@@ -358,6 +358,13 @@ pub enum ExternalHint {
     /// Stores a marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     SetMarker { marker: ResOperand },
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
+    Blake2sCompress {
+        state: ResOperand,
+        byte_count: ResOperand,
+        message: ResOperand,
+        output: CellRef,
+    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -857,6 +864,9 @@ impl PythonicHint for ExternalHint {
             Self::SetMarker { marker } => {
                 let marker = ResOperandAsAddressFormatter(marker);
                 format!(r#"raise NotImplementedError("marker = {}")"#, marker)
+            }
+            Self::Blake2sCompress { .. } => {
+                r#"raise NotImplementedError("blake2s_compress")"#.into()
             }
         }
     }
