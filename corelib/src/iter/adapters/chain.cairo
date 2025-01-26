@@ -22,10 +22,9 @@ impl ChainIterator<
     B,
     impl IterA: Iterator<A>,
     +Iterator<B>[Item: IterA::Item],
-    +Copy<A>,
-    +Drop<A>,
-    +Drop<B>,
-    +Drop<IterA::Item>,
+    +Destruct<A>,
+    +Destruct<B>,
+    +Destruct<IterA::Item>,
 > of Iterator<Chain<A, B>> {
     type Item = IterA::Item;
 
@@ -35,12 +34,12 @@ impl ChainIterator<
             if let Option::Some(value) = first.next() {
                 self.a = Option::Some(first);
                 return Option::Some(value);
-            } else {
-                self.a = Option::None;
             }
         }
 
         // Then iterate over second container values.
-        self.b.next()
+        let next_val = self.b.next();
+        self.a = Option::None;
+        next_val
     }
 }
