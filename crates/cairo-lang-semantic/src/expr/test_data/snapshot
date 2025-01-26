@@ -39,7 +39,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
+error: Unexpected argument type. Expected: "core::felt252", found: "@?2".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:3:23
