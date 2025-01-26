@@ -608,6 +608,7 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
+        Blake(_) => vec![ConstCost::steps(1).into()],
     }
 }
 
