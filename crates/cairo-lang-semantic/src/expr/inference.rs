@@ -1358,8 +1358,8 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                         impl_impl_id_rewrite_result
                     }
                     ImplLongId::Concrete(_) => {
-                        if let Ok(ty) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
-                            *value = self.rewrite(ty).no_err().lookup_intern(self.db);
+                        if let Ok(imp) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
+                            *value = self.rewrite(imp).no_err().lookup_intern(self.db);
                             RewriteResult::Modified
                         } else {
                             impl_impl_id_rewrite_result

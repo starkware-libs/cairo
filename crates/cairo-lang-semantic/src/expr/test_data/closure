@@ -489,9 +489,9 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo() {
     let bar = |a: Option<u32>| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
 }
 
@@ -513,12 +513,12 @@ test_function_diagnostics(expect_diagnostics: true)
 //TODO(Tomer): Add support for inference of Option type in closures.
 fn foo() {
     let bar1 = |a| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
     let bar2 = |b: Option<u32>| {
-        Option::Some(b?)
+        Some(b?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
     let _f: u32 = bar2(a).unwrap();
 }
@@ -530,14 +530,14 @@ foo
 
 //! > expected_diagnostics
 error: Type "?0" can not error propagate
- --> lib.cairo:4:22
-        Option::Some(a?)
-                     ^^
+ --> lib.cairo:4:14
+        Some(a?)
+             ^^
 
 error: `?` can only be used in a function with `Option` or `Result` return type.
- --> lib.cairo:7:22
-        Option::Some(b?)
-                     ^^
+ --> lib.cairo:7:14
+        Some(b?)
+             ^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
@@ -768,3 +768,54 @@ error: Closure parameters cannot be references
  --> lib.cairo:2:14
     let _ = |ref a| {
              ^^^^^
+
+//! > ==========================================================================
+
+//! > Passing closures as args with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<u32> {
+    let x: Option<Array<i32>> = Some(array![1, 2, 3]);
+    x.map(|x| x.len())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Passing closures as trait generics with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    MyTrait::call_with(|arr| {
+        arr.len();
+    });
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<F, +core::ops::Fn<F, (Array::<i32>,)>> {
+    fn call_with(func: F) {
+        func(ArrayTrait::<i32>::new());
+    }
+}
+impl MyImpl<F, impl Func: core::ops::Fn<F, (Array::<i32>,)>> of MyTrait<F, Func>;
+
+//! > expected_diagnostics
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::array::ArrayTrait::len and core::array::SpanTrait::len. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:9:13
+        arr.len();
+            ^^^

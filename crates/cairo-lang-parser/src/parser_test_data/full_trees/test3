@@ -176,10 +176,7 @@ false
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
-    │   │       │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │       │   │   └── ident (kind: TokenIdentifier): 'Option'
-    │   │       │       │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │       │       │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │       │   │   │       │       └── ident (kind: TokenIdentifier): 'Some'
     │   │       │       │   │   │       └── arguments (kind: ArgListParenthesized)
     │   │       │       │   │   │           ├── lparen (kind: TokenLParen): '('
@@ -348,10 +345,7 @@ false
     │           │       │   │   │       ├── expressions (kind: ExprList)
     │           │       │   │   │       │   ├── item #0 (kind: ExprFunctionCall)
     │           │       │   │   │       │   │   ├── path (kind: ExprPath)
-    │           │       │   │   │       │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │   │   │   │   └── ident (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │           │       │   │   │       │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │           │       │   │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │           │       │   │   │       │   │   │       └── ident (kind: TokenIdentifier): 'Some'
     │           │       │   │   │       │   │   └── arguments (kind: ArgListParenthesized)
     │           │       │   │   │       │   │       ├── lparen (kind: TokenLParen): '('
@@ -366,10 +360,7 @@ false
     │           │       │   │   │       │   ├── separator #0 (kind: TokenComma): ','
     │           │       │   │   │       │   └── item #1 (kind: ExprFunctionCall)
     │           │       │   │   │       │       ├── path (kind: ExprPath)
-    │           │       │   │   │       │       │   ├── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │       │   │   └── ident (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │       │   ├── separator #0 (kind: TokenColonColon): '::'
-    │           │       │   │   │       │       │   └── item #1 (kind: PathSegmentSimple)
+    │           │       │   │   │       │       │   └── item #0 (kind: PathSegmentSimple)
     │           │       │   │   │       │       │       └── ident (kind: TokenIdentifier): 'Some'
     │           │       │   │   │       │       └── arguments (kind: ArgListParenthesized)
     │           │       │   │   │       │           ├── lparen (kind: TokenLParen): '('
@@ -814,16 +805,7 @@ false
     │   │       │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
-    │   │       │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
-    │   │       │       │   │   │       │   │   └── ident (kind: TerminalIdentifier)
-    │   │       │       │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │       │   │       ├── token (kind: TokenIdentifier): 'Option'
-    │   │       │       │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
-    │   │       │       │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │       │   │   ├── token (kind: TokenColonColon): '::'
-    │   │       │       │   │   │       │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │       │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │       │   │   │       │       └── ident (kind: TerminalIdentifier)
     │   │       │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │       │           ├── token (kind: TokenIdentifier): 'Some'
@@ -1220,16 +1202,7 @@ false
     │           │       │   │   │       ├── expressions (kind: ExprList)
     │           │       │   │   │       │   ├── item #0 (kind: ExprFunctionCall)
     │           │       │   │   │       │   │   ├── path (kind: ExprPath)
-    │           │       │   │   │       │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │   │   │   │   └── ident (kind: TerminalIdentifier)
-    │           │       │   │   │       │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   │       ├── token (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   ├── separator #0 (kind: TerminalColonColon)
-    │           │       │   │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   │   ├── token (kind: TokenColonColon): '::'
-    │           │       │   │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │           │       │   │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │           │       │   │   │       │   │   │       └── ident (kind: TerminalIdentifier)
     │           │       │   │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │       │   │   │           ├── token (kind: TokenIdentifier): 'Some'
@@ -1260,16 +1233,7 @@ false
     │           │       │   │   │       │   │       └── child #0 (kind: TokenWhitespace).
     │           │       │   │   │       │   └── item #1 (kind: ExprFunctionCall)
     │           │       │   │   │       │       ├── path (kind: ExprPath)
-    │           │       │   │   │       │       │   ├── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │       │   │   └── ident (kind: TerminalIdentifier)
-    │           │       │   │   │       │       │   │       ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │       │   │       ├── token (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │       │   │       └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │       │   ├── separator #0 (kind: TerminalColonColon)
-    │           │       │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │       │   │   ├── token (kind: TokenColonColon): '::'
-    │           │       │   │   │       │       │   │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │       │   └── item #1 (kind: PathSegmentSimple)
+    │           │       │   │   │       │       │   └── item #0 (kind: PathSegmentSimple)
     │           │       │   │   │       │       │       └── ident (kind: TerminalIdentifier)
     │           │       │   │   │       │       │           ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │       │       │           ├── token (kind: TokenIdentifier): 'Some'

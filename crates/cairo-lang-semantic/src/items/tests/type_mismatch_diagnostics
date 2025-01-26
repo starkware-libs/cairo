@@ -178,7 +178,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _: Option<felt252> = Option::Some(3_u16);
+    let _: Option<felt252> = Some(3_u16);
 }
 
 //! > function_name
@@ -189,8 +189,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::option::Option::<core::felt252>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:2:30
-    let _: Option<felt252> = Option::Some(3_u16);
-                             ^^^^^^^^^^^^^^^^^^^
+    let _: Option<felt252> = Some(3_u16);
+                             ^^^^^^^^^^^
 
 //! > ==========================================================================
 

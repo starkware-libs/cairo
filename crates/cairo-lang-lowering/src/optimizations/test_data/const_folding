@@ -133,7 +133,7 @@ test_match_optimizer
 
 //! > function
 fn foo() -> Box<Option<felt252>> {
-    BoxTrait::new(Option::Some(2))
+    BoxTrait::new(Some(2))
 }
 
 //! > function_name
@@ -3586,8 +3586,8 @@ test_match_optimizer
 //! > function
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(-5) {
-        Result::Ok(v) => Result::Ok(BoxTrait::new(v)),
-        Result::Err(v) => Result::Err(BoxTrait::new(v)),
+        Ok(v) => Ok(BoxTrait::new(v)),
+        Err(v) => Err(BoxTrait::new(v)),
     }
 }
 
@@ -3669,8 +3669,8 @@ test_match_optimizer
 //! > function
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(5) {
-        Result::Ok(v) => Result::Ok(BoxTrait::new(v)),
-        Result::Err(v) => Result::Err(BoxTrait::new(v)),
+        Ok(v) => Ok(BoxTrait::new(v)),
+        Err(v) => Err(BoxTrait::new(v)),
     }
 }
 

@@ -1,6 +1,6 @@
 fn array_sum(mut arr: Array<felt252>) -> felt252 {
     let mut sum = 0;
-    while let Option::Some(x) = arr.pop_front() {
+    while let Some(x) = arr.pop_front() {
         sum += x;
     };
     sum

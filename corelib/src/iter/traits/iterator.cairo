@@ -1,7 +1,8 @@
 use crate::iter::adapters::{
-    Chain, Enumerate, Map, Zip, chained_iterator, enumerated_iterator, mapped_iterator,
-    zipped_iterator,
+    Chain, Enumerate, Map, Peekable, Zip, chained_iterator, enumerated_iterator, mapped_iterator,
+    peekable_iterator, zipped_iterator,
 };
+use crate::iter::traits::Product;
 use crate::metaprogramming::TypeEqual;
 
 /// A trait for dealing with iterators.
@@ -23,8 +24,8 @@ pub trait Iterator<T> {
     /// again may or may not eventually start returning [`Some(Item)`] again at some
     /// point.
     ///
-    /// [`Some(Item)`]: Option::Some
-    /// [`None`]: Option::None
+    /// [`Some(Item)`]: Some
+    /// [`None`]: None
     ///
     /// # Examples
     ///
@@ -32,18 +33,84 @@ pub trait Iterator<T> {
     /// let mut iter = [1, 2, 3].span().into_iter();
     ///
     /// // A call to next() returns the next value...
-    /// assert_eq!(Option::Some(@1), iter.next());
-    /// assert_eq!(Option::Some(@2), iter.next());
-    /// assert_eq!(Option::Some(@3), iter.next());
+    /// assert_eq!(Some(@1), iter.next());
+    /// assert_eq!(Some(@2), iter.next());
+    /// assert_eq!(Some(@3), iter.next());
     ///
     /// // ... and then None once it's over.
-    /// assert_eq!(Option::None, iter.next());
+    /// assert_eq!(None, iter.next());
     ///
     /// // More calls may or may not return `None`. Here, they always will.
-    /// assert_eq!(Option::None, iter.next());
-    /// assert_eq!(Option::None, iter.next());
+    /// assert_eq!(None, iter.next());
+    /// assert_eq!(None, iter.next());
     /// ```
     fn next(ref self: T) -> Option<Self::Item>;
+
+    /// Consumes the iterator, counting the number of iterations and returning it.
+    ///
+    /// This method will call [`next`] repeatedly until [`None`] is encountered,
+    /// returning the number of times it saw [`Some`]. Note that [`next`] has to be
+    /// called at least once even if the iterator does not have any elements.
+    ///
+    /// [`next`]: Iterator::next
+    ///
+    /// # Overflow Behavior
+    ///
+    /// The method does no guarding against overflows, so counting elements of
+    /// an iterator with more than [`Bounded::<usize>::MAX`] elements either produces the
+    /// wrong result or panics.
+    ///
+    /// [`Bounded::<usize>::MAX`]: core::num::traits::Bounded
+    ///
+    /// # Panics
+    ///
+    /// This function might panic if the iterator has more than [`Bounded::<usize>::MAX`]
+    /// elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = array![1, 2, 3].into_iter();
+    /// assert_eq!(a.count(), 3);
+    ///
+    /// let mut a = array![1, 2, 3, 4, 5].into_iter();
+    /// assert_eq!(a.count(), 5);
+    /// ```
+    #[inline]
+    fn count<+Destruct<T>, +Destruct<Self::Item>>(
+        self: T,
+    ) -> usize {
+        let mut self = self;
+        Self::fold(ref self, 0_usize, |count, _x| {
+            count + 1
+        })
+    }
+
+    /// Consumes the iterator, returning the last element.
+    ///
+    /// This method will evaluate the iterator until it returns [`None`]. While
+    /// doing so, it keeps track of the current element. After [`None`] is
+    /// returned, `last()` will then return the last element it saw.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = array![1, 2, 3].into_iter();
+    /// assert_eq!(a.last(), Option::Some(3));
+    ///
+    /// let mut a = array![].into_iter();
+    /// assert_eq!(a.last(), Option::None);
+    /// ```
+    #[inline]
+    fn last<+Destruct<T>, +Destruct<Self::Item>>(
+        self: T,
+    ) -> Option<
+        Self::Item,
+    > {
+        let mut self = self;
+        let next = Self::next(ref self)?;
+        Option::Some(Self::last(self).unwrap_or(next))
+    }
 
     /// Advances the iterator by `n` elements.
     ///
@@ -57,7 +124,7 @@ pub trait Iterator<T> {
     /// If `self` is empty and `n` is non-zero, then this returns `Err(n)`.
     /// Otherwise, `k` is always less than `n`.
     ///
-    /// [`None`]: Option::None
+    /// [`None`]: None
     /// [`next`]: Iterator::next
     ///
     /// # Examples
@@ -65,24 +132,24 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1_u8, 2, 3, 4].into_iter();
     ///
-    /// assert_eq!(iter.advance_by(2), Result::Ok(()));
-    /// assert_eq!(iter.next(), Option::Some(3));
-    /// assert_eq!(iter.advance_by(0), Result::Ok(()));
-    /// assert_eq!(iter.advance_by(100), Result::Err(99));
+    /// assert_eq!(iter.advance_by(2), Ok(()));
+    /// assert_eq!(iter.next(), Some(3));
+    /// assert_eq!(iter.advance_by(0), Ok(()));
+    /// assert_eq!(iter.advance_by(100), Err(99));
     /// ```
     fn advance_by<+Destruct<T>, +Destruct<Self::Item>>(
         ref self: T, n: usize,
     ) -> Result<
         (), NonZero<usize>,
     > {
-        if let Option::Some(nz_n) = n.try_into() {
-            if let Option::Some(_) = Self::next(ref self) {
+        if let Some(nz_n) = n.try_into() {
+            if let Some(_) = Self::next(ref self) {
                 return Self::advance_by(ref self, n - 1);
             } else {
-                Result::Err(nz_n)
+                Err(nz_n)
             }
         } else {
-            Result::Ok(())
+            Ok(())
         }
     }
 
@@ -110,10 +177,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
     ///
-    /// assert!(iter.next() == Option::Some(2));
-    /// assert!(iter.next() == Option::Some(4));
-    /// assert!(iter.next() == Option::Some(6));
-    /// assert!(iter.next() == Option::None);
+    /// assert!(iter.next() == Some(2));
+    /// assert!(iter.next() == Some(4));
+    /// assert!(iter.next() == Some(6));
+    /// assert!(iter.next() == None);
     /// ```
     ///
     /// If you're doing some sort of side effect, prefer `for` to `map()`:
@@ -162,10 +229,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array!['a', 'b', 'c'].into_iter().enumerate();
     ///
-    /// assert_eq!(iter.next(), Option::Some((0, 'a')));
-    /// assert_eq!(iter.next(), Option::Some((1, 'b')));
-    /// assert_eq!(iter.next(), Option::Some((2, 'c')));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((0, 'a')));
+    /// assert_eq!(iter.next(), Some((1, 'b')));
+    /// assert_eq!(iter.next(), Some((2, 'c')));
+    /// assert_eq!(iter.next(), None);
     /// ```
     #[inline]
     fn enumerate(self: T) -> Enumerate<T> {
@@ -261,8 +328,8 @@ pub trait Iterator<T> {
         ref self: T, init: B, f: F,
     ) -> B {
         match Self::next(ref self) {
-            Option::None => init,
-            Option::Some(x) => Self::fold(ref self, f(init, x), f),
+            None => init,
+            Some(x) => Self::fold(ref self, f(init, x), f),
         }
     }
 
@@ -274,8 +341,8 @@ pub trait Iterator<T> {
     ///
     /// In other words, it zips two iterators together, into a single one.
     ///
-    /// If either iterator returns [`Option::None`], [`next`] from the zipped iterator
-    /// will return [`Option::None`].
+    /// If either iterator returns [`None`], [`next`] from the zipped iterator
+    /// will return [`None`].
     /// If the zipped iterator has no more elements to return then each further attempt to advance
     /// it will first try to advance the first iterator at most one time and if it still yielded an
     /// item try to advance the second iterator at most one time.
@@ -287,10 +354,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6].into_iter());
     ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
     /// ```
     ///
     /// Since the argument to `zip()` uses [`IntoIterator`], we can pass
@@ -300,10 +367,10 @@ pub trait Iterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter().zip(array![4, 5, 6]);
     ///
-    /// assert_eq!(iter.next(), Option::Some((1, 4)));
-    /// assert_eq!(iter.next(), Option::Some((2, 5)));
-    /// assert_eq!(iter.next(), Option::Some((3, 6)));
-    /// assert_eq!(iter.next(), Option::None);
+    /// assert_eq!(iter.next(), Some((1, 4)));
+    /// assert_eq!(iter.next(), Some((2, 5)));
+    /// assert_eq!(iter.next(), Some((3, 6)));
+    /// assert_eq!(iter.next(), None);
     /// ``
     ///
     /// [`enumerate`]: Iterator::enumerate
@@ -313,6 +380,123 @@ pub trait Iterator<T> {
         self: T, other: U,
     ) -> Zip<T, UIntoIter::IntoIter> {
         zipped_iterator(self, other.into_iter())
+    }
+
+    /// Transforms an iterator into a collection.
+    ///
+    /// `collect()` can take anything iterable, and turn it into a relevant
+    /// collection. This is one of the more powerful methods in the core
+    /// library, used in a variety of contexts.
+    ///
+    /// The most basic pattern in which `collect()` is used is to turn one
+    /// collection into another. You take a collection, call [`iter`] on it,
+    /// do a bunch of transformations, and then `collect()` at the end.
+    ///
+    /// `collect()` can also create instances of types that are not typical
+    /// collections.
+    ///
+    /// Because `collect()` is so general, it can cause problems with type
+    /// inference. As such, `collect()` is one of the few times you'll see
+    /// the syntax affectionately known as the 'turbofish': `::<>`. This
+    /// helps the inference algorithm understand specifically which collection
+    /// you're trying to collect into.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let doubled: Array<u32> = array![1, 2, 3].into_iter().map(|x| x * 2).collect();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Note that we needed the `: Array<u32>` on the left-hand side.
+    ///
+    /// Using the 'turbofish' instead of annotating `doubled`:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<u32>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    ///
+    /// Because `collect()` only cares about what you're collecting into, you can
+    /// still use a partial type hint, `_`, with the turbofish:
+    ///
+    /// ```
+    /// let doubled = array![1, 2, 3].into_iter().map(|x| x * 2).collect::<Array<_>>();
+    ///
+    /// assert_eq!(array![2, 4, 6], doubled);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
+        self: T,
+    ) -> B {
+        FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
+    }
+
+    /// Creates an iterator which can use the [`peek`] method to look at the next element of the
+    /// iterator. See its documentation for more information.
+    ///
+    /// Note that the underlying iterator is still advanced when [`peek`] is called for the first
+    /// time: In order to retrieve the next element, [`next`] is called on the underlying iterator,
+    /// hence any side effects (i.e. anything other than fetching the next value) of the [`next`]
+    /// method will occur.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = (1..4_u8).into_iter().peekable();
+    ///
+    /// // peek() lets us see one step into the future
+    /// assert_eq!(iter.peek(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(1));
+    ///
+    /// assert_eq!(iter.next(), Option::Some(2));
+    ///
+    /// // we can peek() multiple times, the iterator won't advance
+    /// assert_eq!(iter.peek(), Option::Some(3));
+    /// assert_eq!(iter.peek(), Option::Some(3));
+    ///
+    /// assert_eq!(iter.next(), Option::Some(3));
+    ///
+    /// // after the iterator is finished, so is peek()
+    /// assert_eq!(iter.peek(), Option::None);
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn peekable(self: T) -> Peekable<T, Self::Item> {
+        peekable_iterator(self)
+    }
+
+    /// Iterates over the entire iterator, multiplying all the elements
+    ///
+    /// An empty iterator returns the one value of the type.
+    ///
+    /// # Panics
+    ///
+    /// When calling `product()` and a primitive integer type is being returned, this
+    /// method will panic if the computation overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// fn factorial(n: u32) -> u32 {
+    ///     (1..=n).into_iter().product()
+    /// }
+    /// assert_eq!(factorial(0), 1);
+    /// assert_eq!(factorial(1), 1);
+    /// assert_eq!(factorial(5), 120);
+    /// ```
+    fn product<+Destruct<T>, +Destruct<Self::Item>, +Product<Self::Item>>(
+        self: T,
+    ) -> Self::Item {
+        Product::<Self::Item>::product::<T, Self>(self)
     }
 
     /// Takes two iterators and creates a new iterator over both in sequence.

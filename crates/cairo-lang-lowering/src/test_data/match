@@ -396,7 +396,7 @@ test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    match Option::Some(5) {};
+    match Some(5) {};
 }
 
 //! > function_name
@@ -409,13 +409,13 @@ foo
 //! > lowering_diagnostics
 error: Missing match arm: `Some` not covered.
  --> lib.cairo:2:5
-    match Option::Some(5) {};
-    ^^^^^^^^^^^^^^^^^^^^^^^^
+    match Some(5) {};
+    ^^^^^^^^^^^^^^^^
 
 error: Missing match arm: `None` not covered.
  --> lib.cairo:2:5
-    match Option::Some(5) {};
-    ^^^^^^^^^^^^^^^^^^^^^^^^
+    match Some(5) {};
+    ^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:
@@ -772,8 +772,8 @@ test_function_lowering(expect_diagnostics: true)
 //! > function
 fn foo(a: Option<Option<felt252>>) -> felt252 {
     match a {
-        Option::Some(Option::Some(x)) => x,
-        Option::None(_) => 1,
+        Some(Some(x)) => x,
+        None(_) => 1,
     }
 }
 
@@ -786,9 +786,9 @@ foo
 
 //! > lowering_diagnostics
 error: Inner patterns are not in this context.
- --> lib.cairo:3:22
-        Option::Some(Option::Some(x)) => x,
-                     ^^^^^^^^^^^^^^^
+ --> lib.cairo:3:14
+        Some(Some(x)) => x,
+             ^^^^^^^
 
 //! > lowering_flat
 Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>

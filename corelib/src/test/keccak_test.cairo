@@ -6,7 +6,7 @@ fn test_keccak_syscall() {
         starknet::syscalls::keccak_syscall(
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].span(),
         ),
-        Result::Ok(0xd2eb808dfba4703c528d145dfe6571afec687be9c50d2218388da73622e8fdd5),
+        Ok(0xd2eb808dfba4703c528d145dfe6571afec687be9c50d2218388da73622e8fdd5),
     );
 }
 

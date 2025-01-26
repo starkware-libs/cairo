@@ -21,5 +21,5 @@ fn build(self: Tag) {
 #[available_gas(1000000)]
 #[should_panic(expected: ('Option::unwrap failed.',))]
 fn test_build_empty() {
-    build(Tag { children: Option::None });
+    build(Tag { children: None });
 }

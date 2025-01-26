@@ -7,9 +7,9 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(flag: bool, x: u128) -> Option<A> {
     let a = A { x };
     if flag {
-        Option::Some(a)
+        Some(a)
     } else {
-        Option::None
+        None
     }
 }
 
@@ -27,8 +27,8 @@ impl ADestruct of Destruct<A> {
         let A { x } = self;
         // Use RangeCheck, a previously unused implicit.
         match core::integer::u128_overflowing_add(x, 2_u128) {
-            Result::Ok(v) => v,
-            Result::Err(v) => v,
+            Ok(v) => v,
+            Err(v) => v,
         };
     }
 }

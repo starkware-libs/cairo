@@ -39,8 +39,8 @@
 //! ```
 //!
 //! An iterator has a method, [`next`], which when called, returns an
-//! <code>[Option]\<Item></code>. Calling [`next`] will return [`Option::Some(Item)`] as long as
-//! there are elements, and once they've all been exhausted, will return `Option::None` to
+//! <code>[Option]\<Item></code>. Calling [`next`] will return [`Some(Item)`] as long as
+//! there are elements, and once they've all been exhausted, will return `None` to
 //! indicate that iteration is finished.
 //!
 //! [`Iterator`]'s full definition includes a number of other methods as well,
@@ -51,7 +51,7 @@
 //! more complex forms of processing. See the [Adapters](#adapters) section
 //! below for more details.
 //!
-//! [`Option::Some(Item)`]: Option::Some
+//! [`Some(Item)`]: Some
 //! [`next`]: Iterator::next
 //!
 //! # Forms of iteration
@@ -101,9 +101,9 @@
 //!
 //!         // Check to see if we've finished counting or not.
 //!         if self.count < 6 {
-//!             Option::Some(self.count)
+//!             Some(self.count)
 //!         } else {
-//!             Option::None
+//!             None
 //!         }
 //!     }
 //! }
@@ -112,16 +112,16 @@
 //!
 //! let mut counter = CounterTrait::new();
 //!
-//! assert!(counter.next() == Option::Some(1));
-//! assert!(counter.next() == Option::Some(2));
-//! assert!(counter.next() == Option::Some(3));
-//! assert!(counter.next() == Option::Some(4));
-//! assert!(counter.next() == Option::Some(5));
-//! assert!(counter.next() == Option::None);
+//! assert!(counter.next() == Some(1));
+//! assert!(counter.next() == Some(2));
+//! assert!(counter.next() == Some(3));
+//! assert!(counter.next() == Some(4));
+//! assert!(counter.next() == Some(5));
+//! assert!(counter.next() == None);
 //! ```
 //!
 //! Calling [`next`] this way gets repetitive. Cairo has a construct which can
-//! call [`next`] on your iterator, until it reaches `Option::None`. Let's go over that
+//! call [`next`] on your iterator, until it reaches `None`. Let's go over that
 //! next.
 //!
 //! # `for` loops and `IntoIterator`
@@ -166,8 +166,8 @@
 //!     let result = loop {
 //!             let mut next = 0;
 //!             match iter.next() {
-//!                 Option::Some(val) => next = val,
-//!                 Option::None => {
+//!                 Some(val) => next = val,
+//!                 None => {
 //!                     break;
 //!                 },
 //!             };
@@ -179,7 +179,7 @@
 //! ```
 //!
 //! First, we call `into_iter()` on the value. Then, we match on the iterator
-//! that returns, calling [`next`] over and over until we see a `Option::None`. At
+//! that returns, calling [`next`] over and over until we see a `None`. At
 //! that point, we `break` out of the loop, and we're done iterating.
 //!
 //! There's one more subtle bit here: the core library contains an
@@ -231,4 +231,5 @@
 //! [`map`]: Iterator::map
 mod adapters;
 mod traits;
-pub use traits::{FromIterator, IntoIterator, Iterator};
+pub use adapters::PeekableTrait;
+pub use traits::{FromIterator, IntoIterator, Iterator, Product};

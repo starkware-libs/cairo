@@ -24,10 +24,12 @@ use crate::integer::{
     u8,
 };
 use crate::nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
+use crate::option::Option::{None, Some};
 use crate::option::{Option, OptionTrait};
 use crate::panics::{Panic, PanicResult, panic};
 use crate::pedersen::Pedersen;
 use crate::poseidon::Poseidon;
+use crate::result::Result::{Err, Ok};
 use crate::result::{Result, ResultTrait};
 use crate::serde::Serde;
 use crate::starknet::System;

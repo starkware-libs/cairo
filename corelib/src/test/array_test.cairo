@@ -148,40 +148,40 @@ fn test_fixed_size_array_copy() {
 
 /// Helper for tests removing the box wrapping a fixed sized array wrapped by an option.
 fn debox<T, const SIZE: usize>(value: Option<@Box<[T; SIZE]>>) -> Option<@[T; SIZE]> {
-    Option::Some(value?.as_snapshot().unbox())
+    Some(value?.as_snapshot().unbox())
 }
 
 #[test]
 fn test_span_into_fixed_size_array() {
     assert!(debox::<felt252, 2>([10, 11, 12].span().try_into()).is_none());
-    assert!(debox::<felt252, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<felt252, 3>([10, 11, 12].span().try_into()) == Some(@[10, 11, 12]));
     assert!(debox::<felt252, 4>([10, 11, 12].span().try_into()).is_none());
     assert!(debox::<u256, 2>([10, 11, 12].span().try_into()).is_none());
-    assert!(debox::<u256, 3>([10, 11, 12].span().try_into()) == Option::Some(@[10, 11, 12]));
+    assert!(debox::<u256, 3>([10, 11, 12].span().try_into()) == Some(@[10, 11, 12]));
     assert!(debox::<u256, 4>([10, 11, 12].span().try_into()).is_none());
     assert!(debox::<felt252, 1>([].span().try_into()).is_none());
-    assert!(debox::<felt252, 0>([].span().try_into()) == Option::Some(@[]));
+    assert!(debox::<felt252, 0>([].span().try_into()) == Some(@[]));
 }
 
 #[test]
 fn test_span_multi_pop() {
     let mut span = array![10, 11, 12, 13].span();
     assert!(span.multi_pop_front::<5>().is_none());
-    assert!(debox(span.multi_pop_front::<4>()) == Option::Some(@[10, 11, 12, 13]));
+    assert!(debox(span.multi_pop_front::<4>()) == Some(@[10, 11, 12, 13]));
     let mut span = array![10, 11, 12, 13].span();
-    assert!(debox(span.multi_pop_front::<3>()) == Option::Some(@[10, 11, 12]));
+    assert!(debox(span.multi_pop_front::<3>()) == Some(@[10, 11, 12]));
     let mut span = array![10, 11, 12, 13].span();
     assert!(span.multi_pop_back::<5>().is_none());
-    assert!(debox(span.multi_pop_back::<4>()) == Option::Some(@[10, 11, 12, 13]));
+    assert!(debox(span.multi_pop_back::<4>()) == Some(@[10, 11, 12, 13]));
     let mut span = array![10, 11, 12, 13].span();
-    assert!(debox(span.multi_pop_back::<3>()) == Option::Some(@[11, 12, 13]));
+    assert!(debox(span.multi_pop_back::<3>()) == Some(@[11, 12, 13]));
 }
 
 #[test]
 fn test_span_iterator() {
     let mut iter = array![10, 11, 12, 13_felt252].span().into_iter();
     let mut i = 10;
-    while let Option::Some(value) = iter.next() {
+    while let Some(value) = iter.next() {
         assert_eq!(value, @i);
         i += 1;
     }
@@ -191,7 +191,7 @@ fn test_span_iterator() {
 fn test_array_iterator() {
     let mut iter = array![10, 11, 12, 13].into_iter();
     let mut i = 10;
-    while let Option::Some(value) = iter.next() {
+    while let Some(value) = iter.next() {
         assert_eq!(value, i);
         i += 1;
     }
@@ -200,10 +200,10 @@ fn test_array_iterator() {
 #[test]
 fn test_snapshot_fixed_size_array_iterator() {
     let mut iter = (@[10_usize, 11, 12, 13]).into_iter();
-    assert_eq!(iter.next(), Option::Some(@10));
-    assert_eq!(iter.next(), Option::Some(@11));
-    assert_eq!(iter.next(), Option::Some(@12));
-    assert_eq!(iter.next(), Option::Some(@13));
+    assert_eq!(iter.next(), Some(@10));
+    assert_eq!(iter.next(), Some(@11));
+    assert_eq!(iter.next(), Some(@12));
+    assert_eq!(iter.next(), Some(@13));
     assert!(iter.next().is_none());
 }
 
@@ -216,22 +216,22 @@ fn test_empty_snapshot_fixed_size_array_iterator() {
 
 fn test_snapshot_array_into_iter() {
     let mut iter = (@array![1, 2, 3, 4, 5]).into_iter();
-    assert_eq!(iter.next(), Option::Some(@1));
-    assert_eq!(iter.next(), Option::Some(@2));
-    assert_eq!(iter.next(), Option::Some(@3));
-    assert_eq!(iter.next(), Option::Some(@4));
-    assert_eq!(iter.next(), Option::Some(@5));
+    assert_eq!(iter.next(), Some(@1));
+    assert_eq!(iter.next(), Some(@2));
+    assert_eq!(iter.next(), Some(@3));
+    assert_eq!(iter.next(), Some(@4));
+    assert_eq!(iter.next(), Some(@5));
     assert!(iter.next().is_none());
 }
 
 #[test]
 fn test_snapshot_span_into_iter() {
     let mut iter = (@(array![1, 2, 3, 4, 5].span())).into_iter();
-    assert_eq!(iter.next(), Option::Some(@1));
-    assert_eq!(iter.next(), Option::Some(@2));
-    assert_eq!(iter.next(), Option::Some(@3));
-    assert_eq!(iter.next(), Option::Some(@4));
-    assert_eq!(iter.next(), Option::Some(@5));
+    assert_eq!(iter.next(), Some(@1));
+    assert_eq!(iter.next(), Some(@2));
+    assert_eq!(iter.next(), Some(@3));
+    assert_eq!(iter.next(), Some(@4));
+    assert_eq!(iter.next(), Some(@5));
     assert!(iter.next().is_none());
 }
 

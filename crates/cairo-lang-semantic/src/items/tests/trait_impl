@@ -551,7 +551,7 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
     x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
@@ -614,7 +614,7 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
     x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
@@ -1012,7 +1012,7 @@ fn foo() -> felt252 {
 fn bar<T, impl I: IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = I::Impl::next(ref x) {
+    while let Some(_) = I::Impl::next(ref x) {
         y += 1;
     };
     y;
@@ -1048,7 +1048,7 @@ fn foo() -> felt252 {
 fn bar<T, +IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = x.next() {
+    while let Some(_) = x.next() {
         y += 1;
     };
     y;
@@ -1137,6 +1137,14 @@ error: Trait has no implementation in context: test::OtherTrait.
  --> lib.cairo:7:1
 impl MyImpl of MyTrait {}
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:8:10-10:1
+  fn foo() {
+ __________^
+|     MyImpl::I::f()
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -1280,3 +1288,82 @@ mod my_mod {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > implicit impl is not found when implizing generic impl argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    1_u64.foo(1_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Outer<R> {
+    impl InnerImpl: Inner<R>;
+    type Item;
+    fn into(self: R) -> Self::Item;
+}
+trait Inner<R> {
+    type Item;
+    fn foo<
+        U,
+        impl OuterU: Outer<U>,
+        +core::metaprogramming::TypeEqual<Self::Item, OuterU::InnerImpl::Item>,
+        +Destruct<R>,
+    >(
+        self: R, u: U,
+    ) -> (R, U) {
+        (self, u.into())
+    }
+}
+
+impl InnerU64 of Inner<u64> {
+    type Item = u32;
+}
+
+impl OuterU32 of Outer<u32> {
+    type Item = u64;
+    fn into(self: u32) -> u64 {
+        self.into()
+    }
+}
+
+//! > expected_diagnostics
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:16:18
+        (self, u.into())
+                 ^^^^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:27:14
+        self.into()
+             ^^^^
+
+error: Cannot infer implicit impl `InnerImpl.`
+Could not find implementation of trait `test::Inner::<core::integer::u32>`
+ --> lib.cairo:24:1-29:1
+  impl OuterU32 of Outer<u32> {
+ _^
+| ...
+| }
+|_^
+
+error: Trait has no implementation in context: test::Inner::<core::integer::u32>.
+ --> lib.cairo:24:1-29:1
+  impl OuterU32 of Outer<u32> {
+ _^
+| ...
+| }
+|_^
+
+error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, OuterU32::test::Inner::<core::integer::u32>::Item>.
+ --> lib.cairo:31:11
+    1_u64.foo(1_u32);
+          ^^^
