@@ -85,6 +85,32 @@ pub trait Iterator<T> {
         })
     }
 
+    /// Consumes the iterator, returning the last element.
+    ///
+    /// This method will evaluate the iterator until it returns [`None`]. While
+    /// doing so, it keeps track of the current element. After [`None`] is
+    /// returned, `last()` will then return the last element it saw.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = array![1, 2, 3].into_iter();
+    /// assert_eq!(a.last(), Option::Some(3));
+    ///
+    /// let mut a = array![].into_iter();
+    /// assert_eq!(a.last(), Option::None);
+    /// ```
+    #[inline]
+    fn last<+Destruct<T>, +Destruct<Self::Item>>(
+        self: T,
+    ) -> Option<
+        Self::Item,
+    > {
+        let mut self = self;
+        let next = Self::next(ref self)?;
+        Option::Some(Self::last(self).unwrap_or(next))
+    }
+
     /// Advances the iterator by `n` elements.
     ///
     /// This method will eagerly skip `n` elements by calling [`next`] up to `n`
