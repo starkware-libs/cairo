@@ -1,3 +1,5 @@
+use core::iter::PeekableTrait;
+
 #[test]
 fn test_iter_count() {
     let mut empty_iter = ArrayTrait::<usize>::new().into_iter();
@@ -69,4 +71,23 @@ fn test_iter_adapter_fold() {
 #[test]
 fn test_iter_adapter_collect() {
     assert_eq!((0..3_u32).into_iter().collect(), array![0, 1, 2]);
+}
+
+#[test]
+fn test_iter_adapter_peekable() {
+    let mut iter = (1..4_u8).into_iter().peekable();
+
+    // peek() lets us see one step into the future
+    assert_eq!(iter.peek(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+
+    // The iterator does not advance even if we `peek` multiple times
+    assert_eq!(iter.peek(), Option::Some(3));
+    assert_eq!(iter.peek(), Option::Some(3));
+    assert_eq!(iter.next(), Option::Some(3));
+
+    // After the iterator is finished, so is `peek()`
+    assert_eq!(iter.peek(), Option::None);
+    assert_eq!(iter.next(), Option::None);
 }

@@ -1,5 +1,6 @@
 use crate::iter::adapters::{
-    Enumerate, Map, Zip, enumerated_iterator, mapped_iterator, zipped_iterator,
+    Enumerate, Map, Peekable, Zip, enumerated_iterator, mapped_iterator, peekable_iterator,
+    zipped_iterator,
 };
 
 /// A trait for dealing with iterators.
@@ -406,5 +407,42 @@ pub trait Iterator<T> {
         self: T,
     ) -> B {
         FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
+    }
+
+    /// Creates an iterator which can use the [`peek`] method to look at the next element of the
+    /// iterator. See its documentation for more information.
+    ///
+    /// Note that the underlying iterator is still advanced when [`peek`] is called for the first
+    /// time: In order to retrieve the next element, [`next`] is called on the underlying iterator,
+    /// hence any side effects (i.e. anything other than fetching the next value) of the [`next`]
+    /// method will occur.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = (1..4_u8).into_iter().peekable();
+    ///
+    /// // peek() lets us see one step into the future
+    /// assert_eq!(iter.peek(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(1));
+    ///
+    /// assert_eq!(iter.next(), Option::Some(2));
+    ///
+    /// // we can peek() multiple times, the iterator won't advance
+    /// assert_eq!(iter.peek(), Option::Some(3));
+    /// assert_eq!(iter.peek(), Option::Some(3));
+    ///
+    /// assert_eq!(iter.next(), Option::Some(3));
+    ///
+    /// // after the iterator is finished, so is peek()
+    /// assert_eq!(iter.peek(), Option::None);
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn peekable(self: T) -> Peekable<T, Self::Item> {
+        peekable_iterator(self)
     }
 }
