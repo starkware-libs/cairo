@@ -11,18 +11,18 @@
 //!
 //! // Checked addition
 //! let a: u8 = 1;
-//! assert!(a.checked_add(2) == Option::Some(3));
-//! assert!(a.checked_add(255) == Option::None); // Overflow
+//! assert!(a.checked_add(2) == Some(3));
+//! assert!(a.checked_add(255) == None); // Overflow
 //!
 //! // Checked subtraction
 //! let b: u8 = 1;
-//! assert!(b.checked_sub(1) == Option::Some(0));
-//! assert!(b.checked_sub(2) == Option::None); // Underflow
+//! assert!(b.checked_sub(1) == Some(0));
+//! assert!(b.checked_sub(2) == None); // Underflow
 //!
 //! // Checked multiplication
 //! let c: u8 = 10;
-//! assert!(c.checked_mul(20) == Option::Some(200));
-//! assert!(c.checked_mul(30) == Option::None); // Overflow
+//! assert!(c.checked_mul(20) == Some(200));
+//! assert!(c.checked_mul(30) == None); // Overflow
 //! ```
 
 /// Performs addition that returns `None` instead of wrapping around on
@@ -34,10 +34,10 @@
 /// use core::num::traits::CheckedAdd;
 ///
 /// let result = 1_u8.checked_add(2);
-/// assert!(result == Option::Some(3));
+/// assert!(result == Some(3));
 ///
 /// let result = 255_u8.checked_add(1);
-/// assert!(result == Option::None); // Overflow
+/// assert!(result == None); // Overflow
 /// ```
 pub trait CheckedAdd<T> {
     /// Adds two numbers, checking for overflow. If overflow happens, `None` is
@@ -53,10 +53,10 @@ pub trait CheckedAdd<T> {
 /// use core::num::traits::CheckedSub;
 ///
 /// let result = 1_u8.checked_sub(1);
-/// assert!(result == Option::Some(0));
+/// assert!(result == Some(0));
 ///
 /// let result = 1_u8.checked_sub(2);
-/// assert!(result == Option::None); // Underflow
+/// assert!(result == None); // Underflow
 /// ```
 pub trait CheckedSub<T> {
     /// Subtracts two numbers, checking for underflow. If underflow happens,
@@ -73,10 +73,10 @@ pub trait CheckedSub<T> {
 /// use core::num::traits::CheckedMul;
 ///
 /// let result = 10_u8.checked_mul(20);
-/// assert!(result == Option::Some(200));
+/// assert!(result == Some(200));
 ///
 /// let result = 10_u8.checked_mul(30);
-/// assert!(result == Option::None); // Overflow
+/// assert!(result == None); // Overflow
 /// ```
 pub trait CheckedMul<T> {
     /// Multiplies two numbers, checking for underflow or overflow. If underflow
@@ -91,8 +91,8 @@ pub(crate) mod overflow_based {
         fn checked_add(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_add(v);
             match overflow {
-                true => Option::None,
-                false => Option::Some(result),
+                true => None,
+                false => Some(result),
             }
         }
     }
@@ -103,8 +103,8 @@ pub(crate) mod overflow_based {
         fn checked_sub(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_sub(v);
             match overflow {
-                true => Option::None,
-                false => Option::Some(result),
+                true => None,
+                false => Some(result),
             }
         }
     }
@@ -115,8 +115,8 @@ pub(crate) mod overflow_based {
         fn checked_mul(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_mul(v);
             match overflow {
-                true => Option::None,
-                false => Option::Some(result),
+                true => None,
+                false => Some(result),
             }
         }
     }

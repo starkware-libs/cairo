@@ -127,7 +127,7 @@ fn test_get_available_gas_with_gas_supply() {
 
 #[test]
 fn test_assert_eq_path_requiring_inference() {
-    assert_eq!(Option::<u32>::None, Option::None);
+    assert_eq!(Option::<u32>::None, None);
 }
 
 #[inline(never)]

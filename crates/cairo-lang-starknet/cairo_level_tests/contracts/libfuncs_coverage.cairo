@@ -517,8 +517,8 @@ fn snapshot_libfuncs(libfuncs: SnapshotLibfuncs) {
     match libfuncs {
         SnapshotLibfuncs::BoxForward(snap) => use_and_panic(snap.as_snapshot()),
         SnapshotLibfuncs::Match(snap) => match snap {
-            Option::Some(value) => use_and_panic(value),
-            Option::None => {},
+            Some(value) => use_and_panic(value),
+            None => {},
         },
     }
 }

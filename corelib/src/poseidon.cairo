@@ -139,12 +139,12 @@ fn _poseidon_hash_span_inner(
 ) -> felt252 {
     let (s0, s1, s2) = state;
     let x = *match span.pop_front() {
-        Option::Some(x) => x,
-        Option::None => { return HashState { s0, s1, s2, odd: false }.finalize(); },
+        Some(x) => x,
+        None => { return HashState { s0, s1, s2, odd: false }.finalize(); },
     };
     let y = *match span.pop_front() {
-        Option::Some(y) => y,
-        Option::None => { return HashState { s0: s0 + x, s1, s2, odd: true }.finalize(); },
+        Some(y) => y,
+        None => { return HashState { s0: s0 + x, s1, s2, odd: true }.finalize(); },
     };
     let next_state = hades_permutation(s0 + x, s1 + y, s2);
     crate::gas::withdraw_gas_all(builtin_costs).expect('Out of gas');

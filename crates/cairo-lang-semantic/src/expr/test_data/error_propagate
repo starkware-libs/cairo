@@ -142,7 +142,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() -> Option<felt252> {
     6_u32?;
-    Option::None
+    None
 }
 
 //! > function_name

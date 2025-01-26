@@ -174,8 +174,8 @@ fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T,
     let mut span = reversed_digits.span();
     loop {
         match span.pop_back() {
-            Option::Some(byte) => { byte_array.append_byte(*byte); },
-            Option::None => { break; },
+            Some(byte) => { byte_array.append_byte(*byte); },
+            None => { break; },
         };
     };
 }

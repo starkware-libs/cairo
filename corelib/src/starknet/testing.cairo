@@ -201,7 +201,7 @@ pub fn set_block_hash(block_number: u64, value: felt252) {
 /// If called until `None` is returned, all events have been popped.
 pub fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>)> {
     let mut log = cheatcode::<'pop_log'>([address.into()].span());
-    Option::Some((Serde::deserialize(ref log)?, Serde::deserialize(ref log)?))
+    Some((Serde::deserialize(ref log)?, Serde::deserialize(ref log)?))
 }
 
 /// Pop the earliest unpopped logged event for the contract as the requested type.
@@ -235,15 +235,15 @@ pub fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt
 ///     let contract_address = somehow_get_contract_address();
 ///     call_code_causing_events(contract_address);
 ///     assert_eq!(
-///         starknet::testing::pop_log(contract_address), Option::Some(contract::Event::Event1(42))
+///         starknet::testing::pop_log(contract_address), Some(contract::Event::Event1(42))
 ///     );
 ///     assert_eq!(
-///         starknet::testing::pop_log(contract_address), Option::Some(contract::Event::Event2(41))
+///         starknet::testing::pop_log(contract_address), Some(contract::Event::Event2(41))
 ///     );
 ///     assert_eq!(
-///         starknet::testing::pop_log(contract_address), Option::Some(contract::Event::Event1(40))
+///         starknet::testing::pop_log(contract_address), Some(contract::Event::Event1(40))
 ///     );
-///     assert_eq!(starknet::testing::pop_log_raw(contract_address), Option::None);
+///     assert_eq!(starknet::testing::pop_log_raw(contract_address), None);
 /// }
 /// ```
 pub fn pop_log<T, +starknet::Event<T>>(address: ContractAddress) -> Option<T> {
@@ -264,7 +264,5 @@ pub fn pop_log<T, +starknet::Event<T>>(address: ContractAddress) -> Option<T> {
 /// Useful for testing the contract's l2 to l1 message emission.
 pub fn pop_l2_to_l1_message(address: ContractAddress) -> Option<(felt252, Span<felt252>)> {
     let mut l2_to_l1_message = cheatcode::<'pop_l2_to_l1_message'>([address.into()].span());
-    Option::Some(
-        (Serde::deserialize(ref l2_to_l1_message)?, Serde::deserialize(ref l2_to_l1_message)?),
-    )
+    Some((Serde::deserialize(ref l2_to_l1_message)?, Serde::deserialize(ref l2_to_l1_message)?))
 }

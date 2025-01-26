@@ -271,8 +271,8 @@ SmallE2ETestRunner
 //! > cairo
 fn foo(b: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match math::u256_guarantee_inv_mod_n(b, n) {
-        Result::Ok((r, _, _, _, _, _, _, _, _)) => Option::Some(r),
-        Result::Err(_) => Option::None(()),
+        Ok((r, _, _, _, _, _, _, _, _)) => Some(r),
+        Err(_) => None(()),
     }
 }
 

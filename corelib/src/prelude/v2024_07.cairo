@@ -7,8 +7,10 @@ pub use crate::dict::Felt252DictTrait;
 pub use crate::integer::{i128, i16, i32, i64, i8, u128, u16, u256, u32, u64, u8};
 pub use crate::nullable::{Nullable, NullableTrait};
 pub use crate::ops::Deref;
+pub use crate::option::Option::{None, Some};
 pub use crate::option::{Option, OptionTrait};
 pub use crate::panics::{Panic, PanicResult, panic};
+pub use crate::result::Result::{Err, Ok};
 pub use crate::result::{Result, ResultTrait};
 pub use crate::serde::Serde;
 pub use crate::starknet::System;
@@ -18,7 +20,5 @@ pub use crate::traits::{
 };
 pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 pub use crate::{assert, bool, felt252, starknet, usize};
-use crate::option::Option::{None, Some};
-use crate::result::Result::{Err, Ok};
 
 pub use crate::zeroable::NonZero;

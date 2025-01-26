@@ -3,8 +3,8 @@ use core::integer::u256_from_felt252;
 #[test]
 fn reproduce_bug() {
     match core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) {
-        Option::Some(_) => {},
-        Option::None => { panic(array!['OOG']); },
+        Some(_) => {},
+        None => { panic(array!['OOG']); },
     }
     let a = 1;
     let b = 2;

@@ -18,9 +18,9 @@
 //! ```
 //! fn divide(numerator: u64, denominator: u64) -> Option<u64> {
 //!     if denominator == 0 {
-//!         Option::None
+//!         None
 //!     } else {
-//!         Option::Some(numerator / denominator)
+//!         Some(numerator / denominator)
 //!     }
 //! }
 //!
@@ -30,9 +30,9 @@
 //! // Pattern match to retrieve the value
 //! match result {
 //!     // The division was valid
-//!     Option::Some(x) => println!("Result: {x}"),
+//!     Some(x) => println!("Result: {x}"),
 //!     // The division was invalid
-//!     Option::None    => println!("Cannot divide by 0"),
+//!     None    => println!("Cannot divide by 0"),
 //! }
 //! ```
 //!
@@ -51,8 +51,8 @@
 //!     let b = array.pop_front();
 //!
 //!     match (a, b) {
-//!         (Option::Some(x), Option::Some(y)) => Option::Some(x + y),
-//!         _ => Option::None,
+//!         (Some(x), Some(y)) => Some(x + y),
+//!         _ => None,
 //!     }
 //! }
 //!
@@ -62,7 +62,7 @@
 //!
 //! ```
 //! fn add_last_numbers(mut array: Array<u32>) -> Option<u32> {
-//!     Option::Some(array.pop_front()? + array.pop_front()?)
+//!     Some(array.pop_front()? + array.pop_front()?)
 //!  }
 //! ```
 //!
@@ -73,8 +73,8 @@
 //! `?` can be used in functions that return [`Option`] because of the
 //! early return of [`None`] that it provides.
 //!
-//! [`Some`]: Option::Some
-//! [`None`]: Option::None
+//! [`Some`]: Some
+//! [`None`]: None
 //!
 //! # Method overview
 //!
@@ -119,9 +119,9 @@
 //! * [`ok_or_else`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
 //!   a value of [`Err`] using the provided function
 //!
-//! [`Err(err)`]: Result::Err
-//! [`Ok(v)`]: Result::Ok
-//! [`Some(v)`]: Option::Some
+//! [`Err(err)`]: Err
+//! [`Ok(v)`]: Ok
+//! [`Some(v)`]: Some
 //! [`ok_or`]: OptionTrait::ok_or
 //! [`ok_or_else`]: OptionTrait::ok_or_else
 //!
@@ -212,7 +212,7 @@ pub enum Option<T> {
 
 impl OptionDefault<T> of Default<Option<T>> {
     fn default() -> Option<T> {
-        Option::None
+        None
     }
 }
 
@@ -220,8 +220,8 @@ pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>
     #[inline]
     fn destruct(self: Option<T>) nopanic {
         match self {
-            Option::Some(x) => x.destruct(),
-            Option::None => (),
+            Some(x) => x.destruct(),
+            None => (),
         };
     }
 }
@@ -236,7 +236,7 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// let value = option.expect('no value');
     /// assert!(value == 123);
     /// ```
@@ -251,35 +251,35 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// let value = option.unwrap();
     /// assert!(value == 123);
     /// ```
     const fn unwrap(self: Option<T>) -> T;
 
-    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
-    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Some(v)` to
+    /// `Ok(v)` and `None` to `Err(err)`.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some('foo').ok_or(0), Result::Ok('foo'));
+    /// assert_eq!(Some('foo').ok_or(0), Ok('foo'));
     ///
-    /// let option: Option<felt252> = Option::None;
-    /// assert_eq!(option.ok_or(0), Result::Err(0));
+    /// let option: Option<felt252> = None;
+    /// assert_eq!(option.ok_or(0), Err(0));
     /// ```
     fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
 
-    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
-    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err())`.
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Some(v)` to
+    /// `Ok(v)` and `None` to `Err(err())`.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some('foo').ok_or_else(|| 0), Result::Ok('foo'));
+    /// assert_eq!(Some('foo').ok_or_else(|| 0), Ok('foo'));
     ///
-    /// let option: Option<felt252> = Option::None;
-    /// assert_eq!(option.ok_or_else(|| 0), Result::Err(0));
+    /// let option: Option<felt252> = None;
+    /// assert_eq!(option.ok_or_else(|| 0), Err(0));
     /// ```
     fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
         self: Option<T>, err: F,
@@ -296,21 +296,21 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let x = Option::Some(2);
-    /// let y: Option<ByteArray> = Option::None;
-    /// assert_eq!(x.and(y), Option::None);
+    /// let x = Some(2);
+    /// let y: Option<ByteArray> = None;
+    /// assert_eq!(x.and(y), None);
     ///
-    /// let x: Option<u32> = Option::None;
-    /// let y: Option<ByteArray> = Option::Some("foo");
-    /// assert_eq!(x.and(y), Option::None);
+    /// let x: Option<u32> = None;
+    /// let y: Option<ByteArray> = Some("foo");
+    /// assert_eq!(x.and(y), None);
     ///
-    /// let x = Option::Some(2);
-    /// let y: Option<ByteArray> = Option::Some("foo");
-    /// assert_eq!(x.and(y), Option::Some("foo"));
+    /// let x = Some(2);
+    /// let y: Option<ByteArray> = Some("foo");
+    /// assert_eq!(x.and(y), Some("foo"));
     ///
-    /// let x: Option<u32> = Option::None;
-    /// let y: Option<ByteArray> = Option::None;
-    /// assert_eq!(x.and(y), Option::None);
+    /// let x: Option<u32> = None;
+    /// let y: Option<ByteArray> = None;
+    /// assert_eq!(x.and(y), None);
     /// ```
     fn and<U, +Drop<T>, +Drop<U>>(self: Option<T>, optb: Option<U>) -> Option<U>;
 
@@ -325,16 +325,16 @@ pub trait OptionTrait<T> {
     /// use core::num::traits::CheckedMul;
     ///
     /// let option: Option<ByteArray> = checked_mul(2_u32, 2_u32)
-    ///     .and_then(|v| Option::Some(format!("{}", v)));
-    /// assert_eq!(option, Option::Some("4"));
+    ///     .and_then(|v| Some(format!("{}", v)));
+    /// assert_eq!(option, Some("4"));
     ///
     /// let option: Option<ByteArray> = checked_mul(65536_u32, 65536_u32)
-    ///     .and_then(|v| Option::Some(format!("{}", v)));
-    /// assert_eq!(option, Option::None); // overflowed!
+    ///     .and_then(|v| Some(format!("{}", v)));
+    /// assert_eq!(option, None); // overflowed!
     ///
     /// let option: Option<ByteArray> = Option::<u32>::None
-    ///     .and_then(|v| Option::Some(format!("{}", v)));
-    /// assert_eq!(option, Option::None);
+    ///     .and_then(|v| Some(format!("{}", v)));
+    /// assert_eq!(option, None);
     /// ```
     fn and_then<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: Option<U>]>(
         self: Option<T>, f: F,
@@ -351,21 +351,21 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let x = Option::Some(2);
-    /// let y = Option::None;
-    /// assert_eq!(x.or(y), Option::Some(2));
+    /// let x = Some(2);
+    /// let y = None;
+    /// assert_eq!(x.or(y), Some(2));
     ///
-    /// let x = Option::None;
-    /// let y = Option::Some(100);
-    /// assert_eq!(x.or(y), Option::Some(100));
+    /// let x = None;
+    /// let y = Some(100);
+    /// assert_eq!(x.or(y), Some(100));
     ///
-    /// let x = Option::Some(2);
-    /// let y = Option::Some(100);
-    /// assert_eq!(x.or(y), Option::Some(2));
+    /// let x = Some(2);
+    /// let y = Some(100);
+    /// assert_eq!(x.or(y), Some(2));
     ///
-    /// let x: Option<u32> = Option::None;
-    /// let y = Option::None;
-    /// assert_eq!(x.or(y), Option::None);
+    /// let x: Option<u32> = None;
+    /// let y = None;
+    /// assert_eq!(x.or(y), None);
     /// ```
     fn or<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T>;
 
@@ -378,9 +378,9 @@ pub trait OptionTrait<T> {
     /// let nobody = || Option::<ByteArray>::None;
     /// let vikings = || Option::<ByteArray>::Some("vikings");
     ///
-    /// assert_eq!(Option::Some("barbarians").or_else(vikings), Option::Some("barbarians"));
-    /// assert_eq!(Option::None.or_else(vikings), Option::Some("vikings"));
-    /// assert_eq!(Option::None.or_else(nobody), Option::None);
+    /// assert_eq!(Some("barbarians").or_else(vikings), Some("barbarians"));
+    /// assert_eq!(None.or_else(vikings), Some("vikings"));
+    /// assert_eq!(None.or_else(nobody), None);
     /// ```
     fn or_else<F, +Drop<F>, +core::ops::FnOnce<F, ()>[Output: Option<T>]>(
         self: Option<T>, f: F,
@@ -391,45 +391,45 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let x = Option::Some(2);
-    /// let y: Option<u32> = Option::None;
-    /// assert_eq!(x.xor(y), Option::Some(2));
+    /// let x = Some(2);
+    /// let y: Option<u32> = None;
+    /// assert_eq!(x.xor(y), Some(2));
     ///
-    /// let x: Option<u32> = Option::None;
-    /// let y = Option::Some(2);
-    /// assert_eq!(x.xor(y), Option::Some(2));
+    /// let x: Option<u32> = None;
+    /// let y = Some(2);
+    /// assert_eq!(x.xor(y), Some(2));
     ///
-    /// let x = Option::Some(2);
-    /// let y = Option::Some(2);
-    /// assert_eq!(x.xor(y), Option::None);
+    /// let x = Some(2);
+    /// let y = Some(2);
+    /// assert_eq!(x.xor(y), None);
     ///
-    /// let x: Option<u32> = Option::None;
-    /// let y: Option<u32> = Option::None;
-    /// assert_eq!(x.xor(y), Option::None);
+    /// let x: Option<u32> = None;
+    /// let y: Option<u32> = None;
+    /// assert_eq!(x.xor(y), None);
     /// ```
     fn xor<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T>;
 
-    /// Returns `true` if the `Option` is `Option::Some`, `false` otherwise.
+    /// Returns `true` if the `Option` is `Some`, `false` otherwise.
     ///
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// assert!(option.is_some());
     /// ```
     #[must_use]
     fn is_some(self: @Option<T>) -> bool;
 
-    /// Returns `true` if the `Option` is `Option::Some` and the value inside of it matches a
+    /// Returns `true` if the `Option` is `Some` and the value inside of it matches a
     /// predicate.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some(2_u8).is_some_and(|x| x > 1), true);
-    /// assert_eq!(Option::Some(0_u8).is_some_and(|x| x > 1), false);
+    /// assert_eq!(Some(2_u8).is_some_and(|x| x > 1), true);
+    /// assert_eq!(Some(0_u8).is_some_and(|x| x > 1), false);
     ///
-    /// let option: Option<u8> = Option::None;
+    /// let option: Option<u8> = None;
     /// assert_eq!(option.is_some_and(|x| x > 1), false);
     /// ```
     #[must_use]
@@ -437,27 +437,27 @@ pub trait OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> bool;
 
-    /// Returns `true` if the `Option` is `Option::None`, `false` otherwise.
+    /// Returns `true` if the `Option` is `None`, `false` otherwise.
     ///
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// assert!(!option.is_none());
     /// ```
     #[must_use]
     fn is_none(self: @Option<T>) -> bool;
 
-    /// Returns `true` if the `Option` is `Option::None` or the value inside of it matches a
+    /// Returns `true` if the `Option` is `None` or the value inside of it matches a
     /// predicate.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some(2_u8).is_none_or(|x| x > 1), true);
-    /// assert_eq!(Option::Some(0_u8).is_none_or(|x| x > 1), false);
+    /// assert_eq!(Some(2_u8).is_none_or(|x| x > 1), true);
+    /// assert_eq!(Some(0_u8).is_none_or(|x| x > 1), false);
     ///
-    /// let option: Option<u8> = Option::None;
+    /// let option: Option<u8> = None;
     /// assert_eq!(option.is_none_or(|x| x > 1), true);
     /// ```
     #[must_use]
@@ -465,30 +465,30 @@ pub trait OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> bool;
 
-    /// Returns the contained `Some` value if `self` is `Option::Some(x)`. Otherwise, returns the
+    /// Returns the contained `Some` value if `self` is `Some(x)`. Otherwise, returns the
     /// provided default.
     ///
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// assert!(option.unwrap_or(456) == 123);
     ///
-    /// let option = Option::None;
+    /// let option = None;
     /// assert!(option.unwrap_or(456) == 456);
     /// ```
     const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
 
-    /// Returns the contained `Some` value if `self` is `Option::Some(x)`. Otherwise, returns
+    /// Returns the contained `Some` value if `self` is `Some(x)`. Otherwise, returns
     /// `Default::<T>::default()`.
     ///
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
+    /// let option = Some(123);
     /// assert!(option.unwrap_or_default() == 123);
     ///
-    /// let option: Option<felt252> = Option::None;
+    /// let option: Option<felt252> = None;
     /// assert!(option.unwrap_or_default() == Default::default());
     /// ```
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
@@ -499,8 +499,8 @@ pub trait OptionTrait<T> {
     ///
     /// ```
     /// let k = 10;
-    /// assert!(Option::Some(4).unwrap_or_else(|| 2 * k) == 4);
-    /// assert!(Option::None.unwrap_or_else(|| 2 * k) == 20);
+    /// assert!(Some(4).unwrap_or_else(|| 2 * k) == 4);
+    /// assert!(None.unwrap_or_else(|| 2 * k) == 20);
     /// ```
     fn unwrap_or_else<
         F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>,
@@ -513,18 +513,18 @@ pub trait OptionTrait<T> {
     /////////////////////////////////////////////////////////////////////////
 
     /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
-    /// or returns `Option::None` (if `None`).
+    /// or returns `None` (if `None`).
     ///
     /// # Examples
     ///
     /// ```
-    /// let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
+    /// let maybe_some_string: Option<ByteArray> = Some("Hello, World!");
     /// // `Option::map` takes self *by value*, consuming `maybe_some_string`
     /// let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
-    /// assert!(maybe_some_len == Option::Some(13));
+    /// assert!(maybe_some_len == Some(13));
     ///
-    /// let x: Option<ByteArray> = Option::None;
-    /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
+    /// let x: Option<ByteArray> = None;
+    /// assert!(x.map(|s: ByteArray| s.len()) == None);
     /// ```
     fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
@@ -542,9 +542,9 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
+    /// assert_eq!(Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
     ///
-    /// let x: Option<ByteArray> = Option::None;
+    /// let x: Option<ByteArray> = None;
     /// assert_eq!(x.map_or(42, |v: ByteArray| v.len()), 42);
     /// ```
     #[must_use]
@@ -560,10 +560,10 @@ pub trait OptionTrait<T> {
     /// ```
     /// let k = 21;
     ///
-    /// let x = Option::Some("foo");
+    /// let x = Some("foo");
     /// assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 3);
     ///
-    /// let x: Option<ByteArray> = Option::None;
+    /// let x: Option<ByteArray> = None;
     /// assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
     /// ```
     fn map_or_else<
@@ -579,20 +579,20 @@ pub trait OptionTrait<T> {
         self: Option<T>, default: D, f: F,
     ) -> U;
 
-    /// Takes the value out of the option, leaving a [`Option::None`] in its place.
+    /// Takes the value out of the option, leaving a [`None`] in its place.
     ///
     /// # Examples
     ///
     /// ```
-    /// let mut x = Option::Some(2);
+    /// let mut x = Some(2);
     /// let y = x.take();
-    /// assert_eq!(x, Option::None);
-    /// assert_eq!(y, Option::Some(2));
+    /// assert_eq!(x, None);
+    /// assert_eq!(y, Some(2));
     ///
-    /// let mut x: Option<u32> = Option::None;
+    /// let mut x: Option<u32> = None;
     /// let y = x.take();
-    /// assert_eq!(x, Option::None);
-    /// assert_eq!(y, Option::None);
+    /// assert_eq!(x, None);
+    /// assert_eq!(y, None);
     /// ```
     fn take(ref self: Option<T>) -> Option<T>;
 
@@ -610,9 +610,9 @@ pub trait OptionTrait<T> {
     ///     *n % 2 == 0
     /// };
     ///
-    /// assert_eq!(Option::None.filter(is_even), Option::None);
-    /// assert_eq!(Option::Some(3).filter(is_even), Option::None);
-    /// assert_eq!(Option::Some(4).filter(is_even), Option::Some(4));
+    /// assert_eq!(None.filter(is_even), None);
+    /// assert_eq!(Some(3).filter(is_even), None);
+    /// assert_eq!(Some(4).filter(is_even), Some(4));
     /// ```
     fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
         self: Option<T>, predicate: P,
@@ -623,8 +623,8 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     const fn expect(self: Option<T>, err: felt252) -> T {
         match self {
-            Option::Some(x) => x,
-            Option::None => crate::panic_with_felt252(err),
+            Some(x) => x,
+            None => crate::panic_with_felt252(err),
         }
     }
 
@@ -636,8 +636,8 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline]
     fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E> {
         match self {
-            Option::Some(v) => Result::Ok(v),
-            Option::None => Result::Err(err),
+            Some(v) => Ok(v),
+            None => Err(err),
         }
     }
 
@@ -646,16 +646,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, err: F,
     ) -> Result<T, E> {
         match self {
-            Option::Some(v) => Result::Ok(v),
-            Option::None => Result::Err(err()),
+            Some(v) => Ok(v),
+            None => Err(err()),
         }
     }
 
     #[inline]
     fn and<U, +Drop<T>, +Drop<U>>(self: Option<T>, optb: Option<U>) -> Option<U> {
         match self {
-            Option::Some(_) => optb,
-            Option::None => Option::None,
+            Some(_) => optb,
+            None => None,
         }
     }
 
@@ -664,16 +664,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> Option<U> {
         match self {
-            Option::Some(x) => f(x),
-            Option::None => Option::None,
+            Some(x) => f(x),
+            None => None,
         }
     }
 
     #[inline]
     fn or<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T> {
         match self {
-            Option::Some(x) => Option::Some(x),
-            Option::None => optb,
+            Some(x) => Some(x),
+            None => optb,
         }
     }
 
@@ -682,25 +682,25 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> Option<T> {
         match self {
-            Option::Some(x) => Option::Some(x),
-            Option::None => f(),
+            Some(x) => Some(x),
+            None => f(),
         }
     }
 
     #[inline]
     fn xor<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T> {
         match (self, optb) {
-            (Option::Some(x), Option::None) => Option::Some(x),
-            (Option::None, Option::Some(x)) => Option::Some(x),
-            _ => Option::None,
+            (Some(x), None) => Some(x),
+            (None, Some(x)) => Some(x),
+            _ => None,
         }
     }
 
     #[inline]
     fn is_some(self: @Option<T>) -> bool {
         match self {
-            Option::Some(_) => true,
-            Option::None => false,
+            Some(_) => true,
+            None => false,
         }
     }
 
@@ -709,16 +709,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> bool {
         match self {
-            Option::None => false,
-            Option::Some(x) => f(x),
+            None => false,
+            Some(x) => f(x),
         }
     }
 
     #[inline]
     fn is_none(self: @Option<T>) -> bool {
         match self {
-            Option::Some(_) => false,
-            Option::None => true,
+            Some(_) => false,
+            None => true,
         }
     }
 
@@ -727,24 +727,24 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> bool {
         match self {
-            Option::Some(x) => f(x),
-            Option::None => true,
+            Some(x) => f(x),
+            None => true,
         }
     }
 
     #[inline]
     const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
         match self {
-            Option::Some(x) => x,
-            Option::None => default,
+            Some(x) => x,
+            None => default,
         }
     }
 
     #[inline]
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T {
         match self {
-            Option::Some(x) => x,
-            Option::None => Default::default(),
+            Some(x) => x,
+            None => Default::default(),
         }
     }
 
@@ -755,8 +755,8 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> T {
         match self {
-            Option::Some(x) => x,
-            Option::None => f(),
+            Some(x) => x,
+            None => f(),
         }
     }
 
@@ -765,8 +765,8 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> Option<U> {
         match self {
-            Option::Some(x) => Option::Some(f(x)),
-            Option::None => Option::None,
+            Some(x) => Some(f(x)),
+            None => None,
         }
     }
 
@@ -775,8 +775,8 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, default: U, f: F,
     ) -> U {
         match self {
-            Option::Some(x) => f(x),
-            Option::None => default,
+            Some(x) => f(x),
+            None => default,
         }
     }
 
@@ -794,27 +794,27 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         self: Option<T>, default: D, f: F,
     ) -> U {
         match self {
-            Option::Some(x) => f(x),
-            Option::None => default(),
+            Some(x) => f(x),
+            None => default(),
         }
     }
 
     fn take(ref self: Option<T>) -> Option<T> {
         let value = self;
-        self = Option::None;
+        self = None;
         value
     }
 
     fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
         self: Option<T>, predicate: P,
     ) -> Option<T> {
-        if let Option::Some(value) = self {
+        if let Some(value) = self {
             if predicate(@value) {
-                return Option::Some(value);
+                return Some(value);
             }
         }
 
-        Option::None
+        None
     }
 }
 
@@ -836,7 +836,7 @@ impl OptionIterator<T> of crate::iter::Iterator<OptionIter<T>> {
     type Item = T;
     fn next(ref self: OptionIter<T>) -> Option<T> {
         let item = self.inner;
-        self.inner = Option::None;
+        self.inner = None;
         item
     }
 }
