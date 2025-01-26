@@ -2364,11 +2364,23 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax)?;
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
-        (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
-        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
+        (ast::Pattern::Tuple(_), TypeLongId::Tuple(_) | TypeLongId::Var(_))
+        | (
+            ast::Pattern::FixedSizeArray(_),
+            TypeLongId::FixedSizeArray { .. } | TypeLongId::Var(_),
+        ) => {}
         _ => {
             return Err(ctx.diagnostics.report(pattern_syntax, unexpected_pattern(ty)));
         }
+    };
+    let patterns_syntax = match pattern_syntax {
+        ast::Pattern::Tuple(pattern_tuple) => {
+            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
+            pattern_fixed_size_array.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        _ => unreachable!(),
     };
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
@@ -2381,14 +2393,27 @@ fn maybe_compute_tuple_like_pattern_semantic(
                 .unwrap();
             [inner_ty].repeat(size)
         }
-        _ => unreachable!(),
-    };
-    let patterns_syntax = match pattern_syntax {
-        ast::Pattern::Tuple(pattern_tuple) => {
-            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
-        }
-        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
-            pattern_fixed_size_array.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        TypeLongId::Var(_) => {
+            let inference = &mut ctx.resolver.inference();
+            let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
+                let inner_tys: Vec<_> = patterns_syntax
+                    .iter()
+                    .map(|e| inference.new_type_var(Some(e.stable_ptr().untyped())))
+                    .collect();
+                (inner_tys.clone(), TypeLongId::Tuple(inner_tys))
+            } else {
+                let var = inference.new_type_var(Some(pattern_syntax.stable_ptr().untyped()));
+                (vec![var; patterns_syntax.len()], TypeLongId::FixedSizeArray {
+                    type_id: var,
+                    size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(ctx.db))
+                        .intern(ctx.db),
+                })
+            };
+            match inference.conform_ty(ty, tuple_like_ty.intern(ctx.db)) {
+                Ok(_) => {}
+                Err(_) => unreachable!("As the type is a var, conforming should always succeed."),
+            }
+            inner_tys
         }
         _ => unreachable!(),
     };
