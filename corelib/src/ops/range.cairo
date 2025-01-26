@@ -203,7 +203,7 @@ pub impl RangeInclusiveImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeInclusiveT
     /// ```
     #[inline]
     fn is_empty(self: @RangeInclusive<T>) -> bool {
-        !(self.start <= self.end)
+        self.start > self.end
     }
 }
 
