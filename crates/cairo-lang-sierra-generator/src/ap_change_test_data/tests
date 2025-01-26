@@ -76,14 +76,14 @@ contains_cycles_test
 
 //! > module_code
 fn not_cycle() {
-    cycle_if_some(Option::None)
+    cycle_if_some(None)
 }
 
 #[inline(always)]
 fn cycle_if_some(x: Option<felt252>) {
     match x {
-        Option::Some(x) => while x != 0 {},
-        Option::None => {},
+        Some(x) => while x != 0 {},
+        None => {},
     }
 }
 

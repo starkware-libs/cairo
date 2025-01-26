@@ -438,8 +438,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -459,8 +459,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -480,8 +480,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -501,8 +501,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -522,8 +522,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -543,8 +543,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -556,8 +556,8 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([26]) -> ([27])
 Originating location:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -569,8 +569,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([19]) -> ([19])
 Originating location:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -582,8 +582,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([27]) -> ([27])
 Originating location:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -595,8 +595,8 @@ Inlined at:
 In function: lib.cairo::foo
 return([19], [27])
 Originating location:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -608,8 +608,8 @@ Inlined at:
 In function: lib.cairo::foo
 label_test::foo::8:
 Originating location:
-            Option::None => crate::panic_with_felt252(err),
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -783,8 +783,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -804,8 +804,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -825,8 +825,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -846,8 +846,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -867,8 +867,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -888,8 +888,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -901,8 +901,8 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([38]) -> ([39])
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -914,8 +914,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([30]) -> ([30])
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -927,8 +927,8 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([39]) -> ([39])
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -940,8 +940,8 @@ Inlined at:
 In function: lib.cairo::foo
 return([30], [39])
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -953,8 +953,8 @@ Inlined at:
 In function: lib.cairo::foo
 label_test::foo::10:
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -966,8 +966,8 @@ Inlined at:
 In function: lib.cairo::foo
 label_test::foo::6:
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -979,8 +979,8 @@ Inlined at:
 In function: lib.cairo::foo
 label_test::foo::3:
 Originating location:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2658,8 +2658,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2683,8 +2683,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2708,8 +2708,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2733,8 +2733,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2758,8 +2758,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2783,8 +2783,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2890,8 +2890,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2915,8 +2915,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2940,8 +2940,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2965,8 +2965,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -2990,8 +2990,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3015,8 +3015,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3135,8 +3135,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3160,8 +3160,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3185,8 +3185,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3210,8 +3210,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3235,8 +3235,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3260,8 +3260,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3393,8 +3393,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3418,8 +3418,8 @@ Inlined at:
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3443,8 +3443,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3468,8 +3468,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3493,8 +3493,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -3518,8 +3518,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array_inline_macro
 Inlined at:
-            Result::Err(_) => crate::panic_with_felt252(err),
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')

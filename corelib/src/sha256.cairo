@@ -59,7 +59,7 @@ pub fn compute_sha256_u32_array(
     let mut input = input.span();
     let mut state = sha256_state_handle_init(BoxTrait::new(SHA256_INITIAL_STATE));
 
-    while let Option::Some(chunk) = input.multi_pop_front() {
+    while let Some(chunk) = input.multi_pop_front() {
         state = starknet::syscalls::sha256_process_block_syscall(state, *chunk).unwrap_syscall();
     };
 

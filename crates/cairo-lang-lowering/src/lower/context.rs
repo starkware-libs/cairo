@@ -159,7 +159,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr_id: Option::None,
+            current_loop_expr_id: None,
             diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })

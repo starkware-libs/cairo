@@ -92,7 +92,7 @@ const VALID_POW_2_0: () = assert(2_felt252.pow(0) == 0b1);
 const VALID_POW_2_6: () = assert(2_felt252.pow(6) == 0b1000000);
 const VALID_POW_2_10: () = assert(2_felt252.pow(10) == 0b10000000000);
 
-const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
+const FUNC_CALC_SUCCESS_OPTION: felt252 = Some(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
 

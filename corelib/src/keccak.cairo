@@ -80,8 +80,8 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
 
     loop {
         match input.pop_front() {
-            Option::Some(v) => { keccak_add_u256_le(ref keccak_input, *v); },
-            Option::None => { break (); },
+            Some(v) => { keccak_add_u256_le(ref keccak_input, *v); },
+            None => { break (); },
         };
     };
 
@@ -122,8 +122,8 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 
     loop {
         match input.pop_front() {
-            Option::Some(v) => { keccak_add_u256_be(ref keccak_input, *v); },
-            Option::None => { break (); },
+            Some(v) => { keccak_add_u256_be(ref keccak_input, *v); },
+            None => { break (); },
         };
     };
 
@@ -262,7 +262,7 @@ pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
     let mut inner = 0;
     let mut limb: u64 = 0;
     let mut factor: u64 = 1;
-    while let Option::Some(b) = arr.at(i) {
+    while let Some(b) = arr.at(i) {
         limb = limb + b.into() * factor;
         i += 1;
         inner += 1;

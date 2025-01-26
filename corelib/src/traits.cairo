@@ -795,16 +795,16 @@ impl TIntoT<T> of Into<T, T> {
 ///
 ///         // Validate rank is between 1 and 8
 ///         if rank < 1 || rank > 8 {
-///             return Option::None;
+///             return None;
 ///         }
 ///
 ///         // Validate and convert file character (a-h) to number (0-7)
 ///         if file_char < 'a' || file_char > 'h' {
-///             return Option::None;
+///             return None;
 ///         }
 ///         let file = file_char - 'a';
 ///
-///         Option::Some(Position {
+///         Some(Position {
 ///             file,
 ///             rank: rank - 1 // Convert 1-8 (chess notation) to 0-7 (internal index)
 ///         })
@@ -813,32 +813,32 @@ impl TIntoT<T> of Into<T, T> {
 ///
 /// // Valid positions
 /// let e4 = ('e', 4).try_into();
-/// assert!(e4 == Option::Some(Position { file: 4, rank: 3 }));
+/// assert!(e4 == Some(Position { file: 4, rank: 3 }));
 ///
 /// // Invalid positions
 /// let invalid_file = ('x', 4).try_into();
 /// let invalid_rank = ('a', 9).try_into();
-/// assert!(invalid_file == Option::None);
-/// assert!(invalid_rank == Option::None);
+/// assert!(invalid_file == None);
+/// assert!(invalid_rank == None);
 /// ```
 pub trait TryInto<T, S> {
     /// Attempts to convert the input type T into the output type S.
-    /// In the event of a conversion error, returns [`Option::None`].
+    /// In the event of a conversion error, returns [`None`].
     ///
     /// # Examples
     ///
     /// ```
     /// let a: Option<u8> = 1_u16.try_into();
-    /// assert!(a == Option::Some(1));
+    /// assert!(a == Some(1));
     /// let b: Option<u8> = 256_u16.try_into();
-    /// assert!(b == Option::None);
+    /// assert!(b == None);
     /// ```
     fn try_into(self: T) -> Option<S>;
 }
 
 impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
-        Option::Some(self.into())
+        Some(self.into())
     }
 }
 

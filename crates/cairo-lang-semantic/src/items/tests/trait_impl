@@ -551,7 +551,7 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
     x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
@@ -614,7 +614,7 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
     x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
@@ -1012,7 +1012,7 @@ fn foo() -> felt252 {
 fn bar<T, impl I: IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = I::Impl::next(ref x) {
+    while let Some(_) = I::Impl::next(ref x) {
         y += 1;
     };
     y;
@@ -1048,7 +1048,7 @@ fn foo() -> felt252 {
 fn bar<T, +IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = x.next() {
+    while let Some(_) = x.next() {
         y += 1;
     };
     y;

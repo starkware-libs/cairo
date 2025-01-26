@@ -1,9 +1,7 @@
-#[feature("deprecated-bounded-int-trait")]
 use crate::integer::{u512, u512_safe_div_rem_by_u256};
-#[feature("deprecated-bounded-int-trait")]
-use crate::integer;
 use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
+use crate::integer;
 
 #[test]
 fn test_u8_operators() {
@@ -763,7 +761,7 @@ fn test_u512_safe_div_rem_by_u256() {
 fn test_u512_try_into_u256() {
     assert!(
         u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
-            .try_into() == Option::Some(0x200000000000000000000000000000001_u256),
+            .try_into() == Some(0x200000000000000000000000000000001_u256),
     );
     assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
     assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
@@ -947,7 +945,7 @@ fn validate_max_strictly_contained<
 ) {
     let max_a: A = Bounded::MAX;
     let max_a_as_b: B = max_a.try_into().expect(err);
-    assert(Option::Some(max_a) == max_a_as_b.try_into(), err);
+    assert(Some(max_a) == max_a_as_b.try_into(), err);
     assert(is_out_of_range::<A>(max_a_as_b + 1.try_into().unwrap()), err);
 }
 
@@ -972,7 +970,7 @@ fn validate_min_strictly_contained<
 ) {
     let min_sub: A = Bounded::MIN;
     let min_sub_as_super: B = min_sub.try_into().expect(err);
-    assert(Option::Some(min_sub) == min_sub_as_super.try_into(), err);
+    assert(Some(min_sub) == min_sub_as_super.try_into(), err);
     assert(is_out_of_range::<A>(min_sub_as_super - 1.try_into().unwrap()), err);
 }
 
@@ -1891,8 +1889,8 @@ mod bounded_int {
     /// Is `value` the equivalent value of `expected` in `T` type.
     fn is_some_of<T>(value: Option<T>, expected: felt252) -> bool {
         match value {
-            Option::Some(v) => upcast(v) == expected,
-            Option::None => false,
+            Some(v) => upcast(v) == expected,
+            None => false,
         }
     }
 
@@ -1904,12 +1902,12 @@ mod bounded_int {
     /// Is `value` the equivalent value (as `felt252`) of `expected` in `T` type.
     fn downcast_invalid<T, S>(value: T) -> bool {
         match downcast::<T, S>(value) {
-            Option::Some(v) => {
+            Some(v) => {
                 // Just as a drop for `v`.
                 upcast::<_, felt252>(v);
                 false
             },
-            Option::None => true,
+            None => true,
         }
     }
 
@@ -1945,7 +1943,7 @@ mod bounded_int {
     #[test]
     fn test_bounded_int_casts() {
         assert!(downcast::<OneMinusPToZero, u8>(upcast(bi_const::<-1>())).is_none());
-        assert!(downcast::<OneMinusPToZero, u8>(0) == Option::Some(0));
+        assert!(downcast::<OneMinusPToZero, u8>(0) == Some(0));
         assert!(downcast::<OneMinusPToZero, u8>(upcast(bi_const::<ONE_MINUS_P>())).is_none());
         assert!(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(119).is_none());
         assert!(is_some_of(downcast::<BoundedInt<100, 200>, BoundedInt<120, 180>>(120), 120));
@@ -2126,8 +2124,8 @@ mod bounded_int {
         value: T,
     ) -> bool {
         match bounded_int::constrain::<_, BOUNDARY>(value) {
-            Result::Ok(result) => upcast(result),
-            Result::Err(result) => upcast(result),
+            Ok(result) => upcast(result),
+            Err(result) => upcast(result),
         } == upcast::<_, felt252>(value)
     }
 
@@ -2235,8 +2233,8 @@ fn test_downcast_in_const() {
     const OUT_OF_RANGE: u16 = 300;
     const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_U8, Option::Some(10));
-    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+    assert_eq!(IN_RANGE_AS_U8, Some(10));
+    assert_eq!(OUT_OF_RANGE_AS_U8, None);
 }
 
 #[test]
@@ -2289,46 +2287,46 @@ fn test_const_from_felt252_casts() {
 
     const IN_RANGE_AS_U8: Option<u8> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_U8: Option<u8> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_U8, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_U8, Option::None);
+    assert_eq!(IN_RANGE_AS_U8, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U8, None);
 
     const IN_RANGE_AS_U16: Option<u16> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_U16: Option<u16> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_U16, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_U16, Option::None);
+    assert_eq!(IN_RANGE_AS_U16, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U16, None);
 
     const IN_RANGE_AS_U32: Option<u32> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_U32: Option<u32> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_U32, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_U32, Option::None);
+    assert_eq!(IN_RANGE_AS_U32, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U32, None);
 
     const IN_RANGE_AS_U64: Option<u64> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_U64: Option<u64> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_U64, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_U64, Option::None);
+    assert_eq!(IN_RANGE_AS_U64, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_U64, None);
 
     const IN_RANGE_AS_I8: Option<i8> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_I8: Option<i8> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_I8, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_I8, Option::None);
+    assert_eq!(IN_RANGE_AS_I8, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I8, None);
 
     const IN_RANGE_AS_I16: Option<i16> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_I16: Option<i16> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_I16, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_I16, Option::None);
+    assert_eq!(IN_RANGE_AS_I16, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I16, None);
 
     const IN_RANGE_AS_I32: Option<i32> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_I32: Option<i32> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_I32, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_I32, Option::None);
+    assert_eq!(IN_RANGE_AS_I32, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I32, None);
 
     const IN_RANGE_AS_I64: Option<i64> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_I64: Option<i64> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_I64, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_I64, Option::None);
+    assert_eq!(IN_RANGE_AS_I64, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I64, None);
 
     const IN_RANGE_AS_I128: Option<i128> = IN_RANGE.try_into();
     const OUT_OF_RANGE_AS_I128: Option<i128> = OUT_OF_RANGE.try_into();
-    assert_eq!(IN_RANGE_AS_I128, Option::Some(0));
-    assert_eq!(OUT_OF_RANGE_AS_I128, Option::None);
+    assert_eq!(IN_RANGE_AS_I128, Some(0));
+    assert_eq!(OUT_OF_RANGE_AS_I128, None);
 }

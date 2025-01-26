@@ -15,8 +15,8 @@ foo
 #[inline(always)]
 fn expect(opt: Option<felt252>) -> felt252 {
     match opt {
-        Option::Some(x) => x,
-        Option::None => no_inline_panic(),
+        Some(x) => x,
+        None => no_inline_panic(),
     }
 }
 
