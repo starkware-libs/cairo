@@ -94,7 +94,7 @@ fn test_iter_adapter_peekable() {
 
 #[test]
 fn test_iter_accum_product() {
-    assert_eq!((0_usize..=0).into_iter().product(), 1);
-    assert_eq!((0_usize..=1).into_iter().product(), 1);
-    assert_eq!((0_usize..=5).into_iter().product(), 120);
+    assert_eq!((1_usize..=0).into_iter().product(), 1);
+    assert_eq!((1_usize..=1).into_iter().product(), 1);
+    assert_eq!((1_usize..=5).into_iter().product(), 120);
 }
