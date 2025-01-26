@@ -57,6 +57,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         array: "array",
         bitwise: "bitwise",
+        blake: "blake",
         bool: "bool",
         bounded_int: "bounded_int",
         box_: "box",

@@ -9,6 +9,7 @@ use crate::program::GenericArg;
 pub mod ap_tracking;
 pub mod array;
 pub mod bitwise;
+pub mod blake;
 pub mod boolean;
 pub mod bounded_int;
 pub mod boxing;
