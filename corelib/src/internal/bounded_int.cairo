@@ -6,7 +6,9 @@ pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 impl NumericLiteralBoundedInt<
     const MIN: felt252, const MAX: felt252,
-> of crate::integer::NumericLiteral<BoundedInt<MIN, MAX>>;
+> of crate::integer::NumericLiteral<BoundedInt<MIN, MAX>> {
+    type Type = BoundedInt<MIN, MAX>;
+}
 
 impl BoundedIntIntoFelt252<
     const MIN: felt252, const MAX: felt252,
