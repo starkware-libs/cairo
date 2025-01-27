@@ -203,6 +203,37 @@ pub trait Store<T> {
     /// This is bounded to 255, as the offset is a u8. As such, a single type can only take up to
     /// 255 slots in storage.
     fn size() -> u8;
+
+    /// Clears the storage area by writing zeroes to it.
+    ///
+    /// # Arguments
+    ///
+    /// * `address_domain` - The storage domain
+    /// * `base` - The base storage address to start clearing
+    /// * `offset` - The offset from the base address where clearing should start
+    ///
+    /// The operation writes zeroes to storage starting from the specified base address and offset,
+    /// and continues for the size of the type as determined by the `size()` function.
+    #[inline]
+    fn scrub(
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
+    ) -> SyscallResult<
+        (),
+    > {
+        let mut result = Result::Ok(());
+        let mut offset = offset;
+        for _ in 0..Self::size() {
+            if let Result::Err(err) =
+                storage_write_syscall(
+                    address_domain, storage_address_from_base_and_offset(base, offset), 0,
+                ) {
+                result = Result::Err(err);
+                break;
+            }
+            offset += 1;
+        };
+        result
+    }
 }
 
 /// Trait for efficient packing of values into optimized storage representations.
