@@ -1,7 +1,7 @@
 #[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
-use starknet::storage::Vec;
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Vec};
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
 
