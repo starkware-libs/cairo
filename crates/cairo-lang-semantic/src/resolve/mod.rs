@@ -1677,7 +1677,7 @@ impl<'db> Resolver<'db> {
                     for (trait_ty, ty1) in param.type_constraints.iter() {
                         let ty0 = TypeLongId::ImplType(ImplTypeId::new(
                             resolved_impl,
-                            trait_ty.trait_type(self.db),
+                            *trait_ty,
                             self.db,
                         ))
                         .intern(self.db);
