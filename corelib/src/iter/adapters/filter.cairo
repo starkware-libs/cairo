@@ -19,10 +19,9 @@ pub impl FilterIterator<
     I,
     P,
     impl TIter: Iterator<I>,
-    +core::ops::Fn<P, (TIter::Item,)>[Output: bool],
+    +core::ops::Fn<P, (@TIter::Item,)>[Output: bool],
     +Destruct<I>,
     +Destruct<P>,
-    +Copy<TIter::Item>,
     +Copy<P>,
     +Destruct<TIter::Item>,
 > of Iterator<Filter<I, P>> {
