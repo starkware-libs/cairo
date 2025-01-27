@@ -4,8 +4,8 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplImplDefId, LocalVarId, MemberId, ParamId, StructId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VariantId,
+    ImplFunctionId, ImplImplDefId, LanguageElementId, LocalVarId, MemberId, ParamId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -202,21 +202,12 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
     }
 }
 
-impl<T: Clone + Hash + Eq, V: Clone, E, TRewriter: SemanticRewriter<V, E> + SemanticRewriter<T, E>>
-    SemanticRewriter<OrderedHashMap<T, V>, E> for TRewriter
+impl<K: Hash + Eq + LanguageElementId, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+    SemanticRewriter<OrderedHashMap<K, V>, E> for TRewriter
 {
-    fn internal_rewrite(&mut self, value: &mut OrderedHashMap<T, V>) -> Result<RewriteResult, E> {
+    fn internal_rewrite(&mut self, value: &mut OrderedHashMap<K, V>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
-        let mut changed_key = Vec::new();
-        for (k, v) in value.iter_mut() {
-            let mut temp_key = k.clone();
-            match self.internal_rewrite(&mut temp_key)? {
-                RewriteResult::Modified => {
-                    changed_key.push((k.clone(), temp_key));
-                    result = RewriteResult::Modified;
-                }
-                RewriteResult::NoChange => {}
-            }
+        for (_, v) in value.iter_mut() {
             match self.internal_rewrite(v)? {
                 RewriteResult::Modified => {
                     result = RewriteResult::Modified;
@@ -224,11 +215,6 @@ impl<T: Clone + Hash + Eq, V: Clone, E, TRewriter: SemanticRewriter<V, E> + Sema
                 RewriteResult::NoChange => {}
             }
         }
-        for (old_key, new_key) in changed_key {
-            let v = value.swap_remove(&old_key).unwrap();
-            value.insert(new_key, v);
-        }
-
         Ok(result)
     }
 }
