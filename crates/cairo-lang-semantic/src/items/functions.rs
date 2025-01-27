@@ -855,9 +855,22 @@ pub fn concrete_function_closure_params(
     let ConcreteFunction { generic_function, generic_args, .. } =
         function_id.lookup_intern(db).function;
     let generic_params = generic_function.generic_params(db)?;
-    let generic_closure_params = db.get_closure_params(generic_function)?;
+    let mut generic_closure_params = db.get_closure_params(generic_function)?;
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_closure_params)
+    let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
+    let mut changed_keys = vec![];
+    for (key, value) in generic_closure_params.iter_mut() {
+        rewriter.internal_rewrite(value)?;
+        let updated_key = rewriter.rewrite(*key)?;
+        if updated_key != *key {
+            changed_keys.push((*key, updated_key));
+        }
+    }
+    for (old_key, new_key) in changed_keys {
+        let v = generic_closure_params.swap_remove(&old_key).unwrap();
+        generic_closure_params.insert(new_key, v);
+    }
+    Ok(generic_closure_params)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

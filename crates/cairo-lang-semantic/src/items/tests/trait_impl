@@ -1367,3 +1367,64 @@ error: Trait has no implementation in context: core::metaprogramming::TypeEqual:
  --> lib.cairo:31:11
     1_u64.foo(1_u32);
           ^^^
+
+//! > ==========================================================================
+
+//! > Trait default implementation with recursive types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    // TODO(orizi): Remove this diagnostic.
+    mix(1_u64.into_inner(), 1_u32.into_inner());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Outer<T> {
+    type Inner;
+    impl Impl: Inner<Self::Inner>;
+    fn into_inner(self: T) -> Self::Inner;
+}
+
+trait Inner<T> {
+    type InnerMost;
+}
+
+fn mix<
+    T,
+    U,
+    impl InnerT: Inner<T>,
+    impl OuterU: Outer<U>,
+    +core::metaprogramming::TypeEqual<InnerT::InnerMost, OuterU::Impl::InnerMost>,
+>(
+    lhs: T, rhs: U,
+) {}
+
+impl OuterU32 of Outer<u32> {
+    type Inner = u64;
+    fn into_inner(self: u32) -> u64 {
+        self.into()
+    }
+}
+
+impl OuterU64 of Outer<u64> {
+    type Inner = u64;
+    fn into_inner(self: u64) -> u64 {
+        self
+    }
+}
+
+impl InnerImpl of Inner<u64> {
+    type InnerMost = u128;
+}
+
+//! > expected_diagnostics
+error: Impl mismatch: `Outer::Impl` and `test::InnerImpl`.
+ --> lib.cairo:40:5
+    mix(1_u64.into_inner(), 1_u32.into_inner());
+    ^^^
