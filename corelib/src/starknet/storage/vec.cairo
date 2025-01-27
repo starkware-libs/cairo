@@ -320,7 +320,52 @@ pub trait MutableVecTrait<T> {
     ///     self.numbers.append().write(number);
     /// }
     /// ```
+    #[deprecated(
+        feature: "corelib-internal-use",
+        note: "Use `core::starknet::storage::Vec::MutableVecTrait::allocate` instead",
+    )]
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>>;
+
+    /// Allocates space for a new element at the end of the vector, returning a mutable storage path
+    /// to write the element.
+    ///
+    /// This function is a replacement for the deprecated `append` function, which allowed
+    /// appending new elements to a vector. Unlike `append`, `allocate` is specifically useful when
+    /// you need to prepare space for elements of unknown or dynamic size (e.g., appending another
+    /// vector).
+    ///
+    /// # Use Case
+    ///
+    /// `allocate` is essential when pushing a vector into another vector, as the size of the
+    /// nested vector is unknown at compile time. It allows the caller to allocate the required
+    /// space first, then write the nested vector into the allocated space using `.write()`.
+    ///
+    /// This is necessary because pushing directly (e.g., `vec.push(nested_vec)`) is not supported
+    /// due to the size constraints of the inner vector being dynamic.
+    ///
+    /// # Deprecation Note
+    ///
+    /// The `append` function is now deprecated. Use `allocate` to achieve the same functionality
+    /// with improved clarity and flexibility.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<Vec<u256>>,
+    /// }
+    ///
+    /// fn append_nested_vector(ref self: ContractState, nested: Vec<u256>) {
+    ///     // Allocate space for the nested vector in the outer vector.
+    ///     let storage_path = self.numbers.allocate();
+    ///     // Write the nested vector into the allocated space.
+    ///     storage_path.write(nested);
+    /// }
+    /// ```
+    fn allocate(self: T) -> StoragePath<Mutable<Self::ElementType>>;
 
     /// Pushes a new value onto the vector.
     ///
@@ -400,6 +445,12 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         self.update(vec_len)
     }
 
+    fn allocate(self: StoragePath<Mutable<Vec<T>>>) -> StoragePath<Mutable<T>> {
+        let vec_len = self.len();
+        self.as_ptr().write(vec_len + 1);
+        self.update(vec_len)
+    }
+
     fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
         self: StoragePath<Mutable<Vec<T>>>, value: Self::ElementType,
     ) {
@@ -450,6 +501,10 @@ impl PathableMutableVecImpl<
     }
 
     fn append(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
+        self.as_path().append()
+    }
+
+    fn allocate(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
         self.as_path().append()
     }
 
