@@ -3179,3 +3179,47 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
  --> lib.cairo:9:12
     fn foo<impl I1: MyTrait[ty: u64]>() {}
            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+//! > ==========================================================================
+
+//! > An impl can be used in a path in its own body, if the generics are different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+}
+
+impl M of MyTrait {
+    InputType = u32;
+}
+
+Struct S<impl M: MyTrait> {
+    x: M::InputType,
+}
+
+fn foo() {
+    S{ x: 3_u32 } == S{ x: 3_felt252 };
+}
+
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `core::integer::u32`.
+ --> lib.cairo:9:15
+    fn foo(x: MyImpl::<u32>::InputType, y: Self::InputType) -> MyImpl::<u32>::OutputType {
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `T`, actual: `core::integer::u32`.
+ --> lib.cairo:9:64
+    fn foo(x: MyImpl::<u32>::InputType, y: Self::InputType) -> MyImpl::<u32>::OutputType {
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^           
