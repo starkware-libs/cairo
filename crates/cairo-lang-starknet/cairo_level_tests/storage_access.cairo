@@ -1,7 +1,7 @@
 #[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
-use starknet::storage::Vec;
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Vec};
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
 
@@ -106,8 +106,8 @@ mod test_contract {
     };
 
     #[storage]
-    struct Storage {
-        data: AbcEtc,
+    pub struct Storage {
+        pub data: AbcEtc,
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
         vecs: Vecs,
@@ -401,4 +401,39 @@ fn test_enum_sub_pointers() {
     assert_eq!(
         deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 789,
     );
+}
+
+#[test]
+fn test_scrub_clears_memory() {
+    let base_address = starknet::storage_access::storage_base_address_from_felt252(
+        selector!("data"),
+    );
+    for i in 0..=255_u8 {
+        starknet::Store::<u8>::write_at_offset(0, base_address, i, 1).unwrap();
+    };
+    starknet::Store::<
+        (
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+            felt252,
+        ),
+    >::scrub(0, base_address, 7)
+        .unwrap();
+    for i in 0..7_u8 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
+    };
+    for i in 7..18_u8 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 0);
+    };
+    for i in 18..=255_u8 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
+    };
 }

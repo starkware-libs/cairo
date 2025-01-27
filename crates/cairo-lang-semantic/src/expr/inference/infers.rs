@@ -376,11 +376,7 @@ impl InferenceEmbeddings for Inference<'_> {
                     .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 let impl_id = self.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
                 for (trait_ty, ty1) in param.type_constraints.iter() {
-                    let ty0 = self.reduce_impl_ty(ImplTypeId::new(
-                        impl_id,
-                        trait_ty.trait_type(self.db),
-                        self.db,
-                    ))?;
+                    let ty0 = self.reduce_impl_ty(ImplTypeId::new(impl_id, *trait_ty, self.db))?;
                     // Conforming the type will always work as the impl is a new inference variable.
                     self.conform_ty(ty0, *ty1).ok();
                 }
