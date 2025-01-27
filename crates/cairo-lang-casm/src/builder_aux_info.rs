@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use num_bigint::BigInt;
 
-use crate::builder::{CasmBuilder, Var};
+use crate::builder::Var;
 use crate::cell_expression::CellExpression;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -98,7 +98,7 @@ impl RetBranchDesc {
     }
 
     pub fn flat_exprs(&self) -> Vec<String> {
-        self.exprs.iter().flat_map(|exprs| exprs.names.iter().map(|s| s.clone())).collect()
+        self.exprs.iter().flat_map(|exprs| exprs.names.iter().cloned()).collect()
     }
 }
 
@@ -126,7 +126,7 @@ pub enum LibfuncAlgTypeDesc {
     DivRemKnownSmallQuotient { q_upper_bound: BigInt },
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub struct CasmBuilderAuxiliaryInfo {
     pub var_names: HashMap<Var, String>,
     pub consts: Vec<ConstDesc>,
@@ -142,13 +142,13 @@ pub struct CasmBuilderAuxiliaryInfo {
 
 impl CasmBuilderAuxiliaryInfo {
     pub fn not_empty(&self) -> bool {
-        if 0 == self.statements.len() {
+        if self.statements.is_empty() {
             false
         } else if self.statements.len() == 1 {
             // Heuristic: check that this block is not simply a non-conditional 'jump'
             // Where such blocks come from is not yet clear to me.
             match &self.statements[0] {
-                StatementDesc::Jump(jmp) => !jmp.cond_var.is_none(),
+                StatementDesc::Jump(jmp) => jmp.cond_var.is_some(),
                 _ => true,
             }
         } else {
@@ -219,17 +219,16 @@ impl CasmBuilderAuxiliaryInfo {
 
     pub fn add_let(
         &mut self,
-        lhs: VarBaseDesc,
-        lhs_id: Var,
+        lhs: (VarBaseDesc, Var),
         expr: &str,
         var_a: VarBaseDesc,
         op: &str,
         var_b: Option<VarBaseDesc>,
         ap_change: usize,
     ) {
-        self.var_names.insert(lhs_id, String::from(&lhs.name));
+        self.var_names.insert(lhs.1, String::from(&lhs.0.name));
         self.statements.push(StatementDesc::Let(AssertDesc {
-            lhs,
+            lhs: lhs.0,
             expr: ExprDesc { expr: String::from(expr), var_a, op: String::from(op), var_b },
             ap_change,
         }));
@@ -239,7 +238,7 @@ impl CasmBuilderAuxiliaryInfo {
         self.statements.push(StatementDesc::ApPlus(step_size));
     }
 
-    pub fn make_var_desc(&self, name: &str, id: Var, expr: CellExpression) -> VarBaseDesc {
+    pub fn make_var_desc(&self, name: &str, expr: CellExpression) -> VarBaseDesc {
         VarBaseDesc { name: name.into(), var_expr: expr }
     }
 
@@ -318,19 +317,5 @@ impl CasmBuilderAuxiliaryInfo {
         // Record the number of instructions generated for the code built up to
         // here (additional instructions may be added later).
         self.core_libfunc_instr_num = num_casm_instructions;
-    }
-}
-
-impl Default for CasmBuilderAuxiliaryInfo {
-    fn default() -> Self {
-        Self {
-            var_names: Default::default(),
-            consts: Default::default(),
-            args: Default::default(),
-            statements: Default::default(),
-            return_branches: Default::default(),
-            core_libfunc_instr_num: 0,
-            alg_type: None,
-        }
     }
 }

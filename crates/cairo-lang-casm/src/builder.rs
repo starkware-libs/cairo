@@ -696,7 +696,7 @@ impl CasmBuilder {
 
     #[cfg(feature = "lean")]
     pub fn move_aux_info(&mut self) -> Option<CasmBuilderAuxiliaryInfo> {
-        std::mem::replace(&mut self.aux_info, None)
+        self.aux_info.take()
     }
 
     #[cfg(feature = "lean")]
@@ -745,9 +745,9 @@ impl CasmBuilder {
         let ap_change = self.get_ap_change();
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_assert(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
+                aux_info.make_var_desc(dst_name, dst_expr),
                 res_name,
-                aux_info.make_var_desc(res_name, res, res_expr),
+                aux_info.make_var_desc(res_name, res_expr),
                 "",
                 None,
                 ap_change,
@@ -762,10 +762,9 @@ impl CasmBuilder {
         let ap_change = self.get_ap_change();
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_let(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
-                dst,
+                (aux_info.make_var_desc(dst_name, dst_expr), dst),
                 src_name,
-                aux_info.make_var_desc(src_name, src, src_expr),
+                aux_info.make_var_desc(src_name, src_expr),
                 "",
                 None,
                 ap_change,
@@ -776,31 +775,28 @@ impl CasmBuilder {
     #[cfg(feature = "lean")]
     pub fn aux_info_add_assert_bin_op(
         &mut self,
-        dst_name: &str,
-        dst: Var,
-        a_name: &str,
-        a: Var,
-        b_name: &str,
-        b: Var,
+        dst: (&str, Var),
+        a: (&str, Var),
+        b: (&str, Var),
         expr_str: &str,
         op: CellOperator,
     ) {
-        let dst_expr = self.get_value(dst, false);
-        let a_expr = self.get_value(a, false);
-        let b_expr = self.get_value(b, false);
+        let dst_expr = self.get_value(dst.1, false);
+        let a_expr = self.get_value(a.1, false);
+        let b_expr = self.get_value(b.1, false);
         let ap_change = self.get_ap_change();
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_assert(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
+                aux_info.make_var_desc(dst.0, dst_expr),
                 expr_str,
-                aux_info.make_var_desc(a_name, a, a_expr),
+                aux_info.make_var_desc(a.0, a_expr),
                 match op {
                     CellOperator::Add => "+",
                     CellOperator::Sub => "-",
                     CellOperator::Mul => "*",
                     CellOperator::Div => "/",
                 },
-                Some(aux_info.make_var_desc(b_name, b, b_expr)),
+                Some(aux_info.make_var_desc(b.0, b_expr)),
                 ap_change,
             );
         }
@@ -809,32 +805,28 @@ impl CasmBuilder {
     #[cfg(feature = "lean")]
     pub fn aux_info_add_let_bin_op(
         &mut self,
-        dst_name: &str,
-        dst: Var,
-        a_name: &str,
-        a: Var,
-        b_name: &str,
-        b: Var,
+        dst: (&str, Var),
+        a: (&str, Var),
+        b: (&str, Var),
         expr_str: &str,
         op: CellOperator,
     ) {
-        let dst_expr = self.get_value(dst, false);
-        let a_expr = self.get_value(a, false);
-        let b_expr = self.get_value(b, false);
+        let dst_expr = self.get_value(dst.1, false);
+        let a_expr = self.get_value(a.1, false);
+        let b_expr = self.get_value(b.1, false);
         let ap_change = self.get_ap_change();
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_let(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
-                dst,
+                (aux_info.make_var_desc(dst.0, dst_expr), dst.1),
                 expr_str,
-                aux_info.make_var_desc(a_name, a, a_expr),
+                aux_info.make_var_desc(a.0, a_expr),
                 match op {
                     CellOperator::Add => "+",
                     CellOperator::Sub => "-",
                     CellOperator::Mul => "*",
                     CellOperator::Div => "/",
                 },
-                Some(aux_info.make_var_desc(b_name, b, b_expr)),
+                Some(aux_info.make_var_desc(b.0, b_expr)),
                 ap_change,
             );
         }
@@ -860,9 +852,9 @@ impl CasmBuilder {
 
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_assert(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
+                aux_info.make_var_desc(dst_name, dst_expr),
                 expr_str,
-                aux_info.make_var_desc(buffer_name, buffer, buffer_expr),
+                aux_info.make_var_desc(buffer_name, buffer_expr),
                 if offset_str.is_some() { "*(+)" } else { "*()" },
                 None,
                 ap_change,
@@ -895,10 +887,9 @@ impl CasmBuilder {
 
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_let(
-                aux_info.make_var_desc(dst_name, dst, dst_expr),
-                dst,
+                (aux_info.make_var_desc(dst_name, dst_expr), dst),
                 expr_str,
-                aux_info.make_var_desc(buffer_name, buffer, buffer_expr),
+                aux_info.make_var_desc(buffer_name, buffer_expr),
                 if offset_str.is_some() { "*(+)" } else { "*()" },
                 None,
                 ap_change,
@@ -921,7 +912,7 @@ impl CasmBuilder {
         if let Some(aux_info) = &mut self.aux_info {
             aux_info.add_jump_nz(
                 target_str,
-                aux_info.make_var_desc(condition_str, condition, cond_var_expr),
+                aux_info.make_var_desc(condition_str, cond_var_expr),
                 ap_change,
             );
         }
@@ -1008,12 +999,9 @@ macro_rules! casm_build_extend {
             #[cfg(feature = "lean")]
             {
                 $builder.aux_info_add_assert_bin_op(
-                    stringify!($dst),
-                    $dst,
-                    stringify!($a),
-                    $a,
-                    stringify!($b),
-                    $b,
+                    (stringify!($dst), $dst),
+                    (stringify!($a), $a),
+                    (stringify!($b), $b),
                     stringify!($a + $b),
                     $crate::cell_expression::CellOperator::Add
                 );
@@ -1028,12 +1016,9 @@ macro_rules! casm_build_extend {
             #[cfg(feature = "lean")]
             {
                 $builder.aux_info_add_assert_bin_op(
-                    stringify!($dst),
-                    $dst,
-                    stringify!($a),
-                    $a,
-                    stringify!($b),
-                    $b,
+                    (stringify!($dst), $dst),
+                    (stringify!($a), $a),
+                    (stringify!($b), $b),
                     stringify!($a * $b),
                     $crate::cell_expression::CellOperator::Mul
                 );
@@ -1048,12 +1033,9 @@ macro_rules! casm_build_extend {
             #[cfg(feature = "lean")]
             {
                 $builder.aux_info_add_assert_bin_op(
-                    stringify!($dst),
-                    $dst,
-                    stringify!($a),
-                    $a,
-                    stringify!($b),
-                    $b,
+                    (stringify!($dst), $dst),
+                    (stringify!($a), $a),
+                    (stringify!($b), $b),
                     stringify!($a - $b),
                     $crate::cell_expression::CellOperator::Sub
                 );
@@ -1068,12 +1050,9 @@ macro_rules! casm_build_extend {
             #[cfg(feature = "lean")]
             {
                 $builder.aux_info_add_assert_bin_op(
-                    stringify!($dst),
-                    $dst,
-                    stringify!($a),
-                    $a,
-                    stringify!($b),
-                    $b,
+                    (stringify!($dst), $dst),
+                    (stringify!($a), $a),
+                    (stringify!($b), $b),
                     stringify!($a / $b),
                     $crate::cell_expression::CellOperator::Div
                 );
@@ -1203,12 +1182,9 @@ macro_rules! casm_build_extend {
         #[cfg(feature = "lean")]
         {
             $builder.aux_info_add_let_bin_op(
-                stringify!($dst),
-                $dst,
-                stringify!($a),
-                $a,
-                stringify!($b),
-                $b,
+                (stringify!($dst), $dst),
+                (stringify!($a), $a),
+                (stringify!($b), $b),
                 stringify!($a + $b),
                 $crate::cell_expression::CellOperator::Add,
             );
@@ -1220,12 +1196,9 @@ macro_rules! casm_build_extend {
         #[cfg(feature = "lean")]
         {
             $builder.aux_info_add_let_bin_op(
-                stringify!($dst),
-                $dst,
-                stringify!($a),
-                $a,
-                stringify!($b),
-                $b,
+                (stringify!($dst), $dst),
+                (stringify!($a), $a),
+                (stringify!($b), $b),
                 stringify!($a * $b),
                 $crate::cell_expression::CellOperator::Mul,
             );
@@ -1237,12 +1210,9 @@ macro_rules! casm_build_extend {
         #[cfg(feature = "lean")]
         {
             $builder.aux_info_add_let_bin_op(
-                stringify!($dst),
-                $dst,
-                stringify!($a),
-                $a,
-                stringify!($b),
-                $b,
+                (stringify!($dst), $dst),
+                (stringify!($a), $a),
+                (stringify!($b), $b),
                 stringify!($a - $b),
                 $crate::cell_expression::CellOperator::Sub,
             );
@@ -1254,12 +1224,9 @@ macro_rules! casm_build_extend {
         #[cfg(feature = "lean")]
         {
             $builder.aux_info_add_let_bin_op(
-                stringify!($dst),
-                $dst,
-                stringify!($a),
-                $a,
-                stringify!($b),
-                $b,
+                (stringify!($dst), $dst),
+                (stringify!($a), $a),
+                (stringify!($b), $b),
                 stringify!($a / $b),
                 $crate::cell_expression::CellOperator::Div,
             );
