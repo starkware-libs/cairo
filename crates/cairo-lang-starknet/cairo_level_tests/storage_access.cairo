@@ -106,8 +106,8 @@ mod test_contract {
     };
 
     #[storage]
-    struct Storage {
-        data: AbcEtc,
+    pub struct Storage {
+        pub data: AbcEtc,
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
         vecs: Vecs,
@@ -401,4 +401,47 @@ fn test_enum_sub_pointers() {
     assert_eq!(
         deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 789,
     );
+}
+
+#[test]
+fn test_scrub_clears_memory() {
+    let base_address = starknet::storage_access::storage_base_address_from_felt252(
+        selector!("data"),
+    );
+
+    let mut i: u8 = 0;
+    while i <= 255 {
+        starknet::Store::<u8>::write_at_offset(0, base_address, i, 1).unwrap();
+        if i == 255 {
+            break;
+        }
+        i += 1;
+    };
+
+    let mut offset = 3;
+    while offset < (3 + 23) {
+        starknet::Store::<u8>::scrub(0, base_address, offset).unwrap();
+        offset += 1;
+    };
+
+    i = 0;
+    while i < 3 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
+        i += 1;
+    };
+
+    i = 3;
+    while i < (3 + 23) {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 0);
+        i += 1;
+    };
+
+    i = (3 + 23);
+    while i <= 255 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
+        if i == 255 {
+            break;
+        }
+        i += 1;
+    };
 }
