@@ -397,9 +397,9 @@ pub fn create_entry_code_from_params(
             param_index += 1;
             unallocated_count += ty_size;
         } else if generic_ty == &GasBuiltinType::ID {
-            // Setting gas to be far from u128 boundaries.
+            // Setting gas to be far from u64 boundaries.
             casm_build_extend! {ctx,
-                const max_gas = i128::MAX;
+                const max_gas = i64::MAX;
                 tempvar gas = max_gas;
             };
         }
