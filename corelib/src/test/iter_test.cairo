@@ -124,7 +124,7 @@ fn test_iter_find() {
 
 #[test]
 fn test_iter_adapter_filter() {
-    let mut iter = array![0_u32, 1, 2].into_iter().filter(|x| x > 0);
+    let mut iter = array![0_u32, 1, 2].into_iter().filter(|x| *x > 0);
     assert_eq!(iter.next(), Option::Some(1));
     assert_eq!(iter.next(), Option::Some(2));
     assert_eq!(iter.next(), Option::None);

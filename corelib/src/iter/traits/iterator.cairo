@@ -1,5 +1,5 @@
 use crate::iter::adapters::{
-    Enumerate, Filter, Map, Zip, enumerated_iterator, filter_iterator, mapped_iterator,
+    Enumerate, Filter, Map, Peekable, Zip, enumerated_iterator, filter_iterator, mapped_iterator,
     peekable_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
@@ -388,7 +388,7 @@ pub trait Iterator<T> {
     }
 
     /// Creates an iterator which uses a closure to determine if an element
-    /// should be yielded.
+    /// should be yielded. The closure takes each element as a snapshot.
     ///
     /// Given an element the closure must return `true` or `false`. The returned
     /// iterator will yield only the elements for which the closure returns
@@ -401,7 +401,7 @@ pub trait Iterator<T> {
     /// ```
     /// let a = array![0_u32, 1, 2];
     ///
-    /// let mut iter = a.into_iter().filter(|x| x > 0);
+    /// let mut iter = a.into_iter().filter(|x| *x > 0);
     ///
     /// assert_eq!(iter.next(), Option::Some(1));
     /// assert_eq!(iter.next(), Option::Some(2));
@@ -412,10 +412,9 @@ pub trait Iterator<T> {
     #[inline]
     fn filter<
         P,
-        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
         +Destruct<P>,
         +Destruct<T>,
-        +Copy<Self::Item>,
         +Destruct<Self::Item>,
     >(
         self: T, predicate: P,
