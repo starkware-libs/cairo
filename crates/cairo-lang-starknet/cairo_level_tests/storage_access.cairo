@@ -1,7 +1,7 @@
 #[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
-use starknet::storage::Vec;
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Vec};
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
 
@@ -106,8 +106,8 @@ mod test_contract {
     };
 
     #[storage]
-    struct Storage {
-        data: AbcEtc,
+    pub struct Storage {
+        pub data: AbcEtc,
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
         vecs: Vecs,
@@ -401,4 +401,14 @@ fn test_enum_sub_pointers() {
     assert_eq!(
         deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 789,
     );
+}
+
+#[test]
+fn test_scrub_clears_memory() {
+    let mut state = test_contract::contract_state_for_testing();
+    state.data.a.write(1);
+    let a_address = state.data.a.__storage_pointer_address__;
+    assert_eq!(state.data.a.read(), 1);
+    starknet::SyscallResultTrait::unwrap_syscall(starknet::Store::<u8>::scrub(0, a_address, 0));
+    assert_eq!(state.data.a.read(), 0);
 }
