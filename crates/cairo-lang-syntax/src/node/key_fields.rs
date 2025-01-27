@@ -418,6 +418,19 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRule => {
             vec![]
         }
+        SyntaxKind::MacroRuleParam => {
+            vec![]
+        }
+        SyntaxKind::ParenthesizedMacroMatcher => {
+            vec![]
+        }
+        SyntaxKind::BracedMacroMatcher => {
+            vec![]
+        }
+        SyntaxKind::BracketedMacroMatcher => {
+            vec![]
+        }
+        SyntaxKind::MacroRuleElements => vec![],
         SyntaxKind::LegacyExprInlineMacro => {
             vec![]
         }
