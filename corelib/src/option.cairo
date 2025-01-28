@@ -222,7 +222,7 @@ pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>
         match self {
             Some(x) => x.destruct(),
             None => (),
-        };
+        }
     }
 }
 /// A trait for handling `Option<T>` related operations.

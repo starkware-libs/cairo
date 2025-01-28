@@ -9,7 +9,7 @@ fn contains<T, impl TPartialEq: PartialEq<T>, +Drop<T>, +Copy<T>>(
             break true;
         } else {
             index = index + 1_usize;
-        };
+        }
     }
 }
 

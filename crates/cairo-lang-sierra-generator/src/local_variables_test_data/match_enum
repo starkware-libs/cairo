@@ -108,7 +108,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             return 0;
         },
         MyEnum::B(b) => { b + b + b },
-    };
+    }
 
     // w1 is not revoked.
     let w2 = w1 + z;
@@ -119,7 +119,7 @@ fn foo(x: MyEnum, z: felt252) -> felt252 {
             a
         },
         MyEnum::B(b) => { b + b + b },
-    };
+    }
 
     // w2 is revoked.
     w2 + z

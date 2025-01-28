@@ -166,7 +166,7 @@ fn sha256_as_u256(input: ByteArray) -> u256 {
     for word in hash_result.span() {
         value *= 0x100000000;
         value = value + (*word).into();
-    };
+    }
     value
 }
 

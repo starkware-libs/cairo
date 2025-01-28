@@ -410,7 +410,7 @@ fn test_scrub_clears_memory() {
     );
     for i in 0..=255_u8 {
         starknet::Store::<u8>::write_at_offset(0, base_address, i, 1).unwrap();
-    };
+    }
     starknet::Store::<
         (
             felt252,
@@ -429,11 +429,11 @@ fn test_scrub_clears_memory() {
         .unwrap();
     for i in 0..7_u8 {
         assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
-    };
+    }
     for i in 7..18_u8 {
         assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 0);
-    };
+    }
     for i in 18..=255_u8 {
         assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i).unwrap(), 1);
-    };
+    }
 }

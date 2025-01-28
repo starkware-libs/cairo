@@ -294,16 +294,16 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
                 Some(value) => {
                     if Debug::fmt(value, ref f).is_err() {
                         break Err(Error {});
-                    };
+                    }
                     if self.is_empty() {
                         break Ok(());
                     }
                     if write!(f, ", ").is_err() {
                         break Err(Error {});
-                    };
+                    }
                 },
                 None => { break Ok(()); },
-            };
+            }
         }?;
         write!(f, "]")
     }

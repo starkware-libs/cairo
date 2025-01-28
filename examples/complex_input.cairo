@@ -13,16 +13,16 @@ fn complex_input(
     let mut r: u256 = felt_input.into();
     while let Some(x) = felt_arr_input.pop_front() {
         r += x.into();
-    };
+    }
     r += a_input.val;
     while let Some(x) = a_input.arr.pop_front() {
         r += x;
-    };
+    }
     while let Some(mut a) = a_arr_input.pop_front() {
         r += a.val;
         while let Some(x) = a.arr.pop_front() {
             r += x;
-        };
-    };
+        }
+    }
     r
 }

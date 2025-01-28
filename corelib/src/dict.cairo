@@ -274,7 +274,7 @@ impl Felt252DictFromIterator<
         let mut dict = Default::default();
         for (key, value) in iter {
             dict.insert(key, value);
-        };
+        }
         dict
     }
 }

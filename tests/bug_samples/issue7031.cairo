@@ -10,7 +10,7 @@ pub trait IteratorEx<T, impl I: Iterator<T>, +Destruct<T>, +Drop<I::Item>> {
                 res = Err((n - i).try_into().unwrap());
                 break;
             }
-        };
+        }
         res
     }
 }

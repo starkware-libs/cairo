@@ -59,7 +59,7 @@ fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a {
         y = y + x;
-    };
+    }
     y
 }
 
@@ -116,7 +116,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -176,7 +176,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), true) = (a(), 5 == 6) {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -236,7 +236,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), 3) = (a(), 3) {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -283,7 +283,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let x = y {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -301,7 +301,7 @@ error: Numeric values are not supported in while-let conditions.
       while let x = y {
  _____^
 |         y = y + x
-|     };
+|     }
 |_____^
 
 //! > lowering_flat
@@ -327,7 +327,7 @@ fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let _ = a {
         y = y + 5;
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -387,7 +387,7 @@ fn foo(a: MyStruct) -> felt252 {
     let mut y = 0;
     while let _ = a {
         y = y + 5;
-    };
+    }
     y = y + 1;
     return y;
 }

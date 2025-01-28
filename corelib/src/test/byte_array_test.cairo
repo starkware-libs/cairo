@@ -10,7 +10,7 @@ fn test_append_byte() {
         }
         ba.append_byte(c);
         c += 1;
-    };
+    }
 
     let expected_data = [0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
@@ -517,7 +517,7 @@ fn compare_byte_array(
             None(_) => { break; },
         }
         data_index += 1;
-    };
+    }
 
     assert_eq!(*ba.pending_word_len, pending_word_len);
     let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
@@ -538,7 +538,7 @@ fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
             None(_) => { break; },
         }
         index += 1;
-    };
+    }
 }
 
 fn test_byte_array_1() -> ByteArray {

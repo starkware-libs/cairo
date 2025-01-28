@@ -9,7 +9,7 @@ impl BattleImpl of BattleTrait {
             if !self.is_ally(entity) {
                 break;
             }
-        };
+        }
     }
 
     fn is_ally(ref self: Battle, entity_index: u32) -> bool {

@@ -150,7 +150,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
                 self.append_span(span);
             },
             None => {},
-        };
+        }
     }
 
     /// Pops a value from the front of the array.
@@ -759,8 +759,8 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
             match span.pop_front() {
                 Some(v) => { response.append(v.clone()); },
                 None => { break (); },
-            };
-        };
+            }
+        }
         response
     }
 }
@@ -784,7 +784,7 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
                     break false;
                 } },
                 None => { break true; },
-            };
+            }
         }
     }
 }
@@ -862,7 +862,7 @@ impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
         let mut arr = array![];
         for elem in iter {
             arr.append(elem);
-        };
+        }
         arr
     }
 }
