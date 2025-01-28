@@ -29,7 +29,7 @@ use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::plugin::aux_data::StarkNetEventAuxData;
+use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
     CONSTRUCTOR_ATTR, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG, CONTRACT_STATE_NAME,
@@ -837,7 +837,7 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     let module_file = impl_def_id.module_file_id(db.upcast());
     let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
     let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
-    Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
+    Some(aux_data.0.as_any().downcast_ref::<StarknetEventAuxData>()?.event_data.clone())
 }
 
 #[derive(Error, Debug)]
