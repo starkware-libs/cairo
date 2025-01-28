@@ -30,7 +30,7 @@ fn main() -> anyhow::Result<()> {
         Err(err) => {
             anyhow::bail!(formatdoc! {"
             Failed to parse sierra program with: `{err:?}`.
-            Note: StarkNet contracts should be compiled with `starknet-sierra-compile`."
+            Note: Starknet contracts should be compiled with `starknet-sierra-compile`."
             })
         }
     };

@@ -425,7 +425,7 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::builtin(CostTokenType::Poseidon),
             }],
         },
-        StarkNet(libfunc) => {
+        Starknet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
         Nullable(libfunc) => match libfunc {

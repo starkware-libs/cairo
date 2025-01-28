@@ -29,7 +29,7 @@ pub struct Call {
 ///
 /// This trait assumes that the calldata for invoke transactions is `Array<Call>`.
 /// This is the network standard following SNIP6.
-/// It is not enforced by StarkNet, but deviating from the standard interface may lead to
+/// It is not enforced by Starknet, but deviating from the standard interface may lead to
 /// incompatibility with standard tooling.
 #[starknet::interface]
 pub trait AccountContract<TContractState> {

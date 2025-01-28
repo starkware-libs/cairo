@@ -16,7 +16,7 @@ use cairo_lang_utils::extract_matches;
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
 use super::events::{EMPTY_EVENT_CODE, get_starknet_event_variants};
-use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::aux_data::StarknetContractAuxData;
 use crate::plugin::consts::{
     COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME,
     STORAGE_ATTR, STORAGE_STRUCT_NAME,
@@ -221,7 +221,7 @@ pub(super) fn handle_module_by_storage(
             code_mappings,
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
-                    Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
+                    Some(DynGeneratedFileAuxData::new(StarknetContractAuxData {
                         contract_name: module_name,
                     }))
                 }

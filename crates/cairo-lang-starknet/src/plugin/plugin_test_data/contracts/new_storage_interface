@@ -1,4 +1,4 @@
-//! > Test expansion of StarkNet storage logic.
+//! > Test expansion of Starknet storage logic.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: warnings_only)

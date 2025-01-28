@@ -28,9 +28,9 @@ use self::starknet_module::{handle_module, handle_module_by_storage};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct StarkNetPlugin;
+pub struct StarknetPlugin;
 
-impl MacroPlugin for StarkNetPlugin {
+impl MacroPlugin for StarknetPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
