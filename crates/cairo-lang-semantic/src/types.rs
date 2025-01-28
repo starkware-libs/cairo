@@ -225,7 +225,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
                 write!(f, "{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::ImplType(impl_type_id) => {
-                write!(f, "{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
+                write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(def_db))
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
