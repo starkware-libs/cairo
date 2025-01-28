@@ -48,9 +48,8 @@ pub enum Felt252SerdeError {
     #[error("Invalid input for deserialization.")]
     InvalidInputForDeserialization,
     #[error(
-        "Id `{0}` is too long for serialization. It is longer than {} characters. Consider adding \
-         it in SERDE_SUPPORTED_LONG_IDS.",
-        SHORT_STRING_BOUND
+        "Id `{0}` is too long for serialization. It is longer than {SHORT_STRING_BOUND} \
+         characters. Consider adding it in SERDE_SUPPORTED_LONG_IDS."
     )]
     GenericIdTooLong(String),
     #[error("Invalid order of type declarations for serialization.")]
