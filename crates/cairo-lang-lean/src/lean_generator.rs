@@ -116,7 +116,7 @@ struct CasmOpCodePos {
     op_size: usize,
 }
 
-/// Describes a conditional branch: teh condition variable and whether this is the
+/// Describes a conditional branch: the condition variable and whether this is the
 /// equal or not-equal branch.
 struct CondDesc<'a> {
     cond_var: &'a VarBaseDesc,
@@ -354,7 +354,7 @@ struct RetBlockInfo<'a> {
 /// Identifies the statements at the end of the function which copy the return variables to the end
 /// of the stack. Returns a vector of tuples where the first element of the tuple is the number of
 /// statements in the branch return block, the second is the position of the branch ID return
-/// argument inside that block, and the third indicates the size of the ap step (ap += <count>) the
+/// argument inside that block, and the third indicates the size of the ap step (ap += {count}) the
 /// block begins with.
 fn get_ret_blocks(
     aux_info: &CasmBuilderAuxiliaryInfo,
@@ -391,7 +391,7 @@ fn get_ret_blocks(
     };
 
     for pos in (casm_start + aux_info.core_libfunc_instr_num..casm_end).rev() {
-        // A branch return block begins with an ap += <step> or with the jmp or return at the end of
+        // A branch return block begins with an ap += {step} or with the jmp or return at the end of
         // the previous block.
         match &cairo_program.instructions[pos].body {
             InstructionBody::AddAp(ap_instr) => {
@@ -737,7 +737,7 @@ struct LeanFuncInfo<'a> {
     casm_start: usize,
     casm_end: usize,
     ret_args: RetArgs,
-    /// The size of the ap step (ap += <count>) at the beginning of each return block.
+    /// The size of the ap step (ap += {count}) at the beginning of each return block.
     ret_branch_ap_steps: Vec<usize>,
     blocks: Vec<FuncBlock>,
     max_rc_counts: HashMap<String, usize>,
@@ -3602,9 +3602,9 @@ impl CompletenessProof {
     /// 2. The variable is a 'let' variable assigned inside the block, but referring to an argument
     ///    of the block.
     ///
-    /// In the first case, the only rewrite needed for the variable is htv_<arg name>.
+    /// In the first case, the only rewrite needed for the variable is htv_{arg name}.
     /// In the second case, this function returns both the rewrite from the 'let' variable
-    /// to the argument (h_<var name>) and the rewrite for the argument (htv_<arg name>).
+    /// to the argument (h_{var name}) and the rewrite for the argument (htv_{arg name}).
     /// TO DO: this function assumes that there is at most one 'let' between the given variable
     /// and the block argument. However, if we have two 'let' statement 'let b = a; let c = b;'
     /// then we would need to add both rewrites (but the method used in this function cannot
