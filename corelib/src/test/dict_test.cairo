@@ -148,3 +148,19 @@ fn test_array_dict() {
     assert(value.is_null(), 'dict[10] == null');
 }
 
+#[test]
+fn test_dict_from_iterator() {
+    let mut dict: Felt252Dict<u32> = (0..5_u32).into_iter().map(|x| (x.into(), x)).collect();
+
+    assert_eq!(dict[0], 0);
+    assert_eq!(dict[1], 1);
+    assert_eq!(dict[2], 2);
+    assert_eq!(dict[3], 3);
+    assert_eq!(dict[4], 4);
+}
+
+#[test]
+fn test_dict_from_iterator_with_duplicate_keys() {
+    let mut dict = array![(0, 1_u32), (0, 2_u32)].into_iter().collect::<Felt252Dict<_>>();
+    assert_eq!(dict[0], 2);
+}

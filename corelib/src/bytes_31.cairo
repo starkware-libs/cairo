@@ -122,10 +122,10 @@ pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
 /// performance.
 ///
 /// Note: this function assumes that:
-/// 1. `word` is validly convertible to a `bytes31`` which has no more than `len` bytes of data.
+/// 1. `word` is validly convertible to a `bytes31` which has no more than `len` bytes of data.
 /// 2. `index <= len`.
 /// 3. `len <= BYTES_IN_BYTES31`.
-/// If these assumptions are not met, it can corrupt the `byte31`s. Thus, this should be a
+/// If these assumptions are not met, it can corrupt the `bytes31`. Thus, this should be a
 /// private function. We could add masking/assertions but it would be more expensive.
 pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {

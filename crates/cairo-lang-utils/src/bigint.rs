@@ -12,7 +12,7 @@ use num_bigint::{BigInt, BigUint};
 use num_traits::{Num, Signed};
 
 /// A wrapper for BigUint that serializes as hex.
-#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct BigUintAsHex {
     /// A field element that encodes the signature of the called function.
@@ -21,6 +21,12 @@ pub struct BigUintAsHex {
         serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
     )]
     pub value: BigUint,
+}
+
+impl<T: Into<BigUint>> From<T> for BigUintAsHex {
+    fn from(x: T) -> Self {
+        Self { value: x.into() }
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -55,7 +61,7 @@ where
 }
 
 // A wrapper for BigInt that serializes as hex.
-#[derive(Default, Clone, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BigIntAsHex {

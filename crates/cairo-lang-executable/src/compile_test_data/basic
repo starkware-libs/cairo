@@ -7,7 +7,7 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable]
 fn main() {}
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -18,6 +18,8 @@ call rel 12;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
 jmp rel 4;
+%{ raise NotImplementedError("marker = memory[ap + -3]") %}
+%{ raise NotImplementedError("marker = memory[ap + -2]") %}
 [ap + -1] = [fp + -3] + 1;
 [ap + -4] = [[fp + -3] + 0];
 [ap + 0] = [ap + -1], ap++;
@@ -57,7 +59,7 @@ fn main(a: felt252, b: felt252) -> felt252 {
     a + b
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -68,6 +70,8 @@ call rel 12;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
 jmp rel 4;
+%{ raise NotImplementedError("marker = memory[ap + -3]") %}
+%{ raise NotImplementedError("marker = memory[ap + -2]") %}
 [ap + -1] = [fp + -3] + 1;
 [ap + -4] = [[fp + -3] + 0];
 [ap + 0] = [ap + -1], ap++;
@@ -143,7 +147,7 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
     }
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output, range_check
 # header #
 [ap + 0] = [fp + -3], ap++;
@@ -155,6 +159,8 @@ call rel 13;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
 jmp rel 4;
+%{ raise NotImplementedError("marker = memory[ap + -3]") %}
+%{ raise NotImplementedError("marker = memory[ap + -2]") %}
 [ap + -1] = [fp + -4] + 1;
 [ap + -4] = [[fp + -4] + 0];
 [ap + 0] = [ap + -1], ap++;
@@ -380,7 +386,7 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable_raw]
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -412,12 +418,12 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable]
 fn require_gas() -> felt252 {
     match core::gas::withdraw_gas() {
-        Option::Some(()) => 1,
-        Option::None => 2,
+        Some(()) => 1,
+        None => 2,
     }
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
@@ -428,6 +434,8 @@ call rel 12;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
 jmp rel 4;
+%{ raise NotImplementedError("marker = memory[ap + -3]") %}
+%{ raise NotImplementedError("marker = memory[ap + -2]") %}
 [ap + -1] = [fp + -3] + 1;
 [ap + -4] = [[fp + -3] + 0];
 [ap + 0] = [ap + -1], ap++;
@@ -469,7 +477,7 @@ fn use_dict() {
     let _dict: Felt252Dict<u8> = Default::default();
 }
 
-//! > generated_casm_code
+//! > result
 # builtins: output, range_check
 # header #
 ap += 2;
@@ -481,7 +489,7 @@ ap += 2;
 [ap + -1] = [[ap + -3] + 2];
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -4] + 3, ap++;
-[ap + 0] = 170141183460469231731687303715884105727, ap++;
+[ap + 0] = 9223372036854775807, ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
@@ -490,6 +498,8 @@ call rel 39;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
 jmp rel 4;
+%{ raise NotImplementedError("marker = memory[ap + -3]") %}
+%{ raise NotImplementedError("marker = memory[ap + -2]") %}
 [ap + -1] = [fp + -4] + 1;
 [ap + -4] = [[fp + -4] + 0];
 [fp + 0] = [ap + -7];
@@ -780,5 +790,23 @@ ret;
 ret;
 # footer #
 ret;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use System implicit.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn use_system() {
+    core::keccak::compute_keccak_byte_array(@"not allowed without starknet.");
+}
+
+//! > result
+Emulated builtin `System` not allowed for executable.
 
 //! > expected_diagnostics

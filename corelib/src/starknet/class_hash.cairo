@@ -78,7 +78,7 @@ impl ClassHashSerde of Serde<ClassHash> {
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
-        Option::Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
+        Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
 }
 

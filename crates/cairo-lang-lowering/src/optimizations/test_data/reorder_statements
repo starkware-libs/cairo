@@ -15,12 +15,12 @@ fn foo() -> felt252 {
     let three = 3;
 
     match opt {
-        Option::Some(_) => one + two,
-        Option::None => {
+        Some(_) => one + two,
+        None => {
             let four = 4;
             match opt {
-                Option::Some(_) => three + four,
-                Option::None => one,
+                Some(_) => three + four,
+                None => one,
             }
         },
     }
@@ -193,8 +193,8 @@ fn foo() {
     !!a;
 
     match get_option() {
-        Option::Some(_) => a,
-        Option::None => false ^ b,
+        Some(_) => a,
+        None => false ^ b,
     };
 }
 
@@ -318,3 +318,94 @@ Statements:
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test match inputs are moved next to the matchh.
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo() -> felt252 {
+    let a = true;
+    let v = 5;
+    if a {
+        v + 3
+    } else {
+        v + 3
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+  (v2: core::felt252) <- 5
+End:
+  Match(match_enum(v1) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 3
+  (v6: core::felt252) <- core::felt252_add(v2, v5)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 3
+  (v9: core::felt252) <- core::felt252_add(v2, v8)
+End:
+  Goto(blk3, {v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 5
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+End:
+  Match(match_enum(v1) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 3
+  (v6: core::felt252) <- core::felt252_add(v2, v5)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 3
+  (v9: core::felt252) <- core::felt252_add(v2, v8)
+End:
+  Goto(blk3, {v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)

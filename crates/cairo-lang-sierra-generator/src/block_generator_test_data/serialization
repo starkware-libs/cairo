@@ -6,11 +6,11 @@ block_generator_test
 //! > function
 fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
     match input.pop_front() {
-        Option::Some(value) => {
+        Some(value) => {
             value.serialize(ref serialized);
             serialize_array_felt_helper(ref serialized, input);
         },
-        Option::None => {},
+        None => {},
     }
 }
 

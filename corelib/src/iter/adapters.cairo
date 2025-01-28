@@ -12,3 +12,8 @@ mod zip;
 pub use zip::Zip;
 #[allow(unused_imports)]
 pub(crate) use zip::zipped_iterator;
+
+mod peekable;
+#[allow(unused_imports)]
+pub(crate) use peekable::peekable_iterator;
+pub use peekable::{Peekable, PeekableTrait};

@@ -1230,15 +1230,9 @@ impl SemanticRewriter<TypeLongId, NoError> for Inference<'_> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) => {
-                        impl_type_id_rewrite_result
-                    }
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_type_id_rewrite_result
-                    }
+                    ImplLongId::GenericParameter(_)
+                    | ImplLongId::SelfImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_type_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(ty) = self.db.impl_type_concrete_implized(ImplTypeId::new(
                             impl_id, trait_ty, self.db,
@@ -1358,8 +1352,8 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                         impl_impl_id_rewrite_result
                     }
                     ImplLongId::Concrete(_) => {
-                        if let Ok(ty) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
-                            *value = self.rewrite(ty).no_err().lookup_intern(self.db);
+                        if let Ok(imp) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
+                            *value = self.rewrite(imp).no_err().lookup_intern(self.db);
                             RewriteResult::Modified
                         } else {
                             impl_impl_id_rewrite_result

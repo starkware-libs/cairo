@@ -47,7 +47,7 @@ use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
 use super::squashed_felt252_dict::SquashedFelt252DictType;
-use super::starknet::{StarkNetLibfunc, StarkNetType};
+use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
@@ -91,7 +91,7 @@ define_type_hierarchy! {
         Pedersen(PedersenType),
         Poseidon(PoseidonType),
         Span(SpanType),
-        StarkNet(StarkNetType),
+        Starknet(StarknetType),
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
@@ -140,7 +140,7 @@ define_libfunc_hierarchy! {
         Felt252DictEntry(Felt252DictEntryLibfunc),
         Pedersen(PedersenLibfunc),
         Poseidon(PoseidonLibfunc),
-        StarkNet(StarkNetLibfunc),
+        Starknet(StarknetLibfunc),
         Debug(DebugLibfunc),
         SnapshotTake(SnapshotTakeLibfunc),
         Bytes31(Bytes31Libfunc),

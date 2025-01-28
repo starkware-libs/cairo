@@ -698,7 +698,7 @@ pub fn compile_invocation(
         Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
         Pedersen(libfunc) => pedersen::build(libfunc, builder),
         Poseidon(libfunc) => poseidon::build(libfunc, builder),
-        StarkNet(libfunc) => starknet::build(libfunc, builder),
+        Starknet(libfunc) => starknet::build(libfunc, builder),
         Nullable(libfunc) => nullable::build(libfunc, builder),
         Debug(libfunc) => debug::build(libfunc, builder),
         SnapshotTake(_) => misc::build_dup(builder),

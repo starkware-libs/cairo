@@ -38,14 +38,13 @@
 //!
 //! ```
 //! let mut ba: ByteArray = "ABC";
-//! let first_bytes = ba[0]
+//! let first_byte = ba[0]
 //! assert!(first_byte == 0x41);
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
 use crate::clone::Clone;
 use crate::cmp::min;
-use crate::option::OptionTrait;
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::bytes_31::{
@@ -168,35 +167,33 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         if self.pending_word_len == BYTES_IN_U128 {
             loop {
                 match other_data.pop_front() {
-                    Option::Some(current_word) => {
-                        self.append_split_index_16((*current_word).into());
-                    },
-                    Option::None => { break; },
+                    Some(current_word) => { self.append_split_index_16((*current_word).into()); },
+                    None => { break; },
                 };
             };
         } else if self.pending_word_len < BYTES_IN_U128 {
             loop {
                 match other_data.pop_front() {
-                    Option::Some(current_word) => {
+                    Some(current_word) => {
                         self
                             .append_split_index_lt_16(
                                 (*current_word).into(), self.pending_word_len,
                             );
                     },
-                    Option::None => { break; },
+                    None => { break; },
                 };
             };
         } else {
             // self.pending_word_len > BYTES_IN_U128
             loop {
                 match other_data.pop_front() {
-                    Option::Some(current_word) => {
+                    Some(current_word) => {
                         self
                             .append_split_index_gt_16(
                                 (*current_word).into(), self.pending_word_len,
                             );
                     },
-                    Option::None => { break; },
+                    None => { break; },
                 };
             };
         }
@@ -267,7 +264,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     }
 
     /// Returns an option of the byte at the given index of `self`
-    /// or `Option::None` if the index is out of bounds.
+    /// or `None` if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -281,17 +278,17 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         if word_index == self.data.len() {
             // Index is in pending word.
             if index_in_word >= *self.pending_word_len {
-                return Option::None;
+                return None;
             }
             // index_in_word is from MSB, we need index from LSB.
-            return Option::Some(
+            return Some(
                 u8_at_u256((*self.pending_word).into(), *self.pending_word_len - 1 - index_in_word),
             );
         }
 
         let data_word: bytes31 = *self.data.get(word_index)?.deref();
         // index_in_word is from MSB, we need index from LSB.
-        Option::Some(data_word.at(BYTES_IN_BYTES31 - 1 - index_in_word))
+        Some(data_word.at(BYTES_IN_BYTES31 - 1 - index_in_word))
     }
 
     /// Returns a `ByteArray` with the reverse order of `self`.
@@ -311,10 +308,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         let mut data = self.data.span();
         loop {
             match data.pop_back() {
-                Option::Some(current_word) => {
+                Some(current_word) => {
                     result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
                 },
-                Option::None => { break; },
+                None => { break; },
             };
         };
         result
@@ -511,5 +508,15 @@ impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {
         ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+    }
+}
+
+impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
+    fn from_iter<I, +Iterator<I>[Item: u8], +Destruct<I>>(iter: I) -> ByteArray {
+        let mut ba = Default::default();
+        for byte in iter {
+            ba.append_byte(byte);
+        };
+        ba
     }
 }

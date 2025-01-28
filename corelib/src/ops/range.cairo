@@ -77,7 +77,7 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
         self.start.fmt(ref f)?;
         write!(f, "..")?;
         self.end.fmt(ref f)?;
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -109,9 +109,9 @@ impl RangeIteratorImpl<
         if self.cur != self.end {
             let value = self.cur;
             self.cur = value + OneT::one();
-            Option::Some(value)
+            Some(value)
         } else {
-            Option::None
+            None
         }
     }
 }
@@ -181,7 +181,7 @@ impl RangeInclusiveDebug<
         self.start.fmt(ref f)?;
         write!(f, "..=")?;
         self.end.fmt(ref f)?;
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -192,7 +192,7 @@ impl RangeInclusiveIteratorImpl<
 
     fn next(ref self: RangeInclusiveIterator<T>) -> Option<T> {
         if self.exhausted {
-            return Option::None;
+            return None;
         }
 
         let current = self.cur;
@@ -200,12 +200,12 @@ impl RangeInclusiveIteratorImpl<
         // If this is the last element, mark as exhausted for next iteration
         if current == self.end {
             self.exhausted = true;
-            return Option::Some(current);
+            return Some(current);
         }
 
         // We know current < self.end here, because the iterator is not exhausted
         self.cur = current + One::one();
-        Option::Some(current)
+        Some(current)
     }
 }
 
@@ -239,10 +239,10 @@ mod internal {
 
         fn next(ref self: IntRange<T>) -> Option<T> {
             match int_range_pop_front(self) {
-                OptionRev::None => Option::None,
+                OptionRev::None => None,
                 OptionRev::Some((new_range, value)) => {
                     self = new_range;
-                    Option::Some(value)
+                    Some(value)
                 },
             }
         }
@@ -258,8 +258,8 @@ impl SierraRangeIntoIterator<
     type IntoIter = internal::IntRange<T>;
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         match internal::int_range_try_new(self.start, self.end) {
-            Result::Ok(range) => range,
-            Result::Err(range) => range,
+            Ok(range) => range,
+            Err(range) => range,
         }
     }
 }

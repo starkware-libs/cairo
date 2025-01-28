@@ -66,7 +66,7 @@ use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
-use crate::items::functions::function_signature_params;
+use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
@@ -424,7 +424,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
-        ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr),
+        ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
     }
 }
 
@@ -882,7 +882,7 @@ fn compute_expr_function_call_semantic(
                 let mut arg_types = vec![];
                 for arg_syntax in args_iter {
                     let stable_ptr = arg_syntax.stable_ptr();
-                    let arg = compute_named_argument_clause(ctx, arg_syntax);
+                    let arg = compute_named_argument_clause(ctx, arg_syntax, None);
                     if arg.2 != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
                     }
@@ -930,7 +930,7 @@ fn compute_expr_function_call_semantic(
             let named_args: Vec<_> = args_syntax
                 .elements(syntax_db)
                 .into_iter()
-                .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax))
+                .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
                 .collect();
             if named_args.len() != 1 {
                 return Err(ctx.diagnostics.report(syntax, WrongNumberOfArguments {
@@ -979,16 +979,21 @@ fn compute_expr_function_call_semantic(
             let mut args_iter = args_syntax.elements(syntax_db).into_iter();
             // Normal parameters
             let mut named_args = vec![];
-            for _ in function_parameter_types(ctx, function)? {
+            let closure_params = concrete_function_closure_params(db, function)?;
+            for ty in function_parameter_types(ctx, function)? {
                 let Some(arg_syntax) = args_iter.next() else {
                     continue;
                 };
-                named_args.push(compute_named_argument_clause(ctx, arg_syntax));
+                named_args.push(compute_named_argument_clause(
+                    ctx,
+                    arg_syntax,
+                    closure_params.get(&ty).copied(),
+                ));
             }
 
             // Maybe coupon
             if let Some(arg_syntax) = args_iter.next() {
-                named_args.push(compute_named_argument_clause(ctx, arg_syntax));
+                named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
             }
 
             expr_function_call(ctx, function, named_args, syntax, syntax.stable_ptr().into())
@@ -1006,6 +1011,7 @@ fn compute_expr_function_call_semantic(
 pub fn compute_named_argument_clause(
     ctx: &mut ComputationContext<'_>,
     arg_syntax: ast::Arg,
+    closure_params_tuple_ty: Option<TypeId>,
 ) -> NamedArg {
     let syntax_db = ctx.db.upcast();
 
@@ -1017,11 +1023,16 @@ pub fn compute_named_argument_clause(
 
     let arg_clause = arg_syntax.arg_clause(syntax_db);
     let (expr, arg_name_identifier) = match arg_clause {
-        ast::ArgClause::Unnamed(arg_unnamed) => {
-            (compute_expr_semantic(ctx, &arg_unnamed.value(syntax_db)), None)
-        }
+        ast::ArgClause::Unnamed(arg_unnamed) => (
+            handle_possible_closure_expr(
+                ctx,
+                &arg_unnamed.value(syntax_db),
+                closure_params_tuple_ty,
+            ),
+            None,
+        ),
         ast::ArgClause::Named(arg_named) => (
-            compute_expr_semantic(ctx, &arg_named.value(syntax_db)),
+            handle_possible_closure_expr(ctx, &arg_named.value(syntax_db), closure_params_tuple_ty),
             Some(arg_named.name(syntax_db)),
         ),
         ast::ArgClause::FieldInitShorthand(arg_field_init_shorthand) => {
@@ -1034,8 +1045,26 @@ pub fn compute_named_argument_clause(
             (expr, Some(arg_name_identifier))
         }
     };
-
     NamedArg(expr, arg_name_identifier, mutability)
+}
+
+/// Handles the semantic computation of a closure expression.
+/// It processes a closure expression, computes its semantic model,
+/// allocates it in the expression arena, and ensures that the closure's
+/// parameter types are conformed if provided.
+fn handle_possible_closure_expr(
+    ctx: &mut ComputationContext<'_>,
+    expr: &ast::Expr,
+    closure_param_types: Option<TypeId>,
+) -> ExprAndId {
+    if let ast::Expr::Closure(expr_closure) = expr {
+        let expr = compute_expr_closure_semantic(ctx, expr_closure, closure_param_types);
+        let expr = wrap_maybe_with_missing(ctx, expr, expr_closure.stable_ptr().into());
+        let id = ctx.arenas.exprs.alloc(expr.clone());
+        ExprAndId { expr, id }
+    } else {
+        compute_expr_semantic(ctx, expr)
+    }
 }
 
 pub fn compute_root_expr(
@@ -1645,6 +1674,7 @@ fn compute_loop_body_semantic(
 fn compute_expr_closure_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprClosure,
+    params_tuple_ty: Option<TypeId>,
 ) -> Maybe<Expr> {
     ctx.are_closures_in_context = true;
     let syntax_db = ctx.db.upcast();
@@ -1663,6 +1693,14 @@ fn compute_expr_closure_semantic(
         } else {
             vec![]
         };
+        let closure_type =
+            TypeLongId::Tuple(params.iter().map(|param| param.ty).collect()).intern(new_ctx.db);
+        if let Some(param_types) = params_tuple_ty {
+            if let Err(err_set) = new_ctx.resolver.inference().conform_ty(closure_type, param_types)
+            {
+                new_ctx.resolver.inference().consume_error_without_reporting(err_set);
+            }
+        }
 
         params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
             new_ctx.diagnostics.report(param.stable_ptr(ctx.db.upcast()), RefClosureParam);
@@ -2326,11 +2364,23 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax)?;
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
-        (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
-        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
+        (ast::Pattern::Tuple(_), TypeLongId::Tuple(_) | TypeLongId::Var(_))
+        | (
+            ast::Pattern::FixedSizeArray(_),
+            TypeLongId::FixedSizeArray { .. } | TypeLongId::Var(_),
+        ) => {}
         _ => {
             return Err(ctx.diagnostics.report(pattern_syntax, unexpected_pattern(ty)));
         }
+    };
+    let patterns_syntax = match pattern_syntax {
+        ast::Pattern::Tuple(pattern_tuple) => {
+            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
+            pattern_fixed_size_array.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
+        _ => unreachable!(),
     };
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
@@ -2343,14 +2393,27 @@ fn maybe_compute_tuple_like_pattern_semantic(
                 .unwrap();
             [inner_ty].repeat(size)
         }
-        _ => unreachable!(),
-    };
-    let patterns_syntax = match pattern_syntax {
-        ast::Pattern::Tuple(pattern_tuple) => {
-            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
-        }
-        ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
-            pattern_fixed_size_array.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        TypeLongId::Var(_) => {
+            let inference = &mut ctx.resolver.inference();
+            let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
+                let inner_tys: Vec<_> = patterns_syntax
+                    .iter()
+                    .map(|e| inference.new_type_var(Some(e.stable_ptr().untyped())))
+                    .collect();
+                (inner_tys.clone(), TypeLongId::Tuple(inner_tys))
+            } else {
+                let var = inference.new_type_var(Some(pattern_syntax.stable_ptr().untyped()));
+                (vec![var; patterns_syntax.len()], TypeLongId::FixedSizeArray {
+                    type_id: var,
+                    size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(ctx.db))
+                        .intern(ctx.db),
+                })
+            };
+            match inference.conform_ty(ty, tuple_like_ty.intern(ctx.db)) {
+                Ok(_) => {}
+                Err(_) => unreachable!("As the type is a var, conforming should always succeed."),
+            }
+            inner_tys
         }
         _ => unreachable!(),
     };
@@ -2834,16 +2897,22 @@ fn method_call_expr(
     // Self argument.
     let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
     // Other arguments.
-    for _ in function_parameter_types(ctx, function_id)?.skip(1) {
+    let closure_params: OrderedHashMap<TypeId, TypeId> =
+        concrete_function_closure_params(ctx.db, function_id)?;
+    for ty in function_parameter_types(ctx, function_id)?.skip(1) {
         let Some(arg_syntax) = args_iter.next() else {
             break;
         };
-        named_args.push(compute_named_argument_clause(ctx, arg_syntax));
+        named_args.push(compute_named_argument_clause(
+            ctx,
+            arg_syntax,
+            closure_params.get(&ty).copied(),
+        ));
     }
 
     // Maybe coupon
     if let Some(arg_syntax) = args_iter.next() {
-        named_args.push(compute_named_argument_clause(ctx, arg_syntax));
+        named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
     }
 
     expr_function_call(ctx, function_id, named_args, &expr, stable_ptr)

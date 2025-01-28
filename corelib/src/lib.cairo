@@ -32,7 +32,7 @@ impl BoolSerde of Serde<bool> {
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
-        Option::Some(*serialized.pop_front()? != 0)
+        Some(*serialized.pop_front()? != 0)
     }
 }
 
@@ -137,13 +137,13 @@ impl Felt252Serde of Serde<felt252> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
         let mut snapshot = serialized.snapshot;
         match crate::array::array_snapshot_pop_front(ref snapshot) {
-            Option::Some(x) => {
+            Some(x) => {
                 serialized = Span { snapshot };
-                Option::Some(*x.unbox())
+                Some(*x.unbox())
             },
-            Option::None => {
+            None => {
                 serialized = Span { snapshot };
-                Option::None
+                None
             },
         }
     }
@@ -238,8 +238,8 @@ extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopan
 impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     fn try_into(self: felt252) -> Option<NonZero<felt252>> {
         match felt252_is_zero(self) {
-            zeroable::IsZeroResult::Zero => Option::None,
-            zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
+            zeroable::IsZeroResult::Zero => None,
+            zeroable::IsZeroResult::NonZero(x) => Some(x),
         }
     }
 }

@@ -12,6 +12,6 @@ pub fn starknet_keccak(data: &[u8]) -> BigUint {
     let mut result = hasher.finalize();
 
     // Truncate result to 250 bits.
-    *result.first_mut().unwrap() &= 3;
+    result[0] &= 3;
     BigUint::from_bytes_be(&result)
 }

@@ -41,22 +41,22 @@ fn test_egcd() {
 
 #[test]
 fn test_inv_mod() {
-    assert(math::inv_mod(5, 24) == Option::Some(5_u256), 'inv_mov(5, 24) != 5');
-    assert(math::inv_mod(29, 24) == Option::Some(5_u128), 'inv_mov(29, 24) != 5');
-    assert(math::inv_mod(1, 24) == Option::Some(1_u16), 'inv_mov(1, 24) != 1');
-    assert(math::inv_mod(1, 5) == Option::Some(1_u32), 'inv_mov(1, 5) != 1');
+    assert(math::inv_mod(5, 24) == Some(5_u256), 'inv_mov(5, 24) != 5');
+    assert(math::inv_mod(29, 24) == Some(5_u128), 'inv_mov(29, 24) != 5');
+    assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mov(1, 24) != 1');
+    assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mov(1, 5) != 1');
     assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mov(8, 24) != None');
-    assert(math::inv_mod(1, 1) == Option::Some(0_usize), 'inv_mov(1, 1) != 0');
-    assert(math::inv_mod(7, 1) == Option::Some(0_usize), 'inv_mov(7, 1) != 0');
+    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mov(1, 1) != 0');
+    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mov(7, 1) != 0');
 }
 
 #[test]
 fn test_u256_div_mod_n() {
-    assert(math::u256_div_mod_n(6, 2, 7) == Option::Some(3), '6 / 2 != 3 (7)');
-    assert(math::u256_div_mod_n(5, 1, 7) == Option::Some(5), '5 / 1 != 5 (7)');
-    assert(math::u256_div_mod_n(1, 1, 7) == Option::Some(1), '1 / 1 != 1 (7)');
-    assert(math::u256_div_mod_n(7, 2, 13) == Option::Some(10), '7 / 2 != 10 (13)');
-    assert(math::u256_div_mod_n(0, 3, 13) == Option::Some(0), '0 / 3 != 0 (13)');
+    assert(math::u256_div_mod_n(6, 2, 7) == Some(3), '6 / 2 != 3 (7)');
+    assert(math::u256_div_mod_n(5, 1, 7) == Some(5), '5 / 1 != 5 (7)');
+    assert(math::u256_div_mod_n(1, 1, 7) == Some(1), '1 / 1 != 1 (7)');
+    assert(math::u256_div_mod_n(7, 2, 13) == Some(10), '7 / 2 != 10 (13)');
+    assert(math::u256_div_mod_n(0, 3, 13) == Some(0), '0 / 3 != 0 (13)');
     assert(math::u256_div_mod_n(4, 3, 6).is_none(), '4 / 3 == None (6)');
     assert(math::u256_div_mod_n(5, 4, 6).is_none(), '5 / 4 == None (6)');
     assert(math::u256_div_mod_n(2, 8, 4).is_none(), '2 / 8 == None (4)');
@@ -65,7 +65,7 @@ fn test_u256_div_mod_n() {
             0xfa855081cc80656250605b2ecd7958ba4f0aa6799053da0d68bf76f2484decc6,
             0xe8e94a59a951af1b4c8cbd45fb8d01c1dd946de2533e3ad18845f9dbb6d12f4f,
             0xa3db605888ac3cd19e70c5b52220ad693566b996ef078e907578fec7758dabc9,
-        ) == Option::Some(0x8e70aea916ee4b782a0da9c18083ed9d867148a703615a2a88d0e7fddd4c900d),
+        ) == Some(0x8e70aea916ee4b782a0da9c18083ed9d867148a703615a2a88d0e7fddd4c900d),
         'Random large values 1',
     );
     assert(
@@ -73,7 +73,7 @@ fn test_u256_div_mod_n() {
             0x759426f1c0ba213b6378196b5091f5fa48f49f1d0cecfb00a7d59a51be35f609,
             0x57ff2c2e0900fce82331e396a71787a837783cca8145538eb32cb4b52104a3be,
             0xcb514e4d4672d8f1d952c0312afb5baae86121aa5817030d8439ce759295a029,
-        ) == Option::Some(0x7c9d22b40f98075c0bfd674d546bc77d775dcf021d30b88afb099834dffa951b),
+        ) == Some(0x7c9d22b40f98075c0bfd674d546bc77d775dcf021d30b88afb099834dffa951b),
         'Random large values 2',
     );
 }

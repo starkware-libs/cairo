@@ -35,7 +35,7 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -302,46 +302,46 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Poseidon(libfunc) => match libfunc {
             PoseidonConcreteLibfunc::HadesPermutation(_) => vec![ApChange::Known(0)],
         },
-        StarkNet(libfunc) => match libfunc {
-            StarkNetConcreteLibfunc::ClassHashConst(_)
-            | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
+        Starknet(libfunc) => match libfunc {
+            StarknetConcreteLibfunc::ClassHashConst(_)
+            | StarknetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
 
-            StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
-            | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
-            | StarkNetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
+            StarknetConcreteLibfunc::ClassHashTryFromFelt252(_)
+            | StarknetConcreteLibfunc::ContractAddressTryFromFelt252(_)
+            | StarknetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
-            StarkNetConcreteLibfunc::ClassHashToFelt252(_)
-            | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
-            | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
+            StarknetConcreteLibfunc::ClassHashToFelt252(_)
+            | StarknetConcreteLibfunc::ContractAddressToFelt252(_)
+            | StarknetConcreteLibfunc::StorageAddressToFelt252(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
                 vec![ApChange::Known(7)]
             }
-            StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::CallContract(_)
-            | StarkNetConcreteLibfunc::StorageRead(_)
-            | StarkNetConcreteLibfunc::StorageWrite(_)
-            | StarkNetConcreteLibfunc::EmitEvent(_)
-            | StarkNetConcreteLibfunc::GetBlockHash(_)
-            | StarkNetConcreteLibfunc::GetExecutionInfo(_)
-            | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
-            | StarkNetConcreteLibfunc::Deploy(_)
-            | StarkNetConcreteLibfunc::Keccak(_)
-            | StarkNetConcreteLibfunc::Sha256ProcessBlock(_)
-            | StarkNetConcreteLibfunc::LibraryCall(_)
-            | StarkNetConcreteLibfunc::ReplaceClass(_)
-            | StarkNetConcreteLibfunc::SendMessageToL1(_)
-            | StarkNetConcreteLibfunc::Secp256(_)
-            | StarkNetConcreteLibfunc::GetClassHashAt(_) => {
+            StarknetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::CallContract(_)
+            | StarknetConcreteLibfunc::StorageRead(_)
+            | StarknetConcreteLibfunc::StorageWrite(_)
+            | StarknetConcreteLibfunc::EmitEvent(_)
+            | StarknetConcreteLibfunc::GetBlockHash(_)
+            | StarknetConcreteLibfunc::GetExecutionInfo(_)
+            | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+            | StarknetConcreteLibfunc::Deploy(_)
+            | StarknetConcreteLibfunc::Keccak(_)
+            | StarknetConcreteLibfunc::Sha256ProcessBlock(_)
+            | StarknetConcreteLibfunc::LibraryCall(_)
+            | StarknetConcreteLibfunc::ReplaceClass(_)
+            | StarknetConcreteLibfunc::SendMessageToL1(_)
+            | StarknetConcreteLibfunc::Secp256(_)
+            | StarknetConcreteLibfunc::GetClassHashAt(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
+            StarknetConcreteLibfunc::Testing(libfunc) => match libfunc {
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
             },
-            StarkNetConcreteLibfunc::Sha256StateHandleInit(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::Sha256StateHandleDigest(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::Sha256StateHandleInit(_) => vec![ApChange::Known(0)],
+            StarknetConcreteLibfunc::Sha256StateHandleDigest(_) => vec![ApChange::Known(0)],
         },
         Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_)

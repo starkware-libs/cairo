@@ -4,8 +4,8 @@ fn main() {
 
     let _a = loop {
         let _v: felt252 = match a.pop_front() {
-            Option::Some(v) => { v },
-            Option::None => { break 'hi'; },
+            Some(v) => { v },
+            None => { break 'hi'; },
         };
     };
 }

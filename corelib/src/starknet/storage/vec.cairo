@@ -187,9 +187,9 @@ impl VecImpl<T> of VecTrait<StoragePath<Vec<T>>> {
     fn get(self: StoragePath<Vec<T>>, index: u64) -> Option<StoragePath<T>> {
         let vec_len = self.len();
         if index < vec_len {
-            Option::Some(self.update(index))
+            Some(self.update(index))
         } else {
-            Option::None
+            None
         }
     }
 
@@ -247,7 +247,7 @@ pub trait MutableVecTrait<T> {
     /// }
     ///
     /// fn set_number(ref self: ContractState, index: u64, number: u256) -> bool {
-    ///     if let Option::Some(ptr) = self.numbers.get(index) {
+    ///     if let Some(ptr) = self.numbers.get(index) {
     ///         ptr.write(number);
     ///         true
     ///     } else {
@@ -320,7 +320,103 @@ pub trait MutableVecTrait<T> {
     ///     self.numbers.append().write(number);
     /// }
     /// ```
-    fn append(self: T) -> StoragePath<Mutable<Self::ElementType>>;
+    #[deprecated(
+        feature: "starknet-storage-deprecation",
+        note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead",
+    )]
+    fn append(self: T) -> StoragePath<Mutable<Self::ElementType>> {
+        Self::allocate(self)
+    }
+
+    /// Allocates space for a new element at the end of the vector, returning a mutable storage path
+    /// to write the element.
+    ///
+    /// This function is a replacement for the deprecated `append` function, which allowed
+    /// appending new elements to a vector. Unlike `append`, `allocate` is specifically useful when
+    /// you need to prepare space for elements of unknown or dynamic size (e.g., appending another
+    /// vector).
+    ///
+    /// # Use Case
+    ///
+    /// `allocate` is essential when pushing a vector into another vector, as the size of the
+    /// nested vector is unknown at compile time. It allows the caller to allocate the required
+    /// space first, then write the nested vector into the allocated space using `.write()`.
+    ///
+    /// This is necessary because pushing directly (e.g., `vec.push(nested_vec)`) is not supported
+    /// due to the size constraints of the inner vector being dynamic.
+    ///
+    /// # Deprecation Note
+    ///
+    /// The `append` function is now deprecated. Use `allocate` to achieve the same functionality
+    /// with improved clarity and flexibility.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<Vec<u256>>,
+    /// }
+    ///
+    /// fn append_nested_vector(ref self: ContractState, nested: Vec<u256>) {
+    ///     // Allocate space for the nested vector in the outer vector.
+    ///     let storage_path = self.numbers.allocate();
+    ///     // Write the nested vector into the allocated space.
+    ///     storage_path.write(nested);
+    /// }
+    /// ```
+    fn allocate(self: T) -> StoragePath<Mutable<Self::ElementType>>;
+
+    /// Pushes a new value onto the vector.
+    ///
+    /// This operation:
+    /// 1. Increments the vector's length.
+    /// 2. Writes the provided value to the new storage location at the end of the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<u256>,
+    /// }
+    ///
+    /// fn push_number(ref self: ContractState, number: u256) {
+    ///     self.numbers.push(number);
+    /// }
+    /// ```
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T, value: Self::ElementType,
+    );
+
+    /// Pops the last value off the vector.
+    ///
+    /// This operation:
+    /// 1. Retrieves the value stored at the last position in the vector.
+    /// 2. Decrements the vector's length.
+    /// 3. Returns the retrieved value or `None` if the vector is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::storage::{Vec, MutableVecTrait};
+    ///
+    /// #[storage]
+    /// struct Storage {
+    ///     numbers: Vec<u256>,
+    /// }
+    ///
+    /// fn pop_number(ref self: ContractState) -> Option<u256> {
+    ///     self.numbers.pop()
+    /// }
+    /// ```
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T,
+    ) -> Option<Self::ElementType>;
 }
 
 /// Implement `MutableVecTrait` for `StoragePath<Mutable<Vec<T>>`.
@@ -330,9 +426,9 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
     fn get(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> Option<StoragePath<Mutable<T>>> {
         let vec_len = self.len();
         if index < vec_len {
-            Option::Some(self.update(index))
+            Some(self.update(index))
         } else {
-            Option::None
+            None
         }
     }
 
@@ -345,13 +441,39 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         self.as_ptr().read()
     }
 
-    fn append(self: StoragePath<Mutable<Vec<T>>>) -> StoragePath<Mutable<T>> {
+    fn allocate(self: StoragePath<Mutable<Vec<T>>>) -> StoragePath<Mutable<T>> {
         let vec_len = self.len();
         self.as_ptr().write(vec_len + 1);
         self.update(vec_len)
     }
-}
 
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: StoragePath<Mutable<Vec<T>>>, value: Self::ElementType,
+    ) {
+        self.append().write(value);
+    }
+
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: StoragePath<Mutable<Vec<T>>>,
+    ) -> Option<Self::ElementType> {
+        let len_ptr = self.as_ptr();
+        let vec_len: u64 = len_ptr.read();
+        if vec_len == 0 {
+            return None;
+        }
+        let entry: StoragePath<Mutable<T>> = self.update(vec_len - 1);
+        let last_element = entry.read();
+        // Remove the element's data from the storage.
+        let entry_ptr = entry.as_ptr();
+        starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::Store::<
+                Self::ElementType,
+            >::scrub(0, entry_ptr.__storage_pointer_address__, 0),
+        );
+        len_ptr.write(vec_len - 1);
+        Some(last_element)
+    }
+}
 /// Implement `MutableVecTrait` for any type that implements StorageAsPath into a storage
 /// path that implements MutableVecTrait.
 impl PathableMutableVecImpl<
@@ -374,8 +496,20 @@ impl PathableMutableVecImpl<
         self.as_path().len()
     }
 
-    fn append(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
-        self.as_path().append()
+    fn allocate(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
+        self.as_path().allocate()
+    }
+
+    fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T, value: Self::ElementType,
+    ) {
+        self.as_path().push(value)
+    }
+
+    fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
+        self: T,
+    ) -> Option<Self::ElementType> {
+        self.as_path().pop()
     }
 }
 
