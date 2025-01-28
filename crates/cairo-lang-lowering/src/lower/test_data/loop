@@ -941,7 +941,7 @@ fn foo() -> bool {
     loop {
         s.foo();
         break;
-    };
+    }
     s.foo();
     false
 }
@@ -995,7 +995,7 @@ Generated loop lowering for source location:
       loop {
  _____^
 | ...
-|     };
+|     }
 |_____^
 
 Parameters: v0: @test::S
@@ -1027,7 +1027,7 @@ fn foo() {
     loop {
         TT::f1oo(@t.s);
         break;
-    };
+    }
     TT::f1oo(@t.s);
 }
 
@@ -1083,7 +1083,7 @@ Generated loop lowering for source location:
       loop {
  _____^
 | ...
-|     };
+|     }
 |_____^
 
 Parameters: v0: @test::S
@@ -1119,7 +1119,7 @@ fn foo() {
             let _y = a.b.c;
             ex(_y);
             break;
-        };
+        }
         break;
     };
 }
@@ -1182,7 +1182,7 @@ Generated loop lowering for source location:
           loop {
  _________^
 | ...
-|         };
+|         }
 |_________^
 
 Parameters: v0: core::integer::u32
@@ -1246,7 +1246,7 @@ fn foo() {
             let _y = @a.b.c;
             ex(_y);
             break;
-        };
+        }
         break;
     };
 }
@@ -1305,7 +1305,7 @@ Generated loop lowering for source location:
           loop {
  _________^
 | ...
-|         };
+|         }
 |_________^
 
 Parameters: v0: @core::integer::u32
@@ -1553,7 +1553,7 @@ trait MyTrait {
                 break;
             }
             i += 1;
-        };
+        }
         i
     }
 }

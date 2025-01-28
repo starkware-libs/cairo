@@ -93,7 +93,7 @@ impl ArrayExt of ArrayExtTrait {
         let mut output: Array<func::Output> = array![];
         for elem in self {
             output.append(f(elem));
-        };
+        }
         output
     }
 }

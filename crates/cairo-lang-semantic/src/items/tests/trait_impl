@@ -1014,7 +1014,7 @@ fn bar<T, impl I: IntoIterator<T>>(a: T) {
     let mut y: felt252 = 0;
     while let Some(_) = I::Impl::next(ref x) {
         y += 1;
-    };
+    }
     y;
 }
 
@@ -1050,7 +1050,7 @@ fn bar<T, +IntoIterator<T>>(a: T) {
     let mut y: felt252 = 0;
     while let Some(_) = x.next() {
         y += 1;
-    };
+    }
     y;
 }
 

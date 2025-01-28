@@ -921,6 +921,31 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalEmpty {
             return true;
         }
+        if self.kind(db) == SyntaxKind::TerminalSemicolon
+            && parent_kind(db, self) == Some(SyntaxKind::StatementExpr)
+        {
+            let parent_node = self.parent().unwrap();
+            // Checking if not the last statement, as `;` may be there to prevent the block from
+            // returning the value of the current block.
+            let non_tail = parent_node
+                .parent()
+                .map(|grand_parent| db.get_children(grand_parent).last() != Some(&parent_node))
+                .unwrap_or_default();
+            let children = db.get_children(parent_node);
+            if non_tail
+                && matches!(
+                    children[1].kind(db),
+                    SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprLoop
+                        | SyntaxKind::ExprWhile
+                        | SyntaxKind::ExprFor
+                )
+            {
+                return true;
+            }
+        }
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {

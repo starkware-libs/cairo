@@ -82,8 +82,8 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
         match input.pop_front() {
             Some(v) => { keccak_add_u256_le(ref keccak_input, *v); },
             None => { break (); },
-        };
-    };
+        }
+    }
 
     add_padding(ref keccak_input, 0, 0);
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
@@ -124,8 +124,8 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
         match input.pop_front() {
             Some(v) => { keccak_add_u256_be(ref keccak_input, *v); },
             None => { break (); },
-        };
-    };
+        }
+    }
 
     add_padding(ref keccak_input, 0, 0);
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
@@ -274,7 +274,7 @@ pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
         } else {
             factor *= 0x100;
         }
-    };
+    }
     add_padding(ref input, limb, inner);
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
 }

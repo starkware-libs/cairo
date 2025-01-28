@@ -47,7 +47,7 @@ fn foo(ref x: felt252, ref a: bool) -> felt252 {
         x = 7;
     } else {
         x = 6;
-    };
+    }
     bar(ref a)
 }
 
