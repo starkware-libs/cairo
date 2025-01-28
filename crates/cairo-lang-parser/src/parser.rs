@@ -661,18 +661,78 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a MacroRule kind or TryParseFailure if a macro rule can't
     /// be parsed.
     fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen> {
-        match self.peek().kind {
-            SyntaxKind::TerminalLParen => {
-                let lhs = self.parse_token_tree_node();
-                let arrow = self.parse_token::<TerminalMatchArrow>();
-                let rhs = self.parse_block_with_placeholders();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
-                Ok(MacroRule::new_green(self.db, lhs, arrow, rhs, semicolon))
-            }
-            _ => Err(TryParseFailure::SkipToken),
-        }
+        let macro_matcher = match self.peek().kind {
+            SyntaxKind::TerminalLParen => self
+                .expect_wrapped_macro_rule_elements::<TerminalLParen, TerminalRParen, _, _>(
+                    ParenthesizedMacroMatcher::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrace => self
+                .expect_wrapped_macro_rule_elements::<TerminalLBrace, TerminalRBrace, _, _>(
+                    BracedMacroMatcher::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrack => self
+                .expect_wrapped_macro_rule_elements::<TerminalLBrack, TerminalRBrack, _, _>(
+                    BracketedMacroMatcher::new_green,
+                )
+                .into(),
+            _ => return Err(TryParseFailure::SkipToken),
+        };
+        let arrow = self.parse_token::<TerminalMatchArrow>();
+        let macro_body = self.parse_block_with_placeholders();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        Ok(MacroRule::new_green(self.db, macro_matcher, arrow, macro_body, semicolon))
     }
 
+    /// Assumes the current token is LTerminal.
+    /// Expected pattern: `[LTerminal](<MacroRuleElement>)*[RTerminal]`
+    /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
+    /// the parsed list and returns the result.
+    fn expect_wrapped_macro_rule_elements<
+        LTerminal: syntax::node::Terminal,
+        RTerminal: syntax::node::Terminal,
+        ListGreen,
+        NewGreen: Fn(
+            &dyn SyntaxGroup,
+            LTerminal::Green,
+            MacroRuleElementsGreen,
+            RTerminal::Green,
+        ) -> ListGreen,
+    >(
+        &mut self,
+        new_green: NewGreen,
+    ) -> ListGreen {
+        let l_term = self.take::<LTerminal>();
+        let exprs: Vec<MacroRuleElementGreen> = self.parse_list(
+            Self::try_parse_macro_rule_element,
+            is_of_kind!(rparen, rbrace, rbrack),
+            "macro rule element",
+        );
+        let r_term = self.parse_token::<RTerminal>();
+        new_green(self.db, l_term, MacroRuleElements::new_green(self.db, exprs), r_term)
+    }
+
+    /// Returns a GreenId of a node with a MacroRuleElement kind or TryParseFailure if a macro rule
+    /// element can't be parsed.
+    /// Expected pattern: Either any token or a matcher of the pattern $ident:kind.
+    fn try_parse_macro_rule_element(&mut self) -> TryParseResult<MacroRuleElementGreen> {
+        match self.peek().kind {
+            SyntaxKind::TerminalDollar => {
+                let dollar = self.take::<TerminalDollar>();
+                let ident = self.parse_identifier();
+                let colon = self.parse_token::<TerminalColon>();
+                let kind = self.parse_token::<TerminalIdentifier>();
+                Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind).into())
+            }
+            // TODO(Gil): Handle these cases using a tree structure similar to the one used for
+            // token trees.
+            SyntaxKind::TerminalRParen
+            | SyntaxKind::TerminalRBrace
+            | SyntaxKind::TerminalRBrack => Err(TryParseFailure::SkipToken),
+            _ => Ok(self.parse_token_tree_leaf().into()),
+        }
+    }
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
     fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen> {
         if !matches!(

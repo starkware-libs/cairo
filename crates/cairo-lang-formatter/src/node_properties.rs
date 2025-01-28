@@ -173,7 +173,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
+                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
+                    || grandparent_kind(db, self) == Some(SyntaxKind::MacroRuleParam) =>
             {
                 true
             }
