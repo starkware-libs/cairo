@@ -1,7 +1,7 @@
 use crate::circuit::{
     AddInputResultTrait, AddMod, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
     CircuitOutputsTrait, EvalCircuitTrait, MulMod, RangeCheck96, circuit_add, circuit_inverse,
-    circuit_mul, circuit_sub, u384, u96,
+    circuit_mul, circuit_sub, circuit_unsafe_if, u384, u96,
 };
 use crate::num::traits::Zero;
 use crate::traits::TryInto;
@@ -47,6 +47,37 @@ fn test_circuit_success() {
     assert_eq!(outputs.get_output(inv), u384 { limb0: 4, limb1: 0, limb2: 0, limb3: 0 });
     assert_eq!(outputs.get_output(sub), u384 { limb0: 5, limb1: 0, limb2: 0, limb3: 0 });
     assert_eq!(outputs.get_output(mul), u384 { limb0: 6, limb1: 0, limb2: 0, limb3: 0 });
+}
+
+#[test]
+fn test_circuit_unsafe_if() {
+    let condition = CircuitElement::<CircuitInput<0>> {};
+    let in1 = CircuitElement::<CircuitInput<1>> {};
+    let in2 = CircuitElement::<CircuitInput<2>> {};
+    let result = circuit_unsafe_if(condition, in1, in2);
+
+    let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
+    let outputs = (result,)
+        .new_inputs()
+        .next([1, 0, 0, 0])
+        .next([3, 0, 0, 0])
+        .next([6, 0, 0, 0])
+        .done()
+        .eval(modulus)
+        .unwrap();
+
+    assert_eq!(outputs.get_output(result), u384 { limb0: 3, limb1: 0, limb2: 0, limb3: 0 });
+
+    let outputs = (result,)
+        .new_inputs()
+        .next([0, 0, 0, 0])
+        .next([3, 0, 0, 0])
+        .next([6, 0, 0, 0])
+        .done()
+        .eval(modulus)
+        .unwrap();
+
+    assert_eq!(outputs.get_output(result), u384 { limb0: 6, limb1: 0, limb2: 0, limb3: 0 });
 }
 
 

@@ -180,6 +180,26 @@ pub fn circuit_mul<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
     CircuitElement::<MulModGate<Lhs, Rhs>> {}
 }
 
+/// Given a condition in 0 or 1, and two circuit elements a and b, returns a new circuit element
+/// with the value of a if the condition is 1, or b if the condition is 0.
+/// Unsafe: condition not checked, Unexpected value returned if is neither 0 nor 1
+pub fn circuit_unsafe_if<
+    Cond,
+    TrueEl,
+    FalseEl,
+    +CircuitElementTrait<Cond>,
+    +CircuitElementTrait<TrueEl>,
+    +CircuitElementTrait<FalseEl>
+>(
+    condition: CircuitElement<Cond>, a: CircuitElement<TrueEl>, b: CircuitElement<FalseEl>,
+) -> CircuitElement::<AddModGate<FalseEl, MulModGate<SubModGate<TrueEl, FalseEl>, Cond>>> {
+    // a - b if condition is 1, zero if condition is 0
+    let scaled_diff = circuit_mul(circuit_sub(a, b), condition);
+
+    // returns b + (a - b)) if condition is 1, b + 0 if condition is 0
+    circuit_add(b, scaled_diff)
+}
+
 /// A 384-bit unsigned integer, used for circuit values.
 #[derive(Copy, Drop, Debug, PartialEq)]
 pub struct u384 {
