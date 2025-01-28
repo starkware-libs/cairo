@@ -27,11 +27,10 @@ macro macro_name {
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   └── child #0 (kind: MacroRule)
-    │       │       ├── lhs (kind: TokenTreeNode)
-    │       │       │   └── subtree (kind: ParenthesizedTokenTree)
-    │       │       │       ├── lparen (kind: TokenLParen): '('
-    │       │       │       ├── tokens (kind: TokenList) []
-    │       │       │       └── rparen (kind: TokenRParen): ')'
+    │       │       ├── lhs (kind: ParenthesizedMacroMatcher)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroRuleElements) []
+    │       │       │   └── rparen (kind: TokenRParen): ')'
     │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
     │       │       ├── rhs (kind: ExprBlock)
     │       │       │   ├── lbrace (kind: TokenLBrace): '{'
@@ -63,7 +62,7 @@ macro macro_name {
         2 + $placeholder
     };
 
-    ($x: ident) => {
+    ($x:ident x + y) => {
         2 + $x
     };
 }
@@ -85,11 +84,10 @@ macro macro_name {
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── rules (kind: MacroRulesList)
     │       │   ├── child #0 (kind: MacroRule)
-    │       │   │   ├── lhs (kind: TokenTreeNode)
-    │       │   │   │   └── subtree (kind: ParenthesizedTokenTree)
-    │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │       │   │   │       ├── tokens (kind: TokenList) []
-    │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │       │   │   ├── lhs (kind: ParenthesizedMacroMatcher)
+    │       │   │   │   ├── lparen (kind: TokenLParen): '('
+    │       │   │   │   ├── elements (kind: MacroRuleElements) []
+    │       │   │   │   └── rparen (kind: TokenRParen): ')'
     │       │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
     │       │   │   ├── rhs (kind: ExprBlock)
     │       │   │   │   ├── lbrace (kind: TokenLBrace): '{'
@@ -106,19 +104,21 @@ macro macro_name {
     │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │       │   └── child #1 (kind: MacroRule)
-    │       │       ├── lhs (kind: TokenTreeNode)
-    │       │       │   └── subtree (kind: ParenthesizedTokenTree)
-    │       │       │       ├── lparen (kind: TokenLParen): '('
-    │       │       │       ├── tokens (kind: TokenList)
-    │       │       │       │   ├── child #0 (kind: TokenTreeLeaf)
-    │       │       │       │   │   └── leaf (kind: TokenDollar): '$'
-    │       │       │       │   ├── child #1 (kind: TokenTreeLeaf)
-    │       │       │       │   │   └── leaf (kind: TokenIdentifier): 'x'
-    │       │       │       │   ├── child #2 (kind: TokenTreeLeaf)
-    │       │       │       │   │   └── leaf (kind: TokenColon): ':'
-    │       │       │       │   └── child #3 (kind: TokenTreeLeaf)
-    │       │       │       │       └── leaf (kind: TokenIdentifier): 'ident'
-    │       │       │       └── rparen (kind: TokenRParen): ')'
+    │       │       ├── lhs (kind: ParenthesizedMacroMatcher)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroRuleElements)
+    │       │       │   │   ├── child #0 (kind: MacroRuleParam)
+    │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   ├── colon (kind: TokenColon): ':'
+    │       │       │   │   │   └── kind (kind: TokenIdentifier): 'ident'
+    │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'x'
+    │       │       │   │   ├── child #2 (kind: TokenTreeLeaf)
+    │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
+    │       │       │   │   └── child #3 (kind: TokenTreeLeaf)
+    │       │       │   │       └── leaf (kind: TokenIdentifier): 'y'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
     │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
     │       │       ├── rhs (kind: ExprBlock)
     │       │       │   ├── lbrace (kind: TokenLBrace): '{'
