@@ -15,18 +15,17 @@ pub fn filter_iterator<I, P>(iter: I, predicate: P) -> Filter<I, P> {
     Filter { iter, predicate }
 }
 
-pub impl FilterIterator<
+impl FilterIterator<
     I,
     P,
     impl TIter: Iterator<I>,
     +core::ops::Fn<P, (@TIter::Item,)>[Output: bool],
     +Destruct<I>,
     +Destruct<P>,
-    +Copy<P>,
     +Destruct<TIter::Item>,
 > of Iterator<Filter<I, P>> {
     type Item = TIter::Item;
     fn next(ref self: Filter<I, P>) -> Option<Self::Item> {
-        self.iter.find(self.predicate)
+        self.iter.find(@self.predicate)
     }
 }
