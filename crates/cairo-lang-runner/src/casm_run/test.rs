@@ -22,6 +22,8 @@ fn assembled(casm: CasmContext) -> AssembledCairoProgram {
         instructions: casm.instructions,
         consts_info: Default::default(),
         debug_info: CairoProgramDebugInfo { sierra_statement_info: vec![] },
+        #[cfg(feature = "lean")]
+        aux_infos: Vec::new(),
     }
     .assemble()
 }
