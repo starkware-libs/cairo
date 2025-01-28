@@ -49,7 +49,7 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2024-11-23");
+    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-01-27");
     let cmd_with_args = cmd.arg("--config-path").arg(project_root().join("rustfmt.toml"));
     let mut stdout = cmd_with_args.stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
@@ -388,6 +388,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_enum_code(
     name: String,
     variants: Vec<Variant>,
@@ -510,6 +511,7 @@ fn gen_enum_code(
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_token_code(name: String) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let ptr_name = format!("{name}Ptr");
@@ -595,6 +597,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let mut body = rust::Tokens::new();

@@ -122,6 +122,8 @@ trait CompareAssertionPlugin: NamedPlugin {
                 .into(),
             ));
         }
+
+        #[expect(clippy::literal_string_with_formatting_args)]
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
