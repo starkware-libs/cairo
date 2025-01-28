@@ -1,6 +1,7 @@
 use std::hash::Hash;
 
 use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -12,6 +13,7 @@ use super::{
     InferenceVar, LocalTypeVarId, TypeVar,
 };
 use crate::corelib::never_ty;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
@@ -663,10 +665,23 @@ impl Inference<'_> {
         &mut self,
         ty0: TypeId,
         ty1: TypeId,
-    ) -> Result<(), (ErrorSet, TypeId, TypeId)> {
+        diagnostics: &mut SemanticDiagnostics,
+        stable_ptr: impl FnOnce() -> SyntaxStablePtrId,
+        kind: impl FnOnce(TypeId, TypeId) -> SemanticDiagnosticKind,
+    ) -> Maybe<()> {
         match self.conform_ty(ty0, ty1) {
             Ok(_ty) => Ok(()),
-            Err(err) => Err((err, self.rewrite(ty0).no_err(), self.rewrite(ty1).no_err())),
+            Err(err) => {
+                let ty0 = self.rewrite(ty0).no_err();
+                let ty1 = self.rewrite(ty1).no_err();
+                Err(if ty0 != ty1 {
+                    let diag_added = diagnostics.report(stable_ptr(), kind(ty0, ty1));
+                    self.consume_reported_error(err, diag_added);
+                    diag_added
+                } else {
+                    self.report_on_pending_error(err, diagnostics, stable_ptr())
+                })
+            }
         }
     }
 
