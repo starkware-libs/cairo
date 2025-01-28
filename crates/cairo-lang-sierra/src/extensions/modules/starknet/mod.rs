@@ -51,7 +51,7 @@ use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
 
 define_type_hierarchy! {
-    pub enum StarkNetType {
+    pub enum StarknetType {
         ClassHash(ClassHashType),
         ContractAddress(ContractAddressType),
         StorageBaseAddress(StorageBaseAddressType),
@@ -59,11 +59,11 @@ define_type_hierarchy! {
         System(SystemType),
         Secp256Point(Secp256PointType),
         Sha256StateHandle(Sha256StateHandleType),
-    }, StarkNetTypeConcrete
+    }, StarknetTypeConcrete
 }
 
 define_libfunc_hierarchy! {
-    pub enum StarkNetLibfunc {
+    pub enum StarknetLibfunc {
          CallContract(CallContractLibfunc),
          ClassHashConst(ClassHashConstLibfunc),
          ClassHashTryFromFelt252(TryFromFelt252Libfunc<ClassHashTryFromFelt252Trait>),
@@ -94,7 +94,7 @@ define_libfunc_hierarchy! {
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
          Secp256(Secp256Libfunc),
-    }, StarkNetConcreteLibfunc
+    }, StarknetConcreteLibfunc
 }
 
 /// User type for `Span<T>`.
