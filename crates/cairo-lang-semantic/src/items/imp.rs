@@ -274,7 +274,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
     ) -> std::fmt::Result {
         match self {
             ImplLongId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
-            ImplLongId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
+            ImplLongId::GenericParameter(param) => write!(f, "{}", param.debug_name(db.upcast())),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
@@ -410,9 +410,8 @@ impl ImplImplId {
         Ok(ConcreteTraitImplId::new(db, self.impl_id.concrete_trait(db)?, self.trait_impl_id))
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()),)
-            .into()
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
@@ -421,7 +420,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.format(db))
+        write!(f, "{:?}::{}", self.impl_id.debug(db), self.trait_impl_id.name(db.upcast()))
     }
 }
 

@@ -1363,7 +1363,7 @@ error: Trait has no implementation in context: test::Inner::<core::integer::u32>
 | }
 |_^
 
-error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, OuterU32::test::Inner::<core::integer::u32>::Item>.
+error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, test::OuterU32::InnerImpl::Item>.
  --> lib.cairo:31:11
     1_u64.foo(1_u32);
           ^^^
