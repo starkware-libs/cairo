@@ -223,3 +223,47 @@ error: Fixed size array type must have a positive integer size.
  --> lib.cairo:2:5
     [0; N]
     ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test infer fixed size array size from pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let [_a, _b] = bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test fixed size array, wrong pattern size.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let [_a, _b] = bar::<3>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
+
+//! > expected_diagnostics
+error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
+ --> lib.cairo:3:9
+    let [_a, _b] = bar::<3>();
+        ^^^^^^^^

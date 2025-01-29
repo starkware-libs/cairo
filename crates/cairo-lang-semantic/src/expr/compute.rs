@@ -2385,12 +2385,23 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
-            let size = size
-                .lookup_intern(ctx.db)
-                .into_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size = if let ConstValue::Int(value, _) = size.lookup_intern(ctx.db) {
+                value.to_usize().expect("Fixed sized array size must always be usize.")
+            } else {
+                let inference = &mut ctx.resolver.inference();
+                let expected_size =
+                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(ctx.db))
+                        .intern(ctx.db);
+                if let Err(err) = inference.conform_const(size, expected_size) {
+                    let _ = inference.report_on_pending_error(
+                        err,
+                        ctx.diagnostics,
+                        pattern_syntax.stable_ptr().untyped(),
+                    );
+                }
+                patterns_syntax.len()
+            };
+
             [inner_ty].repeat(size)
         }
         TypeLongId::Var(_) => {
