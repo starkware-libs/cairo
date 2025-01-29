@@ -1149,7 +1149,7 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
     let _: u32 = x;
                  ^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: Impl type mismatch: `core::integer::u16` and `core::integer::u32`.
  --> lib.cairo:26:21
     let _: MyTrait::MyType = 3_u32;
                     ^^^^^^
@@ -1524,7 +1524,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
                                     ^^^^^^^^^^^^^^^^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: Impl type mismatch: `core::integer::u16` and `core::integer::u32`.
  --> lib.cairo:16:21
     let _: MyTrait::MyType1 = x;
                     ^^^^^^^
@@ -2656,7 +2656,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u16`.
+error: Impl type mismatch: `core::integer::u16` and `core::felt252`.
  --> lib.cairo:13:31
     let _: felt252 = MyTrait::my_function();
                               ^^^^^^^^^^^
@@ -3209,7 +3209,7 @@ struct S<impl M: MyTrait> {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u32`.
+error: Impl type mismatch: `core::integer::u32` and `core::felt252`.
  --> lib.cairo:12:13
 fn foo() -> S<M> {
             ^^^^

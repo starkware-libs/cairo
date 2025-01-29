@@ -281,7 +281,7 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::integer::u128` and `core::felt252`.
+error: Impl type mismatch: `core::felt252` and `core::integer::u128`.
  --> lib.cairo:9:39
     let _f: u128 = core::ops::FnOnce::call(c, (2,));
                                       ^^^^
