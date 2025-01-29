@@ -170,6 +170,10 @@ pub enum InferenceError {
         trt0: TraitId,
         trt1: TraitId,
     },
+    ImplTypeMismatch {
+        ty0: TypeId,
+        ty1: TypeId,
+    },
     GenericFunctionMismatch {
         func0: GenericFunctionId,
         func1: GenericFunctionId,
@@ -245,6 +249,9 @@ impl InferenceError {
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
                 format!("Function mismatch: `{}` and `{}`.", func0.format(db), func1.format(db))
+            },
+            InferenceError::ImplTypeMismatch { ty0, ty1 } => {
+                format!("Impl type mismatch: `{:?}` and `{:?}`.", ty0.debug(db), ty1.debug(db))
             }
         }
     }
@@ -792,12 +799,18 @@ impl<'db> Inference<'db> {
         self.impl_assignment.insert(var, impl_id);
         if let Some(mappings) = self.impl_vars_trait_item_mappings.remove(&var) {
             for (trait_ty, ty) in mappings.types {
-                self.conform_ty(
-                    ty,
-                    self.db
-                        .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+                let impl_ty = self
+                    .db
+                    .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
+                    .map_err(|_| ErrorSet)?;
+                if let Err(_) = self.conform_ty(ty, impl_ty) {
+                    self.error_status = Ok(());
+                    self.error = None;
+                    return Err(self.set_error(InferenceError::ImplTypeMismatch {
+                        ty0: self.rewrite(impl_ty).no_err(),
+                        ty1: self.rewrite(ty).no_err(),
+                    }));
+                }
             }
             for (trait_constant, constant_id) in mappings.constants {
                 self.conform_const(
