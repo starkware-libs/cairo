@@ -3179,3 +3179,37 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
  --> lib.cairo:9:12
     fn foo<impl I1: MyTrait[ty: u64]>() {}
            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Mismatch in associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> S<M> {
+    S { x: 3_felt252 }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+}
+
+impl M of MyTrait {
+    type InputType = u32;
+}
+
+struct S<impl M: MyTrait> {
+    x: M::InputType,
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "test::S::<test::M>", found: "test::S::<test::M>".
+ --> lib.cairo:12:13
+fn foo() -> S<M> {
+            ^^^^
