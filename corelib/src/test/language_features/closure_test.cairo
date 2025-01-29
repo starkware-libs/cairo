@@ -9,11 +9,11 @@ fn closure() {
 }
 
 #[derive(Destruct)]
-struct DestuctOnly {}
+struct DestructOnly {}
 
 #[test]
 fn closure_destruct() {
-    let a = DestuctOnly {};
+    let a = DestructOnly {};
     || {
         let _b = a;
     };
