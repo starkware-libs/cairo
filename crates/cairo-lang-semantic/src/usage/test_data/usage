@@ -190,7 +190,7 @@ fn foo() -> u32 {
         for _j in inner.span() {
             counter = counter + 1;
         };
-    };
+    }
     counter
 }
 

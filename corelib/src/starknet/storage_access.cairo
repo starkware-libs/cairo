@@ -231,7 +231,7 @@ pub trait Store<T> {
                 break;
             }
             offset += 1;
-        };
+        }
         result
     }
 }
@@ -704,7 +704,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-        };
+        }
         starknet::SyscallResult::Ok(())
     }
 
@@ -739,7 +739,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
                 Store::write_at_offset(address_domain, base, offset, 0)?;
                 Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
-        };
+        }
         starknet::SyscallResult::Ok(())
     }
 
@@ -770,7 +770,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             None(_) => { Store::write(address_domain, base, 0)?; },
-        };
+        }
         starknet::SyscallResult::Ok(())
     }
 
@@ -800,7 +800,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
                 Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             None(_x) => { Store::write_at_offset(address_domain, base, offset, 0)?; },
-        };
+        }
         starknet::SyscallResult::Ok(())
     }
 
@@ -942,7 +942,7 @@ fn inner_write_byte_array(
         ) {
             Ok(_) => {},
             Err(err) => { break Err(err); },
-        };
+        }
         index_in_chunk = match core::integer::u8_overflowing_add(index_in_chunk, 1) {
             Ok(x) => x,
             Err(_) => {

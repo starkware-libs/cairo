@@ -8,7 +8,7 @@ fn foo(y: felt252) -> felt252 {
     let mut x = 5;
     while x != 0 {
         x = x - 1;
-    };
+    }
     x
 }
 
@@ -66,7 +66,7 @@ Generated loop lowering for source location:
       while x != 0 {
  _____^
 |         x = x - 1;
-|     };
+|     }
 |_____^
 
 Parameters: v0: core::felt252
@@ -159,7 +159,7 @@ fn foo(ref arr: Array<felt252>, mut x: felt252) -> felt252 {
     while let true = (x != 0) {
         x = x - 1;
         break;
-    };
+    }
     x
 }
 
@@ -212,7 +212,7 @@ Generated loop lowering for source location:
       while let true = (x != 0) {
  _____^
 | ...
-|     };
+|     }
 |_____^
 
 Parameters: v0: core::felt252
@@ -282,7 +282,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -350,7 +350,7 @@ Generated loop lowering for source location:
       while let MyEnum::A(x) = a() {
  _____^
 |         y = y + x
-|     };
+|     }
 |_____^
 
 Parameters: v0: core::felt252

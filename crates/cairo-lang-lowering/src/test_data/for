@@ -10,7 +10,7 @@ fn foo() -> felt252 {
     let mut iter = array![10, 11, 12, 13_felt252].span();
     for _x in iter {
         1;
-    };
+    }
     y
 }
 

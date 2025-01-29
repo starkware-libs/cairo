@@ -298,7 +298,7 @@ fn foo() -> Option<bool> {
         let res = Some(true);
         res?;
         break;
-    };
+    }
     None
 }
 
@@ -325,7 +325,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() -> Option<bool> {
     loop {
         1
-    };
+    }
     None
 }
 
@@ -352,7 +352,7 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         ()
-    };
+    }
     None
 }
 
@@ -375,7 +375,7 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         panic_with_felt252('no return')
-    };
+    }
     None
 }
 

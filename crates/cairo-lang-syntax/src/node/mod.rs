@@ -103,14 +103,6 @@ impl SyntaxNode {
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
     }
-    /// Returns the position of a syntax node in its parent's children, or None if the node has no
-    /// parent.
-    pub fn position_in_parent(&self, db: &dyn SyntaxGroup) -> Option<usize> {
-        let parent_green = self.parent()?.green_node(db);
-        let parent_children = parent_green.children();
-        let self_green_id = self.0.green;
-        parent_children.iter().position(|child| child == &self_green_id)
-    }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         self.0.stable_ptr
     }

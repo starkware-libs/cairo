@@ -61,7 +61,7 @@ pub fn compute_sha256_u32_array(
 
     while let Some(chunk) = input.multi_pop_front() {
         state = starknet::syscalls::sha256_process_block_syscall(state, *chunk).unwrap_syscall();
-    };
+    }
 
     sha256_state_handle_digest(state).unbox()
 }
@@ -91,7 +91,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
             + arr.at(index).unwrap().into() * 0x1000000;
         word_arr.append(word);
         index = index + 4;
-    };
+    }
 
     let last = match rem {
         0 => 0,

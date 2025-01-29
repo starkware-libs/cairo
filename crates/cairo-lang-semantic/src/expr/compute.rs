@@ -3581,7 +3581,12 @@ pub fn compute_statement_semantic(
                 ast::OptionTerminalSemicolon::Empty(_)
             ) && !matches!(
                 expr_syntax,
-                ast::Expr::Block(_) | ast::Expr::If(_) | ast::Expr::Match(_)
+                ast::Expr::Block(_)
+                    | ast::Expr::If(_)
+                    | ast::Expr::Match(_)
+                    | ast::Expr::Loop(_)
+                    | ast::Expr::While(_)
+                    | ast::Expr::For(_)
             ) {
                 // Point to after the expression, where the semicolon is missing.
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);

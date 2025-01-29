@@ -616,7 +616,7 @@ fn foo(ref a: felt252, b: MyEnum) -> felt252 {
     match b {
         MyEnum::A(x) => x,
         MyEnum::B(x) => x,
-    };
+    }
     res
 }
 

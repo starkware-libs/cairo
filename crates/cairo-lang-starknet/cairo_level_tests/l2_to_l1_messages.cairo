@@ -47,7 +47,7 @@ fn generate_payload(n: u128) -> Array<felt252> {
 
         payload.append(i.into());
         i += 1;
-    };
+    }
 
     payload
 }

@@ -268,7 +268,7 @@ fn nested_for_loop() {
     for arr in mat {
         for i in arr {
             result += i;
-        };
-    };
+        }
+    }
     assert_eq!(result, 21);
 }

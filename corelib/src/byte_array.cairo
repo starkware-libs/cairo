@@ -169,8 +169,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                 match other_data.pop_front() {
                     Some(current_word) => { self.append_split_index_16((*current_word).into()); },
                     None => { break; },
-                };
-            };
+                }
+            }
         } else if self.pending_word_len < BYTES_IN_U128 {
             loop {
                 match other_data.pop_front() {
@@ -181,8 +181,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                             );
                     },
                     None => { break; },
-                };
-            };
+                }
+            }
         } else {
             // self.pending_word_len > BYTES_IN_U128
             loop {
@@ -194,8 +194,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                             );
                     },
                     None => { break; },
-                };
-            };
+                }
+            }
         }
 
         // Add the pending word of `other`.
@@ -312,8 +312,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                     result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
                 },
                 None => { break; },
-            };
-        };
+            }
+        }
         result
     }
 
@@ -341,7 +341,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             }
             self.append_byte(core::bytes_31::get_lsb(split_u128(low, index).high));
             index += 1;
-        };
+        }
         if low_part_limit == BYTES_IN_U128 {
             let mut index_in_high_part = 0;
             let high_part_len = len - BYTES_IN_U128;
@@ -516,7 +516,7 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
         let mut ba = Default::default();
         for byte in iter {
             ba.append_byte(byte);
-        };
+        }
         ba
     }
 }

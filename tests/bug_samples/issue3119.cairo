@@ -17,7 +17,7 @@ fn index_of_min<T, +PartialEq<T>, +PartialOrd<T>, +Drop<T>, +Copy<T>>(
                 }
             },
             None => { break Some(min_index); },
-        };
+        }
     }
 }
 
