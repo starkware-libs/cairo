@@ -27,7 +27,7 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -239,27 +239,22 @@ fn main() -> anyhow::Result<()> {
                     function_id.function_with_body_id(db).base_semantic_function(db),
                 )
                 .unwrap();
-            let key = *multi
+            let key = **multi
                 .generated_lowerings
                 .keys()
-                .find(|key| match key {
-                    GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
-                    // TODO(ilya): Support other types of generated functions.
-                    _ => false,
+                .sorted_by_key(|key| match key {
+                    GeneratedFunctionKey::Loop(id) => {
+                        id.0.lookup(db).span_without_trivia(db.upcast())
+                    }
+                    GeneratedFunctionKey::TraitFunc(_, id) => {
+                        id.syntax_node(db).span_without_trivia(db.upcast())
+                    }
                 })
-                .with_context(|| {
-                    format!(
-                        "expr_id not found - available expr_ids: {:?}",
-                        multi
-                            .generated_lowerings
-                            .keys()
-                            .filter_map(|key| match key {
-                                GeneratedFunctionKey::Loop(id) => Some(id.index()),
-                                _ => None,
-                            })
-                            .collect_vec()
-                    )
-                })?;
+                .take(expr_id + 1)
+                .collect_vec()
+                .get(expr_id)
+                .expect("expr_id out of bounds");
+
             function_id = db.intern_lowering_concrete_function_with_body(
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: function_id.base_semantic_function(db),

@@ -201,7 +201,7 @@ Statements:
   (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
   (v10: @core::array::Array::<core::bytes_31::bytes31>, v11: @core::felt252, v12: @core::integer::u32) <- struct_destructure(v9)
   (v13: core::array::Span::<core::bytes_31::bytes31>) <- struct_construct(v10)
-  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[expr14](v0, v1, v13, v4)
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[exprChild { parent: SyntaxStablePtrId(165242), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v13, v4)
 End:
   Match(match_enum(v16) {
     PanicResult::Ok(v17) => blk1,

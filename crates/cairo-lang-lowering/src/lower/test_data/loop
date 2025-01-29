@@ -33,7 +33,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[expr17](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(19198), kind: ExprLoop, key_fields: [], index: 0 }](v0)
 End:
   Return(v1)
 
@@ -43,7 +43,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 5
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(19198), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -101,7 +101,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- test::foo[expr17](v2)
+  (v14: core::felt252, v13: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(19198), kind: ExprLoop, key_fields: [], index: 0 }](v2)
 End:
   Return(v14, v13)
 
@@ -139,7 +139,7 @@ End:
 
 blk3:
 Statements:
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v3, v4, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(19198), kind: ExprLoop, key_fields: [], index: 0 }](v3, v4, v8)
 End:
   Return(v16, v17, v18)
 
@@ -190,7 +190,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[expr16](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(95500), kind: ExprLoop, key_fields: [], index: 0 }](v0)
 End:
   Return(v1)
 
@@ -200,7 +200,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 5
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(95500), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -258,7 +258,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- test::foo[expr16](v3)
+  (v14: core::felt252, v13: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(95500), kind: ExprLoop, key_fields: [], index: 0 }](v3)
 End:
   Return(v14, v13)
 
@@ -296,7 +296,7 @@ End:
 
 blk3:
 Statements:
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v3, v4, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(95500), kind: ExprLoop, key_fields: [], index: 0 }](v3, v4, v8)
 End:
   Return(v16, v17, v18)
 
@@ -363,7 +363,7 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 5
   (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
-  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[expr26](v2, v3, v1)
+  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[exprChild { parent: SyntaxStablePtrId(104362), kind: ExprLoop, key_fields: [], index: 0 }](v2, v3, v1)
   (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
   (v10: ()) <- struct_construct()
 End:
@@ -376,7 +376,7 @@ blk0 (root):
 Statements:
   (v4: core::integer::u32) <- 5
   (v5: test::B, v6: core::felt252) <- struct_destructure(v2)
-  (v7: core::RangeCheck, v8: core::gas::GasBuiltin, v9: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- test::foo[expr26](v0, v1, v4, v5, v3)
+  (v7: core::RangeCheck, v8: core::gas::GasBuiltin, v9: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(104362), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v4, v5, v3)
 End:
   Match(match_enum(v9) {
     PanicResult::Ok(v10) => blk1,
@@ -438,7 +438,7 @@ End:
 blk3:
 Statements:
   (v17: test::B) <- struct_construct(v0, v5)
-  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[expr26](v0, v17, v2)
+  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[exprChild { parent: SyntaxStablePtrId(104362), kind: ExprLoop, key_fields: [], index: 0 }](v0, v17, v2)
   (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
 End:
   Return(v19, v20, v18)
@@ -516,7 +516,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[expr24](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v0)
 End:
   Return(v1)
 
@@ -526,7 +526,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 5
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -572,7 +572,7 @@ End:
 
 blk1:
 Statements:
-  (v11: core::felt252, v10: core::bool) <- test::foo[expr24](v2)
+  (v11: core::felt252, v10: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v2)
 End:
   Return(v11, v10)
 
@@ -607,7 +607,7 @@ End:
 
 blk6:
 Statements:
-  (v24: core::felt252, v23: core::bool) <- test::foo[expr24](v2)
+  (v24: core::felt252, v23: core::bool) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v2)
 End:
   Return(v24, v23)
 
@@ -636,7 +636,7 @@ End:
 
 blk2:
 Statements:
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v4, v8)
+  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v3, v4, v8)
 End:
   Return(v12, v13, v14)
 
@@ -661,7 +661,7 @@ End:
 
 blk5:
 Statements:
-  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v4, v8)
+  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[exprChild { parent: SyntaxStablePtrId(117598), kind: ExprLoop, key_fields: [], index: 0 }](v3, v4, v8)
 End:
   Return(v22, v23, v24)
 
@@ -707,7 +707,7 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[expr1]()
+  (v0: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(121767), kind: ExprLoop, key_fields: [], index: 0 }]()
 End:
   Return(v0)
 
@@ -791,7 +791,7 @@ Statements:
   (v1: core::integer::u8) <- 4
   (v2: test::A) <- struct_construct(v0, v1)
   (v3: core::integer::u8, v4: core::integer::u8) <- struct_destructure(v2)
-  (v6: core::integer::u8, v5: ()) <- test::foo[expr25](v3)
+  (v6: core::integer::u8, v5: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(123377), kind: ExprLoop, key_fields: [], index: 0 }](v3)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -802,7 +802,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::integer::u8) <- 3
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(123377), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -879,7 +879,7 @@ End:
 
 blk6:
 Statements:
-  (v18: core::integer::u8, v17: ()) <- test::foo[expr25](v8)
+  (v18: core::integer::u8, v17: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(123377), kind: ExprLoop, key_fields: [], index: 0 }](v8)
 End:
   Return(v18, v17)
 
@@ -913,7 +913,7 @@ End:
 
 blk3:
 Statements:
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v3, v4, v7)
+  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(123377), kind: ExprLoop, key_fields: [], index: 0 }](v3, v4, v7)
 End:
   Return(v12, v13, v14)
 
@@ -973,7 +973,7 @@ blk0 (root):
 Statements:
   (v0: test::S) <- struct_construct()
   (v1: test::S, v2: @test::S) <- snapshot(v0)
-  (v3: ()) <- test::foo[expr5](v2)
+  (v3: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(143649), kind: ExprLoop, key_fields: [], index: 0 }](v2)
   (v4: ()) <- test::I::foo(v2)
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
@@ -1064,7 +1064,7 @@ Statements:
   (v1: test::T) <- struct_construct(v0)
   (v2: test::S) <- struct_destructure(v1)
   (v3: test::S, v4: @test::S) <- snapshot(v2)
-  (v5: ()) <- test::foo[expr7](v4)
+  (v5: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(146212), kind: ExprLoop, key_fields: [], index: 0 }](v4)
   (v6: ()) <- test::STT::f1oo(v4)
   (v7: ()) <- struct_construct()
 End:
@@ -1158,7 +1158,7 @@ Statements:
   (v4: test::B, v5: @test::B) <- snapshot(v3)
   (v6: core::integer::u32) <- struct_destructure(v4)
   (v7: test::B) <- struct_construct(v6)
-  (v8: ()) <- test::foo[expr16](v6, v5)
+  (v8: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(148480), kind: ExprLoop, key_fields: [], index: 0 }](v6, v5)
   (v9: ()) <- struct_construct()
 End:
   Return(v9)
@@ -1214,7 +1214,7 @@ Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
 Statements:
   () <- test::ex1(v1)
-  (v2: ()) <- test::foo[expr14](v0)
+  (v2: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(148545), kind: ExprLoop, key_fields: [], index: 0 }](v0)
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -1282,7 +1282,7 @@ Statements:
   (v1: test::B) <- struct_construct(v0)
   (v2: test::A) <- struct_construct(v1)
   (v3: test::B) <- struct_destructure(v2)
-  (v4: ()) <- test::foo[expr16](v3)
+  (v4: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(152301), kind: ExprLoop, key_fields: [], index: 0 }](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1339,7 +1339,7 @@ Statements:
   () <- test::ex1(v0)
   (v1: core::integer::u32) <- struct_destructure(v0)
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  (v4: ()) <- test::foo[expr14](v3)
+  (v4: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(152568), kind: ExprLoop, key_fields: [], index: 0 }](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1399,7 +1399,7 @@ Statements:
   (v0: core::felt252) <- 0
   (v1: test::A) <- struct_construct(v0)
   (v2: core::felt252) <- 0
-  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[expr19](v2, v1)
+  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(155715), kind: ExprWhile, key_fields: [], index: 0 }](v2, v1)
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
@@ -1412,7 +1412,7 @@ Statements:
   (v2: core::felt252) <- 0
   (v3: core::felt252) <- 0
   (v4: test::A) <- struct_construct(v2)
-  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v0, v1, v3, v4)
+  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(155715), kind: ExprWhile, key_fields: [], index: 0 }](v0, v1, v3, v4)
 End:
   Match(match_enum(v7) {
     PanicResult::Ok(v8) => blk1,
@@ -1462,7 +1462,7 @@ Statements:
   () <- test::use_a(v12)
   (v13: core::felt252) <- 1
   (v15: core::felt252, v14: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2, v13)
-  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[expr19](v15, v11)
+  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(155715), kind: ExprWhile, key_fields: [], index: 0 }](v15, v11)
 End:
   Goto(blk3, {v17 -> v21, v18 -> v22, v16 -> v20})
 
@@ -1513,7 +1513,7 @@ Statements:
   () <- test::use_a(v16)
   (v17: core::felt252) <- 1
   (v18: core::felt252) <- core::felt252_add(v2, v17)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v4, v5, v18, v15)
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(155715), kind: ExprWhile, key_fields: [], index: 0 }](v4, v5, v18, v15)
 End:
   Return(v19, v20, v21)
 
@@ -1584,7 +1584,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::integer::u8) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[expr9](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[exprChild { parent: SyntaxStablePtrId(164086), kind: ExprLoop, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,

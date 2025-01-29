@@ -30,7 +30,7 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 5
-  (v3: core::felt252, v2: ()) <- test::foo[expr12](v1)
+  (v3: core::felt252, v2: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(19266), kind: ExprWhile, key_fields: [], index: 0 }](v1)
 End:
   Return(v3)
 
@@ -40,7 +40,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 5
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v0, v1, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(19266), kind: ExprWhile, key_fields: [], index: 0 }](v0, v1, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -86,7 +86,7 @@ blk1:
 Statements:
   (v8: core::felt252) <- 1
   (v9: core::felt252) <- core::Felt252Sub::sub(v1, v8)
-  (v11: core::felt252, v10: ()) <- test::foo[expr12](v9)
+  (v11: core::felt252, v10: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(19266), kind: ExprWhile, key_fields: [], index: 0 }](v9)
 End:
   Goto(blk3, {v11 -> v14, v10 -> v13})
 
@@ -132,7 +132,7 @@ blk3:
 Statements:
   (v11: core::felt252) <- 1
   (v12: core::felt252) <- core::felt252_sub(v2, v11)
-  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v3, v4, v12)
+  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(19266), kind: ExprWhile, key_fields: [], index: 0 }](v3, v4, v12)
 End:
   Return(v13, v14, v15)
 
@@ -180,7 +180,7 @@ Main:
 Parameters: v0: core::array::Array::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252, v2: ()) <- test::foo[expr12](v1)
+  (v3: core::felt252, v2: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(96894), kind: ExprWhile, key_fields: [], index: 0 }](v1)
 End:
   Return(v0, v3)
 
@@ -310,7 +310,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v2: core::felt252, v1: ()) <- test::foo[expr8](v0)
+  (v2: core::felt252, v1: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(100984), kind: ExprWhile, key_fields: [], index: 0 }](v0)
   (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
@@ -322,7 +322,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(100984), kind: ExprWhile, key_fields: [], index: 0 }](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -366,7 +366,7 @@ End:
 blk1:
 Statements:
   (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v4: core::felt252, v3: ()) <- test::foo[expr8](v2)
+  (v4: core::felt252, v3: ()) <- test::foo[exprChild { parent: SyntaxStablePtrId(100984), kind: ExprWhile, key_fields: [], index: 0 }](v2)
 End:
   Goto(blk6, {v4 -> v6, v3 -> v5})
 
@@ -420,7 +420,7 @@ End:
 blk2:
 Statements:
   (v8: core::felt252) <- core::felt252_add(v2, v7)
-  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v3, v4, v8)
+  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[exprChild { parent: SyntaxStablePtrId(100984), kind: ExprWhile, key_fields: [], index: 0 }](v3, v4, v8)
 End:
   Return(v9, v10, v11)
 
