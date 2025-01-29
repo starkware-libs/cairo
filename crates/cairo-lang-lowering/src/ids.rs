@@ -8,6 +8,8 @@ use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
+use cairo_lang_syntax::node::ast::ExprPtr;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
@@ -215,15 +217,10 @@ impl ConcreteFunctionWithBodyId {
         let semantic_db = db.upcast();
         Ok(match self.lookup_intern(db) {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
-            ConcreteFunctionWithBodyLongId::Generated(generated) => {
-                let parent_id = generated.parent.function_with_body_id(semantic_db);
-                match generated.key {
-                    GeneratedFunctionKey::Loop(expr_id) => StableLocation::new(
-                        db.function_body(parent_id)?.arenas.exprs[expr_id].stable_ptr().untyped(),
-                    ),
-                    GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
-                }
-            }
+            ConcreteFunctionWithBodyLongId::Generated(generated) => match generated.key {
+                GeneratedFunctionKey::Loop(stable_ptr) => StableLocation::new(stable_ptr.untyped()),
+                GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
+            },
         })
     }
 }
@@ -379,7 +376,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GeneratedFunctionKey {
     /// Generated loop functions are identified by the loop expr_id.
-    Loop(semantic::ExprId),
+    Loop(ExprPtr),
     TraitFunc(TraitFunctionId, StableLocation),
 }
 
@@ -405,8 +402,23 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for GeneratedFunction {
         db: &(dyn LoweringGroup + 'a),
     ) -> std::fmt::Result {
         match self.key {
-            GeneratedFunctionKey::Loop(expr_id) => {
-                write!(f, "{:?}[expr{}]", self.parent.debug(db), expr_id.index())
+            GeneratedFunctionKey::Loop(expr_ptr) => {
+                let mut func_ptr = expr_ptr.untyped();
+                while ![SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction]
+                    .contains(&func_ptr.kind(db.upcast()))
+                {
+                    func_ptr = func_ptr.parent(db.upcast())
+                }
+
+                let span = expr_ptr.0.lookup(db.upcast()).span(db.upcast());
+                let function_start = func_ptr.lookup(db.upcast()).span(db.upcast()).start;
+                write!(
+                    f,
+                    "{:?}[{:?}-{:?}]",
+                    self.parent.debug(db),
+                    span.start.as_u32() - function_start.as_u32(),
+                    span.end.as_u32() - function_start.as_u32()
+                )
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
                 let trait_id = trait_func.trait_id(db.upcast());

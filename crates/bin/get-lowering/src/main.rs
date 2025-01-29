@@ -27,7 +27,7 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -75,7 +75,7 @@ struct Args {
 
     /// The id the expr id of the generated function to output.
     #[arg(long)]
-    expr_id: Option<usize>,
+    expr_index: Option<usize>,
 
     /// The output file name (default: stdout).
     output: Option<String>,
@@ -233,33 +233,30 @@ fn main() -> anyhow::Result<()> {
 
     let res = if let Some(function_path) = args.function_path {
         let mut function_id = get_func_id_by_name(db, &main_crate_ids, function_path)?;
-        if let Some(expr_id) = args.expr_id {
+        if let Some(expr_id) = args.expr_index {
             let multi = db
                 .priv_function_with_body_multi_lowering(
                     function_id.function_with_body_id(db).base_semantic_function(db),
                 )
                 .unwrap();
-            let key = *multi
+            let keys = multi
                 .generated_lowerings
                 .keys()
-                .find(|key| match key {
-                    GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
-                    // TODO(ilya): Support other types of generated functions.
-                    _ => false,
+                .sorted_by_key(|key| match key {
+                    GeneratedFunctionKey::Loop(id) => {
+                        id.0.lookup(db).span_without_trivia(db.upcast())
+                    }
+                    GeneratedFunctionKey::TraitFunc(_, id) => {
+                        id.syntax_node(db).span_without_trivia(db.upcast())
+                    }
                 })
-                .with_context(|| {
-                    format!(
-                        "expr_id not found - available expr_ids: {:?}",
-                        multi
-                            .generated_lowerings
-                            .keys()
-                            .filter_map(|key| match key {
-                                GeneratedFunctionKey::Loop(id) => Some(id.index()),
-                                _ => None,
-                            })
-                            .collect_vec()
-                    )
-                })?;
+                .take(expr_id + 1)
+                .collect_vec();
+
+            let key = **keys.get(expr_id).with_context(|| {
+                "Invalid expr index. There are {keys.len()} exprs in the function"
+            })?;
+
             function_id = db.intern_lowering_concrete_function_with_body(
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: function_id.base_semantic_function(db),

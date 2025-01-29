@@ -1,4 +1,4 @@
-use crate::test::test_utils::assert_eq;
+use core::test::test_utils::assert_eq;
 
 #[test]
 fn test_array() {
