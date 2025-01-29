@@ -152,8 +152,10 @@ impl SyntaxNode {
                     return token_node.span(db).end;
                 }
                 let children = &mut db.get_children(self.clone());
-                if let Some(child) =
-                    children.iter().filter(|child| child.width(db) != TextWidth::default()).last()
+                if let Some(child) = children
+                    .iter()
+                    .filter(|child| child.width(db) != TextWidth::default())
+                    .next_back()
                 {
                     child.span_end_without_trivia(db)
                 } else {

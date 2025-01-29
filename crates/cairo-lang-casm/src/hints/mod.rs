@@ -1,3 +1,4 @@
+#![expect(clippy::literal_string_with_formatting_args)]
 #[cfg(not(feature = "std"))]
 use alloc::{
     format,
