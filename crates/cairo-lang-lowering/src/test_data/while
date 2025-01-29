@@ -26,7 +26,7 @@ blk0 (root):
 Statements:
   (v3: core::felt252) <- 5
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v2)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v0, v1, v3, v5)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[40,84](v0, v1, v3, v5)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
@@ -83,7 +83,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[118,175](v0, v1, v2, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -141,7 +141,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[120,178](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -201,7 +201,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr15](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[120,196](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -265,7 +265,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[expr10](v0)
+  (v1: core::felt252) <- test::foo[120,188](v0)
   (v2: core::felt252) <- 1
   (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
@@ -309,7 +309,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[expr8](v0)
+  (v1: core::felt252) <- test::foo[41,86](v0)
   (v2: core::felt252) <- 1
   (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
@@ -352,7 +352,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[118,164](v0, v1, v2, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -414,7 +414,7 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
-  (v2: core::felt252) <- test::foo[expr8](v0, v1)
+  (v2: core::felt252) <- test::foo[104,150](v0, v1)
   (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
