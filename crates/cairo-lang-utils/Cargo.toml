@@ -35,7 +35,7 @@ std = [
   "num-traits/std",
   "serde?/std"
 ]
-serde = ["dep:serde", "num-bigint/serde", "indexmap/serde"]
+serde = ["dep:serde", "indexmap/serde"]
 schemars = ["std", "serde", "dep:schemars"]
 parity-scale-codec = ["dep:parity-scale-codec"]
 testing = []
