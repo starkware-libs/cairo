@@ -54,6 +54,19 @@ pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     }
 }
 
+impl UnsignedIntegerIntoContractAddress<T, +Into<T, u128>> of Into<T, ContractAddress> {
+    fn into(self: T) -> ContractAddress {
+        let self: u128 = self.into();
+        contract_address_try_from_felt252(self.into()).unwrap()
+    }
+}
+
+impl U256TryIntoContractAddress of TryInto<u256, ContractAddress> {
+    fn try_into(self: u256) -> Option<ContractAddress> {
+        contract_address_try_from_felt252(self.try_into()?)
+    }
+}
+
 impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
