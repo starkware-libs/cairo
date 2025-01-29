@@ -152,6 +152,55 @@ pub trait Iterator<T> {
         }
     }
 
+    /// Returns the `n`th element of the iterator.
+    ///
+    /// Like most indexing operations, the count starts from zero, so `nth(0)`
+    /// returns the first value, `nth(1)` the second, and so on.
+    ///
+    /// Note that all preceding elements, as well as the returned element, will be
+    /// consumed from the iterator. That means that the preceding elements will be
+    /// discarded, and also that calling `nth(0)` multiple times on the same iterator
+    /// will return different elements.
+    ///
+    /// `nth()` will return [`None`] if `n` is greater than or equal to the length of the
+    /// iterator.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// assert_eq!(iter.nth(1), Some(2));
+    /// ```
+    ///
+    /// Calling `nth()` multiple times doesn't rewind the iterator:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    ///
+    /// assert_eq!(iter.nth(1), Some(2));
+    /// assert_eq!(iter.nth(1), None);
+    /// ```
+    ///
+    /// Returning `None` if there are less than `n + 1` elements:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// assert_eq!(iter.nth(10), None);
+    /// ```
+    #[inline]
+    fn nth<+Destruct<T>, +Destruct<Self::Item>>(
+        ref self: T, n: usize,
+    ) -> Option<
+        Self::Item,
+    > {
+        match Self::advance_by(ref self, n) {
+            Result::Ok(_) => Self::next(ref self),
+            Result::Err(_) => Option::None,
+        }
+    }
+
     /// Takes a closure and creates an iterator which calls that closure on each
     /// element.
     ///
@@ -460,7 +509,7 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.next(), Some((2, 5)));
     /// assert_eq!(iter.next(), Some((3, 6)));
     /// assert_eq!(iter.next(), None);
-    /// ``
+    /// ```
     ///
     /// [`enumerate`]: Iterator::enumerate
     /// [`next`]: Iterator::next
