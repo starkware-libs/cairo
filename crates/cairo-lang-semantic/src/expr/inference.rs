@@ -13,6 +13,7 @@ use cairo_lang_defs::ids::{
     LocalVarId, LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
     TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -170,6 +171,12 @@ pub enum InferenceError {
         trt0: TraitId,
         trt1: TraitId,
     },
+    ImplTypeMismatch {
+        impl_id: ImplId,
+        trait_type_id: TraitTypeId,
+        ty0: TypeId,
+        ty1: TypeId,
+    },
     GenericFunctionMismatch {
         func0: GenericFunctionId,
         func1: GenericFunctionId,
@@ -245,6 +252,15 @@ impl InferenceError {
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
                 format!("Function mismatch: `{}` and `{}`.", func0.format(db), func1.format(db))
+            }
+            InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 } => {
+                format!(
+                    "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
+                    impl_id.format(db.upcast()),
+                    trait_type_id.name(db.upcast()),
+                    ty0.debug(db),
+                    ty1.debug(db)
+                )
             }
         }
     }
@@ -791,13 +807,19 @@ impl<'db> Inference<'db> {
         }
         self.impl_assignment.insert(var, impl_id);
         if let Some(mappings) = self.impl_vars_trait_item_mappings.remove(&var) {
-            for (trait_ty, ty) in mappings.types {
-                self.conform_ty(
-                    ty,
-                    self.db
-                        .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+            for (trait_type_id, ty) in mappings.types {
+                let impl_ty = self
+                    .db
+                    .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_type_id, self.db))
+                    .map_err(|_| ErrorSet)?;
+                if let Err(err_set) = self.conform_ty(ty, impl_ty) {
+                    // Override the error with ImplTypeMismatch.
+                    let ty0 = self.rewrite(ty).no_err();
+                    let ty1 = self.rewrite(impl_ty).no_err();
+
+                    self.error = Some(InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 });
+                    return Err(err_set);
+                }
             }
             for (trait_constant, constant_id) in mappings.constants {
                 self.conform_const(
