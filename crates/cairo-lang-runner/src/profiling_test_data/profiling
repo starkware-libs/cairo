@@ -167,14 +167,14 @@ Weight by sierra statement:
   statement 40: 5 (store_temp<RangeCheck>([3]) -> ([3]))
   statement 41: 5 (store_temp<GasBuiltin>([4]) -> ([4]))
   statement 42: 5 (store_temp<felt252>([13]) -> ([13]))
-  statement 43: 5 (function_call<user@test::main[expr12]>([3], [4], [13]) -> ([14], [15], [16]))
+  statement 43: 5 (function_call<user@test::main[31-113]>([3], [4], [13]) -> ([14], [15], [16]))
   statement 44: 5 (return([14], [15], [16]))
   statement 14: 3 (store_temp<core::panics::PanicResult::<((),)>>([11]) -> ([11]))
   statement 34: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([11]) -> ([11]))
   statement 2: 1 (store_temp<RangeCheck>([0]) -> ([0]))
   statement 3: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
   statement 4: 1 (store_temp<felt252>([2]) -> ([2]))
-  statement 5: 1 (function_call<user@test::main[expr12]>([0], [1], [2]) -> ([3], [4], [5]))
+  statement 5: 1 (function_call<user@test::main[31-113]>([0], [1], [2]) -> ([3], [4], [5]))
   statement 6: 1 (enum_match<core::panics::PanicResult::<(core::felt252, ())>>([5]) { fallthrough([6]) 16([7]) })
   statement 12: 1 (store_temp<RangeCheck>([3]) -> ([3]))
   statement 13: 1 (store_temp<GasBuiltin>([4]) -> ([4]))
@@ -187,7 +187,7 @@ Weight by concrete libfunc:
   libfunc store_temp<RangeCheck>: 14
   libfunc store_temp<GasBuiltin>: 8
   libfunc felt252_is_zero: 6
-  libfunc function_call<user@test::main[expr12]>: 6
+  libfunc function_call<user@test::main[31-113]>: 6
   libfunc store_temp<felt252>: 6
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::felt252, ())>>: 3
@@ -201,7 +201,7 @@ Weight by generic libfunc:
   libfunc enum_match: 1
   return: 7
 Weight by user function (inc. generated):
-  function test::main[expr12]: 61
+  function test::main[31-113]: 61
   function test::main: 11
 Weight by original user function (exc. generated):
   function test::main: 72
@@ -210,12 +210,12 @@ Weight by Cairo function:
   function core::Felt252PartialEq::eq: 12
 Weight by Sierra stack trace:
   test::main: 72
-  test::main -> test::main[expr12]: 61
-  test::main -> test::main[expr12] -> test::main[expr12]: 51
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 41
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 31
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 21
-  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 11
+  test::main -> test::main[31-113]: 61
+  test::main -> test::main[31-113] -> test::main[31-113]: 51
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 41
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 31
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 21
+  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 11
 Weight by Cairo stack trace:
   test::main: 72
 
