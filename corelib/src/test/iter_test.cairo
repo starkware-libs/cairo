@@ -121,3 +121,11 @@ fn test_iter_find() {
     assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
     assert_eq!(iter.next(), Option::Some(3));
 }
+
+#[test]
+fn test_iter_adapter_filter() {
+    let mut iter = array![0_u32, 1, 2].into_iter().filter(|x| *x > 0);
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::None);
+}

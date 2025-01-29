@@ -1,6 +1,6 @@
 use crate::iter::adapters::{
-    Enumerate, Map, Peekable, Zip, enumerated_iterator, mapped_iterator, peekable_iterator,
-    zipped_iterator,
+    Enumerate, Filter, Map, Peekable, Zip, enumerated_iterator, filter_iterator, mapped_iterator,
+    peekable_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
 
@@ -364,6 +364,8 @@ pub trait Iterator<T> {
     /// // we can still use `iter`, as there are more elements.
     /// assert_eq!(iter.next(), Option::Some(3));
     /// ```
+    ///
+    /// Note that `iter.find(f)` is equivalent to `iter.filter(f).next()`.
     fn find<
         P,
         +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
@@ -383,6 +385,41 @@ pub trait Iterator<T> {
                 Self::find(ref self, predicate)
             },
         }
+    }
+
+    /// Creates an iterator which uses a closure to determine if an element
+    /// should be yielded. The closure takes each element as a snapshot.
+    ///
+    /// Given an element the closure must return `true` or `false`. The returned
+    /// iterator will yield only the elements for which the closure returns
+    /// `true`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let a = array![0_u32, 1, 2];
+    ///
+    /// let mut iter = a.into_iter().filter(|x| *x > 0);
+    ///
+    /// assert_eq!(iter.next(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(2));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    ///
+    /// Note that `iter.filter(f).next()` is equivalent to `iter.find(f)`.
+    #[inline]
+    fn filter<
+        P,
+        +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        self: T, predicate: P,
+    ) -> Filter<T, P> {
+        filter_iterator(self, predicate)
     }
 
     /// 'Zips up' two iterators into a single iterator of pairs.
