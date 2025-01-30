@@ -12536,7 +12536,7 @@
       ],
       [
         532,
-        "function_call<user@core::sha256::compute_sha256_byte_array[expr62]>"
+        "function_call<user@core::sha256::compute_sha256_byte_array[545-866]>"
       ],
       [
         533,
@@ -12664,7 +12664,7 @@
       ],
       [
         564,
-        "function_call<user@core::sha256::compute_sha256_u32_array[expr20]>"
+        "function_call<user@core::sha256::compute_sha256_u32_array[998-1157]>"
       ],
       [
         565,
@@ -15192,7 +15192,7 @@
       ],
       [
         1196,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[expr12]>"
+        "function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>"
       ],
       [
         1197,
@@ -15320,7 +15320,7 @@
       ],
       [
         1228,
-        "function_call<user@core::starknet::storage_access::inner_write_byte_array[expr56]>"
+        "function_call<user@core::starknet::storage_access::inner_write_byte_array[634-1476]>"
       ],
       [
         1229,
@@ -16122,7 +16122,7 @@
       ],
       [
         83,
-        "core::sha256::compute_sha256_byte_array[expr62]"
+        "core::sha256::compute_sha256_byte_array[545-866]"
       ],
       [
         84,
@@ -16134,7 +16134,7 @@
       ],
       [
         86,
-        "core::sha256::compute_sha256_u32_array[expr20]"
+        "core::sha256::compute_sha256_u32_array[998-1157]"
       ],
       [
         87,
@@ -16278,7 +16278,7 @@
       ],
       [
         122,
-        "core::keccak::keccak_u256s_be_inputs[expr12]"
+        "core::keccak::keccak_u256s_be_inputs[646-813]"
       ],
       [
         123,
@@ -16286,7 +16286,7 @@
       ],
       [
         124,
-        "core::starknet::storage_access::inner_write_byte_array[expr56]"
+        "core::starknet::storage_access::inner_write_byte_array[634-1476]"
       ],
       [
         125,

@@ -5151,7 +5151,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-function_call<user@core::array::SpanPartialEq::eq[expr36]>([20], [21]) -> ([34])
+function_call<user@core::array::SpanPartialEq::eq[194-446]>([20], [21]) -> ([34])
 Originating location:
           loop {
  _________^

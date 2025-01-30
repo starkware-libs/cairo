@@ -39,7 +39,7 @@ Statements:
   (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v10)
   (v13: core::array::Span::<core::felt252>) <- struct_construct(v12)
   (v14: core::array::SpanIter::<core::felt252>) <- struct_construct(v13)
-  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, ())>) <- test::foo[expr26](v0, v1, v14)
+  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, ())>) <- test::foo[114-152](v0, v1, v14)
 End:
   Match(match_enum(v17) {
     PanicResult::Ok(v18) => blk1,
