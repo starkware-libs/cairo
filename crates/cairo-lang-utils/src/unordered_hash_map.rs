@@ -34,7 +34,7 @@ use itertools::Itertools;
 pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
+pub struct UnorderedHashMap<Key, Value, BH = hashbrown::DefaultHashBuilder>(
     HashMap<Key, Value, BH>,
 );
 

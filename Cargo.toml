@@ -80,73 +80,73 @@ license = "Apache-2.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
-anyhow = "1.0.83"
-ark-ff = "0.4.2"
-ark-secp256k1 = "0.4.0"
-ark-secp256r1 = "0.4.0"
-ark-std = "0.4.0"
+anyhow = "1.0.95"
+ark-ff = "0.5.0"
+ark-secp256k1 = "0.5.0"
+ark-secp256r1 = "0.5.0"
+ark-std = "0.5.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.1", features = ["mod_builtin"] }
-clap = { version = "4.5.4", features = ["derive"] }
-colored = "2.1.0"
+cairo-vm = { version = "1.0.2", features = ["mod_builtin"] }
+clap = { version = "4.5.27", features = ["derive"] }
+colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
-const_format = "0.2.32"
-convert_case = "0.6.0"
+const_format = "0.2.34"
+convert_case = "0.7.1"
 derivative = "2.2.0"
-diffy = "0.3.0"
-env_logger = "0.11.3"
-genco = "0.17.8"
-good_lp = { version = "1.8.1", features = ["minilp"], default-features = false }
-hashbrown = "0.14.5"
+diffy = "0.4.0"
+env_logger = "0.11.6"
+genco = "0.17.10"
+good_lp = { version = "1.11.0", features = ["minilp"], default-features = false }
+hashbrown = "0.15.2"
 id-arena = "2.2.1"
-ignore = "0.4.22"
+ignore = "0.4.23"
 indent = "0.1.1"
-indexmap = { version = "2.2.6", default-features = false }
+indexmap = { version = "2.7.1", default-features = false }
 indoc = "2.0.5"
-itertools = { version = "0.12.1", default-features = false }
+itertools = { version = "0.14.0", default-features = false }
 keccak = "0.1.5"
-lalrpop-util = { version = "0.20.2", features = ["lexer"] }
-log = "0.4.21"
-num-bigint = { version = "0.4.5", default-features = false }
+lalrpop-util = { version = "0.22.1", features = ["lexer"] }
+log = "0.4.25"
+num-bigint = { version = "0.4.6", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
-parity-scale-codec = { version = "3.6.9", default-features = false, features = [
+parity-scale-codec = { version = "3.7.2", default-features = false, features = [
     "derive",
 ] }
 path-clean = "1.0.1"
-pretty_assertions = "1.4.0"
-proc-macro2 = "1.0.82"
-quote = "1.0.36"
-rand = "0.8.5"
+pretty_assertions = "1.4.1"
+proc-macro2 = "1.0.93"
+quote = "1.0.38"
+rand = "0.9.0"
 rayon = "1.10.0"
-rstest = "0.19.0"
+rstest = "0.24.0"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
-schemars = { version = "0.8.19", features = ["preserve_order"] }
-semver = { version = "1.0.23", features = ["serde"] }
-serde = { version = "1.0.200", default-features = false, features = ["derive"] }
-serde_json = "1.0.116"
+schemars = { version = "0.8.21", features = ["preserve_order"] }
+semver = { version = "1.0.25", features = ["serde"] }
+serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+serde_json = "1.0.138"
 sha2 = "0.10.8"
 sha3 = "0.10.8"
-smol_str = { version = "0.2.0", features = ["serde"] }
-starknet-types-core = { version = "0.1.0", features = [
+smol_str = { version = "0.3.2", features = ["serde"] }
+starknet-types-core = { version = "0.1.7", features = [
     "hash",
     "prime-bigint",
     "serde",
 ] }
-syn = { version = "2.0.61", features = ["full", "extra-traits"] }
+syn = { version = "2.0.96", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
-test-log = "0.2.16"
-thiserror = "1.0.60"
-time = { version = "0.3.36", features = [
+test-log = "0.2.17"
+thiserror = "2.0.11"
+time = { version = "0.3.37", features = [
     "formatting",
     "macros",
     "local-offset",
 ] }
-tokio = { version = "1.37.0", features = ["full", "sync"] }
-toml = "0.8.12"
-unescaper = "0.1.2"
-xshell = "0.2.6"
+tokio = { version = "1.43.0", features = ["full", "sync"] }
+toml = "0.8.19"
+unescaper = "0.1.5"
+xshell = "0.2.7"
 
-openssl = { version = "0.10.35" }
+openssl = { version = "0.10.69" }

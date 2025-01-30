@@ -11,9 +11,7 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key, Value, BH = RandomState>(IndexMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct OrderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
-    IndexMap<Key, Value, BH>,
-);
+pub struct OrderedHashMap<Key, Value, BH = hashbrown::DefaultHashBuilder>(IndexMap<Key, Value, BH>);
 
 impl<Key, Value, BH: Default> Default for OrderedHashMap<Key, Value, BH> {
     #[cfg(feature = "std")]
