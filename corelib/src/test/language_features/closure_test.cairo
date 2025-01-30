@@ -9,11 +9,11 @@ fn closure() {
 }
 
 #[derive(Destruct)]
-struct DestuctOnly {}
+struct DestructOnly {}
 
 #[test]
 fn closure_destruct() {
-    let a = DestuctOnly {};
+    let a = DestructOnly {};
     || {
         let _b = a;
     };
@@ -59,16 +59,16 @@ fn option_map<T, F, +core::ops::FnOnce<F, (T,)>, +Drop<F>>(
     opt: Option<T>, f: F,
 ) -> Option<core::ops::FnOnce::<F, (T,)>::Output> {
     match opt {
-        Option::Some(x) => Option::Some(f(x)),
-        Option::None => Option::None,
+        Some(x) => Some(f(x)),
+        None => None,
     }
 }
 
 #[test]
 fn option_map_test() {
-    assert_eq!(option_map(Option::Some(2), |x| x + 3), Option::Some(5));
-    assert_eq!(option_map(Option::None, |x| x + 3), Option::None);
-    assert_eq!(option_map(Option::Some(2), |x| Option::Some(x)), Option::Some(Option::Some(2)));
+    assert_eq!(option_map(Some(2), |x| x + 3), Some(5));
+    assert_eq!(option_map(None, |x| x + 3), None);
+    assert_eq!(option_map(Some(2), |x| Some(x)), Some(Some(2)));
 }
 
 fn fix_sized_array_map<
@@ -93,7 +93,7 @@ impl ArrayExt of ArrayExtTrait {
         let mut output: Array<func::Output> = array![];
         for elem in self {
             output.append(f(elem));
-        };
+        }
         output
     }
 }

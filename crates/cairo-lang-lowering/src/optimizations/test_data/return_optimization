@@ -6,8 +6,8 @@ test_return_optimizer
 //! > function
 fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
     match v {
-        Option::Some(x) => { return Option::Some(x); },
-        Option::None => { return Option::None; },
+        Some(x) => { return Some(x); },
+        None => { return None; },
     }
 }
 
@@ -73,11 +73,11 @@ test_return_optimizer
 //! > function
 fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
     match v {
-        Option::Some(x) => {
+        Some(x) => {
             a = ();
-            return Option::Some(x);
+            return Some(x);
         },
-        Option::None => { return Option::None; },
+        None => { return None; },
     }
 }
 
@@ -148,8 +148,8 @@ test_return_optimizer
 //! > function
 fn foo(v: Option<u16>) -> Option<u16> {
     match v {
-        Option::Some(x) => Option::Some(x),
-        Option::None => Option::None,
+        Some(x) => Some(x),
+        None => None,
     }
 }
 
@@ -225,11 +225,11 @@ test_return_optimizer
 //! > function
 fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
     match v {
-        Option::Some(tuple) => {
+        Some(tuple) => {
             let (x,) = tuple;
-            return Option::Some((x,));
+            return Some((x,));
         },
-        Option::None => { return Option::None; },
+        None => { return None; },
     }
 }
 
@@ -299,11 +299,11 @@ test_return_optimizer
 //! > function
 fn foo(ref a: MyStruct, v: Option<u16>) -> Option<u16> {
     match v {
-        Option::Some(x) => {
+        Some(x) => {
             a = MyStruct {};
-            Option::Some(x)
+            Some(x)
         },
-        Option::None => Option::None,
+        None => None,
     }
 }
 
@@ -386,11 +386,11 @@ test_return_optimizer
 //! > function
 fn foo(v: Option<(u16, ())>) -> Option<(u16, ())> {
     match v {
-        Option::Some(v) => {
+        Some(v) => {
             let (x, _) = v;
-            Option::Some((x, ()))
+            Some((x, ()))
         },
-        Option::None => { Option::None },
+        None => { None },
     }
 }
 
@@ -616,7 +616,7 @@ fn foo(ref a: felt252, b: MyEnum) -> felt252 {
     match b {
         MyEnum::A(x) => x,
         MyEnum::B(x) => x,
-    };
+    }
     res
 }
 

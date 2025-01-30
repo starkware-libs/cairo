@@ -8,8 +8,8 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
     fn try_into(self: u256) -> Option<u64> {
         let intermediate: Option<felt252> = self.try_into();
         match intermediate {
-            Option::Some(felt) => felt.try_into(),
-            Option::None => Option::None,
+            Some(felt) => felt.try_into(),
+            None => None,
         }
     }
 }
@@ -64,7 +64,7 @@ impl ProposalStore of Store<Proposal> {
                 address_domain, storage_address_from_base_and_offset(base, offset),
             )?,
         );
-        Result::Ok(Proposal { proposer, last_updated_at })
+        Ok(Proposal { proposer, last_updated_at })
     }
 
     fn write_at_offset(

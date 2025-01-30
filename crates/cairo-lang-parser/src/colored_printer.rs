@@ -135,7 +135,7 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
 }
 
 pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode, verbose: bool) -> String {
-    let mut printer = ColoredPrinter { db, verbose, result: "".to_string() };
+    let mut printer = ColoredPrinter { db, verbose, result: Default::default() };
     printer.print(syntax_root);
     printer.result
 }

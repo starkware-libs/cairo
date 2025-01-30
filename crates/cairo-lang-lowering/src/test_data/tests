@@ -70,7 +70,7 @@ test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: never) -> felt252 {
-    match a {};
+    match a {}
     1 + 2
 }
 

@@ -21,16 +21,16 @@
 //! ```
 //! fn parse_version(header: felt252) -> Result<felt252, felt252> {
 //!     match header {
-//!         0 => Result::Ok(0),
-//!         1 => Result::Ok(1),
-//!         _ => Result::Err('invalid version'),
+//!         0 => Ok(0),
+//!         1 => Ok(1),
+//!         _ => Err('invalid version'),
 //!     }
 //! }
 //!
 //! let version = parse_version(1);
 //! match version {
-//!     Result::Ok(v) => println!("working with version {}", v),
-//!     Result::Err(e) => println!("error parsing version: {:?}", e)
+//!     Ok(v) => println!("working with version {}", v),
+//!     Err(e) => println!("error parsing version: {:?}", e)
 //! }
 //! ```
 //!
@@ -174,13 +174,13 @@
 //!
 //! fn add_three_numbers(a: u8, b: u8, c: u8) -> Result<u8, u8> {
 //!     match u8_overflowing_add(a, b) {
-//!         Result::Ok(sum_ab) => {
+//!         Ok(sum_ab) => {
 //!             match u8_overflowing_add(sum_ab, c) {
-//!                 Result::Ok(total) => Result::Ok(total),
-//!                 Result::Err(e) => Result::Err(e),
+//!                 Ok(total) => Ok(total),
+//!                 Err(e) => Err(e),
 //!             }
 //!         },
-//!         Result::Err(e) => Result::Err(e),
+//!         Err(e) => Err(e),
 //!     }
 //! }
 //! ```
@@ -192,14 +192,14 @@
 //!
 //! fn add_three_numbers_2(a: u8, b: u8, c: u8) -> Result<u8, u8> {
 //!     let total = u8_overflowing_add(u8_overflowing_add(a, b)?, c)?;
-//!     Result::Ok(total)
+//!     Ok(total)
 //! }
 //! ```
 //!
 //! *It's much nicer!*
 //!
-//! [`Ok`]: Result::Ok
-//! [`Err`]: Result::Err
+//! [`Ok`]: Ok
+//! [`Err`]: Err
 //!
 //! ## Iterating over `Result`
 //!
@@ -239,13 +239,13 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.expect('no value') == 123);
     /// ```
     const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
-            Result::Ok(x) => x,
-            Result::Err(_) => crate::panic_with_felt252(err),
+            Ok(x) => x,
+            Err(_) => crate::panic_with_felt252(err),
         }
     }
 
@@ -258,7 +258,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.unwrap() == 123);
     /// ```
     const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
@@ -270,16 +270,16 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.unwrap_or(456) == 123);
     ///
-    /// let result: Result<felt252, felt252> = Result::Err('no value');
+    /// let result: Result<felt252, felt252> = Err('no value');
     /// assert!(result.unwrap_or(456) == 456);
     /// ```
     const fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
         match self {
-            Result::Ok(x) => x,
-            Result::Err(_) => default,
+            Ok(x) => x,
+            Err(_) => default,
         }
     }
 
@@ -288,16 +288,16 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.unwrap_or_default() == 123);
     ///
-    /// let result: Result<felt252, felt252> = Result::Err('no value');
+    /// let result: Result<felt252, felt252> = Err('no value');
     /// assert!(result.unwrap_or_default() == 0);
     /// ```
     fn unwrap_or_default<+Destruct<E>, +Default<T>>(self: Result<T, E>) -> T {
         match self {
-            Result::Ok(x) => x,
-            Result::Err(_) => Default::default(),
+            Ok(x) => x,
+            Err(_) => Default::default(),
         }
     }
 
@@ -307,16 +307,16 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// assert!(Result::Ok(2).unwrap_or_else(|e: ByteArray| e.len()) == 2);
-    /// assert!(Result::Err("foo").unwrap_or_else(|e: ByteArray| e.len()) == 3);
+    /// assert!(Ok(2).unwrap_or_else(|e: ByteArray| e.len()) == 2);
+    /// assert!(Err("foo").unwrap_or_else(|e: ByteArray| e.len()) == 3);
     /// ```
     #[inline]
     fn unwrap_or_else<F, +Destruct<E>, +Drop<F>, +core::ops::FnOnce<F, (E,)>[Output: T]>(
         self: Result<T, E>, f: F,
     ) -> T {
         match self {
-            Result::Ok(x) => x,
-            Result::Err(e) => f(e),
+            Ok(x) => x,
+            Err(e) => f(e),
         }
     }
 
@@ -325,29 +325,29 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
-    /// let y: Result<ByteArray, ByteArray> = Result::Err("late error");
-    /// assert!(x.and(y) == Result::Err("late error"));
+    /// let x: Result<u32, ByteArray> = Ok(2);
+    /// let y: Result<ByteArray, ByteArray> = Err("late error");
+    /// assert!(x.and(y) == Err("late error"));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("early error");
-    /// let y: Result<ByteArray, ByteArray> = Result::Ok("foo");
-    /// assert!(x.and(y) == Result::Err("early error"));
+    /// let x: Result<u32, ByteArray> = Err("early error");
+    /// let y: Result<ByteArray, ByteArray> = Ok("foo");
+    /// assert!(x.and(y) == Err("early error"));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("not a 2");
-    /// let y: Result<ByteArray, ByteArray> = Result::Err("late error");
-    /// assert!(x.and(y) == Result::Err("not a 2"));
+    /// let x: Result<u32, ByteArray> = Err("not a 2");
+    /// let y: Result<ByteArray, ByteArray> = Err("late error");
+    /// assert!(x.and(y) == Err("not a 2"));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
-    /// let y: Result<ByteArray, ByteArray> = Result::Ok("different result type");
-    /// assert!(x.and(y) == Result::Ok("different result type"));
+    /// let x: Result<u32, ByteArray> = Ok(2);
+    /// let y: Result<ByteArray, ByteArray> = Ok("different result type");
+    /// assert!(x.and(y) == Ok("different result type"));
     /// ```
     #[inline]
     fn and<U, +Destruct<T>, +Drop<E>, +Drop<U>>(
         self: Result<T, E>, other: Result<U, E>,
     ) -> Result<U, E> {
         match self {
-            Result::Ok(_) => other,
-            Result::Err(e) => Result::Err(e),
+            Ok(_) => other,
+            Err(e) => Err(e),
         }
     }
 
@@ -362,22 +362,22 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     ///
     /// fn sq_then_string(x: u32) -> Result<ByteArray, ByteArray> {
     ///     let res = x.checked_mul(x).ok_or("overflowed");
-    ///     res.and_then(|v| Result::Ok(format!("{}", v)))
+    ///     res.and_then(|v| Ok(format!("{}", v)))
     /// }
     ///
     /// let x = sq_then_string(4);
-    /// assert!(x == Result::Ok("16"));
+    /// assert!(x == Ok("16"));
     ///
     /// let y = sq_then_string(65536);
-    /// assert!(y == Result::Err("overflowed"));
+    /// assert!(y == Err("overflowed"));
     /// ```
     #[inline]
     fn and_then<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: Result<U, E>]>(
         self: Result<T, E>, op: F,
     ) -> Result<U, E> {
         match self {
-            Result::Ok(t) => op(t),
-            Result::Err(e) => Result::Err(e),
+            Ok(t) => op(t),
+            Err(e) => Err(e),
         }
     }
 
@@ -386,29 +386,29 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
-    /// let y: Result<u32, ByteArray> = Result::Err("late error");
-    /// assert!(x.or(y) == Result::Ok(2));
+    /// let x: Result<u32, ByteArray> = Ok(2);
+    /// let y: Result<u32, ByteArray> = Err("late error");
+    /// assert!(x.or(y) == Ok(2));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("early error");
-    /// let y: Result<u32, ByteArray> = Result::Ok(2);
-    /// assert!(x.or(y) == Result::Ok(2));
+    /// let x: Result<u32, ByteArray> = Err("early error");
+    /// let y: Result<u32, ByteArray> = Ok(2);
+    /// assert!(x.or(y) == Ok(2));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("not a 2");
-    /// let y: Result<u32, ByteArray> = Result::Err("late error");
-    /// assert!(x.or(y) == Result::Err("late error"));
+    /// let x: Result<u32, ByteArray> = Err("not a 2");
+    /// let y: Result<u32, ByteArray> = Err("late error");
+    /// assert!(x.or(y) == Err("late error"));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
-    /// let y: Result<u32, ByteArray> = Result::Ok(100);
-    /// assert!(x.or(y) == Result::Ok(2));
+    /// let x: Result<u32, ByteArray> = Ok(2);
+    /// let y: Result<u32, ByteArray> = Ok(100);
+    /// assert!(x.or(y) == Ok(2));
     /// ```
     #[inline]
     fn or<F, +Drop<T>, +Drop<F>, +Destruct<E>>(
         self: Result<T, E>, other: Result<T, F>,
     ) -> Result<T, F> {
         match self {
-            Result::Ok(v) => Result::Ok(v),
-            Result::Err(_) => other,
+            Ok(v) => Ok(v),
+            Err(_) => other,
         }
     }
 
@@ -420,24 +420,24 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     ///
     /// ```
     /// let x: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Err("bad input")
-    ///     .or_else(|_e| Result::Ok(42));
-    /// assert!(x == Result::Ok(42));
+    ///     .or_else(|_e| Ok(42));
+    /// assert!(x == Ok(42));
     ///
     /// let y: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Err("bad input")
-    ///     .or_else(|_e| Result::Err("not 42"));
-    /// assert!(y == Result::Err("not 42"));
+    ///     .or_else(|_e| Err("not 42"));
+    /// assert!(y == Err("not 42"));
     ///
     /// let z: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Ok(100)
-    ///     .or_else(|_e| Result::Ok(42));
-    /// assert!(z == Result::Ok(100));
+    ///     .or_else(|_e| Ok(42));
+    /// assert!(z == Ok(100));
     /// ```
     #[inline]
     fn or_else<F, O, +Drop<O>, +core::ops::FnOnce<O, (E,)>[Output: Result<T, F>]>(
         self: Result<T, E>, op: O,
     ) -> Result<T, F> {
         match self {
-            Result::Ok(t) => Result::Ok(t),
-            Result::Err(e) => op(e),
+            Ok(t) => Ok(t),
+            Err(e) => op(e),
         }
     }
 
@@ -450,13 +450,13 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Err('no value');
+    /// let result: Result<felt252, felt252> = Err('no value');
     /// assert!(result.expect_err('result is ok') == 'no value');
     /// ```
     const fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
-            Result::Ok(_) => crate::panic_with_felt252(err),
-            Result::Err(x) => x,
+            Ok(_) => crate::panic_with_felt252(err),
+            Err(x) => x,
         }
     }
 
@@ -469,74 +469,74 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Err('no value');
+    /// let result: Result<felt252, felt252> = Err('no value');
     /// assert!(result.unwrap_err() == 'no value');
     /// ```
     const fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
 
-    /// Returns `true` if the `Result` is `Result::Ok`.
+    /// Returns `true` if the `Result` is `Ok`.
     ///
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.is_ok());
     /// ```
     #[inline]
     fn is_ok(self: @Result<T, E>) -> bool {
         match self {
-            Result::Ok(_) => true,
-            Result::Err(_) => false,
+            Ok(_) => true,
+            Err(_) => false,
         }
     }
 
-    /// Returns `true` if the `Result` is `Result::Err`.
+    /// Returns `true` if the `Result` is `Err`.
     ///
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(!result.is_err());
     /// ```
     #[inline]
     fn is_err(self: @Result<T, E>) -> bool {
         match self {
-            Result::Ok(_) => false,
-            Result::Err(_) => true,
+            Ok(_) => false,
+            Err(_) => true,
         }
     }
 
-    /// Returns `true` if the `Result` is `Result::Ok`, and consumes the value.
+    /// Returns `true` if the `Result` is `Ok`, and consumes the value.
     ///
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(result.into_is_ok());
     /// ```
     #[inline]
     fn into_is_ok<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> bool {
         match self {
-            Result::Ok(_) => true,
-            Result::Err(_) => false,
+            Ok(_) => true,
+            Err(_) => false,
         }
     }
 
-    /// Returns `true` if the `Result` is `Result::Err`, and consumes the value.
+    /// Returns `true` if the `Result` is `Err`, and consumes the value.
     ///
     /// # Examples
     ///
     /// ```
-    /// let result: Result<felt252, felt252> = Result::Ok(123);
+    /// let result: Result<felt252, felt252> = Ok(123);
     /// assert!(!result.into_is_err());
     /// ```
     #[inline]
     fn into_is_err<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> bool {
         match self {
-            Result::Ok(_) => false,
-            Result::Err(_) => true,
+            Ok(_) => false,
+            Err(_) => true,
         }
     }
 
@@ -548,16 +548,16 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
-    /// assert!(x.ok() == Option::Some(2));
+    /// let x: Result<u32, ByteArray> = Ok(2);
+    /// assert!(x.ok() == Some(2));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("Nothing here");
+    /// let x: Result<u32, ByteArray> = Err("Nothing here");
     /// assert!(x.ok().is_none());
     /// ```
     fn ok<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> Option<T> {
         match self {
-            Result::Ok(x) => Option::Some(x),
-            Result::Err(_) => Option::None,
+            Ok(x) => Some(x),
+            Err(_) => None,
         }
     }
 
@@ -569,16 +569,16 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let x: Result<u32, ByteArray> = Result::Err("Nothing here");
-    /// assert!(x.err() == Option::Some("Nothing here"));
+    /// let x: Result<u32, ByteArray> = Err("Nothing here");
+    /// assert!(x.err() == Some("Nothing here"));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// let x: Result<u32, ByteArray> = Ok(2);
     /// assert!(x.err().is_none());
     /// ```
     fn err<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> Option<E> {
         match self {
-            Result::Ok(_) => Option::None,
-            Result::Err(x) => Option::Some(x),
+            Ok(_) => None,
+            Err(x) => Some(x),
         }
     }
 
@@ -593,12 +593,12 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     ///
     /// ```
     /// let inputs: Array<Result<u32, ByteArray>> = array![
-    ///     Result::Ok(1), Result::Err("error"), Result::Ok(3), Result::Ok(4),
+    ///     Ok(1), Err("error"), Ok(3), Ok(4),
     /// ];
     /// for i in inputs {
     ///     match i.map(|i| i * 2) {
-    ///         Result::Ok(x) => println!("{x}"),
-    ///         Result::Err(e) => println!("{e}"),
+    ///         Ok(x) => println!("{x}"),
+    ///         Err(e) => println!("{e}"),
     ///     }
     /// }
     /// ```
@@ -607,8 +607,8 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         self: Result<T, E>, f: F,
     ) -> Result<U, E> {
         match self {
-            Result::Ok(x) => Result::Ok(f(x)),
-            Result::Err(e) => Result::Err(e),
+            Ok(x) => Ok(f(x)),
+            Err(e) => Err(e),
         }
     }
 
@@ -618,10 +618,10 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// # Examples
     ///
     /// ```
-    /// let x: Result<_, ByteArray> = Result::Ok("foo");
+    /// let x: Result<_, ByteArray> = Ok("foo");
     /// assert!(x.map_or(42, |v: ByteArray| v.len()) == 3);
     ///
-    /// let x: Result<_, ByteArray> = Result::Err("bar");
+    /// let x: Result<_, ByteArray> = Err("bar");
     /// assert!(x.map_or(42, |v: ByteArray| v.len()) == 42);
     /// ```
     #[inline]
@@ -629,8 +629,8 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         self: Result<T, E>, default: U, f: F,
     ) -> U {
         match self {
-            Result::Ok(x) => f(x),
-            Result::Err(_) => default,
+            Ok(x) => f(x),
+            Err(_) => default,
         }
     }
 
@@ -646,10 +646,10 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// ```
     /// let k = 21;
     ///
-    /// let x: Result<ByteArray, _> = Result::Ok("foo");
+    /// let x: Result<ByteArray, _> = Ok("foo");
     /// assert!(x.map_or_else(|_e: ByteArray| k * 2, |v: ByteArray| v.len()) == 3);
     ///
-    /// let x: Result<_, ByteArray> = Result::Err("bar");
+    /// let x: Result<_, ByteArray> = Err("bar");
     /// assert!(x.map_or_else(|_e: ByteArray| k * 2, |v: ByteArray| v.len()) == 42);
     /// ```
     #[inline]
@@ -665,8 +665,8 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         self: Result<T, E>, default: D, f: F,
     ) -> U {
         match self {
-            Result::Ok(t) => f(t),
-            Result::Err(e) => default(e),
+            Ok(t) => f(t),
+            Err(e) => default(e),
         }
     }
 
@@ -681,18 +681,18 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     ///
     /// ```
     /// let stringify  = |x: u32| -> ByteArray { format!("error code: {x}") };
-    /// let x: Result<u32, u32> = Result::Ok(2);
+    /// let x: Result<u32, u32> = Ok(2);
     /// assert!(x.map_err(stringify) == Result::<u32, ByteArray>::Ok(2));
     ///
-    /// let x: Result<u32, u32> = Result::Err(13);
-    /// assert!(x.map_err(stringify) == Result::Err("error code: 13"));
+    /// let x: Result<u32, u32> = Err(13);
+    /// assert!(x.map_err(stringify) == Err("error code: 13"));
     /// ```
     fn map_err<F, O, +Drop<O>, +core::ops::FnOnce<O, (E,)>[Output: F]>(
         self: Result<T, E>, op: O,
     ) -> Result<T, F> {
         match self {
-            Result::Ok(x) => Result::Ok(x),
-            Result::Err(e) => Result::Err(op(e)),
+            Ok(x) => Ok(x),
+            Err(e) => Err(op(e)),
         }
     }
 }
@@ -705,18 +705,18 @@ impl ResultIntoIterator<
 
     /// Returns a consuming iterator over the possibly contained value.
     ///
-    /// The iterator yields one value if the result is [`Result::Ok`], otherwise none.
+    /// The iterator yields one value if the result is [`Ok`], otherwise none.
     ///
     /// # Examples
     ///
     /// ```
-    /// let x: Result<u32, ByteArray> = Result::Ok(5);
+    /// let x: Result<u32, ByteArray> = Ok(5);
     /// let mut x_iter = x.into_iter();
-    /// assert!(x_iter.next() == Option::Some(5));
+    /// assert!(x_iter.next() == Some(5));
     ///
-    /// let x: Result<u32, ByteArray> = Result::Err("nothing!");
+    /// let x: Result<u32, ByteArray> = Err("nothing!");
     /// let mut x_iter = x.into_iter();
-    /// assert!(x_iter.next() == Option::None);
+    /// assert!(x_iter.next() == None);
     /// ```
     #[inline]
     fn into_iter(self: Result<T, E>) -> crate::option::OptionIter<T> {

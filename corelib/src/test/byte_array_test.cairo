@@ -10,7 +10,7 @@ fn test_append_byte() {
         }
         ba.append_byte(c);
         c += 1;
-    };
+    }
 
     let expected_data = [0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
@@ -273,10 +273,10 @@ fn test_len() {
 fn test_at_empty() {
     let ba: ByteArray = Default::default();
 
-    assert(ba.at(0) == Option::None, 'index 0 is not out of bounds');
-    assert(ba.at(1) == Option::None, 'index 1 is not out of bounds');
-    assert(ba.at(30) == Option::None, 'index 30 is not out of bounds');
-    assert(ba.at(31) == Option::None, 'index 31 is not out of bounds');
+    assert(ba.at(0) == None, 'index 0 is not out of bounds');
+    assert(ba.at(1) == None, 'index 1 is not out of bounds');
+    assert(ba.at(30) == None, 'index 30 is not out of bounds');
+    assert(ba.at(31) == None, 'index 31 is not out of bounds');
 }
 
 #[test]
@@ -285,24 +285,24 @@ fn test_at() {
     ba.append(@test_byte_array_31());
     ba.append(@test_byte_array_17());
 
-    assert(ba.at(0) == Option::Some(0x01), 'wrong byte at index 0');
-    assert(ba.at(1) == Option::Some(0x02), 'wrong byte at index 1');
-    assert(ba.at(2) == Option::Some(0x03), 'wrong byte at index 2');
-    assert(ba.at(14) == Option::Some(0x0f), 'wrong byte at index 14');
-    assert(ba.at(15) == Option::Some(0x10), 'wrong byte at index 15');
-    assert(ba.at(16) == Option::Some(0x11), 'wrong byte at index 16');
-    assert(ba.at(17) == Option::Some(0x12), 'wrong byte at index 17');
-    assert(ba.at(29) == Option::Some(0x1e), 'wrong byte at index 29');
-    assert(ba.at(30) == Option::Some(0x1f), 'wrong byte at index 30');
-    assert(ba.at(31) == Option::Some(0x01), 'wrong byte at index 31');
-    assert(ba.at(32) == Option::Some(0x02), 'wrong byte at index 32');
-    assert(ba.at(61) == Option::Some(0x1f), 'wrong byte at index 61');
-    assert(ba.at(62) == Option::Some(0x01), 'wrong byte at index 62');
-    assert(ba.at(63) == Option::Some(0x02), 'wrong byte at index 63');
-    assert(ba.at(76) == Option::Some(0x0f), 'wrong byte at index 76');
-    assert(ba.at(77) == Option::Some(0x10), 'wrong byte at index 77');
-    assert(ba.at(78) == Option::Some(0x11), 'wrong byte at index 78');
-    assert(ba.at(79) == Option::None, 'index 79 is not out of bounds');
+    assert(ba.at(0) == Some(0x01), 'wrong byte at index 0');
+    assert(ba.at(1) == Some(0x02), 'wrong byte at index 1');
+    assert(ba.at(2) == Some(0x03), 'wrong byte at index 2');
+    assert(ba.at(14) == Some(0x0f), 'wrong byte at index 14');
+    assert(ba.at(15) == Some(0x10), 'wrong byte at index 15');
+    assert(ba.at(16) == Some(0x11), 'wrong byte at index 16');
+    assert(ba.at(17) == Some(0x12), 'wrong byte at index 17');
+    assert(ba.at(29) == Some(0x1e), 'wrong byte at index 29');
+    assert(ba.at(30) == Some(0x1f), 'wrong byte at index 30');
+    assert(ba.at(31) == Some(0x01), 'wrong byte at index 31');
+    assert(ba.at(32) == Some(0x02), 'wrong byte at index 32');
+    assert(ba.at(61) == Some(0x1f), 'wrong byte at index 61');
+    assert(ba.at(62) == Some(0x01), 'wrong byte at index 62');
+    assert(ba.at(63) == Some(0x02), 'wrong byte at index 63');
+    assert(ba.at(76) == Some(0x0f), 'wrong byte at index 76');
+    assert(ba.at(77) == Some(0x10), 'wrong byte at index 77');
+    assert(ba.at(78) == Some(0x11), 'wrong byte at index 78');
+    assert(ba.at(79) == None, 'index 79 is not out of bounds');
 }
 
 // Same as the previous test, but with [] instead of .at() (and without the out-of-bounds case).
@@ -484,12 +484,12 @@ fn test_serde() {
 fn test_into_iterator() {
     let ba: ByteArray = "hello";
     let mut iter = ba.into_iter();
-    assert_eq!(iter.next(), Option::Some('h'));
-    assert_eq!(iter.next(), Option::Some('e'));
-    assert_eq!(iter.next(), Option::Some('l'));
-    assert_eq!(iter.next(), Option::Some('l'));
-    assert_eq!(iter.next(), Option::Some('o'));
-    assert_eq!(iter.next(), Option::None);
+    assert_eq!(iter.next(), Some('h'));
+    assert_eq!(iter.next(), Some('e'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('o'));
+    assert_eq!(iter.next(), None);
 }
 
 #[test]
@@ -509,15 +509,15 @@ fn compare_byte_array(
     let mut data_index = 0;
     loop {
         match ba_data.pop_front() {
-            Option::Some(x) => {
+            Some(x) => {
                 let actual_word = (*x).into();
                 let expected_word = *data.pop_front().unwrap();
                 assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
             },
-            Option::None(_) => { break; },
+            None(_) => { break; },
         }
         data_index += 1;
-    };
+    }
 
     assert_eq!(*ba.pending_word_len, pending_word_len);
     let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
@@ -531,14 +531,14 @@ fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
     let mut index = 0;
     loop {
         match a.pop_front() {
-            Option::Some(current_a) => {
+            Some(current_a) => {
                 let current_b = b.pop_front().unwrap();
                 assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
             },
-            Option::None(_) => { break; },
+            None(_) => { break; },
         }
         index += 1;
-    };
+    }
 }
 
 fn test_byte_array_1() -> ByteArray {

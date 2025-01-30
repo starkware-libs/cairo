@@ -74,11 +74,18 @@ pub struct InstructionRepr {
     pub opcode: Opcode,
 }
 
+#[cfg(feature = "serde")]
+use cairo_lang_utils::bigint::{deserialize_big_ints, serialize_big_ints};
+
 /// An assembled representation of a cairo program.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct AssembledCairoProgram {
     /// The bytecode of the program.
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_ints", deserialize_with = "deserialize_big_ints")
+    )]
     pub bytecode: Vec<BigInt>,
     /// The list of hints, and the instruction index they refer to.
     pub hints: Vec<(usize, Vec<Hint>)>,

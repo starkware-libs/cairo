@@ -161,8 +161,8 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo(x: Option<()>) {
     match x {
-        Option::Some(_) => true,
-        Option::None => 0,
+        Some(_) => true,
+        None => 0,
     }
 }
 

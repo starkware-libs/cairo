@@ -1891,11 +1891,11 @@ pub fn execute_core_hint(
         CoreHint::RandomEcPoint { x, y } => {
             // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
             // residue.
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let (random_x, random_y) = loop {
                 // Randominzing 31 bytes to make sure is in range.
                 // TODO(orizi): Use `Felt252` random implementation when exists.
-                let x_bytes: [u8; 31] = rng.gen();
+                let x_bytes: [u8; 31] = rng.random();
                 let random_x = Felt252::from_bytes_be_slice(&x_bytes);
                 /// The Beta value of the Starkware elliptic curve.
                 pub const BETA: Felt252 = Felt252::from_hex_unchecked(

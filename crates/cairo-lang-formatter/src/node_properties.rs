@@ -883,6 +883,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
+        let is_last = |node: &SyntaxNode, siblings: &[SyntaxNode]| siblings.last() == Some(node);
         // Check for TerminalComma with specific conditions on list types and position.
         if self.kind(db) == SyntaxKind::TerminalComma
             && matches!(
@@ -912,8 +913,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 Some(SyntaxKind::ExprList | SyntaxKind::PatternList)
             );
             if (!is_expr_or_pattern_list || children.len() > 2)
-            // Ensure that this node is the last element in the list
-            && children.last().map(|last| last == self).unwrap_or(false)
+            // Ensure that this node is the last element in the list.
+            && is_last(self, &children)
             {
                 return true;
             }
@@ -921,14 +922,35 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalEmpty {
             return true;
         }
+        if self.kind(db) == SyntaxKind::TerminalSemicolon
+            && parent_kind(db, self) == Some(SyntaxKind::StatementExpr)
+        {
+            let statement_node = self.parent().unwrap();
+            let statements_node = statement_node.parent().unwrap();
+            // Checking if not the last statement, as `;` may be there to prevent the block from
+            // returning the value of the current block.
+            let not_last = !is_last(&statement_node, &db.get_children(statements_node));
+            let children = db.get_children(statement_node);
+            if not_last
+                && matches!(
+                    children[1].kind(db),
+                    SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprLoop
+                        | SyntaxKind::ExprWhile
+                        | SyntaxKind::ExprFor
+                )
+            {
+                return true;
+            }
+        }
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
             let path_segment_node = self.parent().unwrap();
-            let position_in_path = path_segment_node.position_in_parent(db).unwrap();
             let path_node = path_segment_node.parent().unwrap();
-            let path_len = path_node.green_node(db).children().len();
-            if position_in_path != path_len - 1 {
+            if !is_last(&path_segment_node, &db.get_children(path_node.clone())) {
                 false
             } else {
                 matches!(

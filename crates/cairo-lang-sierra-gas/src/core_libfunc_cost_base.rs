@@ -328,11 +328,11 @@ pub fn core_libfunc_cost(
         Uint128(libfunc) => u128_libfunc_cost(libfunc),
         Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint512(libfunc) => u512_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint8(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint16(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint32(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint64(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint128(libfunc) => s128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint8(libfunc) => sint_libfunc_cost(libfunc),
+        Sint16(libfunc) => sint_libfunc_cost(libfunc),
+        Sint32(libfunc) => sint_libfunc_cost(libfunc),
+        Sint64(libfunc) => sint_libfunc_cost(libfunc),
+        Sint128(libfunc) => s128_libfunc_cost(libfunc),
         Felt252(libfunc) => {
             felt252_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect()
         }
@@ -425,7 +425,7 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::builtin(CostTokenType::Poseidon),
             }],
         },
-        StarkNet(libfunc) => {
+        Starknet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
         Nullable(libfunc) => match libfunc {

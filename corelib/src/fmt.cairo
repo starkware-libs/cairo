@@ -37,7 +37,7 @@ pub trait Display<T> {
 impl DisplayByteArray of Display<ByteArray> {
     fn fmt(self: @ByteArray, ref f: Formatter) -> Result<(), Error> {
         f.buffer.append(self);
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -48,7 +48,7 @@ impl DisplayInteger<
         // TODO(yuval): determine base according to Formatter parameters.
         let base: T = 10_u8.into();
         self.append_formatted_to_byte_array(ref f.buffer, base.try_into().unwrap());
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -192,7 +192,7 @@ impl TupleDebugHelperFromDebug<T, +Debug<T>> of TupleDebugHelper<@T> {
 
 impl TupleDebugHelperTuple0 of TupleDebugHelper<()> {
     fn fmt(value: (), ref f: Formatter) -> Result<(), Error> {
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -235,7 +235,7 @@ impl TupleDebugHelperTupleNext<
 
 impl TupleDebugHelperFixedSizedArray0<T> of TupleDebugHelper<[@T; 0]> {
     fn fmt(value: [@T; 0], ref f: Formatter) -> Result<(), Error> {
-        Result::Ok(())
+        Ok(())
     }
 }
 
@@ -291,19 +291,19 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
         write!(f, "[")?;
         loop {
             match self.pop_front() {
-                Option::Some(value) => {
+                Some(value) => {
                     if Debug::fmt(value, ref f).is_err() {
-                        break Result::Err(Error {});
-                    };
+                        break Err(Error {});
+                    }
                     if self.is_empty() {
-                        break Result::Ok(());
+                        break Ok(());
                     }
                     if write!(f, ", ").is_err() {
-                        break Result::Err(Error {});
-                    };
+                        break Err(Error {});
+                    }
                 },
-                Option::None => { break Result::Ok(()); },
-            };
+                None => { break Ok(()); },
+            }
         }?;
         write!(f, "]")
     }
@@ -343,7 +343,7 @@ impl LowerHexInteger<
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         let base: T = 16_u8.into();
         self.append_formatted_to_byte_array(ref f.buffer, base.try_into().unwrap());
-        Result::Ok(())
+        Ok(())
     }
 }
 

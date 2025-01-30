@@ -3,7 +3,7 @@
 mod test;
 
 #[cfg(all(not(feature = "std"), feature = "serde"))]
-use alloc::{format, string::String};
+use alloc::{format, string::String, vec::Vec};
 
 #[cfg(feature = "serde")]
 use num_bigint::ToBigInt;
@@ -12,7 +12,7 @@ use num_bigint::{BigInt, BigUint};
 use num_traits::{Num, Signed};
 
 /// A wrapper for BigUint that serializes as hex.
-#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct BigUintAsHex {
     /// A field element that encodes the signature of the called function.
@@ -21,6 +21,12 @@ pub struct BigUintAsHex {
         serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
     )]
     pub value: BigUint,
+}
+
+impl<T: Into<BigUint>> From<T> for BigUintAsHex {
+    fn from(x: T) -> Self {
+        Self { value: x.into() }
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -55,7 +61,7 @@ where
 }
 
 // A wrapper for BigInt that serializes as hex.
-#[derive(Default, Clone, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BigIntAsHex {
@@ -128,6 +134,55 @@ where
         Some(abs_value) => Ok(deserialize_from_str::<D>(abs_value)?.to_bigint().unwrap().neg()),
         None => Ok(deserialize_from_str::<D>(s)?.to_bigint().unwrap()),
     }
+}
+
+#[cfg(feature = "serde")]
+pub fn serialize_big_ints<S>(nums: &[BigInt], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::ser::Serializer,
+{
+    use serde::ser::SerializeSeq;
+
+    let mut seq = serializer.serialize_seq(Some(nums.len()))?;
+    for num in nums {
+        seq.serialize_element(&BigIntAsHex { value: num.clone() })?;
+    }
+    seq.end()
+}
+
+#[cfg(feature = "serde")]
+pub fn deserialize_big_ints<'a, D>(deserializer: D) -> Result<Vec<BigInt>, D::Error>
+where
+    D: serde::de::Deserializer<'a>,
+{
+    #[cfg(not(feature = "std"))]
+    use alloc::fmt;
+    #[cfg(feature = "std")]
+    use std::fmt;
+    struct BigIntVecVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for BigIntVecVisitor {
+        type Value = Vec<BigInt>;
+
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "a sequence of bigint hex strings")
+        }
+
+        fn visit_seq<A: serde::de::SeqAccess<'de>>(
+            self,
+            mut seq: A,
+        ) -> Result<Self::Value, A::Error> {
+            let mut vec = Vec::new();
+            if let Some(size) = seq.size_hint() {
+                vec.reserve(size);
+            }
+            while let Some(v) = seq.next_element::<BigIntAsHex>()? {
+                vec.push(v.value);
+            }
+            Ok(vec)
+        }
+    }
+    deserializer.deserialize_seq(BigIntVecVisitor)
 }
 
 #[cfg(feature = "parity-scale-codec")]

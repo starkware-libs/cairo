@@ -60,7 +60,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         .leading_trivia(db)
         .as_syntax_node()
         .get_text(db);
-    let extra_ident = leading_trivia.split('\n').last().unwrap_or_default();
+    let extra_ident = leading_trivia.split('\n').next_back().unwrap_or_default();
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
             AttributeArgVariant::Unnamed(ast::Expr::FunctionCall(attr_arg))

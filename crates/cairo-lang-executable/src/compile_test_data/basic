@@ -418,8 +418,8 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable]
 fn require_gas() -> felt252 {
     match core::gas::withdraw_gas() {
-        Option::Some(()) => 1,
-        Option::None => 2,
+        Some(()) => 1,
+        None => 2,
     }
 }
 
@@ -489,7 +489,7 @@ ap += 2;
 [ap + -1] = [[ap + -3] + 2];
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -4] + 3, ap++;
-[ap + 0] = 170141183460469231731687303715884105727, ap++;
+[ap + 0] = 9223372036854775807, ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;

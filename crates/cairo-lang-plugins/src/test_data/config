@@ -274,7 +274,7 @@ test_expand_plugin(expect_diagnostics: false)
 ["a", "b", ["k", "a"], ["k", "b"]]
 
 //! > cairo_code
-#[cfg(not(a)]
+#[cfg(not(a))]
 fn f1() -> felt252 {
     0
 }

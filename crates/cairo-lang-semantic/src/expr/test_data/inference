@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<felt252> {
-    Option::Some(5)
+    Some(5)
 }
 
 //! > function_name
@@ -167,7 +167,7 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() {
     MyTrait::foo(5);
     MyTrait::foo(true);
-    MyTrait::foo(Option::None);
+    MyTrait::foo(None);
 }
 
 //! > function_name
@@ -275,7 +275,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    MyTrait::foo(Option::None);
+    MyTrait::foo(None);
 }
 
 //! > function_name
@@ -301,7 +301,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > expected_diagnostics
 error: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implementations, in: `test::MyImpl3`, `test::MyImpl4`
  --> lib.cairo:17:14
-    MyTrait::foo(Option::None);
+    MyTrait::foo(None);
              ^^^
 
 //! > ==========================================================================
@@ -362,7 +362,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    bar(Option::Some(5));
+    bar(Some(5));
 }
 
 //! > function_name
@@ -687,7 +687,7 @@ impl MyIpls<T, +Drop<T>> of MyTrait<T> {}
 
 // impl MyImpl<T, +Into<T, u8>> of TryInto<T, u8> {
 //    fn try_into(self: T) -> Option<u8> {
-//        Option::Some(self.into())
+//        Some(self.into())
 //    }
 // }
 
@@ -742,7 +742,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option {
-    Option::Some(5_u32)
+    Some(5_u32)
 }
 
 //! > function_name

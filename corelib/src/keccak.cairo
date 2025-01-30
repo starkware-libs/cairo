@@ -80,10 +80,10 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
 
     loop {
         match input.pop_front() {
-            Option::Some(v) => { keccak_add_u256_le(ref keccak_input, *v); },
-            Option::None => { break (); },
-        };
-    };
+            Some(v) => { keccak_add_u256_le(ref keccak_input, *v); },
+            None => { break (); },
+        }
+    }
 
     add_padding(ref keccak_input, 0, 0);
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
@@ -122,10 +122,10 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 
     loop {
         match input.pop_front() {
-            Option::Some(v) => { keccak_add_u256_be(ref keccak_input, *v); },
-            Option::None => { break (); },
-        };
-    };
+            Some(v) => { keccak_add_u256_be(ref keccak_input, *v); },
+            None => { break (); },
+        }
+    }
 
     add_padding(ref keccak_input, 0, 0);
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
@@ -262,7 +262,7 @@ pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
     let mut inner = 0;
     let mut limb: u64 = 0;
     let mut factor: u64 = 1;
-    while let Option::Some(b) = arr.at(i) {
+    while let Some(b) = arr.at(i) {
         limb = limb + b.into() * factor;
         i += 1;
         inner += 1;
@@ -274,7 +274,7 @@ pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
         } else {
             factor *= 0x100;
         }
-    };
+    }
     add_padding(ref input, limb, inner);
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
 }

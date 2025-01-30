@@ -210,7 +210,7 @@ pub trait SemanticGroup:
     fn priv_module_semantic_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
-    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
     #[salsa::invoke(items::module::module_item_by_name)]
     fn module_item_by_name(
         &self,
@@ -219,7 +219,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Option<ModuleItemId>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
-    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
     #[salsa::invoke(items::module::module_item_info_by_name)]
     fn module_item_info_by_name(
         &self,

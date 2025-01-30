@@ -101,8 +101,8 @@ type Const<felt252, 375233589013918064796019> = Const<felt252, 37523358901391806
 type Const<felt252, 39879774624079483812136948410799859986295> = Const<felt252, 39879774624079483812136948410799859986295> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
-type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>> = Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type Tuple<core::integer::u256> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::PanicResult::<(core::integer::u256,)> = Enum<ut@[1269060844977816900161390774519283771907939153398640017202038152081550937644], Tuple<core::integer::u256>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -144,11 +144,11 @@ libfunc function_call<user@core::starknet::storage::StorablePointerReadAccessImp
 libfunc enable_ap_tracking = enable_ap_tracking;
 libfunc enum_match<core::panics::PanicResult::<(core::integer::u256,)>> = enum_match<core::panics::PanicResult::<(core::integer::u256,)>>;
 libfunc struct_deconstruct<Tuple<core::integer::u256>> = struct_deconstruct<Tuple<core::integer::u256>>;
-libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>;
 libfunc struct_deconstruct<core::integer::u256> = struct_deconstruct<core::integer::u256>;
-libfunc drop<u128> = drop<u128>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>;
+libfunc drop<u128> = drop<u128>;
 libfunc store_temp<u128> = store_temp<u128>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc u128_overflowing_add = u128_overflowing_add;
@@ -456,29 +456,29 @@ enable_ap_tracking() -> (); // 36
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([30]) { fallthrough([31]) 110([32]) }; // 37
 branch_align() -> (); // 38
 struct_deconstruct<Tuple<core::integer::u256>>([31]) -> ([33]); // 39
-const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>() -> ([34]); // 40
-struct_deconstruct<core::integer::u256>([33]) -> ([35], [36]); // 41
-struct_deconstruct<core::integer::u256>([34]) -> ([37], [38]); // 42
-drop<u128>([38]) -> (); // 43
-struct_construct<Unit>() -> ([39]); // 44
-enum_init<core::bool, 0>([39]) -> ([40]); // 45
-store_temp<u128>([37]) -> ([37]); // 46
-store_temp<core::bool>([40]) -> ([40]); // 47
-u128_overflowing_add([27], [35], [37]) { fallthrough([41], [42]) 54([43], [44]) }; // 48
+struct_deconstruct<core::integer::u256>([33]) -> ([34], [35]); // 40
+struct_construct<Unit>() -> ([36]); // 41
+enum_init<core::bool, 0>([36]) -> ([37]); // 42
+const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>() -> ([38]); // 43
+struct_deconstruct<core::integer::u256>([38]) -> ([39], [40]); // 44
+drop<u128>([40]) -> (); // 45
+store_temp<u128>([39]) -> ([39]); // 46
+store_temp<core::bool>([37]) -> ([37]); // 47
+u128_overflowing_add([27], [34], [39]) { fallthrough([41], [42]) 54([43], [44]) }; // 48
 branch_align() -> (); // 49
 store_temp<RangeCheck>([41]) -> ([45]); // 50
 store_temp<u128>([42]) -> ([46]); // 51
-store_temp<u128>([36]) -> ([47]); // 52
+store_temp<u128>([35]) -> ([47]); // 52
 jump() { 62() }; // 53
 branch_align() -> (); // 54
 const_as_immediate<Const<u128, 1>>() -> ([48]); // 55
 store_temp<u128>([48]) -> ([48]); // 56
-u128_overflowing_add([43], [36], [48]) { fallthrough([49], [50]) 98([51], [52]) }; // 57
+u128_overflowing_add([43], [35], [48]) { fallthrough([49], [50]) 98([51], [52]) }; // 57
 branch_align() -> (); // 58
 store_temp<RangeCheck>([49]) -> ([45]); // 59
 store_temp<u128>([44]) -> ([46]); // 60
 store_temp<u128>([50]) -> ([47]); // 61
-enum_match<core::bool>([40]) { fallthrough([53]) 92([54]) }; // 62
+enum_match<core::bool>([37]) { fallthrough([53]) 92([54]) }; // 62
 branch_align() -> (); // 63
 disable_ap_tracking() -> (); // 64
 drop<Unit>([53]) -> (); // 65
@@ -517,7 +517,7 @@ jump() { 103() }; // 97
 branch_align() -> (); // 98
 drop<u128>([52]) -> (); // 99
 drop<u128>([44]) -> (); // 100
-drop<core::bool>([40]) -> (); // 101
+drop<core::bool>([37]) -> (); // 101
 store_temp<RangeCheck>([51]) -> ([75]); // 102
 array_new<felt252>() -> ([76]); // 103
 const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>>() -> ([77]); // 104

@@ -59,39 +59,17 @@ trait CompareAssertionPlugin: NamedPlugin {
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db, syntax);
-        // Checks if the expression is a variable, to not create an extra variable.
-        let is_var = |expr: &ast::Expr| matches!(expr, ast::Expr::Path(path) if path.elements(db).len() == 1);
-        let (lhs_value, maybe_assign_lhs) = if is_var(&lhs) {
-            (RewriteNode::from_ast_trimmed(&lhs), "")
-        } else {
-            (
-                RewriteNode::mapped_text(
-                    format!("__lhs_value_for_{}_macro__", Self::NAME),
-                    db,
-                    &lhs,
-                ),
-                "let $lhs_value$ = $lhs$;",
-            )
-        };
-        let (rhs_value, maybe_assign_rhs) = if is_var(&rhs) {
-            (RewriteNode::from_ast_trimmed(&rhs), "")
-        } else {
-            (
-                RewriteNode::mapped_text(
-                    format!("__rhs_value_for_{}_macro__", Self::NAME),
-                    db,
-                    &rhs,
-                ),
-                "let $rhs_value$ = $rhs$;",
-            )
-        };
+        let lhs_value =
+            RewriteNode::mapped_text(format!("__lhs_value_for_{}_macro__", Self::NAME), db, &lhs);
+        let rhs_value =
+            RewriteNode::mapped_text(format!("__rhs_value_for_{}_macro__", Self::NAME), db, &rhs);
         let operator = Self::OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
-                    {maybe_assign_lhs}
-                    {maybe_assign_rhs}
+                    let $lhs_value$ = $lhs$;
+                    let $rhs_value$ = $rhs$;
                     if !($lhs_value$ {operator} $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
@@ -144,6 +122,8 @@ trait CompareAssertionPlugin: NamedPlugin {
                 .into(),
             ));
         }
+
+        #[expect(clippy::literal_string_with_formatting_args)]
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"

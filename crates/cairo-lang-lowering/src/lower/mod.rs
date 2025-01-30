@@ -1432,7 +1432,7 @@ fn lower_expr_loop(
     // Get the function id.
     let function = FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
-        key: GeneratedFunctionKey::Loop(loop_expr_id),
+        key: GeneratedFunctionKey::Loop(stable_ptr),
     }
     .intern(ctx.db);
 
@@ -1449,7 +1449,7 @@ fn lower_expr_loop(
     )
     .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
-    encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(loop_expr_id), lowered);
+    encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
     for snapshot_param in snap_usage.values() {
@@ -1480,11 +1480,11 @@ fn call_loop_func(
     stable_ptr: SyntaxStablePtrId,
 ) -> LoweringResult<LoweredExpr> {
     let location = ctx.get_location(stable_ptr);
-
+    let loop_stable_ptr = ctx.function_body.arenas.exprs[loop_expr_id].stable_ptr();
     // Call it.
     let function = FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
-        key: GeneratedFunctionKey::Loop(loop_expr_id),
+        key: GeneratedFunctionKey::Loop(loop_stable_ptr),
     })
     .intern(ctx.db);
     let inputs = loop_signature

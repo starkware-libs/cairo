@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
-    LanguageElementId, LookupItemId, ModuleFileId, TraitId,
+    LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -200,7 +200,7 @@ pub struct GenericParamConst {
 pub struct GenericParamImpl {
     pub id: GenericParamId,
     pub concrete_trait: Maybe<ConcreteTraitId>,
-    pub type_constraints: OrderedHashMap<ConcreteTraitTypeId, TypeId>,
+    pub type_constraints: OrderedHashMap<TraitTypeId, TypeId>,
 }
 impl Hash for GenericParamImpl {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -397,8 +397,7 @@ pub fn generic_params_type_constraints(
         let Ok(concrete_trait_id) = imp.concrete_trait else {
             continue;
         };
-        for (concrete_trait_type_id, ty1) in imp.type_constraints {
-            let trait_ty = concrete_trait_type_id.trait_type(db);
+        for (trait_ty, ty1) in imp.type_constraints {
             let impl_type = TypeLongId::ImplType(ImplTypeId::new(
                 ImplLongId::GenericParameter(*param).intern(db),
                 trait_ty,
@@ -617,7 +616,7 @@ fn impl_generic_param_semantic(
 
                 let concrete_trait_type_id =
                     ConcreteTraitTypeId::new(db, concrete_trait_id, trait_type_id);
-                match map.entry(concrete_trait_type_id) {
+                match map.entry(trait_type_id) {
                     Entry::Vacant(entry) => {
                         entry.insert(resolve_type(
                             db,

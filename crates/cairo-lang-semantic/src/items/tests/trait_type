@@ -669,7 +669,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    MyImpl::foo(Option::Some(3));
+    MyImpl::foo(Some(3));
 }
 
 //! > function_name
@@ -1149,7 +1149,7 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
     let _: u32 = x;
                  ^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: `test::MyImpl::MyType` type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:26:21
     let _: MyTrait::MyType = 3_u32;
                     ^^^^^^
@@ -1447,7 +1447,7 @@ fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
     };
 }
 fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 
 //! > expected_diagnostics
@@ -1510,7 +1510,7 @@ fn if_statement(cond: bool, x: MyTrait::MyType1, y: MyTrait::MyType2) {
     };
 }
 fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 
 //! > expected_diagnostics
@@ -1524,7 +1524,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
                                     ^^^^^^^^^^^^^^^^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: `test::MyImpl::MyType1` type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:16:21
     let _: MyTrait::MyType1 = x;
                     ^^^^^^^
@@ -1579,7 +1579,7 @@ impl MyImpl of MyTrait {
     type MyType4 = u32;
 }
 fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
@@ -1639,7 +1639,7 @@ impl MyImpl of MyTrait {
     type MyType4 = u32;
 }
 fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
     (x, y)
@@ -1893,7 +1893,7 @@ impl MyImpl of MyTrait {
     type MyType1 = Option<()>;
     type MyType2 = Option<()>;
     fn bar(x: Self::MyType1) -> Self::MyType2 {
-        Option::Some(x?)
+        Some(x?)
     }
 }
 
@@ -2656,7 +2656,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u16`.
+error: `test::MyImpl::MyType` type mismatch: `core::felt252` and `core::integer::u16`.
  --> lib.cairo:13:31
     let _: felt252 = MyTrait::my_function();
                               ^^^^^^^^^^^
@@ -3179,3 +3179,37 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
  --> lib.cairo:9:12
     fn foo<impl I1: MyTrait[ty: u64]>() {}
            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Mismatch in associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> S<M> {
+    S { x: 3_felt252 }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type InputType;
+}
+
+impl M of MyTrait {
+    type InputType = u32;
+}
+
+struct S<impl M: MyTrait> {
+    x: M::InputType,
+}
+
+//! > expected_diagnostics
+error: `test::M::InputType` type mismatch: `core::felt252` and `core::integer::u32`.
+ --> lib.cairo:12:13
+fn foo() -> S<M> {
+            ^^^^

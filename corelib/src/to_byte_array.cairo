@@ -157,7 +157,7 @@ fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T,
             reversed_digits.append(digit_as_u8 + '0');
             if (*value).is_zero() {
                 break;
-            };
+            }
         }
     } else {
         loop {
@@ -167,17 +167,17 @@ fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T,
             reversed_digits.append(get_big_base_digit_representation(:digit_as_u8));
             if (*value).is_zero() {
                 break;
-            };
-        };
+            }
+        }
     }
 
     let mut span = reversed_digits.span();
     loop {
         match span.pop_back() {
-            Option::Some(byte) => { byte_array.append_byte(*byte); },
-            Option::None => { break; },
-        };
-    };
+            Some(byte) => { byte_array.append_byte(*byte); },
+            None => { break; },
+        }
+    }
 }
 
 // Converts a digit (0-9, A-Z) to its ASCII representation in a base > 10.

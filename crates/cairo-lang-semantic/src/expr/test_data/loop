@@ -295,11 +295,11 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() -> Option<bool> {
     loop {
-        let res = Option::Some(true);
+        let res = Some(true);
         res?;
         break;
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -325,8 +325,8 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() -> Option<bool> {
     loop {
         1
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -352,8 +352,8 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         ()
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -375,8 +375,8 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         panic_with_felt252('no return')
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
