@@ -21,7 +21,6 @@ smol_str.workspace = true
 unescaper.workspace = true
 
 [dev-dependencies]
-anstream = "0.6.18"
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 pretty_assertions.workspace = true
