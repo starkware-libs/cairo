@@ -111,7 +111,7 @@ log = "0.4.25"
 num-bigint = { version = "0.4.6", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
-parity-scale-codec = { version = "3.7.2", default-features = false, features = [
+parity-scale-codec = { version = "3.6.12", default-features = false, features = [
     "derive",
 ] }
 path-clean = "1.0.1"
