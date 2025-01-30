@@ -221,7 +221,7 @@ impl ImplIssue of Issue<felt252> {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `@core::felt252` and `core::felt252`.
+error: `test::ImplIssue::Index` type mismatch: `@core::felt252` and `core::felt252`.
  --> lib.cairo:13:15
     1_felt252.issue(@2_felt252);
               ^^^^^
