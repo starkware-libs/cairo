@@ -97,14 +97,13 @@ impl DiagnosticLocation {
 
     /// Helper function to format the location of a diagnostic.
     pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
-        let user_location = self.user_location(db);
-        let file_path = user_location.file_id.full_path(db);
-        let start = match user_location.span.start.position_in_file(db, user_location.file_id) {
+        let file_path = self.file_id.full_path(db);
+        let start = match self.span.start.position_in_file(db, self.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
 
-        let end = match user_location.span.end.position_in_file(db, user_location.file_id) {
+        let end = match self.span.end.position_in_file(db, self.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
@@ -114,26 +113,22 @@ impl DiagnosticLocation {
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
-        let user_location = self.user_location(db);
-        let file_path = user_location.file_id.full_path(db);
+        let file_path = self.file_id.full_path(db);
         let mut marks = String::new();
         let mut ending_pos = String::new();
-        let starting_pos =
-            match user_location.span.start.position_in_file(db, user_location.file_id) {
-                Some(starting_text_pos) => {
-                    if let Some(ending_text_pos) =
-                        user_location.span.end.position_in_file(db, user_location.file_id)
-                    {
-                        if starting_text_pos.line != ending_text_pos.line {
-                            ending_pos =
-                                format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
-                        }
+        let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
+            Some(starting_text_pos) => {
+                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id) {
+                    if starting_text_pos.line != ending_text_pos.line {
+                        ending_pos =
+                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
                     }
-                    marks = get_location_marks(db, &user_location, true);
-                    format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
                 }
-                None => "?".into(),
-            };
+                marks = get_location_marks(db, self, true);
+                format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
+            }
+            None => "?".into(),
+        };
         write!(f, "{file_path}:{starting_pos}{ending_pos}\n{marks}")
     }
 }
