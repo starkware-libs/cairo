@@ -1006,7 +1006,7 @@ fn group_match_arms(
     variants_block_builders
         .into_iter()
         .sorted_by_key(|MatchLeafBuilder { arm_index, .. }| *arm_index)
-        .group_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)
+        .chunk_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .into_iter()
         .map(|(arm_index, group)| {
             let arm = &arms[arm_index];

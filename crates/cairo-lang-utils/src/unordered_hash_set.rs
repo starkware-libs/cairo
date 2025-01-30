@@ -18,7 +18,7 @@ use hashbrown::HashSet;
 pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashSet<Key, BH = hashbrown::hash_map::DefaultHashBuilder>(HashSet<Key, BH>);
+pub struct UnorderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(HashSet<Key, BH>);
 
 impl<K, BH: Default> Default for UnorderedHashSet<K, BH> {
     #[cfg(feature = "std")]
