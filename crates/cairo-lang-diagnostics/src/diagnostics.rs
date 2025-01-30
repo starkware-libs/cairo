@@ -322,7 +322,18 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             let diag_location = entry.location(db);
             let (user_location, parent_file_notes) =
                 diag_location.user_location_with_plugin_notes(files_db, file_notes);
+
+            let include_generated_location = diag_location != user_location
+                && std::env::var("CAIRO_DEBUG_GENERATED_CODE").is_ok();
             msg += &format_diagnostics(files_db, &entry.format(db), user_location);
+
+            if include_generated_location {
+                msg += &format!(
+                    "note: The error originates from the generated code in {:?}\n",
+                    diag_location.debug(files_db)
+                );
+            }
+
             for note in entry.notes(db) {
                 msg += &format!("note: {:?}\n", note.debug(files_db))
             }
