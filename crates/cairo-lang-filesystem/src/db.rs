@@ -355,6 +355,10 @@ pub fn get_originating_location(
     mut span: TextSpan,
     mut parent_files: Option<&mut Vec<FileId>>,
 ) -> (FileId, TextSpan) {
+    if std::env::var("CAIRO_DEBUG_GENERATED_CODE").is_ok() {
+        return (file_id, span);
+    }
+
     if let Some(ref mut parent_files) = parent_files {
         parent_files.push(file_id);
     }
