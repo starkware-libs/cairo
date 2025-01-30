@@ -29,6 +29,15 @@ fn test_advance_by() {
 }
 
 #[test]
+fn test_iter_nth() {
+    let mut iter = array![1_u8, 2, 3].into_iter();
+
+    assert_eq!(iter.nth(1), Some(2));
+    assert_eq!(iter.nth(0), Some(3));
+    assert_eq!(iter.nth(0), None);
+}
+
+#[test]
 fn test_iter_adapter_map() {
     let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
 
