@@ -17,7 +17,8 @@ use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use pulldown_cmark::{
-    BrokenLink, CodeBlockKind, Event, LinkType, Options, Parser as MarkdownParser, Tag, TagEnd,
+    BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options, Parser as MarkdownParser,
+    Tag, TagEnd,
 };
 
 use crate::db::DocGroup;
@@ -139,6 +140,12 @@ impl<'a> DocumentationCommentParser<'a> {
                 }
                 Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) => {
                     is_indented_code_block = true;
+                }
+                Event::Start(Tag::Heading { level, .. }) => {
+                    tokens.push(DocumentationCommentToken::Content(format!(
+                        "  {} ",
+                        heading_level_to_markdown(level)
+                    )));
                 }
                 _ => {}
             }
@@ -351,5 +358,18 @@ impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
             .field("path", &self.path)
             .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db.upcast())))
             .finish()
+    }
+}
+
+/// Maps `HeadingLevel` to correct markdown marker.
+fn heading_level_to_markdown(heading_level: HeadingLevel) -> String {
+    let heading_char: String = String::from("#");
+    match heading_level {
+        HeadingLevel::H1 => heading_char,
+        HeadingLevel::H2 => heading_char.repeat(2),
+        HeadingLevel::H3 => heading_char.repeat(3),
+        HeadingLevel::H4 => heading_char.repeat(4),
+        HeadingLevel::H5 => heading_char.repeat(5),
+        HeadingLevel::H6 => heading_char.repeat(6),
     }
 }
