@@ -529,7 +529,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let mut span = array![1, 2, 3].span();
     /// let result = *(span.multi_pop_back::<2>().unwrap());
     /// let unboxed_result = result.unbox();
-    /// assert!(unboxed_result == [2, 3]);;
+    /// assert!(unboxed_result == [2, 3]);
     /// ```
     fn multi_pop_back<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
         array_snapshot_multi_pop_back(ref self.snapshot)
