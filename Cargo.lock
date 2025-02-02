@@ -390,6 +390,15 @@ checksum = "230c5f1ca6a325a32553f8640d31ac9b49f2411e901e427570154868b46da4f7"
 
 [[package]]
 name = "bincode"
+version = "1.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "bincode"
 version = "2.0.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f11ea1a0346b94ef188834a65c068a03aec181c94896d481d7a0a40d85b0ce95"
@@ -530,7 +539,7 @@ name = "cairo-execute"
 version = "2.9.2"
 dependencies = [
  "anyhow",
- "bincode",
+ "bincode 2.0.0-rc.3",
  "cairo-lang-compiler",
  "cairo-lang-executable",
  "cairo-lang-runner",
@@ -743,6 +752,7 @@ dependencies = [
 name = "cairo-lang-lowering"
 version = "2.9.2"
 dependencies = [
+ "bincode 1.3.3",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -764,6 +774,8 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "serde",
+ "smol_str",
  "test-log",
 ]
 
@@ -1126,6 +1138,7 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "serde",
  "smol_str",
  "test-log",
  "unescaper",
@@ -1254,7 +1267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fa8b4b56ee66cebcade4d85128e55b2bfdf046502187aeaa8c2768a427684dc"
 dependencies = [
  "anyhow",
- "bincode",
+ "bincode 2.0.0-rc.3",
  "bitvec",
  "clap",
  "generic-array",
