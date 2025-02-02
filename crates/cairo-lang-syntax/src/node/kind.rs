@@ -156,6 +156,7 @@ pub enum SyntaxKind {
     MacroRulesList,
     MacroRule,
     MacroRuleParam,
+    MacroRuleParamKindMissing,
     ParenthesizedMacroMatcher,
     BracedMacroMatcher,
     BracketedMacroMatcher,
