@@ -16,6 +16,7 @@ pub mod lower;
 pub mod objects;
 pub mod optimizations;
 pub mod panic;
+pub mod precompute;
 pub mod reorganize_blocks;
 pub mod scc;
 pub mod utils;

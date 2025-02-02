@@ -11,7 +11,7 @@ use crate::db::DefsGroup;
 
 /// A stable location of a real, concrete syntax.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub struct StableLocation(SyntaxStablePtrId);
+pub struct StableLocation(pub SyntaxStablePtrId);
 impl StableLocation {
     pub fn new(stable_ptr: SyntaxStablePtrId) -> Self {
         Self(stable_ptr)
