@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -7,6 +8,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -17,6 +19,7 @@ use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::{PotentialDestructCalls, borrow_check};
+use crate::cache::load_cached_crate_functions;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
@@ -61,6 +64,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Arc<MultiLowering>>;
+
+    /// Returns a mapping from function ids to their multi-lowerings for the given loaded from a
+    /// cache for the given crate.
+    fn cached_multi_lowerings(
+        &self,
+        crate_id: cairo_lang_filesystem::ids::CrateId,
+    ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>>;
 
     /// Computes the lowered representation of a function with a body before borrow checking.
     fn priv_function_with_body_lowering(
@@ -382,8 +392,24 @@ fn priv_function_with_body_multi_lowering(
     db: &dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<Arc<MultiLowering>> {
+    let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
+    if let Some(map) = db.cached_multi_lowerings(crate_id) {
+        if let Some(multi_lowering) = map.get(&function_id) {
+            return Ok(Arc::new(multi_lowering.clone()));
+        } else {
+            panic!("function not found in cached lowering {:?}", function_id.debug(db));
+        }
+    };
+
     let multi_lowering = lower_semantic_function(db.upcast(), function_id)?;
     Ok(Arc::new(multi_lowering))
+}
+
+fn cached_multi_lowerings(
+    db: &dyn LoweringGroup,
+    crate_id: cairo_lang_filesystem::ids::CrateId,
+) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
+    load_cached_crate_functions(db, crate_id)
 }
 
 // * Borrow checking.
