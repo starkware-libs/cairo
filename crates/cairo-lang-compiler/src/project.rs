@@ -85,7 +85,7 @@ pub fn update_crate_root(
     let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_identifier, config);
     db.set_crate_config(
         crate_id,
-        Some(CrateConfiguration { root, settings: crate_settings.clone() }),
+        Some(CrateConfiguration { root, settings: crate_settings.clone(), cached_file: None }),
     );
 }
 
