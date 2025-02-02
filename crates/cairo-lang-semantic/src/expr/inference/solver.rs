@@ -144,7 +144,7 @@ pub fn enrich_lookup_context(
 }
 
 /// Adds the defining module of the type to the lookup context.
-fn enrich_lookup_context_with_ty(
+pub fn enrich_lookup_context_with_ty(
     db: &dyn SemanticGroup,
     ty: TypeId,
     lookup_context: &mut ImplLookupContext,
