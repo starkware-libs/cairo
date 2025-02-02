@@ -14,7 +14,7 @@
 //! ```
 
 /// Takes two comparable values `a` and `b` and returns
-/// the smallest of the two values.
+/// the smaller of the two values.
 ///
 /// # Examples
 ///
@@ -33,7 +33,7 @@ pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 }
 
 /// Takes two comparable values `a` and `b` and returns
-/// the greatest of the two values.
+/// the greater of the two values.
 ///
 /// # Examples
 ///
@@ -52,7 +52,7 @@ pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 }
 
 /// Takes two comparable values `a` and `b` and returns
-/// a tuple with the smallest value and the greatest value.
+/// a tuple with the smaller value and the greater value.
 ///
 /// # Examples
 ///
