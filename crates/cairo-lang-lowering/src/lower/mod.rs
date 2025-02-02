@@ -86,11 +86,13 @@ pub fn lower_semantic_function(
     semantic_function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<MultiLowering> {
     let declaration_diagnostics = db.function_declaration_diagnostics(semantic_function_id);
-    check_error_free_or_warn(db, declaration_diagnostics, semantic_function_id, "declaration")?;
+    check_error_free_or_warn(db, declaration_diagnostics, semantic_function_id, "declaration")
+        .unwrap();
     let body_diagnostics = db.function_body_diagnostics(semantic_function_id);
-    check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body")?;
+    check_error_free_or_warn(db, body_diagnostics, semantic_function_id, "body").unwrap();
 
-    let mut encapsulating_ctx = EncapsulatingLoweringContext::new(db, semantic_function_id)?;
+    let mut encapsulating_ctx =
+        EncapsulatingLoweringContext::new(db, semantic_function_id).unwrap();
     let function_id = FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
     let signature = db.function_with_body_signature(semantic_function_id)?;
 
@@ -108,7 +110,8 @@ pub fn lower_semantic_function(
         function_id,
         Signature::from_semantic(db, signature),
         block_expr_id,
-    )?;
+    )
+    .unwrap();
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 

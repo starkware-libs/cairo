@@ -109,7 +109,7 @@ impl<'db> EncapsulatingLoweringContext<'db> {
         db: &'db dyn LoweringGroup,
         semantic_function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Self> {
-        let function_body = db.function_body(semantic_function_id)?;
+        let function_body = db.function_body(semantic_function_id).unwrap();
         let usages = Usages::from_function_body(&function_body);
         Ok(Self {
             db,

@@ -30,6 +30,11 @@ impl StableLocation {
         self.0.lookup(db.upcast())
     }
 
+    /// Returns the [SyntaxStablePtrId] of the [StableLocation].
+    pub fn stable_ptr(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
         let syntax_node = self.syntax_node(db);
