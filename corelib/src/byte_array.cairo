@@ -19,7 +19,7 @@
 //! let s = format!("Starknet's max TPS is: {}", max_tps);
 //! ```
 //!
-//! You can append bytes to an existing `ByteArray`  with [`ByteArrayTrait::append_byte`]:
+//! You can append bytes to an existing `ByteArray` with [`ByteArrayTrait::append_byte`]:
 //!
 //! ```
 //! let mut ba: ByteArray = "";
