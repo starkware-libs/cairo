@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
@@ -44,7 +45,7 @@ use crate::items::feature_kind::{FeatureConfig, FeatureKind, extract_feature_con
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
-    ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
+    ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
 };
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
@@ -55,7 +56,7 @@ use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, ConcreteVariant, ExprId, FunctionId, FunctionLongId,
+    ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
@@ -118,13 +119,10 @@ pub struct EnrichedMembers {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
     pub members: OrderedHashMap<SmolStr, (Member, usize)>,
-    /// The sequence of deref functions needed to access the members.
-    pub deref_functions: Vec<(FunctionId, Mutability)>,
-    /// The tail of deref chain explored so far. The search for additional members will continue
-    /// from this point.
-    /// Useful for partial computation of enriching members where a member was already previously
-    /// found.
-    pub exploration_tail: Option<ExprId>,
+    /// The sequence of deref needed to access the members.
+    pub deref_chain: Arc<[DerefInfo]>,
+    // The number of derefs that were explored.
+    pub explored_derefs: usize,
 }
 impl EnrichedMembers {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
@@ -132,7 +130,12 @@ impl EnrichedMembers {
         let (member, n_derefs) = self.members.get(name)?;
         Some(EnrichedTypeMemberAccess {
             member: member.clone(),
-            deref_functions: self.deref_functions[..*n_derefs].to_vec(),
+            deref_functions: self
+                .deref_chain
+                .iter()
+                .map(|deref_info| (deref_info.function_id, deref_info.self_mutability))
+                .take(*n_derefs)
+                .collect(),
         })
     }
 }

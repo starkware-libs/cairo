@@ -61,8 +61,8 @@ use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
     CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
-    deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait, get_core_trait,
-    panic_destruct_trait,
+    deref_mut_trait, deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait,
+    get_core_trait, panic_destruct_trait,
 };
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -71,7 +71,7 @@ use crate::expr::compute::{ComputationContext, ContextFunction, Environment, com
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context_with_ty};
 use crate::expr::inference::{
     ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId,
 };
@@ -766,6 +766,120 @@ pub fn impl_semantic_definition_diagnostics(
         }
     }
     diagnostics.build()
+}
+
+/// Represents a chain of dereferences.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DerefChain {
+    pub derefs: Arc<[DerefInfo]>,
+}
+
+/// Represents a single steps in a deref chain.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DerefInfo {
+    /// deref function
+    pub function_id: FunctionId,
+    /// The mutability of the self argument of the deref function.
+    pub self_mutability: Mutability,
+    /// The target type of the deref function.
+    pub target_ty: TypeId,
+}
+
+/// Cycle handling for  [crate::db::SemanticGroup::deref_chain].
+pub fn deref_chain_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    _ty: &TypeId,
+    _try_deref_mut: &bool,
+) -> Maybe<DerefChain> {
+    // `SemanticDiagnosticKind::DerefCycle` will be reported by `deref_impl_diagnostics`.
+    Maybe::Err(skip_diagnostic())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::deref_chain].
+pub fn deref_chain(db: &dyn SemanticGroup, ty: TypeId, try_deref_mut: bool) -> Maybe<DerefChain> {
+    let mut opt_deref = None;
+    if try_deref_mut {
+        opt_deref = try_get_deref_func_and_target(db, ty, true)?;
+    }
+    let self_mutability = if opt_deref.is_some() {
+        Mutability::Reference
+    } else {
+        opt_deref = try_get_deref_func_and_target(db, ty, false)?;
+        Mutability::Immutable
+    };
+
+    let Some((function_id, target_ty)) = opt_deref else {
+        return Ok(DerefChain { derefs: Arc::new([]) });
+    };
+
+    let inner_chain = db.deref_chain(target_ty, false)?;
+
+    Ok(DerefChain {
+        derefs: chain!(
+            [DerefInfo { function_id, target_ty, self_mutability }],
+            inner_chain.derefs.iter().cloned()
+        )
+        .collect(),
+    })
+}
+
+/// Tries to find the deref function and the target type for a given type and deref trait.
+fn try_get_deref_func_and_target(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+    is_mut_deref: bool
+) -> Result<Option<(FunctionId, TypeId)>, DiagnosticAdded> {
+
+
+    let (deref_trait_id, deref_method) = if is_mut_deref {
+        (deref_mut_trait(db), "deref_mut".into())
+    } else {
+        (deref_trait(db), "deref".into())
+    };
+
+    let defs_db = db.upcast();
+    let mut lookup_context =
+        ImplLookupContext::new(deref_trait_id.module_file_id(defs_db).0, vec![]);
+    enrich_lookup_context_with_ty(db, ty, &mut lookup_context);
+    let concrete_trait = ConcreteTraitLongId {
+        trait_id: deref_trait_id,
+        generic_args: vec![GenericArgumentId::Type(ty)],
+    }
+    .intern(db);
+    let Ok(deref_impl) = get_impl_at_context(db, lookup_context, concrete_trait, None) else {
+        return Ok(None);
+    };
+    let concrete_impl_id = match deref_impl.lookup_intern(db) {
+        ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id,
+        _ => panic!("Expected concrete impl"),
+    };
+
+    let deref_trait_func =
+        db.trait_function_by_name(deref_trait_id, deref_method).unwrap().unwrap();
+    let function_id = FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                impl_id: deref_impl,
+                function: deref_trait_func,
+            }),
+            generic_args: vec![],
+        },
+    }
+    .intern(db);
+
+    let data = db.priv_impl_definition_data(concrete_impl_id.impl_def_id(db)).unwrap();
+    let mut types_iter = data.item_type_asts.iter();
+    let (impl_item_type_id, _) = types_iter.next().unwrap();
+    if types_iter.next().is_some() {
+        panic!(
+            "get_impl_based_on_single_impl_type called with an impl that has more than one type"
+        );
+    }
+    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+    let ty = concrete_impl_id.substitution(db)?.substitute(db, ty).unwrap();
+
+    Ok(Some((function_id, ty)))
 }
 
 /// Reports diagnostic for a deref impl.

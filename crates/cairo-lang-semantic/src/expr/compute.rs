@@ -31,7 +31,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
@@ -51,9 +50,9 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    CoreTraitContext, core_binary_operator, core_bool_ty, core_unary_operator, deref_mut_trait,
-    deref_trait, false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
-    true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    CoreTraitContext, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
+    get_core_trait, get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -3061,7 +3060,7 @@ fn get_enriched_type_member_access(
             match e.get_member(accessed_member_name) {
                 Some(value) => return Ok(Some(value)),
                 None => {
-                    if e.exploration_tail.is_none() {
+                    if e.deref_chain.len() == e.explored_derefs {
                         // There's no further exploration to be done, and member was not found.
                         return Ok(None);
                     }
@@ -3086,10 +3085,16 @@ fn get_enriched_type_member_access(
                 } else {
                     Default::default()
                 };
-            EnrichedMembers { members, deref_functions: vec![], exploration_tail: Some(expr.id) }
+
+
+            EnrichedMembers {
+                members,
+                deref_chain: ctx.db.deref_chain(ty, is_mut_var)?.derefs,
+                explored_derefs: 0,
+            }
         }
     };
-    enrich_members(ctx, &mut enriched_members, is_mut_var, stable_ptr, accessed_member_name)?;
+    enrich_members(ctx, &mut enriched_members, stable_ptr, accessed_member_name)?;
     let e = ctx.resolver.type_enriched_members.entry(key).or_insert(enriched_members);
     Ok(e.get_member(accessed_member_name))
 }
@@ -3101,83 +3106,28 @@ fn get_enriched_type_member_access(
 fn enrich_members(
     ctx: &mut ComputationContext<'_>,
     enriched_members: &mut EnrichedMembers,
-    is_mut_var: bool,
     stable_ptr: ast::ExprPtr,
     accessed_member_name: &str,
 ) -> Maybe<()> {
-    let EnrichedMembers { members: enriched, deref_functions, exploration_tail } = enriched_members;
-    let mut visited_types: OrderedHashSet<TypeId> = OrderedHashSet::default();
-
-    let expr_id =
-        exploration_tail.expect("`enrich_members` should be called with a `calc_tail` value.");
-    let mut expr = ExprAndId { expr: ctx.arenas.exprs[expr_id].clone(), id: expr_id };
-
-    let deref_mut_trait_id = deref_mut_trait(ctx.db);
-    let deref_trait_id = deref_trait(ctx.db);
-
-    let compute_deref_method_function_call_data =
-        |ctx: &mut ComputationContext<'_>, expr: ExprAndId, use_deref_mut: bool| {
-            let deref_trait = if use_deref_mut { deref_mut_trait_id } else { deref_trait_id };
-            compute_method_function_call_data(
-                ctx,
-                &[deref_trait],
-                if use_deref_mut { "deref_mut".into() } else { "deref".into() },
-                expr.clone(),
-                stable_ptr.0,
-                None,
-                |_, _, _| None,
-                |_, _, _| None,
-            )
-        };
-
-    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
-    let mut use_deref_mut = deref_functions.is_empty()
-        && is_mut_var
-        && compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok();
-
-    // This function either finds a member and sets `exploration_tail` or finishes the exploration
-    // and leaves that exploration tail as `None`.
-    *exploration_tail = None;
+    let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
     // Add members of derefed types.
-    while let Ok((function_id, _, cur_expr, mutability)) =
-        compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
-    {
-        deref_functions.push((function_id, mutability));
-        use_deref_mut = false;
-        let n_deref = deref_functions.len();
-        expr = cur_expr;
-        let derefed_expr = expr_function_call(
-            ctx,
-            function_id,
-            vec![NamedArg(expr, None, mutability)],
-            stable_ptr,
-            stable_ptr,
-        )?;
-        let ty = ctx.reduce_ty(derefed_expr.ty());
-        let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
-        // If the type is still a variable we stop looking for derefed members.
-        if let TypeLongId::Var(_) = long_ty {
-            break;
-        }
-        expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
+    for deref_info in deref_chain.iter().skip(*explored_derefs).cloned() {
+        *explored_derefs += 1;
+        let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, deref_info.target_ty, stable_ptr)?;
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
                 // Insert member if there is not already a member with the same name.
-                enriched.entry(member_name.clone()).or_insert_with(|| (member.clone(), n_deref));
+                enriched
+                    .entry(member_name.clone())
+                    .or_insert_with(|| (member.clone(), *explored_derefs));
             }
             // If member is contained we can stop the calculation post the lookup.
             if members.contains_key(accessed_member_name) {
-                // Found member, so exploration isn't done - setting up the tail.
-                *exploration_tail = Some(expr.id);
+                // Found member, so exploration isn't done.
                 break;
             }
-        }
-        if !visited_types.insert(long_ty.intern(ctx.db)) {
-            // Break if we have a cycle. A diagnostic will be reported from the impl and not from
-            // member access.
-            break;
         }
     }
     Ok(())
