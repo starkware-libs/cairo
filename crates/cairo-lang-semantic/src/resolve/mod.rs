@@ -55,7 +55,7 @@ use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, ConcreteVariant, ExprId, FunctionId, FunctionLongId,
+    ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
@@ -124,7 +124,7 @@ pub struct EnrichedMembers {
     /// from this point.
     /// Useful for partial computation of enriching members where a member was already previously
     /// found.
-    pub exploration_tail: Option<ExprId>,
+    pub exploration_done: bool,
 }
 impl EnrichedMembers {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
