@@ -381,7 +381,7 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    outputs: [VariableId; 2],
+    pub outputs: [VariableId; 2],
 }
 impl StatementSnapshot {
     pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
