@@ -29,7 +29,7 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
-            .with_default_plugin_suite(starknet_plugin_suite())
+            .with_plugin_suite(starknet_plugin_suite())
             .build()
             .unwrap(),
     )
@@ -47,7 +47,7 @@ pub static SHARED_DB_WITH_CONTRACTS: LazyLock<Mutex<RootDatabase>> = LazyLock::n
             .with_project_config(
                 ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
             )
-            .with_default_plugin_suite(starknet_plugin_suite())
+            .with_plugin_suite(starknet_plugin_suite())
             .build()
             .unwrap(),
     )

@@ -15,7 +15,7 @@ use cairo_lang_defs::ids::{
     MemberId, ModuleFileId, ModuleItemId, NamedLanguageElementId, StatementConstLongId,
     StatementItemId, StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
+use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{Maybe, ToOption, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -434,15 +434,10 @@ fn compute_expr_inline_macro_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
-    let crate_id = ctx.resolver.owning_crate_id;
-
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
-    let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
-    else {
+    let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
         return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
-    let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
 
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
@@ -463,7 +458,7 @@ fn compute_expr_inline_macro_semantic(
 
     let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
         cfg_set: &ctx.cfg_set,
-        declared_derives: &ctx.db.declared_derives(crate_id),
+        declared_derives: &ctx.db.declared_derives(),
         allowed_features: &ctx.resolver.data.feature_config.allowed_features,
         edition: ctx.resolver.settings.edition,
     });
@@ -3502,9 +3497,6 @@ pub fn compute_statement_semantic(
 ) -> Maybe<StatementId> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-
-    let crate_id = ctx.resolver.owning_crate_id;
-
     // As for now, statement attributes does not have any semantic affect, so we only validate they
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
@@ -3512,7 +3504,7 @@ pub fn compute_statement_semantic(
         .resolver
         .data
         .feature_config
-        .override_with(extract_item_feature_config(db, crate_id, &syntax, ctx.diagnostics));
+        .override_with(extract_item_feature_config(db, &syntax, ctx.diagnostics));
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(syntax_db);

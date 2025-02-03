@@ -37,7 +37,7 @@ use itertools::Itertools;
 fn test_lowering_consistency() {
     let db_val = RootDatabase::builder()
         .detect_corelib()
-        .with_default_plugin_suite(starknet_plugin_suite())
+        .with_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
 
@@ -225,7 +225,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut db_val = RootDatabase::builder()
         .detect_corelib()
-        .with_default_plugin_suite(starknet_plugin_suite())
+        .with_plugin_suite(starknet_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db_val, Path::new(&args.path))?;
