@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{GenericTypeId, ModuleId, TopLevelLanguageElementId};
+use cairo_lang_defs::ids::{GenericTypeId, MacroPluginLongId, ModuleId, TopLevelLanguageElementId};
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -14,6 +14,7 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
+use crate::ids::AnalyzerPluginLongId;
 use crate::items::us::SemanticUseEx;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::ResolvedGenericItem;
@@ -140,7 +141,9 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_macro_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
+    db.set_default_macro_plugins(Arc::new([
+        db.intern_macro_plugin(MacroPluginLongId(Arc::new(AddInlineModuleDummyPlugin)))
+    ]));
     let crate_id = setup_test_crate(db, indoc! {"
             mod a {
                 #[test_change_return_type]
@@ -240,7 +243,9 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
 fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_analyzer_plugins(vec![Arc::new(NoU128RenameAnalyzerPlugin)]);
+    db.set_default_analyzer_plugins(Arc::new([
+        db.intern_analyzer_plugin(AnalyzerPluginLongId(Arc::new(NoU128RenameAnalyzerPlugin)))
+    ]));
     let crate_id = setup_test_crate(db, indoc! {"
             mod inner {
                 use core::integer::u128 as long_u128_rename;
