@@ -795,7 +795,7 @@ ret;
 
 //! > ==========================================================================
 
-//! > Test use System implicit.
+//! > Test use System implicit with keccak.
 
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
@@ -807,6 +807,24 @@ fn use_system() {
 }
 
 //! > result
-Emulated builtin `System` not allowed for executable.
+The function is using libfunc `keccak_syscall`. Syscalls are not supported in `#[executable]`.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use System implicit with sha256.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn use_system() {
+    core::sha256::compute_sha256_byte_array(@"not allowed without starknet.");
+}
+
+//! > result
+The function is using libfunc `sha256_process_block_syscall`. Syscalls are not supported in `#[executable]`.
 
 //! > expected_diagnostics
