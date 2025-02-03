@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -13,12 +14,13 @@ use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
@@ -47,14 +49,18 @@ impl salsa::ParallelDatabase for RootDatabase {
     }
 }
 impl RootDatabase {
-    fn new(default_plugin_suite: PluginSuite, inlining_strategy: InliningStrategy) -> Self {
+    fn new(
+        plugins: Vec<Arc<dyn MacroPlugin>>,
+        inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+        analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
+        inlining_strategy: InliningStrategy,
+    ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res, inlining_strategy);
-
-        let suite = res.intern_plugin_suite(default_plugin_suite);
-        res.set_default_plugins_from_suite(suite);
-
+        res.set_macro_plugins(plugins);
+        res.set_inline_macro_plugins(inline_macro_plugins.into());
+        res.set_analyzer_plugins(analyzer_plugins);
         res
     }
 
@@ -80,7 +86,7 @@ impl Default for RootDatabase {
 
 #[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
-    default_plugin_suite: PluginSuite,
+    plugin_suite: PluginSuite,
     detect_corelib: bool,
     auto_withdraw_gas: bool,
     add_redeposit_gas: bool,
@@ -92,7 +98,7 @@ pub struct RootDatabaseBuilder {
 impl RootDatabaseBuilder {
     fn new() -> Self {
         Self {
-            default_plugin_suite: get_default_plugin_suite(),
+            plugin_suite: get_default_plugin_suite(),
             detect_corelib: false,
             auto_withdraw_gas: true,
             add_redeposit_gas: false,
@@ -102,13 +108,13 @@ impl RootDatabaseBuilder {
         }
     }
 
-    pub fn with_default_plugin_suite(&mut self, suite: PluginSuite) -> &mut Self {
-        self.default_plugin_suite.add(suite);
+    pub fn with_plugin_suite(&mut self, suite: PluginSuite) -> &mut Self {
+        self.plugin_suite.add(suite);
         self
     }
 
     pub fn clear_plugins(&mut self) -> &mut Self {
-        self.default_plugin_suite = get_default_plugin_suite();
+        self.plugin_suite = get_default_plugin_suite();
         self
     }
 
@@ -147,7 +153,12 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::new(self.default_plugin_suite.clone(), self.inlining_strategy);
+        let mut db = RootDatabase::new(
+            self.plugin_suite.plugins.clone(),
+            self.plugin_suite.inline_macro_plugins.clone(),
+            self.plugin_suite.analyzer_plugins.clone(),
+            self.inlining_strategy,
+        );
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
