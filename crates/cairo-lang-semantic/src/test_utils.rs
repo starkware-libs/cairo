@@ -1,6 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
@@ -17,7 +17,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
 
-use crate::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group};
+use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
 use crate::plugin::PluginSuite;
@@ -47,12 +47,9 @@ impl SemanticDatabaseForTesting {
     pub fn with_plugin_suite(suite: PluginSuite) -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        init_defs_group(&mut res);
-        init_semantic_group(&mut res);
-
-        let suite = res.intern_plugin_suite(suite);
-        res.set_default_plugins_from_suite(suite);
-
+        res.set_macro_plugins(suite.plugins);
+        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
+        res.set_analyzer_plugins(suite.analyzer_plugins);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res

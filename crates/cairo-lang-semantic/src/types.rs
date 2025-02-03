@@ -144,36 +144,18 @@ impl TypeLongId {
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let defs_db = db.upcast();
-
+        let phantom_type_attributes = db.declared_phantom_type_attributes();
         match self {
             TypeLongId::Concrete(id) => match id {
-                ConcreteTypeId::Struct(id) => {
-                    let crate_id =
-                        db.lookup_intern_struct(id.struct_id(db)).0.0.owning_crate(defs_db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
-                }
-                ConcreteTypeId::Enum(id) => {
-                    let crate_id = db.lookup_intern_enum(id.enum_id(db)).0.0.owning_crate(defs_db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
-                }
-                ConcreteTypeId::Extern(id) => {
-                    let crate_id = db
-                        .lookup_intern_extern_type(id.extern_type_id(db))
-                        .0
-                        .0
-                        .owning_crate(defs_db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
-                }
+                ConcreteTypeId::Struct(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Enum(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Extern(id) => phantom_type_attributes
+                    .iter()
+                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
