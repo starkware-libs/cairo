@@ -35,7 +35,12 @@ pub enum ParserDiagnosticKind {
     MissingTypeClause,
     MissingTypeExpression,
     MissingWrappedArgList,
+<<<<<<< HEAD
     MissingPattern,
+=======
+    MissingPatteren,
+    MissingMacroRuleParamKind,
+>>>>>>> d25faa495 (Restrict macro param kind to a predefined enum. (#7194))
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
@@ -84,6 +89,9 @@ impl DiagnosticEntry for ParserDiagnostic {
                 .to_string(),
             ParserDiagnosticKind::MissingPattern => {
                 "Missing tokens. Expected a pattern.".to_string()
+            }
+            ParserDiagnosticKind::MissingMacroRuleParamKind => {
+                "Missing tokens. Expected a macro rule parameter kind.".to_string()
             }
             ParserDiagnosticKind::ExpectedInToken => {
                 "Missing identifier token, expected 'in'.".to_string()

@@ -23038,7 +23038,7 @@ impl MacroRuleParam {
         dollar: TerminalDollarGreen,
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
-        kind: TerminalIdentifierGreen,
+        kind: MacroRuleParamKindGreen,
     ) -> MacroRuleParamGreen {
         let children: Vec<GreenId> = vec![dollar.0, name.0, colon.0, kind.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
@@ -23061,8 +23061,8 @@ impl MacroRuleParam {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
         TerminalColon::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn kind(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> MacroRuleParamKind {
+        MacroRuleParamKind::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23097,7 +23097,7 @@ impl TypedSyntaxNode for MacroRuleParam {
                         TerminalDollar::missing(db).0,
                         TerminalIdentifier::missing(db).0,
                         TerminalColon::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
+                        MacroRuleParamKind::missing(db).0,
                     ],
                     width: TextWidth::default(),
                 },
@@ -23126,6 +23126,167 @@ impl TypedSyntaxNode for MacroRuleParam {
 }
 impl From<&MacroRuleParam> for SyntaxStablePtrId {
     fn from(node: &MacroRuleParam) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MacroRuleParamKind {
+    Identifier(TerminalIdentifier),
+    Missing(MacroRuleParamKindMissing),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRuleParamKindPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for MacroRuleParamKindPtr {
+    type SyntaxNode = MacroRuleParamKind;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRuleParamKind {
+        MacroRuleParamKind::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRuleParamKindPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRuleParamKindPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalIdentifierPtr> for MacroRuleParamKindPtr {
+    fn from(value: TerminalIdentifierPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<MacroRuleParamKindMissingPtr> for MacroRuleParamKindPtr {
+    fn from(value: MacroRuleParamKindMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIdentifierGreen> for MacroRuleParamKindGreen {
+    fn from(value: TerminalIdentifierGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<MacroRuleParamKindMissingGreen> for MacroRuleParamKindGreen {
+    fn from(value: MacroRuleParamKindMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRuleParamKindGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRuleParamKind {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MacroRuleParamKindPtr;
+    type Green = MacroRuleParamKindGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRuleParamKindGreen(MacroRuleParamKindMissing::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalIdentifier => {
+                MacroRuleParamKind::Identifier(TerminalIdentifier::from_syntax_node(db, node))
+            }
+            SyntaxKind::MacroRuleParamKindMissing => {
+                MacroRuleParamKind::Missing(MacroRuleParamKindMissing::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "MacroRuleParamKind"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MacroRuleParamKind::Identifier(x) => x.as_syntax_node(),
+            MacroRuleParamKind::Missing(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRuleParamKindPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&MacroRuleParamKind> for SyntaxStablePtrId {
+    fn from(node: &MacroRuleParamKind) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl MacroRuleParamKind {
+    /// Checks if a kind of a variant of [MacroRuleParamKind].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::TerminalIdentifier | SyntaxKind::MacroRuleParamKindMissing)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroRuleParamKindMissing {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroRuleParamKindMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> MacroRuleParamKindMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroRuleParamKindMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRuleParamKindMissing,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroRuleParamKindMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRuleParamKindMissingPtr(pub SyntaxStablePtrId);
+impl MacroRuleParamKindMissingPtr {}
+impl TypedStablePtr for MacroRuleParamKindMissingPtr {
+    type SyntaxNode = MacroRuleParamKindMissing;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRuleParamKindMissing {
+        MacroRuleParamKindMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRuleParamKindMissingPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRuleParamKindMissingPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRuleParamKindMissingGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRuleParamKindMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRuleParamKindMissing);
+    type StablePtr = MacroRuleParamKindMissingPtr;
+    type Green = MacroRuleParamKindMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRuleParamKindMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRuleParamKindMissing,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRuleParamKindMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRuleParamKindMissing
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRuleParamKindMissingPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroRuleParamKindMissing> for SyntaxStablePtrId {
+    fn from(node: &MacroRuleParamKindMissing) -> Self {
         node.stable_ptr().untyped()
     }
 }
