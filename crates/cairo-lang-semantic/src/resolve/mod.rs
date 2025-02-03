@@ -52,7 +52,7 @@ use crate::items::trt::{
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
     ConcreteFunction, ConcreteTypeId, ConcreteVariant, ExprId, FunctionId, FunctionLongId,
@@ -1083,10 +1083,10 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
-                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-                let ty = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                    .rewrite(ty)?;
-                ResolvedConcreteItem::Type(ty)
+                ResolvedConcreteItem::Type(
+                    GenericSubstitution::new(&generic_params, &generic_args)
+                        .substitute(self.db, ty)?,
+                )
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
                 let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
@@ -1098,10 +1098,10 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
-                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-                let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                    .rewrite(impl_id)?;
-                ResolvedConcreteItem::Impl(impl_id)
+                ResolvedConcreteItem::Impl(
+                    GenericSubstitution::new(&generic_params, &generic_args)
+                        .substitute(self.db, impl_id)?,
+                )
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
@@ -1505,8 +1505,7 @@ impl<'db> Resolver<'db> {
             self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
 
         for generic_param in generic_params.iter() {
-            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(generic_param.clone())?;
+            let generic_param = substitution.substitute(self.db, generic_param.clone())?;
             let generic_arg = self.resolve_generic_arg(
                 &generic_param,
                 arg_syntax_per_param

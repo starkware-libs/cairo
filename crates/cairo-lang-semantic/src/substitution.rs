@@ -78,6 +78,12 @@ impl GenericSubstitution {
         }
         self
     }
+    pub fn substitute<'a, Obj>(&'a self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
+    where
+        SubstitutionRewriter<'a>: SemanticRewriter<Obj, DiagnosticAdded>,
+    {
+        SubstitutionRewriter { db: db.upcast(), substitution: self }.rewrite(obj)
+    }
 }
 impl Deref for GenericSubstitution {
     type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
@@ -437,8 +443,8 @@ macro_rules! add_expr_rewrites {
 }
 
 pub struct SubstitutionRewriter<'a> {
-    pub db: &'a dyn SemanticGroup,
-    pub substitution: &'a GenericSubstitution,
+    db: &'a dyn SemanticGroup,
+    substitution: &'a GenericSubstitution,
 }
 impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a> {
     fn get_db(&self) -> &'a dyn SemanticGroup {

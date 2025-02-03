@@ -45,7 +45,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
 };
-use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeById, ImplTypeId,
@@ -1046,12 +1046,9 @@ impl<'db> Inference<'db> {
         }
         match canonical_impl.0.lookup_intern(self.db) {
             ImplLongId::Concrete(concrete_impl) => {
-                let mut rewriter = SubstitutionRewriter {
-                    db: self.db,
-                    substitution: &concrete_impl.substitution(self.db).map_err(|diag_added| {
-                        self.set_error(InferenceError::Reported(diag_added))
-                    })?,
-                };
+                let substitution = concrete_impl
+                    .substitution(self.db)
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 let generic_params = self
                     .db
                     .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
@@ -1062,8 +1059,8 @@ impl<'db> Inference<'db> {
                         try_extract_matches!(generic_param, GenericParam::NegImpl)
                     })
                     .map(|generic_param| {
-                        rewriter
-                            .rewrite(generic_param.clone())
+                        substitution
+                            .substitute(self.db, generic_param.clone())
                             .and_then(|generic_param| generic_param.concrete_trait)
                     });
                 validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)
