@@ -1,16 +1,22 @@
-use cairo_lang_defs::ids::{EnumId, ModuleId, StructId};
+use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId, TraitId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_semantic::corelib::{core_module, get_submodule};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
+use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::items::structure::Member;
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
-use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
+use cairo_lang_semantic::types::get_impl_at_context;
+use cairo_lang_semantic::{
+    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId,
+};
 use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
@@ -114,7 +120,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
                         && (module_id.has_attr(db, CONTRACT_ATTR).unwrap_or_default()
                             || module_id.has_attr(db, COMPONENT_ATTR).unwrap_or_default()))
                 {
-                    add_storage_struct_diags(db, *id, &mut diagnostics);
+                    analyze_storage_struct(db, *id, &mut diagnostics);
                 }
             }
         }
@@ -133,47 +139,6 @@ impl AnalyzerPlugin for StorageAnalyzer {
 
     fn declared_allows(&self) -> Vec<String> {
         vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
-    }
-}
-
-/// Adds diagnostics for a storage struct.
-///
-/// Specifically finds cases where there are multiple paths to the same location in storage.
-fn add_storage_struct_diags(
-    db: &dyn SemanticGroup,
-    id: StructId,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) {
-    if id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true) {
-        return;
-    }
-    let Ok(members) = db.struct_members(id) else {
-        return;
-    };
-    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
-    for (member_name, member) in members.iter() {
-        if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
-            db.upcast(),
-            "allow",
-            ALLOW_COLLIDING_PATHS_ATTR,
-        ) {
-            continue;
-        }
-        member_analyze(
-            db,
-            member,
-            member_name.clone(),
-            paths_data,
-            &mut vec![],
-            member
-                .id
-                .stable_ptr(db.upcast())
-                .lookup(db.upcast())
-                .name(db.upcast())
-                .stable_ptr()
-                .untyped(),
-            diagnostics,
-        );
     }
 }
 
@@ -276,5 +241,134 @@ fn add_derive_store_enum_diags(
                  add `#[allow({ALLOW_NO_DEFAULT_VARIANT_ATTR})]`"
             ),
         ));
+    }
+}
+/// Analyzes a storage struct:
+/// - Ensures all members implement `ValidStorageTypeTrait`.
+/// - Checks for multiple paths to the same location in storage.
+fn analyze_storage_struct(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) {
+    let Ok(members) = db.struct_members(struct_id) else {
+        return;
+    };
+    let allow_collisions =
+        struct_id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
+
+    let lookup_context = ImplLookupContext::new(struct_id.module_file_id(db.upcast()).0, match db
+        .struct_generic_params(struct_id)
+    {
+        Ok(params) => params.into_iter().map(|p| p.id()).collect(),
+        Err(_) => return,
+    });
+    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
+
+    for (member_name, member) in members.iter() {
+        let member_type = member.ty.lookup_intern(db);
+
+        // Check if member implements `ValidStorageTypeTrait`.
+        let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
+        let inference_result =
+            get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
+
+        if let Err(inference_error) = inference_result {
+            let concrete_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
+            let trait_name =
+                db.lookup_intern_trait(concrete_trait.trait_id).0.0.full_path(db.upcast());
+
+            let inference_error = match inference_error {
+                InferenceError::NoImplsFound(_) => "No implementations found".to_string(),
+                _ => format!("{:?}", inference_error),
+            };
+
+            let type_pointer = member
+                .id
+                .stable_ptr(db.upcast())
+                .lookup(db.upcast())
+                .type_clause(db.upcast())
+                .ty(db.upcast());
+            diagnostics.push(PluginDiagnostic::warning(
+                &type_pointer,
+                format!(
+                    "Member `{}` must be storable. It must either: implement `Store`, be a \
+                     `storage_node`, or be a `Vec` or `Map`. Inference failed for trait `{}` \
+                     with: `{}`",
+                    member_name, trait_name, inference_error
+                ),
+            ));
+        }
+
+        // Check for storage path collisions.
+        if allow_collisions
+            || member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+                db.upcast(),
+                "allow",
+                ALLOW_COLLIDING_PATHS_ATTR,
+            )
+        {
+            continue;
+        }
+
+        member_analyze(
+            db,
+            member,
+            member_name.clone(),
+            paths_data,
+            &mut vec![],
+            member
+                .id
+                .stable_ptr(db.upcast())
+                .lookup(db.upcast())
+                .name(db.upcast())
+                .stable_ptr()
+                .untyped(),
+            diagnostics,
+        );
+    }
+}
+
+/// Resolves the concrete `ValidStorageTypeTrait` for a given type.
+pub fn concrete_valid_storage_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    resolve_valid_storage_trait(db, "ValidStorageTypeTrait".into(), vec![GenericArgumentId::Type(
+        ty,
+    )])
+}
+
+/// Resolves a concrete instance of a storage-related trait by name.
+fn resolve_valid_storage_trait(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> ConcreteTraitId {
+    let trait_id = get_storage_trait(db, name);
+    ConcreteTraitLongId { trait_id, generic_args }.intern(db)
+}
+
+/// Retrieves the trait ID for a given storage-related trait name.
+fn get_storage_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
+    let starknet_module = get_submodule(db, core_module(db), "starknet")
+        .unwrap_or_else(|| panic!("`starknet` is not a core submodule."));
+    let Some(storage_submodule) = get_submodule(db, starknet_module, "storage") else {
+        panic!("`storage` submodule is not found in `starknet`.");
+    };
+    let item_id: ModuleItemId = db
+        .module_item_by_name(storage_submodule, name.clone())
+        .unwrap_or_else(|_| {
+            panic!(
+                "Core module `{module}` failed to compile.",
+                module = storage_submodule.full_path(db.upcast())
+            )
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "Core module `{module}` is missing an use item for trait `{name}`.",
+                module = storage_submodule.full_path(db.upcast()),
+            )
+        });
+    match item_id {
+        ModuleItemId::Trait(id) => id,
+        _ => panic!("Expecting only traits, or uses pointing to traits."),
     }
 }
