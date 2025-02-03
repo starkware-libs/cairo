@@ -7,7 +7,6 @@ pub mod db;
 pub mod diagnostic;
 pub mod expr;
 pub mod helper;
-pub mod ids;
 pub mod inline_macros;
 pub mod items;
 pub mod literals;

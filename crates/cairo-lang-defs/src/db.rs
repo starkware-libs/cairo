@@ -96,47 +96,9 @@ pub trait DefsGroup:
     // Plugins.
     // ========
     #[salsa::input]
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>; // TODO: Delete in favour or [`default_macro_plugins`]
-    #[salsa::input] // TODO: Delete in favour or [`default_inline_macro_plugins`]
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
+    #[salsa::input]
     fn inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>>;
-
-    #[salsa::input]
-    fn default_macro_plugins(&self) -> Arc<[MacroPluginId]>;
-
-    #[salsa::input]
-    fn macro_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[MacroPluginId]>>>;
-
-    #[salsa::interned]
-    fn intern_macro_plugin(&self, plugin: MacroPluginLongId) -> MacroPluginId;
-
-    /// Returns [`MacroPluginId`]s of the plugins set for the crate with [`CrateId`].
-    /// Provides an override if it has been set with
-    /// [`DefsGroupEx::set_override_crate_macro_plugins`] or the default
-    /// ([`DefsGroup::default_macro_plugins`]) otherwise.
-    fn crate_macro_plugins(&self, crate_id: CrateId) -> Arc<[MacroPluginId]>;
-
-    #[salsa::input]
-    fn default_inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId>>;
-
-    #[salsa::input]
-    fn inline_macro_plugin_overrides(
-        &self,
-    ) -> Arc<OrderedHashMap<CrateId, Arc<OrderedHashMap<String, InlineMacroExprPluginId>>>>;
-
-    #[salsa::interned]
-    fn intern_inline_macro_plugin(
-        &self,
-        plugin: InlineMacroExprPluginLongId,
-    ) -> InlineMacroExprPluginId;
-
-    /// Returns [`InlineMacroExprPluginId`]s of the plugins set for the crate with [`CrateId`].
-    /// Provides an override if it has been set with
-    /// [`DefsGroupEx::set_override_crate_inline_macro_plugins`] or the default
-    /// ([`DefsGroup::default_inline_macro_plugins`]) otherwise.
-    fn crate_inline_macro_plugins(
-        &self,
-        crate_id: CrateId,
-    ) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId>>;
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
@@ -297,29 +259,6 @@ pub trait DefsGroup:
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<PluginFileDiagnosticNotes>>;
-}
-
-/// Initializes the [`DefsGroup`] database to a proper state.
-pub fn init_defs_group(db: &mut dyn DefsGroup) {
-    db.set_macro_plugin_overrides(Arc::new(OrderedHashMap::default()));
-    db.set_inline_macro_plugin_overrides(Arc::new(OrderedHashMap::default()));
-}
-
-fn crate_macro_plugins(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<[MacroPluginId]> {
-    db.macro_plugin_overrides()
-        .get(&crate_id)
-        .cloned()
-        .unwrap_or_else(|| db.default_macro_plugins())
-}
-
-fn crate_inline_macro_plugins(
-    db: &dyn DefsGroup,
-    crate_id: CrateId,
-) -> Arc<OrderedHashMap<String, InlineMacroExprPluginId>> {
-    db.inline_macro_plugin_overrides()
-        .get(&crate_id)
-        .cloned()
-        .unwrap_or_else(|| db.default_inline_macro_plugins())
 }
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
@@ -1206,33 +1145,3 @@ fn module_item_name_stable_ptr(
         }
     })
 }
-
-pub trait DefsGroupEx: DefsGroup {
-    /// Overrides the default macro plugins available for [`CrateId`] with `plugins`.
-    ///
-    /// *Note*: Sets the following Salsa input: `DefsGroup::macro_plugin_overrides`.
-    fn set_override_crate_macro_plugins(
-        &mut self,
-        crate_id: CrateId,
-        plugins: Arc<[MacroPluginId]>,
-    ) {
-        let mut overrides = self.macro_plugin_overrides().as_ref().clone();
-        overrides.insert(crate_id, plugins);
-        self.set_macro_plugin_overrides(Arc::new(overrides));
-    }
-
-    /// Overrides the default inline macro plugins available for [`CrateId`] with `plugins`.
-    ///
-    /// *Note*: Sets the following Salsa input: `DefsGroup::inline_macro_plugin_overrides`.
-    fn set_override_crate_inline_macro_plugins(
-        &mut self,
-        crate_id: CrateId,
-        plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId>>,
-    ) {
-        let mut overrides = self.inline_macro_plugin_overrides().as_ref().clone();
-        overrides.insert(crate_id, plugins);
-        self.set_inline_macro_plugin_overrides(Arc::new(overrides));
-    }
-}
-
-impl<T: DefsGroup + ?Sized> DefsGroupEx for T {}
