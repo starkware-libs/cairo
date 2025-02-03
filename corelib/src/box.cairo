@@ -101,7 +101,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
 impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     /// The target type after dereferencing.
     type Target = T;
-    /// Takes a `Box<T>`, deferences it and returns a value of type `T`.
+    /// Takes a `Box<T>`, dereferences it and returns a value of type `T`.
     ///
     /// # Examples
     ///
