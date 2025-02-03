@@ -396,7 +396,12 @@ pub fn get_concrete_libfunc_id(
     let semantic =
         extract_matches!(function.lookup_intern(db), lowering::ids::FunctionLongId::Semantic);
     let concrete_function = semantic.lookup_intern(db).function;
-    let extern_id = extract_matches!(concrete_function.generic_function, GenericFunctionId::Extern);
+    let GenericFunctionId::Extern(extern_id) = concrete_function.generic_function else {
+        panic!(
+            "Expected an extern function, found: {:?}",
+            concrete_function.full_path(db.upcast())
+        );
+    };
 
     let mut generic_args = vec![];
     for generic_arg in &concrete_function.generic_args {
