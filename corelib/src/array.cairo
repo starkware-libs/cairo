@@ -72,7 +72,7 @@ use crate::gas::withdraw_gas;
 use crate::option::OptionTrait;
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
-/// A collection of elements of the same type continuous in memory.
+/// A collection of elements of the same type contiguous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
 
@@ -352,7 +352,7 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
-/// A span is a view into a continuous collection of the same type - such as `Array`.
+/// A span is a view into a contiguous collection of the same type - such as `Array`.
 /// It is a structure with a single field that holds a snapshot of an array.
 /// `Span` implements the `Copy` and the `Drop` traits.
 pub struct Span<T> {
