@@ -1,16 +1,21 @@
-use cairo_lang_defs::ids::{EnumId, ModuleId, StructId};
+use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
+use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::items::structure::Member;
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
-use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
+use cairo_lang_semantic::types::get_impl_at_context;
+use cairo_lang_semantic::{
+    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId,
+};
 use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
@@ -114,7 +119,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
                         && (module_id.has_attr(db, CONTRACT_ATTR).unwrap_or_default()
                             || module_id.has_attr(db, COMPONENT_ATTR).unwrap_or_default()))
                 {
-                    add_storage_struct_diags(db, *id, &mut diagnostics);
+                    analyze_storage_struct(db, *id, &mut diagnostics);
                 }
             }
         }
@@ -136,29 +141,65 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 }
 
-/// Adds diagnostics for a storage struct.
-///
-/// Specifically finds cases where there are multiple paths to the same location in storage.
-fn add_storage_struct_diags(
+/// Analyzes a storage struct:
+/// - Ensures all members implement `ValidStorageTypeTrait`.
+/// - Checks for multiple paths to the same location in storage.
+fn analyze_storage_struct(
     db: &dyn SemanticGroup,
-    id: StructId,
+    struct_id: StructId,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    if id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true) {
-        return;
-    }
-    let Ok(members) = db.struct_members(id) else {
+    let Ok(members) = db.struct_members(struct_id) else {
         return;
     };
+    let allow_collisions =
+        struct_id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
+
+    let lookup_context = ImplLookupContext::new(struct_id.module_file_id(db.upcast()).0, match db
+        .struct_generic_params(struct_id)
+    {
+        Ok(params) => params.into_iter().map(|p| p.id()).collect(),
+        Err(_) => return,
+    });
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
+
     for (member_name, member) in members.iter() {
-        if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
-            db.upcast(),
-            "allow",
-            ALLOW_COLLIDING_PATHS_ATTR,
-        ) {
+        let member_type = member.ty.lookup_intern(db);
+
+        // Check if member implements `ValidStorageTypeTrait`.
+        let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
+        let inference_result =
+            get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
+
+        if let Err(inference_error) = inference_result {
+            let type_pointer = member
+                .id
+                .stable_ptr(db.upcast())
+                .lookup(db.upcast())
+                .type_clause(db.upcast())
+                .ty(db.upcast());
+            diagnostics.push(PluginDiagnostic::warning(
+                &type_pointer,
+                format!(
+                    "Missing `ValidStorageTypeTrait` for member type. Inference failed with: `{}`.
+                Possible solutions: implement `Store`, mark type with `#[storage_node]` or use \
+                     valid args for `Vec` or `Map` library types.",
+                    inference_error.format(db.elongate())
+                ),
+            ));
+        }
+
+        // Check for storage path collisions.
+        if allow_collisions
+            || member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+                db.upcast(),
+                "allow",
+                ALLOW_COLLIDING_PATHS_ATTR,
+            )
+        {
             continue;
         }
+
         member_analyze(
             db,
             member,
@@ -277,4 +318,15 @@ fn add_derive_store_enum_diags(
             ),
         ));
     }
+}
+
+/// Resolves the concrete `ValidStorageTypeTrait` for a given type.
+fn concrete_valid_storage_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;
+    let name = "ValidStorageTypeTrait";
+    let Ok(Some(ModuleItemId::Trait(trait_id))) = db.module_item_by_name(module_id, name.into())
+    else {
+        panic!("`{}` not found in `{}`.", name, module_id.full_path(db.upcast()));
+    };
+    ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }.intern(db)
 }
