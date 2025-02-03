@@ -2,7 +2,8 @@
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
 use starknet::storage::{
-    MutableVecTrait, StoragePointerReadAccess, StoragePointerWriteAccess, SubPointersForward, Vec,
+    Map, MutableVecTrait, StorageMapReadAccess, StoragePointerReadAccess, StoragePointerWriteAccess,
+    SubPointersForward, Vec,
 };
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 
@@ -84,6 +85,9 @@ struct NonZeros {
 struct Vecs {
     vec: Vec<u32>,
     vec_of_vecs: Vec<Vec<u32>>,
+    #[allow(starknet::colliding_storage_paths)]
+    #[rename("vec")]
+    equiv_map: Map<usize, u32>,
 }
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
@@ -206,6 +210,10 @@ fn test_storage_array() {
     assert_eq!(state.vecs.vec[0].read(), 1);
     assert_eq!(state.vecs.vec[1].read(), 2);
     assert_eq!(state.vecs.vec[2].read(), 3);
+    assert_eq!(state.vecs.equiv_map.read(0), 1);
+    assert_eq!(state.vecs.equiv_map.read(1), 2);
+    assert_eq!(state.vecs.equiv_map.read(2), 3);
+    assert_eq!(state.vecs.equiv_map.read(3), 0);
 }
 
 #[test]
