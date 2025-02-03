@@ -23,7 +23,10 @@ use itertools::{Itertools, chain};
 use salsa::InternKey;
 
 use crate::ids::*;
-use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic};
+use crate::plugin::{
+    DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata,
+    PluginDiagnostic,
+};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
@@ -92,6 +95,10 @@ pub trait DefsGroup:
 
     // Plugins.
     // ========
+    #[salsa::input]
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>; // TODO: Delete in favour or [`default_macro_plugins`]
+    #[salsa::input] // TODO: Delete in favour or [`default_inline_macro_plugins`]
+    fn inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>>;
 
     #[salsa::input]
     fn default_macro_plugins(&self) -> Arc<[MacroPluginId]>;
@@ -133,7 +140,7 @@ pub trait DefsGroup:
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
-    fn allowed_attributes(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn allowed_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     /// Returns the set of attributes allowed on statements.
     /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
@@ -141,11 +148,11 @@ pub trait DefsGroup:
 
     /// Returns the set of `derive` that were declared as by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
-    fn declared_derives(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn declared_derives(&self) -> Arc<OrderedHashSet<String>>;
 
     /// Returns the set of attributes that were declared as phantom type attributes by a plugin,
     /// i.e. a type marked with this attribute is considered a phantom type.
-    fn declared_phantom_type_attributes(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
+    fn declared_phantom_type_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     /// Checks whether the submodule is defined as inline.
     fn is_submodule_inline(&self, submodule_id: SubmoduleId) -> Maybe<bool>;
@@ -315,7 +322,7 @@ fn crate_inline_macro_plugins(
         .unwrap_or_else(|| db.default_inline_macro_plugins())
 }
 
-fn allowed_attributes(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<OrderedHashSet<String>> {
+fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     let base_attrs = [
         INLINE_ATTR,
         MUST_USE_ATTR,
@@ -330,14 +337,9 @@ fn allowed_attributes(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<OrderedHashS
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
         STARKNET_INTERFACE_ATTR,
     ];
-
-    let crate_plugins = db.crate_macro_plugins(crate_id);
-
     Arc::new(OrderedHashSet::from_iter(chain!(
         base_attrs.map(|attr| attr.into()),
-        crate_plugins
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).declared_attributes())
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.declared_attributes())
     )))
 }
 
@@ -346,25 +348,16 @@ fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<Strin
     Arc::new(OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into())))
 }
 
-fn declared_derives(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<OrderedHashSet<String>> {
+fn declared_derives(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     Arc::new(OrderedHashSet::from_iter(
-        db.crate_macro_plugins(crate_id)
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).declared_derives()),
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.declared_derives()),
     ))
 }
 
-fn declared_phantom_type_attributes(
-    db: &dyn DefsGroup,
-    crate_id: CrateId,
-) -> Arc<OrderedHashSet<String>> {
-    let crate_plugins = db.crate_macro_plugins(crate_id);
-
+fn declared_phantom_type_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
     Arc::new(OrderedHashSet::from_iter(chain!(
         [PHANTOM_ATTR.into()],
-        crate_plugins
-            .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).phantom_type_attributes())
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.phantom_type_attributes())
     )))
 }
 
@@ -714,12 +707,11 @@ fn priv_module_sub_files(
     }
     .unwrap_or_else(|| file_syntax.items(syntax_db));
 
-    let crate_id = module_id.owning_crate(db);
-
-    let allowed_attributes = db.allowed_attributes(crate_id);
+    let allowed_attributes = db.allowed_attributes();
     // TODO(orizi): Actually extract the allowed features per module.
     let allowed_features = Default::default();
 
+    let crate_id = module_id.owning_crate(db);
     let cfg_set = db
         .crate_config(crate_id)
         .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
@@ -730,7 +722,7 @@ fn priv_module_sub_files(
         .unwrap_or_default();
     let metadata = MacroPluginMetadata {
         cfg_set: &cfg_set,
-        declared_derives: &db.declared_derives(crate_id),
+        declared_derives: &db.declared_derives(),
         allowed_features: &allowed_features,
         edition,
     };
@@ -745,9 +737,7 @@ fn priv_module_sub_files(
         // Iterate the plugins by their order. The first one to change something (either
         // generate new code, remove the original code, or both), breaks the loop. If more
         // plugins might have act on the item, they can do it on the generated code.
-        for plugin_id in db.crate_macro_plugins(crate_id).iter() {
-            let plugin = db.lookup_intern_macro_plugin(*plugin_id);
-
+        for plugin in db.macro_plugins() {
             let result = plugin.generate_code(db.upcast(), item_ast.clone(), &metadata);
             plugin_diagnostics.extend(result.diagnostics);
             if result.remove_original_item {
