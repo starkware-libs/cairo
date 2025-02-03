@@ -325,3 +325,14 @@ impl PathableStorageEntryImpl<
         EntryImpl::entry(path, key)
     }
 }
+
+/// Implementation of `ValidStorageTypeTrait` for `Map<key, value>`.
+/// This ensures that Starknet storage maps (`Map<key, value>`) are valid storage types,
+/// as long as:
+/// - The `key` type implements `core::hash::Hash`, which allows it to be used in storage mappings.
+/// - The `value` type implements `ValidStorageTypeTrait`, meaning it is itself a valid storage
+/// type.
+use crate::starknet::storage::ValidStorageTypeTrait;
+impl ValidStorageTypeTraitMapImpl<
+    Key, Value, +core::hash::Hash<Key, StoragePathHashState>, +ValidStorageTypeTrait<Value>,
+> of ValidStorageTypeTrait<Map<Key, Value>>;

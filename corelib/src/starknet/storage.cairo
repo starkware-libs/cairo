@@ -577,3 +577,17 @@ pub trait IntoIterRange<T> {
     /// Creates an iterator over the full range of a collection.
     fn into_iter_full_range(self: T) -> Self::IntoIter;
 }
+
+/// Trait that ensures a type is valid for storage in Starknet contracts.
+/// This trait is used to enforce that only specific types, such as those implementing
+/// `Store` or acting as a `StorageNode`, can be stored in contract storage. Any type
+/// that does not implement this trait cannot be used as a storage variable.
+pub trait ValidStorageTypeTrait<T>;
+
+/// Implementation of `ValidStorageTypeTrait` for types that implement `starknet::Store`.
+impl ValidStorageTypeTraitStoreImpl<T, +starknet::Store<T>> of ValidStorageTypeTrait<T>;
+
+/// `StorageTrait` is typically used for storage nodes, which help organize contract storage
+/// hierarchies. By implementing `ValidStorageTypeTrait`, this ensures that storage nodes (and
+/// substorages within components) are valid storage types.
+impl ValidStorageTypeTraitStorageNodeImpl<T, +StorageTrait<T>> of ValidStorageTypeTrait<T>;

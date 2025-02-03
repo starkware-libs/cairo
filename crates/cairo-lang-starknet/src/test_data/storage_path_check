@@ -246,3 +246,30 @@ warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or
  --> lib.cairo:5:9
     pub b: felt252,
         ^
+
+//! > ==========================================================================
+
+//! > Test that only structs implementing `ValidStorageTypeTrait` can be stored.
+
+//! > test_runner_name
+test_storage_member_validity_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct ValidStorageStruct {
+    pub valid_field: felt252,
+}
+
+#[starknet::storage_node]
+struct InvalidStorageStruct {
+    pub valid: ValidStorageStruct,
+    pub invalid_array: Array<felt252>,
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+error: Plugin diagnostic: Member `invalid_array` must implement `ValidStorageTypeTrait`.
+ --> lib.cairo:15:9
+    pub invalid_array: Array<felt252>,
+        ^^^^^^^^^^^^^
