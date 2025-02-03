@@ -199,3 +199,67 @@ error: Skipped tokens. Expected: statement.
     │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro definition with unknown param kind.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro macro_name {
+    ($x:unknown) => {
+        2 + $x
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a macro rule parameter kind.
+ --> dummy_file.cairo:2:9
+    ($x:unknown) => {
+        ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacroMatcher)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroRuleElements)
+    │       │       │   │   ├── child #0 (kind: MacroRuleParam)
+    │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   ├── colon (kind: TokenColon): ':'
+    │       │       │   │   │   └── kind (kind: MacroRuleParamKindMissing) []
+    │       │       │   │   └── child #1 (kind: TokenTreeLeaf)
+    │       │       │   │       └── leaf (kind: TokenIdentifier): 'unknown'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: ExprBlock)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── statements (kind: StatementList)
+    │       │       │   │   └── child #0 (kind: StatementExpr)
+    │       │       │   │       ├── attributes (kind: AttributeList) []
+    │       │       │   │       ├── expr (kind: ExprBinary)
+    │       │       │   │       │   ├── lhs (kind: TokenLiteralNumber): '2'
+    │       │       │   │       │   ├── op (kind: TokenPlus): '+'
+    │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
+    │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       │       └── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
