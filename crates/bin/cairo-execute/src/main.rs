@@ -5,7 +5,7 @@ use anyhow::Context;
 use bincode::enc::write::Writer;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_executable::compile::compile_executable;
+use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
 use cairo_lang_executable::executable::{EntryPointKind, Executable};
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
@@ -64,6 +64,9 @@ struct BuildArgs {
     /// Allow warnings and don't print them (implies allow_warnings).
     #[arg(long, conflicts_with = "prebuilt")]
     ignore_warnings: bool,
+    /// Allow syscalls in the program.
+    #[arg(long, conflicts_with = "prebuilt")]
+    allow_syscalls: bool,
     /// The path to the executable function.
     ///
     /// Not required if there is only a single executable function in the project.
@@ -161,6 +164,7 @@ fn main() -> anyhow::Result<()> {
                 &args.input_path,
                 args.build.executable.as_deref(),
                 reporter,
+                ExecutableConfig { allow_syscalls: args.build.allow_syscalls },
             )?)
         }
     };
