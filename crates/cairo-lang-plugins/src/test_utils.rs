@@ -1,15 +1,10 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
-<<<<<<< HEAD
-use cairo_lang_diagnostics::{DiagnosticLocation, Severity, format_diagnostics};
-use cairo_lang_filesystem::span::TextSpan;
-=======
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
 };
->>>>>>> origin/main
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -26,30 +21,9 @@ pub fn expand_module_text(
     let mut uses_list = UnorderedHashSet::<_>::default();
     let syntax_db = db.upcast();
     // Collect the module diagnostics.
-<<<<<<< HEAD
-    for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
-        let syntax_node = diag.stable_ptr.lookup(syntax_db);
-        let file_id = file_id.file_id(db.upcast()).unwrap();
-        let location = match diag.inner_span {
-            Some((start, width)) => {
-                let start = syntax_node.offset().add_width(start);
-                let end = start.add_width(width);
-                DiagnosticLocation { file_id, span: TextSpan { start, end } }
-            }
-            None => {
-                DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db.upcast()) }
-            }
-        };
-        diagnostics.push(format!(
-            "{}: {}",
-            Severity::Error,
-            format_diagnostics(db.upcast(), &diag.message, location)
-        ));
-=======
     let mut builder = DiagnosticsBuilder::default();
     for (_file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
         builder.add(TestDiagnosticEntry(diag.clone()));
->>>>>>> origin/main
     }
     let build = builder.build();
     let file_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
@@ -105,7 +79,11 @@ impl DiagnosticEntry for TestDiagnosticEntry {
         self.0.message.to_string()
     }
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        StableLocation::new(self.0.stable_ptr).diagnostic_location(db)
+        match self.0.inner_span {
+            Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
+                .diagnostic_location(db),
+            None => StableLocation::new(self.0.stable_ptr).diagnostic_location(db),
+        }
     }
     fn severity(&self) -> Severity {
         self.0.severity

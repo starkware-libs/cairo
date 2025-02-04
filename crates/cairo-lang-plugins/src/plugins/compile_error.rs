@@ -32,20 +32,12 @@ impl MacroPlugin for CompileErrorPlugin {
                     ast::WrappedArgList::ParenthesizedArgList(_),
                     &item_ast
                 );
-<<<<<<< HEAD
                 let ast::Expr::String(err_message) = compilation_error_arg.clone() else {
                     return PluginResult::diagnostic_only(PluginDiagnostic::error_with_inner_span(
                         db,
                         item_ast_ptr,
                         compilation_error_arg.as_syntax_node(),
-                        "`compiler_error!` argument must be an unnamed string argument."
-                            .to_string(),
-=======
-                let ast::Expr::String(err_message) = compilation_error_arg else {
-                    return PluginResult::diagnostic_only(PluginDiagnostic::error(
-                        &compilation_error_arg,
                         "`compile_error!` argument must be an unnamed string argument.".to_string(),
->>>>>>> origin/main
                     ));
                 };
                 return PluginResult::diagnostic_only(PluginDiagnostic::error(

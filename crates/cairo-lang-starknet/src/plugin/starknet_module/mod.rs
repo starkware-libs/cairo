@@ -234,47 +234,6 @@ pub(super) fn handle_module_by_storage(
     })
 }
 
-<<<<<<< HEAD
-/// Adds extra uses, to be used in the generated submodules.
-fn maybe_add_extra_use(
-    db: &dyn SyntaxGroup,
-    item: ast::ModuleItem,
-    extra_uses: &mut OrderedHashMap<smol_str::SmolStr, String>,
-) {
-    if let Some(ident) = match item {
-        ast::ModuleItem::Use(item) => {
-            for leaf in get_all_path_leaves(db, &item) {
-                extra_uses
-                    .entry(leaf.stable_ptr().identifier(db))
-                    .or_insert_with_key(|ident| format!("super::{}", ident));
-            }
-            None
-        }
-        ast::ModuleItem::Constant(item) => Some(item.name(db)),
-        ast::ModuleItem::Module(item) => Some(item.name(db)),
-        ast::ModuleItem::Impl(item) => Some(item.name(db)),
-        // Skip the storage struct, that only generates other code, but its code itself is ignored.
-        ast::ModuleItem::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
-        ast::ModuleItem::Struct(item) => Some(item.name(db)),
-        ast::ModuleItem::Enum(item) => Some(item.name(db)),
-        ast::ModuleItem::TypeAlias(item) => Some(item.name(db)),
-        // These items are not directly required in generated inner modules.
-        ast::ModuleItem::ExternFunction(_)
-        | ast::ModuleItem::ExternType(_)
-        | ast::ModuleItem::Trait(_)
-        | ast::ModuleItem::FreeFunction(_)
-        | ast::ModuleItem::ImplAlias(_)
-        | ast::ModuleItem::Missing(_)
-        | ast::ModuleItem::InlineMacro(_)
-        | ast::ModuleItem::HeaderDoc(_) => None,
-        ast::ModuleItem::MacroDeclaration(_) => todo!(),
-    } {
-        extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
-    }
-}
-
-=======
->>>>>>> origin/main
 /// If the grand grand parent of the given item is a starknet module, returns its kind
 /// (contract/component) and its ast.
 fn grand_grand_parent_starknet_module(

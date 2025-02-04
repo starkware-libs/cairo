@@ -12,13 +12,9 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
     ErrorCode, Severity, error_code,
 };
-<<<<<<< HEAD
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
-=======
-use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax::{self as syntax};
->>>>>>> origin/main
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;

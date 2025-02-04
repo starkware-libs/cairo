@@ -102,14 +102,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
-<<<<<<< HEAD
             | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenDollar => true,
-            SyntaxKind::TerminalDotDot
-=======
-            | SyntaxKind::TokenImplicits => true,
             SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
->>>>>>> origin/main
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
@@ -451,14 +446,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
                 | SyntaxKind::ItemEnum
-<<<<<<< HEAD
+                | SyntaxKind::PatternFixedSizeArray
+                | SyntaxKind::ExprFixedSizeArray
                 | SyntaxKind::ParenthesizedTokenTree
                 | SyntaxKind::BracedTokenTree
                 | SyntaxKind::BracketedTokenTree => Some(5),
-=======
-                | SyntaxKind::PatternFixedSizeArray
-                | SyntaxKind::ExprFixedSizeArray => Some(5),
->>>>>>> origin/main
                 _ => None,
             },
         }
