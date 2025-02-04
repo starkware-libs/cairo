@@ -162,7 +162,7 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
 }
 
 /// A state saved for each position in the back analysis.
-/// Used to determine if a Panic object is guaranteed to exist or be created, an where.
+/// Used to determine if a Panic object is guaranteed to exist or be created, and where.
 #[derive(Clone, Default)]
 pub enum PanicState {
     /// The flow will end with a panic. The locations are all the possible places a Panic object
@@ -347,7 +347,7 @@ pub fn add_destructs(
     };
 
     for ((block_id, statement_idx, destruct_type, match_block_id), destructions) in
-        destructions.into_iter().sorted_by_key(as_tuple).rev().group_by(as_tuple).into_iter()
+        destructions.into_iter().sorted_by_key(as_tuple).rev().chunk_by(as_tuple).into_iter()
     {
         let mut stmts = vec![];
 

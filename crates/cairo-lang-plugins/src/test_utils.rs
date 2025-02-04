@@ -1,7 +1,15 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+<<<<<<< HEAD
 use cairo_lang_diagnostics::{DiagnosticLocation, Severity, format_diagnostics};
 use cairo_lang_filesystem::span::TextSpan;
+=======
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
+};
+>>>>>>> origin/main
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -9,7 +17,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
 /// with all the plugins diagnostics.
 pub fn expand_module_text(
-    db: &dyn DefsGroup,
+    db: &(dyn DefsGroup + 'static),
     module_id: ModuleId,
     diagnostics: &mut Vec<String>,
 ) -> String {
@@ -18,6 +26,7 @@ pub fn expand_module_text(
     let mut uses_list = UnorderedHashSet::<_>::default();
     let syntax_db = db.upcast();
     // Collect the module diagnostics.
+<<<<<<< HEAD
     for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
         let syntax_node = diag.stable_ptr.lookup(syntax_db);
         let file_id = file_id.file_id(db.upcast()).unwrap();
@@ -36,7 +45,20 @@ pub fn expand_module_text(
             Severity::Error,
             format_diagnostics(db.upcast(), &diag.message, location)
         ));
+=======
+    let mut builder = DiagnosticsBuilder::default();
+    for (_file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
+        builder.add(TestDiagnosticEntry(diag.clone()));
+>>>>>>> origin/main
     }
+    let build = builder.build();
+    let file_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
+    let formatted = build.format_with_severity(db, &file_notes);
+    diagnostics.extend(
+        formatted
+            .into_iter()
+            .map(|formatted| format!("{}: {}", Severity::Error, formatted.message())),
+    );
     for item_id in db.module_items(module_id).unwrap().iter() {
         if let ModuleItemId::Submodule(item) = item_id {
             let submodule_item = item.stable_ptr(db).lookup(syntax_db);
@@ -73,4 +95,25 @@ pub fn expand_module_text(
         output.push_str(&syntax_item.lookup(syntax_db).get_text(syntax_db));
     }
     output
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+struct TestDiagnosticEntry(pub PluginDiagnostic);
+impl DiagnosticEntry for TestDiagnosticEntry {
+    type DbType = dyn DefsGroup;
+    fn format(&self, _db: &Self::DbType) -> String {
+        self.0.message.to_string()
+    }
+    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        StableLocation::new(self.0.stable_ptr).diagnostic_location(db)
+    }
+    fn severity(&self) -> Severity {
+        self.0.severity
+    }
+    fn error_code(&self) -> Option<ErrorCode> {
+        None
+    }
+    fn is_same_kind(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
 }

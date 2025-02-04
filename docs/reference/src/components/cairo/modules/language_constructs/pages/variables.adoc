@@ -49,7 +49,7 @@ fn add(x: u32, mut y: u32) -> u32 {
 
 fn test() {
     let x = 1;
-    ley y = 2;
+    let y = 2;
     assert(add(x, y) == 3, 'Should be equal.');
     assert(y == 1, 'Should be equal.');
 }
@@ -87,8 +87,8 @@ for example:
 [source]
 ----
 match opt {
-    Option::Some(x) => x,
-    Option::None => 0,
+    Some(x) => x,
+    None => 0,
 }
 ----
 

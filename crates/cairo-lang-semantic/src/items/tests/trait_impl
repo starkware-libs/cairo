@@ -236,12 +236,12 @@ impl MyImpl of MyTrait {
 error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:20:16
     fn bar1(x: u32) {}
-               ^*^
+               ^^^
 
 error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:21:18
     fn bar2() -> u32 {
-                 ^*^
+                 ^^^
 
 //! > ==========================================================================
 
@@ -291,22 +291,22 @@ trait MyTrait {
 error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:25:31
     fn bar1(x: AnotherTrait0::Impl::InputType);
-                              ^**^
+                              ^^^^
 
 error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:26:33
     fn bar2() -> AnotherTrait0::Impl::InputType;
-                                ^**^
+                                ^^^^
 
 error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
  --> lib.cairo:27:31
     fn bar3(x: AnotherTrait2::Impl::InputType);
-                              ^**^
+                              ^^^^
 
 error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
  --> lib.cairo:28:33
     fn bar4() -> AnotherTrait2::Impl::InputType;
-                                ^**^
+                                ^^^^
 
 //! > ==========================================================================
 
@@ -388,17 +388,17 @@ impl MyImpl of MyTrait {
 error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
  --> lib.cairo:18:18
     fn foo1() -> AnotherTrait::Impl::InputType {
-                 ^***************************^
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:18:48
+ --> lib.cairo:18:18
     fn foo1() -> AnotherTrait::Impl::InputType {
-                                               ^
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
  --> lib.cairo:21:16
     fn foo2(x: AnotherTrait::Impl::InputType) {}
-               ^***************************^
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -516,9 +516,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:14:40
+ --> lib.cairo:14:18
     fn foo1() -> Self::Impl::InputType {
-                                       ^
+                 ^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -551,10 +551,10 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
-    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
 ) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
     (x, y)
 }
@@ -572,12 +572,11 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
-            >
-        >
-    )
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType),
+            >,
+        >,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
@@ -615,10 +614,10 @@ impl MyImpl of MyTrait {
     impl Impl2 = Self::Impl1::Impl;
 }
 fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
-    Option::Some(x?)
+    Some(x?)
 }
 fn tuple(
-    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
 ) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
     (x, y)
 }
@@ -636,21 +635,20 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
-            >
-        >
-    )
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType),
+            >,
+        >,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
- --> lib.cairo:45:61
+ --> lib.cairo:44:6
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
-                                                            ^
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -722,9 +720,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:15:46
+ --> lib.cairo:15:42
     fn bar(x: Self::Impl1::InputType) -> u32 {
-                                             ^
+                                         ^^^
 
 //! > ==========================================================================
 
@@ -752,7 +750,7 @@ impl MyImpl of MyTrait {
 error: Cycle detected while resolving 'impls alias' items.
  --> lib.cairo:6:10
     impl MyImpl = Self::MyImpl;
-         ^****^
+         ^^^^^^
 
 //! > ==========================================================================
 
@@ -782,12 +780,12 @@ impl MyImpl of MyTrait {
 error: Cycle detected while resolving 'impls alias' items.
  --> lib.cairo:7:10
     impl Impl1 = Self::Impl2;
-         ^***^
+         ^^^^^
 
 error: Cycle detected while resolving 'impls alias' items.
  --> lib.cairo:8:10
     impl Impl2 = Self::Impl1;
-         ^***^
+         ^^^^^
 
 //! > ==========================================================================
 
@@ -1014,9 +1012,9 @@ fn foo() -> felt252 {
 fn bar<T, impl I: IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = I::Impl::next(ref x) {
+    while let Some(_) = I::Impl::next(ref x) {
         y += 1;
-    };
+    }
     y;
 }
 
@@ -1050,9 +1048,9 @@ fn foo() -> felt252 {
 fn bar<T, +IntoIterator<T>>(a: T) {
     let mut x = a.into_iter();
     let mut y: felt252 = 0;
-    while let Option::Some(_) = x.next() {
+    while let Some(_) = x.next() {
         y += 1;
-    };
+    }
     y;
 }
 
@@ -1133,12 +1131,20 @@ error: Cannot infer implicit impl `I.`
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:7:1
 impl MyImpl of MyTrait {}
-^***********************^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Trait has no implementation in context: test::OtherTrait.
  --> lib.cairo:7:1
 impl MyImpl of MyTrait {}
-^***********************^
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:8:10-10:1
+  fn foo() {
+ __________^
+|     MyImpl::I::f()
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -1282,3 +1288,143 @@ mod my_mod {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > implicit impl is not found when implizing generic impl argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    1_u64.foo(1_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Outer<R> {
+    impl InnerImpl: Inner<R>;
+    type Item;
+    fn into(self: R) -> Self::Item;
+}
+trait Inner<R> {
+    type Item;
+    fn foo<
+        U,
+        impl OuterU: Outer<U>,
+        +core::metaprogramming::TypeEqual<Self::Item, OuterU::InnerImpl::Item>,
+        +Destruct<R>,
+    >(
+        self: R, u: U,
+    ) -> (R, U) {
+        (self, u.into())
+    }
+}
+
+impl InnerU64 of Inner<u64> {
+    type Item = u32;
+}
+
+impl OuterU32 of Outer<u32> {
+    type Item = u64;
+    fn into(self: u32) -> u64 {
+        self.into()
+    }
+}
+
+//! > expected_diagnostics
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:16:18
+        (self, u.into())
+                 ^^^^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:27:14
+        self.into()
+             ^^^^
+
+error: Cannot infer implicit impl `InnerImpl.`
+Could not find implementation of trait `test::Inner::<core::integer::u32>`
+ --> lib.cairo:24:1-29:1
+  impl OuterU32 of Outer<u32> {
+ _^
+| ...
+| }
+|_^
+
+error: Trait has no implementation in context: test::Inner::<core::integer::u32>.
+ --> lib.cairo:24:1-29:1
+  impl OuterU32 of Outer<u32> {
+ _^
+| ...
+| }
+|_^
+
+error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, test::OuterU32::InnerImpl::Item>.
+ --> lib.cairo:31:11
+    1_u64.foo(1_u32);
+          ^^^
+
+//! > ==========================================================================
+
+//! > Trait default implementation with recursive types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    // TODO(orizi): Remove this diagnostic.
+    mix(1_u64.into_inner(), 1_u32.into_inner());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Outer<T> {
+    type Inner;
+    impl Impl: Inner<Self::Inner>;
+    fn into_inner(self: T) -> Self::Inner;
+}
+
+trait Inner<T> {
+    type InnerMost;
+}
+
+fn mix<
+    T,
+    U,
+    impl InnerT: Inner<T>,
+    impl OuterU: Outer<U>,
+    +core::metaprogramming::TypeEqual<InnerT::InnerMost, OuterU::Impl::InnerMost>,
+>(
+    lhs: T, rhs: U,
+) {}
+
+impl OuterU32 of Outer<u32> {
+    type Inner = u64;
+    fn into_inner(self: u32) -> u64 {
+        self.into()
+    }
+}
+
+impl OuterU64 of Outer<u64> {
+    type Inner = u64;
+    fn into_inner(self: u64) -> u64 {
+        self
+    }
+}
+
+impl InnerImpl of Inner<u64> {
+    type InnerMost = u128;
+}
+
+//! > expected_diagnostics
+error: Impl mismatch: `test::Outer::<core::integer::u64>::Impl` and `test::InnerImpl`.
+ --> lib.cairo:40:5
+    mix(1_u64.into_inner(), 1_u32.into_inner());
+    ^^^

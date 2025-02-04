@@ -76,6 +76,9 @@ impl TypedSyntaxNode for Trivia {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::Trivia { Some(Self(ElementList::new(node))) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -214,6 +217,33 @@ impl TypedSyntaxNode for Trivium {
                 Trivium::SkippedNode(TriviumSkippedNode::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Trivium"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TokenSingleLineComment => {
+                Some(Trivium::SingleLineComment(TokenSingleLineComment::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenSingleLineDocComment => Some(Trivium::SingleLineDocComment(
+                TokenSingleLineDocComment::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TokenSingleLineInnerComment => Some(Trivium::SingleLineInnerComment(
+                TokenSingleLineInnerComment::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TokenWhitespace => {
+                Some(Trivium::Whitespace(TokenWhitespace::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenNewline => {
+                Some(Trivium::Newline(TokenNewline::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenSkipped => {
+                Some(Trivium::Skipped(TokenSkipped::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TriviumSkippedNode => {
+                Some(Trivium::SkippedNode(TriviumSkippedNode::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -619,6 +649,61 @@ impl TypedSyntaxNode for Expr {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprPath => Some(Expr::Path(ExprPath::from_syntax_node(db, node))),
+            SyntaxKind::TerminalLiteralNumber => {
+                Some(Expr::Literal(TerminalLiteralNumber::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalShortString => {
+                Some(Expr::ShortString(TerminalShortString::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalString => {
+                Some(Expr::String(TerminalString::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalFalse => {
+                Some(Expr::False(TerminalFalse::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalTrue => Some(Expr::True(TerminalTrue::from_syntax_node(db, node))),
+            SyntaxKind::ExprParenthesized => {
+                Some(Expr::Parenthesized(ExprParenthesized::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprUnary => Some(Expr::Unary(ExprUnary::from_syntax_node(db, node))),
+            SyntaxKind::ExprBinary => Some(Expr::Binary(ExprBinary::from_syntax_node(db, node))),
+            SyntaxKind::ExprListParenthesized => {
+                Some(Expr::Tuple(ExprListParenthesized::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprFunctionCall => {
+                Some(Expr::FunctionCall(ExprFunctionCall::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprStructCtorCall => {
+                Some(Expr::StructCtorCall(ExprStructCtorCall::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprBlock => Some(Expr::Block(ExprBlock::from_syntax_node(db, node))),
+            SyntaxKind::ExprMatch => Some(Expr::Match(ExprMatch::from_syntax_node(db, node))),
+            SyntaxKind::ExprIf => Some(Expr::If(ExprIf::from_syntax_node(db, node))),
+            SyntaxKind::ExprLoop => Some(Expr::Loop(ExprLoop::from_syntax_node(db, node))),
+            SyntaxKind::ExprWhile => Some(Expr::While(ExprWhile::from_syntax_node(db, node))),
+            SyntaxKind::ExprFor => Some(Expr::For(ExprFor::from_syntax_node(db, node))),
+            SyntaxKind::ExprClosure => Some(Expr::Closure(ExprClosure::from_syntax_node(db, node))),
+            SyntaxKind::ExprErrorPropagate => {
+                Some(Expr::ErrorPropagate(ExprErrorPropagate::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprFieldInitShorthand => {
+                Some(Expr::FieldInitShorthand(ExprFieldInitShorthand::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprIndexed => Some(Expr::Indexed(ExprIndexed::from_syntax_node(db, node))),
+            SyntaxKind::ExprInlineMacro => {
+                Some(Expr::InlineMacro(ExprInlineMacro::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprFixedSizeArray => {
+                Some(Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Expr::Path(x) => x.as_syntax_node(),
@@ -775,6 +860,13 @@ impl TypedSyntaxNode for ExprList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ExprList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -866,6 +958,10 @@ impl TypedSyntaxNode for Arg {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::Arg { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -952,6 +1048,21 @@ impl TypedSyntaxNode for ArgClause {
                 ArgClauseFieldInitShorthand::from_syntax_node(db, node),
             ),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ArgClause"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ArgClauseUnnamed => {
+                Some(ArgClause::Unnamed(ArgClauseUnnamed::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ArgClauseNamed => {
+                Some(ArgClause::Named(ArgClauseNamed::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ArgClauseFieldInitShorthand => Some(ArgClause::FieldInitShorthand(
+                ArgClauseFieldInitShorthand::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1069,6 +1180,14 @@ impl TypedSyntaxNode for ArgClauseNamed {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgClauseNamed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -1151,6 +1270,14 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgClauseUnnamed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -1246,6 +1373,14 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgClauseFieldInitShorthand {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -1331,6 +1466,14 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprFieldInitShorthand {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -1427,6 +1570,9 @@ impl TypedSyntaxNode for ArgList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ArgList { Some(Self(ElementList::new(node))) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -1502,6 +1648,10 @@ impl TypedSyntaxNode for ExprMissing {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -1574,6 +1724,18 @@ impl TypedSyntaxNode for PathSegment {
                 PathSegment::Simple(PathSegmentSimple::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::PathSegmentWithGenericArgs => Some(PathSegment::WithGenericArgs(
+                PathSegmentWithGenericArgs::from_syntax_node(db, node),
+            )),
+            SyntaxKind::PathSegmentSimple => {
+                Some(PathSegment::Simple(PathSegmentSimple::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1671,6 +1833,14 @@ impl TypedSyntaxNode for PathSegmentSimple {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PathSegmentSimple {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -1746,6 +1916,18 @@ impl TypedSyntaxNode for OptionTerminalColonColon {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTerminalColonColon"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalColonColonEmpty => Some(OptionTerminalColonColon::Empty(
+                OptionTerminalColonColonEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalColonColon => Some(OptionTerminalColonColon::TerminalColonColon(
+                TerminalColonColon::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1831,6 +2013,14 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalColonColonEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -1932,6 +2122,14 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PathSegmentWithGenericArgs {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -2026,6 +2224,13 @@ impl TypedSyntaxNode for ExprPath {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ExprPath {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -2127,6 +2332,14 @@ impl TypedSyntaxNode for ExprParenthesized {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprParenthesized {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -2217,6 +2430,10 @@ impl TypedSyntaxNode for ExprUnary {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprUnary { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -2328,6 +2545,27 @@ impl TypedSyntaxNode for UnaryOperator {
                 UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UnaryOperator"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalNot => {
+                Some(UnaryOperator::Not(TerminalNot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalBitNot => {
+                Some(UnaryOperator::BitNot(TerminalBitNot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMinus => {
+                Some(UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAt => {
+                Some(UnaryOperator::At(TerminalAt::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMul => {
+                Some(UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2449,6 +2687,10 @@ impl TypedSyntaxNode for ExprBinary {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprBinary { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -2488,6 +2730,7 @@ pub enum BinaryOperator {
     LT(TerminalLT),
     GT(TerminalGT),
     DotDot(TerminalDotDot),
+    DotDotEq(TerminalDotDotEq),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorPtr(pub SyntaxStablePtrId);
@@ -2630,6 +2873,11 @@ impl From<TerminalDotDotPtr> for BinaryOperatorPtr {
         Self(value.0)
     }
 }
+impl From<TerminalDotDotEqPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalDotDotEqPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalDotGreen> for BinaryOperatorGreen {
     fn from(value: TerminalDotGreen) -> Self {
         Self(value.0)
@@ -2755,6 +3003,11 @@ impl From<TerminalDotDotGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalDotDotEqGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalDotDotEqGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorGreen(pub GreenId);
 impl TypedSyntaxNode for BinaryOperator {
@@ -2814,9 +3067,96 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalDotDot => {
                 BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalDotDotEq => {
+                BinaryOperator::DotDotEq(TerminalDotDotEq::from_syntax_node(db, node))
+            }
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BinaryOperator")
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalDot => {
+                Some(BinaryOperator::Dot(TerminalDot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalNot => {
+                Some(BinaryOperator::Not(TerminalNot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMul => {
+                Some(BinaryOperator::Mul(TerminalMul::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMulEq => {
+                Some(BinaryOperator::MulEq(TerminalMulEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDiv => {
+                Some(BinaryOperator::Div(TerminalDiv::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDivEq => {
+                Some(BinaryOperator::DivEq(TerminalDivEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMod => {
+                Some(BinaryOperator::Mod(TerminalMod::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalModEq => {
+                Some(BinaryOperator::ModEq(TerminalModEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPlus => {
+                Some(BinaryOperator::Plus(TerminalPlus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPlusEq => {
+                Some(BinaryOperator::PlusEq(TerminalPlusEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMinus => {
+                Some(BinaryOperator::Minus(TerminalMinus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMinusEq => {
+                Some(BinaryOperator::MinusEq(TerminalMinusEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEqEq => {
+                Some(BinaryOperator::EqEq(TerminalEqEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalNeq => {
+                Some(BinaryOperator::Neq(TerminalNeq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEq => {
+                Some(BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAnd => {
+                Some(BinaryOperator::And(TerminalAnd::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAndAnd => {
+                Some(BinaryOperator::AndAnd(TerminalAndAnd::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalOr => {
+                Some(BinaryOperator::Or(TerminalOr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalOrOr => {
+                Some(BinaryOperator::OrOr(TerminalOrOr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalXor => {
+                Some(BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLE => {
+                Some(BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalGE => {
+                Some(BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLT => {
+                Some(BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalGT => {
+                Some(BinaryOperator::GT(TerminalGT::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDotDot => {
+                Some(BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDotDotEq => {
+                Some(BinaryOperator::DotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2846,6 +3186,7 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::LT(x) => x.as_syntax_node(),
             BinaryOperator::GT(x) => x.as_syntax_node(),
             BinaryOperator::DotDot(x) => x.as_syntax_node(),
+            BinaryOperator::DotDotEq(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2887,6 +3228,7 @@ impl BinaryOperator {
                 | SyntaxKind::TerminalLT
                 | SyntaxKind::TerminalGT
                 | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalDotDotEq
         )
     }
 }
@@ -2978,6 +3320,14 @@ impl TypedSyntaxNode for ExprListParenthesized {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprListParenthesized {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -3068,6 +3418,14 @@ impl TypedSyntaxNode for ExprFunctionCall {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprFunctionCall {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -3169,6 +3527,14 @@ impl TypedSyntaxNode for ArgListParenthesized {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgListParenthesized {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -3244,6 +3610,20 @@ impl TypedSyntaxNode for OptionArgListParenthesized {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionArgListParenthesized"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionArgListParenthesizedEmpty => Some(OptionArgListParenthesized::Empty(
+                OptionArgListParenthesizedEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::ArgListParenthesized => {
+                Some(OptionArgListParenthesized::ArgListParenthesized(
+                    ArgListParenthesized::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3332,6 +3712,14 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionArgListParenthesizedEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -3423,6 +3811,14 @@ impl TypedSyntaxNode for ExprStructCtorCall {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprStructCtorCall {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -3524,6 +3920,14 @@ impl TypedSyntaxNode for StructArgListBraced {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructArgListBraced {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -3623,6 +4027,10 @@ impl TypedSyntaxNode for ExprBlock {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprBlock { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -3736,6 +4144,10 @@ impl TypedSyntaxNode for ExprMatch {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprMatch { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -3830,6 +4242,13 @@ impl TypedSyntaxNode for MatchArms {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::MatchArms {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -3930,6 +4349,10 @@ impl TypedSyntaxNode for MatchArm {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MatchArm { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -4037,6 +4460,10 @@ impl TypedSyntaxNode for ExprIf {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprIf { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4105,6 +4532,18 @@ impl TypedSyntaxNode for Condition {
             SyntaxKind::ConditionLet => Condition::Let(ConditionLet::from_syntax_node(db, node)),
             SyntaxKind::ConditionExpr => Condition::Expr(ConditionExpr::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Condition"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ConditionLet => {
+                Some(Condition::Let(ConditionLet::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ConditionExpr => {
+                Some(Condition::Expr(ConditionExpr::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4222,6 +4661,10 @@ impl TypedSyntaxNode for ConditionLet {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ConditionLet { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4305,6 +4748,14 @@ impl TypedSyntaxNode for ConditionExpr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ConditionExpr {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4373,6 +4824,14 @@ impl TypedSyntaxNode for BlockOrIf {
             SyntaxKind::ExprBlock => BlockOrIf::Block(ExprBlock::from_syntax_node(db, node)),
             SyntaxKind::ExprIf => BlockOrIf::If(ExprIf::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BlockOrIf"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprBlock => Some(BlockOrIf::Block(ExprBlock::from_syntax_node(db, node))),
+            SyntaxKind::ExprIf => Some(BlockOrIf::If(ExprIf::from_syntax_node(db, node))),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4475,6 +4934,10 @@ impl TypedSyntaxNode for ExprLoop {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprLoop { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4574,6 +5037,10 @@ impl TypedSyntaxNode for ExprWhile {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprWhile { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -4704,6 +5171,10 @@ impl TypedSyntaxNode for ExprFor {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprFor { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4795,6 +5266,10 @@ impl TypedSyntaxNode for ElseClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ElseClause { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -4870,6 +5345,18 @@ impl TypedSyntaxNode for OptionElseClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionElseClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionElseClauseEmpty => {
+                Some(OptionElseClause::Empty(OptionElseClauseEmpty::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ElseClause => {
+                Some(OptionElseClause::ElseClause(ElseClause::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4955,6 +5442,14 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionElseClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -5046,6 +5541,14 @@ impl TypedSyntaxNode for ExprErrorPropagate {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprErrorPropagate {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -5153,6 +5656,10 @@ impl TypedSyntaxNode for ExprIndexed {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprIndexed { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -5166,6 +5673,117 @@ impl From<&ExprIndexed> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+<<<<<<< HEAD
+=======
+pub struct ExprInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ExprInlineMacro {
+    pub const INDEX_PATH: usize = 0;
+    pub const INDEX_BANG: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        path: ExprPathGreen,
+        bang: TerminalNotGreen,
+        arguments: WrappedArgListGreen,
+    ) -> ExprInlineMacroGreen {
+        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprInlineMacro {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprInlineMacroPtr(pub SyntaxStablePtrId);
+impl ExprInlineMacroPtr {}
+impl TypedStablePtr for ExprInlineMacroPtr {
+    type SyntaxNode = ExprInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprInlineMacro {
+        ExprInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for ExprInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprInlineMacro);
+    type StablePtr = ExprInlineMacroPtr;
+    type Green = ExprInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        ExprPath::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        WrappedArgList::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &ExprInlineMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+>>>>>>> origin/main
 pub struct ExprFixedSizeArray {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -5259,6 +5877,14 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprFixedSizeArray {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -5350,6 +5976,14 @@ impl TypedSyntaxNode for FixedSizeArraySize {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::FixedSizeArraySize {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -5425,6 +6059,18 @@ impl TypedSyntaxNode for OptionFixedSizeArraySize {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionFixedSizeArraySize"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionFixedSizeArraySizeEmpty => Some(OptionFixedSizeArraySize::Empty(
+                OptionFixedSizeArraySizeEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::FixedSizeArraySize => Some(OptionFixedSizeArraySize::FixedSizeArraySize(
+                FixedSizeArraySize::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5510,6 +6156,14 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionFixedSizeArraySizeEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -5617,6 +6271,10 @@ impl TypedSyntaxNode for ExprClosure {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprClosure { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -5692,6 +6350,18 @@ impl TypedSyntaxNode for ClosureParamWrapper {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "ClosureParamWrapper"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalOrOr => {
+                Some(ClosureParamWrapper::Nullary(TerminalOrOr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ClosureParamWrapperNAry => {
+                Some(ClosureParamWrapper::NAry(ClosureParamWrapperNAry::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5802,6 +6472,14 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ClosureParamWrapperNAry {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -5988,6 +6666,14 @@ impl TypedSyntaxNode for StructArgExpr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructArgExpr {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -6063,6 +6749,18 @@ impl TypedSyntaxNode for OptionStructArgExpr {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionStructArgExpr"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionStructArgExprEmpty => Some(OptionStructArgExpr::Empty(
+                OptionStructArgExprEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::StructArgExpr => {
+                Some(OptionStructArgExpr::StructArgExpr(StructArgExpr::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6148,6 +6846,14 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionStructArgExprEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -6252,6 +6958,14 @@ impl TypedSyntaxNode for StructArgSingle {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructArgSingle {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -6343,6 +7057,14 @@ impl TypedSyntaxNode for StructArgTail {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructArgTail {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -6415,6 +7137,18 @@ impl TypedSyntaxNode for StructArg {
                 StructArg::StructArgTail(StructArgTail::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "StructArg"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StructArgSingle => {
+                Some(StructArg::StructArgSingle(StructArgSingle::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StructArgTail => {
+                Some(StructArg::StructArgTail(StructArgTail::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6521,6 +7255,13 @@ impl TypedSyntaxNode for StructArgList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::StructArgList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -6621,6 +7362,14 @@ impl TypedSyntaxNode for ArgListBraced {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgListBraced {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -6720,6 +7469,14 @@ impl TypedSyntaxNode for ArgListBracketed {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ArgListBracketed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -6825,6 +7582,24 @@ impl TypedSyntaxNode for WrappedArgList {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ArgListBracketed => {
+                Some(WrappedArgList::BracketedArgList(ArgListBracketed::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ArgListParenthesized => Some(WrappedArgList::ParenthesizedArgList(
+                ArgListParenthesized::from_syntax_node(db, node),
+            )),
+            SyntaxKind::ArgListBraced => {
+                Some(WrappedArgList::BracedArgList(ArgListBraced::from_syntax_node(db, node)))
+            }
+            SyntaxKind::WrappedArgListMissing => {
+                Some(WrappedArgList::Missing(WrappedArgListMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             WrappedArgList::BracketedArgList(x) => x.as_syntax_node(),
@@ -6916,6 +7691,14 @@ impl TypedSyntaxNode for WrappedArgListMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::WrappedArgListMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -7119,6 +7902,44 @@ impl TypedSyntaxNode for Pattern {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Pattern"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalUnderscore => {
+                Some(Pattern::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLiteralNumber => {
+                Some(Pattern::Literal(TerminalLiteralNumber::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalFalse => {
+                Some(Pattern::False(TerminalFalse::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalTrue => {
+                Some(Pattern::True(TerminalTrue::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalShortString => {
+                Some(Pattern::ShortString(TerminalShortString::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalString => {
+                Some(Pattern::String(TerminalString::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PatternIdentifier => {
+                Some(Pattern::Identifier(PatternIdentifier::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PatternStruct => {
+                Some(Pattern::Struct(PatternStruct::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PatternTuple => {
+                Some(Pattern::Tuple(PatternTuple::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PatternEnum => Some(Pattern::Enum(PatternEnum::from_syntax_node(db, node))),
+            SyntaxKind::PatternFixedSizeArray => {
+                Some(Pattern::FixedSizeArray(PatternFixedSizeArray::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprPath => Some(Pattern::Path(ExprPath::from_syntax_node(db, node))),
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Pattern::Underscore(x) => x.as_syntax_node(),
@@ -7252,6 +8073,14 @@ impl TypedSyntaxNode for PatternIdentifier {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternIdentifier {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -7358,6 +8187,14 @@ impl TypedSyntaxNode for PatternStruct {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternStruct {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -7452,6 +8289,13 @@ impl TypedSyntaxNode for PatternStructParamList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::PatternStructParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -7553,6 +8397,10 @@ impl TypedSyntaxNode for PatternTuple {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternTuple { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -7653,6 +8501,14 @@ impl TypedSyntaxNode for PatternFixedSizeArray {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternFixedSizeArray {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -7747,6 +8603,13 @@ impl TypedSyntaxNode for PatternList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::PatternList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -7843,6 +8706,13 @@ impl TypedSyntaxNode for PatternListOr {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::PatternListOr {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -7932,6 +8802,21 @@ impl TypedSyntaxNode for PatternStructParam {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "PatternStructParam"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::PatternIdentifier => {
+                Some(PatternStructParam::Single(PatternIdentifier::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PatternStructParamWithExpr => Some(PatternStructParam::WithExpr(
+                PatternStructParamWithExpr::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalDotDot => {
+                Some(PatternStructParam::Tail(TerminalDotDot::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8055,6 +8940,14 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternStructParamWithExpr {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -8148,6 +9041,10 @@ impl TypedSyntaxNode for PatternEnum {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternEnum { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8249,6 +9146,14 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PatternEnumInnerPattern {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -8326,6 +9231,22 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPattern {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionPatternEnumInnerPattern"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty => {
+                Some(OptionPatternEnumInnerPattern::Empty(
+                    OptionPatternEnumInnerPatternEmpty::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::PatternEnumInnerPattern => {
+                Some(OptionPatternEnumInnerPattern::PatternEnumInnerPattern(
+                    PatternEnumInnerPattern::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8414,6 +9335,14 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionPatternEnumInnerPatternEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8506,6 +9435,10 @@ impl TypedSyntaxNode for TypeClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TypeClause { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -8581,6 +9514,18 @@ impl TypedSyntaxNode for OptionTypeClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTypeClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTypeClauseEmpty => {
+                Some(OptionTypeClause::Empty(OptionTypeClauseEmpty::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TypeClause => {
+                Some(OptionTypeClause::TypeClause(TypeClause::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8666,6 +9611,14 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTypeClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -8758,6 +9711,14 @@ impl TypedSyntaxNode for ReturnTypeClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ReturnTypeClause {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -8833,6 +9794,18 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionReturnTypeClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionReturnTypeClauseEmpty => Some(OptionReturnTypeClause::Empty(
+                OptionReturnTypeClauseEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::ReturnTypeClause => Some(OptionReturnTypeClause::ReturnTypeClause(
+                ReturnTypeClause::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8918,6 +9891,14 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionReturnTypeClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -9057,6 +10038,33 @@ impl TypedSyntaxNode for Statement {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Statement"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StatementLet => {
+                Some(Statement::Let(StatementLet::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementExpr => {
+                Some(Statement::Expr(StatementExpr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementContinue => {
+                Some(Statement::Continue(StatementContinue::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementReturn => {
+                Some(Statement::Return(StatementReturn::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementBreak => {
+                Some(Statement::Break(StatementBreak::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementItem => {
+                Some(Statement::Item(StatementItem::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StatementMissing => {
+                Some(Statement::Missing(StatementMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Statement::Let(x) => x.as_syntax_node(),
@@ -9149,6 +10157,13 @@ impl TypedSyntaxNode for StatementList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::StatementList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -9223,6 +10238,14 @@ impl TypedSyntaxNode for StatementMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -9358,6 +10381,10 @@ impl TypedSyntaxNode for StatementLet {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementLet { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -9433,6 +10460,18 @@ impl TypedSyntaxNode for OptionTerminalSemicolon {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTerminalSemicolon"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalSemicolonEmpty => Some(OptionTerminalSemicolon::Empty(
+                OptionTerminalSemicolonEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalSemicolon => Some(OptionTerminalSemicolon::TerminalSemicolon(
+                TerminalSemicolon::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9518,6 +10557,14 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalSemicolonEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -9619,6 +10666,14 @@ impl TypedSyntaxNode for StatementExpr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementExpr {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -9719,6 +10774,14 @@ impl TypedSyntaxNode for StatementContinue {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementContinue {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -9802,6 +10865,10 @@ impl TypedSyntaxNode for ExprClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprClause { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -9877,6 +10944,18 @@ impl TypedSyntaxNode for OptionExprClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionExprClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionExprClauseEmpty => {
+                Some(OptionExprClause::Empty(OptionExprClauseEmpty::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ExprClause => {
+                Some(OptionExprClause::ExprClause(ExprClause::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9962,6 +11041,14 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionExprClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -10069,6 +11156,14 @@ impl TypedSyntaxNode for StatementReturn {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementReturn {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10175,6 +11270,14 @@ impl TypedSyntaxNode for StatementBreak {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementBreak {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10257,6 +11360,14 @@ impl TypedSyntaxNode for StatementItem {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementItem {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -10367,6 +11478,10 @@ impl TypedSyntaxNode for Param {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::Param { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10436,6 +11551,13 @@ impl TypedSyntaxNode for ModifierList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ModifierList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10504,6 +11626,14 @@ impl TypedSyntaxNode for Modifier {
             SyntaxKind::TerminalRef => Modifier::Ref(TerminalRef::from_syntax_node(db, node)),
             SyntaxKind::TerminalMut => Modifier::Mut(TerminalMut::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Modifier"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalRef => Some(Modifier::Ref(TerminalRef::from_syntax_node(db, node))),
+            SyntaxKind::TerminalMut => Some(Modifier::Mut(TerminalMut::from_syntax_node(db, node))),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10609,6 +11739,13 @@ impl TypedSyntaxNode for ParamList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -10716,6 +11853,14 @@ impl TypedSyntaxNode for ImplicitsClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ImplicitsClause {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10811,6 +11956,13 @@ impl TypedSyntaxNode for ImplicitsList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ImplicitsList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -10886,6 +12038,18 @@ impl TypedSyntaxNode for OptionImplicitsClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionImplicitsClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionImplicitsClauseEmpty => Some(OptionImplicitsClause::Empty(
+                OptionImplicitsClauseEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::ImplicitsClause => Some(OptionImplicitsClause::ImplicitsClause(
+                ImplicitsClause::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10972,6 +12136,14 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionImplicitsClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -11047,6 +12219,18 @@ impl TypedSyntaxNode for OptionTerminalNoPanic {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTerminalNoPanic"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalNoPanicEmpty => Some(OptionTerminalNoPanic::Empty(
+                OptionTerminalNoPanicEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalNoPanic => Some(OptionTerminalNoPanic::TerminalNoPanic(
+                TerminalNoPanic::from_syntax_node(db, node),
+            )),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11133,6 +12317,14 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalNoPanicEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -11142,6 +12334,187 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
 }
 impl From<&OptionTerminalNoPanicEmpty> for SyntaxStablePtrId {
     fn from(node: &OptionTerminalNoPanicEmpty) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalConst {
+    Empty(OptionTerminalConstEmpty),
+    TerminalConst(TerminalConst),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionTerminalConstPtr {
+    type SyntaxNode = OptionTerminalConst;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
+        OptionTerminalConst::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalConstPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalConstPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionTerminalConstEmptyPtr> for OptionTerminalConstPtr {
+    fn from(value: OptionTerminalConstEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstPtr> for OptionTerminalConstPtr {
+    fn from(value: TerminalConstPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalConstEmptyGreen> for OptionTerminalConstGreen {
+    fn from(value: OptionTerminalConstEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstGreen> for OptionTerminalConstGreen {
+    fn from(value: TerminalConstGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalConst {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalConstPtr;
+    type Green = OptionTerminalConstGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalConstEmpty => {
+                OptionTerminalConst::Empty(OptionTerminalConstEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalConst => {
+                OptionTerminalConst::TerminalConst(TerminalConst::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalConst"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalConstEmpty => Some(OptionTerminalConst::Empty(
+                OptionTerminalConstEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalConst => {
+                Some(OptionTerminalConst::TerminalConst(TerminalConst::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalConst::Empty(x) => x.as_syntax_node(),
+            OptionTerminalConst::TerminalConst(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalConstPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalConst> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalConst) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl OptionTerminalConst {
+    /// Checks if a kind of a variant of [OptionTerminalConst].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::TerminalConst)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalConstEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionTerminalConstEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalConstEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionTerminalConstEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalConstEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionTerminalConstEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstEmptyPtr(pub SyntaxStablePtrId);
+impl OptionTerminalConstEmptyPtr {}
+impl TypedStablePtr for OptionTerminalConstEmptyPtr {
+    type SyntaxNode = OptionTerminalConstEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalConstEmpty {
+        OptionTerminalConstEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalConstEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalConstEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalConstEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalConstEmpty);
+    type StablePtr = OptionTerminalConstEmptyPtr;
+    type Green = OptionTerminalConstEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalConstEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalConstEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalConstEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalConstEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalConstEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalConstEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalConstEmpty> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalConstEmpty) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -11258,6 +12631,14 @@ impl TypedSyntaxNode for FunctionSignature {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::FunctionSignature {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -11373,6 +12754,10 @@ impl TypedSyntaxNode for Member {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::Member { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -11467,6 +12852,13 @@ impl TypedSyntaxNode for MemberList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::MemberList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -11577,6 +12969,10 @@ impl TypedSyntaxNode for Variant {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::Variant { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -11671,6 +13067,13 @@ impl TypedSyntaxNode for VariantList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::VariantList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -11930,6 +13333,49 @@ impl TypedSyntaxNode for ModuleItem {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ModuleItem"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ItemConstant => {
+                Some(ModuleItem::Constant(ItemConstant::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemModule => {
+                Some(ModuleItem::Module(ItemModule::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemUse => Some(ModuleItem::Use(ItemUse::from_syntax_node(db, node))),
+            SyntaxKind::FunctionWithBody => {
+                Some(ModuleItem::FreeFunction(FunctionWithBody::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemExternFunction => {
+                Some(ModuleItem::ExternFunction(ItemExternFunction::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemExternType => {
+                Some(ModuleItem::ExternType(ItemExternType::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemTrait => Some(ModuleItem::Trait(ItemTrait::from_syntax_node(db, node))),
+            SyntaxKind::ItemImpl => Some(ModuleItem::Impl(ItemImpl::from_syntax_node(db, node))),
+            SyntaxKind::ItemImplAlias => {
+                Some(ModuleItem::ImplAlias(ItemImplAlias::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemStruct => {
+                Some(ModuleItem::Struct(ItemStruct::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemEnum => Some(ModuleItem::Enum(ItemEnum::from_syntax_node(db, node))),
+            SyntaxKind::ItemTypeAlias => {
+                Some(ModuleItem::TypeAlias(ItemTypeAlias::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemInlineMacro => {
+                Some(ModuleItem::InlineMacro(ItemInlineMacro::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemHeaderDoc => {
+                Some(ModuleItem::HeaderDoc(ItemHeaderDoc::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ModuleItemMissing => {
+                Some(ModuleItem::Missing(ModuleItemMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             ModuleItem::Constant(x) => x.as_syntax_node(),
@@ -12040,6 +13486,13 @@ impl TypedSyntaxNode for ModuleItemList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ModuleItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -12114,6 +13567,14 @@ impl TypedSyntaxNode for ModuleItemMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ModuleItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12227,6 +13688,10 @@ impl TypedSyntaxNode for Attribute {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::Attribute { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -12295,6 +13760,13 @@ impl TypedSyntaxNode for AttributeList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::AttributeList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12370,6 +13842,14 @@ impl TypedSyntaxNode for VisibilityDefault {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::VisibilityDefault {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12471,6 +13951,14 @@ impl TypedSyntaxNode for VisibilityPubArgumentClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::VisibilityPubArgumentClause {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -12550,6 +14038,22 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionVisibilityPubArgumentClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => {
+                Some(OptionVisibilityPubArgumentClause::Empty(
+                    OptionVisibilityPubArgumentClauseEmpty::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::VisibilityPubArgumentClause => {
+                Some(OptionVisibilityPubArgumentClause::VisibilityPubArgumentClause(
+                    VisibilityPubArgumentClause::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12640,6 +14144,14 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionVisibilityPubArgumentClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -12735,6 +14247,14 @@ impl TypedSyntaxNode for VisibilityPub {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::VisibilityPub {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -12805,6 +14325,18 @@ impl TypedSyntaxNode for Visibility {
             }
             SyntaxKind::VisibilityPub => Visibility::Pub(VisibilityPub::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Visibility"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::VisibilityDefault => {
+                Some(Visibility::Default(VisibilityDefault::from_syntax_node(db, node)))
+            }
+            SyntaxKind::VisibilityPub => {
+                Some(Visibility::Pub(VisibilityPub::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12937,6 +14469,10 @@ impl TypedSyntaxNode for ItemModule {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemModule { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -13009,6 +14545,18 @@ impl TypedSyntaxNode for MaybeModuleBody {
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeModuleBody")
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ModuleBody => {
+                Some(MaybeModuleBody::Some(ModuleBody::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                Some(MaybeModuleBody::None(TerminalSemicolon::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13120,6 +14668,10 @@ impl TypedSyntaxNode for ModuleBody {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ModuleBody { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -13138,18 +14690,21 @@ pub struct FunctionDeclaration {
     children: Arc<[SyntaxNode]>,
 }
 impl FunctionDeclaration {
-    pub const INDEX_FUNCTION_KW: usize = 0;
-    pub const INDEX_NAME: usize = 1;
-    pub const INDEX_GENERIC_PARAMS: usize = 2;
-    pub const INDEX_SIGNATURE: usize = 3;
+    pub const INDEX_OPTIONAL_CONST: usize = 0;
+    pub const INDEX_FUNCTION_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SIGNATURE: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        optional_const: OptionTerminalConstGreen,
         function_kw: TerminalFunctionGreen,
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         signature: FunctionSignatureGreen,
     ) -> FunctionDeclarationGreen {
-        let children: Vec<GreenId> = vec![function_kw.0, name.0, generic_params.0, signature.0];
+        let children: Vec<GreenId> =
+            vec![optional_const.0, function_kw.0, name.0, generic_params.0, signature.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         FunctionDeclarationGreen(
             Arc::new(GreenNode {
@@ -13161,17 +14716,20 @@ impl FunctionDeclaration {
     }
 }
 impl FunctionDeclaration {
+    pub fn optional_const(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
+        OptionTerminalConst::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[0].clone())
+        TerminalFunction::from_syntax_node(db, self.children[1].clone())
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[2].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[3].clone())
+        FunctionSignature::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13212,6 +14770,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
                 kind: SyntaxKind::FunctionDeclaration,
                 details: GreenNodeDetails::Node {
                     children: vec![
+                        OptionTerminalConst::missing(db).0,
                         TerminalFunction::missing(db).0,
                         TerminalIdentifier::missing(db).0,
                         OptionWrappedGenericParamList::missing(db).0,
@@ -13234,6 +14793,14 @@ impl TypedSyntaxNode for FunctionDeclaration {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::FunctionDeclaration {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13383,6 +14950,10 @@ impl TypedSyntaxNode for ItemConstant {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemConstant { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -13497,6 +15068,14 @@ impl TypedSyntaxNode for FunctionWithBody {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::FunctionWithBody {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13619,6 +15198,14 @@ impl TypedSyntaxNode for ItemExternFunction {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemExternFunction {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13761,6 +15348,14 @@ impl TypedSyntaxNode for ItemExternType {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemExternType {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -13889,6 +15484,10 @@ impl TypedSyntaxNode for ItemTrait {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemTrait { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -13961,6 +15560,18 @@ impl TypedSyntaxNode for MaybeTraitBody {
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeTraitBody")
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TraitBody => {
+                Some(MaybeTraitBody::Some(TraitBody::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                Some(MaybeTraitBody::None(TerminalSemicolon::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14072,6 +15683,10 @@ impl TypedSyntaxNode for TraitBody {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitBody { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -14140,6 +15755,13 @@ impl TypedSyntaxNode for TraitItemList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::TraitItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -14253,6 +15875,27 @@ impl TypedSyntaxNode for TraitItem {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TraitItem"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TraitItemFunction => {
+                Some(TraitItem::Function(TraitItemFunction::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TraitItemType => {
+                Some(TraitItem::Type(TraitItemType::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TraitItemConstant => {
+                Some(TraitItem::Constant(TraitItemConstant::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TraitItemImpl => {
+                Some(TraitItem::Impl(TraitItemImpl::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TraitItemMissing => {
+                Some(TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             TraitItem::Function(x) => x.as_syntax_node(),
@@ -14346,6 +15989,14 @@ impl TypedSyntaxNode for TraitItemMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -14455,6 +16106,14 @@ impl TypedSyntaxNode for TraitItemFunction {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemFunction {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -14578,6 +16237,14 @@ impl TypedSyntaxNode for TraitItemType {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemType {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -14699,6 +16366,14 @@ impl TypedSyntaxNode for TraitItemConstant {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemConstant {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -14828,6 +16503,14 @@ impl TypedSyntaxNode for TraitItemImpl {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemImpl {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -14903,6 +16586,18 @@ impl TypedSyntaxNode for MaybeTraitFunctionBody {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MaybeTraitFunctionBody"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprBlock => {
+                Some(MaybeTraitFunctionBody::Some(ExprBlock::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                Some(MaybeTraitFunctionBody::None(TerminalSemicolon::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15062,6 +16757,10 @@ impl TypedSyntaxNode for ItemImpl {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemImpl { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -15075,6 +16774,129 @@ impl From<&ItemImpl> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+<<<<<<< HEAD
+=======
+pub struct ItemInlineMacro {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ItemInlineMacro {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_BANG: usize = 2;
+    pub const INDEX_ARGUMENTS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        bang: TerminalNotGreen,
+        arguments: WrappedArgListGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> ItemInlineMacroGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemInlineMacro,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ItemInlineMacro {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroPtr(pub SyntaxStablePtrId);
+impl ItemInlineMacroPtr {}
+impl TypedStablePtr for ItemInlineMacroPtr {
+    type SyntaxNode = ItemInlineMacro;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ItemInlineMacro {
+        ItemInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ItemInlineMacroPtr> for SyntaxStablePtrId {
+    fn from(ptr: ItemInlineMacroPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for ItemInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemInlineMacro);
+    type StablePtr = ItemInlineMacroPtr;
+    type Green = ItemInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemInlineMacroGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ItemInlineMacro,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        AttributeList::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                        TerminalNot::missing(db).0,
+                        WrappedArgList::missing(db).0,
+                        TerminalSemicolon::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemInlineMacro
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemInlineMacroPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ItemInlineMacro> for SyntaxStablePtrId {
+    fn from(node: &ItemInlineMacro) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+>>>>>>> origin/main
 pub struct ItemHeaderDoc {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -15144,6 +16966,14 @@ impl TypedSyntaxNode for ItemHeaderDoc {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemHeaderDoc {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -15215,6 +17045,16 @@ impl TypedSyntaxNode for MaybeImplBody {
                 MaybeImplBody::None(TerminalSemicolon::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeImplBody"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ImplBody => Some(MaybeImplBody::Some(ImplBody::from_syntax_node(db, node))),
+            SyntaxKind::TerminalSemicolon => {
+                Some(MaybeImplBody::None(TerminalSemicolon::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15326,6 +17166,10 @@ impl TypedSyntaxNode for ImplBody {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ImplBody { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -15394,6 +17238,13 @@ impl TypedSyntaxNode for ImplItemList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ImplItemList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -15595,6 +17446,42 @@ impl TypedSyntaxNode for ImplItem {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ImplItem"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::FunctionWithBody => {
+                Some(ImplItem::Function(FunctionWithBody::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemTypeAlias => {
+                Some(ImplItem::Type(ItemTypeAlias::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemConstant => {
+                Some(ImplItem::Constant(ItemConstant::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemImplAlias => {
+                Some(ImplItem::Impl(ItemImplAlias::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemModule => {
+                Some(ImplItem::Module(ItemModule::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemUse => Some(ImplItem::Use(ItemUse::from_syntax_node(db, node))),
+            SyntaxKind::ItemExternFunction => {
+                Some(ImplItem::ExternFunction(ItemExternFunction::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemExternType => {
+                Some(ImplItem::ExternType(ItemExternType::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemTrait => Some(ImplItem::Trait(ItemTrait::from_syntax_node(db, node))),
+            SyntaxKind::ItemStruct => {
+                Some(ImplItem::Struct(ItemStruct::from_syntax_node(db, node)))
+            }
+            SyntaxKind::ItemEnum => Some(ImplItem::Enum(ItemEnum::from_syntax_node(db, node))),
+            SyntaxKind::ImplItemMissing => {
+                Some(ImplItem::Missing(ImplItemMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             ImplItem::Function(x) => x.as_syntax_node(),
@@ -15702,6 +17589,14 @@ impl TypedSyntaxNode for ImplItemMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ImplItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -15851,6 +17746,14 @@ impl TypedSyntaxNode for ItemImplAlias {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemImplAlias {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -15998,6 +17901,10 @@ impl TypedSyntaxNode for ItemStruct {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemStruct { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -16147,6 +18054,10 @@ impl TypedSyntaxNode for ItemEnum {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemEnum { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -16295,6 +18206,14 @@ impl TypedSyntaxNode for ItemTypeAlias {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemTypeAlias {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -16417,6 +18336,10 @@ impl TypedSyntaxNode for ItemUse {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemUse { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -16434,6 +18357,7 @@ pub enum UsePath {
     Leaf(UsePathLeaf),
     Single(UsePathSingle),
     Multi(UsePathMulti),
+    Star(UsePathStar),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct UsePathPtr(pub SyntaxStablePtrId);
@@ -16466,6 +18390,11 @@ impl From<UsePathMultiPtr> for UsePathPtr {
         Self(value.0)
     }
 }
+impl From<UsePathStarPtr> for UsePathPtr {
+    fn from(value: UsePathStarPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<UsePathLeafGreen> for UsePathGreen {
     fn from(value: UsePathLeafGreen) -> Self {
         Self(value.0)
@@ -16478,6 +18407,11 @@ impl From<UsePathSingleGreen> for UsePathGreen {
 }
 impl From<UsePathMultiGreen> for UsePathGreen {
     fn from(value: UsePathMultiGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathStarGreen> for UsePathGreen {
+    fn from(value: UsePathStarGreen) -> Self {
         Self(value.0)
     }
 }
@@ -16496,7 +18430,22 @@ impl TypedSyntaxNode for UsePath {
             SyntaxKind::UsePathLeaf => UsePath::Leaf(UsePathLeaf::from_syntax_node(db, node)),
             SyntaxKind::UsePathSingle => UsePath::Single(UsePathSingle::from_syntax_node(db, node)),
             SyntaxKind::UsePathMulti => UsePath::Multi(UsePathMulti::from_syntax_node(db, node)),
+            SyntaxKind::UsePathStar => UsePath::Star(UsePathStar::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UsePath"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::UsePathLeaf => Some(UsePath::Leaf(UsePathLeaf::from_syntax_node(db, node))),
+            SyntaxKind::UsePathSingle => {
+                Some(UsePath::Single(UsePathSingle::from_syntax_node(db, node)))
+            }
+            SyntaxKind::UsePathMulti => {
+                Some(UsePath::Multi(UsePathMulti::from_syntax_node(db, node)))
+            }
+            SyntaxKind::UsePathStar => Some(UsePath::Star(UsePathStar::from_syntax_node(db, node))),
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16504,6 +18453,7 @@ impl TypedSyntaxNode for UsePath {
             UsePath::Leaf(x) => x.as_syntax_node(),
             UsePath::Single(x) => x.as_syntax_node(),
             UsePath::Multi(x) => x.as_syntax_node(),
+            UsePath::Star(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -16520,7 +18470,10 @@ impl UsePath {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+            SyntaxKind::UsePathLeaf
+                | SyntaxKind::UsePathSingle
+                | SyntaxKind::UsePathMulti
+                | SyntaxKind::UsePathStar
         )
     }
 }
@@ -16619,6 +18572,10 @@ impl TypedSyntaxNode for UsePathLeaf {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::UsePathLeaf { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -16720,6 +18677,14 @@ impl TypedSyntaxNode for UsePathSingle {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::UsePathSingle {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -16820,6 +18785,10 @@ impl TypedSyntaxNode for UsePathMulti {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::UsePathMulti { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -16829,6 +18798,93 @@ impl TypedSyntaxNode for UsePathMulti {
 }
 impl From<&UsePathMulti> for SyntaxStablePtrId {
     fn from(node: &UsePathMulti) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathStar {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl UsePathStar {
+    pub const INDEX_STAR: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, star: TerminalMulGreen) -> UsePathStarGreen {
+        let children: Vec<GreenId> = vec![star.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        UsePathStarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::UsePathStar,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl UsePathStar {
+    pub fn star(&self, db: &dyn SyntaxGroup) -> TerminalMul {
+        TerminalMul::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathStarPtr(pub SyntaxStablePtrId);
+impl UsePathStarPtr {}
+impl TypedStablePtr for UsePathStarPtr {
+    type SyntaxNode = UsePathStar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> UsePathStar {
+        UsePathStar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<UsePathStarPtr> for SyntaxStablePtrId {
+    fn from(ptr: UsePathStarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathStarGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathStar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathStar);
+    type StablePtr = UsePathStarPtr;
+    type Green = UsePathStarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathStarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::UsePathStar,
+                details: GreenNodeDetails::Node {
+                    children: vec![TerminalMul::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathStar,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathStar
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::UsePathStar { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathStarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&UsePathStar> for SyntaxStablePtrId {
+    fn from(node: &UsePathStar) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -16914,6 +18970,13 @@ impl TypedSyntaxNode for UsePathList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::UsePathList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -17015,6 +19078,10 @@ impl TypedSyntaxNode for AliasClause {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::AliasClause { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17090,6 +19157,18 @@ impl TypedSyntaxNode for OptionAliasClause {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionAliasClause"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionAliasClauseEmpty => {
+                Some(OptionAliasClause::Empty(OptionAliasClauseEmpty::from_syntax_node(db, node)))
+            }
+            SyntaxKind::AliasClause => {
+                Some(OptionAliasClause::AliasClause(AliasClause::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17176,6 +19255,14 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionAliasClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17248,6 +19335,18 @@ impl TypedSyntaxNode for GenericArg {
                 GenericArg::Named(GenericArgNamed::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericArg"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::GenericArgUnnamed => {
+                Some(GenericArg::Unnamed(GenericArgUnnamed::from_syntax_node(db, node)))
+            }
+            SyntaxKind::GenericArgNamed => {
+                Some(GenericArg::Named(GenericArgNamed::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17359,6 +19458,14 @@ impl TypedSyntaxNode for GenericArgNamed {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericArgNamed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17442,6 +19549,14 @@ impl TypedSyntaxNode for GenericArgUnnamed {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericArgUnnamed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17516,6 +19631,18 @@ impl TypedSyntaxNode for GenericArgValue {
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericArgValue")
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::GenericArgValueExpr => {
+                Some(GenericArgValue::Expr(GenericArgValueExpr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalUnderscore => {
+                Some(GenericArgValue::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17609,6 +19736,14 @@ impl TypedSyntaxNode for GenericArgValueExpr {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericArgValueExpr {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -17710,6 +19845,10 @@ impl TypedSyntaxNode for GenericArgs {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericArgs { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17805,6 +19944,13 @@ impl TypedSyntaxNode for GenericArgList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::GenericArgList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -17814,6 +19960,521 @@ impl TypedSyntaxNode for GenericArgList {
 }
 impl From<&GenericArgList> for SyntaxStablePtrId {
     fn from(node: &GenericArgList) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedItemConstraint {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl AssociatedItemConstraint {
+    pub const INDEX_ITEM: usize = 0;
+    pub const INDEX_COLON: usize = 1;
+    pub const INDEX_VALUE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        item: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        value: ExprGreen,
+    ) -> AssociatedItemConstraintGreen {
+        let children: Vec<GreenId> = vec![item.0, colon.0, value.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        AssociatedItemConstraintGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraint,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl AssociatedItemConstraint {
+    pub fn item(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintPtr(pub SyntaxStablePtrId);
+impl AssociatedItemConstraintPtr {}
+impl TypedStablePtr for AssociatedItemConstraintPtr {
+    type SyntaxNode = AssociatedItemConstraint;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedItemConstraint {
+        AssociatedItemConstraint::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedItemConstraintPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedItemConstraintPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedItemConstraint {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraint);
+    type StablePtr = AssociatedItemConstraintPtr;
+    type Green = AssociatedItemConstraintGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedItemConstraintGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraint,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalIdentifier::missing(db).0,
+                        TerminalColon::missing(db).0,
+                        Expr::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::AssociatedItemConstraint,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::AssociatedItemConstraint
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::AssociatedItemConstraint {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedItemConstraintPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedItemConstraint> for SyntaxStablePtrId {
+    fn from(node: &AssociatedItemConstraint) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedItemConstraints {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl AssociatedItemConstraints {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_ASSOCIATED_ITEM_CONSTRAINTS: usize = 1;
+    pub const INDEX_RBRACK: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        associated_item_constraints: AssociatedItemConstraintListGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> AssociatedItemConstraintsGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, associated_item_constraints.0, rbrack.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        AssociatedItemConstraintsGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraints,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl AssociatedItemConstraints {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn associated_item_constraints(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> AssociatedItemConstraintList {
+        AssociatedItemConstraintList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintsPtr(pub SyntaxStablePtrId);
+impl AssociatedItemConstraintsPtr {}
+impl TypedStablePtr for AssociatedItemConstraintsPtr {
+    type SyntaxNode = AssociatedItemConstraints;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedItemConstraints {
+        AssociatedItemConstraints::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedItemConstraintsPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedItemConstraintsPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintsGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedItemConstraints {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraints);
+    type StablePtr = AssociatedItemConstraintsPtr;
+    type Green = AssociatedItemConstraintsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedItemConstraintsGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraints,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalLBrack::missing(db).0,
+                        AssociatedItemConstraintList::missing(db).0,
+                        TerminalRBrack::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::AssociatedItemConstraints,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::AssociatedItemConstraints
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::AssociatedItemConstraints {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedItemConstraintsPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedItemConstraints> for SyntaxStablePtrId {
+    fn from(node: &AssociatedItemConstraints) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedItemConstraintList(ElementList<AssociatedItemConstraint, 2>);
+impl Deref for AssociatedItemConstraintList {
+    type Target = ElementList<AssociatedItemConstraint, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl AssociatedItemConstraintList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<AssociatedItemConstraintListElementOrSeparatorGreen>,
+    ) -> AssociatedItemConstraintListGreen {
+        let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
+        AssociatedItemConstraintListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraintList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.id()).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintListPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for AssociatedItemConstraintListPtr {
+    type SyntaxNode = AssociatedItemConstraintList;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedItemConstraintList {
+        AssociatedItemConstraintList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedItemConstraintListPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedItemConstraintListPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum AssociatedItemConstraintListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(AssociatedItemConstraintGreen),
+}
+impl From<TerminalCommaGreen> for AssociatedItemConstraintListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        AssociatedItemConstraintListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<AssociatedItemConstraintGreen> for AssociatedItemConstraintListElementOrSeparatorGreen {
+    fn from(value: AssociatedItemConstraintGreen) -> Self {
+        AssociatedItemConstraintListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl AssociatedItemConstraintListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            AssociatedItemConstraintListElementOrSeparatorGreen::Separator(green) => green.0,
+            AssociatedItemConstraintListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedItemConstraintListGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedItemConstraintList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraintList);
+    type StablePtr = AssociatedItemConstraintListPtr;
+    type Green = AssociatedItemConstraintListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedItemConstraintListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedItemConstraintList,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::AssociatedItemConstraintList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedItemConstraintListPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedItemConstraintList> for SyntaxStablePtrId {
+    fn from(node: &AssociatedItemConstraintList) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionAssociatedItemConstraints {
+    Empty(OptionAssociatedItemConstraintsEmpty),
+    AssociatedItemConstraints(AssociatedItemConstraints),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedItemConstraintsPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionAssociatedItemConstraintsPtr {
+    type SyntaxNode = OptionAssociatedItemConstraints;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionAssociatedItemConstraintsPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionAssociatedItemConstraintsPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionAssociatedItemConstraintsEmptyPtr> for OptionAssociatedItemConstraintsPtr {
+    fn from(value: OptionAssociatedItemConstraintsEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AssociatedItemConstraintsPtr> for OptionAssociatedItemConstraintsPtr {
+    fn from(value: AssociatedItemConstraintsPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionAssociatedItemConstraintsEmptyGreen> for OptionAssociatedItemConstraintsGreen {
+    fn from(value: OptionAssociatedItemConstraintsEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AssociatedItemConstraintsGreen> for OptionAssociatedItemConstraintsGreen {
+    fn from(value: AssociatedItemConstraintsGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedItemConstraintsGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAssociatedItemConstraints {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionAssociatedItemConstraintsPtr;
+    type Green = OptionAssociatedItemConstraintsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty => {
+                OptionAssociatedItemConstraints::Empty(
+                    OptionAssociatedItemConstraintsEmpty::from_syntax_node(db, node),
+                )
+            }
+            SyntaxKind::AssociatedItemConstraints => {
+                OptionAssociatedItemConstraints::AssociatedItemConstraints(
+                    AssociatedItemConstraints::from_syntax_node(db, node),
+                )
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionAssociatedItemConstraints"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty => {
+                Some(OptionAssociatedItemConstraints::Empty(
+                    OptionAssociatedItemConstraintsEmpty::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::AssociatedItemConstraints => {
+                Some(OptionAssociatedItemConstraints::AssociatedItemConstraints(
+                    AssociatedItemConstraints::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionAssociatedItemConstraints::Empty(x) => x.as_syntax_node(),
+            OptionAssociatedItemConstraints::AssociatedItemConstraints(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAssociatedItemConstraintsPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&OptionAssociatedItemConstraints> for SyntaxStablePtrId {
+    fn from(node: &OptionAssociatedItemConstraints) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl OptionAssociatedItemConstraints {
+    /// Checks if a kind of a variant of [OptionAssociatedItemConstraints].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty
+                | SyntaxKind::AssociatedItemConstraints
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionAssociatedItemConstraintsEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionAssociatedItemConstraintsEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraintsEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionAssociatedItemConstraintsEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionAssociatedItemConstraintsEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedItemConstraintsEmptyPtr(pub SyntaxStablePtrId);
+impl OptionAssociatedItemConstraintsEmptyPtr {}
+impl TypedStablePtr for OptionAssociatedItemConstraintsEmptyPtr {
+    type SyntaxNode = OptionAssociatedItemConstraintsEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraintsEmpty {
+        OptionAssociatedItemConstraintsEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionAssociatedItemConstraintsEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionAssociatedItemConstraintsEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedItemConstraintsEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAssociatedItemConstraintsEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::OptionAssociatedItemConstraintsEmpty);
+    type StablePtr = OptionAssociatedItemConstraintsEmptyPtr;
+    type Green = OptionAssociatedItemConstraintsEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionAssociatedItemConstraintsEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionAssociatedItemConstraintsEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAssociatedItemConstraintsEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&OptionAssociatedItemConstraintsEmpty> for SyntaxStablePtrId {
+    fn from(node: &OptionAssociatedItemConstraintsEmpty) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -17882,6 +20543,22 @@ impl TypedSyntaxNode for OptionWrappedGenericParamList {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionWrappedGenericParamList"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionWrappedGenericParamListEmpty => {
+                Some(OptionWrappedGenericParamList::Empty(
+                    OptionWrappedGenericParamListEmpty::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::WrappedGenericParamList => {
+                Some(OptionWrappedGenericParamList::WrappedGenericParamList(
+                    WrappedGenericParamList::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17970,6 +20647,14 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionWrappedGenericParamListEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18071,6 +20756,14 @@ impl TypedSyntaxNode for WrappedGenericParamList {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::WrappedGenericParamList {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -18165,6 +20858,13 @@ impl TypedSyntaxNode for GenericParamList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::GenericParamList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18282,6 +20982,27 @@ impl TypedSyntaxNode for GenericParam {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericParam"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::GenericParamType => {
+                Some(GenericParam::Type(GenericParamType::from_syntax_node(db, node)))
+            }
+            SyntaxKind::GenericParamConst => {
+                Some(GenericParam::Const(GenericParamConst::from_syntax_node(db, node)))
+            }
+            SyntaxKind::GenericParamImplNamed => {
+                Some(GenericParam::ImplNamed(GenericParamImplNamed::from_syntax_node(db, node)))
+            }
+            SyntaxKind::GenericParamImplAnonymous => Some(GenericParam::ImplAnonymous(
+                GenericParamImplAnonymous::from_syntax_node(db, node),
+            )),
+            SyntaxKind::GenericParamNegativeImpl => Some(GenericParam::NegativeImpl(
+                GenericParamNegativeImpl::from_syntax_node(db, node),
+            )),
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             GenericParam::Type(x) => x.as_syntax_node(),
@@ -18392,6 +21113,14 @@ impl TypedSyntaxNode for GenericParamType {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericParamType {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18508,6 +21237,14 @@ impl TypedSyntaxNode for GenericParamConst {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericParamConst {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -18530,14 +21267,17 @@ impl GenericParamImplNamed {
     pub const INDEX_NAME: usize = 1;
     pub const INDEX_COLON: usize = 2;
     pub const INDEX_TRAIT_PATH: usize = 3;
+    pub const INDEX_TYPE_CONSTRAINS: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         impl_kw: TerminalImplGreen,
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
         trait_path: ExprPathGreen,
+        type_constrains: OptionAssociatedItemConstraintsGreen,
     ) -> GenericParamImplNamedGreen {
-        let children: Vec<GreenId> = vec![impl_kw.0, name.0, colon.0, trait_path.0];
+        let children: Vec<GreenId> =
+            vec![impl_kw.0, name.0, colon.0, trait_path.0, type_constrains.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         GenericParamImplNamedGreen(
             Arc::new(GreenNode {
@@ -18560,6 +21300,9 @@ impl GenericParamImplNamed {
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18604,6 +21347,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
                         TerminalIdentifier::missing(db).0,
                         TerminalColon::missing(db).0,
                         ExprPath::missing(db).0,
+                        OptionAssociatedItemConstraints::missing(db).0,
                     ],
                     width: TextWidth::default(),
                 },
@@ -18622,6 +21366,14 @@ impl TypedSyntaxNode for GenericParamImplNamed {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericParamImplNamed {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18643,12 +21395,14 @@ pub struct GenericParamImplAnonymous {
 impl GenericParamImplAnonymous {
     pub const INDEX_PLUS: usize = 0;
     pub const INDEX_TRAIT_PATH: usize = 1;
+    pub const INDEX_TYPE_CONSTRAINS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         plus: TerminalPlusGreen,
         trait_path: ExprPathGreen,
+        type_constrains: OptionAssociatedItemConstraintsGreen,
     ) -> GenericParamImplAnonymousGreen {
-        let children: Vec<GreenId> = vec![plus.0, trait_path.0];
+        let children: Vec<GreenId> = vec![plus.0, trait_path.0, type_constrains.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         GenericParamImplAnonymousGreen(
             Arc::new(GreenNode {
@@ -18665,6 +21419,9 @@ impl GenericParamImplAnonymous {
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18695,7 +21452,11 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             Arc::new(GreenNode {
                 kind: SyntaxKind::GenericParamImplAnonymous,
                 details: GreenNodeDetails::Node {
-                    children: vec![TerminalPlus::missing(db).0, ExprPath::missing(db).0],
+                    children: vec![
+                        TerminalPlus::missing(db).0,
+                        ExprPath::missing(db).0,
+                        OptionAssociatedItemConstraints::missing(db).0,
+                    ],
                     width: TextWidth::default(),
                 },
             })
@@ -18713,6 +21474,14 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericParamImplAnonymous {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -18804,6 +21573,14 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::GenericParamNegativeImpl {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -21196,6 +23973,14 @@ impl TypedSyntaxNode for TriviumSkippedNode {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TriviumSkippedNode {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21268,6 +24053,18 @@ impl TypedSyntaxNode for SkippedNode {
                 SkippedNode::VisibilityPub(VisibilityPub::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "SkippedNode"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::AttributeList => {
+                Some(SkippedNode::AttributeList(AttributeList::from_syntax_node(db, node)))
+            }
+            SyntaxKind::VisibilityPub => {
+                Some(SkippedNode::VisibilityPub(VisibilityPub::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21352,6 +24149,12 @@ impl TypedSyntaxNode for TokenIdentifier {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIdentifier)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21456,6 +24259,14 @@ impl TypedSyntaxNode for TerminalIdentifier {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalIdentifier {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21530,6 +24341,12 @@ impl TypedSyntaxNode for TokenLiteralNumber {
                 "Expected a token {:?}, not an internal node",
                 SyntaxKind::TokenLiteralNumber
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21634,6 +24451,14 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLiteralNumber {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21707,6 +24532,12 @@ impl TypedSyntaxNode for TokenShortString {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenShortString)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21811,6 +24642,14 @@ impl TypedSyntaxNode for TerminalShortString {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalShortString {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21884,6 +24723,12 @@ impl TypedSyntaxNode for TokenString {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenString)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21988,6 +24833,14 @@ impl TypedSyntaxNode for TerminalString {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalString {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22061,6 +24914,12 @@ impl TypedSyntaxNode for TokenAs {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAs)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22165,6 +25024,10 @@ impl TypedSyntaxNode for TerminalAs {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalAs { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22238,6 +25101,12 @@ impl TypedSyntaxNode for TokenConst {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenConst)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22342,6 +25211,14 @@ impl TypedSyntaxNode for TerminalConst {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalConst {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22415,6 +25292,12 @@ impl TypedSyntaxNode for TokenElse {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenElse)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22519,6 +25402,10 @@ impl TypedSyntaxNode for TerminalElse {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalElse { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22592,6 +25479,12 @@ impl TypedSyntaxNode for TokenEnum {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEnum)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22696,6 +25589,10 @@ impl TypedSyntaxNode for TerminalEnum {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalEnum { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22769,6 +25666,12 @@ impl TypedSyntaxNode for TokenExtern {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenExtern)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22873,6 +25776,14 @@ impl TypedSyntaxNode for TerminalExtern {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalExtern {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22946,6 +25857,12 @@ impl TypedSyntaxNode for TokenFalse {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFalse)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23050,6 +25967,14 @@ impl TypedSyntaxNode for TerminalFalse {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalFalse {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23123,6 +26048,12 @@ impl TypedSyntaxNode for TokenFunction {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFunction)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23227,6 +26158,14 @@ impl TypedSyntaxNode for TerminalFunction {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalFunction {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23300,6 +26239,12 @@ impl TypedSyntaxNode for TokenIf {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIf)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23404,6 +26349,10 @@ impl TypedSyntaxNode for TerminalIf {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalIf { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23477,6 +26426,12 @@ impl TypedSyntaxNode for TokenWhile {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenWhile)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23581,6 +26536,14 @@ impl TypedSyntaxNode for TerminalWhile {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalWhile {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23654,6 +26617,12 @@ impl TypedSyntaxNode for TokenFor {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFor)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23758,6 +26727,10 @@ impl TypedSyntaxNode for TerminalFor {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalFor { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23831,6 +26804,12 @@ impl TypedSyntaxNode for TokenLoop {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLoop)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23935,6 +26914,10 @@ impl TypedSyntaxNode for TerminalLoop {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLoop { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -24008,6 +26991,12 @@ impl TypedSyntaxNode for TokenImpl {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImpl)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24112,6 +27101,10 @@ impl TypedSyntaxNode for TerminalImpl {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalImpl { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -24185,6 +27178,12 @@ impl TypedSyntaxNode for TokenImplicits {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImplicits)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24289,6 +27288,14 @@ impl TypedSyntaxNode for TerminalImplicits {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalImplicits {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -24362,6 +27369,12 @@ impl TypedSyntaxNode for TokenLet {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLet)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24465,6 +27478,10 @@ impl TypedSyntaxNode for TerminalLet {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLet { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -24718,6 +27735,12 @@ impl TypedSyntaxNode for TokenMatch {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -24820,6 +27843,14 @@ impl TypedSyntaxNode for TerminalMatch {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMatch {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -24893,6 +27924,12 @@ impl TypedSyntaxNode for TokenModule {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModule)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24997,6 +28034,14 @@ impl TypedSyntaxNode for TerminalModule {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalModule {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25070,6 +28115,12 @@ impl TypedSyntaxNode for TokenMut {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMut)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -25174,6 +28225,10 @@ impl TypedSyntaxNode for TerminalMut {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMut { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25247,6 +28302,12 @@ impl TypedSyntaxNode for TokenNoPanic {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNoPanic)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -25351,6 +28412,14 @@ impl TypedSyntaxNode for TerminalNoPanic {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalNoPanic {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25424,6 +28493,12 @@ impl TypedSyntaxNode for TokenOf {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOf)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -25528,6 +28603,10 @@ impl TypedSyntaxNode for TerminalOf {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalOf { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25601,6 +28680,12 @@ impl TypedSyntaxNode for TokenRef {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRef)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -25705,6 +28790,10 @@ impl TypedSyntaxNode for TerminalRef {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalRef { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25778,6 +28867,12 @@ impl TypedSyntaxNode for TokenContinue {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenContinue)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -25882,6 +28977,14 @@ impl TypedSyntaxNode for TerminalContinue {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalContinue {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -25955,6 +29058,12 @@ impl TypedSyntaxNode for TokenReturn {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenReturn)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26059,6 +29168,14 @@ impl TypedSyntaxNode for TerminalReturn {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalReturn {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -26132,6 +29249,12 @@ impl TypedSyntaxNode for TokenBreak {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBreak)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26236,6 +29359,14 @@ impl TypedSyntaxNode for TerminalBreak {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalBreak {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -26309,6 +29440,12 @@ impl TypedSyntaxNode for TokenStruct {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenStruct)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26413,6 +29550,14 @@ impl TypedSyntaxNode for TerminalStruct {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalStruct {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -26486,6 +29631,12 @@ impl TypedSyntaxNode for TokenTrait {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrait)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26590,6 +29741,14 @@ impl TypedSyntaxNode for TerminalTrait {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalTrait {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -26663,6 +29822,12 @@ impl TypedSyntaxNode for TokenTrue {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrue)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26767,6 +29932,10 @@ impl TypedSyntaxNode for TerminalTrue {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalTrue { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -26840,6 +30009,12 @@ impl TypedSyntaxNode for TokenType {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenType)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -26944,6 +30119,10 @@ impl TypedSyntaxNode for TerminalType {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalType { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27017,6 +30196,12 @@ impl TypedSyntaxNode for TokenUse {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUse)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -27121,6 +30306,10 @@ impl TypedSyntaxNode for TerminalUse {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalUse { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27194,6 +30383,12 @@ impl TypedSyntaxNode for TokenPub {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPub)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -27298,6 +30493,10 @@ impl TypedSyntaxNode for TerminalPub {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalPub { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27371,6 +30570,12 @@ impl TypedSyntaxNode for TokenAnd {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAnd)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -27475,6 +30680,10 @@ impl TypedSyntaxNode for TerminalAnd {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalAnd { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27548,6 +30757,12 @@ impl TypedSyntaxNode for TokenAndAnd {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAndAnd)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -27652,6 +30867,14 @@ impl TypedSyntaxNode for TerminalAndAnd {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalAndAnd {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27725,6 +30948,12 @@ impl TypedSyntaxNode for TokenArrow {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenArrow)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -27829,6 +31058,14 @@ impl TypedSyntaxNode for TerminalArrow {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalArrow {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27902,6 +31139,12 @@ impl TypedSyntaxNode for TokenAt {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAt)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28006,6 +31249,10 @@ impl TypedSyntaxNode for TerminalAt {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalAt { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28080,6 +31327,12 @@ impl TypedSyntaxNode for TokenBadCharacters {
                 "Expected a token {:?}, not an internal node",
                 SyntaxKind::TokenBadCharacters
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28184,6 +31437,14 @@ impl TypedSyntaxNode for TerminalBadCharacters {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalBadCharacters {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28257,6 +31518,12 @@ impl TypedSyntaxNode for TokenColon {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColon)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28361,6 +31628,14 @@ impl TypedSyntaxNode for TerminalColon {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalColon {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28434,6 +31709,12 @@ impl TypedSyntaxNode for TokenColonColon {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColonColon)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28538,6 +31819,14 @@ impl TypedSyntaxNode for TerminalColonColon {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalColonColon {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28611,6 +31900,12 @@ impl TypedSyntaxNode for TokenComma {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenComma)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28715,6 +32010,14 @@ impl TypedSyntaxNode for TerminalComma {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalComma {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28788,6 +32091,12 @@ impl TypedSyntaxNode for TokenDiv {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDiv)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -28892,6 +32201,10 @@ impl TypedSyntaxNode for TerminalDiv {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDiv { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -28965,6 +32278,12 @@ impl TypedSyntaxNode for TokenDivEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDivEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -29068,6 +32387,14 @@ impl TypedSyntaxNode for TerminalDivEq {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDivEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -29321,6 +32648,12 @@ impl TypedSyntaxNode for TokenDot {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -29423,6 +32756,10 @@ impl TypedSyntaxNode for TerminalDot {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDot { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -29496,6 +32833,12 @@ impl TypedSyntaxNode for TokenDotDot {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDot)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -29600,6 +32943,14 @@ impl TypedSyntaxNode for TerminalDotDot {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDotDot {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -29609,6 +32960,197 @@ impl TypedSyntaxNode for TerminalDotDot {
 }
 impl From<&TerminalDotDot> for SyntaxStablePtrId {
     fn from(node: &TerminalDotDot) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenDotDotEq {
+    node: SyntaxNode,
+}
+impl Token for TokenDotDotEq {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenDotDotEqGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenDotDotEq,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenDotDotEqPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenDotDotEqPtr {
+    type SyntaxNode = TokenDotDotEq;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenDotDotEq {
+        TokenDotDotEq::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenDotDotEqPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenDotDotEqPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenDotDotEqGreen(pub GreenId);
+impl TokenDotDotEqGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenDotDotEq {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDotDotEq);
+    type StablePtr = TokenDotDotEqPtr;
+    type Green = TokenDotDotEqGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenDotDotEqGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDotEq)
+            }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenDotDotEqPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenDotDotEq> for SyntaxStablePtrId {
+    fn from(node: &TokenDotDotEq) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalDotDotEq {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl Terminal for TerminalDotDotEq {
+    const KIND: SyntaxKind = SyntaxKind::TerminalDotDotEq;
+    type TokenType = TokenDotDotEq;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalDotDotEq as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalDotDotEqGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalDotDotEq,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalDotDotEq {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDotDotEq {
+        TokenDotDotEq::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalDotDotEqPtr(pub SyntaxStablePtrId);
+impl TerminalDotDotEqPtr {}
+impl TypedStablePtr for TerminalDotDotEqPtr {
+    type SyntaxNode = TerminalDotDotEq;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalDotDotEq {
+        TerminalDotDotEq::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalDotDotEqPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalDotDotEqPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalDotDotEqGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalDotDotEq {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDotEq);
+    type StablePtr = TerminalDotDotEqPtr;
+    type Green = TerminalDotDotEqGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalDotDotEqGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalDotDotEq,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenDotDotEq::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalDotDotEq,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalDotDotEq
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDotDotEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalDotDotEqPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TerminalDotDotEq> for SyntaxStablePtrId {
+    fn from(node: &TerminalDotDotEq) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -29673,6 +33215,12 @@ impl TypedSyntaxNode for TokenEndOfFile {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEndOfFile)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -29777,6 +33325,14 @@ impl TypedSyntaxNode for TerminalEndOfFile {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalEndOfFile {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -29850,6 +33406,12 @@ impl TypedSyntaxNode for TokenEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -29954,6 +33516,10 @@ impl TypedSyntaxNode for TerminalEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalEq { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30027,6 +33593,12 @@ impl TypedSyntaxNode for TokenEqEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEqEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -30131,6 +33703,10 @@ impl TypedSyntaxNode for TerminalEqEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalEqEq { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30204,6 +33780,12 @@ impl TypedSyntaxNode for TokenGE {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGE)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -30308,6 +33890,10 @@ impl TypedSyntaxNode for TerminalGE {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalGE { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30381,6 +33967,12 @@ impl TypedSyntaxNode for TokenGT {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGT)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -30485,6 +34077,10 @@ impl TypedSyntaxNode for TerminalGT {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalGT { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30558,6 +34154,12 @@ impl TypedSyntaxNode for TokenHash {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenHash)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -30662,6 +34264,10 @@ impl TypedSyntaxNode for TerminalHash {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalHash { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30735,6 +34341,12 @@ impl TypedSyntaxNode for TokenLBrace {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrace)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -30839,6 +34451,14 @@ impl TypedSyntaxNode for TerminalLBrace {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLBrace {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -30912,6 +34532,12 @@ impl TypedSyntaxNode for TokenLBrack {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrack)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31016,6 +34642,14 @@ impl TypedSyntaxNode for TerminalLBrack {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLBrack {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31089,6 +34723,12 @@ impl TypedSyntaxNode for TokenLE {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLE)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31193,6 +34833,10 @@ impl TypedSyntaxNode for TerminalLE {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLE { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31266,6 +34910,12 @@ impl TypedSyntaxNode for TokenLParen {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLParen)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31370,6 +35020,14 @@ impl TypedSyntaxNode for TerminalLParen {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLParen {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31443,6 +35101,12 @@ impl TypedSyntaxNode for TokenLT {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLT)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31547,6 +35211,10 @@ impl TypedSyntaxNode for TerminalLT {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalLT { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31620,6 +35288,12 @@ impl TypedSyntaxNode for TokenMatchArrow {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMatchArrow)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31724,6 +35398,14 @@ impl TypedSyntaxNode for TerminalMatchArrow {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMatchArrow {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31797,6 +35479,12 @@ impl TypedSyntaxNode for TokenMinus {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinus)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -31901,6 +35589,14 @@ impl TypedSyntaxNode for TerminalMinus {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMinus {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -31974,6 +35670,12 @@ impl TypedSyntaxNode for TokenMinusEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinusEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32078,6 +35780,14 @@ impl TypedSyntaxNode for TerminalMinusEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMinusEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32151,6 +35861,12 @@ impl TypedSyntaxNode for TokenMod {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMod)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32255,6 +35971,10 @@ impl TypedSyntaxNode for TerminalMod {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMod { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32328,6 +36048,12 @@ impl TypedSyntaxNode for TokenModEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32432,6 +36158,14 @@ impl TypedSyntaxNode for TerminalModEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalModEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32505,6 +36239,12 @@ impl TypedSyntaxNode for TokenMul {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMul)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32609,6 +36349,10 @@ impl TypedSyntaxNode for TerminalMul {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMul { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32682,6 +36426,12 @@ impl TypedSyntaxNode for TokenMulEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMulEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32786,6 +36536,14 @@ impl TypedSyntaxNode for TerminalMulEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMulEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32859,6 +36617,12 @@ impl TypedSyntaxNode for TokenNeq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNeq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -32963,6 +36727,10 @@ impl TypedSyntaxNode for TerminalNeq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalNeq { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33036,6 +36804,12 @@ impl TypedSyntaxNode for TokenNot {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNot)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -33140,6 +36914,10 @@ impl TypedSyntaxNode for TerminalNot {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalNot { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33213,6 +36991,12 @@ impl TypedSyntaxNode for TokenBitNot {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBitNot)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -33317,6 +37101,14 @@ impl TypedSyntaxNode for TerminalBitNot {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalBitNot {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33390,6 +37182,12 @@ impl TypedSyntaxNode for TokenOr {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOr)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -33494,6 +37292,10 @@ impl TypedSyntaxNode for TerminalOr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalOr { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33567,6 +37369,12 @@ impl TypedSyntaxNode for TokenOrOr {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOrOr)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -33671,6 +37479,10 @@ impl TypedSyntaxNode for TerminalOrOr {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalOrOr { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33744,6 +37556,12 @@ impl TypedSyntaxNode for TokenPlus {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlus)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -33848,6 +37666,10 @@ impl TypedSyntaxNode for TerminalPlus {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalPlus { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -33921,6 +37743,12 @@ impl TypedSyntaxNode for TokenPlusEq {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlusEq)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34025,6 +37853,14 @@ impl TypedSyntaxNode for TerminalPlusEq {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalPlusEq {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34098,6 +37934,12 @@ impl TypedSyntaxNode for TokenQuestionMark {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenQuestionMark)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34202,6 +38044,14 @@ impl TypedSyntaxNode for TerminalQuestionMark {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalQuestionMark {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34275,6 +38125,12 @@ impl TypedSyntaxNode for TokenRBrace {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrace)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34379,6 +38235,14 @@ impl TypedSyntaxNode for TerminalRBrace {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalRBrace {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34452,6 +38316,12 @@ impl TypedSyntaxNode for TokenRBrack {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrack)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34556,6 +38426,14 @@ impl TypedSyntaxNode for TerminalRBrack {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalRBrack {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34629,6 +38507,12 @@ impl TypedSyntaxNode for TokenRParen {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRParen)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34733,6 +38617,14 @@ impl TypedSyntaxNode for TerminalRParen {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalRParen {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34806,6 +38698,12 @@ impl TypedSyntaxNode for TokenSemicolon {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenSemicolon)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -34910,6 +38808,14 @@ impl TypedSyntaxNode for TerminalSemicolon {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalSemicolon {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -34983,6 +38889,12 @@ impl TypedSyntaxNode for TokenUnderscore {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUnderscore)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35087,6 +38999,14 @@ impl TypedSyntaxNode for TerminalUnderscore {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalUnderscore {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35160,6 +39080,12 @@ impl TypedSyntaxNode for TokenXor {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenXor)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35264,6 +39190,10 @@ impl TypedSyntaxNode for TerminalXor {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalXor { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35355,6 +39285,10 @@ impl TypedSyntaxNode for SyntaxFile {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::SyntaxFile { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35428,6 +39362,12 @@ impl TypedSyntaxNode for TokenEmpty {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEmpty)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35532,6 +39472,14 @@ impl TypedSyntaxNode for TerminalEmpty {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35606,6 +39554,12 @@ impl TypedSyntaxNode for TokenSingleLineComment {
                 "Expected a token {:?}, not an internal node",
                 SyntaxKind::TokenSingleLineComment
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35684,6 +39638,12 @@ impl TypedSyntaxNode for TokenSingleLineInnerComment {
             ),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35758,6 +39718,12 @@ impl TypedSyntaxNode for TokenSingleLineDocComment {
                 "Expected a token {:?}, not an internal node",
                 SyntaxKind::TokenSingleLineDocComment
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35835,6 +39801,12 @@ impl TypedSyntaxNode for TokenWhitespace {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -35908,6 +39880,12 @@ impl TypedSyntaxNode for TokenNewline {
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNewline)
             }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -35985,6 +39963,12 @@ impl TypedSyntaxNode for TokenMissing {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -36060,6 +40044,12 @@ impl TypedSyntaxNode for TokenSkipped {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -36121,6 +40111,7 @@ pub enum TokenNode {
     TerminalDollar(TerminalDollar),
     TerminalDot(TerminalDot),
     TerminalDotDot(TerminalDotDot),
+    TerminalDotDotEq(TerminalDotDotEq),
     TerminalEndOfFile(TerminalEndOfFile),
     TerminalEq(TerminalEq),
     TerminalEqEq(TerminalEqEq),
@@ -36403,6 +40394,11 @@ impl From<TerminalDotPtr> for TokenNodePtr {
 }
 impl From<TerminalDotDotPtr> for TokenNodePtr {
     fn from(value: TerminalDotDotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDotDotEqPtr> for TokenNodePtr {
+    fn from(value: TerminalDotDotEqPtr) -> Self {
         Self(value.0)
     }
 }
@@ -36806,6 +40802,11 @@ impl From<TerminalDotDotGreen> for TokenNodeGreen {
         Self(value.0)
     }
 }
+impl From<TerminalDotDotEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalDotDotEqGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalEndOfFileGreen> for TokenNodeGreen {
     fn from(value: TerminalEndOfFileGreen) -> Self {
         Self(value.0)
@@ -37116,6 +41117,9 @@ impl TypedSyntaxNode for TokenNode {
             SyntaxKind::TerminalDotDot => {
                 TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalDotDotEq => {
+                TokenNode::TerminalDotDotEq(TerminalDotDotEq::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalEndOfFile => {
                 TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node))
             }
@@ -37206,6 +41210,249 @@ impl TypedSyntaxNode for TokenNode {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenNode"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalIdentifier => {
+                Some(TokenNode::TerminalIdentifier(TerminalIdentifier::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLiteralNumber => Some(TokenNode::TerminalLiteralNumber(
+                TerminalLiteralNumber::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalShortString => Some(TokenNode::TerminalShortString(
+                TerminalShortString::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalString => {
+                Some(TokenNode::TerminalString(TerminalString::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAs => {
+                Some(TokenNode::TerminalAs(TerminalAs::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalConst => {
+                Some(TokenNode::TerminalConst(TerminalConst::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalElse => {
+                Some(TokenNode::TerminalElse(TerminalElse::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEnum => {
+                Some(TokenNode::TerminalEnum(TerminalEnum::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalExtern => {
+                Some(TokenNode::TerminalExtern(TerminalExtern::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalFalse => {
+                Some(TokenNode::TerminalFalse(TerminalFalse::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalFunction => {
+                Some(TokenNode::TerminalFunction(TerminalFunction::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalIf => {
+                Some(TokenNode::TerminalIf(TerminalIf::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalWhile => {
+                Some(TokenNode::TerminalWhile(TerminalWhile::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalFor => {
+                Some(TokenNode::TerminalFor(TerminalFor::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLoop => {
+                Some(TokenNode::TerminalLoop(TerminalLoop::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalImpl => {
+                Some(TokenNode::TerminalImpl(TerminalImpl::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalImplicits => {
+                Some(TokenNode::TerminalImplicits(TerminalImplicits::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLet => {
+                Some(TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMatch => {
+                Some(TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalModule => {
+                Some(TokenNode::TerminalModule(TerminalModule::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMut => {
+                Some(TokenNode::TerminalMut(TerminalMut::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalNoPanic => {
+                Some(TokenNode::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalOf => {
+                Some(TokenNode::TerminalOf(TerminalOf::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalRef => {
+                Some(TokenNode::TerminalRef(TerminalRef::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalContinue => {
+                Some(TokenNode::TerminalContinue(TerminalContinue::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalReturn => {
+                Some(TokenNode::TerminalReturn(TerminalReturn::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalBreak => {
+                Some(TokenNode::TerminalBreak(TerminalBreak::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalStruct => {
+                Some(TokenNode::TerminalStruct(TerminalStruct::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalTrait => {
+                Some(TokenNode::TerminalTrait(TerminalTrait::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalTrue => {
+                Some(TokenNode::TerminalTrue(TerminalTrue::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalType => {
+                Some(TokenNode::TerminalType(TerminalType::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalUse => {
+                Some(TokenNode::TerminalUse(TerminalUse::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPub => {
+                Some(TokenNode::TerminalPub(TerminalPub::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAnd => {
+                Some(TokenNode::TerminalAnd(TerminalAnd::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAndAnd => {
+                Some(TokenNode::TerminalAndAnd(TerminalAndAnd::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalArrow => {
+                Some(TokenNode::TerminalArrow(TerminalArrow::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalAt => {
+                Some(TokenNode::TerminalAt(TerminalAt::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalBadCharacters => Some(TokenNode::TerminalBadCharacters(
+                TerminalBadCharacters::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalColon => {
+                Some(TokenNode::TerminalColon(TerminalColon::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalColonColon => {
+                Some(TokenNode::TerminalColonColon(TerminalColonColon::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalComma => {
+                Some(TokenNode::TerminalComma(TerminalComma::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDiv => {
+                Some(TokenNode::TerminalDiv(TerminalDiv::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDivEq => {
+                Some(TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDot => {
+                Some(TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDotDot => {
+                Some(TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDotDotEq => {
+                Some(TokenNode::TerminalDotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEndOfFile => {
+                Some(TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEq => {
+                Some(TokenNode::TerminalEq(TerminalEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEqEq => {
+                Some(TokenNode::TerminalEqEq(TerminalEqEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalGE => {
+                Some(TokenNode::TerminalGE(TerminalGE::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalGT => {
+                Some(TokenNode::TerminalGT(TerminalGT::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalHash => {
+                Some(TokenNode::TerminalHash(TerminalHash::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLBrace => {
+                Some(TokenNode::TerminalLBrace(TerminalLBrace::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLBrack => {
+                Some(TokenNode::TerminalLBrack(TerminalLBrack::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLE => {
+                Some(TokenNode::TerminalLE(TerminalLE::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLParen => {
+                Some(TokenNode::TerminalLParen(TerminalLParen::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalLT => {
+                Some(TokenNode::TerminalLT(TerminalLT::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMatchArrow => {
+                Some(TokenNode::TerminalMatchArrow(TerminalMatchArrow::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMinus => {
+                Some(TokenNode::TerminalMinus(TerminalMinus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMinusEq => {
+                Some(TokenNode::TerminalMinusEq(TerminalMinusEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMod => {
+                Some(TokenNode::TerminalMod(TerminalMod::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalModEq => {
+                Some(TokenNode::TerminalModEq(TerminalModEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMul => {
+                Some(TokenNode::TerminalMul(TerminalMul::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMulEq => {
+                Some(TokenNode::TerminalMulEq(TerminalMulEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalNeq => {
+                Some(TokenNode::TerminalNeq(TerminalNeq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalNot => {
+                Some(TokenNode::TerminalNot(TerminalNot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalBitNot => {
+                Some(TokenNode::TerminalBitNot(TerminalBitNot::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalOr => {
+                Some(TokenNode::TerminalOr(TerminalOr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalOrOr => {
+                Some(TokenNode::TerminalOrOr(TerminalOrOr::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPlus => {
+                Some(TokenNode::TerminalPlus(TerminalPlus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPlusEq => {
+                Some(TokenNode::TerminalPlusEq(TerminalPlusEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalQuestionMark => Some(TokenNode::TerminalQuestionMark(
+                TerminalQuestionMark::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalRBrace => {
+                Some(TokenNode::TerminalRBrace(TerminalRBrace::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalRBrack => {
+                Some(TokenNode::TerminalRBrack(TerminalRBrack::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalRParen => {
+                Some(TokenNode::TerminalRParen(TerminalRParen::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                Some(TokenNode::TerminalSemicolon(TerminalSemicolon::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalUnderscore => {
+                Some(TokenNode::TerminalUnderscore(TerminalUnderscore::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalXor => {
+                Some(TokenNode::TerminalXor(TerminalXor::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalEmpty => {
+                Some(TokenNode::TerminalEmpty(TerminalEmpty::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             TokenNode::TerminalIdentifier(x) => x.as_syntax_node(),
@@ -37255,6 +41502,7 @@ impl TypedSyntaxNode for TokenNode {
             TokenNode::TerminalDollar(x) => x.as_syntax_node(),
             TokenNode::TerminalDot(x) => x.as_syntax_node(),
             TokenNode::TerminalDotDot(x) => x.as_syntax_node(),
+            TokenNode::TerminalDotDotEq(x) => x.as_syntax_node(),
             TokenNode::TerminalEndOfFile(x) => x.as_syntax_node(),
             TokenNode::TerminalEq(x) => x.as_syntax_node(),
             TokenNode::TerminalEqEq(x) => x.as_syntax_node(),
@@ -37351,6 +41599,7 @@ impl TokenNode {
                 | SyntaxKind::TerminalDollar
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalDotDotEq
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalEq
                 | SyntaxKind::TerminalEqEq

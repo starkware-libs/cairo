@@ -58,12 +58,40 @@ impl MacroPlugin for DerivePlugin {
                 extern_type_ast.generic_params(db),
                 TypeVariantInfo::Extern,
             ),
-            _ => return PluginResult::default(),
+            _ => {
+                let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
+                    vec![PluginDiagnostic::error(
+                        derive_attr.as_syntax_node().stable_ptr(),
+                        "`derive` may only be applied to `struct`s, `enum`s and `extern type`s"
+                            .to_string(),
+                    )]
+                });
+
+                return PluginResult {
+                    diagnostics: maybe_error.unwrap_or_default(),
+                    ..PluginResult::default()
+                };
+            }
         })
     }
 
     fn declared_attributes(&self) -> Vec<String> {
         vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
+    }
+
+    fn declared_derives(&self) -> Vec<String> {
+        vec![
+            "Copy".to_string(),
+            "Drop".to_string(),
+            "Clone".to_string(),
+            "Debug".to_string(),
+            "Default".to_string(),
+            "Destruct".to_string(),
+            "Hash".to_string(),
+            "PanicDestruct".to_string(),
+            "PartialEq".to_string(),
+            "Serde".to_string(),
+        ]
     }
 }
 
@@ -292,6 +320,7 @@ fn generate_derive_code_for_type(
             code_mappings,
             content,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

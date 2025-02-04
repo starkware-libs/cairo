@@ -13,7 +13,7 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt252>,
+    a: Array<felt252>,
     b: felt252,
 }
 fn bar(a: @Array::<felt252>, b: @felt252) {}
@@ -68,9 +68,9 @@ foo
 error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
  --> lib.cairo:2:24
     let _x: @felt252 = 5_felt252;
-                       ^*******^
+                       ^^^^^^^^^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
  --> lib.cairo:3:23
     let _y: felt252 = @6_felt252;
-                      ^********^
+                      ^^^^^^^^^^

@@ -33,7 +33,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
 use crate::compile::{SemanticEntryPoints, extract_semantic_entrypoints};
-use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::aux_data::StarknetContractAuxData;
 use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 
 #[cfg(test)]
@@ -71,7 +71,7 @@ pub fn module_contract(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Co
     // }
     // Then we want lookup b inside a and not inside b.
     all_aux_data.iter().skip(1).find_map(|aux_data| {
-        let StarkNetContractAuxData { contract_name } =
+        let StarknetContractAuxData { contract_name } =
             aux_data.as_ref()?.as_any().downcast_ref()?;
         if let ModuleId::Submodule(submodule_id) = module_id {
             Some(ContractDeclaration { submodule_id })
@@ -317,7 +317,10 @@ fn analyze_contract<T: SierraIdReplacer>(
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let constant = db.constant_semantic_data(constant_id).unwrap();
     let class_hash: Felt252 =
-        extract_matches!(&constant.exprs[constant.value], Expr::Literal).value.clone().into();
+        extract_matches!(&constant.arenas.exprs[constant.value], Expr::Literal)
+            .value
+            .clone()
+            .into();
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =

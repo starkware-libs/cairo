@@ -2,7 +2,9 @@ use std::fmt::Write;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, Severity};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
+};
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
@@ -36,7 +38,9 @@ impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
-    /// Ignore warnings in these crates. This should be subset of `crate_ids`.
+    // Ignore all warnings, the `ignore_warnings_crate_ids` field is irrelevant in this case.
+    ignore_all_warnings: bool,
+    /// Ignore warnings in specific crates. This should be subset of `crate_ids`.
     /// Adding ids that are not in `crate_ids` have no effect.
     ignore_warnings_crate_ids: Vec<CrateId>,
     /// Check diagnostics for these crates only.
@@ -54,6 +58,7 @@ impl DiagnosticsReporter<'static> {
         Self {
             callback: None,
             crate_ids: vec![],
+            ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
             skip_lowering_diagnostics: false,
@@ -98,6 +103,7 @@ impl<'a> DiagnosticsReporter<'a> {
         Self {
             callback: Some(Box::new(callback)),
             crate_ids: vec![],
+            ignore_all_warnings: false,
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
             skip_lowering_diagnostics: false,
@@ -122,6 +128,12 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Allows the compilation to succeed if only warnings are emitted.
     pub fn allow_warnings(mut self) -> Self {
         self.allow_warnings = true;
+        self
+    }
+
+    /// Ignores warnings in all cargo crates.
+    pub fn ignore_all_warnings(mut self) -> Self {
+        self.ignore_all_warnings = true;
         self
     }
 
@@ -162,10 +174,14 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let ignore_warnings_in_crate =
+                self.ignore_all_warnings || self.ignore_warnings_crate_ids.contains(crate_id);
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
+                let diagnostic_notes =
+                    db.module_plugin_diagnostics_notes(*module_id).unwrap_or_default();
+
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
@@ -173,14 +189,19 @@ impl<'a> DiagnosticsReporter<'a> {
                                 db.upcast(),
                                 db.file_syntax_diagnostics(file_id),
                                 ignore_warnings_in_crate,
+                                &diagnostic_notes,
                             );
                         }
                     }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
+                    found_diagnostics |= self.check_diag_group(
+                        db.upcast(),
+                        group,
+                        ignore_warnings_in_crate,
+                        &diagnostic_notes,
+                    );
                 }
 
                 if self.skip_lowering_diagnostics {
@@ -188,8 +209,12 @@ impl<'a> DiagnosticsReporter<'a> {
                 }
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
+                    found_diagnostics |= self.check_diag_group(
+                        db.upcast(),
+                        group,
+                        ignore_warnings_in_crate,
+                        &diagnostic_notes,
+                    );
                 }
             }
         }
@@ -203,9 +228,10 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
         skip_warnings: bool,
+        file_notes: &PluginFileDiagnosticNotes,
     ) -> bool {
         let mut found: bool = false;
-        for entry in group.format_with_severity(db) {
+        for entry in group.format_with_severity(db, file_notes) {
             if skip_warnings && entry.severity() == Severity::Warning {
                 continue;
             }

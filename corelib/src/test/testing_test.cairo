@@ -127,5 +127,23 @@ fn test_get_available_gas_with_gas_supply() {
 
 #[test]
 fn test_assert_eq_path_requiring_inference() {
-    assert_eq!(Option::<u32>::None, Option::None);
+    assert_eq!(Option::<u32>::None, None);
+}
+
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+
+#[test]
+fn test_get_unspent_gas() {
+    let one = identity(1);
+    let two = identity(2);
+    let prev = crate::testing::get_unspent_gas();
+    let _three = identity(one + two);
+    let after = crate::testing::get_unspent_gas();
+    let expected_cost = 100 // `one + two`.
+        + 300 // `identity(...)`.
+        + 2300; // `get_unspent_gas()`.
+    assert_eq!(prev - after, expected_cost);
 }

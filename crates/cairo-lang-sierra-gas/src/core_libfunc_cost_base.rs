@@ -25,7 +25,7 @@ use cairo_lang_sierra::extensions::felt252_dict::{
 };
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
+    BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, GetUnspentGas, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
@@ -244,6 +244,13 @@ pub fn core_libfunc_cost(
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![ConstCost::default().into()],
+            GetUnspentGas(_) => vec![
+                ConstCost::steps(
+                    BuiltinCostsType::cost_computation_steps(false, |_| 2).into_or_panic::<i32>()
+                        + 1,
+                )
+                .into(),
+            ],
             BuiltinWithdrawGas(_) => {
                 vec![
                     BranchCost::WithdrawGas(WithdrawGasBranchInfo {
@@ -321,11 +328,11 @@ pub fn core_libfunc_cost(
         Uint128(libfunc) => u128_libfunc_cost(libfunc),
         Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint512(libfunc) => u512_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint8(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint16(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint32(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint64(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Sint128(libfunc) => s128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint8(libfunc) => sint_libfunc_cost(libfunc),
+        Sint16(libfunc) => sint_libfunc_cost(libfunc),
+        Sint32(libfunc) => sint_libfunc_cost(libfunc),
+        Sint64(libfunc) => sint_libfunc_cost(libfunc),
+        Sint128(libfunc) => s128_libfunc_cost(libfunc),
         Felt252(libfunc) => {
             felt252_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect()
         }
@@ -418,7 +425,7 @@ pub fn core_libfunc_cost(
                 pre_cost: PreCost::builtin(CostTokenType::Poseidon),
             }],
         },
-        StarkNet(libfunc) => {
+        Starknet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()
         }
         Nullable(libfunc) => match libfunc {
@@ -503,6 +510,12 @@ pub fn core_libfunc_cost(
                     })
                     .into(),
                 ]
+            }
+            BoundedIntConcreteLibfunc::TrimMin(libfunc)
+            | BoundedIntConcreteLibfunc::TrimMax(libfunc) => {
+                let steps: BranchCost =
+                    ConstCost::steps(if libfunc.trimmed_value.is_zero() { 1 } else { 2 }).into();
+                vec![steps.clone(), steps]
             }
             BoundedIntConcreteLibfunc::IsZero(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]

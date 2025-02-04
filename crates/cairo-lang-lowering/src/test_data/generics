@@ -232,7 +232,7 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo() -> MyStruct::<9> {
+fn foo() -> MyStruct<9> {
     let s1 = foo_helper();
     s1.bar();
     s1.bar();
@@ -256,7 +256,7 @@ impl MyStructMyTrait<const N: felt252> of MyTrait<MyStruct<N>> {
 }
 
 #[inline(never)]
-fn foo_helper<const N: felt252>() -> MyStruct::<N> {
+fn foo_helper<const N: felt252>() -> MyStruct<N> {
     MyStruct::<N> {}
 }
 

@@ -225,7 +225,7 @@ pub fn has_v0_attribute_ex(
 }
 
 /// Assuming the attribute is `name`, validates it's #[`name`(v0)].
-fn validate_v0(
+pub fn validate_v0(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     attr: &Attribute,

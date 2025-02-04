@@ -34,7 +34,7 @@ use itertools::Itertools;
 pub struct UnorderedHashMap<Key, Value, BH = RandomState>(HashMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct UnorderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
+pub struct UnorderedHashMap<Key, Value, BH = hashbrown::DefaultHashBuilder>(
     HashMap<Key, Value, BH>,
 );
 
@@ -343,5 +343,13 @@ impl<Key: Hash + Eq, Value, const N: usize, BH: BuildHasher + Default> From<[(Ke
 {
     fn from(items: [(Key, Value); N]) -> Self {
         Self(HashMap::from_iter(items))
+    }
+}
+
+impl<Key: Hash + Eq, Value, BH: BuildHasher> Extend<(Key, Value)>
+    for UnorderedHashMap<Key, Value, BH>
+{
+    fn extend<T: IntoIterator<Item = (Key, Value)>>(&mut self, iter: T) {
+        self.0.extend(iter)
     }
 }

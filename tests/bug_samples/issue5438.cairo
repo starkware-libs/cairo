@@ -6,7 +6,7 @@ fn foo(mut x: i8, mut y: i8) -> i8 {
                 // A loop before continue - bug would cause the continue to call this loop.
                 while y < 100 {
                     y += 1;
-                };
+                }
                 x += 1;
             },
             1 => {

@@ -25,6 +25,8 @@
         "bounded_int_is_zero",
         "bounded_int_mul",
         "bounded_int_sub",
+        "bounded_int_trim_max",
+        "bounded_int_trim_min",
         "bounded_int_wrap_non_zero",
         "box_forward_snapshot",
         "branch_align",

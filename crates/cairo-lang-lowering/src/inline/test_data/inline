@@ -52,7 +52,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(val: Option::<felt252>) -> felt252 {
+fn foo(val: Option<felt252>) -> felt252 {
     bar(val, 2)
 }
 
@@ -60,12 +60,12 @@ fn foo(val: Option::<felt252>) -> felt252 {
 foo
 
 //! > module_code
-/// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
+/// If `val` is `Some(x)`, returns `x`. Otherwise, panics.
 #[inline]
-fn bar<T, impl TDrop: Drop<T>>(val: Option::<T>, val2: T) -> T {
+fn bar<T, impl TDrop: Drop<T>>(val: Option<T>, val2: T) -> T {
     match val {
-        Option::Some(x) => x,
-        Option::None => val2,
+        Some(x) => x,
+        None => val2,
     }
 }
 

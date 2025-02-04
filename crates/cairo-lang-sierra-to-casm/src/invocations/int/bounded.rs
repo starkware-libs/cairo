@@ -39,6 +39,10 @@ pub fn build(
         BoundedIntConcreteLibfunc::Constrain(libfunc) => {
             build_constrain(builder, &libfunc.boundary)
         }
+        BoundedIntConcreteLibfunc::TrimMin(libfunc)
+        | BoundedIntConcreteLibfunc::TrimMax(libfunc) => {
+            build_trim(builder, &libfunc.trimmed_value)
+        }
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
     }
@@ -219,5 +223,26 @@ fn build_constrain(
             }],
             extra_costs: None,
         },
+    ))
+}
+
+/// Build trim on bounded ints.
+fn build_trim(
+    builder: CompiledInvocationBuilder<'_>,
+    trimmed_value: &BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables!(casm_builder, deref value; );
+    casm_build_extend! {casm_builder,
+        const trimmed_value = trimmed_value.clone();
+        maybe_tempvar diff = value - trimmed_value;
+        jump Target if diff != 0;
+    };
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
+        Default::default(),
     ))
 }

@@ -51,8 +51,13 @@ impl RewriteNode {
     }
 
     /// Creates a rewrite node from an AST object.
-    pub fn from_ast<T: TypedSyntaxNode>(node: &T) -> Self {
+    pub fn from_ast(node: &impl TypedSyntaxNode) -> Self {
         RewriteNode::Copied(node.as_syntax_node())
+    }
+
+    /// Creates a rewrite node from an AST object - with .
+    pub fn from_ast_trimmed(node: &impl TypedSyntaxNode) -> Self {
+        Self::new_trimmed(node.as_syntax_node())
     }
 
     /// Prepares a node for modification.
@@ -263,13 +268,8 @@ impl<'a> PatchBuilder<'a> {
     /// Builds the resulting code and code mappings.
     pub fn build(mut self) -> (String, Vec<CodeMapping>) {
         // Adds the mapping to the original node from all code not previously mapped.
-        self.code_mappings.push(CodeMapping {
-            span: TextSpan {
-                start: TextOffset::default(),
-                end: TextOffset::default().add_width(TextWidth::from_str(&self.code)),
-            },
-            origin: self.origin,
-        });
+        self.code_mappings
+            .push(CodeMapping { span: TextSpan::from_str(&self.code), origin: self.origin });
         (self.code, self.code_mappings)
     }
 
@@ -315,7 +315,7 @@ impl<'a> PatchBuilder<'a> {
     }
 
     pub fn add_node(&mut self, node: SyntaxNode) {
-        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        let start = TextOffset::from_str(&self.code);
         let orig_span = node.span(self.db);
         self.code_mappings.push(CodeMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
@@ -325,9 +325,9 @@ impl<'a> PatchBuilder<'a> {
     }
 
     fn add_mapped(&mut self, node: RewriteNode, origin: TextSpan) {
-        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        let start = TextOffset::from_str(&self.code);
         self.add_modified(node);
-        let end = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        let end = TextOffset::from_str(&self.code);
         self.code_mappings
             .push(CodeMapping { span: TextSpan { start, end }, origin: CodeOrigin::Span(origin) });
     }
@@ -339,7 +339,7 @@ impl<'a> PatchBuilder<'a> {
         let origin_span = TextSpan { start: orig_start, end: orig_end };
 
         let text = node.get_text_of_span(self.db, origin_span);
-        let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
+        let start = TextOffset::from_str(&self.code);
 
         self.code += &text;
 

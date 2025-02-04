@@ -98,11 +98,14 @@ fn test_colored_parsed_code(
     colored::control::set_override(true);
     let db = &SimpleParserDatabase::default();
     let (syntax_root, _) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
+    use anstream::adapter::strip_str;
+
+    let colored_output = print_colored(db, &syntax_root, bool_input(&inputs["is_verbose"]));
+    let striped_output = strip_str(&colored_output).to_string();
+    assert_ne!(colored_output, striped_output, "The output is not colored");
+
     TestRunnerResult {
-        outputs: OrderedHashMap::from([(
-            "expected_colored".into(),
-            print_colored(db, &syntax_root, bool_input(&inputs["is_verbose"])),
-        )]),
+        outputs: OrderedHashMap::from([("expected".into(), striped_output)]),
         error: None,
     }
 }
@@ -145,6 +148,7 @@ cairo_lang_test_utils::test_file_test!(
         expr_diagnostics: "expr_diagnostics",
         enum_diagnostics: "enum_diagnostics",
         fn_: "fn",
+        generic_params: "generic_params",
         if_: "if",
         illegal_string_escapes: "illegal_string_escapes",
         match_: "match",

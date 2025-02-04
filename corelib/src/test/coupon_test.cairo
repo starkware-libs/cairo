@@ -3,16 +3,16 @@ extern fn coupon_buy<T>() -> T nopanic;
 #[feature("corelib-internal-use")]
 fn arr_sum(arr: Array<(u128, arr_sum::Coupon)>) -> u128 nopanic {
     match arr.pop_front_consume() {
-        Option::Some((
-            rem, (elm, coupon)
+        Some((
+            rem, (elm, coupon),
         )) => crate::integer::u128_wrapping_add(elm, arr_sum(rem, __coupon__: coupon)),
-        Option::None => 0,
+        None => 0,
     }
 }
 
 #[test]
 fn test_arr_sum() {
-    let mut arr: Array::<(u128, arr_sum::Coupon)> = array![];
+    let mut arr: Array<(u128, arr_sum::Coupon)> = array![];
     arr.append((3, coupon_buy()));
     arr.append((4, coupon_buy()));
     arr.append((5, coupon_buy()));

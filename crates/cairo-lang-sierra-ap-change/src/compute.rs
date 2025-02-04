@@ -1,4 +1,4 @@
-use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
+use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
@@ -62,7 +62,7 @@ struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> us
     token_usages: TokenUsages,
     /// The size of allocated locals until the statement.
     locals_size: UnorderedHashMap<StatementIdx, usize>,
-    /// The lower bound of a ap-change to the furthest return per statement.
+    /// The lower bound of an ap-change to the furthest return per statement.
     known_ap_change_to_return: UnorderedHashMap<StatementIdx, usize>,
     /// The ap_change of functions with known ap changes.
     function_ap_change: OrderedHashMap<FunctionId, usize>,
@@ -96,11 +96,11 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
 
     /// Calculates the locals size and function ap changes.
     fn calc_locals_and_function_ap_changes(&mut self) -> Result<(), ApChangeError> {
-        let ordering = self.known_ap_change_topological_order()?;
-        for idx in ordering.iter().rev() {
+        let rev_ordering = self.known_ap_change_reverse_topological_order()?;
+        for idx in rev_ordering.iter().rev() {
             self.calc_locals_for_statement(*idx)?;
         }
-        for idx in ordering {
+        for idx in rev_ordering {
             self.calc_known_ap_change_for_statement(idx)?;
         }
         self.function_ap_change = self
@@ -139,7 +139,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         Ok(())
     }
 
-    /// Calculates the lower bound of a ap-change to the furthest return per statement.
+    /// Calculates the lower bound of an ap-change to the furthest return per statement.
     /// If it is unknown does not set it.
     fn calc_known_ap_change_for_statement(
         &mut self,
@@ -163,8 +163,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     }
 
     /// Returns the topological ordering of the program statements for fully known ap-changes.
-    fn known_ap_change_topological_order(&self) -> Result<Vec<StatementIdx>, ApChangeError> {
-        get_topological_ordering(
+    fn known_ap_change_reverse_topological_order(
+        &self,
+    ) -> Result<Vec<StatementIdx>, ApChangeError> {
+        reverse_topological_ordering(
             false,
             (0..self.program.statements.len()).map(StatementIdx),
             self.program.statements.len(),
@@ -178,15 +180,16 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 }
                 Ok(res)
             },
-            ApChangeError::StatementOutOfBounds,
             |_| unreachable!("Cycle isn't an error."),
         )
     }
 
     /// Returns the topological ordering of the program statements where tracked ap changes give the
     /// ordering.
-    fn tracked_ap_change_topological_order(&self) -> Result<Vec<StatementIdx>, ApChangeError> {
-        get_topological_ordering(
+    fn tracked_ap_change_reverse_topological_order(
+        &self,
+    ) -> Result<Vec<StatementIdx>, ApChangeError> {
+        reverse_topological_ordering(
             false,
             (0..self.program.statements.len()).map(StatementIdx),
             self.program.statements.len(),
@@ -212,7 +215,6 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                     })
                     .collect())
             },
-            ApChangeError::StatementOutOfBounds,
             |_| unreachable!("Cycle isn't an error."),
         )
     }
@@ -359,7 +361,8 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
 ) -> Result<ApChangeInfo, ApChangeError> {
     let mut helper = ApChangeCalcHelper::new(program, token_usages)?;
     helper.calc_locals_and_function_ap_changes()?;
-    let ap_tracked_topological_ordering = helper.tracked_ap_change_topological_order()?;
+    let ap_tracked_reverse_topological_ordering =
+        helper.tracked_ap_change_reverse_topological_order()?;
     // Setting tracking info for function entry points.
     for f in &program.funcs {
         helper.tracking_info.insert(f.entry_point, ApTrackingInfo {
@@ -367,10 +370,10 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
             ap_change: 0,
         });
     }
-    for idx in ap_tracked_topological_ordering.iter().rev() {
+    for idx in ap_tracked_reverse_topological_ordering.iter().rev() {
         helper.calc_tracking_info_for_statement(*idx)?;
     }
-    for idx in ap_tracked_topological_ordering {
+    for idx in ap_tracked_reverse_topological_ordering {
         helper.calc_effective_ap_change_and_variables_per_statement(idx)?;
     }
     Ok(ApChangeInfo {

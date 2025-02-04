@@ -39,6 +39,7 @@ fn test_serde() {
                     dependencies: Default::default(),
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: true,
+                        associated_item_constraints: false,
                         coupons: false,
                     },
                     cfg_set: Default::default(),
@@ -62,6 +63,7 @@ fn test_serde() {
 
             [config.global.experimental_features]
             negative_impls = false
+            associated_item_constraints = false
             coupons = false
 
             [config.override.crate1]
@@ -71,6 +73,7 @@ fn test_serde() {
 
             [config.override.crate1.experimental_features]
             negative_impls = false
+            associated_item_constraints = false
             coupons = false
 
             [config.override.crate3]
@@ -80,6 +83,7 @@ fn test_serde() {
 
             [config.override.crate3.experimental_features]
             negative_impls = true
+            associated_item_constraints = false
             coupons = false
         "# });
     assert_eq!(config, toml::from_str(&serialized).unwrap());
@@ -95,6 +99,7 @@ fn test_serde_defaults() {
 
         [config.global.experimental_features]
         negative_impls = false
+        associated_item_constraints = false
     "# };
     let result = indoc! { r#"
         [crate_roots]
@@ -106,6 +111,7 @@ fn test_serde_defaults() {
 
         [config.global.experimental_features]
         negative_impls = false
+        associated_item_constraints = false
         coupons = false
 
         [config.override]

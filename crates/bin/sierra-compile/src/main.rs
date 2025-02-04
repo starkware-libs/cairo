@@ -6,7 +6,7 @@ use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
-use indoc::indoc;
+use indoc::formatdoc;
 
 /// Compiles a Sierra file to CASM.
 /// Exits with 0/1 if the compilation succeeds/fails.
@@ -25,11 +25,14 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let sierra_code = fs::read_to_string(args.file).with_context(|| "Could not read file!")?;
-    let Ok(program) = ProgramParser::new().parse(&sierra_code) else {
-        anyhow::bail!(indoc! {"
-            Failed to parse sierra program.
-            Note: StarkNet contracts should be compiled with `starknet-sierra-compile`."
-        })
+    let program = match ProgramParser::new().parse(&sierra_code) {
+        Ok(program) => program,
+        Err(err) => {
+            anyhow::bail!(formatdoc! {"
+            Failed to parse sierra program with: `{err:?}`.
+            Note: Starknet contracts should be compiled with `starknet-sierra-compile`."
+            })
+        }
     };
 
     let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(

@@ -411,6 +411,9 @@ struct UnsupportedTrait {}
 #[derive(long::path)]
 struct NonSimplePath {}
 
+#[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
+fn unsupportedItem() {}
+
 #[derive(Clone)]
 extern type NotCloneable;
 
@@ -441,6 +444,9 @@ struct UnsupportedTrait {}
 #[derive(long::path)]
 struct NonSimplePath {}
 
+#[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
+fn unsupportedItem() {}
+
 #[derive(Clone)]
 extern type NotCloneable;
 
@@ -469,32 +475,44 @@ error: Expected args.
 #[derive()]
         ^^
 
+
 error: Expected path.
  --> test_src/lib.cairo:4:10
 #[derive(1)]
          ^
 
+
 error: Unknown derive `Unsupported` - a plugin might be missing.
  --> test_src/lib.cairo:7:10
 #[derive(Unsupported)]
-         ^*********^
+         ^^^^^^^^^^^
+
 
 error: Unknown derive `long::path` - a plugin might be missing.
  --> test_src/lib.cairo:10:10
 #[derive(long::path)]
-         ^********^
+         ^^^^^^^^^^
+
+
+error: `derive` may only be applied to `struct`s, `enum`s and `extern type`s
+ --> test_src/lib.cairo:13:1
+#[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 error: Unsupported trait for derive for extern types.
- --> test_src/lib.cairo:13:10
+ --> test_src/lib.cairo:16:10
 #[derive(Clone)]
-         ^***^
+         ^^^^^
+
 
 error: derive `Default` for enum only supported with a default variant.
- --> test_src/lib.cairo:16:10
+ --> test_src/lib.cairo:19:10
 #[derive(Default)]
-         ^*****^
+         ^^^^^^^
+
 
 error: Multiple variants annotated with `#[default]`
- --> test_src/lib.cairo:26:5
+ --> test_src/lib.cairo:29:5
     #[default]
-    ^********^
+    ^^^^^^^^^^

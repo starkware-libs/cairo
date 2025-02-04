@@ -27,8 +27,8 @@ impl<'a> Lexer<'a> {
         Lexer {
             db,
             text,
-            previous_position: TextOffset::default(),
-            current_position: TextOffset::default(),
+            previous_position: TextOffset::START,
+            current_position: TextOffset::START,
             done: false,
         }
     }
@@ -271,7 +271,13 @@ impl<'a> Lexer<'a> {
                 ']' => self.take_token_of_kind(TokenKind::RBrack),
                 '(' => self.take_token_of_kind(TokenKind::LParen),
                 ')' => self.take_token_of_kind(TokenKind::RParen),
-                '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
+                '.' => {
+                    self.take();
+                    match self.peek() {
+                        Some('.') => self.pick_kind('=', TokenKind::DotDotEq, TokenKind::DotDot),
+                        _ => TokenKind::Dot,
+                    }
+                }
                 '*' => self.pick_kind('=', TokenKind::MulEq, TokenKind::Mul),
                 '/' => self.pick_kind('=', TokenKind::DivEq, TokenKind::Div),
                 '%' => self.pick_kind('=', TokenKind::ModEq, TokenKind::Mod),
@@ -426,6 +432,7 @@ enum TokenKind {
     Dollar,
     Dot,
     DotDot,
+    DotDotEq,
     Eq,
     Hash,
     Semicolon,
@@ -509,6 +516,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Dollar => SyntaxKind::TerminalDollar,
         TokenKind::Dot => SyntaxKind::TerminalDot,
         TokenKind::DotDot => SyntaxKind::TerminalDotDot,
+        TokenKind::DotDotEq => SyntaxKind::TerminalDotDotEq,
         TokenKind::Eq => SyntaxKind::TerminalEq,
         TokenKind::Hash => SyntaxKind::TerminalHash,
         TokenKind::Semicolon => SyntaxKind::TerminalSemicolon,

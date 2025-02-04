@@ -1,0 +1,84 @@
+//! > Test for proper handling of comment markers
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+trait T {
+    /////////////////////////////////////////////////////////////////////////
+    // Transforming contained values
+    /////////////////////////////////////////////////////////////////////////
+
+    /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
+    /// or returns `None` (if `None`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let maybe_some_string: Option<ByteArray> = Some("Hello, World!");
+    /// // `Option::map` takes self *by value*, consuming `maybe_some_string`
+    /// let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+    /// assert!(maybe_some_len == Some(13));
+    ///
+    /// let x: Option<ByteArray> = None;
+    /// assert!(x.map(|s: ByteArray| s.len()) == None);
+    /// ```
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U>;
+}
+
+//! > Item signature #1
+
+//! > Item documentation #1
+
+//! > Item documentation tokens #1
+
+//! > Item signature #2
+trait T
+
+//! > Item documentation #2
+
+//! > Item documentation tokens #2
+
+//! > Item signature #3
+fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    self: Option<T>, f: F,
+) -> Option<U>
+
+//! > Item documentation #3
+Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `None` (if `None`).
+
+# Examples
+
+```cairo
+let maybe_some_string: Option<ByteArray> = Some("Hello, World!");
+// `Option::map` takes self *by value*, consuming `maybe_some_string`
+let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+assert!(maybe_some_len == Some(13));
+
+let x: Option<ByteArray> = None;
+assert!(x.map(|s: ByteArray| s.len()) == None);
+```
+
+//! > Item documentation tokens #3
+Content("Maps an ")
+Content("`Option<T>`")
+Content(" to ")
+Content("`Option<U>`")
+Content(" by applying a function to a contained value (if ")
+Content("`Some`")
+Content(") or returns ")
+Content("`None`")
+Content(" (if ")
+Content("`None`")
+Content(").")
+Content("  # ")
+Content("Examples")
+Content("\n```cairo\n")
+Content("let maybe_some_string: Option<ByteArray> = Some(\"Hello, World!\");\n// `Option::map` takes self *by value*, consuming `maybe_some_string`\nlet maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());\nassert!(maybe_some_len == Some(13));\n\nlet x: Option<ByteArray> = None;\nassert!(x.map(|s: ByteArray| s.len()) == None);\n")
+Content("```")

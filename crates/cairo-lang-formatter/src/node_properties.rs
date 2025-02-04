@@ -8,6 +8,7 @@ use crate::formatter_impl::{
     BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SortKind,
     SyntaxNodeFormat,
 };
+use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
 impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
@@ -44,6 +45,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenOr => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
+            SyntaxKind::TokenOrOr => {
+                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::TokenLBrack
                 if !matches!(
@@ -98,9 +102,14 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
+<<<<<<< HEAD
             | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenDollar => true,
             SyntaxKind::TerminalDotDot
+=======
+            | SyntaxKind::TokenImplicits => true,
+            SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
+>>>>>>> origin/main
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
@@ -111,6 +120,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             ),
             SyntaxKind::TokenOr => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+            }
+            SyntaxKind::TokenOrOr => {
+                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
@@ -166,7 +178,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
-            SyntaxKind::TokenDotDot
+            SyntaxKind::TokenDotDot | SyntaxKind::TokenDotDotEq
                 if grandparent_kind(db, self) == Some(SyntaxKind::StructArgTail) =>
             {
                 true
@@ -277,6 +289,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprUnary => Some(3),
                 _ => None,
             },
+
+            Some(SyntaxKind::ExprClosure) => match self.kind(db) {
+                SyntaxKind::ClosureParamWrapperNAry => Some(3),
+                SyntaxKind::ReturnTypeClause => Some(2),
+                SyntaxKind::ExprBlock => Some(1),
+                _ => None,
+            },
+
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
                 SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
@@ -325,7 +345,57 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::PatternFixedSizeArray => Some(10),
                 _ => None,
             },
-            Some(SyntaxKind::StatementLet) => match self.kind(db) {
+            Some(SyntaxKind::StatementLet) => {
+                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let pattern = let_statement.pattern(db).as_syntax_node();
+
+                if pattern.kind(db) == SyntaxKind::PatternStruct {
+                    // Calculate the number of descendants for the pattern (LHS) and RHS of the
+                    // `let` statement. The `pattern_count` represents the total
+                    // number of nested nodes in the pattern, while `rhs_count`
+                    // is limited to at most `pattern_count + 1` descendants.
+                    let pattern_count = pattern.descendants(db).count();
+
+                    // Limiting `rhs_count` ensures that we don't traverse deeply nested structures
+                    // unnecessarily. If the RHS has more descendants than
+                    // `pattern_count`, we can conclude that the RHS is more
+                    // complex without fully iterating over all descendants.
+                    let rhs_count = let_statement
+                        .rhs(db)
+                        .as_syntax_node()
+                        .descendants(db)
+                        .take(pattern_count + 1)
+                        .count();
+
+                    if pattern_count > rhs_count { Some(9) } else { Some(11) }
+                } else {
+                    match self.kind(db) {
+                        SyntaxKind::ExprBinary
+                        | SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprErrorPropagate
+                        | SyntaxKind::ExprFieldInitShorthand
+                        | SyntaxKind::ExprFunctionCall
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprList
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprMissing
+                        | SyntaxKind::ExprParenthesized
+                        | SyntaxKind::ExprPath
+                        | SyntaxKind::ExprStructCtorCall
+                        | SyntaxKind::ExprListParenthesized
+                        | SyntaxKind::ArgListBraced
+                        | SyntaxKind::ArgListBracketed
+                        | SyntaxKind::ExprUnary => Some(1),
+                        SyntaxKind::TerminalEq => Some(10),
+                        SyntaxKind::PatternEnum
+                        | SyntaxKind::PatternTuple
+                        | SyntaxKind::PatternFixedSizeArray => Some(11),
+                        SyntaxKind::TypeClause => Some(12),
+                        _ => None,
+                    }
+                }
+            }
+            Some(SyntaxKind::ItemConstant) => match self.kind(db) {
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprBlock
                 | SyntaxKind::ExprErrorPropagate
@@ -381,9 +451,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
                 | SyntaxKind::ItemEnum
+<<<<<<< HEAD
                 | SyntaxKind::ParenthesizedTokenTree
                 | SyntaxKind::BracedTokenTree
                 | SyntaxKind::BracketedTokenTree => Some(5),
+=======
+                | SyntaxKind::PatternFixedSizeArray
+                | SyntaxKind::ExprFixedSizeArray => Some(5),
+>>>>>>> origin/main
                 _ => None,
             },
         }
@@ -443,58 +518,119 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ))
             }
             _ => match self.kind(db) {
-                SyntaxKind::ExprList | SyntaxKind::ImplicitsList | SyntaxKind::PatternList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                SyntaxKind::PatternStructParamList => {
+                    let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
-                        false,
-                    ))
+                        true,
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
-                SyntaxKind::ParamList
-                    if !matches!(
-                        parent_kind(db, self),
-                        Some(SyntaxKind::ClosureParamWrapperNAry)
-                    ) =>
-                {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                SyntaxKind::ExprList | SyntaxKind::PatternList => {
+                    let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,
-                    ))
-                } // }
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    if db.get_children(self.clone()).len() > 2 {
+                        trailing_break_point.set_comma_if_broken();
+                    }
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
+                }
+                SyntaxKind::ImplicitsList => {
+                    let leading_break_point = BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
+                }
+                SyntaxKind::ParamList => {
+                    let leading_break_point = BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
+                }
                 SyntaxKind::StructArgList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         true,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::UsePathList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::MemberList | SyntaxKind::VariantList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
                         false,
                         true,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::ArgList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::StatementList => {
                     BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
@@ -514,28 +650,46 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::MatchArms => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         12,
                         BreakLinePointIndentation::IndentedWithTail,
                         false,
                         true,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::GenericParamList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::GenericArgList => {
-                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                    let leading_break_point = BreakLinePointProperties::new(
                         21,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,
-                    ))
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
                 }
                 SyntaxKind::TerminalPlus
                     if !matches!(
@@ -563,7 +717,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalMul if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                SyntaxKind::TerminalMul
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::ExprUnary | SyntaxKind::UsePathStar)
+                    ) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         10,
                         BreakLinePointIndentation::Indented,
@@ -587,7 +746,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalOrOr => {
+                SyntaxKind::TerminalOrOr
+                    if !matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure)) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         12,
                         BreakLinePointIndentation::Indented,
@@ -624,7 +785,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalDotDot
+                SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
                     if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
@@ -662,17 +823,17 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn get_internal_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
+        config: &FormatterConfig,
     ) -> BreakLinePointsPositions {
         match self.kind(db) {
             SyntaxKind::ImplicitsList
-            | SyntaxKind::ParamList
             | SyntaxKind::PatternList
             | SyntaxKind::PatternStructParamList
             | SyntaxKind::StructArgList
-            | SyntaxKind::ArgList
-            | SyntaxKind::ExprList
             | SyntaxKind::GenericArgList
-            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
+            | SyntaxKind::GenericParamList
+            | SyntaxKind::ParamList
+            | SyntaxKind::ArgList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
@@ -681,6 +842,42 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ),
                 breaking_frequency: 2,
             },
+            SyntaxKind::ExprList => {
+                let mut properties = BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                );
+
+                if let Some(parent_kind) = parent_kind(db, self) {
+                    match parent_kind {
+                        SyntaxKind::ExprListParenthesized => match config.tuple_breaking_behavior {
+                            CollectionsBreakingBehavior::SingleBreakPoint => {
+                                properties.set_single_breakpoint();
+                            }
+                            CollectionsBreakingBehavior::LineByLine => {
+                                properties.set_line_by_line();
+                            }
+                        },
+                        SyntaxKind::ExprFixedSizeArray => {
+                            match config.fixed_array_breaking_behavior {
+                                CollectionsBreakingBehavior::SingleBreakPoint => {
+                                    properties.set_single_breakpoint();
+                                }
+                                CollectionsBreakingBehavior::LineByLine => {
+                                    properties.set_line_by_line();
+                                }
+                            }
+                        }
+                        _ => {
+                            properties.set_line_by_line();
+                        }
+                    }
+                }
+
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+            }
             SyntaxKind::MatchArms | SyntaxKind::MemberList | SyntaxKind::VariantList => {
                 BreakLinePointsPositions::List {
                     properties: BreakLinePointProperties::new(
@@ -702,32 +899,90 @@ impl SyntaxNodeFormat for SyntaxNode {
                 properties.set_single_breakpoint();
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
-
             _ => BreakLinePointsPositions::None,
         }
     }
 
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
+        let is_last = |node: &SyntaxNode, siblings: &[SyntaxNode]| siblings.last() == Some(node);
+        // Check for TerminalComma with specific conditions on list types and position.
+        if self.kind(db) == SyntaxKind::TerminalComma
+            && matches!(
+                parent_kind(db, self),
+                Some(
+                    SyntaxKind::ExprList
+                        | SyntaxKind::PatternList
+                        | SyntaxKind::ArgList
+                        | SyntaxKind::ParamList
+                        | SyntaxKind::ImplicitsList
+                        | SyntaxKind::MemberList
+                        | SyntaxKind::VariantList
+                        | SyntaxKind::UsePathList
+                        | SyntaxKind::GenericArgList
+                        | SyntaxKind::GenericParamList
+                        | SyntaxKind::MatchArms
+                        | SyntaxKind::StructArgList
+                        | SyntaxKind::PatternStructParamList
+                )
+            )
+        {
+            let parent_node = self.parent().unwrap();
+            let children = db.get_children(parent_node);
+            // Check if it's an ExprList or PatternList with len > 2, or any other list type.
+            let is_expr_or_pattern_list = matches!(
+                parent_kind(db, self),
+                Some(SyntaxKind::ExprList | SyntaxKind::PatternList)
+            );
+            if (!is_expr_or_pattern_list || children.len() > 2)
+            // Ensure that this node is the last element in the list.
+            && is_last(self, &children)
+            {
+                return true;
+            }
+        }
         if self.kind(db) == SyntaxKind::TerminalEmpty {
             return true;
+        }
+        if self.kind(db) == SyntaxKind::TerminalSemicolon
+            && parent_kind(db, self) == Some(SyntaxKind::StatementExpr)
+        {
+            let statement_node = self.parent().unwrap();
+            let statements_node = statement_node.parent().unwrap();
+            // Checking if not the last statement, as `;` may be there to prevent the block from
+            // returning the value of the current block.
+            let not_last = !is_last(&statement_node, &db.get_children(statements_node));
+            let children = db.get_children(statement_node);
+            if not_last
+                && matches!(
+                    children[1].kind(db),
+                    SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprLoop
+                        | SyntaxKind::ExprWhile
+                        | SyntaxKind::ExprFor
+                )
+            {
+                return true;
+            }
         }
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
             let path_segment_node = self.parent().unwrap();
-            let position_in_path = path_segment_node.position_in_parent(db).unwrap();
             let path_node = path_segment_node.parent().unwrap();
-            let path_len = path_node.green_node(db).children().len();
-            if position_in_path != path_len - 1 {
+            if !is_last(&path_segment_node, &db.get_children(path_node.clone())) {
                 false
             } else {
                 matches!(
                     parent_kind(db, &path_node),
                     Some(
-                        SyntaxKind::ItemImpl
-                            | SyntaxKind::GenericParamImplNamed
+                        SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous
-                            | SyntaxKind::GenericArgValueExpr
+                            | SyntaxKind::GenericParamImplNamed
+                            | SyntaxKind::ItemImpl
+                            | SyntaxKind::ReturnTypeClause
+                            | SyntaxKind::TypeClause
                     )
                 )
             }
@@ -735,6 +990,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             false
         }
     }
+
     // Merge the `as_sort_kind` method here
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind {
         match self.kind(db) {

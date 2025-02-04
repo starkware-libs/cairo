@@ -50,9 +50,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+ --> lib.cairo:1:23-9:1
+  fn foo(x: Option<()>) {
+ _______________________^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -75,7 +78,7 @@ foo
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
-    ^*******^
+    ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -98,7 +101,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
-    ^******^
+    ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -123,7 +126,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return true;
-        ^**********^
+        ^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -211,7 +214,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return;
-        ^*****^
+        ^^^^^^^
 
 //! > ==========================================================================
 
@@ -234,9 +237,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
- --> lib.cairo:1:18
+ --> lib.cairo:1:13
 fn foo() -> bool {
-                 ^
+            ^^^^
 
 //! > ==========================================================================
 
@@ -280,7 +283,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
-    ^****^
+    ^^^^^^
 
 //! > ==========================================================================
 
@@ -292,11 +295,11 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() -> Option<bool> {
     loop {
-        let res = Option::Some(true);
+        let res = Some(true);
         res?;
         break;
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -309,7 +312,7 @@ use option::Option;
 error: `?` not allowed inside a `loop`.
  --> lib.cairo:5:9
         res?;
-        ^**^
+        ^^^^
 
 //! > ==========================================================================
 
@@ -322,8 +325,8 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() -> Option<bool> {
     loop {
         1
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -349,8 +352,8 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         ()
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name
@@ -372,8 +375,8 @@ test_function_diagnostics(expect_diagnostics: false)
 fn foo() -> Option<bool> {
     loop {
         panic_with_felt252('no return')
-    };
-    Option::None
+    }
+    None
 }
 
 //! > function_name

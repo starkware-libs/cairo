@@ -18,7 +18,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         if (self.high == 0) {
             self.low.try_into()
         } else {
-            Option::None
+            None
         }
     }
 }
@@ -116,3 +116,37 @@ Statements:
   (v9: core::felt252, v8: core::bool) <- foo[expr14](v2)
 End:
   Return(v9, v8)
+
+//! > ==========================================================================
+
+//! > Not adding ignored implicits.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(x: u128) -> u128 {
+    if false {
+        x + 1
+    } else {
+        x
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+  (v1: (core::integer::u128,)) <- struct_construct(v0)
+  (v2: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v1)
+End:
+  Return(v2)

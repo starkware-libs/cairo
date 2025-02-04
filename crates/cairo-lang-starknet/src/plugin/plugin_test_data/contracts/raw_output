@@ -11,13 +11,13 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -32,20 +32,20 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -87,9 +87,9 @@ pub struct ContractState {
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -117,7 +117,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2a1a1bba6d0c773fab786191dfb5454782701d3308f2d60e686ba861815e841;
+pub const TEST_CLASS_HASH: felt252 = 0xd3e4aedceb9023ffd093c5d4d4605354999ba4a10776d97d533a048d33898;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -181,7 +181,7 @@ pub mod __constructor {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -189,7 +189,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -211,7 +211,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -220,7 +220,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:3:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

@@ -1,6 +1,5 @@
 use std::vec;
 
-use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
@@ -10,16 +9,14 @@ use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, require};
+use cairo_lang_utils::extract_matches;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
 use super::events::{EMPTY_EVENT_CODE, get_starknet_event_variants};
-use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::aux_data::StarknetContractAuxData;
 use crate::plugin::consts::{
     COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME,
     STORAGE_ATTR, STORAGE_STRUCT_NAME,
@@ -183,8 +180,6 @@ pub(super) fn handle_module_by_storage(
     // Whether an event exists in the given module. If it doesn't, we need to generate an empty one.
     let mut has_event = false;
     let mut event_variants = vec![];
-    // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
-    let mut extra_uses = OrderedHashMap::default();
     for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
         if let Some(variants) =
             get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
@@ -192,20 +187,11 @@ pub(super) fn handle_module_by_storage(
             has_event = true;
             event_variants = variants;
         }
-
-        maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
     if !has_event {
         common_data.event_code = RewriteNode::text(EMPTY_EVENT_CODE);
     }
-
-    common_data.extra_uses_node = RewriteNode::new_modified(
-        extra_uses
-            .values()
-            .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};")))
-            .collect(),
-    );
 
     // Generate the specific code for contract/component according to the module kind.
     let module_kind_specific_code = match module_kind {
@@ -235,18 +221,20 @@ pub(super) fn handle_module_by_storage(
             code_mappings,
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
-                    Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
+                    Some(DynGeneratedFileAuxData::new(StarknetContractAuxData {
                         contract_name: module_name,
                     }))
                 }
                 StarknetModuleKind::Component => None,
             },
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: backwards_compatible_storage(metadata.edition),
     })
 }
 
+<<<<<<< HEAD
 /// Adds extra uses, to be used in the generated submodules.
 fn maybe_add_extra_use(
     db: &dyn SyntaxGroup,
@@ -285,6 +273,8 @@ fn maybe_add_extra_use(
     }
 }
 
+=======
+>>>>>>> origin/main
 /// If the grand grand parent of the given item is a starknet module, returns its kind
 /// (contract/component) and its ast.
 fn grand_grand_parent_starknet_module(
@@ -294,8 +284,7 @@ fn grand_grand_parent_starknet_module(
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.
     let module_node = item_node.parent()?.parent()?.parent()?;
-    require(module_node.kind(db) == SyntaxKind::ItemModule)?;
-    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
+    let module_ast = ast::ItemModule::cast(db, module_node)?;
     let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;
     Some((module_ast, module_kind, attr))
 }

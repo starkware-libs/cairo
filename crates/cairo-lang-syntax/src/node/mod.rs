@@ -26,6 +26,7 @@ pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
 pub mod utils;
+pub mod with_db;
 
 #[cfg(test)]
 mod ast_test;
@@ -48,7 +49,22 @@ impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
         let inner = SyntaxNodeInner {
             green,
-            offset: TextOffset::default(),
+            offset: TextOffset::START,
+            parent: None,
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
+        };
+        Self(Arc::new(inner))
+    }
+
+    pub fn new_root_with_offset(
+        db: &dyn SyntaxGroup,
+        file_id: FileId,
+        green: GreenId,
+        initial_offset: Option<TextOffset>,
+    ) -> Self {
+        let inner = SyntaxNodeInner {
+            green,
+            offset: initial_offset.unwrap_or_default(),
             parent: None,
             stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
@@ -102,14 +118,6 @@ impl SyntaxNode {
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
     }
-    /// Returns the position of a syntax node in its parent's children, or None if the node has no
-    /// parent.
-    pub fn position_in_parent(&self, db: &dyn SyntaxGroup) -> Option<usize> {
-        let parent_green = self.parent()?.green_node(db);
-        let parent_children = parent_green.children();
-        let self_green_id = self.0.green;
-        parent_children.iter().position(|child| child == &self_green_id)
-    }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         self.0.stable_ptr
     }
@@ -151,8 +159,10 @@ impl SyntaxNode {
                     return token_node.span(db).end;
                 }
                 let children = &mut db.get_children(self.clone());
-                if let Some(child) =
-                    children.iter().filter(|child| child.width(db) != TextWidth::default()).last()
+                if let Some(child) = children
+                    .iter()
+                    .filter(|child| child.width(db) != TextWidth::default())
+                    .next_back()
                 {
                     child.span_end_without_trivia(db)
                 } else {
@@ -227,26 +237,21 @@ impl SyntaxNode {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text),
             green::GreenNodeDetails::Node { .. } => {
                 for child in db.get_children(self.clone()).iter() {
-                    let kind = child.kind(db);
-
-                    if matches!(kind, SyntaxKind::Trivia) {
-                        ast::Trivia::from_syntax_node(db, child.clone())
-                            .elements(db)
-                            .iter()
-                            .for_each(|element| {
-                                if !matches!(
-                                    element,
-                                    ast::Trivium::SingleLineComment(_)
-                                        | ast::Trivium::SingleLineDocComment(_)
-                                        | ast::Trivium::SingleLineInnerComment(_)
-                                ) {
-                                    buffer.push_str(
-                                        &element
-                                            .as_syntax_node()
-                                            .get_text_without_all_comment_trivia(db),
-                                    );
-                                }
-                            });
+                    if let Some(trivia) = ast::Trivia::cast(db, child.clone()) {
+                        trivia.elements(db).iter().for_each(|element| {
+                            if !matches!(
+                                element,
+                                ast::Trivium::SingleLineComment(_)
+                                    | ast::Trivium::SingleLineDocComment(_)
+                                    | ast::Trivium::SingleLineInnerComment(_)
+                            ) {
+                                buffer.push_str(
+                                    &element
+                                        .as_syntax_node()
+                                        .get_text_without_all_comment_trivia(db),
+                                );
+                            }
+                        });
                     } else {
                         buffer
                             .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
@@ -276,11 +281,10 @@ impl SyntaxNode {
         let orig_span = self.span(db);
         assert!(orig_span.contains(span));
         let full_text = self.get_text(db);
-        let zero_offset = TextOffset::default();
 
         let span_in_span = TextSpan {
-            start: zero_offset.add_width(span.start - orig_span.start),
-            end: zero_offset.add_width(span.end - orig_span.start),
+            start: (span.start - orig_span.start).as_offset(),
+            end: (span.end - orig_span.start).as_offset(),
         };
         span_in_span.take(&full_text).to_string()
     }
@@ -316,14 +320,14 @@ impl SyntaxNode {
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
-pub trait TypedSyntaxNode {
+pub trait TypedSyntaxNode: Sized {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr: TypedStablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
-    // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self>;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
@@ -344,6 +348,14 @@ pub trait Terminal: TypedSyntaxNode {
     ) -> <Self as TypedSyntaxNode>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
+    /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
+    fn cast_token(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
+            Some(Self::from_syntax_node(db, node.parent()?))
+        } else {
+            None
+        }
+    }
 }
 
 /// Trait for stable pointers to syntax nodes.

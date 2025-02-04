@@ -78,9 +78,9 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     // If there is another fix for the same match arm, the same variable will be used.
     let mut var_renaming = UnorderedHashMap::<(VariableId, usize), VariableId>::default();
 
-    // Fixes were added in reverse order, so we apply them in reverse.
-    // Either order will result in correct code, but this way variables with smaller ids appear
-    // earlier.
+    // Fixes were added in reverse order and need to be applied in that order.
+    // This is because `additional_remapping` in later blocks may need to be renamed by fixes from
+    // earlier blocks.
     for FixInfo {
         statement_location,
         match_block,
@@ -89,7 +89,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         remapping,
         reachable_blocks,
         additional_remapping,
-    } in ctx.fixes.into_iter().rev()
+    } in ctx.fixes
     {
         // Choose new variables for each destination of the additional remappings (see comment
         // above).
@@ -242,7 +242,7 @@ pub struct FixInfo {
 
 #[derive(Clone)]
 struct OptimizationCandidate<'a> {
-    /// The variable that is match.
+    /// The variable that is matched.
     match_variable: VariableId,
 
     /// The match arms of the extern match that we are optimizing.
@@ -322,15 +322,22 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             return;
         };
 
-        let Some(var_usage) = remapping.get(&candidate.match_variable) else {
-            // Revoke the candidate.
-            info.candidate = None;
-            return;
-        };
         let orig_match_variable = candidate.match_variable;
-        candidate.match_variable = var_usage.var_id;
 
-        if remapping.len() > 1 {
+        // The term 'additional_remappings' refers to remappings for variables other than the match
+        // variable.
+        let goto_has_additional_remappings =
+            if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+                candidate.match_variable = var_usage.var_id;
+                remapping.len() > 1
+            } else {
+                // Note that remapping.is_empty() is false here.
+                true
+            };
+
+        if goto_has_additional_remappings {
+            // here, we have remappings for variables other than the match variable.
+
             if candidate.future_merge || candidate.additional_remappings.is_some() {
                 // TODO(ilya): Support multiple remappings with future merges.
 

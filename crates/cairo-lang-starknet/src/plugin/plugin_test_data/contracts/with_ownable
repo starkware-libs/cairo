@@ -9,9 +9,9 @@ cairo_level_tests/contracts/with_ownable.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod ownable_balance {
+    use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
-    use starknet::ContractAddress;
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -54,6 +54,7 @@ mod ownable_balance {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
     balance: starknet::storage::StorageBase<u128>,
 }
@@ -72,6 +73,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
     balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
@@ -89,14 +91,15 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -288,9 +291,9 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
+    use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
-    use starknet::ContractAddress;
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -333,6 +336,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
     balance: starknet::storage::StorageBase<u128>,
 }
@@ -351,6 +355,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
     balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
@@ -368,14 +373,15 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

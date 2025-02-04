@@ -3,7 +3,7 @@ use std::ops::Shl;
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
-use num_traits::{One, Signed};
+use num_traits::{One, Signed, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
 use super::non_zero::{NonZeroType, nonzero_ty};
@@ -79,6 +79,8 @@ define_libfunc_hierarchy! {
         Mul(BoundedIntMulLibfunc),
         DivRem(BoundedIntDivRemLibfunc),
         Constrain(BoundedIntConstrainLibfunc),
+        TrimMin(BoundedIntTrimLibfunc<false>),
+        TrimMax(BoundedIntTrimLibfunc<true>),
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
     }, BoundedIntConcreteLibfunc
@@ -379,6 +381,80 @@ pub struct BoundedIntConstrainConcreteLibfunc {
     signature: LibfuncSignature,
 }
 impl SignatureBasedConcreteLibfunc for BoundedIntConstrainConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Libfunc for trimming a BoundedInt<Min, Max> by removing `Min` or `Max` from the range.
+/// The libfunc is also applicable for standard types such as u* and i*.
+#[derive(Default)]
+pub struct BoundedIntTrimLibfunc<const IS_MAX: bool> {}
+impl<const IS_MAX: bool> NamedLibfunc for BoundedIntTrimLibfunc<IS_MAX> {
+    type Concrete = BoundedIntTrimConcreteLibfunc;
+
+    const STR_ID: &'static str =
+        if IS_MAX { "bounded_int_trim_max" } else { "bounded_int_trim_min" };
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(Self::Concrete::new::<IS_MAX>(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::Concrete::new::<IS_MAX>(context.upcast(), args)
+    }
+}
+
+pub struct BoundedIntTrimConcreteLibfunc {
+    pub trimmed_value: BigInt,
+    signature: LibfuncSignature,
+}
+impl BoundedIntTrimConcreteLibfunc {
+    fn new<const IS_MAX: bool>(
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let ty_info = context.get_type_info(ty.clone())?;
+        let range = Range::from_type_info(&ty_info)?;
+        let (res_ty, trimmed_value) = if IS_MAX {
+            (
+                bounded_int_ty(context, range.lower.clone(), range.upper.clone() - 2)?,
+                range.upper - 1,
+            )
+        } else {
+            (
+                bounded_int_ty(context, range.lower.clone() + 1, range.upper.clone() - 1)?,
+                range.lower,
+            )
+        };
+        let ap_change = SierraApChange::Known { new_vars_only: trimmed_value.is_zero() };
+        let signature = LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(ty.clone())],
+            branch_signatures: vec![
+                BranchSignature { vars: vec![], ap_change: ap_change.clone() },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: res_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change,
+                },
+            ],
+            fallthrough: Some(0),
+        };
+        Ok(Self { trimmed_value, signature })
+    }
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntTrimConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }

@@ -148,7 +148,6 @@ pub fn get_concrete_long_type_id(
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::ImplType(_)
-        | semantic::TypeLongId::TraitType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!(
                 "Types should be fully resolved at this point. Got: `{}`.",
@@ -201,7 +200,6 @@ pub fn type_dependencies(
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::ImplType(_)
-        | semantic::TypeLongId::TraitType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!(
                 "Types should be fully resolved at this point. Got: `{}`.",

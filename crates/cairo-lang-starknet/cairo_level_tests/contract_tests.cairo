@@ -1,5 +1,4 @@
 use core::num::traits::Zero;
-
 use super::utils::serialized;
 
 #[starknet::interface]
@@ -9,15 +8,15 @@ trait ITestContract<T> {}
 mod test_contract {
     use starknet::StorageAddress;
     use starknet::storage::{
-        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
 
     #[storage]
     struct Storage {
         value: felt252,
-        mapping: Map::<u128, bool>,
-        large_mapping: Map::<u256, u256>,
+        mapping: Map<u128, bool>,
+        large_mapping: Map<u256, u256>,
     }
 
     #[external(v0)]
@@ -43,7 +42,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_value(self: @ContractState,) -> felt252 {
+    fn get_value(self: @ContractState) -> felt252 {
         self.value.read()
     }
 
@@ -74,7 +73,7 @@ mod test_contract {
 
     #[external(v0)]
     fn test_storage_address(
-        self: @ContractState, storage_address: StorageAddress
+        self: @ContractState, storage_address: StorageAddress,
     ) -> StorageAddress {
         storage_address
     }
@@ -108,7 +107,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 fn test_wrapper_array_arg_and_output() {
     assert_eq!(
         test_contract::__external::get_appended_array(serialized(array![2])),
-        serialized(array![2, 1])
+        serialized(array![2, 1]),
     );
 }
 
@@ -146,7 +145,7 @@ fn not_contains_removed() {
 fn read_large_first_value() {
     assert_eq!(
         test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        serialized(0_u256)
+        serialized(0_u256),
     );
 }
 
@@ -155,15 +154,18 @@ fn write_read_large_value() {
     assert(
         test_contract::__external::set_large(
             serialized(
-                (0x200000000000000000000000000000001_u256, 0x400000000000000000000000000000003_u256)
-            )
+                (
+                    0x200000000000000000000000000000001_u256,
+                    0x400000000000000000000000000000003_u256,
+                ),
+            ),
         )
             .is_empty(),
-        'Array not empty'
+        'Array not empty',
     );
     assert_eq!(
         test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        serialized(0x400000000000000000000000000000003_u256)
+        serialized(0x400000000000000000000000000000003_u256),
     );
 }
 
@@ -251,16 +253,12 @@ fn test_get_signature() {
 #[test]
 fn test_get_block_hash() {
     assert!(
-        starknet::syscalls::get_block_hash_syscall(
-            1337
-        ) == Result::Err(array!['GET_BLOCK_HASH_NOT_SET'])
+        starknet::syscalls::get_block_hash_syscall(1337) == Err(array!['GET_BLOCK_HASH_NOT_SET']),
     );
     starknet::testing::set_block_hash(1337, 'some-value');
-    assert!(starknet::syscalls::get_block_hash_syscall(1337) == Result::Ok('some-value'));
+    assert!(starknet::syscalls::get_block_hash_syscall(1337) == Ok('some-value'));
     assert!(
-        starknet::syscalls::get_block_hash_syscall(
-            1338
-        ) == Result::Err(array!['GET_BLOCK_HASH_NOT_SET'])
+        starknet::syscalls::get_block_hash_syscall(1338) == Err(array!['GET_BLOCK_HASH_NOT_SET']),
     );
 }
 
@@ -312,9 +310,9 @@ enum MyEventEnum {
 }
 
 fn event_serde_tester<
-    T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>, +core::fmt::Debug<T>
+    T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>, +core::fmt::Debug<T>,
 >(
-    event: T
+    event: T,
 ) {
     let original_event = event.clone();
     let mut keys = Default::default();
@@ -346,7 +344,7 @@ fn test_dispatcher_serde() {
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == contract_address.into(),
-        'Serialize to 0'
+        'Serialize to 0',
     );
 
     // Deserialize
@@ -364,7 +362,7 @@ fn test_dispatcher_serde() {
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == class_hash.into(),
-        'Serialize to class_hash'
+        'Serialize to class_hash',
     );
 
     // Deserialize

@@ -10,7 +10,7 @@ fn test_append_byte() {
         }
         ba.append_byte(c);
         c += 1;
-    };
+    }
 
     let expected_data = [0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f];
     compare_byte_array(@ba, expected_data.span(), 2, 0x2021);
@@ -22,7 +22,7 @@ fn test_append_word() {
 
     ba.append_word(0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e, 30);
     compare_byte_array(
-        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba, [].span(), 30, 0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     );
 
     ba.append_word(0x1f2021, 3);
@@ -39,7 +39,7 @@ fn test_append_word() {
     ba.append_word(0x2425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 27);
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e
+        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e,
     ];
     compare_byte_array(@ba, expected_data.span(), 0, 0);
 
@@ -56,7 +56,7 @@ fn test_append() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -71,7 +71,7 @@ fn test_add_eq() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -85,7 +85,7 @@ fn test_concat() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -100,7 +100,7 @@ fn test_add() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -139,7 +139,7 @@ fn test_concat_first_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
 }
@@ -154,7 +154,7 @@ fn test_concat_second_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x1f);
 }
@@ -193,7 +193,7 @@ fn test_concat_split_index_gt_16() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01,
-        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x21);
 }
@@ -208,7 +208,7 @@ fn test_concat_pending_sum_up_to_full() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 0, 0);
 }
@@ -250,7 +250,10 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
 
     let expected_data = [0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01];
     compare_byte_array(
-        @ba3, expected_data.span(), 29, 0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        @ba3,
+        expected_data.span(),
+        29,
+        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     );
 }
 
@@ -270,10 +273,10 @@ fn test_len() {
 fn test_at_empty() {
     let ba: ByteArray = Default::default();
 
-    assert(ba.at(0) == Option::None, 'index 0 is not out of bounds');
-    assert(ba.at(1) == Option::None, 'index 1 is not out of bounds');
-    assert(ba.at(30) == Option::None, 'index 30 is not out of bounds');
-    assert(ba.at(31) == Option::None, 'index 31 is not out of bounds');
+    assert(ba.at(0) == None, 'index 0 is not out of bounds');
+    assert(ba.at(1) == None, 'index 1 is not out of bounds');
+    assert(ba.at(30) == None, 'index 30 is not out of bounds');
+    assert(ba.at(31) == None, 'index 31 is not out of bounds');
 }
 
 #[test]
@@ -282,24 +285,24 @@ fn test_at() {
     ba.append(@test_byte_array_31());
     ba.append(@test_byte_array_17());
 
-    assert(ba.at(0) == Option::Some(0x01), 'wrong byte at index 0');
-    assert(ba.at(1) == Option::Some(0x02), 'wrong byte at index 1');
-    assert(ba.at(2) == Option::Some(0x03), 'wrong byte at index 2');
-    assert(ba.at(14) == Option::Some(0x0f), 'wrong byte at index 14');
-    assert(ba.at(15) == Option::Some(0x10), 'wrong byte at index 15');
-    assert(ba.at(16) == Option::Some(0x11), 'wrong byte at index 16');
-    assert(ba.at(17) == Option::Some(0x12), 'wrong byte at index 17');
-    assert(ba.at(29) == Option::Some(0x1e), 'wrong byte at index 29');
-    assert(ba.at(30) == Option::Some(0x1f), 'wrong byte at index 30');
-    assert(ba.at(31) == Option::Some(0x01), 'wrong byte at index 31');
-    assert(ba.at(32) == Option::Some(0x02), 'wrong byte at index 32');
-    assert(ba.at(61) == Option::Some(0x1f), 'wrong byte at index 61');
-    assert(ba.at(62) == Option::Some(0x01), 'wrong byte at index 62');
-    assert(ba.at(63) == Option::Some(0x02), 'wrong byte at index 63');
-    assert(ba.at(76) == Option::Some(0x0f), 'wrong byte at index 76');
-    assert(ba.at(77) == Option::Some(0x10), 'wrong byte at index 77');
-    assert(ba.at(78) == Option::Some(0x11), 'wrong byte at index 78');
-    assert(ba.at(79) == Option::None, 'index 79 is not out of bounds');
+    assert(ba.at(0) == Some(0x01), 'wrong byte at index 0');
+    assert(ba.at(1) == Some(0x02), 'wrong byte at index 1');
+    assert(ba.at(2) == Some(0x03), 'wrong byte at index 2');
+    assert(ba.at(14) == Some(0x0f), 'wrong byte at index 14');
+    assert(ba.at(15) == Some(0x10), 'wrong byte at index 15');
+    assert(ba.at(16) == Some(0x11), 'wrong byte at index 16');
+    assert(ba.at(17) == Some(0x12), 'wrong byte at index 17');
+    assert(ba.at(29) == Some(0x1e), 'wrong byte at index 29');
+    assert(ba.at(30) == Some(0x1f), 'wrong byte at index 30');
+    assert(ba.at(31) == Some(0x01), 'wrong byte at index 31');
+    assert(ba.at(32) == Some(0x02), 'wrong byte at index 32');
+    assert(ba.at(61) == Some(0x1f), 'wrong byte at index 61');
+    assert(ba.at(62) == Some(0x01), 'wrong byte at index 62');
+    assert(ba.at(63) == Some(0x02), 'wrong byte at index 63');
+    assert(ba.at(76) == Some(0x0f), 'wrong byte at index 76');
+    assert(ba.at(77) == Some(0x10), 'wrong byte at index 77');
+    assert(ba.at(78) == Some(0x11), 'wrong byte at index 78');
+    assert(ba.at(79) == None, 'index 79 is not out of bounds');
 }
 
 // Same as the previous test, but with [] instead of .at() (and without the out-of-bounds case).
@@ -457,9 +460,9 @@ fn test_serde() {
     compare_spans(
         serialized.span(),
         [0, // data len
-         0x68656c6c6f, // pending_word
-         5 // pending_word_len
-        ].span()
+        0x68656c6c6f, // pending_word
+        5 // pending_word_len
+        ].span(),
     );
 
     let mut serialized = array![];
@@ -472,14 +475,33 @@ fn test_serde() {
             0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
             0x63746572732e, // pending_word
             6 // pending_word_len
-        ].span()
+        ]
+            .span(),
     );
+}
+
+#[test]
+fn test_into_iterator() {
+    let ba: ByteArray = "hello";
+    let mut iter = ba.into_iter();
+    assert_eq!(iter.next(), Some('h'));
+    assert_eq!(iter.next(), Some('e'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('o'));
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_from_iterator() {
+    let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
+    assert_eq!(ba, "hello");
 }
 
 // ========= Test helper functions =========
 
 fn compare_byte_array(
-    mut ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252
+    ba: @ByteArray, mut data: Span<felt252>, pending_word_len: usize, pending_word: felt252,
 ) {
     assert(ba.data.len() == data.len(), 'wrong data len');
     let mut ba_data = ba.data.span();
@@ -487,15 +509,15 @@ fn compare_byte_array(
     let mut data_index = 0;
     loop {
         match ba_data.pop_front() {
-            Option::Some(x) => {
+            Some(x) => {
                 let actual_word = (*x).into();
                 let expected_word = *data.pop_front().unwrap();
                 assert_eq!(actual_word, expected_word, "wrong data for index: {data_index}");
             },
-            Option::None(_) => { break; }
+            None(_) => { break; },
         }
         data_index += 1;
-    };
+    }
 
     assert_eq!(*ba.pending_word_len, pending_word_len);
     let ba_pending_word_felt: felt252 = (*ba.pending_word).into();
@@ -503,20 +525,20 @@ fn compare_byte_array(
 }
 
 fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
-    mut a: Span<T>, mut b: Span<T>
+    mut a: Span<T>, mut b: Span<T>,
 ) {
     assert_eq!(a.len(), b.len());
     let mut index = 0;
     loop {
         match a.pop_front() {
-            Option::Some(current_a) => {
+            Some(current_a) => {
                 let current_b = b.pop_front().unwrap();
                 assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
             },
-            Option::None(_) => { break; }
+            None(_) => { break; },
         }
         index += 1;
-    };
+    }
 }
 
 fn test_byte_array_1() -> ByteArray {

@@ -15,7 +15,7 @@ pub trait HasStorage<
     /// The storage node.
     impl Node: starknet::storage::StorageNode<Storage>,
     /// The mutable storage node.
-    impl NodeMut: starknet::storage::StorageNodeMut<Storage>
+    impl NodeMut: starknet::storage::StorageNodeMut<Storage>,
 > {
     fn storage(self: @TContractState) -> Node::NodeType;
     fn storage_mut(ref self: TContractState) -> NodeMut::NodeType;
@@ -28,7 +28,7 @@ pub struct OwnableStorage {
 
 #[starknet::embeddable]
 pub impl TransferImpl<
-    TContractState, +HasStorage<TContractState, OwnableStorage>, +Drop<TContractState>
+    TContractState, +HasStorage<TContractState, OwnableStorage>, +Drop<TContractState>,
 > of TransferTrait<TContractState> {
     fn owner(self: @TContractState) -> ContractAddress {
         self.storage().owner.read()
@@ -42,7 +42,7 @@ pub impl TransferImpl<
 
 #[generate_trait]
 pub impl OwnableHelperImpl<
-    TContractState, +HasStorage<TContractState, OwnableStorage>, +Drop<TContractState>
+    TContractState, +HasStorage<TContractState, OwnableStorage>, +Drop<TContractState>,
 > of OwnableHelperTrait<TContractState> {
     fn init_ownable(ref self: TContractState, owner: ContractAddress) {
         self.storage_mut().owner.write(owner);

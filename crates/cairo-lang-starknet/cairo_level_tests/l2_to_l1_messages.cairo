@@ -1,13 +1,11 @@
-use starknet::{testing, SyscallResultTrait};
-
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
+use starknet::{SyscallResultTrait, testing};
 
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
+    use core::array::ArrayTrait;
     use starknet::SyscallResultTrait;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use core::array::ArrayTrait;
-
     use super::generate_payload;
 
     #[storage]
@@ -28,7 +26,7 @@ mod contract_with_messages_sent_to_l1 {
             let value_ = self.value.read();
 
             starknet::syscalls::send_message_to_l1_syscall(
-                to_address: value_.into(), payload: generate_payload(n: value_).span()
+                to_address: value_.into(), payload: generate_payload(n: value_).span(),
             )
                 .unwrap_syscall();
             self.value.write(value_ + 1);
@@ -49,7 +47,7 @@ fn generate_payload(n: u128) -> Array<felt252> {
 
         payload.append(i.into());
         i += 1;
-    };
+    }
 
     payload
 }
@@ -72,11 +70,9 @@ fn test_l2_to_l1_messages() {
     assert!(testing::pop_l2_to_l1_message(other_contract_address).is_none());
 
     // Pop messages.
-    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((0, [0].span())));
-    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((1, [0, 1].span())));
-    assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0, 1, 2].span()))
-    );
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Some((0, [0].span())));
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Some((1, [0, 1].span())));
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Some((2, [0, 1, 2].span())));
 
     // Assert all messages have been popped.
     assert!(testing::pop_l2_to_l1_message(contract_address).is_none());
@@ -93,10 +89,6 @@ fn test_pop_l2_to_l1_message() {
     starknet::syscalls::send_message_to_l1_syscall(to_address, payload).unwrap_syscall();
     starknet::syscalls::send_message_to_l1_syscall(to_address, payload).unwrap_syscall();
 
-    assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
-    );
-    assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
-    );
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Some((to_address, payload)));
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Some((to_address, payload)));
 }

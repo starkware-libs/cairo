@@ -11,9 +11,7 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key, Value, BH = RandomState>(IndexMap<Key, Value, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct OrderedHashMap<Key, Value, BH = hashbrown::hash_map::DefaultHashBuilder>(
-    IndexMap<Key, Value, BH>,
-);
+pub struct OrderedHashMap<Key, Value, BH = hashbrown::DefaultHashBuilder>(IndexMap<Key, Value, BH>);
 
 impl<Key, Value, BH: Default> Default for OrderedHashMap<Key, Value, BH> {
     #[cfg(feature = "std")]
@@ -109,7 +107,7 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> OrderedHashMap<Key, Value, BH> {
     ///
     /// Computes in O(1) time (amortized average).
     ///
-    /// See also entry if you you want to insert or modify or if you need to get the index of the
+    /// See also entry if you want to insert or modify or if you need to get the index of the
     /// corresponding key-value pair.
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)

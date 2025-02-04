@@ -61,12 +61,12 @@ foo
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?0; 3]".
  --> lib.cairo:2:24
     let _x: [u32; 2] = [1, 2, 3];
-                       ^*******^
+                       ^^^^^^^^^
 
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?3; 3]".
  --> lib.cairo:3:24
     let _x: [u32; 2] = [1; 3];
-                       ^****^
+                       ^^^^^^
 
 //! > ==========================================================================
 
@@ -93,17 +93,17 @@ foo
 error: Fixed size array type must have exactly one type.
  --> lib.cairo:2:13
     let _x: [u32, u32; 2] = [1, 2];
-            ^***********^
+            ^^^^^^^^^^^^^
 
 error: Fixed size array type must have exactly one type.
  --> lib.cairo:3:13
     let _x: [; 2] = [1, 2];
-            ^***^
+            ^^^^^
 
 error: Fixed size array with defined size must have exactly one value.
  --> lib.cairo:4:24
     let _x: [u32; 2] = [1, 2; 2];
-                       ^*******^
+                       ^^^^^^^^^
 
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?4; 0]".
  --> lib.cairo:5:24
@@ -113,7 +113,7 @@ error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?
 error: Fixed size array with defined size must have exactly one value.
  --> lib.cairo:6:24
     let _x: [u32; 2] = [; 2];
-                       ^***^
+                       ^^^^^
 
 //! > ==========================================================================
 
@@ -145,7 +145,7 @@ error: The value does not fit within the range of type core::integer::u32.
 error: Fixed size array type must have a positive integer size.
  --> lib.cairo:3:13
     let _x: [u32; -1] = [1; -1];
-            ^*******^
+            ^^^^^^^^^
 
 error: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:3:29
@@ -155,12 +155,12 @@ error: The value does not fit within the range of type core::integer::u32.
 error: Fixed size array type must have a positive integer size.
  --> lib.cairo:3:25
     let _x: [u32; -1] = [1; -1];
-                        ^*****^
+                        ^^^^^^^
 
 error: Fixed size array size must be smaller than 2^15.
  --> lib.cairo:6:28
     let _x: [u32; 32768] = [1; 32768];
-                           ^********^
+                           ^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -186,17 +186,17 @@ const SIZE: usize = 2;
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[core::integer::u16; 2]".
  --> lib.cairo:3:24
     let _x: [u32; 2] = [1, 2_u16];
-                       ^********^
+                       ^^^^^^^^^^
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:4:22
     let _x = [1_u32, 2_u16];
-                     ^***^
+                     ^^^^^
 
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[core::bool; 2]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [true, false];
-                       ^***********^
+                       ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -222,4 +222,48 @@ fn bar<const N: usize>() -> [felt252; N] {
 error: Fixed size array type must have a positive integer size.
  --> lib.cairo:2:5
     [0; N]
-    ^****^
+    ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test infer fixed size array size from pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let [_a, _b] = bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test fixed size array, wrong pattern size.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let [_a, _b] = bar::<3>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
+
+//! > expected_diagnostics
+error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
+ --> lib.cairo:3:9
+    let [_a, _b] = bar::<3>();
+        ^^^^^^^^

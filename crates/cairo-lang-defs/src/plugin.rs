@@ -51,6 +51,10 @@ pub struct PluginGeneratedFile {
     pub code_mappings: Vec<CodeMapping>,
     /// Arbitrary data that the plugin generates along with the file.
     pub aux_data: Option<DynGeneratedFileAuxData>,
+    /// Diagnostic note for the plugin generated file.
+    /// This will be used as [`cairo_lang_diagnostics::DiagnosticNote`] on diagnostics originating
+    /// from this file.
+    pub diagnostics_note: Option<String>,
 }
 
 /// Result of plugin code generation.
@@ -130,7 +134,7 @@ pub struct MacroPluginMetadata<'a> {
     pub edition: Edition,
 }
 
-// TOD(spapini): Move to another place.
+// TODO(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.

@@ -1,4 +1,4 @@
-use crate::bytes_31::{split_bytes31, bytes31_const};
+use crate::bytes_31::{bytes31_const, split_bytes31};
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
 
@@ -131,7 +131,7 @@ fn test_u128_into_bytes31() {
     let max_u128 = 0xffffffffffffffffffffffffffffffff_u128;
     let max_as_bytes31: bytes31 = max_u128.into();
     assert(
-        max_as_bytes31.into() == 0xffffffffffffffffffffffffffffffff_felt252, 'bad cast: 2^128 - 1'
+        max_as_bytes31.into() == 0xffffffffffffffffffffffffffffffff_felt252, 'bad cast: 2^128 - 1',
     );
 }
 

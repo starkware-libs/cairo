@@ -22,14 +22,14 @@ mod ownable {
 
     #[embeddable_as(Transfer)]
     impl TransferImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::TransferTrait<ComponentState<TContractState>> {
         fn owner(self: @ComponentState<TContractState>) -> ContractAddress {
             self.owner.read()
         }
 
         fn transfer_ownership(
-            ref self: ComponentState<TContractState>, new_owner: ContractAddress
+            ref self: ComponentState<TContractState>, new_owner: ContractAddress,
         ) {
             self.validate_ownership();
             self.owner.write(new_owner);
@@ -38,7 +38,7 @@ mod ownable {
 
     #[generate_trait]
     impl OwnableHelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of OwnableHelperTrait<TContractState, X> {
         fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress) {
             self.owner.write(owner);
@@ -60,7 +60,7 @@ trait ERC20Trait<TCS> {
     fn allowance(self: @TCS, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(ref self: TCS, recipient: ContractAddress, amount: u256);
     fn transfer_from(
-        ref self: TCS, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TCS, sender: ContractAddress, recipient: ContractAddress, amount: u256,
     );
     fn approve(ref self: TCS, spender: ContractAddress, amount: u256);
     fn increase_allowance(ref self: TCS, spender: ContractAddress, added_value: u256);
@@ -70,15 +70,15 @@ trait ERC20Trait<TCS> {
 #[starknet::component]
 mod erc20 {
     use core::num::traits::Zero;
-    use starknet::{ContractAddress, get_caller_address, contract_address_const};
+    use starknet::{ContractAddress, contract_address_const, get_caller_address};
     #[storage]
     struct Storage {
         name: felt252,
         symbol: felt252,
         decimals: u8,
         total_supply: u256,
-        balances: LegacyMap::<ContractAddress, u256>,
-        allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
+        balances: LegacyMap<ContractAddress, u256>,
+        allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]
@@ -102,7 +102,7 @@ mod erc20 {
 
     #[embeddable_as(IERC20)]
     impl ERC20Impl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of super::ERC20Trait<ComponentState<TContractState>> {
         fn get_name(self: @ComponentState<TContractState>) -> felt252 {
             self.name.read()
@@ -125,13 +125,13 @@ mod erc20 {
         }
 
         fn allowance(
-            self: @ComponentState<TContractState>, owner: ContractAddress, spender: ContractAddress
+            self: @ComponentState<TContractState>, owner: ContractAddress, spender: ContractAddress,
         ) -> u256 {
             self.allowances.read((owner, spender))
         }
 
         fn transfer(
-            ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256
+            ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256,
         ) {
             let sender = get_caller_address();
             self.transfer_helper(sender, recipient, amount);
@@ -141,7 +141,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let caller = get_caller_address();
             self.spend_allowance(sender, caller, amount);
@@ -149,44 +149,44 @@ mod erc20 {
         }
 
         fn approve(
-            ref self: ComponentState<TContractState>, spender: ContractAddress, amount: u256
+            ref self: ComponentState<TContractState>, spender: ContractAddress, amount: u256,
         ) {
             let caller = get_caller_address();
             self.approve_helper(caller, spender, amount);
         }
 
         fn increase_allowance(
-            ref self: ComponentState<TContractState>, spender: ContractAddress, added_value: u256
+            ref self: ComponentState<TContractState>, spender: ContractAddress, added_value: u256,
         ) {
             let caller = get_caller_address();
             self
                 .approve_helper(
-                    caller, spender, self.allowances.read((caller, spender)) + added_value
+                    caller, spender, self.allowances.read((caller, spender)) + added_value,
                 );
         }
 
         fn decrease_allowance(
             ref self: ComponentState<TContractState>,
             spender: ContractAddress,
-            subtracted_value: u256
+            subtracted_value: u256,
         ) {
             let caller = get_caller_address();
             self
                 .approve_helper(
-                    caller, spender, self.allowances.read((caller, spender)) - subtracted_value
+                    caller, spender, self.allowances.read((caller, spender)) - subtracted_value,
                 );
         }
     }
 
     #[generate_trait]
     impl ERC20HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of ERC20HelperTrait<TContractState, X> {
         fn transfer_helper(
             ref self: ComponentState<TContractState>,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!sender.is_zero(), 'ERC20: transfer from 0');
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
@@ -199,7 +199,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             owner: ContractAddress,
             spender: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let current_allowance: u256 = self.allowances.read((owner, spender));
             let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
@@ -214,7 +214,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             owner: ContractAddress,
             spender: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!spender.is_zero(), 'ERC20: approve from 0');
             self.allowances.write((owner, spender), amount);
@@ -226,7 +226,7 @@ mod erc20 {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.name.write(name);
             self.symbol.write(symbol);
@@ -240,9 +240,9 @@ mod erc20 {
                         TransferEvent {
                             from: contract_address_const::<0>(),
                             to: recipient,
-                            value: initial_supply
-                        }
-                    )
+                            value: initial_supply,
+                        },
+                    ),
                 );
         }
     }
@@ -268,7 +268,7 @@ mod mintable {
         +HasComponent<TContractState>,
         impl Ownable: super::ownable::HasComponent<TContractState>,
         impl ERC20: super::erc20::HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');
@@ -282,8 +282,8 @@ mod mintable {
             erc20_component
                 .emit(
                     super::erc20::TransferEvent {
-                        from: contract_address_const::<0>(), to: account, value: amount
-                    }
+                        from: contract_address_const::<0>(), to: account, value: amount,
+                    },
                 );
         }
     }

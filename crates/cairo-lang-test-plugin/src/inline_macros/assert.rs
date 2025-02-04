@@ -72,39 +72,17 @@ trait CompareAssertionPlugin: NamedPlugin {
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
         let mut builder = PatchBuilder::new(db, syntax);
-        // Checks if the expression is a variable, to not create an extra variable.
-        let is_var = |expr: &ast::Expr| matches!(expr, ast::Expr::Path(path) if path.elements(db).len() == 1);
-        let (lhs_value, maybe_assign_lhs) = if is_var(&lhs) {
-            (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")
-        } else {
-            (
-                RewriteNode::mapped_text(
-                    format!("__lhs_value_for_{}_macro__", Self::NAME),
-                    db,
-                    &lhs,
-                ),
-                "let $lhs_value$ = $lhs$;",
-            )
-        };
-        let (rhs_value, maybe_assign_rhs) = if is_var(&rhs) {
-            (RewriteNode::new_trimmed(rhs.as_syntax_node()), "")
-        } else {
-            (
-                RewriteNode::mapped_text(
-                    format!("__rhs_value_for_{}_macro__", Self::NAME),
-                    db,
-                    &rhs,
-                ),
-                "let $rhs_value$ = $rhs$;",
-            )
-        };
+        let lhs_value =
+            RewriteNode::mapped_text(format!("__lhs_value_for_{}_macro__", Self::NAME), db, &lhs);
+        let rhs_value =
+            RewriteNode::mapped_text(format!("__rhs_value_for_{}_macro__", Self::NAME), db, &rhs);
         let operator = Self::OPERATOR;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
-                    {maybe_assign_lhs}
-                    {maybe_assign_rhs}
+                    let $lhs_value$ = $lhs$;
+                    let $rhs_value$ = $rhs$;
                     if !($lhs_value$ {operator} $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
@@ -113,8 +91,8 @@ trait CompareAssertionPlugin: NamedPlugin {
             "#,
             },
             &[
-                ("lhs".to_string(), RewriteNode::new_trimmed(lhs.as_syntax_node())),
-                ("rhs".to_string(), RewriteNode::new_trimmed(rhs.as_syntax_node())),
+                ("lhs".to_string(), RewriteNode::from_ast_trimmed(&lhs)),
+                ("rhs".to_string(), RewriteNode::from_ast_trimmed(&rhs)),
                 ("lhs_value".to_string(), lhs_value.clone()),
                 ("rhs_value".to_string(), rhs_value.clone()),
             ]
@@ -138,18 +116,18 @@ trait CompareAssertionPlugin: NamedPlugin {
                 &[
                     (
                         "lparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.lparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.lparen(db)),
                     ),
                     (
                         "rparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.rparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.rparen(db)),
                     ),
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
                             format_args
                                 .iter()
-                                .map(|arg| RewriteNode::new_trimmed(arg.as_syntax_node())),
+                                .map(RewriteNode::from_ast_trimmed),
                             RewriteNode::text(", "),
                         ),
                     ),
@@ -157,6 +135,8 @@ trait CompareAssertionPlugin: NamedPlugin {
                 .into(),
             ));
         }
+
+        #[expect(clippy::literal_string_with_formatting_args)]
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
@@ -193,6 +173,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics,
         }

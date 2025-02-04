@@ -25,9 +25,12 @@ error: Condition has type "core::felt252", expected bool.
        ^
 
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:10
-fn foo() {
-         ^
+ --> lib.cairo:1:10-8:1
+  fn foo() {
+ __________^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -65,7 +68,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
-    let x = Option::Some(7_u64);
+    let x = Some(7_u64);
     if let MyEnum::A(y) = x {
         return y == 9;
     } else {
@@ -85,7 +88,7 @@ enum MyEnum {
 error: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEnum".
  --> lib.cairo:6:12
     if let MyEnum::A(y) = x {
-           ^**********^
+           ^^^^^^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:7:16
@@ -101,7 +104,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
-    let x = Option::Some(7_u64);
+    let x = Some(7_u64);
     if let Some(y) = x || true {
         return y == 9;
     } else {
@@ -123,12 +126,12 @@ error: Expected type "core::bool", found: "core::option::Option::<core::integer:
 error: Logical operator not allowed in if-let.
  --> lib.cairo:3:22
     if let Some(y) = x || true {
-                     ^*******^
+                     ^^^^^^^^^
 
-error: Identifier not found.
+error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
  --> lib.cairo:3:12
     if let Some(y) = x || true {
-           ^**^
+           ^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:4:16

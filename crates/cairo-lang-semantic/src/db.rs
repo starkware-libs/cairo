@@ -1,13 +1,15 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
-    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
-    ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
+    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -22,9 +24,9 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
+use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
-use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
+use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
@@ -34,12 +36,12 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemTypeData,
 };
-use crate::items::us::SemanticUseEx;
+use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::{ImplTypeId, TypeSizeInformation};
+use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
@@ -161,6 +163,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::constant::constant_const_type)]
     #[salsa::cycle(items::constant::constant_const_type_cycle)]
     fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;
+    /// Returns information required for const calculations.
+    #[salsa::invoke(items::constant::const_calc_info)]
+    fn const_calc_info(&self) -> Arc<ConstCalcInfo>;
 
     // Use.
     // ====
@@ -175,6 +180,28 @@ pub trait SemanticGroup:
     #[salsa::cycle(items::us::use_resolver_data_cycle)]
     fn use_resolver_data(&self, use_id: UseId) -> Maybe<Arc<ResolverData>>;
 
+    // Global Use.
+    // ====
+    /// Private query to compute data about a global use.
+    #[salsa::invoke(items::us::priv_global_use_semantic_data)]
+    #[salsa::cycle(items::us::priv_global_use_semantic_data_cycle)]
+    fn priv_global_use_semantic_data(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Maybe<items::us::UseGlobalData>;
+    /// Private query to compute the imported module, given a global use.
+    #[salsa::invoke(items::us::priv_global_use_imported_module)]
+    fn priv_global_use_imported_module(&self, global_use_id: GlobalUseId) -> Maybe<ModuleId>;
+    /// Returns the semantic diagnostics of a global use.
+    #[salsa::invoke(items::us::global_use_semantic_diagnostics)]
+    fn global_use_semantic_diagnostics(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute the imported modules of a module, using global uses.
+    #[salsa::invoke(items::us::priv_module_use_star_modules)]
+    fn priv_module_use_star_modules(&self, module_id: ModuleId) -> Arc<ImportedModules>;
+
     // Module.
     // ====
 
@@ -183,7 +210,7 @@ pub trait SemanticGroup:
     fn priv_module_semantic_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
-    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
     #[salsa::invoke(items::module::module_item_by_name)]
     fn module_item_by_name(
         &self,
@@ -192,7 +219,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Option<ModuleItemId>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
-    /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
     #[salsa::invoke(items::module::module_item_info_by_name)]
     fn module_item_info_by_name(
         &self,
@@ -688,6 +715,7 @@ pub trait SemanticGroup:
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
         lookup_context: ImplLookupContext,
+        impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
         inference::InferenceError,
@@ -1403,6 +1431,22 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Maybe<semantic::Signature>;
 
+    /// Returns a mapping of closure types to their associated parameter types for a concrete
+    /// function.
+    #[salsa::invoke(items::functions::concrete_function_closure_params)]
+    fn concrete_function_closure_params(
+        &self,
+        function_id: FunctionId,
+    ) -> Maybe<OrderedHashMap<semantic::TypeId, semantic::TypeId>>;
+
+    /// Returns a mapping of closure types to their associated parameter types for a generic
+    /// function.
+    #[salsa::invoke(items::functions::get_closure_params)]
+    fn get_closure_params(
+        &self,
+        generic_function_id: GenericFunctionId,
+    ) -> Maybe<OrderedHashMap<TypeId, TypeId>>;
+
     // Generic type.
     // =============
     /// Returns the generic params of a generic type.
@@ -1439,6 +1483,13 @@ pub trait SemanticGroup:
         in_cycle: bool,
     ) -> Maybe<GenericParamData>;
 
+    /// Returns the type constraints intoduced by the generic params.
+    #[salsa::invoke(items::generics::generic_params_type_constraints)]
+    fn generic_params_type_constraints(
+        &self,
+        generic_params: Vec<GenericParamId>,
+    ) -> Vec<(TypeId, TypeId)>;
+
     // Concrete type.
     // ==============
     /// Returns true if there is only one value for the given type and hence the values of the given
@@ -1469,6 +1520,10 @@ pub trait SemanticGroup:
     /// Private query to check if a type contains no variables.
     #[salsa::invoke(types::priv_type_is_var_free)]
     fn priv_type_is_var_free(&self, ty: types::TypeId) -> bool;
+
+    /// Private query for a shorter unique name for types.
+    #[salsa::invoke(types::priv_type_short_name)]
+    fn priv_type_short_name(&self, ty: types::TypeId) -> String;
 
     // Expression.
     // ===========
@@ -1556,25 +1611,25 @@ pub trait SemanticGroup:
     #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
     fn visible_traits_from_module(
         &self,
-        module_id: ModuleId,
+        module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<TraitId, String>>>;
     /// Returns all visible traits in a module, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible. If
+    /// `user_module_file_id` is the module from which the traits are should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
     fn visible_traits_in_module(
         &self,
         module_id: ModuleId,
-        user_module_id: ModuleId,
+        user_module_file_id: ModuleFileId,
         include_parent: bool,
     ) -> Arc<[(TraitId, String)]>;
     /// Returns all visible traits in a crate, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible.
+    /// `user_module_file_id` is the module from which the traits are should be visible.
     #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
     fn visible_traits_in_crate(
         &self,
         crate_id: CrateId,
-        user_module_id: ModuleId,
+        user_module_file_id: ModuleFileId,
     ) -> Arc<[(TraitId, String)]>;
 }
 
@@ -1669,6 +1724,9 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
         }
+    }
+    for global_use in db.module_global_uses(module_id)?.keys() {
+        diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin in db.analyzer_plugins().iter() {

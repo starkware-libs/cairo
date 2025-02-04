@@ -1,7 +1,7 @@
 #[derive(Drop, Copy)]
 struct S1 {
     a: usize,
-    b: felt252
+    b: felt252,
 }
 
 #[derive(Drop, Copy)]
@@ -12,18 +12,18 @@ struct S2 {
 
 #[derive(Drop, Copy)]
 struct S3 {
-    inner: S2
+    inner: S2,
 }
 
 
-impl S2Deref of crate::ops::deref::Deref<S2> {
+impl S2Deref of crate::ops::Deref<S2> {
     type Target = S1;
     fn deref(self: S2) -> S1 {
         self.inner
     }
 }
 
-impl S3Deref of crate::ops::deref::Deref<S3> {
+impl S3Deref of crate::ops::Deref<S3> {
     type Target = S2;
     fn deref(self: S3) -> S2 {
         self.inner
@@ -50,7 +50,7 @@ enum E1 {
     V2: S1,
 }
 
-impl E1Deref of crate::ops::deref::Deref<E1> {
+impl E1Deref of crate::ops::Deref<E1> {
     type Target = S1;
     fn deref(self: E1) -> S1 {
         match self {
@@ -74,7 +74,7 @@ enum E3 {
     V2: S3,
 }
 
-impl E3Deref of crate::ops::deref::Deref<E3> {
+impl E3Deref of crate::ops::Deref<E3> {
     type Target = S3;
     fn deref(self: E3) -> S3 {
         match self {
@@ -103,7 +103,7 @@ struct S4 {
     a: usize,
 }
 
-impl S4Deref of crate::ops::deref::Deref<S4> {
+impl S4Deref of crate::ops::Deref<S4> {
     type Target = E3;
     fn deref(self: S4) -> E3 {
         self.e3
@@ -123,49 +123,4 @@ fn test_struct_enum_deref() {
     assert_eq!(s4.e3.inner.inner.a, 1);
     assert_eq!(s4.e3.b, 2);
     assert_eq!(s4.e3.inner.b, 2);
-}
-
-struct ArithOps {
-    add: usize,
-    sub: usize,
-    mul: usize,
-    div: usize,
-}
-
-impl UsizeTupleDeref of crate::ops::deref::Deref<(usize, usize)> {
-    type Target = ArithOps;
-    fn deref(self: (usize, usize)) -> ArithOps {
-        let (x, y) = self;
-        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y, }
-    }
-}
-
-impl UsizeFixedSizeArrayDeref of crate::ops::deref::Deref<[usize; 2]> {
-    type Target = ArithOps;
-    fn deref(self: [usize; 2]) -> ArithOps {
-        let [x, y] = self;
-        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y, }
-    }
-}
-
-#[test]
-fn test_tuple_deref() {
-    let a = 6;
-    let b = 3;
-    let usize_tuple = (a, b);
-    assert_eq!(usize_tuple.add, 9);
-    assert_eq!(usize_tuple.sub, 3);
-    assert_eq!(usize_tuple.mul, 18);
-    assert_eq!(usize_tuple.div, 2);
-}
-
-#[test]
-fn test_fixed_size_array_deref() {
-    let a = 6;
-    let b = 3;
-    let usize_array = [a, b];
-    assert_eq!(usize_array.add, 9);
-    assert_eq!(usize_array.sub, 3);
-    assert_eq!(usize_array.mul, 18);
-    assert_eq!(usize_array.div, 2);
 }

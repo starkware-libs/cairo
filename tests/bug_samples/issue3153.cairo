@@ -1,15 +1,15 @@
-use starknet::{
-    Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
-    storage_address_from_base_and_offset
-};
 use core::integer::u256_from_felt252;
+use starknet::{
+    StorageBaseAddress, Store, SyscallResult, storage_address_from_base_and_offset,
+    storage_read_syscall, storage_write_syscall,
+};
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
     fn try_into(self: u256) -> Option<u64> {
         let intermediate: Option<felt252> = self.try_into();
         match intermediate {
-            Option::Some(felt) => felt.try_into(),
-            Option::None => Option::None
+            Some(felt) => felt.try_into(),
+            None => None,
         }
     }
 }
@@ -57,22 +57,22 @@ impl ProposalStore of Store<Proposal> {
         Self::write_at_offset(address_domain, base, 0, value)
     }
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<Proposal> {
         let (proposer, last_updated_at) = unpack_proposal_fields(
             storage_read_syscall(
-                address_domain, storage_address_from_base_and_offset(base, offset)
-            )?
+                address_domain, storage_address_from_base_and_offset(base, offset),
+            )?,
         );
-        Result::Ok(Proposal { proposer, last_updated_at })
+        Ok(Proposal { proposer, last_updated_at })
     }
 
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal,
     ) -> SyscallResult<()> {
         let packed = pack_proposal_fields(value.proposer, value.last_updated_at);
         storage_write_syscall(
-            address_domain, storage_address_from_base_and_offset(base, offset), packed
+            address_domain, storage_address_from_base_and_offset(base, offset), packed,
         )
     }
 
@@ -83,12 +83,12 @@ impl ProposalStore of Store<Proposal> {
 
 #[starknet::contract]
 mod test_contract {
-    use super::Proposal;
     use starknet::storage::Map;
+    use super::Proposal;
     #[storage]
     struct Storage {
         _proposals: Map<u32, Proposal>,
-        _single_proposal: Proposal
+        _single_proposal: Proposal,
     }
 
     #[external(v0)]

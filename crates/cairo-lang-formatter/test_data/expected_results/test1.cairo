@@ -34,7 +34,7 @@ fn bar<T>(x: T) -> T {
     let x: [u32; 3] = [1, 2, 3];
     let [a, b, c] = x;
     let [a, b, c] = f(
-        "very long string that should not cause a break in the fixed size array pattern"
+        "very long string that should not cause a break in the fixed size array pattern",
     );
 }
 
@@ -43,7 +43,7 @@ struct A {}
 struct B {}
 
 // Calculates fib, but all variables are boxes.
-fn fib(a: Box::<felt252>, b: Box::<felt252>, n: Box::<felt252>) -> Box::<felt252> {
+fn fib(a: Box<felt252>, b: Box<felt252>, n: Box<felt252>) -> Box<felt252> {
     match n {
         0 => { a },
         _ => {
@@ -61,7 +61,7 @@ fn if_let_test() {
     if let (x, y) =
         (
             x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x + x,
-            y + y + y + y + y + y
+            y + y + y + y + y + y,
         ) {
         if_let_block_content();
     }

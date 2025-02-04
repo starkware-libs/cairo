@@ -99,6 +99,7 @@ impl CodeMapping {
                     TextSpan { start, end: start.add_width(span.width()) }
                 }
                 CodeOrigin::Span(span) => span,
+                CodeOrigin::CallSite(span) => span,
             })
         } else {
             None
@@ -113,6 +114,19 @@ pub enum CodeOrigin {
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
     Span(TextSpan),
+    /// The origin was generated because of this span, but no code has been copied.
+    /// E.g. a macro defined attribute on a function.
+    CallSite(TextSpan),
+}
+
+impl CodeOrigin {
+    pub fn as_span(&self) -> Option<TextSpan> {
+        match self {
+            CodeOrigin::Start(_) => None,
+            CodeOrigin::CallSite(_) => None,
+            CodeOrigin::Span(span) => Some(*span),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -177,7 +191,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
         match self {
-            Directory::Real(path) => FileId::new(db, path.join(name.to_string())),
+            Directory::Real(path) => FileId::new(db, path.join(&name)),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
                 .copied()
@@ -189,7 +203,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, name: SmolStr) -> Directory {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(name.to_string())),
+            Directory::Real(path) => Directory::Real(path.join(&name)),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()

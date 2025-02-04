@@ -1,8 +1,8 @@
 fn array_sum(mut arr: Array<felt252>) -> felt252 {
     let mut sum = 0;
-    while let Option::Some(x) = arr.pop_front() {
+    while let Some(x) = arr.pop_front() {
         sum += x;
-    };
+    }
     sum
 }
 
@@ -18,9 +18,9 @@ fn test_outer_loop_break() {
     while let true = i != 10 {
         while true {
             break;
-        };
+        }
         i += 1;
-    };
+    }
     assert_eq!(i, 10);
 }
 
@@ -30,7 +30,7 @@ fn test_borrow_usage() {
     let arr = array![1, 2, 3, 4];
     while i != arr.len() {
         i += 1;
-    };
+    }
     assert_eq!(arr.len(), 4);
 }
 
@@ -51,6 +51,6 @@ fn test_borrow_with_inner_change() {
         a.x = i;
         assert_x_eq(@a, i);
         i += 1;
-    };
+    }
 }
 

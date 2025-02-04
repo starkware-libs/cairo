@@ -85,6 +85,15 @@ pub enum CompilationError {
     MetadataNegativeGasVariable,
 }
 
+impl CompilationError {
+    pub fn stmt_indices(&self) -> Vec<StatementIdx> {
+        match self {
+            CompilationError::AnnotationError(err) => err.stmt_indices(),
+            _ => vec![],
+        }
+    }
+}
+
 /// Configuration for the Sierra to CASM compilation.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct SierraToCasmConfig {
@@ -140,9 +149,9 @@ impl CairoProgram {
 
     /// Creates an assembled representation of the program preceded by `header` and followed by
     /// `footer`.
-    pub fn assemble_ex(
-        &self,
-        header: &[Instruction],
+    pub fn assemble_ex<'a>(
+        &'a self,
+        header: impl IntoIterator<Item = &'a Instruction>,
         footer: &[Instruction],
     ) -> AssembledCairoProgram {
         let mut bytecode = vec![];

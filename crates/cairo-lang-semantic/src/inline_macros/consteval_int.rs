@@ -5,10 +5,15 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+<<<<<<< HEAD
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
+=======
+use cairo_lang_filesystem::span::TextSpan;
+>>>>>>> origin/main
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use indoc::indoc;
 use num_bigint::BigInt;
 
 #[derive(Debug, Default)]
@@ -52,10 +57,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         InlinePluginResult {
             code: code.map(|x| {
                 let content = x.to_string();
-                let span = TextSpan {
-                    start: TextOffset::default(),
-                    end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                };
+                let span = TextSpan::from_str(&content);
                 PluginGeneratedFile {
                     name: "consteval_int_inline_macro".into(),
                     content,
@@ -64,10 +66,36 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                         origin: CodeOrigin::Span(syntax.as_syntax_node().span(db)),
                     }],
                     aux_data: None,
+                    diagnostics_note: Default::default(),
                 }
             }),
             diagnostics,
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Evaluates an integer expression at compile time.
+            The `consteval_int!` macro computes an integer expression \
+            during compilation and replaces itself with the computed value.
+            This macro is deprecated; use const expressions directly instead.
+
+            # Syntax
+            ```cairo
+            consteval_int!(expression)
+            ```
+            # Parameters
+            - `expression`: An integer expression to evaluate at compile time.
+
+            # Examples
+            ```cairo
+            let x = consteval_int!(2 + 3); // Equivalent to: let x = 5;
+            let y = consteval_int!(4 * 5); // Equivalent to: let y = 20;
+            ```
+            "#}
+            .to_string(),
+        )
     }
 }
 

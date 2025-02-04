@@ -1,3 +1,4 @@
+#![expect(clippy::literal_string_with_formatting_args)]
 #[cfg(not(feature = "std"))]
 use alloc::{
     format,
@@ -28,6 +29,9 @@ pub enum Hint {
     Core(CoreHintBase),
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     Starknet(StarknetHint),
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
+    #[cfg_attr(feature = "schemars", schemars(skip))]
+    External(ExternalHint),
 }
 
 impl Hint {
@@ -46,6 +50,11 @@ impl From<StarknetHint> for Hint {
         Hint::Starknet(value)
     }
 }
+impl From<ExternalHint> for Hint {
+    fn from(value: ExternalHint) -> Self {
+        Hint::External(value)
+    }
+}
 
 /// A trait for displaying the pythonic version of a hint.
 /// Should only be used from within the compiler.
@@ -58,6 +67,7 @@ impl PythonicHint for Hint {
         match self {
             Hint::Core(hint) => hint.get_pythonic_hint(),
             Hint::Starknet(hint) => hint.get_pythonic_hint(),
+            Hint::External(hint) => hint.get_pythonic_hint(),
         }
     }
 }
@@ -174,7 +184,7 @@ pub enum CoreHint {
     /// Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result
     /// in sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and
     /// remainder_high. The remainder is defined as `value - sqrt**2`.
-    /// Lastly it checks weather `2*sqrt - remainder >= 2**128`.
+    /// Lastly it checks whether `2*sqrt - remainder >= 2**128`.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 8))]
     Uint256SquareRoot {
         value_low: ResOperand,
@@ -327,6 +337,27 @@ pub enum DeprecatedHint {
     /// Sets the value corresponding to the key in the vm dict_manager.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 6))]
     Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
+}
+
+/// Represents an external hint.
+///
+/// Hints used out of the Sierra environment, mostly for creating external wrapper for code.
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode)
+)]
+pub enum ExternalHint {
+    /// Relocates a segment from `src` to `dst`.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
+    AddRelocationRule { src: ResOperand, dst: ResOperand },
+    /// Writes a run argument of number `index` to `dst` and on.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
+    WriteRunParam { index: ResOperand, dst: CellRef },
+    /// Stores a marker in the HintProcessor. Useful for debugging.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
+    SetMarker { marker: ResOperand },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -805,7 +836,28 @@ impl PythonicHint for StarknetHint {
                     ResOperandAsAddressFormatter(system)
                 )
             }
-            StarknetHint::Cheatcode { .. } => "raise NotImplementedError".to_string(),
+            StarknetHint::Cheatcode { .. } => {
+                r#"raise NotImplementedError("Cheatcode")"#.to_string()
+            }
+        }
+    }
+}
+
+impl PythonicHint for ExternalHint {
+    fn get_pythonic_hint(&self) -> String {
+        match self {
+            Self::AddRelocationRule { src, dst } => {
+                let [src, dst] = [src, dst].map(ResOperandAsAddressFormatter);
+                format!("memory.add_relocation_rule(src_ptr={src}, dest_ptr={dst})")
+            }
+            Self::WriteRunParam { index, dst } => {
+                let index = ResOperandAsIntegerFormatter(index);
+                format!(r#"raise NotImplementedError("memory{dst}.. = params[{index}])")"#)
+            }
+            Self::SetMarker { marker } => {
+                let marker = ResOperandAsAddressFormatter(marker);
+                format!(r#"raise NotImplementedError("marker = {}")"#, marker)
+            }
         }
     }
 }

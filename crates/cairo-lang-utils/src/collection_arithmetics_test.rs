@@ -2,7 +2,7 @@
 use std::collections::hash_map::RandomState as HashBuilderType;
 
 #[cfg(not(feature = "std"))]
-use hashbrown::hash_map::DefaultHashBuilder as HashBuilderType;
+use hashbrown::DefaultHashBuilder as HashBuilderType;
 use test_log::test;
 
 use crate::collection_arithmetics::{add_maps, sub_maps};

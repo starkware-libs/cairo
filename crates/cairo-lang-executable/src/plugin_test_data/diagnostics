@@ -1,0 +1,265 @@
+//! > Test executable on generic.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable]
+fn main<T>() {}
+
+//! > generated_cairo_code
+#[executable]
+fn main<T>() {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Executable functions cannot have generic params.
+ --> lib.cairo:2:8
+fn main<T>() {}
+       ^^^
+
+//! > ==========================================================================
+
+//! > Test executable with arguments with no serde.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable]
+fn main(a: NoSerde, b: felt252) -> felt252 {
+    a.v + b
+}
+
+struct NoSerde {
+    v: felt252,
+}
+
+//! > generated_cairo_code
+#[executable]
+fn main(a: NoSerde, b: felt252) -> felt252 {
+    a.v + b
+}
+
+struct NoSerde {
+    v: felt252,
+}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[executable_raw]
+fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    let __param__executable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
+    let __param__executable_wrapper__1 = Serde::deserialize(ref input).expect('Failed to deserialize param #1');
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+        __param__executable_wrapper__0,
+        __param__executable_wrapper__1,
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+ --> lib.cairo:2:9
+fn main(a: NoSerde, b: felt252) -> felt252 {
+        ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test executable with result with no serde.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable]
+fn main(a: felt252, b: felt252) -> NoSerde {
+    NoSerde { v: a + b }
+}
+
+struct NoSerde {
+    v: felt252,
+}
+
+//! > generated_cairo_code
+#[executable]
+fn main(a: felt252, b: felt252) -> NoSerde {
+    NoSerde { v: a + b }
+}
+
+struct NoSerde {
+    v: felt252,
+}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[executable_raw]
+fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    let __param__executable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
+    let __param__executable_wrapper__1 = Serde::deserialize(ref input).expect('Failed to deserialize param #1');
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+        __param__executable_wrapper__0,
+        __param__executable_wrapper__1,
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+ --> lib.cairo:2:33
+fn main(a: felt252, b: felt252) -> NoSerde {
+                                ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable with return type.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+    1
+}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+    1
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid return type for `#[executable_raw]` function, expected `()`.
+ --> lib.cairo:2:65
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+                                                                ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable wrong number of parameters.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid number of params for `#[executable_raw]` function, expected 2.
+ --> lib.cairo:2:9
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable bad input type.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid first param type for `#[executable_raw]` function, expected `Span<felt252>`.
+ --> lib.cairo:2:13
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+            ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable bad output type.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid second param type for `#[executable_raw]` function, expected `Array<felt252>`.
+ --> lib.cairo:2:40
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+                                       ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable bad input modifier.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid first param mutability for `#[executable_raw]` function, got unexpected `ref`.
+ --> lib.cairo:2:13
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+            ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw executable bad output modifier.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[executable_raw]
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid second param mutability for `#[executable_raw]` function, expected `ref`.
+ --> lib.cairo:2:36
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+                                   ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test executable with ref arg.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[executable]
+fn with_ref_arg(ref a: felt252) {
+    a += 1;
+}
+
+//! > generated_cairo_code
+#[executable]
+fn with_ref_arg(ref a: felt252) {
+    a += 1;
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Parameters of an `#[executable]` function can't be `ref`.
+ --> lib.cairo:2:17
+fn with_ref_arg(ref a: felt252) {
+                ^^^

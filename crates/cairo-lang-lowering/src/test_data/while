@@ -26,7 +26,7 @@ blk0 (root):
 Statements:
   (v3: core::felt252) <- 5
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v2)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v0, v1, v3, v5)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[40-84](v0, v1, v3, v5)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
@@ -59,7 +59,7 @@ fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a {
         y = y + x;
-    };
+    }
     y
 }
 
@@ -83,7 +83,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[50-108](v0, v1, v2, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -116,7 +116,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -141,7 +141,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -176,7 +176,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), true) = (a(), 5 == 6) {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -201,7 +201,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr15](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-118](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -236,7 +236,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), 3) = (a(), 3) {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -258,14 +258,14 @@ extern fn a() -> MyEnum nopanic;
 error: Unsupported value in while-let. Currently, while-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:35
     while let (MyEnum::A(x), 3) = (a(), 3) {
-                                  ^******^
+                                  ^^^^^^^^
 
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[expr10](v0)
+  (v1: core::felt252) <- test::foo[41-110](v0)
   (v2: core::felt252) <- 1
   (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
@@ -283,7 +283,7 @@ fn foo() -> felt252 {
     let mut y = 0;
     while let x = y {
         y = y + x
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -297,16 +297,19 @@ foo
 
 //! > lowering_diagnostics
 error: Numeric values are not supported in while-let conditions.
- --> lib.cairo:3:5
-    while let x = y {
-    ^***************^
+ --> lib.cairo:3:5-5:5
+      while let x = y {
+ _____^
+|         y = y + x
+|     }
+|_____^
 
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[expr8](v0)
+  (v1: core::felt252) <- test::foo[41-87](v0)
   (v2: core::felt252) <- 1
   (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
@@ -324,7 +327,7 @@ fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let _ = a {
         y = y + 5;
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -349,7 +352,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v0, v1, v2, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[50-97](v0, v1, v2, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -384,7 +387,7 @@ fn foo(a: MyStruct) -> felt252 {
     let mut y = 0;
     while let _ = a {
         y = y + 5;
-    };
+    }
     y = y + 1;
     return y;
 }
@@ -411,7 +414,7 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 0
-  (v2: core::felt252) <- test::foo[expr8](v0, v1)
+  (v2: core::felt252) <- test::foo[52-99](v0, v1)
   (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:

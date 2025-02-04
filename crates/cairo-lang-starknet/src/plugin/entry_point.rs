@@ -159,7 +159,7 @@ pub fn handle_entry_point(
         ))
     }
 
-    let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
+    let mut declaration_node = RewriteNode::from_ast_trimmed(&declaration);
     let original_parameters = declaration_node
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
@@ -173,7 +173,7 @@ pub fn handle_entry_point(
                 .set_str("".to_string());
         }
     }
-    let function_name = RewriteNode::new_trimmed(name_node.as_syntax_node());
+    let function_name = RewriteNode::from_ast_trimmed(&name_node);
     let wrapper_function_name = RewriteNode::interpolate_patched(
         &format!("{WRAPPER_PREFIX}{wrapper_identifier}"),
         &[("function_name".into(), function_name.clone())].into(),

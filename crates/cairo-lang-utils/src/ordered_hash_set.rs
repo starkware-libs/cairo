@@ -11,7 +11,7 @@ use itertools::zip_eq;
 pub struct OrderedHashSet<Key, BH = RandomState>(IndexSet<Key, BH>);
 #[cfg(not(feature = "std"))]
 #[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key, BH = hashbrown::hash_map::DefaultHashBuilder>(IndexSet<Key, BH>);
+pub struct OrderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(IndexSet<Key, BH>);
 
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 

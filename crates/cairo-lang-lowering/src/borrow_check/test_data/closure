@@ -4,7 +4,7 @@
 test_borrow_check
 
 //! > function
-fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>,) {
+fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
     |d: u32| {
         let _ = a + d;
     };
@@ -272,12 +272,13 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 8
   (v1: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v0{`x`})
-  (v2: core::felt252) <- 2
-  (v3: (core::felt252,)) <- struct_construct(v2{`2`})
-  (v4: core::felt252) <- Generated core::ops::function::FnOnce::<{closure@lib.cairo:3:13: 3:16}, (core::felt252,)>::call(v1{`c`}, v3{`c(2)`})
-  (v5: core::felt252) <- core::Felt252Add::add(v4{`y`}, v0{`x`})
+  (v2: {closure@lib.cairo:3:13: 3:16}, v3: @{closure@lib.cairo:3:13: 3:16}) <- snapshot(v1{`c`})
+  (v4: core::felt252) <- 2
+  (v5: (core::felt252,)) <- struct_construct(v4{`2`})
+  (v6: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:16}(v3{`c`}, v5{`c(2)`})
+  (v7: core::felt252) <- core::Felt252Add::add(v6{`y`}, v0{`x`})
 End:
-  Return(v5)
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -314,15 +315,16 @@ Statements:
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`99_felt252`})
   (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3{`x`})
   (v6: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
-  (v7: core::integer::u32) <- 2
-  (v8: (core::integer::u32,)) <- struct_construct(v7{`2`})
-  (v9: core::integer::u32) <- Generated core::ops::function::FnOnce::<{closure@lib.cairo:3:13: 3:16}, (core::integer::u32,)>::call(v6{`c`}, v8{`c(2)`})
-  (v10: core::array::Array::<core::felt252>, v11: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
-  (v12: core::integer::u32) <- 0
-  (v13: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v11{`x`}, v12{`0`})
-  (v14: core::felt252) <- desnap(v13{`0`})
+  (v7: {closure@lib.cairo:3:13: 3:16}, v8: @{closure@lib.cairo:3:13: 3:16}) <- snapshot(v6{`c`})
+  (v9: core::integer::u32) <- 2
+  (v10: (core::integer::u32,)) <- struct_construct(v9{`2`})
+  (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:16}(v8{`c`}, v10{`c(2)`})
+  (v12: core::array::Array::<core::felt252>, v13: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
+  (v14: core::integer::u32) <- 0
+  (v15: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v13{`x`}, v14{`0`})
+  (v16: core::felt252) <- desnap(v15{`0`})
 End:
-  Return(v14)
+  Return(v16)
 
 //! > ==========================================================================
 

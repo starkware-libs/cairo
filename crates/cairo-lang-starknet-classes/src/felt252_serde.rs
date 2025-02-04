@@ -48,9 +48,8 @@ pub enum Felt252SerdeError {
     #[error("Invalid input for deserialization.")]
     InvalidInputForDeserialization,
     #[error(
-        "Id `{0}` is too long for serialization. It is longer than {} characters. Consider adding \
-         it in SERDE_SUPPORTED_LONG_IDS.",
-        SHORT_STRING_BOUND
+        "Id `{0}` is too long for serialization. It is longer than {SHORT_STRING_BOUND} \
+         characters. Consider adding it in SERDE_SUPPORTED_LONG_IDS."
     )]
     GenericIdTooLong(String),
     #[error("Invalid order of type declarations for serialization.")]
@@ -176,10 +175,11 @@ impl Felt252Serde for BigInt {
         Ok(())
     }
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let first = input.first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+        let (first, rest) =
+            input.split_first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
         Ok((
-            first.value.to_bigint().expect("Unsigned should always be convertible to signed."),
-            &input[1..],
+            first.value.to_bigint().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?,
+            rest,
         ))
     }
 }
@@ -466,8 +466,12 @@ impl Felt252Serde for ConcreteTypeInfo {
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
         let (generic_id, input) = GenericTypeId::deserialize(input)?;
         let (len_and_decl_ti_value, mut input) = BigInt::deserialize(input)?;
-        let len = (len_and_decl_ti_value.clone() & BigInt::from(u128::MAX)).to_usize().unwrap();
-        let decl_ti_value = (len_and_decl_ti_value.shr(128) as BigInt).to_u64().unwrap();
+        let len = (len_and_decl_ti_value.clone() & BigInt::from(u128::MAX))
+            .to_usize()
+            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+        let decl_ti_value = (len_and_decl_ti_value.shr(128) as BigInt)
+            .to_u64()
+            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
         let mut generic_args = vec_with_bounded_capacity(len, input.len())?;
         for _ in 0..len {
             let (arg, next) = GenericArg::deserialize(input)?;

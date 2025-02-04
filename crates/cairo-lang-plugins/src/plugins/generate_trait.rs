@@ -7,7 +7,6 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 #[derive(Debug, Default)]
@@ -61,7 +60,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         .leading_trivia(db)
         .as_syntax_node()
         .get_text(db);
-    let extra_ident = leading_trivia.split('\n').last().unwrap_or_default();
+    let extra_ident = leading_trivia.split('\n').next_back().unwrap_or_default();
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
             AttributeArgVariant::Unnamed(ast::Expr::FunctionCall(attr_arg))
@@ -71,8 +70,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 for arg in attr_arg.arguments(db).arguments(db).elements(db) {
                     builder.add_modified(RewriteNode::interpolate_patched(
                         &format!("{extra_ident}#[$attr$]\n"),
-                        &[("attr".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))]
-                            .into(),
+                        &[("attr".to_string(), RewriteNode::from_ast_trimmed(&arg))].into(),
                     ));
                 }
             }
@@ -141,7 +139,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     }
     match impl_ast.body(db) {
         ast::MaybeImplBody::None(semicolon) => {
-            builder.add_modified(RewriteNode::new_trimmed(impl_generic_params.as_syntax_node()));
+            builder.add_modified(RewriteNode::from_ast_trimmed(&impl_generic_params));
             builder.add_node(semicolon.as_syntax_node());
         }
         ast::MaybeImplBody::Some(body) => {
@@ -153,6 +151,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         let decl = function_item.declaration(db);
                         let signature = decl.signature(db);
                         builder.add_node(function_item.attributes(db).as_syntax_node());
+                        builder.add_node(decl.optional_const(db).as_syntax_node());
                         builder.add_node(decl.function_kw(db).as_syntax_node());
                         builder.add_node(decl.name(db).as_syntax_node());
                         builder.add_node(decl.generic_params(db).as_syntax_node());
@@ -160,10 +159,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         for node in
                             db.get_children(signature.parameters(db).node.clone()).iter().cloned()
                         {
-                            if node.kind(db) != SyntaxKind::Param {
-                                builder.add_node(node);
-                            } else {
-                                let param = ast::Param::from_syntax_node(db, node);
+                            if let Some(param) = ast::Param::cast(db, node.clone()) {
                                 for modifier in param.modifiers(db).elements(db) {
                                     // `mut` modifiers are only relevant for impls, not traits.
                                     if !matches!(modifier, ast::Modifier::Mut(_)) {
@@ -172,6 +168,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                                 }
                                 builder.add_node(param.name(db).as_syntax_node());
                                 builder.add_node(param.type_clause(db).as_syntax_node());
+                            } else {
+                                builder.add_node(node);
                             }
                         }
                         let rparen = signature.rparen(db);
@@ -245,6 +243,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

@@ -1,6 +1,5 @@
 use std::path::Path;
 use std::sync::Mutex;
-use std::vec::IntoIter;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
@@ -8,7 +7,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_runner::casm_run::format_next_item;
+use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
@@ -165,17 +164,6 @@ impl CompiledTestRunner {
     }
 }
 
-/// Formats the given felts as a panic string.
-fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
-    let mut items = Vec::new();
-    while let Some(item) = format_next_item(&mut felts) {
-        items.push(item.quote_if_string());
-    }
-    let panic_values_string =
-        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
-    format!("Panicked with {panic_values_string}.")
-}
-
 /// Whether to run the profiler, and what results to produce.
 ///
 /// With `None`, don't run the profiler.
@@ -227,13 +215,16 @@ impl TestCompiler {
     ) -> Result<Self> {
         let db = &mut {
             let mut b = RootDatabase::builder();
+            let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
             if !gas_enabled {
+                cfg.insert(Cfg::kv("gas", "disabled"));
                 b.skip_auto_withdraw_gas();
+            } else {
+                b.with_add_redeposit_gas();
             }
             b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
+            b.with_cfg(cfg);
             b.with_plugin_suite(test_plugin_suite());
-            b.with_add_redeposit_gas();
             if config.starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
             }
@@ -429,7 +420,7 @@ fn run_single_test(
     }
     let func = runner.find_function(name.as_str())?;
     let result = runner
-        .run_function_with_starknet_context(func, &[], test.available_gas, Default::default())
+        .run_function_with_starknet_context(func, vec![], test.available_gas, Default::default())
         .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
     Ok((
         name,

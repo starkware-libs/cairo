@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use genco::prelude::*;
-use xshell::{Shell, cmd};
+use xshell::Shell;
 
 use crate::cairo_spec::get_spec;
 use crate::spec::{Member, Node, NodeKind, Variant, Variants};
@@ -49,9 +49,9 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2024-10-30");
-    let rustfmt_toml = project_root().join("rustfmt.toml");
-    let mut stdout = cmd!(sh, "rustfmt --config-path {rustfmt_toml}").stdin(text).read().unwrap();
+    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-01-27");
+    let cmd_with_args = cmd.arg("--config-path").arg(project_root().join("rustfmt.toml"));
+    let mut stdout = cmd_with_args.stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
         stdout.push('\n');
     }
@@ -366,6 +366,13 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 Self(ElementList::new(node))
             }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                if node.kind(db) == SyntaxKind::$name {
+                    Some(Self(ElementList::new(node)))
+                } else {
+                    None
+                }
+            }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
             }
@@ -381,6 +388,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_enum_code(
     name: String,
     variants: Vec<Variant>,
@@ -390,6 +398,7 @@ fn gen_enum_code(
     let green_name = format!("{name}Green");
     let mut enum_body = quote! {};
     let mut from_node_body = quote! {};
+    let mut cast_body = quote! {};
     let mut ptr_conversions = quote! {};
     let mut green_conversions = quote! {};
     for variant in &variants {
@@ -401,6 +410,9 @@ fn gen_enum_code(
         });
         from_node_body.extend(quote! {
             SyntaxKind::$k => $(&name)::$n($k::from_syntax_node(db, node)),
+        });
+        cast_body.extend(quote! {
+            SyntaxKind::$k => Some($(&name)::$n($k::from_syntax_node(db, node))),
         });
         let variant_ptr = format!("{k}Ptr");
         ptr_conversions.extend(quote! {
@@ -469,6 +481,13 @@ fn gen_enum_code(
                         $[str]($[const](&name))),
                 }
             }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                let kind = node.kind(db);
+                match kind {
+                    $cast_body
+                    _ => None,
+                }
+            }
             fn as_syntax_node(&self) -> SyntaxNode {
                 match self {
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
@@ -492,6 +511,7 @@ fn gen_enum_code(
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_token_code(name: String) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let ptr_name = format!("{name}Ptr");
@@ -556,6 +576,12 @@ fn gen_token_code(name: String) -> rust::Tokens {
                     ),
                 }
             }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                match node.0.green.lookup_intern(db).details {
+                    GreenNodeDetails::Token(_) => Some(Self { node }),
+                    GreenNodeDetails::Node { .. } => None,
+                }
+            }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
             }
@@ -571,6 +597,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
     }
 }
 
+#[expect(clippy::literal_string_with_formatting_args)]
 fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let mut body = rust::Tokens::new();
@@ -705,6 +732,14 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
                 let children = db.get_children(node.clone());
                 Self { node, children }
+            }
+            fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+                let kind = node.kind(db);
+                if kind == SyntaxKind::$(&name) {
+                    Some(Self::from_syntax_node(db, node))
+                } else {
+                    None
+                }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()

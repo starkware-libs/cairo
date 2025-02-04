@@ -9,6 +9,6 @@ When no type annotation is given, the compiler infers the type, or signals an er
 insufficient type information is available for definite inference.
 
 // TODO(spapini): Add an explanation about shadowing.
-Any variable introduced by a this declaration is visible from the point of declaration
+Any variable introduced by this declaration is visible from the point of declaration
 until the end of the enclosing block scope, except when it is shadowed by another variable
 declaration.

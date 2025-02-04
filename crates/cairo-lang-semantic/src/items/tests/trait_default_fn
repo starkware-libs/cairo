@@ -82,4 +82,28 @@ trait MyTrait {
 error: Parameter of trait function `MyTrait::foo` can't be defined as mutable.
  --> lib.cairo:2:12
     fn foo(mut x: u32) -> u32 {
-           ^*^
+           ^^^
+
+//! > ==========================================================================
+
+//! > Test default implementation with using `Self` as an outside impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn default_impl() {
+        bar::<Self>();
+    }
+}
+
+fn bar<+MyTrait>() {}
+
+//! > expected_diagnostics

@@ -21,7 +21,7 @@ foo
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:4:9
         break 5;
-        ^******^
+        ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -32,7 +32,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    while let Option::Some(x) = Option::Some(5) && 4 == 7 {
+    while let Some(x) = Some(5) && 4 == 7 {
         1;
         break x;
         break;
@@ -46,19 +46,19 @@ foo
 
 //! > expected_diagnostics
 error: Expected type "core::bool", found: "core::option::Option::<?0>".
- --> lib.cairo:2:33
-    while let Option::Some(x) = Option::Some(5) && 4 == 7 {
-                                ^*************^
+ --> lib.cairo:2:25
+    while let Some(x) = Some(5) && 4 == 7 {
+                        ^^^^^^^
 
 error: Logical operator not allowed in while-let.
- --> lib.cairo:2:33
-    while let Option::Some(x) = Option::Some(5) && 4 == 7 {
-                                ^***********************^
+ --> lib.cairo:2:25
+    while let Some(x) = Some(5) && 4 == 7 {
+                        ^^^^^^^^^^^^^^^^^
 
 error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option".
  --> lib.cairo:2:15
-    while let Option::Some(x) = Option::Some(5) && 4 == 7 {
-              ^*************^
+    while let Some(x) = Some(5) && 4 == 7 {
+              ^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:4:15
@@ -68,4 +68,4 @@ error: Identifier not found.
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:4:9
         break x;
-        ^******^
+        ^^^^^^^^

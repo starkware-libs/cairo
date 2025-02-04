@@ -40,7 +40,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Second liné.
                         ^
         "});
@@ -54,7 +54,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Third liné.
                ^
         "});
@@ -68,7 +68,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Third liné.
                ^^
         "});
@@ -82,9 +82,9 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Second liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Multiline span.
@@ -96,9 +96,11 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
-            Second liné.
-                   ^***^
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+              Second liné.
+             ________^
+            | Third liné.
+            |__^
         "});
 
     // Span that ends past the end of the file.
@@ -110,9 +112,9 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Third liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Empty span past the end of the file.
@@ -121,7 +123,7 @@ fn test_location_marks() {
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
             Third liné.
                        ^
         "});

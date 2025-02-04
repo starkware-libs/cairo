@@ -1,0 +1,143 @@
+//! > Deref trait cycle of two impls.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+struct A {}
+struct B {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+impl BDeref of core::ops::Deref<B> {
+    type Target = A;
+    fn deref(self: B) -> A {
+        A {}
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
+ --> lib.cairo:11:1-16:1
+  impl BDeref of core::ops::Deref<B> {
+ _^
+| ...
+| }
+|_^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
+ --> lib.cairo:4:1-9:1
+  impl ADeref of core::ops::Deref<A> {
+ _^
+| ...
+| }
+|_^
+
+//! > ==========================================================================
+
+//! > Deref trait cycle of three impls.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+struct A {}
+struct B {}
+struct C {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+impl BDeref of core::ops::Deref<B> {
+    type Target = C;
+    fn deref(self: B) -> C {
+        C {}
+    }
+}
+
+impl CDeref of core::ops::Deref<C> {
+    type Target = A;
+    fn deref(self: C) -> A {
+        A {}
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
+ --> lib.cairo:12:1-17:1
+  impl BDeref of core::ops::Deref<B> {
+ _^
+| ...
+| }
+|_^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
+ --> lib.cairo:19:1-24:1
+  impl CDeref of core::ops::Deref<C> {
+ _^
+| ...
+| }
+|_^
+
+error: Deref impls cycle detected:
+core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
+ --> lib.cairo:5:1-10:1
+  impl ADeref of core::ops::Deref<A> {
+ _^
+| ...
+| }
+|_^
+
+//! > ==========================================================================
+
+//! > Test deref not next to trait or type.
+
+//! > test_comments
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+impl U32Deref of core::ops::Deref<u32> {
+    type Target = u16;
+    fn deref(self: u32) -> Self::Target {
+        1
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: 'Deref' implementation must be defined in the same module as either the type being dereferenced or the trait itself
+ --> lib.cairo:1:1-6:1
+  impl U32Deref of core::ops::Deref<u32> {
+ _^
+| ...
+| }
+|_^

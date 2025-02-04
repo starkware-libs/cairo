@@ -4,7 +4,8 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
+use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
@@ -17,10 +18,9 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::Zero;
-use smol_str::SmolStr;
 
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::{FunctionId, SemanticFunctionIdEx};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -232,7 +232,7 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
-        let id = stmt.function.get_extern(self.db)?;
+        let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
             let val = self.as_int(stmt.inputs[1].var_id)?;
@@ -276,10 +276,14 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function = ModuleHelper { db: self.db, id: self.storage_access_module }
-                    .function_id("storage_base_address_const", vec![GenericArgumentId::Constant(
-                        ConstValue::Int(val.clone(), *ty).intern(self.db),
-                    )]);
+                stmt.function =
+                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
+                        .function_id("storage_base_address_const", vec![
+                            GenericArgumentId::Constant(
+                                ConstValue::Int(val.clone(), *ty).intern(self.db),
+                            ),
+                        ])
+                        .lowered(self.db);
             }
             None
         } else if id == self.into_box {
@@ -331,7 +335,7 @@ impl ConstFoldingContext<'_> {
         &mut self,
         info: &mut MatchExternInfo,
     ) -> Option<(Option<StatementConst>, FlatBlockEnd)> {
-        let id = info.function.get_extern(self.db)?;
+        let (id, generic_args) = info.function.get_extern(self.db)?;
         if self.nz_fns.contains(&id) {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val {
@@ -377,14 +381,14 @@ impl ConstFoldingContext<'_> {
                         arms: vec![
                             MatchArm {
                                 arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_zero_variant(db),
+                                    corelib::jump_nz_zero_variant(db, var.ty),
                                 ),
                                 block_id: info.arms[1].block_id,
                                 var_ids: vec![],
                             },
                             MatchArm {
                                 arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_nonzero_variant(db),
+                                    corelib::jump_nz_nonzero_variant(db, var.ty),
                                 ),
                                 block_id: info.arms[0].block_id,
                                 var_ids: vec![unused_nz_var],
@@ -461,9 +465,7 @@ impl ConstFoldingContext<'_> {
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
             let (value, nz_ty) = self.as_int_ex(input_var)?;
-            let semantic_id =
-                extract_matches!(info.function.lookup_intern(self.db), FunctionLongId::Semantic);
-            let generic_arg = semantic_id.get_concrete(self.db.upcast()).generic_args[1];
+            let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
                 .lookup_intern(self.db)
                 .into_int()
@@ -474,6 +476,21 @@ impl ConstFoldingContext<'_> {
                 Some(self.propagate_const_and_get_statement(value.clone(), output, nz_ty)),
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
+        } else if id == self.array_get {
+            if self.as_int(info.inputs[1].var_id)?.is_zero() {
+                if let [success, failure] = info.arms.as_mut_slice() {
+                    let arr = info.inputs[0].var_id;
+                    let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
+                    let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
+                    info.inputs.truncate(1);
+                    info.function = ModuleHelper { db: self.db.upcast(), id: self.array_module }
+                        .function_id("array_snapshot_pop_front", generic_args)
+                        .lowered(self.db);
+                    success.var_ids.insert(0, unused_arr_output0);
+                    failure.var_ids.insert(0, unused_arr_output1);
+                }
+            }
+            None
         } else {
             None
         }
@@ -527,52 +544,6 @@ pub fn priv_const_folding_info(
     Arc::new(ConstFoldingLibfuncInfo::new(db))
 }
 
-/// Helper for getting functions in the corelib.
-struct ModuleHelper<'a> {
-    /// The db.
-    db: &'a dyn LoweringGroup,
-    /// The current module id.
-    id: ModuleId,
-}
-impl<'a> ModuleHelper<'a> {
-    /// Returns a helper for the core module.
-    fn core(db: &'a dyn LoweringGroup) -> Self {
-        Self { db, id: corelib::core_module(db.upcast()) }
-    }
-    /// Returns a helper for a submodule named `name` of the current module.
-    fn submodule(&self, name: &str) -> Self {
-        let id = corelib::get_submodule(self.db.upcast(), self.id, name).unwrap_or_else(|| {
-            panic!("`{name}` missing in `{}`.", self.id.full_path(self.db.upcast()))
-        });
-        Self { db: self.db, id }
-    }
-    /// Returns the id of an extern function named `name` in the current module.
-    fn extern_function_id(&self, name: impl Into<SmolStr>) -> ExternFunctionId {
-        let name = name.into();
-        let Ok(Some(ModuleItemId::ExternFunction(id))) =
-            self.db.module_item_by_name(self.id, name.clone())
-        else {
-            panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db.upcast()));
-        };
-        id
-    }
-    /// Returns the id of a function named `name` in the current module, with the given
-    /// `generic_args`.
-    fn function_id(
-        &self,
-        name: impl Into<SmolStr>,
-        generic_args: Vec<GenericArgumentId>,
-    ) -> FunctionId {
-        FunctionLongId::Semantic(corelib::get_function_id(
-            self.db.upcast(),
-            self.id,
-            name.into(),
-            generic_args,
-        ))
-        .intern(self.db)
-    }
-}
-
 /// Holds static information about libfuncs required for the optimization.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstFoldingLibfuncInfo {
@@ -584,8 +555,6 @@ pub struct ConstFoldingLibfuncInfo {
     upcast: ExternFunctionId,
     /// The `downcast` libfunc.
     downcast: ExternFunctionId,
-    /// The `storage_base_address_from_felt252` libfunc.
-    storage_base_address_from_felt252: ExternFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions that check if numbers are equal.
@@ -610,14 +579,20 @@ pub struct ConstFoldingLibfuncInfo {
     bounded_int_sub: ExternFunctionId,
     /// The `bounded_int_constrain` libfunc.
     bounded_int_constrain: ExternFunctionId,
+    /// The array module.
+    array_module: ModuleId,
+    /// The `array_get` libfunc.
+    array_get: ExternFunctionId,
     /// The storage access module.
     storage_access_module: ModuleId,
+    /// The `storage_base_address_from_felt252` libfunc.
+    storage_base_address_from_felt252: ExternFunctionId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
-        let core = ModuleHelper::core(db);
+        let core = ModuleHelper::core(db.upcast());
         let felt_sub = core.extern_function_id("felt252_sub");
         let box_module = core.submodule("box");
         let into_box = box_module.extern_function_id("into_box");
@@ -625,6 +600,8 @@ impl ConstFoldingLibfuncInfo {
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
         let upcast = integer_module.extern_function_id("upcast");
         let downcast = integer_module.extern_function_id("downcast");
+        let array_module = core.submodule("array");
+        let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
@@ -689,7 +666,9 @@ impl ConstFoldingLibfuncInfo {
                 let info = TypeInfo {
                     min,
                     max,
-                    is_zero: integer_module.function_id(format!("{ty}_is_zero"), vec![]),
+                    is_zero: integer_module
+                        .function_id(format!("{ty}_is_zero"), vec![])
+                        .lowered(db),
                 };
                 (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), info)
             }),
@@ -699,7 +678,6 @@ impl ConstFoldingLibfuncInfo {
             into_box,
             upcast,
             downcast,
-            storage_base_address_from_felt252,
             nz_fns,
             eq_fns,
             uadd_fns,
@@ -712,7 +690,10 @@ impl ConstFoldingLibfuncInfo {
             bounded_int_add,
             bounded_int_sub,
             bounded_int_constrain,
+            array_module: array_module.id,
+            array_get,
             storage_access_module: storage_access_module.id,
+            storage_base_address_from_felt252,
             type_value_ranges,
         }
     }

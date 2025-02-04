@@ -85,6 +85,7 @@ pub enum SyntaxKind {
     ImplicitsList,
     OptionImplicitsClauseEmpty,
     OptionTerminalNoPanicEmpty,
+    OptionTerminalConstEmpty,
     FunctionSignature,
     Member,
     MemberList,
@@ -126,6 +127,7 @@ pub enum SyntaxKind {
     UsePathLeaf,
     UsePathSingle,
     UsePathMulti,
+    UsePathStar,
     UsePathList,
     AliasClause,
     OptionAliasClauseEmpty,
@@ -134,6 +136,10 @@ pub enum SyntaxKind {
     GenericArgValueExpr,
     GenericArgs,
     GenericArgList,
+    AssociatedItemConstraint,
+    AssociatedItemConstraints,
+    AssociatedItemConstraintList,
+    OptionAssociatedItemConstraintsEmpty,
     OptionWrappedGenericParamListEmpty,
     WrappedGenericParamList,
     GenericParamList,
@@ -257,6 +263,8 @@ pub enum SyntaxKind {
     TerminalDot,
     TokenDotDot,
     TerminalDotDot,
+    TokenDotDotEq,
+    TerminalDotDotEq,
     TokenEndOfFile,
     TerminalEndOfFile,
     TokenEq,
@@ -383,6 +391,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenDollar
                 | SyntaxKind::TokenDot
                 | SyntaxKind::TokenDotDot
+                | SyntaxKind::TokenDotDotEq
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenEq
                 | SyntaxKind::TokenEqEq
@@ -475,6 +484,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalDollar
                 | SyntaxKind::TerminalDot
                 | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalDotDotEq
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalEq
                 | SyntaxKind::TerminalEqEq

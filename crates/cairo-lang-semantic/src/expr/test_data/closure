@@ -18,9 +18,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
- --> lib.cairo:2:15
+ --> lib.cairo:2:11
     || -> i32 {
-              ^
+          ^^^
 
 //! > ==========================================================================
 
@@ -79,7 +79,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _x: i32 =  || {
+    let _x: i32 = || {
         let d: u32 = 3;
         d
     };
@@ -91,10 +91,13 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
- --> lib.cairo:2:20
-    let _x: i32 =  || {
-                   ^**^
+error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:19: 2:21}".
+ --> lib.cairo:2:19-5:5
+      let _x: i32 = || {
+ ___________________^
+| ...
+|     };
+|_____^
 
 //! > ==========================================================================
 
@@ -110,21 +113,27 @@ fn foo() {}
 foo
 
 //! > module_code
-const _x: i32 =  || {
+const _x: i32 = || {
     let d: u32 = 3;
     d
 };
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:1:18
-const _x: i32 =  || {
-                 ^**^
+ --> lib.cairo:1:17-4:1
+  const _x: i32 = || {
+ _________________^
+| ...
+| };
+|_^
 
-error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
- --> lib.cairo:1:1
-const _x: i32 =  || {
-^*******************^
+error: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer::i32`.
+ --> lib.cairo:1:1-4:2
+  const _x: i32 = || {
+ _^
+| ...
+| };
+|__^
 
 //! > ==========================================================================
 
@@ -135,7 +144,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    bar::<{  || -> u32 {
+    bar::<{ || -> u32 {
         2
     } }>();
 }
@@ -148,14 +157,20 @@ fn bar<const N: u32>() {}
 
 //! > expected_diagnostics
 error: Closures are not allowed in this context.
- --> lib.cairo:3:14
-    bar::<{  || -> u32 {
-             ^*********^
+ --> lib.cairo:3:13-5:5
+      bar::<{ || -> u32 {
+ _____________^
+|         2
+|     } }>();
+|_____^
 
-error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
- --> lib.cairo:3:11
-    bar::<{  || -> u32 {
-          ^************^
+error: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `core::integer::u32`.
+ --> lib.cairo:3:11-5:7
+      bar::<{ || -> u32 {
+ ___________^
+|         2
+|     } }>();
+|_______^
 
 //! > ==========================================================================
 
@@ -235,10 +250,10 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::integer::u32` and `core::integer::u64`.
- --> lib.cairo:4:10
-fn foo() {
-         ^
+error: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
+ --> lib.cairo:10:23
+    let _k: felt252 = bar(c);
+                      ^^^
 
 //! > ==========================================================================
 
@@ -266,10 +281,10 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u128`.
- --> lib.cairo:4:10
-fn foo() {
-         ^
+error: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `core::integer::u128` and `core::felt252`.
+ --> lib.cairo:9:39
+    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+                                      ^^^^
 
 //! > ==========================================================================
 
@@ -317,7 +332,7 @@ foo
 error: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
  --> lib.cairo:3:22
         a.into() + b.into() + c.into()
-                     ^**^
+                     ^^^^
 
 //! > ==========================================================================
 
@@ -344,7 +359,7 @@ fn bar() -> u32 {
 warning: Function `bar` is shadowed by a local variable.
  --> lib.cairo:6:19
     let _f: u32 = bar(2);
-                  ^*^
+                  ^^^
 
 //! > ==========================================================================
 
@@ -375,15 +390,15 @@ fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::ops::function::FnOnce::<core::felt252, ()>.
+error: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
  --> lib.cairo:7:19
     let _x: u32 = bar();
-                  ^***^
+                  ^^^^^
 
 error: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
  --> lib.cairo:12:11
         a.into()
-          ^**^
+          ^^^^
 
 //! > ==========================================================================
 
@@ -409,10 +424,10 @@ fn bar(a: felt252) -> u32 {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `(?6,)` and `(?0, ?1, ?2)`.
- --> lib.cairo:4:10
-fn foo() {
-         ^
+error: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (core::felt252,)>.
+ --> lib.cairo:8:19
+    let _f: u32 = bar(2);
+                  ^^^^^^
 
 //! > ==========================================================================
 
@@ -439,7 +454,7 @@ foo
 error: Arguments to closure functions cannot be references
  --> lib.cairo:6:23
     let _f: u32 = bar(ref a);
-                      ^***^
+                      ^^^^^
 
 //! > ==========================================================================
 
@@ -474,9 +489,9 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo() {
     let bar = |a: Option<u32>| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
 }
 
@@ -498,12 +513,12 @@ test_function_diagnostics(expect_diagnostics: true)
 //TODO(Tomer): Add support for inference of Option type in closures.
 fn foo() {
     let bar1 = |a| -> Option<u32> {
-        Option::Some(a?)
+        Some(a?)
     };
     let bar2 = |b: Option<u32>| {
-        Option::Some(b?)
+        Some(b?)
     };
-    let a = Option::Some(5);
+    let a = Some(5);
     let _f: u32 = bar(a).unwrap();
     let _f: u32 = bar2(a).unwrap();
 }
@@ -515,34 +530,34 @@ foo
 
 //! > expected_diagnostics
 error: Type "?0" can not error propagate
- --> lib.cairo:4:22
-        Option::Some(a?)
-                     ^^
+ --> lib.cairo:4:14
+        Some(a?)
+             ^^
 
 error: `?` can only be used in a function with `Option` or `Result` return type.
- --> lib.cairo:7:22
-        Option::Some(b?)
-                     ^^
+ --> lib.cairo:7:14
+        Some(b?)
+             ^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
     let bar2 = |b: Option<u32>| {
-                ^************^
+                ^^^^^^^^^^^^^^
 
 error: Function not found.
  --> lib.cairo:10:19
     let _f: u32 = bar(a).unwrap();
-                  ^*^
+                  ^^^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:10:26
     let _f: u32 = bar(a).unwrap();
-                         ^****^
+                         ^^^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
     let bar1 = |a| -> Option<u32> {
-        ^**^
+        ^^^^
 
 //! > ==========================================================================
 
@@ -554,7 +569,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
     loop {
-        let c =  || {
+        let c = || {
             break;
         };
         c();
@@ -570,7 +585,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:4:13
             break;
-            ^****^
+            ^^^^^^
 
 //! > ==========================================================================
 
@@ -582,7 +597,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() {
     loop {
-        let c =  || {
+        let c = || {
             continue;
         };
         c();
@@ -598,7 +613,7 @@ foo
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:4:13
             continue;
-            ^*******^
+            ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -636,7 +651,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-    bar( || {});
+    bar(|| {});
 }
 
 //! > function_name
@@ -646,3 +661,161 @@ foo
 fn bar<T, +Destruct<T>>(a: T) {}
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling a non closure type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _y = || 2;
+    let x: u32 = 5;
+    x()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Call expression requires a function, found `core::integer::u32`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
+ --> lib.cairo:4:5
+    x()
+    ^^^
+
+//! > ==========================================================================
+
+//! > Implementing a closure trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    let _y = || 2;
+    let x: u32 = 5;
+    x()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl MyImpl of core::ops::FnOnce<u32, ()> {
+    type Output = u32;
+    fn call(self: u32, args: ()) -> u32 {
+        self
+    }
+}
+
+//! > expected_diagnostics
+error: Trait `core::ops::function::FnOnce` should not be re-implemented.
+ --> lib.cairo:1:16
+impl MyImpl of core::ops::FnOnce<u32, ()> {
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Mutating non mutable closure param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cannot assign to an immutable variable.
+ --> lib.cairo:3:9
+        a = a + 2
+        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Closures with ref arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _ = |ref a| {
+        a = a + 2
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Closure parameters cannot be references
+ --> lib.cairo:2:14
+    let _ = |ref a| {
+             ^^^^^
+
+//! > ==========================================================================
+
+//! > Passing closures as args with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<u32> {
+    let x: Option<Array<i32>> = Some(array![1, 2, 3]);
+    x.map(|x| x.len())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Passing closures as trait generics with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    MyTrait::call_with(|arr| {
+        arr.len();
+    });
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<F, +core::ops::Fn<F, (Array::<i32>,)>> {
+    fn call_with(func: F) {
+        func(ArrayTrait::<i32>::new());
+    }
+}
+impl MyImpl<F, impl Func: core::ops::Fn<F, (Array::<i32>,)>> of MyTrait<F, Func>;
+
+//! > expected_diagnostics
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::array::ArrayTrait::len and core::array::SpanTrait::len. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:9:13
+        arr.len();
+            ^^^

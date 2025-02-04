@@ -3,11 +3,10 @@ use std::fmt::Write;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::get_location_marks;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
@@ -73,12 +72,7 @@ fn test_generated_function(
 
             let func_description = match key {
                 crate::ids::GeneratedFunctionKey::Loop(_) => "loop".into(),
-                crate::ids::GeneratedFunctionKey::TraitFunc(func, _) => extract_matches!(
-                    func.lookup_intern(db).function.generic_function,
-                    GenericFunctionId::Impl
-                )
-                .function
-                .full_path(db),
+                crate::ids::GeneratedFunctionKey::TraitFunc(func, _) => func.full_path(db),
             };
 
             writeln!(
@@ -87,7 +81,8 @@ fn test_generated_function(
                 func_description,
                 get_location_marks(
                     db,
-                    &generated_id.stable_location(db).unwrap().diagnostic_location(db)
+                    &generated_id.stable_location(db).unwrap().diagnostic_location(db),
+                    true
                 )
             )
             .unwrap();

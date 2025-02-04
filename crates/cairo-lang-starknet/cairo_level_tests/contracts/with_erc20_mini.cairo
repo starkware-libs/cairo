@@ -1,8 +1,8 @@
 #[starknet::contract]
 mod erc20_mini_contract {
-    use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
+    use crate::components::erc20_mini;
     #[storage]
     struct Storage {
         #[flat]
@@ -25,7 +25,7 @@ mod erc20_mini_contract {
             self.erc20_token.deref()
         }
         fn storage_mut(
-            ref self: ContractState
+            ref self: ContractState,
         ) -> StorageTraitMut::<erc20_mini::ERC20Storage>::BaseType {
             self.erc20_token.deref()
         }
@@ -41,7 +41,7 @@ mod erc20_mini_contract {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.erc20_init(name, symbol, decimals, initial_supply, recipient);
         }

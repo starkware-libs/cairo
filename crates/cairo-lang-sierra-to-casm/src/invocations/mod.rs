@@ -463,11 +463,7 @@ impl CompiledInvocationBuilder<'_> {
                 BranchChanges::new(
                     ap_change,
                     ap_tracking_change,
-                    gas_change
-                        .unwrap_or_default()
-                        .iter()
-                        .map(|(token_type, val)| (*token_type, -val))
-                        .collect(),
+                    gas_change.iter().map(|(token_type, val)| (*token_type, -val)).collect(),
                     expressions,
                     branch_signature,
                     &self.environment,
@@ -522,11 +518,7 @@ impl CompiledInvocationBuilder<'_> {
         let gas_changes =
             core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
                 .into_iter()
-                .map(|costs| {
-                    costs
-                        .and_then(|costs| costs.get(&CostTokenType::Const).copied())
-                        .unwrap_or_default()
-                });
+                .map(|costs| costs.get(&CostTokenType::Const).copied().unwrap_or_default());
         let mut final_costs: [ConstCost; BRANCH_COUNT] =
             std::array::from_fn(|_| Default::default());
         for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
@@ -706,7 +698,7 @@ pub fn compile_invocation(
         Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
         Pedersen(libfunc) => pedersen::build(libfunc, builder),
         Poseidon(libfunc) => poseidon::build(libfunc, builder),
-        StarkNet(libfunc) => starknet::build(libfunc, builder),
+        Starknet(libfunc) => starknet::build(libfunc, builder),
         Nullable(libfunc) => nullable::build(libfunc, builder),
         Debug(libfunc) => debug::build(libfunc, builder),
         SnapshotTake(_) => misc::build_dup(builder),

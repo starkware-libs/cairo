@@ -3,11 +3,14 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
+<<<<<<< HEAD
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
+=======
+use cairo_lang_syntax::node::ast;
+>>>>>>> origin/main
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 /// Macro for formatting.
@@ -54,9 +57,10 @@ impl InlineMacroExprPlugin for FormatMacro {
                 ),
                 (
                     "args".to_string(),
-                    arguments.arg_list(db).map_or_else(RewriteNode::empty, |n| {
-                        RewriteNode::new_trimmed(n.as_syntax_node())
-                    }),
+                    arguments
+                        .arg_list(db)
+                        .as_ref()
+                        .map_or_else(RewriteNode::empty, RewriteNode::from_ast_trimmed),
                 ),
             ]
             .into(),
@@ -68,6 +72,7 @@ impl InlineMacroExprPlugin for FormatMacro {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }
@@ -92,7 +97,7 @@ impl InlineMacroExprPlugin for FormatMacro {
             # Examples
             ```cairo
             format!("hello"); // => "hello".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             format!("hello {}", world_ba); // => "hello world".
             format!("hello {world_ba}"); // => "hello world".
             let (x, y) = (1, 2);

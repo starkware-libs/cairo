@@ -330,9 +330,9 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
+fn foo(mut arr: Array<felt252>, mut b: (felt252,)) -> Array<felt252> {
     let y = match f(ref arr, ref b) {
-        MyEnum::A(_x) => arr
+        MyEnum::A(_x) => arr,
     };
     y
 }
@@ -344,7 +344,7 @@ foo
 enum MyEnum {
     A: felt252,
 }
-extern fn f(ref arr: Array::<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
+extern fn f(ref arr: Array<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -413,7 +413,7 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<()> {
+fn foo() -> Option<()> {
     gas::withdraw_gas()
 }
 
@@ -458,7 +458,7 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<()> {
+fn foo() -> Option<()> {
     return gas::withdraw_gas();
 }
 

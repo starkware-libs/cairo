@@ -9,9 +9,9 @@ cairo_level_tests/contracts/ownable_erc20.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod ownable_erc20_contract {
+    use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
     use crate::components::ownable::ownable as ownable_comp;
-    use starknet::ContractAddress;
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -60,7 +60,9 @@ mod ownable_erc20_contract {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
 }
 #[doc(hidden)]
@@ -78,7 +80,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -95,15 +99,17 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          ownable_storage: ownable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          erc20_storage: erc20_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }
@@ -314,9 +320,9 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
+    use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
     use crate::components::ownable::ownable as ownable_comp;
-    use starknet::ContractAddress;
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -365,7 +371,9 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
 }
 #[doc(hidden)]
@@ -383,7 +391,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -400,15 +410,17 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          ownable_storage: ownable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          erc20_storage: erc20_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
-impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
     type Target = starknet::storage::FlattenedStorage<Storage>;
-    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
         starknet::storage::FlattenedStorage {}
     }
 }

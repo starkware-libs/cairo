@@ -3,46 +3,42 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use num_bigint::BigUint;
 use num_integer::Integer;
-use num_traits::ToPrimitive;
+use num_traits::{ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
 /// Compresses a vector of `BigUintAsHex` representing felts into `result`, by creating a code
 /// mapping, and then compressing several original code words into the given felts.
-pub fn compress<Result: Extend<BigUintAsHex>>(values: &[BigUintAsHex], result: &mut Result) {
-    let mut code = OrderedHashMap::<&BigUint, usize>::default();
+pub fn compress(values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) {
+    let mut code = OrderedHashMap::<&BigUintAsHex, usize>::default();
     for value in values {
         let idx = code.len();
-        code.entry(&value.value).or_insert(idx);
+        code.entry(value).or_insert(idx);
     }
     // Limiting the number of possible encodings by working only on powers of 2, as well as only
     // starting at 256 (or 8 bits per code word).
     let padded_code_size = std::cmp::max(256, code.len()).next_power_of_two();
-    result.extend([BigUintAsHex { value: BigUint::from(code.len()) }]);
-    result.extend([BigUintAsHex { value: BigUint::from(padded_code_size - code.len()) }]);
-    result.extend(code.keys().map(|value| BigUintAsHex { value: (*value).clone() }));
-    result.extend([BigUintAsHex { value: BigUint::from(values.len()) }]);
+    result.extend([code.len(), padded_code_size - code.len()].map(BigUintAsHex::from));
+    result.extend(code.keys().copied().cloned());
+    result.push(values.len().into());
     let words_per_felt = words_per_felt(padded_code_size);
     for values in values.chunks(words_per_felt) {
-        let mut packed_value = BigUint::from(0u64);
+        let mut packed_value = BigUint::zero();
         for value in values.iter().rev() {
             packed_value *= padded_code_size;
-            packed_value += code[&value.value];
+            packed_value += code[&value];
         }
-        result.extend([BigUintAsHex { value: packed_value }]);
+        result.push(packed_value.into());
     }
 }
 
 /// Decompresses `packed_values` created using `compress` into `result`.
-pub fn decompress<Result: Extend<BigUintAsHex>>(
-    packed_values: &[BigUintAsHex],
-    result: &mut Result,
-) -> Option<()> {
+pub fn decompress(packed_values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) -> Option<()> {
     let (packed_values, code_size) = pop_usize(packed_values)?;
     require(code_size < packed_values.len())?;
     let (packed_values, padding_size) = pop_usize(packed_values)?;
     let (code, packed_values) = packed_values.split_at(code_size);
     let (packed_values, mut remaining_unpacked_size) = pop_usize(packed_values)?;
-    let padded_code_size = code_size + padding_size;
+    let padded_code_size = code_size.checked_add(padding_size)?;
     let words_per_felt = words_per_felt(padded_code_size);
     let padded_code_size = BigUint::from(padded_code_size);
     for packed_value in packed_values {
@@ -50,9 +46,7 @@ pub fn decompress<Result: Extend<BigUintAsHex>>(
         let mut v = packed_value.value.clone();
         for _ in 0..curr_words {
             let (remaining, code_word) = v.div_mod_floor(&padded_code_size);
-            result.extend([BigUintAsHex {
-                value: code.get(code_word.to_usize().unwrap())?.value.clone(),
-            }]);
+            result.push(code.get(code_word.to_usize()?)?.clone());
             v = remaining;
         }
         remaining_unpacked_size -= curr_words;

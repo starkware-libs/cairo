@@ -13,7 +13,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-    a: felt252
+    a: felt252,
 }
 
 type RenamedStruct = MyStruct;
@@ -39,7 +39,7 @@ foo
 
 //! > module_code
 enum MyEnum {
-    f: felt252
+    f: felt252,
 }
 
 type RenamedEnum = MyEnum;
@@ -77,8 +77,8 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > function
 fn foo(a: OptionFelt252) -> felt252 {
     match a {
-        Option::Some(v) => v,
-        Option::None => 1,
+        Some(v) => v,
+        None => 1,
     }
 }
 
@@ -98,7 +98,7 @@ type OptionFelt252 = Option::<felt252>;
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(a: RenamedTuple::<u128>) -> u128 {
+fn foo(a: RenamedTuple<u128>) -> u128 {
     let (_, v) = a;
     v
 }
@@ -119,7 +119,7 @@ type RenamedTuple<T> = (felt252, T);
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(a: A::<bool>) -> (felt252, u128, bool) {
+fn foo(a: A<bool>) -> (felt252, u128, bool) {
     a
 }
 
@@ -140,7 +140,7 @@ type B<P1, P2, P3> = (P1, P3, P2);
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(a: A::<5>) -> felt252 {
+fn foo(a: A<5>) -> felt252 {
     let (v, _) = a;
     v
 }
@@ -153,9 +153,9 @@ type A<T> = (felt252, T);
 
 //! > expected_diagnostics
 error: Unknown type.
- --> lib.cairo:2:15
-fn foo(a: A::<5>) -> felt252 {
-              ^
+ --> lib.cairo:2:13
+fn foo(a: A<5>) -> felt252 {
+            ^
 
 //! > ==========================================================================
 
@@ -233,4 +233,4 @@ type Alias = bad_type;
 error: Type not found.
  --> lib.cairo:1:14
 type Alias = bad_type;
-             ^******^
+             ^^^^^^^^

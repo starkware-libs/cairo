@@ -16,12 +16,14 @@ use smol_str::SmolStr;
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
-    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
+    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
+    STORAGE_STRUCT_NAME, STORE_TRAIT,
 };
+use crate::plugin::storage_interfaces::{StorageMemberKind, get_member_storage_config};
 use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
+const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -76,9 +78,16 @@ fn add_abi_diagnostics(
     };
     for err in abi_builder.errors() {
         if !matches!(err, ABIError::SemanticError) {
+            let location = err.location(db).unwrap_or_else(|| {
+                if let Ok(Some(attr)) = contract.module_id().find_attr(db, CONTRACT_ATTR) {
+                    attr.stable_ptr.untyped()
+                } else {
+                    contract.submodule_id.stable_ptr(db.upcast()).untyped()
+                }
+            });
+
             diagnostics.push(PluginDiagnostic::warning(
-                err.location(db)
-                    .unwrap_or_else(|| contract.submodule_id.stable_ptr(db.upcast()).untyped()),
+                location,
                 format!("Failed to generate ABI: {err}"),
             ));
         }
@@ -123,7 +132,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 
     fn declared_allows(&self) -> Vec<String> {
-        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string()]
+        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
     }
 }
 
@@ -135,11 +144,21 @@ fn add_storage_struct_diags(
     id: StructId,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
+    if id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true) {
+        return;
+    }
     let Ok(members) = db.struct_members(id) else {
         return;
     };
+    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
     for (member_name, member) in members.iter() {
+        if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+            db.upcast(),
+            "allow",
+            ALLOW_COLLIDING_PATHS_ATTR,
+        ) {
+            continue;
+        }
         member_analyze(
             db,
             member,
@@ -176,7 +195,8 @@ impl StorageStructMembers {
             diagnostics.push(PluginDiagnostic::warning(
                 pointer_to_code,
                 format!(
-                    "The path `{}` collides with existing path `{}`.",
+                    "The path `{}` collides with existing path `{}`. Fix or add \
+                     `#[allow({ALLOW_COLLIDING_PATHS_ATTR})]` if intentional.",
                     path_to_member.join("."),
                     existing_path.join(".")
                 ),
@@ -206,14 +226,12 @@ fn member_analyze(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
     user_data_path.push(member_name.clone());
-    if !(member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr(db.upcast(), FLAT_ATTR)
-        || member
-            .id
-            .stable_ptr(db.upcast())
-            .lookup(db.upcast())
-            .has_attr(db.upcast(), SUBSTORAGE_ATTR))
-    {
-        paths_data.handle(member_name, user_data_path.clone(), pointer_to_code, diagnostics);
+    let member_ast = member.id.stable_ptr(db.upcast()).lookup(db.upcast());
+    // Ignoring diagnostics as these would have been reported previously.
+    let config = get_member_storage_config(db.upcast(), &member_ast, &mut vec![]);
+    if config.kind == StorageMemberKind::Basic {
+        let name = config.rename.map(Into::into).unwrap_or(member_name);
+        paths_data.handle(name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
     }
@@ -239,7 +257,7 @@ fn member_analyze(
     user_data_path.pop();
 }
 
-/// Adds diagnostics for a enum deriving `starknet::Store`.
+/// Adds diagnostics for an enum deriving `starknet::Store`.
 ///
 /// Specifically finds cases missing a `#[default]` variant.
 fn add_derive_store_enum_diags(

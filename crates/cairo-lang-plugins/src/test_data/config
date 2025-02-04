@@ -262,3 +262,181 @@ impl RemoveTraitItem of SomeTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test logical operators in config attributes.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: false)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"]]
+
+//! > cairo_code
+#[cfg(not(a))]
+fn f1() -> felt252 {
+    0
+}
+
+#[cfg(not(b))]
+fn f2() -> felt252 {
+    0
+}
+
+#[cfg(not(k: "a"))]
+fn f3() -> felt252 {
+    0
+}
+
+#[cfg(and(a, b))]
+fn f4() -> felt252 {
+    0
+}
+
+#[cfg(or(a, x))]
+fn f5() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+
+#[cfg(and(a, b))]
+fn f4() -> felt252 {
+    0
+}
+
+#[cfg(or(a, x))]
+fn f5() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test more complex logical operators in config attributes.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: false)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"], "c", "d"]
+
+//! > cairo_code
+#[cfg(and(or(a, b), not(and(k: "a", k: "b"))))]
+fn f_nested_and_or() -> felt252 {
+    0
+}
+
+#[cfg(or(and(a, b), and(k: "a", not(k: "b"))))]
+fn f_nested_or_and() -> felt252 {
+    0
+}
+
+#[cfg(and(or(not(a), b), not(and(k: "a", c))))]
+fn f_combined_not_and_or() -> felt252 {
+    0
+}
+
+#[cfg(and(or(and(a, not(b)), not(k: "a")), or(k: "b", and(c, d))))]
+fn f_mixed_conditions() -> felt252 {
+    0
+}
+
+#[cfg(not(or(and(a, b), not(k: "b"))))]
+fn f_not_over_nested() -> felt252 {
+    0
+}
+
+#[cfg(or(and(a, not(b)), and(k: "a", not(c))))]
+fn f_multiple_conditions() -> felt252 {
+    0
+}
+
+#[cfg(and(or(and(a, b), not(c)), or(not(k: "a"), k: "b")))]
+fn f_deep_nested() -> felt252 {
+    0
+}
+
+#[cfg(or(not(and(a, not(b))), and(k: "a", or(k: "b", c))))]
+fn f_complex_evaluation() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+
+#[cfg(or(and(a, b), and(k: "a", not(k: "b"))))]
+fn f_nested_or_and() -> felt252 {
+    0
+}
+
+#[cfg(and(or(and(a, b), not(c)), or(not(k: "a"), k: "b")))]
+fn f_deep_nested() -> felt252 {
+    0
+}
+
+#[cfg(or(not(and(a, not(b))), and(k: "a", or(k: "b", c))))]
+fn f_complex_evaluation() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test logical operators in config attributes with illegal arguments.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"]]
+
+//! > cairo_code
+#[cfg(not(a, b))]
+fn f_invalid_not() -> felt252 {
+    0
+}
+
+#[cfg(and())]
+fn f_invalid_and() -> felt252 {
+    0
+}
+
+#[cfg(or())]
+fn f_invalid_or() -> felt252 {
+    0
+
+//! > expanded_cairo_code
+#[cfg(not(a, b))]
+fn f_invalid_not() -> felt252 {
+    0
+}
+
+#[cfg(and())]
+fn f_invalid_and() -> felt252 {
+    0
+}
+
+#[cfg(or())]
+fn f_invalid_or() -> felt252 {
+    0
+
+//! > expected_diagnostics
+error: `not` operator expects exactly one argument.
+ --> test_src/lib.cairo:1:7
+#[cfg(not(a, b))]
+      ^^^^^^^^^
+
+
+error: `and` operator expects at least two arguments.
+ --> test_src/lib.cairo:6:7
+#[cfg(and())]
+      ^^^^^
+
+
+error: `or` operator expects at least two arguments.
+ --> test_src/lib.cairo:11:7
+#[cfg(or())]
+      ^^^^

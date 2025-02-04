@@ -1,5 +1,5 @@
-use starknet::ContractAddress;
 use core::test::test_utils::assert_eq;
+use starknet::ContractAddress;
 
 #[test]
 fn main() {
@@ -11,6 +11,6 @@ fn foo(contract_address: ContractAddress) {
     assert_eq(
         @Into::<ContractAddress, felt252>::into(contract_address),
         @Into::<ContractAddress, felt252>::into(contract_address),
-        'Some message'
+        'Some message',
     );
 }

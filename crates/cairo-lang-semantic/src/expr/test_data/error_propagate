@@ -4,7 +4,7 @@
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Option::<felt252> {
+fn foo() -> Option<felt252> {
     with_err()?;
     Option::<felt252>::None
 }
@@ -13,7 +13,7 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-fn with_err() -> Option::<felt252> {
+fn with_err() -> Option<felt252> {
     Option::<felt252>::None
 }
 
@@ -36,7 +36,7 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-fn with_err() -> Option::<felt252> {
+fn with_err() -> Option<felt252> {
     Option::<felt252>::None
 }
 
@@ -44,7 +44,7 @@ fn with_err() -> Option::<felt252> {
 error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
-    ^*********^
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -54,7 +54,7 @@ error: `?` can only be used in a function with `Option` or `Result` return type.
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo() -> Result::<felt252, u128> {
+fn foo() -> Result<felt252, u128> {
     with_err()?;
     Result::<felt252, u128>::Ok(with_err2()?)
 }
@@ -63,11 +63,11 @@ fn foo() -> Result::<felt252, u128> {
 foo
 
 //! > module_code
-fn with_err() -> Result::<(), u128> {
+fn with_err() -> Result<(), u128> {
     Result::<(), u128>::Ok(())
 }
 
-fn with_err2() -> Result::<felt252, u128> {
+fn with_err2() -> Result<felt252, u128> {
     Result::<felt252, u128>::Ok((0))
 }
 
@@ -90,7 +90,7 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-fn with_err() -> Result::<felt252, u128> {
+fn with_err() -> Result<felt252, u128> {
     Result::<felt252, u128>::Ok((0))
 }
 
@@ -98,7 +98,7 @@ fn with_err() -> Result::<felt252, u128> {
 error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
-    ^*********^
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -108,7 +108,7 @@ error: `?` can only be used in a function with `Option` or `Result` return type.
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> Result::<felt252, u128> {
+fn foo() -> Result<felt252, u128> {
     with_other_err()?;
     Result::<felt252, felt252>::Ok((0))
 }
@@ -117,7 +117,7 @@ fn foo() -> Result::<felt252, u128> {
 foo
 
 //! > module_code
-fn with_other_err() -> Result::<felt252, felt252> {
+fn with_other_err() -> Result<felt252, felt252> {
     Result::<felt252, felt252>::Ok((0))
 }
 
@@ -125,12 +125,12 @@ fn with_other_err() -> Result::<felt252, felt252> {
 error: Return type "core::result::Result::<core::felt252, core::integer::u128>" does not wrap error "core::felt252"
  --> lib.cairo:5:5
     with_other_err()?;
-    ^***************^
+    ^^^^^^^^^^^^^^^^^
 
 error: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
- --> lib.cairo:4:37
-fn foo() -> Result::<felt252, u128> {
-                                    ^
+ --> lib.cairo:4:13
+fn foo() -> Result<felt252, u128> {
+            ^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -142,7 +142,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo() -> Option<felt252> {
     6_u32?;
-    Option::None
+    None
 }
 
 //! > function_name
@@ -154,4 +154,4 @@ foo
 error: Type "core::integer::u32" can not error propagate
  --> lib.cairo:2:5
     6_u32?;
-    ^****^
+    ^^^^^^
