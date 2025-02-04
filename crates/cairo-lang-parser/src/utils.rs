@@ -3,15 +3,17 @@ use std::path::PathBuf;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::span::{TextOffset, TextWidth};
+use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::{Intern, Upcast};
+use itertools::chain;
 
 use crate::ParserDiagnostic;
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
-use crate::types::TokenStream;
 
 /// A salsa database for parsing only.
 #[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -73,17 +75,18 @@ impl SimpleParserDatabase {
         get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
     }
 
-    /// Parses a [TokenStream] (based on whole file) and returns its syntax root.
+    /// Parses a token stream (based on whole file) and returns its syntax root.
     /// It's very similar to [Self::parse_virtual_with_diagnostics], but instead of taking a content
-    /// as a string, it takes a [TokenStream].
+    /// as a string, it takes a type that implements [ToPrimitiveTokenStream] trait
     pub fn parse_token_stream(
         &self,
-        token_stream: &dyn TokenStream,
+        token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let (content, _offset) = primitive_token_stream_content_and_offset(token_stream);
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: "token_stream_file_parser_input".into(),
-            content: token_stream.as_str().into(),
+            content: content.into(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
         })
@@ -97,11 +100,11 @@ impl SimpleParserDatabase {
         )
     }
 
-    /// Parses a [TokenStream] (based on a single expression).
+    /// Parses a token stream (based on a single expression).
     /// It's very similar to the [Self::parse_token_stream].
     pub fn parse_token_stream_expr(
         &self,
-        token_stream: &dyn TokenStream,
+        token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
@@ -150,4 +153,20 @@ pub fn get_syntax_file_and_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())
+}
+
+/// Collect content string and start offset from a struct implementing `[ToPrimitiveTokenStream`]
+/// interface. This basically means concatenation of all tokens supplied.
+pub(crate) fn primitive_token_stream_content_and_offset(
+    token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
+) -> (String, Option<TextOffset>) {
+    let mut primitive_stream = token_stream.to_primitive_token_stream();
+    let Some(first) = primitive_stream.next() else {
+        return ("".into(), None);
+    };
+    let start_offset = first
+        .span
+        .as_ref()
+        .map(|s| TextOffset::default().add_width(TextWidth::new_for_testing(s.start as u32)));
+    (chain!([first], primitive_stream).map(|t| t.content).collect(), start_offset)
 }
