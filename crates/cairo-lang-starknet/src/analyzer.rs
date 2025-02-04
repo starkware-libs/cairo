@@ -29,6 +29,7 @@ use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
 const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
+const ALLOW_INVALID_STORAGE_MEMBERS_ATTR: &str = "starknet::invalid_storage_member_types";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -137,7 +138,11 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 
     fn declared_allows(&self) -> Vec<String> {
-        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
+        vec![
+            ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(),
+            ALLOW_COLLIDING_PATHS_ATTR.to_string(),
+            ALLOW_INVALID_STORAGE_MEMBERS_ATTR.to_string(),
+        ]
     }
 }
 
@@ -152,6 +157,8 @@ fn analyze_storage_struct(
     let Ok(members) = db.struct_members(struct_id) else {
         return;
     };
+    let allow_invalid_members =
+        struct_id.has_attr_with_arg(db, "allow", ALLOW_INVALID_STORAGE_MEMBERS_ATTR) == Ok(true);
     let allow_collisions =
         struct_id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
 
@@ -164,37 +171,37 @@ fn analyze_storage_struct(
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
     for (member_name, member) in members.iter() {
+        let member_ast = member.id.stable_ptr(db.upcast()).lookup(db.upcast());
         let member_type = member.ty.lookup_intern(db);
-
-        // Check if member implements `ValidStorageTypeTrait`.
         let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
-        let inference_result =
-            get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
 
-        if let Err(inference_error) = inference_result {
-            let type_pointer = member
-                .id
-                .stable_ptr(db.upcast())
-                .lookup(db.upcast())
-                .type_clause(db.upcast())
-                .ty(db.upcast());
-            diagnostics.push(PluginDiagnostic::warning(
-                &type_pointer,
-                format!(
-                    "Missing `ValidStorageTypeTrait` for member type. Inference failed with: \
-                     `{}`. Possible solutions: implement `Store`, mark type with \
-                     `#[storage_node]` or use valid args for `Vec` or `Map` library types.",
-                    inference_error.format(db.elongate())
-                ),
-            ));
+        let member_allows_invalid =
+            member_ast.has_attr_with_arg(db.upcast(), "allow", ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
+
+        if !(allow_invalid_members || member_allows_invalid) {
+            let inference_result =
+                get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
+
+            if let Err(inference_error) = inference_result {
+                let type_pointer = member_ast.type_clause(db.upcast()).ty(db.upcast());
+                diagnostics.push(PluginDiagnostic::warning(
+                    &type_pointer,
+                    format!(
+                        "Missing `ValidStorageTypeTrait` for member type. Inference failed with: \
+                         `{}`. Possible solutions: implement `Store`, mark type with \
+                         `#[storage_node]`, or use valid args for `Vec` or `Map` library types.",
+                        inference_error.format(db.elongate())
+                    ),
+                ));
+            }
         }
 
         // Check for storage path collisions.
         if allow_collisions
-            || member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+            || member_ast.has_attr_with_arg(
                 db.upcast(),
                 "allow",
-                ALLOW_COLLIDING_PATHS_ATTR,
+                "starknet::colliding_storage_paths",
             )
         {
             continue;
@@ -206,13 +213,7 @@ fn analyze_storage_struct(
             member_name.clone(),
             paths_data,
             &mut vec![],
-            member
-                .id
-                .stable_ptr(db.upcast())
-                .lookup(db.upcast())
-                .name(db.upcast())
-                .stable_ptr()
-                .untyped(),
+            member_ast.name(db.upcast()).stable_ptr().untyped(),
             diagnostics,
         );
     }
