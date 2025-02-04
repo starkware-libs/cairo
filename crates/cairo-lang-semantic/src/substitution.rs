@@ -572,7 +572,9 @@ impl SemanticRewriter<GenericFunctionWithBodyId, DiagnosticAdded> for Substituti
         if let GenericFunctionWithBodyId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {
                 if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {
-                    if id.concrete_trait(self.db.upcast()) == self_impl.concrete_trait(self.db)? {
+                    if self.rewrite(id.concrete_trait(self.db.upcast()))?
+                        == self_impl.concrete_trait(self.db)?
+                    {
                         *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
                             concrete_impl_id,
                             function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
