@@ -1274,11 +1274,11 @@ TerminalSemicolon
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:2:7-3:5
+ --> dummy_file.cairo:2:7-3:7
   #[bbb]
  _______^
-| macro
-|_____^
+| a_macro
+|_______^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1381,13 +1381,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:4
-<<<<<<< HEAD
-pub macro
-   ^^^^^^
-=======
 pub a_macro
-   ^******^
->>>>>>> cb8bb6241 (Add macro declaration syntax. (#7075))
+   ^^^^^^^^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1495,11 +1490,11 @@ TerminalSemicolon
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:8-2:9
+ --> dummy_file.cairo:1:8-2:11
   #[attr]
  ________^
-| pub macro
-|_________^
+| pub a_macro
+|___________^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)

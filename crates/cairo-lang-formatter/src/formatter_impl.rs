@@ -4,12 +4,9 @@ use std::fmt;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextWidth;
-<<<<<<< HEAD
 use cairo_lang_parser::ParserDiagnostic;
-use cairo_lang_parser::parser::Parser;
-=======
 use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
->>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
+use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
@@ -947,12 +944,11 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
-<<<<<<< HEAD
         if self.is_merging_use_items {
             // When merging, only format this node once and return to avoid recursion.
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
             return;
-=======
+        }
         // If we encounter a token tree node, i.e. a macro, we try to parse it as a
         // [ast::WrappedArgList] (the syntax kind of legacy macro calls). If successful, we
         // format the wrapped arg list according to the rules of wrapped arg lists, otherwise we
@@ -970,7 +966,6 @@ impl<'a> FormatterImpl<'a> {
                 self.format_node(&new_syntax_node);
                 return;
             }
->>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
         }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");

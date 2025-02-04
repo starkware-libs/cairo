@@ -35,12 +35,8 @@ pub enum ParserDiagnosticKind {
     MissingTypeClause,
     MissingTypeExpression,
     MissingWrappedArgList,
-<<<<<<< HEAD
     MissingPattern,
-=======
-    MissingPatteren,
     MissingMacroRuleParamKind,
->>>>>>> d25faa495 (Restrict macro param kind to a predefined enum. (#7194))
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
