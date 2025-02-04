@@ -614,7 +614,7 @@ error: Plugin diagnostic: Unused argument.
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
     format!;
-    ^*****^
+    ^^^^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -722,7 +722,7 @@ error: Plugin diagnostic: Unused argument.
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
     print!;
-    ^****^
+    ^^^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
@@ -830,7 +830,7 @@ error: Plugin diagnostic: Unused argument.
 error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:5
     println!;
-    ^******^
+    ^^^^^^^^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9

@@ -5,12 +5,8 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-<<<<<<< HEAD
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-=======
-use cairo_lang_filesystem::span::TextSpan;
->>>>>>> origin/main
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::indoc;

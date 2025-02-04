@@ -171,6 +171,7 @@ error: Skipped tokens. Expected: statement.
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'foo'
     │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

@@ -1,5 +1,6 @@
 use std::vec;
 
+use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
@@ -9,9 +10,10 @@ use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
@@ -234,7 +236,6 @@ pub(super) fn handle_module_by_storage(
     })
 }
 
-<<<<<<< HEAD
 /// Adds extra uses, to be used in the generated submodules.
 fn maybe_add_extra_use(
     db: &dyn SyntaxGroup,
@@ -273,8 +274,6 @@ fn maybe_add_extra_use(
     }
 }
 
-=======
->>>>>>> origin/main
 /// If the grand grand parent of the given item is a starknet module, returns its kind
 /// (contract/component) and its ast.
 fn grand_grand_parent_starknet_module(

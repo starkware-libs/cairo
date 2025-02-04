@@ -700,6 +700,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprFixedSizeArray => {
                 Some(Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node)))
             }
+            SyntaxKind::ExprPlaceholder => {
+                Some(Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node)))
+            }
             SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
             _ => None,
         }
@@ -5673,117 +5676,6 @@ impl From<&ExprIndexed> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-<<<<<<< HEAD
-=======
-pub struct ExprInlineMacro {
-    node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
-}
-impl ExprInlineMacro {
-    pub const INDEX_PATH: usize = 0;
-    pub const INDEX_BANG: usize = 1;
-    pub const INDEX_ARGUMENTS: usize = 2;
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        path: ExprPathGreen,
-        bang: TerminalNotGreen,
-        arguments: WrappedArgListGreen,
-    ) -> ExprInlineMacroGreen {
-        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
-        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
-        ExprInlineMacroGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::ExprInlineMacro,
-                details: GreenNodeDetails::Node { children, width },
-            })
-            .intern(db),
-        )
-    }
-}
-impl ExprInlineMacro {
-    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[2].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprInlineMacroPtr(pub SyntaxStablePtrId);
-impl ExprInlineMacroPtr {}
-impl TypedStablePtr for ExprInlineMacroPtr {
-    type SyntaxNode = ExprInlineMacro;
-    fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprInlineMacro {
-        ExprInlineMacro::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl From<ExprInlineMacroPtr> for SyntaxStablePtrId {
-    fn from(ptr: ExprInlineMacroPtr) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprInlineMacroGreen(pub GreenId);
-impl TypedSyntaxNode for ExprInlineMacro {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprInlineMacro);
-    type StablePtr = ExprInlineMacroPtr;
-    type Green = ExprInlineMacroGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ExprInlineMacroGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::ExprInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: vec![
-                        ExprPath::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        WrappedArgList::missing(db).0,
-                    ],
-                    width: TextWidth::default(),
-                },
-            })
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ExprInlineMacro,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ExprInlineMacro
-        );
-        let children = db.get_children(node.clone());
-        Self { node, children }
-    }
-    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ExprInlineMacro {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprInlineMacroPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprInlineMacro> for SyntaxStablePtrId {
-    fn from(node: &ExprInlineMacro) -> Self {
-        node.stable_ptr().untyped()
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
->>>>>>> origin/main
 pub struct ExprFixedSizeArray {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -6574,6 +6466,14 @@ impl TypedSyntaxNode for ExprPlaceholder {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprPlaceholder {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -13367,6 +13267,9 @@ impl TypedSyntaxNode for ModuleItem {
             SyntaxKind::ItemInlineMacro => {
                 Some(ModuleItem::InlineMacro(ItemInlineMacro::from_syntax_node(db, node)))
             }
+            SyntaxKind::ItemMacroDeclaration => {
+                Some(ModuleItem::MacroDeclaration(ItemMacroDeclaration::from_syntax_node(db, node)))
+            }
             SyntaxKind::ItemHeaderDoc => {
                 Some(ModuleItem::HeaderDoc(ItemHeaderDoc::from_syntax_node(db, node)))
             }
@@ -16774,129 +16677,6 @@ impl From<&ItemImpl> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-<<<<<<< HEAD
-=======
-pub struct ItemInlineMacro {
-    node: SyntaxNode,
-    children: Arc<[SyntaxNode]>,
-}
-impl ItemInlineMacro {
-    pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_NAME: usize = 1;
-    pub const INDEX_BANG: usize = 2;
-    pub const INDEX_ARGUMENTS: usize = 3;
-    pub const INDEX_SEMICOLON: usize = 4;
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        attributes: AttributeListGreen,
-        name: TerminalIdentifierGreen,
-        bang: TerminalNotGreen,
-        arguments: WrappedArgListGreen,
-        semicolon: TerminalSemicolonGreen,
-    ) -> ItemInlineMacroGreen {
-        let children: Vec<GreenId> = vec![attributes.0, name.0, bang.0, arguments.0, semicolon.0];
-        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
-        ItemInlineMacroGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::ItemInlineMacro,
-                details: GreenNodeDetails::Node { children, width },
-            })
-            .intern(db),
-        )
-    }
-}
-impl ItemInlineMacro {
-    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[3].clone())
-    }
-    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemInlineMacroPtr(pub SyntaxStablePtrId);
-impl ItemInlineMacroPtr {}
-impl TypedStablePtr for ItemInlineMacroPtr {
-    type SyntaxNode = ItemInlineMacro;
-    fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-    fn lookup(&self, db: &dyn SyntaxGroup) -> ItemInlineMacro {
-        ItemInlineMacro::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl From<ItemInlineMacroPtr> for SyntaxStablePtrId {
-    fn from(ptr: ItemInlineMacroPtr) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemInlineMacroGreen(pub GreenId);
-impl TypedSyntaxNode for ItemInlineMacro {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemInlineMacro);
-    type StablePtr = ItemInlineMacroPtr;
-    type Green = ItemInlineMacroGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ItemInlineMacroGreen(
-            Arc::new(GreenNode {
-                kind: SyntaxKind::ItemInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: vec![
-                        AttributeList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        WrappedArgList::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ],
-                    width: TextWidth::default(),
-                },
-            })
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ItemInlineMacro,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ItemInlineMacro
-        );
-        let children = db.get_children(node.clone());
-        Self { node, children }
-    }
-    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ItemInlineMacro {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemInlineMacroPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemInlineMacro> for SyntaxStablePtrId {
-    fn from(node: &ItemInlineMacro) -> Self {
-        node.stable_ptr().untyped()
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
->>>>>>> origin/main
 pub struct ItemHeaderDoc {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -21651,6 +21431,13 @@ impl TypedSyntaxNode for TokenList {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::TokenList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21734,6 +21521,14 @@ impl TypedSyntaxNode for TokenTreeLeaf {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeLeaf {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -21816,6 +21611,14 @@ impl TypedSyntaxNode for TokenTreeNode {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeNode {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -21905,6 +21708,21 @@ impl TypedSyntaxNode for TokenTree {
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenTree"),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TokenTreeLeaf => {
+                Some(TokenTree::Token(TokenTreeLeaf::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenTreeNode => {
+                Some(TokenTree::Subtree(TokenTreeNode::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenTreeMissing => {
+                Some(TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             TokenTree::Token(x) => x.as_syntax_node(),
@@ -21992,6 +21810,14 @@ impl TypedSyntaxNode for TokenTreeMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -22098,6 +21924,24 @@ impl TypedSyntaxNode for WrappedTokenTree {
             ),
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ParenthesizedTokenTree => Some(WrappedTokenTree::Parenthesized(
+                ParenthesizedTokenTree::from_syntax_node(db, node),
+            )),
+            SyntaxKind::BracedTokenTree => {
+                Some(WrappedTokenTree::Braced(BracedTokenTree::from_syntax_node(db, node)))
+            }
+            SyntaxKind::BracketedTokenTree => {
+                Some(WrappedTokenTree::Bracketed(BracketedTokenTree::from_syntax_node(db, node)))
+            }
+            SyntaxKind::WrappedTokenTreeMissing => {
+                Some(WrappedTokenTree::Missing(WrappedTokenTreeMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             WrappedTokenTree::Parenthesized(x) => x.as_syntax_node(),
@@ -22189,6 +22033,14 @@ impl TypedSyntaxNode for WrappedTokenTreeMissing {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::WrappedTokenTreeMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -22290,6 +22142,14 @@ impl TypedSyntaxNode for ParenthesizedTokenTree {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ParenthesizedTokenTree {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22389,6 +22249,14 @@ impl TypedSyntaxNode for BracedTokenTree {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::BracedTokenTree {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -22490,6 +22358,14 @@ impl TypedSyntaxNode for BracketedTokenTree {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::BracketedTokenTree {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22589,6 +22465,14 @@ impl TypedSyntaxNode for ExprInlineMacro {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -22701,6 +22585,14 @@ impl TypedSyntaxNode for ItemInlineMacro {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -22836,6 +22728,14 @@ impl TypedSyntaxNode for ItemMacroDeclaration {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ItemMacroDeclaration {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -22904,6 +22804,13 @@ impl TypedSyntaxNode for MacroRulesList {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::MacroRulesList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -23011,6 +22918,10 @@ impl TypedSyntaxNode for MacroRule {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRule { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23117,6 +23028,14 @@ impl TypedSyntaxNode for MacroRuleParam {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRuleParam {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23192,6 +23111,18 @@ impl TypedSyntaxNode for MacroRuleElement {
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MacroRuleElement"
             ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TokenTreeLeaf => {
+                Some(MacroRuleElement::Token(TokenTreeLeaf::from_syntax_node(db, node)))
+            }
+            SyntaxKind::MacroRuleParam => {
+                Some(MacroRuleElement::Param(MacroRuleParam::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23289,6 +23220,21 @@ impl TypedSyntaxNode for MacroMatcher {
                 MacroMatcher::Bracketed(BracketedMacroMatcher::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MacroMatcher"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ParenthesizedMacroMatcher => Some(MacroMatcher::Parenthesized(
+                ParenthesizedMacroMatcher::from_syntax_node(db, node),
+            )),
+            SyntaxKind::BracedMacroMatcher => {
+                Some(MacroMatcher::Braced(BracedMacroMatcher::from_syntax_node(db, node)))
+            }
+            SyntaxKind::BracketedMacroMatcher => {
+                Some(MacroMatcher::Bracketed(BracketedMacroMatcher::from_syntax_node(db, node)))
+            }
+            _ => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23406,6 +23352,14 @@ impl TypedSyntaxNode for ParenthesizedMacroMatcher {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ParenthesizedMacroMatcher {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23505,6 +23459,14 @@ impl TypedSyntaxNode for BracedMacroMatcher {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::BracedMacroMatcher {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -23606,6 +23568,14 @@ impl TypedSyntaxNode for BracketedMacroMatcher {
         let children = db.get_children(node.clone());
         Self { node, children }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::BracketedMacroMatcher {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -23677,6 +23647,13 @@ impl TypedSyntaxNode for MacroRuleElements {
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::MacroRuleElements {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -23777,6 +23754,14 @@ impl TypedSyntaxNode for LegacyExprInlineMacro {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::LegacyExprInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -23889,6 +23874,14 @@ impl TypedSyntaxNode for LegacyItemInlineMacro {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::LegacyItemInlineMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -27558,6 +27551,12 @@ impl TypedSyntaxNode for TokenMacro {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -27659,6 +27658,14 @@ impl TypedSyntaxNode for TerminalMacro {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalMacro {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -32471,6 +32478,12 @@ impl TypedSyntaxNode for TokenDollar {
             }
         }
     }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Some(Self { node }),
+            GreenNodeDetails::Node { .. } => None,
+        }
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
@@ -32572,6 +32585,14 @@ impl TypedSyntaxNode for TerminalDollar {
         );
         let children = db.get_children(node.clone());
         Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TerminalDollar {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -41267,6 +41288,9 @@ impl TypedSyntaxNode for TokenNode {
             SyntaxKind::TerminalLet => {
                 Some(TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node)))
             }
+            SyntaxKind::TerminalMacro => {
+                Some(TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node)))
+            }
             SyntaxKind::TerminalMatch => {
                 Some(TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node)))
             }
@@ -41341,6 +41365,9 @@ impl TypedSyntaxNode for TokenNode {
             }
             SyntaxKind::TerminalDivEq => {
                 Some(TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalDollar => {
+                Some(TokenNode::TerminalDollar(TerminalDollar::from_syntax_node(db, node)))
             }
             SyntaxKind::TerminalDot => {
                 Some(TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node)))
