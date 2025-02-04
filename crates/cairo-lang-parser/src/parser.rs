@@ -3,6 +3,7 @@ use std::mem;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -17,7 +18,7 @@ use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
-use crate::types::TokenStream;
+use crate::utils::primitive_token_stream_content_and_offset;
 use crate::validation::{validate_literal_number, validate_short_string, validate_string};
 
 #[cfg(test)]
@@ -164,13 +165,14 @@ impl<'a> Parser<'a> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
-        token_stream: &'a dyn TokenStream,
+        token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> SyntaxFile {
-        let parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        let parser = Parser::new(db, file_id, &content, diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
         )
     }
 
@@ -179,9 +181,10 @@ impl<'a> Parser<'a> {
         db: &'a dyn SyntaxGroup,
         diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
-        token_stream: &'a dyn TokenStream,
+        token_stream: &'a dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> Expr {
-        let mut parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
+        let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
+        let mut parser = Parser::new(db, file_id, &content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {
@@ -190,10 +193,7 @@ impl<'a> Parser<'a> {
                 span,
             });
         }
-        Expr::from_syntax_node(
-            db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
-        )
+        Expr::from_syntax_node(db, SyntaxNode::new_root_with_offset(db, file_id, green.0, offset))
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
