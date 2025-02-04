@@ -246,3 +246,62 @@ warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or
  --> lib.cairo:5:9
     pub b: felt252,
         ^
+
+//! > ==========================================================================
+
+//! > Test that only structs implementing `ValidStorageTypeTrait` can be stored.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+use core::starknet::storage::{Map, Vec};
+#[starknet::storage_node]
+struct ValidStorageStruct {
+    pub valid_field: felt252,
+}
+
+#[starknet::storage_node]
+struct InvalidArrayStruct {
+    pub valid: ValidStorageStruct,
+    pub invalid_array: Array<felt252>,
+}
+
+struct InvalidStorageStruct {}
+#[starknet::storage_node]
+struct ValidVecStorage {
+    pub valid_vec: Vec<felt252>,
+}
+
+#[starknet::storage_node]
+struct InvalidVecStorage {
+    pub invalid_vec: Vec<InvalidStorageStruct>,
+}
+
+#[starknet::storage_node]
+struct ValidMapStorage {
+    pub valid_map: Map<felt252, ValidStorageStruct>,
+}
+
+#[starknet::storage_node]
+struct InvalidMapStorage {
+    pub invalid_map: Map<felt252, InvalidStorageStruct>,
+}
+
+//! > expected_diagnostics
+
+//! > diagnostics
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::array::Array::<core::felt252>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+ --> lib.cairo:10:24
+    pub invalid_array: Array<felt252>,
+                       ^^^^^^^^^^^^^^
+
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::vec::Vec::<test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+ --> lib.cairo:21:22
+    pub invalid_vec: Vec<InvalidStorageStruct>,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::map::Map::<core::felt252, test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+ --> lib.cairo:31:22
+    pub invalid_map: Map<felt252, InvalidStorageStruct>,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
