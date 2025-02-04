@@ -12,13 +12,9 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
     ErrorCode, Severity, error_code,
 };
-<<<<<<< HEAD
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax::{self as syntax};
-=======
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
->>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;

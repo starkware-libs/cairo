@@ -1676,6 +1676,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
             SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
+            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq>().into(),
             SyntaxKind::TerminalEndOfFile => self.take::<TerminalEndOfFile>().into(),
             SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
             SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),

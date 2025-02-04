@@ -62,7 +62,7 @@ impl AsLegacyInlineMacro for ExprInlineMacro {
         let offset = self.stable_ptr().0.lookup(db).offset();
         Some(LegacyExprInlineMacro::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, offset),
+            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
         ))
     }
 }
@@ -92,7 +92,7 @@ impl AsLegacyInlineMacro for ItemInlineMacro {
         let offset = self.stable_ptr().0.lookup(db).offset();
         Some(LegacyItemInlineMacro::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, offset),
+            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
         ))
     }
 }

@@ -102,14 +102,9 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
-<<<<<<< HEAD
-            | SyntaxKind::TokenImplicits => true,
-            SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
-=======
             | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenDollar => true,
-            SyntaxKind::TerminalDotDot
->>>>>>> cb8bb6241 (Add macro declaration syntax. (#7075))
+            SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
@@ -451,14 +446,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
                 | SyntaxKind::ItemEnum
-<<<<<<< HEAD
                 | SyntaxKind::PatternFixedSizeArray
-                | SyntaxKind::ExprFixedSizeArray => Some(5),
-=======
+                | SyntaxKind::ExprFixedSizeArray
                 | SyntaxKind::ParenthesizedTokenTree
                 | SyntaxKind::BracedTokenTree
                 | SyntaxKind::BracketedTokenTree => Some(5),
->>>>>>> d24ed1917 (Change macro syntax to be token tree based and fix legacy macros. (#6388))
                 _ => None,
             },
         }
