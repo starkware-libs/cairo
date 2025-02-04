@@ -722,7 +722,7 @@ impl<'a> Parser<'a> {
                 let dollar = self.take::<TerminalDollar>();
                 let ident = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
-                let kind = self.parse_token::<TerminalIdentifier>();
+                let kind = self.parse_macro_rule_param_kind();
                 Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind).into())
             }
             // TODO(Gil): Handle these cases using a tree structure similar to the one used for
@@ -733,6 +733,18 @@ impl<'a> Parser<'a> {
             _ => Ok(self.parse_token_tree_leaf().into()),
         }
     }
+
+    /// Returns a GreenId of a node with a MacroRuleParamKind kind.
+    fn parse_macro_rule_param_kind(&mut self) -> MacroRuleParamKindGreen {
+        if self.peek().kind == SyntaxKind::TerminalIdentifier && self.peek().text == "ident" {
+            self.parse_token::<TerminalIdentifier>().into()
+        } else {
+            self.create_and_report_missing::<MacroRuleParamKind>(
+                ParserDiagnosticKind::MissingMacroRuleParamKind,
+            )
+        }
+    }
+
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
     fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen> {
         if !matches!(
