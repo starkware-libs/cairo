@@ -97,7 +97,6 @@ fn test_token_stream_expr_parser() {
             content: expr_code.to_string(),
             span: TextSpan::from_str(expr_code),
         }],
-        content_string: expr_code.to_string(),
     };
 
     let (node_from_token_stream, _) = db.parse_token_stream_expr(&token_stream);
