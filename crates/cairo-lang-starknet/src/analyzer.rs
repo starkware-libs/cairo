@@ -29,6 +29,7 @@ use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
 const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
+const ALLOW_INVALID_STORAGE_MEMBERS_ATTR: &str = "starknet::invalid_storage_members";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -137,7 +138,11 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 
     fn declared_allows(&self) -> Vec<String> {
-        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
+        vec![
+            ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(),
+            ALLOW_COLLIDING_PATHS_ATTR.to_string(),
+            ALLOW_INVALID_STORAGE_MEMBERS_ATTR.to_string(),
+        ]
     }
 }
 
@@ -172,6 +177,13 @@ fn analyze_storage_struct(
             get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
 
         if let Err(inference_error) = inference_result {
+            if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+                db.upcast(),
+                "allow",
+                ALLOW_INVALID_STORAGE_MEMBERS_ATTR,
+            ) {
+                continue;
+            }
             let type_pointer = member
                 .id
                 .stable_ptr(db.upcast())

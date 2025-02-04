@@ -305,3 +305,25 @@ warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inf
  --> lib.cairo:31:22
     pub invalid_map: Map<felt252, InvalidStorageStruct>,
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allowing invalid storage members.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: false)
+
+//! > cairo_code
+use core::starknet::storage::{Map, Vec};
+struct InvalidStorageStruct {}
+#[starknet::storage_node]
+struct InvalidAllowedStorage {
+    #[allow(starknet::invalid_storage_members)]
+    pub invalid_array: Array<felt252>,
+    #[allow(starknet::invalid_storage_members)]
+    pub invalid_vec: Vec<InvalidStorageStruct>,
+    #[allow(starknet::invalid_storage_members)]
+    pub invalid_map: Map<felt252, InvalidStorageStruct>,
+}
+
+//! > diagnostics
