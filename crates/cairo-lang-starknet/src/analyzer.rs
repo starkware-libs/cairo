@@ -29,6 +29,7 @@ use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
 const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
+const ALLOW_INVALID_STORAGE_MEMBERS_ATTR: &str = "starknet::invalid_storage_member_types";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -137,7 +138,11 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 
     fn declared_allows(&self) -> Vec<String> {
-        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
+        vec![
+            ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(),
+            ALLOW_COLLIDING_PATHS_ATTR.to_string(),
+            ALLOW_INVALID_STORAGE_MEMBERS_ATTR.to_string(),
+        ]
     }
 }
 
@@ -163,7 +168,17 @@ fn analyze_storage_struct(
     });
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
+    if struct_id.has_attr_with_arg(db, "allow", ALLOW_INVALID_STORAGE_MEMBERS_ATTR) == Ok(true) {
+        return;
+    }
     for (member_name, member) in members.iter() {
+        if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+            db.upcast(),
+            "allow",
+            ALLOW_INVALID_STORAGE_MEMBERS_ATTR,
+        ) {
+            continue;
+        }
         let member_type = member.ty.lookup_intern(db);
 
         // Check if member implements `ValidStorageTypeTrait`.
