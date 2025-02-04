@@ -41,13 +41,13 @@ fn test_egcd() {
 
 #[test]
 fn test_inv_mod() {
-    assert(math::inv_mod(5, 24) == Some(5_u256), 'inv_mov(5, 24) != 5');
-    assert(math::inv_mod(29, 24) == Some(5_u128), 'inv_mov(29, 24) != 5');
-    assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mov(1, 24) != 1');
-    assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mov(1, 5) != 1');
-    assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mov(8, 24) != None');
-    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mov(1, 1) != 0');
-    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mov(7, 1) != 0');
+    assert(math::inv_mod(5, 24) == Some(5_u256), 'inv_mod(5, 24) != 5');
+    assert(math::inv_mod(29, 24) == Some(5_u128), 'inv_mod(29, 24) != 5');
+    assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mod(1, 24) != 1');
+    assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mod(1, 5) != 1');
+    assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mod(8, 24) != None');
+    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mod(1, 1) != 0');
+    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mod(7, 1) != 0');
 }
 
 #[test]
