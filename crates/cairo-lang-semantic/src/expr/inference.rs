@@ -1310,13 +1310,8 @@ impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_constant_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_constant_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_constant_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
                             ImplConstantId::new(impl_id, trait_constant, self.db),
@@ -1363,13 +1358,8 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_impl_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_impl_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_impl_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(imp) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
                             *value = self.rewrite(imp).no_err().lookup_intern(self.db);
