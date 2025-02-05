@@ -22,7 +22,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{add_type_based_diagnostics, resolve_type};
 use crate::{ConcreteEnumId, SemanticDiagnostic, semantic};
 
@@ -313,8 +313,7 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = concrete_enum_id.lookup_intern(db).generic_args;
-        let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-        SubstitutionRewriter { db, substitution: &substitution }.rewrite(ConcreteVariant {
+        GenericSubstitution::new(&generic_params, &generic_args).substitute(db, ConcreteVariant {
             concrete_enum_id,
             id: variant.id,
             ty: variant.ty,

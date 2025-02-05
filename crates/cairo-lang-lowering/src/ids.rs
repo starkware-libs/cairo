@@ -193,9 +193,7 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
-        let substitution = self.substitution(db)?;
-        SubstitutionRewriter { db: db.upcast(), substitution: &substitution }
-            .rewrite(generic_signature)
+        self.substitution(db)?.substitute(db.upcast(), generic_signature)
     }
     pub fn from_no_generics_free(
         db: &dyn LoweringGroup,

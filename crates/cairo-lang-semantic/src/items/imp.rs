@@ -79,7 +79,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeId, add_type_based_diagnostics, get_impl_at_context, resolve_type};
 use crate::{
     Arenas, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
@@ -581,7 +581,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             );
 
             let impl_concrete_trait_id = db.impl_def_concrete_trait(long_impl.impl_def_id)?;
-            SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
+            substitution.substitute(db, impl_concrete_trait_id)
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
@@ -2235,9 +2235,7 @@ pub fn impl_type_concrete_implized(
     let Ok(ty) = ty else {
         return ty;
     };
-
-    let substitution = &concrete_impl.substitution(db)?;
-    SubstitutionRewriter { db, substitution }.rewrite(ty)
+    concrete_impl.substitution(db)?.substitute(db, ty)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
@@ -2445,13 +2443,11 @@ pub fn impl_constant_concrete_implized_value(
     if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().lookup_intern(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let constant = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?;
-        let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
-        return SubstitutionRewriter { db, substitution }.rewrite(constant);
+        return concrete_impl.substitution(db)?.substitute(db, constant);
     }
-    let substitution = &GenericSubstitution::from_impl(impl_constant_id.impl_id());
-
     Ok(ConstValue::ImplConstant(
-        SubstitutionRewriter { db, substitution }.rewrite(impl_constant_id)?,
+        GenericSubstitution::from_impl(impl_constant_id.impl_id())
+            .substitute(db, impl_constant_id)?,
     )
     .intern(db))
 }
@@ -2475,8 +2471,7 @@ pub fn impl_constant_concrete_implized_type(
         ImplLongId::Concrete(concrete_impl) => {
             let impl_def_id = concrete_impl.impl_def_id(db);
             let ty = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?.ty(db)?;
-            let substitution = &concrete_impl.substitution(db)?;
-            return SubstitutionRewriter { db, substitution }.rewrite(ty);
+            return concrete_impl.substitution(db)?.substitute(db, ty);
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
@@ -2494,8 +2489,7 @@ pub fn impl_constant_concrete_implized_type(
         concrete_trait_id,
         impl_constant_id.trait_constant_id(),
     ))?;
-    let substitution = &GenericSubstitution::from_impl(impl_constant_id.impl_id());
-    SubstitutionRewriter { db, substitution }.rewrite(ty)
+    GenericSubstitution::from_impl(impl_constant_id.impl_id()).substitute(db, ty)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
@@ -2678,11 +2672,9 @@ fn validate_impl_item_impl(
     let concrete_trait_impl = ConcreteTraitImplId::new(db, concrete_trait_id, trait_impl_id);
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
 
-    let concrete_trait_impl_concrete_trait =
-        db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
-            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-                .rewrite(concrete_trait_id)
-        });
+    let concrete_trait_impl_concrete_trait = db
+        .concrete_trait_impl_concrete_trait(concrete_trait_impl)
+        .and_then(|concrete_trait_id| impl_def_substitution.substitute(db, concrete_trait_id));
 
     let resolved_impl_concrete_trait =
         impl_data.resolved_impl.and_then(|imp| imp.concrete_trait(db));
@@ -2780,8 +2772,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
         })
         .and_then(|concrete_trait_id| {
             let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-                .rewrite(concrete_trait_id)
+            impl_def_substitution.substitute(db, concrete_trait_id)
         });
     let impl_lookup_context = resolver.impl_lookup_context();
     let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
@@ -2869,13 +2860,13 @@ fn impl_impl_concrete_implized_ex(
     if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().lookup_intern(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id, in_cycle)?;
-        let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
-        return SubstitutionRewriter { db, substitution }.rewrite(imp);
+        return concrete_impl.substitution(db)?.substitute(db, imp);
     }
-    let substitution = &GenericSubstitution::from_impl(impl_impl_id.impl_id());
 
-    Ok(ImplLongId::ImplImpl(SubstitutionRewriter { db, substitution }.rewrite(impl_impl_id)?)
-        .intern(db))
+    Ok(ImplLongId::ImplImpl(
+        GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, impl_impl_id)?,
+    )
+    .intern(db))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
@@ -2884,10 +2875,8 @@ pub fn impl_impl_concrete_trait(
     impl_impl_id: ImplImplId,
 ) -> Maybe<ConcreteTraitId> {
     let concrete_trait_impl = impl_impl_id.concrete_trait_impl_id(db)?;
-    let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
-
     db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
-        SubstitutionRewriter { db, substitution: &substitution }.rewrite(concrete_trait_id)
+        GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, concrete_trait_id)
     })
 }
 
@@ -3167,9 +3156,7 @@ fn validate_impl_function_signature(
         return Ok(trait_function_id);
     }
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-    let func_generics: Vec<GenericParam> =
-        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-            .rewrite(func_generics)?;
+    let func_generics: Vec<GenericParam> = impl_def_substitution.substitute(db, func_generics)?;
 
     let function_substitution =
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
@@ -3190,11 +3177,9 @@ fn validate_impl_function_signature(
             (GenericParam::Impl(generic_param), GenericParam::Impl(trait_generic_param))
             | (GenericParam::NegImpl(generic_param), GenericParam::NegImpl(trait_generic_param)) => {
                 let rewritten_trait_param_trait =
-                    SubstitutionRewriter { db, substitution: &function_substitution }
-                        .rewrite(trait_generic_param.concrete_trait)?;
+                    function_substitution.substitute(db, trait_generic_param.concrete_trait)?;
                 let rewritten_trait_param_type_constraints =
-                    SubstitutionRewriter { db, substitution: &function_substitution }
-                        .rewrite(trait_generic_param.type_constraints)?;
+                    function_substitution.substitute(db, trait_generic_param.type_constraints)?;
                 generic_param
                     .concrete_trait
                     .map(|actual_trait| {
@@ -3221,8 +3206,7 @@ fn validate_impl_function_signature(
                     .ok();
             }
             (GenericParam::Const(generic_param), GenericParam::Const(trait_generic_param)) => {
-                let expected_ty = SubstitutionRewriter { db, substitution: &function_substitution }
-                    .rewrite(trait_generic_param.ty)?;
+                let expected_ty = function_substitution.substitute(db, trait_generic_param.ty)?;
                 if generic_param.ty != expected_ty {
                     diagnostics.report(generic_param.id.stable_ptr(defs_db), WrongParameterType {
                         impl_def_id,
@@ -3249,8 +3233,7 @@ fn validate_impl_function_signature(
     }
 
     let concrete_trait_signature =
-        SubstitutionRewriter { db, substitution: &function_substitution }
-            .rewrite(concrete_trait_signature)?;
+        function_substitution.substitute(db, concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(&signature_syntax.parameters(syntax_db), WrongNumberOfParameters {
@@ -3262,8 +3245,7 @@ fn validate_impl_function_signature(
         });
     }
     let concrete_trait_signature =
-        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-            .rewrite(concrete_trait_signature)?;
+        impl_def_substitution.substitute(db, concrete_trait_signature)?;
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {

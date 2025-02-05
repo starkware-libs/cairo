@@ -37,7 +37,7 @@ use crate::expr::compute::{ComputationContext, ContextFunction, Environment, com
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
 use crate::{
     Arenas, FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
@@ -974,7 +974,7 @@ pub fn concrete_trait_constant_type(
         &concrete_trait_id.generic_args(db),
     );
     let generic_ty = db.trait_constant_type(concrete_trait_constant_id.trait_constant(db))?;
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_ty)
+    substitution.substitute(db, generic_ty)
 }
 
 // === Trait item impl ===
@@ -1063,13 +1063,11 @@ pub fn concrete_trait_impl_concrete_trait(
     concrete_trait_impl_id: ConcreteTraitImplId,
 ) -> Maybe<ConcreteTraitId> {
     let concrete_trait_id = concrete_trait_impl_id.concrete_trait(db);
-    let substitution = GenericSubstitution::new(
+    GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
-    );
-    let impl_concrete_trait =
-        db.trait_impl_concrete_trait(concrete_trait_impl_id.trait_impl(db))?;
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait)
+    )
+    .substitute(db, db.trait_impl_concrete_trait(concrete_trait_impl_id.trait_impl(db))?)
 }
 
 // === Trait function Declaration ===
@@ -1278,14 +1276,14 @@ pub fn concrete_trait_function_generic_params(
     concrete_trait_function_id: ConcreteTraitGenericFunctionId,
 ) -> Maybe<Vec<GenericParam>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
-    let substitution = GenericSubstitution::new(
+    GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
-    );
-    let generic_params =
-        db.trait_function_generic_params(concrete_trait_function_id.trait_function(db))?;
-    let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
-    rewriter.rewrite(generic_params)
+    )
+    .substitute(
+        db,
+        db.trait_function_generic_params(concrete_trait_function_id.trait_function(db))?,
+    )
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
@@ -1294,13 +1292,11 @@ pub fn concrete_trait_function_signature(
     concrete_trait_function_id: ConcreteTraitGenericFunctionId,
 ) -> Maybe<semantic::Signature> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
-    let substitution = GenericSubstitution::new(
+    GenericSubstitution::new(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
-    );
-    let generic_signature =
-        db.trait_function_signature(concrete_trait_function_id.trait_function(db))?;
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
+    )
+    .substitute(db, db.trait_function_signature(concrete_trait_function_id.trait_function(db))?)
 }
 
 // === Body ===
