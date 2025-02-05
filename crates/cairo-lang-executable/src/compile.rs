@@ -94,17 +94,8 @@ pub fn compile_executable_in_prepared_db(
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
-    let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
-        .into_iter()
-        .filter_map(|(id, labels)| {
-            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
-        })
-        .collect();
+    let executables = find_executable_functions(db, main_crate_ids, executable_path);
 
-    if let Some(executable_path) = executable_path {
-        executables
-            .retain(|executable| originating_function_path(db, *executable) == executable_path);
-    };
     let executable = match executables.len() {
         0 => {
             // Report diagnostics as they might reveal the reason why no executable was found.
@@ -128,10 +119,31 @@ pub fn compile_executable_in_prepared_db(
     compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter, config)
 }
 
+/// Search crates identified by `main_crate_ids` for executable functions.
+/// If `executable_path` is provided, only functions with exactly the same path will be returned.
+pub fn find_executable_functions(
+    db: &RootDatabase,
+    main_crate_ids: Vec<CrateId>,
+    executable_path: Option<&str>,
+) -> Vec<ConcreteFunctionWithBodyId> {
+    let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
+        .into_iter()
+        .filter_map(|(id, labels)| {
+            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
+        })
+        .collect();
+
+    if let Some(executable_path) = executable_path {
+        executables
+            .retain(|executable| originating_function_path(db, *executable) == executable_path);
+    };
+    executables
+}
+
 /// Returns the path to the function that the executable is wrapping.
 ///
 /// If the executable is not wrapping a function, returns the full path of the executable.
-fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
+pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let semantic = wrapper.base_semantic_function(db);
     let wrapper_name = semantic.name(db);
     let wrapper_full_path = semantic.full_path(db.upcast());
