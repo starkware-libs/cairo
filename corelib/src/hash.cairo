@@ -5,7 +5,7 @@
 //! functions.
 //!
 //! The simplest way to make a type hashable is to use `#[derive(Hash)]`. Hashing a value is done by
-//! initiating a `HashState` corresponding to a hash function, updating it with the value, and then
+//! initializing a `HashState` corresponding to a hash function, updating it with the value, and then
 //! finalizing it to get the hash result.
 //!
 //! # Examples
