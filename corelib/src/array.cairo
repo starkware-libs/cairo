@@ -868,8 +868,16 @@ impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
 }
 
 impl ArrayExtend<T, +Drop<T>> of crate::iter::Extend<Array<T>, T> {
-    fn extend<I, +Iterator<I>[Item: T], +Destruct<I>>(ref self: Array<T>, iter: I) {
-        for elem in iter {
+    fn extend<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +TypeEqual<IntoIter::Iterator::Item, T>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        ref self: Array<T>, iter: I,
+    ) {
+        for elem in iter.into_iter() {
             self.append(elem);
         };
     }
