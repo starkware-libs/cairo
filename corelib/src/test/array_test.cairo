@@ -246,16 +246,9 @@ fn test_array_from_iterator() {
 #[test]
 fn test_array_extend() {
     let mut arr = array![1_u32, 2, 3];
-    arr.extend((4..6_u32).into_iter());
+    arr.extend((4..6_u32));
     assert_eq!(arr, array![1, 2, 3, 4, 5]);
 }
-
-// #[test]
-// fn test_array_extend_panic() {
-//     let mut arr: Array<u32> = array![1, 2, 3];
-//     arr.extend((4..6_u32).into_iter());
-//     assert_eq!(arr, array![1, 2, 3, 4, 5]);
-// }
 
 #[test]
 fn test_array_into_span() {
