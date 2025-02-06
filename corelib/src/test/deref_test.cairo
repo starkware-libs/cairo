@@ -15,6 +15,10 @@ struct S3 {
     inner: S2,
 }
 
+#[generate_trait]
+impl MyImpl of MyTrait {
+    fn foo(self: @S1) {}
+}
 
 impl S2Deref of crate::ops::Deref<S2> {
     type Target = S1;
@@ -42,6 +46,7 @@ fn test_simple_deref() {
     assert_eq!(s3.inner.inner.a, 1);
     assert_eq!(s3.b, 2);
     assert_eq!(s3.inner.b, 2);
+    assert_eq!(s3.foo(), ());
 }
 
 #[derive(Drop, Copy)]
