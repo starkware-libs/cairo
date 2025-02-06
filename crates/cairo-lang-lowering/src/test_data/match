@@ -785,7 +785,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Inner patterns are not in this context.
+error: Inner patterns are not allowed in this context.
  --> lib.cairo:3:14
         Some(Some(x)) => x,
              ^^^^^^^

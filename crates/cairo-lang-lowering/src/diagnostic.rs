@@ -71,7 +71,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::UnsupportedPattern => {
-                "Inner patterns are not in this context.".into()
+                "Inner patterns are not allowed in this context.".into()
             }
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
