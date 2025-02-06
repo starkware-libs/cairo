@@ -111,6 +111,9 @@ fn test_iter_adapter_peekable() {
 fn test_iter_accum_sum() {
     assert_eq!(array![1, 2, 3].into_iter().sum(), 6);
     assert_eq!(array![].into_iter().sum(), 0);
+
+    assert_eq!(array![1_u8, 2, 3].span().into_iter().sum(), @6);
+    assert_eq!([].span().into_iter().sum(), @0);
 }
 
 #[test]
