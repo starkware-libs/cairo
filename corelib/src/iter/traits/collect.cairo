@@ -19,7 +19,7 @@ use crate::metaprogramming::TypeEqual;
 /// Basic usage:
 ///
 /// ```
-/// let v = FromIterator::from_iter((0..5_u32));
+/// let v = FromIterator::from_iter(0..5_u32);
 ///
 /// assert_eq!(v, array![0, 1, 2, 3, 4]);
 /// ```
