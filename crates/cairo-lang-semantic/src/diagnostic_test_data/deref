@@ -141,3 +141,66 @@ error: 'Deref' implementation must be defined in the same module as either the t
 | ...
 | }
 |_^
+
+//! > ==========================================================================
+
+//! > diffrent @T and @T derefs.
+
+//! > test_comments
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    let s1 = S1 { a: 1, b: 2 };
+    let s2 = S2 { inner: s1, c: 5 };
+    let s3 = S3 { inner: s2 };
+
+    s3.c;
+    (@s3).a;
+}
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct S1 {
+    a: usize,
+    b: felt252,
+}
+
+#[derive(Drop, Copy)]
+struct S2 {
+    inner: S1,
+    c: usize,
+}
+
+#[derive(Drop)]
+struct S3 {
+    inner: S2,
+}
+
+
+impl S2Deref of core::ops::Deref<S2> {
+    type Target = S1;
+    fn deref(self: S2) -> S1 {
+        self.inner
+    }
+}
+
+impl S3Deref of core::ops::Deref<S3> {
+    type Target = S2;
+    fn deref(self: S3) -> S2 {
+        self.inner
+    }
+}
+
+impl S3SnapDeref of core::ops::Deref<@S3> {
+    type Target = S1;
+    fn deref(self: @S3) -> S1 {
+        *self.inner.inner
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics

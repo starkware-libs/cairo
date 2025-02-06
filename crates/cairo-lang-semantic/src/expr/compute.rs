@@ -3039,13 +3039,6 @@ fn get_enriched_type_member_access(
     stable_ptr: ast::ExprPtr,
     accessed_member_name: &str,
 ) -> Maybe<Option<EnrichedTypeMemberAccess>> {
-    let (_, mut long_ty) = peel_snapshots(ctx.db, expr.ty());
-    if matches!(long_ty, TypeLongId::Var(_)) {
-        // Save some work. ignore the result. The error, if any, will be reported later.
-        ctx.resolver.inference().solve().ok();
-        long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
-    }
-    let (_, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
     let base_var = match &expr.expr {
         Expr::Var(expr_var) => Some(expr_var.var),
         Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
@@ -3056,8 +3049,7 @@ fn get_enriched_type_member_access(
     let is_mut_var = base_var
         .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
         .is_some();
-    let ty = long_ty.clone().intern(ctx.db);
-    let key = (ty, is_mut_var);
+    let key = (expr.ty(), is_mut_var);
     let mut enriched_members = match ctx.resolver.type_enriched_members.entry(key) {
         Entry::Occupied(entry) => {
             let e = entry.get();
@@ -3074,6 +3066,10 @@ fn get_enriched_type_member_access(
             entry.swap_remove()
         }
         Entry::Vacant(_) => {
+            let (_, mut long_ty) = peel_snapshots(ctx.db, expr.ty());
+            // Save some work. ignore the result. The error, if any, will be reported later.
+            ctx.resolver.inference().solve().ok();
+            ctx.resolver.inference().internal_rewrite(&mut long_ty).no_err();
             let members =
                 if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
                     let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
