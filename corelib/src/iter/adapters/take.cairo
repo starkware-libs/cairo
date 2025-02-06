@@ -7,8 +7,8 @@
 #[must_use]
 #[derive(Drop, Clone)]
 pub struct Take<I> {
-    pub iter: I,
-    pub n: usize,
+    iter: I,
+    n: usize,
 }
 
 pub fn take_iterator<I>(iter: I, n: usize) -> Take<I> {
@@ -32,15 +32,11 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
         ref self: Take<I>, n: usize,
     ) -> Option<Self::Item> {
         if self.n > n {
-            self.n -= 1;
-            Iterator::nth(ref self.iter, n)
+            self.n -= n + 1;
+            self.iter.nth(n)
         } else {
-            if self.n > 0 {
-                // Force use of Destruct<Self::Item> and not Destruct<Option<Self::Item>>
-                match self.iter.nth(self.n - 1) {
-                    Some(_item) => {},
-                    None => {},
-                }
+            if self.n != 0 {
+                let _ = self.iter.advance_by(self.n - 1);
                 self.n = 0;
             }
             None

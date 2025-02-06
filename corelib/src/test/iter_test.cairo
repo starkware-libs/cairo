@@ -120,6 +120,7 @@ fn test_iter_adapter_take_nth() {
     // Test when n > requested nth
     let mut iter = array![1, 2, 3].into_iter().take(2);
     assert_eq!(iter.nth(1), Some(2));
+    assert_eq!(iter.next(), None);
 
     // Test when n > 0 but not enough elements
     let mut iter = array![1, 2].into_iter().take(2);
