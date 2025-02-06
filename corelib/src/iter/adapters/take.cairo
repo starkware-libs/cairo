@@ -47,17 +47,25 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn advance_by<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Result<(), NonZero<usize>> {
-        let min = core::cmp::min(self.n, n);
-        let rem = match self.iter.advance_by(min) {
-            Ok(_) => 0,
-            Err(rem) => rem.into(),
-        };
-        let advanced = min - rem;
-        self.n -= advanced;
-        let maybe_nz: Option<NonZero<usize>> = (n - advanced).try_into();
-        match maybe_nz {
-            Some(nz) => Err(nz),
-            None => Ok(()),
+        if self.n >= n {
+            self.n -= n;
+            match self.iter.advance_by(n) {
+                Ok(_) => Ok(()),
+                Err(rem_nz) => {
+                    let rem = rem_nz.into();
+                    self.n += rem;
+                    Err((n - rem).try_into().unwrap())
+                },
+            }
+        } else {
+            let maybe_nz: Option<NonZero<usize>> = (n - self.n).try_into();
+            let _n = self.iter.advance_by(n - self.n);
+            self.n = 0;
+            match maybe_nz {
+                Some(nz) => Err(nz),
+                // Unreachable - but reducing the possible code size.
+                None => Ok(()),
+            }
         }
     }
 }
