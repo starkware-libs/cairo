@@ -1,8 +1,7 @@
 //! Generic hashing support.
 //!
 //! This module provides a hash state abstraction that can be updated with values and finalized to
-//! produce a hash. This allows for flexible and efficient hashing of any type with different hash
-//! functions.
+//! produce a hash. This allows for flexible and efficient hashing of any type with different hash functions.
 //!
 //! The simplest way to make a type hashable is to use `#[derive(Hash)]`. Hashing a value is done by
 //! initializing a `HashState` corresponding to a hash function, updating it with the value, and then
