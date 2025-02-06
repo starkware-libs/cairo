@@ -108,6 +108,47 @@ fn test_iter_adapter_peekable() {
 }
 
 #[test]
+fn test_iter_adapter_take_next() {
+    let mut iter = array![1, 2, 3].into_iter().take(2);
+    assert_eq!(iter.next(), Some(1));
+    assert_eq!(iter.next(), Some(2));
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_iter_adapter_take_nth() {
+    // Test when n > requested nth
+    let mut iter = array![1, 2, 3].into_iter().take(2);
+    assert_eq!(iter.nth(1), Some(2));
+
+    // Test when n > 0 but not enough elements
+    let mut iter = array![1, 2].into_iter().take(2);
+    assert_eq!(iter.nth(1), Some(2));
+    assert_eq!(iter.nth(0), None);
+
+    // Test when n = 0
+    let mut iter = array![1, 2, 3].into_iter().take(0);
+    assert_eq!(iter.nth(0), None);
+}
+
+#[test]
+fn test_iter_adapter_take_advance_by() {
+    // Test when advancing by less than n
+    let mut iter = array![1, 2, 3].into_iter().take(3);
+    assert_eq!(iter.advance_by(2), Ok(()));
+    assert_eq!(iter.next(), Some(3));
+
+    // Test when advancing by more than available elements
+    let mut iter = array![1, 2].into_iter().take(2);
+    assert_eq!(iter.advance_by(3), Err(1_usize.try_into().unwrap()));
+    assert_eq!(iter.next(), None);
+
+    // Test when n = 0
+    let mut iter = array![1, 2, 3].into_iter().take(0);
+    assert_eq!(iter.advance_by(1), Err(1_usize.try_into().unwrap()));
+}
+
+#[test]
 fn test_iter_accum_sum() {
     assert_eq!(array![1, 2, 3].into_iter().sum(), 6);
     assert_eq!(array![].into_iter().sum(), 0);

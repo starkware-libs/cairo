@@ -1,6 +1,6 @@
 use crate::iter::adapters::{
-    Enumerate, Filter, Map, Peekable, Zip, enumerated_iterator, filter_iterator, mapped_iterator,
-    peekable_iterator, zipped_iterator,
+    Enumerate, Filter, Map, Peekable, Take, Zip, enumerated_iterator, filter_iterator,
+    mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
 
@@ -610,6 +610,42 @@ pub trait Iterator<T> {
     #[must_use]
     fn peekable(self: T) -> Peekable<T, Self::Item> {
         peekable_iterator(self)
+    }
+
+    /// Creates an iterator that yields the first `n` elements, or fewer
+    /// if the underlying iterator ends sooner.
+    ///
+    /// `take(n)` yields elements until `n` elements are yielded or the end of
+    /// the iterator is reached (whichever happens first).
+    /// The returned iterator is a prefix of length `n` if the original iterator
+    /// contains at least `n` elements, otherwise it contains all of the
+    /// (fewer than `n`) elements of the original iterator.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter().take(2);
+    ///
+    /// assert_eq!(iter.next(), Some(1));
+    /// assert_eq!(iter.next(), Some(2));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    ///
+    /// If less than `n` elements are available,
+    /// `take` will limit itself to the size of the underlying iterator:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2].into_iter().take(5);
+    /// assert_eq!(iter.next(), Some(1));
+    /// assert_eq!(iter.next(), Some(2));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    #[inline]
+    #[must_use]
+    fn take(self: T, n: usize) -> Take<T> {
+        take_iterator(self, n)
     }
 
     /// Sums the elements of an iterator.
