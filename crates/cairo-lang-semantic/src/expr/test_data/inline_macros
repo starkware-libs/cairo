@@ -969,3 +969,27 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    add_one!(xyz);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_one {
+    ($x:ident) => {
+        1
+    };
+}
+
+//! > expected_diagnostics

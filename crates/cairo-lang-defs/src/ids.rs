@@ -337,6 +337,7 @@ define_language_element_id_as_enum! {
         Impl(ImplDefId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
+        MacroDeclaration(MacroDeclarationId),
     }
 }
 define_top_level_language_element_id!(
@@ -379,6 +380,14 @@ define_top_level_language_element_id!(
     ast::FunctionWithBody,
     lookup_intern_free_function,
     intern_free_function
+);
+
+define_top_level_language_element_id!(
+    MacroDeclarationId,
+    MacroDeclarationLongId,
+    ast::ItemMacroDeclaration,
+    lookup_intern_macro_declaration,
+    intern_macro_declaration
 );
 
 impl UnstableSalsaId for FreeFunctionId {
@@ -1058,7 +1067,8 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)
             | ModuleItemId::Impl(_)
-            | ModuleItemId::ExternFunction(_) => None,
+            | ModuleItemId::ExternFunction(_)
+            | ModuleItemId::MacroDeclaration(_) => None,
         }
     }
 }
