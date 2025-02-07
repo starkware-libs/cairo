@@ -2945,7 +2945,7 @@ fn method_call_expr(
         compute_method_function_call_data(
             ctx,
             candidate_traits.keys().copied().collect_vec().as_slice(),
-            func_name,
+            func_name.clone(),
             lexpr,
             path.stable_ptr().untyped(),
             generic_args_syntax,
@@ -2968,8 +2968,17 @@ fn method_call_expr(
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
             },
         )?;
-    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
 
+    if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
+        if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(&func_name) {
+            ctx.resolver.validate_feature_constraints(
+                ctx.diagnostics,
+                &segment.identifier_ast(db.upcast()),
+                &trait_item_info,
+            );
+        }
+    }
+    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
     ctx.resolver.data.resolved_items.mark_concrete(
         ctx.db,
         &segment,

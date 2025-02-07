@@ -450,7 +450,7 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
     fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
         self: StoragePath<Mutable<Vec<T>>>, value: Self::ElementType,
     ) {
-        self.append().write(value);
+        self.allocate().write(value);
     }
 
     fn pop<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
