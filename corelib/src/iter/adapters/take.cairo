@@ -59,7 +59,7 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
             }
         } else {
             let maybe_nz: Option<NonZero<usize>> = (n - self.n).try_into();
-            let _n = self.iter.advance_by(n - self.n);
+            let _n = self.iter.advance_by(self.n);
             self.n = 0;
             match maybe_nz {
                 Some(nz) => Err(nz),
