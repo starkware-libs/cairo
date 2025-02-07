@@ -20,6 +20,7 @@ use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use smol_str::SmolStr;
 
 use super::TraitOrImplContext;
+use super::feature_kind::FeatureKind;
 use super::function_with_body::{FunctionBodyData, get_implicit_precedence, get_inline_config};
 use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplGenericFunctionId, ImplicitPrecedence,
@@ -36,6 +37,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosti
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::items::feature_kind::HasFeatureKind;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -477,7 +479,29 @@ pub struct TraitDefinitionData {
     item_impl_asts: OrderedHashMap<TraitImplId, ast::TraitItemImpl>,
 
     /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemId>>,
+    item_id_by_name: Arc<OrderedHashMap<SmolStr, TraitItemInfo>>,
+}
+
+impl TraitDefinitionData {
+    /// Retrieves trait item information by its name.
+    pub fn get_trait_item_info(&self, item_name: &SmolStr) -> Option<TraitItemInfo> {
+        self.item_id_by_name.get(item_name).cloned()
+    }
+}
+/// Stores metadata for a trait item, including its ID and feature kind.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TraitItemInfo {
+    /// The unique identifier of the trait item.
+    pub id: TraitItemId,
+    /// The feature kind associated with this trait item.
+    pub feature_kind: FeatureKind,
+}
+
+impl HasFeatureKind for TraitItemInfo {
+    /// Returns the feature kind of this trait item.
+    fn feature_kind(&self) -> FeatureKind {
+        self.feature_kind.clone()
+    }
 }
 
 // --- Selectors ---
@@ -520,7 +544,7 @@ pub fn trait_required_item_names(
 ) -> Maybe<OrderedHashSet<SmolStr>> {
     let mut required_items = OrderedHashSet::<_>::default();
     for (item_name, item_id) in db.priv_trait_definition_data(trait_id)?.item_id_by_name.iter() {
-        if match item_id {
+        if match item_id.id {
             TraitItemId::Function(id) => {
                 let body = id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast());
                 matches!(body, ast::MaybeTraitFunctionBody::None(_))
@@ -540,7 +564,7 @@ pub fn trait_item_by_name(
     trait_id: TraitId,
     name: SmolStr,
 ) -> Maybe<Option<TraitItemId>> {
-    Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).cloned())
+    Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).map(|info| info.id))
 }
 
 /// Query implementation of [SemanticGroup::trait_all_used_items].
@@ -551,7 +575,7 @@ pub fn trait_all_used_items(
     let mut all_used_items = db.trait_resolver_data(trait_id)?.used_items.clone();
     let data = db.priv_trait_definition_data(trait_id)?;
     for item in data.item_id_by_name.values() {
-        for resolver_data in get_resolver_data_options(LookupItemId::TraitItem(*item), db) {
+        for resolver_data in get_resolver_data_options(LookupItemId::TraitItem(item.id), db) {
             all_used_items.extend(resolver_data.used_items.iter().cloned());
         }
     }
@@ -679,7 +703,7 @@ pub fn priv_trait_definition_data(
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_constant_asts = OrderedHashMap::default();
     let mut item_impl_asts = OrderedHashMap::default();
-    let mut item_id_by_name = OrderedHashMap::default();
+    let mut item_id_by_name: OrderedHashMap<SmolStr, TraitItemInfo> = OrderedHashMap::default();
 
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -689,8 +713,14 @@ pub fn priv_trait_definition_data(
                         TraitFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let attributes = func.attributes(syntax_db);
+                    let feature_kind =
+                        FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Function(trait_func_id))
+                        .insert(name.clone(), TraitItemInfo {
+                            id: TraitItemId::Function(trait_func_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -704,8 +734,14 @@ pub fn priv_trait_definition_data(
                     let trait_type_id = TraitTypeLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let attributes = ty.attributes(syntax_db);
+                    let feature_kind =
+                        FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Type(trait_type_id))
+                        .insert(name.clone(), TraitItemInfo {
+                            id: TraitItemId::Type(trait_type_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -721,8 +757,14 @@ pub fn priv_trait_definition_data(
 
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let attributes = constant.attributes(syntax_db);
+                    let feature_kind =
+                        FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemId::Constant(trait_constant))
+                        .insert(name.clone(), TraitItemInfo {
+                            id: TraitItemId::Constant(trait_constant),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -737,7 +779,15 @@ pub fn priv_trait_definition_data(
 
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
-                    if item_id_by_name.insert(name.clone(), TraitItemId::Impl(trait_impl)).is_some()
+                    let attributes = imp.attributes(syntax_db);
+                    let feature_kind =
+                        FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
+                    if item_id_by_name
+                        .insert(name.clone(), TraitItemInfo {
+                            id: TraitItemId::Impl(trait_impl),
+                            feature_kind,
+                        })
+                        .is_some()
                     {
                         diagnostics.report(
                             &name_node,
@@ -757,7 +807,7 @@ pub fn priv_trait_definition_data(
         item_type_asts,
         item_constant_asts,
         item_impl_asts,
-        item_id_by_name: item_id_by_name.into(),
+        item_id_by_name: Arc::new(item_id_by_name),
     })
 }
 
