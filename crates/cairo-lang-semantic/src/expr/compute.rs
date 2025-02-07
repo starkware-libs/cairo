@@ -2843,7 +2843,7 @@ fn method_call_expr(
         return Err(ctx.diagnostics.report(&expr, InvalidMemberExpression));
     };
     let func_name = segment.identifier(syntax_db);
-    let generic_args_syntax = segment.generic_args(syntax_db);
+    let generic_args_syntax: Option<Vec<ast::GenericArg>> = segment.generic_args(syntax_db);
     // Save some work. ignore the result. The error, if any, will be reported later.
     ctx.resolver.inference().solve().ok();
 
@@ -2869,7 +2869,7 @@ fn method_call_expr(
         compute_method_function_call_data(
             ctx,
             candidate_traits.keys().copied().collect_vec().as_slice(),
-            func_name,
+            func_name.clone(),
             lexpr,
             path.stable_ptr().untyped(),
             generic_args_syntax,
@@ -2892,8 +2892,19 @@ fn method_call_expr(
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
             },
         )?;
-    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
 
+    // Validate if the function is usable before inserting it into `used_items`.
+    if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id) {
+        if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(&func_name) {
+            ctx.resolver.validate_item_usability(
+                ctx.diagnostics,
+                &segment.identifier_ast(db.upcast()),
+                &trait_item_info,
+            );
+        }
+    }
+    // maybe take care of the ambigious also.
+    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
     ctx.resolver.data.resolved_items.mark_concrete(
         ctx.db,
         &segment,
