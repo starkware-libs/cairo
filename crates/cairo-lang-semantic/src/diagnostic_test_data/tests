@@ -1267,3 +1267,36 @@ error: Global `use` item is not supported in `V2023_01` edition.
  --> lib.cairo:4:8
 use a::*;
        ^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated trait function.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let x = Struct {};
+  MyTrait::deprecated_method(@x);
+}
+
+//! > module_code
+pub struct Struct {}
+
+pub trait MyTrait {
+    #[deprecated(feature: "deprecated", note: "This method is deprecated", since: "1.0.0")]
+    fn deprecated_method(self: @Struct);
+}
+
+impl MyTraitImpl of MyTrait {
+    fn deprecated_method(self: @Struct) {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "This method is deprecated"
+ --> lib.cairo:14:12
+  MyTrait::deprecated_method(@x);
+           ^^^^^^^^^^^^^^^^^

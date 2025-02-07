@@ -71,6 +71,12 @@ impl FeatureKind {
     }
 }
 
+/// A trait for retrieving the `FeatureKind` of an item.
+pub trait GetFeatureKind {
+    /// Returns the `FeatureKind` associated with the implementing struct.
+    fn get_feature_kind(&self) -> FeatureKind;
+}
+
 /// Diagnostics for feature markers.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum FeatureMarkerDiagnostic {

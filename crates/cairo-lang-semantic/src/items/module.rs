@@ -19,6 +19,7 @@ use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::items::feature_kind::GetFeatureKind;
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
@@ -283,4 +284,10 @@ fn specific_module_usable_trait_ids(
         }
     }
     Ok(module_traits)
+}
+
+impl GetFeatureKind for ModuleItemInfo {
+    fn get_feature_kind(&self) -> FeatureKind {
+        self.feature_kind.clone()
+    }
 }
