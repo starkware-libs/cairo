@@ -34,7 +34,7 @@ use crate::items::imp::{
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
-    TraitItemTypeData,
+    TraitItemInfo, TraitItemTypeData,
 };
 use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
@@ -466,6 +466,13 @@ pub trait SemanticGroup:
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
     fn trait_item_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitItemId>>;
+    /// Returns the metadata for a trait item, by the given `name`, if exists.
+    #[salsa::invoke(items::trt::trait_item_info_by_name)]
+    fn trait_item_info_by_name(
+        &self,
+        trait_id: TraitId,
+        name: SmolStr,
+    ) -> Maybe<Option<TraitItemInfo>>;
     /// Returns all the items used within the trait.
     #[salsa::invoke(items::trt::trait_all_used_items)]
     fn trait_all_used_items(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;

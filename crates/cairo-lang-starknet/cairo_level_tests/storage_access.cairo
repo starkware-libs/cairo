@@ -203,9 +203,9 @@ fn test_read_write_non_zero() {
 #[test]
 fn test_storage_array() {
     let mut state = test_contract::contract_state_for_testing();
-    state.vecs.vec.append().write(1_u32);
-    state.vecs.vec.append().write(2_u32);
-    state.vecs.vec.append().write(3_u32);
+    state.vecs.vec.push(1_u32);
+    state.vecs.vec.push(2_u32);
+    state.vecs.vec.push(3_u32);
     assert_eq!(state.vecs.vec.len(), 3);
     assert_eq!(state.vecs.vec[0].read(), 1);
     assert_eq!(state.vecs.vec[1].read(), 2);
@@ -219,13 +219,13 @@ fn test_storage_array() {
 #[test]
 fn test_storage_vec_of_vecs() {
     let mut state = test_contract::contract_state_for_testing();
-    state.vecs.vec_of_vecs.append();
-    state.vecs.vec_of_vecs[0].append().write(1);
-    state.vecs.vec_of_vecs[0].append().write(2);
-    state.vecs.vec_of_vecs[0].append().write(3);
-    state.vecs.vec_of_vecs.append();
-    state.vecs.vec_of_vecs[1].append().write(4);
-    state.vecs.vec_of_vecs[1].append().write(5);
+    state.vecs.vec_of_vecs.allocate();
+    state.vecs.vec_of_vecs[0].push(1);
+    state.vecs.vec_of_vecs[0].push(2);
+    state.vecs.vec_of_vecs[0].push(3);
+    state.vecs.vec_of_vecs.allocate();
+    state.vecs.vec_of_vecs[1].push(4);
+    state.vecs.vec_of_vecs[1].push(5);
     assert_eq!(state.vecs.vec_of_vecs.len(), 2);
     assert_eq!(state.vecs.vec_of_vecs[0].len(), 3);
     assert_eq!(state.vecs.vec_of_vecs[0][0].read(), 1);
