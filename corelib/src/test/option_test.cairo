@@ -280,3 +280,9 @@ fn test_option_filter() {
     assert!(Some(3).filter(is_even) == None);
     assert!(Some(4).filter(is_even) == Some(4));
 }
+
+#[test]
+fn test_option_into() {
+    let o: Option<u8> = 67_u8.into();
+    assert_eq!(Some(67), o);
+}
