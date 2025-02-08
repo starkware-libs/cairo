@@ -52,19 +52,21 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
             match self.iter.advance_by(n) {
                 Ok(_) => Ok(()),
                 Err(rem_nz) => {
-                    let rem = rem_nz.into();
-                    self.n += rem;
-                    Err((n - rem).try_into().unwrap())
+                    self.n += rem_nz.into();
+                    Err(rem_nz)
                 },
             }
         } else {
-            let maybe_nz: Option<NonZero<usize>> = (n - self.n).try_into();
-            let _n = self.iter.advance_by(self.n);
-            self.n = 0;
-            match maybe_nz {
-                Some(nz) => Err(nz),
-                // Unreachable - but reducing the possible code size.
-                None => Ok(()),
+            let available = self.n;
+            match self.iter.advance_by(available) {
+                Ok(_) => {
+                    self.n = 0;
+                    Err((n - available).try_into().unwrap())
+                },
+                Err(rem_nz) => {
+                    self.n = rem_nz.into();
+                    Err((n - (available - rem_nz.into())).try_into().unwrap())
+                },
             }
         }
     }
