@@ -1,7 +1,7 @@
 use crate::hash::{HashStateExTrait, HashStateTrait};
 use crate::poseidon::PoseidonTrait;
 use crate::test::test_utils::assert_eq;
-use crate::blake::blake2s_compress;
+use crate::blake::{blake2s_compress, blake2s_finalize};
 
 #[test]
 fn test_pedersen_hash() {
@@ -103,4 +103,13 @@ fn test_blake2s() {
             365144891,
         ],
     );
+
+    let res = blake2s_finalize(state, byte_count, msg).unbox();
+    assert_eq!(
+        res,
+        [
+            128291589, 1454945417, 3191583614, 1491889056, 794023379, 651000200, 3725903680, 1044330286,
+        ],
+    );
+
 }

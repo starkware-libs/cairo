@@ -11,14 +11,18 @@ pub fn build(
     libfunc: &BlakeConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    match libfunc {
-        BlakeConcreteLibfunc::Blake2sCompress(_) => build_compress(builder),
-    }
+    let finalize = match libfunc {
+        BlakeConcreteLibfunc::Blake2sCompress(_) => false,
+        BlakeConcreteLibfunc::Blake2sFinalize(_) => true,
+    };
+
+    build_compress(builder, finalize)
 }
 
 /// Handles instructions for boolean AND.
 fn build_compress(
     builder: CompiledInvocationBuilder<'_>,
+    finalize: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [state, byte_count, message] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
@@ -30,8 +34,9 @@ fn build_compress(
     casm_build_extend! {casm_builder,
         tempvar output;
         const state_size = 8;
+        const finalize = finalize;
         hint AllocConstantSize { size: state_size } into {dst: output};
-        hint ExternalHint::Blake2sCompress { state, byte_count, message, output};
+        hint ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize};
         ap += 1;
     };
     Ok(builder.build_from_casm_builder(
