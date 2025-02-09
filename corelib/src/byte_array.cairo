@@ -491,22 +491,37 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
 // TODO: Implement a more efficient version of this iterator.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
-pub struct ByteArrayIter {
-    ba: ByteArray,
+pub struct ByteArrayIter<T> {
+    ba: T,
     current_index: crate::ops::RangeIterator<usize>,
 }
 
-impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
+impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter<ByteArray>> {
     type Item = u8;
-    fn next(ref self: ByteArrayIter) -> Option<u8> {
+    fn next(ref self: ByteArrayIter<ByteArray>) -> Option<u8> {
+        self.ba.at(self.current_index.next()?)
+    }
+}
+
+impl SnapshotByteArrayIterator of crate::iter::Iterator<ByteArrayIter<@ByteArray>> {
+    type Item = u8;
+    fn next(ref self: ByteArrayIter<@ByteArray>) -> Option<u8> {
         self.ba.at(self.current_index.next()?)
     }
 }
 
 impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
-    type IntoIter = ByteArrayIter;
+    type IntoIter = ByteArrayIter<ByteArray>;
     #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {
+        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+    }
+}
+
+impl SnapshotByteArrayIntoIterator of crate::iter::IntoIterator<@ByteArray> {
+    type IntoIter = ByteArrayIter<@ByteArray>;
+    #[inline]
+    fn into_iter(self: @ByteArray) -> Self::IntoIter {
         ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }
