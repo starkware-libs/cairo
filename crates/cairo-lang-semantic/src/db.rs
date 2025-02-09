@@ -29,7 +29,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
 };
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
@@ -781,6 +781,13 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_item_by_name)]
     fn impl_item_by_name(&self, impl_def_id: ImplDefId, name: SmolStr)
     -> Maybe<Option<ImplItemId>>;
+    /// Returns the metadata for an impl item, by the given `name`, if exists.
+    #[salsa::invoke(items::imp::impl_item_info_by_name)]
+    fn impl_item_info_by_name(
+        &self,
+        impl_def_id: ImplDefId,
+        name: SmolStr,
+    ) -> Maybe<Option<ImplItemInfo>>;
     /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
     #[salsa::invoke(items::imp::impl_implicit_impl_by_name)]
     fn impl_implicit_impl_by_name(

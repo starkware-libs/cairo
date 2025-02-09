@@ -36,6 +36,7 @@ use super::constant::{
     constant_semantic_data_helper,
 };
 use super::enm::SemanticEnumEx;
+use super::feature_kind::{FeatureKind, HasFeatureKind};
 use super::function_with_body::{FunctionBody, FunctionBodyData, get_inline_config};
 use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplGenericFunctionId, InlineConfiguration,
@@ -707,11 +708,34 @@ pub struct ImplDefinitionData {
     item_constant_asts: Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>,
     item_impl_asts: Arc<OrderedHashMap<ImplImplDefId, ast::ItemImplAlias>>,
 
-    /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
+    /// Mapping of item names to their meta data info. All the IDs should appear in one of the AST
+    /// maps above.
+    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemInfo>>,
 
     /// Mapping of missing impl names item names to the trait id.
     implicit_impls_id_by_name: Arc<OrderedHashMap<SmolStr, TraitImplId>>,
+}
+
+impl ImplDefinitionData {
+    /// Retrieves impl item information by its name.
+    pub fn get_impl_item_info(&self, item_name: &SmolStr) -> Option<ImplItemInfo> {
+        self.item_id_by_name.get(item_name).cloned()
+    }
+}
+/// Stores metadata for a impl item, including its ID and feature kind.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ImplItemInfo {
+    /// The unique identifier of the impl item.
+    pub id: ImplItemId,
+    /// The feature kind associated with this impl item.
+    pub feature_kind: FeatureKind,
+}
+
+impl HasFeatureKind for ImplItemInfo {
+    /// Returns the feature kind of this impl item.
+    fn feature_kind(&self) -> &FeatureKind {
+        &self.feature_kind
+    }
 }
 
 // --- Selectors ---
@@ -904,7 +928,17 @@ pub fn impl_item_by_name(
     impl_def_id: ImplDefId,
     name: SmolStr,
 ) -> Maybe<Option<ImplItemId>> {
-    Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).cloned())
+    Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).map(|info| info.id))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_item_info_by_name].
+pub fn impl_item_info_by_name(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    name: SmolStr,
+) -> Maybe<Option<ImplItemInfo>> {
+    let impl_definition_data = db.priv_impl_definition_data(impl_def_id)?;
+    Ok(impl_definition_data.get_impl_item_info(&name))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
@@ -924,7 +958,7 @@ pub fn impl_all_used_items(
     let mut all_used_items = db.impl_def_resolver_data(impl_def_id)?.used_items.clone();
     let data = db.priv_impl_definition_data(impl_def_id)?;
     for item in data.item_id_by_name.values() {
-        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(*item), db) {
+        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(item.id), db) {
             all_used_items.extend(resolver_data.used_items.iter().cloned());
         }
     }
@@ -1108,7 +1142,7 @@ pub fn priv_impl_definition_data(
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_constant_asts = OrderedHashMap::default();
     let mut item_impl_asts = OrderedHashMap::default();
-    let mut item_id_by_name = OrderedHashMap::default();
+    let mut item_id_by_name: OrderedHashMap<SmolStr, ImplItemInfo> = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -1150,8 +1184,16 @@ pub fn priv_impl_definition_data(
                         ImplFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &func.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Function(impl_function_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Function(impl_function_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
@@ -1163,8 +1205,16 @@ pub fn priv_impl_definition_data(
                         ImplTypeDefLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &ty.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Type(impl_type_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Type(impl_type_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
@@ -1176,8 +1226,16 @@ pub fn priv_impl_definition_data(
                         ImplConstantDefLongId(module_file_id, constant.stable_ptr()).intern(db);
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &constant.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Constant(impl_constant_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Constant(impl_constant_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1188,12 +1246,20 @@ pub fn priv_impl_definition_data(
                     item_constant_asts.insert(impl_constant_id, constant);
                 }
                 ImplItem::Impl(imp) => {
-                    let impl_constant_id =
+                    let impl_impl_id =
                         ImplImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &imp.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Impl(impl_constant_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Impl(impl_impl_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1201,7 +1267,7 @@ pub fn priv_impl_definition_data(
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
-                    item_impl_asts.insert(impl_constant_id, imp);
+                    item_impl_asts.insert(impl_impl_id, imp);
                 }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
