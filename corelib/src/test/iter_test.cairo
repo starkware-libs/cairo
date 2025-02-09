@@ -121,6 +121,23 @@ fn test_iter_accum_product() {
 }
 
 #[test]
+fn test_iter_any() {
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(iter.any(|x| *x == 2));
+    assert!(!iter.any(|x| *x == 5));
+
+    // Test short-circuiting behavior
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(iter.any(|x| *x == 2));
+    // Iterator should continue after any()
+    assert_eq!(iter.next(), Option::Some(3));
+
+    // Test empty iterator
+    let mut empty_iter = ArrayTrait::<felt252>::new().into_iter();
+    assert!(!empty_iter.any(|x| *x == 1));
+}
+
+#[test]
 fn test_iter_find() {
     let mut iter = array![1, 2, 3].into_iter();
     assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
