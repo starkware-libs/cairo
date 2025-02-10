@@ -9,3 +9,5 @@ pub mod plugin;
 pub mod plugin_utils;
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_utils;

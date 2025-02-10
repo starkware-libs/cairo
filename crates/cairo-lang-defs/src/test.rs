@@ -2,7 +2,6 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, Severity};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
     init_files_group,
@@ -18,10 +17,8 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
-use itertools::Itertools;
 
 use crate::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
-use crate::diagnostic_utils::StableLocation;
 use crate::ids::{
     FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
     SubmoduleLongId,
@@ -29,6 +26,7 @@ use crate::ids::{
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use crate::test_utils::build_plugin_diagnostics;
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
@@ -496,24 +494,6 @@ cairo_lang_test_utils::test_file_test!(
     test_allow_attr
 );
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct TestDiagnosticEntry(PluginDiagnostic);
-impl DiagnosticEntry for TestDiagnosticEntry {
-    type DbType = dyn DefsGroup;
-    fn format(&self, _db: &Self::DbType) -> String {
-        self.0.message.clone()
-    }
-    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        StableLocation::new(self.0.stable_ptr).diagnostic_location(db)
-    }
-    fn severity(&self) -> Severity {
-        self.0.severity
-    }
-    fn is_same_kind(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
 fn test_allow_attr(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
@@ -524,14 +504,7 @@ fn test_allow_attr(
     let module_id = setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
     let db = &db_val;
 
-    let mut builder = DiagnosticsBuilder::default();
-    for (_, diagnostic) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
-        builder.add(TestDiagnosticEntry(diagnostic.clone()));
-    }
-    let diagnostics = builder.build();
-    let file_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
-    let formatted = diagnostics.format_with_severity(db, &file_notes);
-    let diagnostics_str = formatted.into_iter().map(|d| d.to_string()).join("\n");
+    let diagnostics_str = build_plugin_diagnostics(db, module_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics_str);
 
