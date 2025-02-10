@@ -1694,7 +1694,11 @@ fn compute_expr_closure_semantic(
         if let Some(param_types) = params_tuple_ty {
             if let Err(err_set) = new_ctx.resolver.inference().conform_ty(closure_type, param_types)
             {
-                new_ctx.resolver.inference().consume_error_without_reporting(err_set);
+                new_ctx.resolver.inference().report_on_pending_error(
+                    err_set,
+                    new_ctx.diagnostics,
+                    syntax.stable_ptr().untyped(),
+                );
             }
         }
 
