@@ -6,10 +6,11 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR,
-    INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR,
-    UNSTABLE_ATTR,
+    ALLOW_ATTR, ALLOW_ATTR_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR,
+    IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR,
+    STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
+use cairo_lang_syntax::attribute::structured::AttributeStructurize;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
@@ -27,6 +28,7 @@ use crate::plugin::{
     DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata,
     PluginDiagnostic,
 };
+use crate::plugin_utils::try_extract_unnamed_arg;
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
@@ -269,6 +271,7 @@ fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
         DEPRECATED_ATTR,
         INTERNAL_ATTR,
         ALLOW_ATTR,
+        ALLOW_ATTR_ATTR,
         FEATURE_ATTR,
         PHANTOM_ATTR,
         IMPLICIT_PRECEDENCE_ATTR,
@@ -722,6 +725,38 @@ fn priv_module_sub_files(
     Ok(res.into())
 }
 
+/// Collects attributes allowed by allow_attr attribute and adds them to the base set.
+fn extend_allowed_attributes(
+    db: &dyn SyntaxGroup,
+    base_allowed_attributes: &OrderedHashSet<String>,
+    item: &impl QueryAttrs,
+    plugin_diagnostics: &mut Vec<PluginDiagnostic>,
+) -> OrderedHashSet<String> {
+    let mut allowed_attributes = base_allowed_attributes.clone();
+
+    for attr in item.attributes_elements(db) {
+        if attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR {
+            for arg in attr.structurize(db).args {
+                match try_extract_unnamed_arg(db, &arg.arg) {
+                    Some(expr) => {
+                        if let ast::Expr::Path(path) = expr {
+                            if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                                allowed_attributes.insert(segment.ident(db).text(db).into());
+                            }
+                        }
+                    }
+                    None => plugin_diagnostics.push(PluginDiagnostic::error(
+                        &arg.arg,
+                        "Expected unnamed argument".to_string(),
+                    )),
+                };
+            }
+        }
+    }
+
+    allowed_attributes
+}
+
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
 pub fn validate_attributes_flat(
     db: &dyn SyntaxGroup,
@@ -729,8 +764,13 @@ pub fn validate_attributes_flat(
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
+    let local_allowed_attributes =
+        extend_allowed_attributes(db, allowed_attributes, item, plugin_diagnostics);
+
+    // Then validate all attributes against the allowed set
     for attr in item.attributes_elements(db) {
-        if !allowed_attributes.contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+        if !local_allowed_attributes
+            .contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
         {
             plugin_diagnostics
                 .push(PluginDiagnostic::error(&attr, "Unsupported attribute.".to_string()));
@@ -759,13 +799,16 @@ fn validate_attributes(
     item_ast: &ast::ModuleItem,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    validate_attributes_flat(db, allowed_attributes, item_ast, plugin_diagnostics);
+    let local_allowed_attributes =
+        extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
+    validate_attributes_flat(db, &local_allowed_attributes, item_ast, plugin_diagnostics);
+
     match item_ast {
         ast::ModuleItem::Trait(item) => {
             if let ast::MaybeTraitBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    allowed_attributes,
+                    &local_allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -775,7 +818,7 @@ fn validate_attributes(
             if let ast::MaybeImplBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    allowed_attributes,
+                    &local_allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -784,7 +827,7 @@ fn validate_attributes(
         ast::ModuleItem::Struct(item) => {
             validate_attributes_element_list(
                 db,
-                allowed_attributes,
+                &local_allowed_attributes,
                 &item.members(db),
                 plugin_diagnostics,
             );
@@ -792,7 +835,7 @@ fn validate_attributes(
         ast::ModuleItem::Enum(item) => {
             validate_attributes_element_list(
                 db,
-                allowed_attributes,
+                &local_allowed_attributes,
                 &item.variants(db),
                 plugin_diagnostics,
             );
