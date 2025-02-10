@@ -18,13 +18,13 @@ fn empty() {}
 fn named_arg() {}
 
 #[allow_attr(1234)]
-fn invalid_number() {}
+fn number() {}
 
 #[allow_attr("string")]
-fn invalid_string() {}
+fn string() {}
 
 #[allow_attr(a::b)]
-fn invalid_path() {}
+fn path() {}
 
 #[allow_attr(attr1, attr2, attr3)]
 struct MultiAttr {
@@ -64,13 +64,13 @@ fn empty() {}
 fn named_arg() {}
 
 #[allow_attr(1234)]
-fn invalid_number() {}
+fn number() {}
 
 #[allow_attr("string")]
-fn invalid_string() {}
+fn string() {}
 
 #[allow_attr(a::b)]
-fn invalid_path() {}
+fn path() {}
 
 #[allow_attr(attr1, attr2, attr3)]
 struct MultiAttr {
