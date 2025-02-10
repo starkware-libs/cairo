@@ -75,7 +75,7 @@ cairo_lang_test_utils::test_file_test!(
     defs,
     "src/test_data",
     {
-        generic_item_id: "generic_item_id"
+        generic_item_id: "generic_item_id",
     },
     test_generic_item_id
 );
