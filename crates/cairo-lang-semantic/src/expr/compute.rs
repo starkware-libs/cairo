@@ -1964,19 +1964,23 @@ fn compute_method_function_call_data(
         TraitFunctionId,
     ) -> Option<SemanticDiagnosticKind>,
 ) -> Maybe<(FunctionId, TraitId, ExprAndId, Mutability)> {
+    let expr_ptr = self_expr.stable_ptr();
     let self_ty = ctx.reduce_ty(self_expr.ty());
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
     // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
     // indicating certain traits/impls/functions don't match, which is OK as we only look for one.
     let mut inference_errors = vec![];
-    let candidates = filter_candidate_traits(
+    let (candidates, mut fixed_expr, fixed_ty) = get_method_function_candidates(
         ctx,
-        &mut inference_errors,
-        self_ty,
         candidate_traits,
-        func_name.clone(),
+        &func_name,
+        self_expr,
         method_syntax,
-    );
+        expr_ptr,
+        self_ty,
+        &mut inference_errors,
+    )?;
+
     let trait_function_id = match candidates[..] {
         [] => {
             return Err(no_implementation_diagnostic(self_ty, func_name, TraitInferenceErrors {
@@ -1987,24 +1991,23 @@ fn compute_method_function_call_data(
         }
         [trait_function_id] => trait_function_id,
         [trait_function_id0, trait_function_id1, ..] => {
-            return Err(multiple_trait_diagnostic(self_ty, trait_function_id0, trait_function_id1)
-                .map(|diag| ctx.diagnostics.report(method_syntax, diag))
-                .unwrap_or_else(skip_diagnostic));
+            return Err(multiple_trait_diagnostic(
+                fixed_ty,
+                trait_function_id0,
+                trait_function_id1,
+            )
+            .map(|diag| ctx.diagnostics.report(method_syntax, diag))
+            .unwrap_or_else(skip_diagnostic));
         }
     };
     let (function_id, n_snapshots) =
-        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)?;
+        infer_impl_by_self(ctx, trait_function_id, fixed_ty, method_syntax, generic_args_syntax)?;
 
     let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
-    let mut fixed_expr = self_expr.clone();
     for _ in 0..n_snapshots {
         let ty = TypeLongId::Snapshot(fixed_expr.ty()).intern(ctx.db);
-        let expr = Expr::Snapshot(ExprSnapshot {
-            inner: fixed_expr.id,
-            ty,
-            stable_ptr: self_expr.stable_ptr(),
-        });
+        let expr = Expr::Snapshot(ExprSnapshot { inner: fixed_expr.id, ty, stable_ptr: expr_ptr });
         fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
     }
 
@@ -2014,6 +2017,76 @@ fn compute_method_function_call_data(
         fixed_expr,
         first_param.mutability,
     ))
+}
+
+/// Return candidates for method functions that match the given arguments.
+/// Also returns the expression to be used as self for the method call and its type.
+#[expect(clippy::too_many_arguments)]
+fn get_method_function_candidates(
+    ctx: &mut ComputationContext<'_>,
+    candidate_traits: &[TraitId],
+    func_name: &SmolStr,
+    self_expr: ExprAndId,
+    method_syntax: SyntaxStablePtrId,
+    expr_ptr: ExprPtr,
+    self_ty: TypeId,
+    inference_errors: &mut Vec<(TraitFunctionId, InferenceError)>,
+) -> Result<(Vec<TraitFunctionId>, ExprAndId, TypeId), cairo_lang_diagnostics::DiagnosticAdded> {
+    let mut candidates = filter_candidate_traits(
+        ctx,
+        inference_errors,
+        self_ty,
+        candidate_traits,
+        func_name.clone(),
+        method_syntax,
+    );
+    if !candidates.is_empty() {
+        return Ok((candidates, self_expr, self_ty));
+    }
+
+    let mut fixed_expr = self_expr;
+    let mut fixed_ty = self_ty;
+
+    let base_var = match &fixed_expr.expr {
+        Expr::Var(expr_var) => Some(expr_var.var),
+        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
+            Some(member_path.base_var())
+        }
+        _ => None,
+    };
+    let is_mut_var = base_var
+        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
+        .is_some();
+
+    let deref_chain = ctx.db.deref_chain(self_ty, is_mut_var)?;
+
+    for deref_info in deref_chain.derefs.iter() {
+        let derefed_expr = expr_function_call(
+            ctx,
+            deref_info.function_id,
+            vec![NamedArg(fixed_expr, None, deref_info.self_mutability)],
+            method_syntax,
+            expr_ptr,
+        )?;
+
+        fixed_expr =
+            ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
+
+        candidates = filter_candidate_traits(
+            ctx,
+            inference_errors,
+            deref_info.target_ty,
+            candidate_traits,
+            func_name.clone(),
+            method_syntax,
+        );
+        if !candidates.is_empty() {
+            fixed_ty = deref_info.target_ty;
+            break;
+        }
+    }
+
+    Ok((candidates, fixed_expr, fixed_ty))
 }
 
 /// Computes the semantic model of a pattern.

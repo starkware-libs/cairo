@@ -57,3 +57,68 @@ impl S3SnapDeref of core::ops::Deref<@S3> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test method call through deref.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let s1 = S1 { a: 1, b: 2 };
+    let s2 = S2 { inner: s1, c: 5 };
+
+    s2.foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct S1 {
+    a: usize,
+    b: felt252,
+}
+
+#[derive(Drop, Copy)]
+struct S2 {
+    inner: S1,
+    c: usize,
+}
+
+impl S2Deref of core::ops::Deref<S2> {
+    type Target = S1;
+    fn deref(self: S2) -> S1 {
+        self.inner
+    }
+}
+
+#[generate_trait]
+impl MyImpl of MyTrait {
+    fn foo(self: @S1) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test method call through box.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let a = BoxTrait::new(@array![1_u32]);
+    let _ = a.len();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
