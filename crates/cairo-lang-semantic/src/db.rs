@@ -926,6 +926,11 @@ pub trait SemanticGroup:
         impl_type_def_id: ImplTypeDefId,
     ) -> Maybe<GenericParamsData>;
 
+    /// Returns the deref chain and diagnostics for a given type.
+    #[salsa::invoke(items::imp::deref_chain)]
+    #[salsa::cycle(items::imp::deref_chain_cycle)]
+    fn deref_chain(&self, ty: TypeId, try_deref_mut: bool) -> Maybe<items::imp::DerefChain>;
+
     // Impl type.
     // ================
     /// Returns the implized impl type if the impl is concrete. Returns a TypeId that's not an impl
