@@ -725,7 +725,7 @@ fn priv_module_sub_files(
     Ok(res.into())
 }
 
-/// Collects attributes allowed by allow_attr attribute and adds them to the base set.
+/// Collects attributes allowed by `allow_attr` attribute and adds them to the base set.
 fn extend_allowed_attributes(
     db: &dyn SyntaxGroup,
     base_allowed_attributes: &OrderedHashSet<String>,
