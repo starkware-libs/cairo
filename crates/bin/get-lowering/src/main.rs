@@ -246,9 +246,9 @@ fn main() -> anyhow::Result<()> {
                     GeneratedFunctionKey::Loop(id) => {
                         (id.0.lookup(db).span_without_trivia(db.upcast()), "".into())
                     }
-                    GeneratedFunctionKey::TraitFunc(trat_function, id) => (
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
                         id.syntax_node(db).span_without_trivia(db.upcast()),
-                        trat_function.name(db),
+                        trait_function.name(db),
                     ),
                 })
                 .take(generated_function_index + 1)
