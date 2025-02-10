@@ -493,6 +493,15 @@ fn test_into_iterator() {
 }
 
 #[test]
+fn test_snapshot_byte_array_into_iterator() {
+    let ba: ByteArray = "hello";
+    let mut iter = (@ba).into_iter();
+    assert_eq!(iter.next(), Some('h'));
+    assert_eq!(iter.next(), Some('e'));
+    assert_eq!(iter.next(), Some('l'));
+}
+
+#[test]
 fn test_from_iterator() {
     let ba: ByteArray = array!['h', 'e', 'l', 'l', 'o'].into_iter().collect();
     assert_eq!(ba, "hello");
