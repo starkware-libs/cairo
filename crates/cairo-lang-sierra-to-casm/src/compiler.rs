@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
@@ -101,6 +102,7 @@ pub struct SierraToCasmConfig {
     pub gas_usage_check: bool,
     /// CASM bytecode size limit.
     pub max_bytecode_size: usize,
+    pub m31: bool,
 }
 
 /// The casm program representation.
@@ -181,6 +183,38 @@ impl CairoProgram {
             bytecode.extend(instruction.assemble().encode().into_iter())
         }
         AssembledCairoProgram { bytecode, hints }
+    }
+
+    /// Creates an assembled representation of the program preceded by `header` and followed by
+    /// `footer`.
+    pub fn assemble_m31<'a>(
+        &'a self,
+        header: impl IntoIterator<Item = &'a Instruction>,
+        footer: &[Instruction],
+    ) -> (Vec<u32>, Vec<(usize, Vec<Hint>)>) {
+        let mut bytecode = vec![];
+        let mut hints = vec![];
+        for instruction in chain!(header, &self.instructions) {
+            if !instruction.hints.is_empty() {
+                hints.push((bytecode.len(), instruction.hints.clone()))
+            }
+            bytecode.extend(instruction.encode31());
+        }
+        let ret_opcode =
+            Instruction::new(InstructionBody::Ret(RetInstruction {}), false).encode31();
+        for segment in self.consts_info.segments.values() {
+            bytecode.extend(ret_opcode.clone());
+            bytecode.extend(segment.values.iter().map(|v| v.to_i32().unwrap() as u32));
+        }
+        for instruction in footer {
+            assert!(
+                instruction.hints.is_empty(),
+                "All footer instructions must have no hints since these cannot be added to the \
+                 hints dict."
+            );
+            bytecode.extend(instruction.encode31())
+        }
+        (bytecode, hints)
     }
 }
 
@@ -511,7 +545,7 @@ pub fn compile(
                 let start_offset = program_offset;
 
                 let ret_instruction = RetInstruction {};
-                program_offset += ret_instruction.op_size();
+                program_offset += if config.m31 { 1 } else { ret_instruction.op_size() };
 
                 sierra_statement_info.push(SierraStatementDebugInfo {
                     start_offset,
@@ -557,13 +591,14 @@ pub fn compile(
                     statement_idx,
                     &invoke_refs,
                     annotations.environment,
+                    config.m31,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
                 let start_offset = program_offset;
 
                 for instruction in &compiled_invocation.instructions {
-                    program_offset += instruction.body.op_size();
+                    program_offset += if config.m31 { 1 } else { instruction.body.op_size() };
                 }
 
                 sierra_statement_info.push(SierraStatementDebugInfo {
@@ -644,7 +679,13 @@ pub fn compile(
         &circuits_info.circuits,
         const_segments_max_size,
     )?;
-    relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
+    relocate_instructions(
+        &relocations,
+        &statement_offsets,
+        &consts_info,
+        &mut instructions,
+        config.m31,
+    );
 
     Ok(CairoProgram {
         instructions,

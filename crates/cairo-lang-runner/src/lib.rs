@@ -181,7 +181,7 @@ impl SierraCasmRunner {
     ) -> Result<Self, RunnerError> {
         // Find all contracts.
         Ok(Self {
-            builder: RunnableBuilder::new(sierra_program, metadata_config)?,
+            builder: RunnableBuilder::new(sierra_program, metadata_config, false)?,
             starknet_contracts_info,
             run_profiler,
         })

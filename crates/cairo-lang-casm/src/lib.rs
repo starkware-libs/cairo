@@ -10,6 +10,7 @@ pub mod assembler;
 pub mod builder;
 pub mod cell_expression;
 pub mod encoder;
+pub mod encoder_m31;
 pub mod hints;
 pub mod inline;
 pub mod instructions;

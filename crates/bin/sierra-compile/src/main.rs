@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
         &program,
         &calc_metadata(&program, Default::default())
             .with_context(|| "Failed calculating Sierra variables.")?,
-        SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
+        SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX, m31: false },
     )
     .with_context(|| "Compilation failed.")?;
 

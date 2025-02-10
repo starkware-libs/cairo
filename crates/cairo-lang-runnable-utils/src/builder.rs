@@ -75,6 +75,7 @@ pub struct RunnableBuilder {
     casm_program: CairoProgram,
     /// The types of the non-user argument variables.
     non_args_types: UnorderedHashSet<GenericTypeId>,
+    m31: bool,
 }
 
 impl RunnableBuilder {
@@ -82,6 +83,7 @@ impl RunnableBuilder {
     pub fn new(
         sierra_program: SierraProgram,
         metadata_config: Option<MetadataComputationConfig>,
+        m31: bool,
     ) -> Result<Self, BuildError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -91,7 +93,7 @@ impl RunnableBuilder {
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX, m31 },
         )?;
 
         Ok(Self {
@@ -113,6 +115,7 @@ impl RunnableBuilder {
                 SegmentArenaType::ID,
                 SystemType::ID,
             ]),
+            m31,
         })
     }
 
@@ -213,7 +216,7 @@ impl RunnableBuilder {
             );
         }
 
-        create_entry_code_from_params(&param_types, &return_types, code_offset, config)
+        create_entry_code_from_params(&param_types, &return_types, code_offset, config, self.m31)
     }
 
     /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes
@@ -279,8 +282,9 @@ pub fn create_entry_code_from_params(
     return_types: &[(GenericTypeId, i16)],
     code_offset: usize,
     config: EntryCodeConfig,
+    m31: bool,
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
-    let mut ctx = CasmBuilder::default();
+    let mut ctx = CasmBuilder::new(m31);
     let mut builtin_offset = 3;
     let mut builtin_vars = OrderedHashMap::<_, _>::default();
     let mut builtin_ty_to_vm_name = UnorderedHashMap::<_, _>::default();

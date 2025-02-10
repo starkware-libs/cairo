@@ -16,7 +16,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         TestingConcreteLibfunc::Cheatcode(c) => {
-            let mut casm_builder = CasmBuilder::default();
+            let mut casm_builder = CasmBuilder::new(builder.m31);
             let [input] = builder.try_get_refs()?;
             let [input_start, input_end] = input.try_unpack()?;
 

@@ -12,7 +12,7 @@ use crate::{casm_build_extend, res};
 
 #[test]
 fn test_ap_change_fixes() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     let ap_at_7_mul_34 = builder.add_var(CellExpression::from_res_operand(res!([ap + 7] * 34)));
     let fp_at_minus_3 = builder.add_var(CellExpression::from_res_operand(res!([fp - 3])));
     let imm5 = builder.add_var(CellExpression::from_res_operand(res!(5)));
@@ -49,7 +49,7 @@ fn test_ap_change_fixes() {
 
 #[test]
 fn test_awaiting_relocations() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         ap += 5;
         jump Target;
@@ -67,7 +67,7 @@ fn test_awaiting_relocations() {
 
 #[test]
 fn test_noop_branch() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         ap += 3;
         jump Target;
@@ -86,7 +86,7 @@ fn test_noop_branch() {
 
 #[test]
 fn test_allocations() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         tempvar a;
         tempvar b;
@@ -110,7 +110,7 @@ fn test_allocations() {
 #[test]
 #[should_panic]
 fn should_panic_test_allocations_not_enough_commands() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         tempvar a;
         tempvar b;
@@ -123,7 +123,7 @@ fn should_panic_test_allocations_not_enough_commands() {
 
 #[test]
 fn test_aligned_branch_intersect() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
         tempvar _unused;
@@ -147,7 +147,7 @@ fn test_aligned_branch_intersect() {
 #[test]
 #[should_panic]
 fn should_panic_test_unaligned_branch_intersect() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
         jump X if var != 0;
@@ -164,7 +164,7 @@ fn should_panic_test_unaligned_branch_intersect() {
 
 #[test]
 fn test_calculation_loop() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         const one = 1;
         const ten = 10;
@@ -195,7 +195,7 @@ fn test_calculation_loop() {
 
 #[test]
 fn test_call_ret() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         const zero = 0;
         const one = 1;
@@ -248,7 +248,7 @@ fn test_call_ret() {
 
 #[test]
 fn test_local_fib() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         const one = 1;
         const ten = 10;
@@ -283,7 +283,7 @@ fn test_local_fib() {
 
 #[test]
 fn test_array_access() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         const zero = 0;
         const one = 1;
@@ -308,7 +308,7 @@ fn test_array_access() {
 
 #[test]
 fn test_fail() {
-    let mut builder = CasmBuilder::default();
+    let mut builder = CasmBuilder::new(false);
     casm_build_extend! {builder,
         const three = 3;
         tempvar var = three;

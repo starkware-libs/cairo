@@ -425,7 +425,7 @@ impl CasmContractClass {
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size, m31: false },
         )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
