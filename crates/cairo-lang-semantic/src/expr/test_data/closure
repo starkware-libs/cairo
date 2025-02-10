@@ -819,3 +819,29 @@ error: Ambiguous method call. More than one applicable trait function with a sui
  --> lib.cairo:9:13
         arr.len();
             ^^^
+
+//! > ==========================================================================
+
+//! > Closures bad param count.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    call_with(|| {})
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn call_with<F, +core::ops::Fn<F, (i32,)>>(func: F) {
+    func(1);
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `()` and `(core::integer::i32,)`.
+ --> lib.cairo:5:15
+    call_with(|| {})
+              ^^^^^
