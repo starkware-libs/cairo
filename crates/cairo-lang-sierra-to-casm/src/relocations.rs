@@ -127,6 +127,7 @@ pub fn relocate_instructions(
     statement_offsets: &[usize],
     consts_info: &ConstsInfo,
     instructions: &mut [Instruction],
+    m31: bool,
 ) {
     let mut program_offset = 0;
     let mut relocations_iter = relocations.iter();
@@ -147,7 +148,7 @@ pub fn relocate_instructions(
             }
         }
 
-        program_offset += instruction.body.op_size();
+        program_offset += if m31 { 1 } else { instruction.body.op_size() };
     }
     assert!(
         relocation_entry.is_none(),

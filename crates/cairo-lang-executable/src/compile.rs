@@ -197,7 +197,7 @@ pub fn compile_executable_function_in_prepared_db(
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
     assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
-    let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
+    let builder = RunnableBuilder::new(sierra_program, None, true).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
             // Note that the `last` is used here as the call site is the most relevant location.

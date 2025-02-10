@@ -143,8 +143,21 @@ pub struct CasmBuilder {
     /// Is the current state reachable.
     /// Example for unreachable state is after a unconditional jump, before any label is stated.
     reachable: bool,
+    m31: bool,
 }
 impl CasmBuilder {
+    pub fn new(m31: bool) -> Self {
+        Self {
+            label_state: Default::default(),
+            read_labels: Default::default(),
+            main_state: Default::default(),
+            statements: Default::default(),
+            current_hints: Default::default(),
+            var_count: Default::default(),
+            reachable: true,
+            m31,
+        }
+    }
     /// Finalizes the builder, with the requested labels as the returning branches.
     /// "Fallthrough" is a special case for the fallthrough case.
     pub fn build<const BRANCH_COUNT: usize>(
@@ -165,7 +178,7 @@ impl CasmBuilder {
         for statement in self.statements {
             match statement {
                 Statement::Final(inst) => {
-                    offset += inst.body.op_size();
+                    offset += if self.m31 { 1 } else { inst.body.op_size() };
                     instructions.push(inst);
                 }
                 Statement::Jump(label, mut inst) => {
@@ -194,7 +207,7 @@ impl CasmBuilder {
                             branch_relocations.entry(label).or_default().push(instructions.len())
                         }
                     }
-                    offset += inst.body.op_size();
+                    offset += if self.m31 { 1 } else { inst.body.op_size() };
                     instructions.push(inst);
                 }
                 Statement::Label(name, _) => {
@@ -228,7 +241,7 @@ impl CasmBuilder {
         for statement in &self.statements {
             match statement {
                 Statement::Final(inst) | Statement::Jump(_, inst) => {
-                    offset += inst.body.op_size();
+                    offset += if self.m31 { 1 } else { inst.body.op_size() };
                 }
                 Statement::Label(name, extra_offset) => {
                     label_offsets.insert(name.clone(), offset + extra_offset);
@@ -729,20 +742,6 @@ impl CasmBuilder {
         let mut hints = vec![];
         core::mem::swap(&mut hints, &mut self.current_hints);
         Instruction { body, inc_ap, hints }
-    }
-}
-
-impl Default for CasmBuilder {
-    fn default() -> Self {
-        Self {
-            label_state: Default::default(),
-            read_labels: Default::default(),
-            main_state: Default::default(),
-            statements: Default::default(),
-            current_hints: Default::default(),
-            var_count: Default::default(),
-            reachable: true,
-        }
     }
 }
 

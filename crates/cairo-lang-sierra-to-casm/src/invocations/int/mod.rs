@@ -34,7 +34,7 @@ pub fn build_small_wide_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::new(builder.m31);
     add_input_variables! {casm_builder,
         deref a;
         deref_or_immediate b;
@@ -58,7 +58,7 @@ fn build_small_diff(
     limit: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::new(builder.m31);
     add_input_variables! {casm_builder,
         buffer(0) range_check;
         deref a;
@@ -106,7 +106,7 @@ fn build_128bit_diff(
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::new(builder.m31);
     add_input_variables! {casm_builder,
         buffer(0) range_check;
         deref a;

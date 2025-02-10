@@ -770,7 +770,7 @@ fn sierra_to_casm(sierra_code: &str, gas_usage_check: bool, expected_casm: &str)
                 calc_metadata_ap_change_only(&program).unwrap_or_default()
             },
             // `max_bytecode_size` is a small value to ensure we can pass with small values.
-            SierraToCasmConfig { gas_usage_check, max_bytecode_size: 100 }
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: 100, m31: false }
         )
         .expect("Compilation failed.")
         .to_string(),
@@ -815,7 +815,7 @@ fn compiler_errors(
         Ok(metadata) => compile(
             &program,
             &metadata,
-            SierraToCasmConfig { gas_usage_check: false, max_bytecode_size },
+            SierraToCasmConfig { gas_usage_check: false, max_bytecode_size, m31: false },
         )
         .expect_err("Compilation is expected to fail.")
         .to_string(),

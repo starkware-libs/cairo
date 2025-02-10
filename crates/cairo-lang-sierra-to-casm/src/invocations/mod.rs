@@ -381,6 +381,7 @@ pub struct CompiledInvocationBuilder<'a> {
     /// The arguments of the libfunc.
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
+    pub m31: bool,
 }
 impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation.
@@ -651,9 +652,17 @@ pub fn compile_invocation(
     idx: StatementIdx,
     refs: &[ReferenceValue],
     environment: Environment,
+    m31: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let builder =
-        CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
+    let builder = CompiledInvocationBuilder {
+        program_info,
+        invocation,
+        libfunc,
+        idx,
+        refs,
+        environment,
+        m31,
+    };
     match libfunc {
         Felt252(libfunc) => felt252::build(libfunc, builder),
         Felt252SquashedDict(libfunc) => squashed_felt252_dict::build(libfunc, builder),

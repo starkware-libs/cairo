@@ -161,7 +161,7 @@ fn cairo_to_casm(
             } else {
                 calc_metadata_ap_change_only(&program).unwrap()
             },
-            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
+            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX, m31: false },
         )
         .unwrap()
         .to_string(),
@@ -179,7 +179,7 @@ fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData)
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &calc_metadata(&program, Default::default()).unwrap(),
-            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX, m31: false },
         )
         .unwrap()
         .to_string(),

@@ -8,6 +8,7 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 
 use crate::compile;
 use crate::plugin::executable_plugin_suite;
@@ -72,15 +73,33 @@ impl TestFileRunner for CompileExecutableTestRunner {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
         let (test_module, semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
-        let result = compile::compile_executable_in_prepared_db(
+        let result = match compile::compile_executable_in_prepared_db(
             &db,
             None,
             vec![test_module.crate_id],
             DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]),
             Default::default(),
-        )
-        .map(|compiled| compiled.to_string())
-        .unwrap_or_else(|e| e.to_string());
+        ) {
+            Err(e) => e.to_string(),
+            Ok(r) => {
+                let (bytecode, _hints) =
+                    r.program.assemble_m31(&r.wrapper.header, &r.wrapper.footer);
+                let mut s = String::new();
+                for x in &bytecode.iter().chunks(4) {
+                    s += "[";
+                    let mut first = true;
+                    for y in x {
+                        if !first {
+                            s += ", ";
+                        }
+                        first = false;
+                        s.push_str(&format!("\"{:#x}\"", y));
+                    }
+                    s += "],\n";
+                }
+                s
+            }
+        };
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
         TestRunnerResult {
             outputs: OrderedHashMap::from([

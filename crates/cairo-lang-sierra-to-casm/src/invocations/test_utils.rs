@@ -302,6 +302,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             StatementIdx(0),
             &args,
             environment,
+            false,
         )
         .expect("Failed to compile invocation."),
     )

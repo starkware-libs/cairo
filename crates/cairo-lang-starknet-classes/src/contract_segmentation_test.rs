@@ -30,6 +30,7 @@ impl TestFileRunner for BytecodeSegmentLengthTest {
                         SierraToCasmConfig {
                             gas_usage_check: false,
                             max_bytecode_size: usize::MAX,
+                            m31: false,
                         },
                     )
                     .ok()
