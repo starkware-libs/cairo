@@ -366,6 +366,7 @@ pub enum ExternalHint {
         byte_count: ResOperand,
         message: ResOperand,
         output: ResOperand,
+        finalize: ResOperand,
     },
 }
 

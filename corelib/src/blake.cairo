@@ -11,3 +11,9 @@ type Blake2sInput = Box<[u32; 16]>;
 pub extern fn blake2s_compress(
     state: Blake2sState, byte_count: u32, msg: Blake2sInput,
 ) -> Blake2sState nopanic;
+
+
+/// Similar to `blake2s_compress`, but used for the final block of the message.
+pub extern fn blake2s_finalize(
+    state: Blake2sState, byte_count: u32, msg: Blake2sInput,
+) -> Blake2sState nopanic;

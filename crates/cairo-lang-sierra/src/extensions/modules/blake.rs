@@ -25,6 +25,7 @@ impl NoGenericArgsGenericType for Blake2sState {
 define_libfunc_hierarchy! {
     pub enum BlakeLibfunc {
         Blake2sCompress(Blake2sCompressLibFunc),
+        Blake2sFinalize(Blake2sFinalizeLibFunc),
     }, BlakeConcreteLibfunc
 }
 
@@ -38,10 +39,32 @@ impl NoGenericArgsGenericLibfunc for Blake2sCompressLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        // let state = context.get_concrete_type(Blake2sState::id(), &[])?;
-
         let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+        let state = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 8)?)?;
+        let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+        let msg_ty = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 16)?)?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![state.clone(), u32_ty, msg_ty],
+            vec![OutputVarInfo {
+                ty: state,
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
 
+/// Libfunc for the Blake2s finalize function.
+#[derive(Default)]
+pub struct Blake2sFinalizeLibFunc {}
+impl NoGenericArgsGenericLibfunc for Blake2sFinalizeLibFunc {
+    const STR_ID: &'static str = "blake2s_finalize";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let state = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 8)?)?;
         let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
         let msg_ty = box_ty(context, fixed_size_array_ty(context, u32_ty.clone(), 16)?)?;

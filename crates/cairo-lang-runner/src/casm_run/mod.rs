@@ -38,7 +38,7 @@ use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
-use num_traits::{Signed, ToPrimitive, Zero};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use rand::Rng;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
@@ -1343,11 +1343,13 @@ impl CairoHintProcessor<'_> {
             ExternalHint::SetMarker { marker } => {
                 self.markers.push(extract_relocatable(vm, marker)?);
             }
-            ExternalHint::Blake2sCompress { state, byte_count, message, output } => {
+            ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize } => {
                 let state = extract_relocatable(vm, state)?;
                 let byte_count = get_val(vm, byte_count)?;
                 let message = extract_relocatable(vm, message)?;
                 let felt_to_u32 = |value: Felt252| value.to_le_digits()[0].try_into().ok();
+
+                let finalize = get_val(vm, finalize)?.is_one();
 
                 let into_u32 = |opt: Option<Cow<'_, _>>| match opt {
                     Some(val) => {
@@ -1380,7 +1382,7 @@ impl CairoHintProcessor<'_> {
                     &message.try_into().unwrap(),
                     felt_to_u32(byte_count).unwrap(),
                     0,
-                    0,
+                    if finalize { 0xffffffff } else { 0x00 },
                     0,
                 );
 
