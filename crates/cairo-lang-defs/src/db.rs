@@ -19,7 +19,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, Upcast};
 use itertools::{Itertools, chain};
 use salsa::InternKey;
 
@@ -732,29 +732,36 @@ fn extend_allowed_attributes(
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> OrderedHashSet<String> {
-    let mut allowed_attributes = base_allowed_attributes.clone();
-
-    for attr in item.attributes_elements(db) {
-        if attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR {
-            for arg in attr.structurize(db).args {
-                match try_extract_unnamed_arg(db, &arg.arg) {
-                    Some(expr) => {
-                        if let ast::Expr::Path(path) = expr {
-                            if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
-                                allowed_attributes.insert(segment.ident(db).text(db).into());
-                            }
+    let additional_attrs: OrderedHashSet<String> = item
+        .attributes_elements(db)
+        .into_iter()
+        .filter(|attr| {
+            attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR
+        })
+        .flat_map(|attr| attr.structurize(db).args.into_iter())
+        .filter_map(|arg| {
+            try_extract_unnamed_arg(db, &arg.arg)
+                .and_then(|expr| {
+                    if let ast::Expr::Path(path) = expr {
+                        if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                            Some(segment.ident(db).text(db).into())
+                        } else {
+                            None
                         }
+                    } else {
+                        None
                     }
-                    None => plugin_diagnostics.push(PluginDiagnostic::error(
+                })
+                .on_none(|| {
+                    plugin_diagnostics.push(PluginDiagnostic::error(
                         &arg.arg,
-                        "Expected unnamed argument".to_string(),
-                    )),
-                };
-            }
-        }
-    }
+                        "Expected simple identifier.".to_string(),
+                    ));
+                })
+        })
+        .collect();
 
-    allowed_attributes
+    base_allowed_attributes.union(&additional_attrs).cloned().collect()
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.

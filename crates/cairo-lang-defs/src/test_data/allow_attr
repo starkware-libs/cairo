@@ -11,6 +11,18 @@ fn foo() {}
 #[some]
 fn bar() {}
 
+#[allow_attr(my_attr = "value")]
+fn named_arg() {}
+
+#[allow_attr(1234)]
+fn invalid_number() {}
+
+#[allow_attr("string")]
+fn invalid_string() {}
+
+#[allow_attr(a::b)]
+fn invalid_path() {}
+
 #[allow_attr(attr1, attr2, attr3)]
 struct MultiAttr {
     #[attr1]
@@ -42,6 +54,18 @@ fn foo() {}
 #[some]
 fn bar() {}
 
+#[allow_attr(my_attr = "value")]
+fn named_arg() {}
+
+#[allow_attr(1234)]
+fn invalid_number() {}
+
+#[allow_attr("string")]
+fn invalid_string() {}
+
+#[allow_attr(a::b)]
+fn invalid_path() {}
+
 #[allow_attr(attr1, attr2, attr3)]
 struct MultiAttr {
     #[attr1]
@@ -72,13 +96,37 @@ error: Unsupported attribute.
 ^^^^^^^
 
 
+error: Expected simple identifier.
+ --> src/lib.cairo:8:14
+#[allow_attr(my_attr = "value")]
+             ^^^^^^^^^^^^^^^^^
+
+
+error: Expected simple identifier.
+ --> src/lib.cairo:11:14
+#[allow_attr(1234)]
+             ^^^^
+
+
+error: Expected simple identifier.
+ --> src/lib.cairo:14:14
+#[allow_attr("string")]
+             ^^^^^^^^
+
+
+error: Expected simple identifier.
+ --> src/lib.cairo:17:14
+#[allow_attr(a::b)]
+             ^^^^
+
+
 error: Unsupported attribute.
- --> src/lib.cairo:16:5
+ --> src/lib.cairo:34:5
     #[attr4]
     ^^^^^^^^
 
 
 error: Unsupported attribute.
- --> src/lib.cairo:27:5
+ --> src/lib.cairo:45:5
     #[other]
     ^^^^^^^^
