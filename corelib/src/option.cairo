@@ -799,12 +799,14 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
+    #[inline]
     fn take(ref self: Option<T>) -> Option<T> {
         let value = self;
         self = None;
         value
     }
 
+    #[inline]
     fn filter<P, +core::ops::FnOnce<P, (@T,)>[Output: bool], +Destruct<T>, +Destruct<P>>(
         self: Option<T>, predicate: P,
     ) -> Option<T> {
