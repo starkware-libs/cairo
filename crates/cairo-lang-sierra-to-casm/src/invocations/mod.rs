@@ -36,6 +36,7 @@ use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntr
 
 mod array;
 mod bitwise;
+mod blake;
 mod boolean;
 mod boxing;
 mod bytes31;
@@ -715,6 +716,7 @@ pub fn compile_invocation(
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
         Circuit(libfunc) => circuit::build(libfunc, builder),
         IntRange(libfunc) => range::build(libfunc, builder),
+        Blake(libfunc) => blake::build(libfunc, builder),
     }
 }
 
