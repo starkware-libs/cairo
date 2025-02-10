@@ -735,7 +735,7 @@ fn extend_allowed_attributes(
     let mut empty_args_diagnostics = Vec::new();
     let mut identifier_diadnostics = Vec::new();
 
-    let additional_attrs: OrderedHashSet<String> = item
+    let additional_attributes: OrderedHashSet<String> = item
         .attributes_elements(db)
         .into_iter()
         .filter(|attr| {
@@ -776,7 +776,7 @@ fn extend_allowed_attributes(
     plugin_diagnostics.extend(empty_args_diagnostics);
     plugin_diagnostics.extend(identifier_diadnostics);
 
-    base_allowed_attributes.union(&additional_attrs).cloned().collect()
+    base_allowed_attributes.union(&additional_attributes).cloned().collect()
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
