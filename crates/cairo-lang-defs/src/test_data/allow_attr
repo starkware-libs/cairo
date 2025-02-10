@@ -1,0 +1,84 @@
+//! > Test allow_attr functionality
+
+//! > test_runner_name
+test_allow_attr
+
+//! > cairo_code
+#[allow_attr(some)]
+#[some]
+fn foo() {}
+
+#[some]
+fn bar() {}
+
+#[allow_attr(attr1, attr2, attr3)]
+struct MultiAttr {
+    #[attr1]
+    x: felt252,
+    #[attr2]
+    y: felt252,
+    #[attr3]
+    z: felt252,
+    #[attr4]
+    w: felt252,
+}
+
+#[allow_attr(outer)]
+struct MyStruct {
+    #[allow_attr(inner)]
+    #[inner]
+    x: felt252,
+    #[outer]
+    y: felt252,
+    #[other]
+    z: felt252,
+}
+
+//! > generated_cairo_code
+#[allow_attr(some)]
+#[some]
+fn foo() {}
+
+#[some]
+fn bar() {}
+
+#[allow_attr(attr1, attr2, attr3)]
+struct MultiAttr {
+    #[attr1]
+    x: felt252,
+    #[attr2]
+    y: felt252,
+    #[attr3]
+    z: felt252,
+    #[attr4]
+    w: felt252,
+}
+
+#[allow_attr(outer)]
+struct MyStruct {
+    #[allow_attr(inner)]
+    #[inner]
+    x: felt252,
+    #[outer]
+    y: felt252,
+    #[other]
+    z: felt252,
+}
+
+//! > expected_diagnostics
+error: Unsupported attribute.
+ --> src/lib.cairo:5:1
+#[some]
+^^^^^^^
+
+
+error: Unsupported attribute.
+ --> src/lib.cairo:16:5
+    #[attr4]
+    ^^^^^^^^
+
+
+error: Unsupported attribute.
+ --> src/lib.cairo:27:5
+    #[other]
+    ^^^^^^^^
