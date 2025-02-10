@@ -11,6 +11,9 @@ fn foo() {}
 #[some]
 fn bar() {}
 
+#[allow_attr]
+fn empty() {}
+
 #[allow_attr(my_attr = "value")]
 fn named_arg() {}
 
@@ -54,6 +57,9 @@ fn foo() {}
 #[some]
 fn bar() {}
 
+#[allow_attr]
+fn empty() {}
+
 #[allow_attr(my_attr = "value")]
 fn named_arg() {}
 
@@ -96,37 +102,43 @@ error: Unsupported attribute.
 ^^^^^^^
 
 
+error: Expected arguments.
+ --> src/lib.cairo:8:1
+#[allow_attr]
+^^^^^^^^^^^^^
+
+
 error: Expected simple identifier.
- --> src/lib.cairo:8:14
+ --> src/lib.cairo:11:14
 #[allow_attr(my_attr = "value")]
              ^^^^^^^^^^^^^^^^^
 
 
 error: Expected simple identifier.
- --> src/lib.cairo:11:14
+ --> src/lib.cairo:14:14
 #[allow_attr(1234)]
              ^^^^
 
 
 error: Expected simple identifier.
- --> src/lib.cairo:14:14
+ --> src/lib.cairo:17:14
 #[allow_attr("string")]
              ^^^^^^^^
 
 
 error: Expected simple identifier.
- --> src/lib.cairo:17:14
+ --> src/lib.cairo:20:14
 #[allow_attr(a::b)]
              ^^^^
 
 
 error: Unsupported attribute.
- --> src/lib.cairo:34:5
+ --> src/lib.cairo:31:5
     #[attr4]
     ^^^^^^^^
 
 
 error: Unsupported attribute.
- --> src/lib.cairo:45:5
+ --> src/lib.cairo:42:5
     #[other]
     ^^^^^^^^

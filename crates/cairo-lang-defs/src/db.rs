@@ -732,13 +732,25 @@ fn extend_allowed_attributes(
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> OrderedHashSet<String> {
+    let mut empty_args_diagnostics = Vec::new();
+    let mut identifier_diadnostics = Vec::new();
+
     let additional_attrs: OrderedHashSet<String> = item
         .attributes_elements(db)
         .into_iter()
         .filter(|attr| {
             attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR
         })
-        .flat_map(|attr| attr.structurize(db).args.into_iter())
+        .flat_map(|attr| {
+            let args = attr.clone().structurize(db).args;
+            if args.is_empty() {
+                empty_args_diagnostics.push(PluginDiagnostic::error(
+                    attr.stable_ptr(),
+                    "Expected arguments.".to_string(),
+                ));
+            }
+            args.into_iter()
+        })
         .filter_map(|arg| {
             try_extract_unnamed_arg(db, &arg.arg)
                 .and_then(|expr| {
@@ -753,13 +765,16 @@ fn extend_allowed_attributes(
                     }
                 })
                 .on_none(|| {
-                    plugin_diagnostics.push(PluginDiagnostic::error(
+                    identifier_diadnostics.push(PluginDiagnostic::error(
                         &arg.arg,
                         "Expected simple identifier.".to_string(),
                     ));
                 })
         })
         .collect();
+
+    plugin_diagnostics.extend(empty_args_diagnostics);
+    plugin_diagnostics.extend(identifier_diadnostics);
 
     base_allowed_attributes.union(&additional_attrs).cloned().collect()
 }
