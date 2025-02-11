@@ -1,17 +1,19 @@
 use cairo_lang_defs::ids::{
-    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    TopLevelLanguageElementId, TraitId, VarId,
+    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ImplItemId, LookupItemId, ModuleId,
+    ModuleItemId, ModuleTypeAliasId, TopLevelLanguageElementId, TraitId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 
 use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
-use crate::items::functions::GenericFunctionId;
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplLongId};
 use crate::items::us::SemanticUseEx;
-use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Variant};
+use crate::{
+    ConcreteImplLongId, ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Variant,
+};
 
 // Resolved items:
 // ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
@@ -32,35 +34,82 @@ pub enum ResolvedGenericItem {
     Variable(VarId),
 }
 impl ResolvedGenericItem {
-    /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
-    pub fn from_module_item(
-        db: &dyn SemanticGroup,
-        module_item: ModuleItemId,
-    ) -> Maybe<ResolvedGenericItem> {
+    /// Wraps a [`ModuleItemId`] with the corresponding [`ResolvedGenericItem`].
+    pub fn from_module_item(db: &dyn SemanticGroup, module_item: ModuleItemId) -> Maybe<Self> {
         Ok(match module_item {
-            ModuleItemId::Constant(id) => ResolvedGenericItem::GenericConstant(id),
-            ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
+            ModuleItemId::Constant(id) => Self::GenericConstant(id),
+            ModuleItemId::Submodule(id) => Self::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // Note that `use_resolved_item` needs to be called before
                 // `use_semantic_diagnostics` to handle cycles.
                 db.use_resolved_item(id)?
             }
-            ModuleItemId::FreeFunction(id) => {
-                ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(id))
-            }
+            ModuleItemId::FreeFunction(id) => Self::GenericFunction(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => {
-                ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(id))
+                Self::GenericFunction(GenericFunctionId::Extern(id))
             }
-            ModuleItemId::Struct(id) => ResolvedGenericItem::GenericType(GenericTypeId::Struct(id)),
-            ModuleItemId::Enum(id) => ResolvedGenericItem::GenericType(GenericTypeId::Enum(id)),
-            ModuleItemId::TypeAlias(id) => ResolvedGenericItem::GenericTypeAlias(id),
-            ModuleItemId::ImplAlias(id) => ResolvedGenericItem::GenericImplAlias(id),
-            ModuleItemId::ExternType(id) => {
-                ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
-            }
-            ModuleItemId::Trait(id) => ResolvedGenericItem::Trait(id),
-            ModuleItemId::Impl(id) => ResolvedGenericItem::Impl(id),
+            ModuleItemId::Struct(id) => Self::GenericType(GenericTypeId::Struct(id)),
+            ModuleItemId::Enum(id) => Self::GenericType(GenericTypeId::Enum(id)),
+            ModuleItemId::TypeAlias(id) => Self::GenericTypeAlias(id),
+            ModuleItemId::ImplAlias(id) => Self::GenericImplAlias(id),
+            ModuleItemId::ExternType(id) => Self::GenericType(GenericTypeId::Extern(id)),
+            ModuleItemId::Trait(id) => Self::Trait(id),
+            ModuleItemId::Impl(id) => Self::Impl(id),
         })
+    }
+
+    /// Wraps a [`TraitItemId`] into the corresponding [`ResolvedGenericItem`].
+    pub fn from_trait_item(db: &dyn SemanticGroup, trait_item: TraitItemId) -> Maybe<Self> {
+        // if let TraitItemId::Function(trait_function_id) = trait_item {
+        //     let parent_trait = trait_item.trait_id(db);
+        //     let generic_parameters = db.trait_generic_params(parent_trait).to_option()?;
+        //     let concrete_trait = ConcreteTraitLongId {
+        //         trait_id: parent_trait,
+        //         generic_args: generic_params_to_args(&generic_parameters, db),
+        //     };
+        //     let concrete_trait = db.intern_concrete_trait(concrete_trait);
+        //
+        //     ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(ImplGenericFunctionId {
+        //         impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+        //         function: trait_function_id,
+        //     }))
+        // } else {
+        //     ResolvedGenericItem::Trait(trait_item.trait_id(db))
+        // }
+        todo!()
+    }
+
+    /// Wraps an [`ImplItemId`] into the corresponding [`ResolvedGenericItem`].
+    pub fn from_impl_item(db: &dyn SemanticGroup, impl_item: ImplItemId) -> Maybe<Self> {
+        Ok(match impl_item {
+            ImplItemId::Function(impl_function) => {
+                let impl_def_id = impl_function.impl_def_id(db.upcast());
+                let impl_id = ImplLongId::Concrete(
+                    ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db.upcast()),
+                )
+                .intern(db.upcast());
+                let function;
+
+                Self::GenericFunction(GenericFunctionId::Impl(ImplGenericFunctionId {
+                    impl_id,
+                    function,
+                }))
+            }
+            ImplItemId::Type(impl_type) => {}
+            ImplItemId::Constant(impl_const) => {}
+            ImplItemId::Impl(impl_impl) => {}
+        })
+    }
+
+    /// Re-wraps a [`LookupItemId`] into the corresponding [`ResolvedGenericItem`].
+    ///
+    /// This method is used by CairoLS.
+    pub fn from_lookup_item(db: &dyn SemanticGroup, lookup_item: LookupItemId) -> Maybe<Self> {
+        match lookup_item {
+            LookupItemId::ModuleItem(module_item) => Self::from_module_item(db, module_item),
+            LookupItemId::TraitItem(trait_item) => Self::from_trait_item(db, trait_item),
+            LookupItemId::ImplItem(impl_item) => Self::from_impl_item(db, impl_item),
+        }
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
