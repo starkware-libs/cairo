@@ -23,6 +23,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
 use itertools::{Itertools, chain, izip};
+use salsa::InternKey;
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
@@ -1893,16 +1894,21 @@ pub fn find_closure_generated_candidate(
     let mem_trait_generic_params = |trait_id, neg_impl_trait: Option<_>| {
         let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
         chain!(
-            closure_type_long.captured_types.iter().map(|ty| {
-                GenericParam::Impl(GenericParamImpl {
-                    id,
-                    concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
-                        trait_id,
-                        generic_args: vec![GenericArgumentId::Type(*ty)],
-                    })),
-                    type_constraints: Default::default(),
-                })
-            }),
+            closure_type_long
+                .captured_types
+                .iter()
+                .sorted_by_key(|ty| ty.as_intern_id())
+                .dedup()
+                .map(|ty| {
+                    GenericParam::Impl(GenericParamImpl {
+                        id,
+                        concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
+                            trait_id,
+                            generic_args: vec![GenericArgumentId::Type(*ty)],
+                        })),
+                        type_constraints: Default::default(),
+                    })
+                }),
             neg_impl_trait.map(|neg_impl_trait| {
                 GenericParam::NegImpl(GenericParamImpl {
                     id,

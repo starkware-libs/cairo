@@ -1773,8 +1773,6 @@ fn compute_expr_closure_semantic(
         usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
         chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty())
     )
-    .sorted_by_key(|ty| ty.as_intern_id())
-    .dedup()
     .collect_vec();
 
     let ty = TypeLongId::Closure(ClosureTypeLongId {
