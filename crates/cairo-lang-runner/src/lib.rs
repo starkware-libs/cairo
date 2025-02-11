@@ -195,6 +195,7 @@ impl SierraCasmRunner {
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
+        // TODO: it's weird that we use `testing` here.
         let (assembled_program, builtins) =
             self.builder.assemble_function_program(func, EntryCodeConfig::testing())?;
         let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);

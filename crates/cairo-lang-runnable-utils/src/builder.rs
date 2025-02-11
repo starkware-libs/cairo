@@ -77,6 +77,7 @@ pub struct RunnableBuilder {
     non_args_types: UnorderedHashSet<GenericTypeId>,
 }
 
+// TODO: rename to ExecutableBuilder?
 impl RunnableBuilder {
     /// Creates a new `RunnableBuilder` for a Sierra program.
     pub fn new(
@@ -162,7 +163,7 @@ impl RunnableBuilder {
         self.type_sizes[ty]
     }
 
-    /// Returns whether `ty` is a user arg sort of type.
+    /// Returns whether `ty` is a user argument type (e.g., not a builtin).
     pub fn is_user_arg_type(&self, ty: &GenericTypeId) -> bool {
         !self.non_args_types.contains(ty)
     }
@@ -199,16 +200,22 @@ impl RunnableBuilder {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
         let entry_point = func.entry_point.0;
+        // TODO: Why the use of `debug_info`? Does it always exist?
         let code_offset =
             self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
-        // Finalizing for proof only if all returned values are builtins or droppable.
-        let droppable_return_value = func.signature.ret_types.iter().all(|ty| {
-            let info = self.type_info(ty);
-            info.droppable || !self.is_user_arg_type(&info.long_id.generic_id)
-        });
-        if !droppable_return_value {
+
+        // If segment arena should be finalized, check that all returned values are builtins or
+        // droppable.
+        // TODO: Why is this check necessary? Why only if segment arena is used?
+        if config.finalize_segment_arena {
+            let droppable_return_value = func.signature.ret_types.iter().all(|ty| {
+                let info = self.type_info(ty);
+                // TODO: What happens if the user put a builtin type on their own, or put more than
+                // one of the same type.
+                info.droppable || !self.is_user_arg_type(&info.long_id.generic_id)
+            });
             assert!(
-                !config.finalize_segment_arena,
+                droppable_return_value,
                 "Cannot finalize the segment arena when returning non-droppable values."
             );
         }
@@ -270,8 +277,16 @@ pub struct CasmProgramWrapperInfo {
     pub footer: Vec<Instruction>,
 }
 
-/// Returns the entry code to call the function with `param_types` as its inputs and
-/// `return_types` as outputs, located at `code_offset`. If `finalize_for_proof` is true,
+/// Gets:
+/// * param_types: The types and sizes of the parameters of the function.
+/// * return_types: The types and sizes of the return values of the function.
+/// * code_offset: The offset of the entry_point in the CASM program (before adding the
+///   executable header).
+///
+/// Returns the entry code to call the function.
+///
+// TODO: The following is unclear.
+/// If `finalize_for_proof` is true,
 /// will make sure to remove the segment arena after calling the function. For testing purposes,
 /// `finalize_for_proof` can be set to false, to avoid a failure of the segment arena validation.
 pub fn create_entry_code_from_params(
@@ -285,6 +300,7 @@ pub fn create_entry_code_from_params(
     let mut builtin_vars = OrderedHashMap::<_, _>::default();
     let mut builtin_ty_to_vm_name = UnorderedHashMap::<_, _>::default();
     let mut builtins = vec![];
+    // Iterate over the supported builtins, in reverse order.
     for (builtin_name, builtin_ty) in [
         (BuiltinName::mul_mod, MulModType::ID),
         (BuiltinName::add_mod, AddModType::ID),
@@ -296,6 +312,7 @@ pub fn create_entry_code_from_params(
         (BuiltinName::pedersen, PedersenType::ID),
     ] {
         if param_types.iter().any(|(ty, _)| ty == &builtin_ty) {
+            // TODO: fix comment below.
             // The offset [fp - i] for each of this builtins in this configuration.
             builtin_vars.insert(
                 builtin_name,
@@ -309,14 +326,17 @@ pub fn create_entry_code_from_params(
     if config.outputting_function {
         let output_builtin_var = ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset])));
         builtin_vars.insert(BuiltinName::output, output_builtin_var);
+        // TODO: Consider adding the following line for completeness. Alternatively, make sure
+        // builtin_offset is not use later by extracting this code to a function.
+        builtin_offset += 1;
         builtins.push(BuiltinName::output);
     }
     builtins.reverse();
 
     let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
 
-    let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
-    let has_post_calculation_loop = got_segment_arena && config.finalize_segment_arena;
+    let segment_arena_used = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
+    let has_post_calculation_loop = segment_arena_used && config.finalize_segment_arena;
 
     let mut local_exprs = vec![];
     if has_post_calculation_loop {
@@ -345,7 +365,7 @@ pub fn create_entry_code_from_params(
             casm_build_extend!(ctx, ap += local_exprs.len(););
         }
     }
-    if got_segment_arena {
+    if segment_arena_used {
         casm_build_extend! {ctx,
             tempvar segment_arena;
             tempvar infos;
@@ -485,7 +505,7 @@ pub fn create_entry_code_from_params(
             casm_build_extend!(ctx, assert local_cell = cell;);
         }
     }
-    if got_segment_arena && config.finalize_segment_arena {
+    if segment_arena_used && config.finalize_segment_arena {
         let segment_arena = builtin_vars[&BuiltinName::segment_arena];
         // Validating the segment arena's segments are one after the other.
         casm_build_extend! {ctx,

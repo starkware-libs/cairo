@@ -30,19 +30,19 @@ pub struct CompiledFunction {
 }
 impl std::fmt::Display for CompiledFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "# builtins:")?;
+        write!(f, "// builtins:")?;
         if !self.wrapper.builtins.is_empty() {
             write!(f, " ")?;
             write_comma_separated(f, self.wrapper.builtins.iter().map(|b| b.to_str()))?;
         }
         writeln!(f)?;
-        writeln!(f, "# header #")?;
+        writeln!(f, "// header")?;
         for instruction in &self.wrapper.header {
             writeln!(f, "{};", instruction)?;
         }
-        writeln!(f, "# sierra based code #")?;
+        writeln!(f, "// sierra based code")?;
         write!(f, "{}", self.program)?;
-        writeln!(f, "# footer #")?;
+        writeln!(f, "// footer ")?;
         for instruction in &self.wrapper.footer {
             writeln!(f, "{};", instruction)?;
         }
@@ -178,6 +178,7 @@ pub fn compile_executable_function_in_prepared_db(
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
+    // Document
     if !config.allow_syscalls {
         for libfunc in &sierra_program.libfunc_declarations {
             if libfunc.long_id.generic_id.0.ends_with("_syscall") {
@@ -190,7 +191,9 @@ pub fn compile_executable_function_in_prepared_db(
         }
     }
 
+    // Why funcs[0]? What happens if there are no functions?
     let executable_func = sierra_program.funcs[0].clone();
+    // Document
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
