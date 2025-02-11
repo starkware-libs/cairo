@@ -395,7 +395,6 @@ fn priv_function_with_body_multi_lowering(
     let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
 
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
-        println!("cached_multi_lowerings {:?}", map.len());
         if let Some(multi_lowering) = map.get(&function_id) {
             println!("function found in cached lowering {:?}", function_id.debug(db));
             return Ok(Arc::new(multi_lowering.clone()));
@@ -454,7 +453,6 @@ fn priv_concrete_function_with_body_lowered_flat(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_db = db.upcast();
-    println!("priv_concrete_function_with_body_lowered_flat {:?}", function.full_path(db));
     let mut lowered =
         (*db.function_with_body_lowering(function.function_with_body_id(db)).unwrap()).clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db).unwrap()).unwrap();

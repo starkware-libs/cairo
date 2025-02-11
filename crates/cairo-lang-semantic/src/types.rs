@@ -461,7 +461,12 @@ impl DebugWithDb<dyn SemanticGroup> for ClosureTypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()))
+        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()));
+        write!(f, "{{closure_params@{:?}}}", self.param_tys.iter().map(|ty| ty.debug(db)));
+        for ty in self.captured_types.iter() {
+            write!(f, "captured {:?}", ty.debug(db));
+        }
+        write!(f, "{{closure_ret@{:?}}}", self.ret_ty.debug(db))
     }
 }
 
@@ -947,6 +952,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
             closure.param_tys.iter().all(|param| param.is_var_free(db))
+                && closure.captured_types.iter().all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
     }

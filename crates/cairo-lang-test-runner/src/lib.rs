@@ -6,6 +6,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::profiling::{
@@ -232,6 +233,7 @@ impl TestCompiler {
         };
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
+        println!("len(main_crate_ids): {}", main_crate_ids.len());
 
         Ok(Self {
             db: db.snapshot(),

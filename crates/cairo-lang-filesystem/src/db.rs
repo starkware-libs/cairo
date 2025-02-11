@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -249,7 +249,8 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                     coupons: true,
                 },
             },
-            cache_file: None,
+            cache_file: Some(BlobLongId::OnDisk("abc.json".into()).intern(db)),
+            // cache_file: None,
         }),
     );
 }

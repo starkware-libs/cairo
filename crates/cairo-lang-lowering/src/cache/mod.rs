@@ -33,6 +33,7 @@ use cairo_lang_semantic::items::generics::{GenericParamConst, GenericParamImpl, 
 use cairo_lang_semantic::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplLongId,
 };
+use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -1597,6 +1598,7 @@ impl SemanticConcreteFunctionWithBodyCached {
 enum GenericFunctionWithBodyCached {
     Free(LanguageElementCached),
     Impl(ConcreteImplCached, ImplFunctionBodyCached),
+    Trait(ConcreteTraitIdCached, LanguageElementCached),
 }
 
 impl GenericFunctionWithBodyCached {
@@ -1612,9 +1614,10 @@ impl GenericFunctionWithBodyCached {
                 ConcreteImplCached::new(id.concrete_impl_id, ctx),
                 ImplFunctionBodyCached::new(id.function_body, ctx),
             ),
-            GenericFunctionWithBodyId::Trait(_id) => {
-                unreachable!("Trait functions are not supported in serialization")
-            }
+            GenericFunctionWithBodyId::Trait(id) => GenericFunctionWithBodyCached::Trait(
+                ConcreteTraitIdCached::new(id.concrete_trait(ctx.db), ctx),
+                LanguageElementCached::new(id.trait_function(ctx.db), ctx),
+            ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericFunctionWithBodyId {
@@ -1626,11 +1629,26 @@ impl GenericFunctionWithBodyCached {
                 GenericFunctionWithBodyId::Free(id)
             }
             GenericFunctionWithBodyCached::Impl(id, function_body) => {
-                // todo handle trait functions
                 GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
                     concrete_impl_id: id.embed(ctx),
                     function_body: function_body.embed(ctx),
                 })
+            }
+            GenericFunctionWithBodyCached::Trait(id, name) => {
+                let concrete_trait_id = id.embed(ctx);
+                let (module_file_id, stable_ptr) = name.embed(ctx);
+                let trait_function_id =
+                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
+                        .intern(ctx.db);
+
+                GenericFunctionWithBodyId::Trait(
+                    ConcreteTraitGenericFunctionLongId::new(
+                        ctx.db,
+                        concrete_trait_id,
+                        trait_function_id,
+                    )
+                    .intern(ctx.db),
+                )
             }
         }
     }

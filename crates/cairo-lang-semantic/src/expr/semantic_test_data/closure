@@ -6,52 +6,122 @@ test_expr_semantics(expect_diagnostics: false)
 //! > module_code
 
 //! > expr_code
-|a| {
-    a + 3
+{
+let outer_var = 42;
+    let _closure_annotated = |i: u32| -> u32 {
+        i + outer_var
+    };
+    let _a = _closure_annotated(1);
 }
 
 //! > expected_semantics
-ExprClosure(
-    ExprClosure {
-        body: Block(
-            ExprBlock {
-                statements: [],
-                tail: Some(
-                    FunctionCall(
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        outer_var,
+                    ),
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 42,
+                            ty: core::integer::u32,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _closure_annotated,
+                    ),
+                    expr: ExprClosure(
+                        ExprClosure {
+                            body: Block(
+                                ExprBlock {
+                                    statements: [],
+                                    tail: Some(
+                                        FunctionCall(
+                                            ExprFunctionCall {
+                                                function: core::integer::U32Add::add,
+                                                args: [
+                                                    Value(
+                                                        Var(
+                                                            ParamId(test::i),
+                                                        ),
+                                                    ),
+                                                    Value(
+                                                        Var(
+                                                            LocalVarId(test::outer_var),
+                                                        ),
+                                                    ),
+                                                ],
+                                                coupon_arg: None,
+                                                ty: core::integer::u32,
+                                            },
+                                        ),
+                                    ),
+                                    ty: core::integer::u32,
+                                },
+                            ),
+                            params: [
+                                Parameter {
+                                    id: ParamId(test::i),
+                                    name: "i",
+                                    ty: core::integer::u32,
+                                    mutability: Immutable,
+                                },
+                            ],
+                            ty: {closure@lib.cairo:4:30: 4:38}{closure_params@Map { iter: Iter([TypeId(5)]) }}captured core::integer::u32{closure_ret@core::integer::u32},
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _a,
+                    ),
+                    expr: FunctionCall(
                         ExprFunctionCall {
-                            function: core::Felt252Add::add,
+                            function: Generated core::ops::function::Fn::<{closure@lib.cairo:4:30: 4:38}{closure_params@Map { iter: Iter([TypeId(5)]) }}captured core::integer::u32{closure_ret@core::integer::u32}, (core::integer::u32,)>::call,
                             args: [
                                 Value(
-                                    Var(
-                                        ParamId(test::a),
+                                    Snapshot(
+                                        ExprSnapshot {
+                                            inner: Var(
+                                                LocalVarId(test::_closure_annotated),
+                                            ),
+                                            ty: @{closure@lib.cairo:4:30: 4:38}{closure_params@Map { iter: Iter([TypeId(5)]) }}captured core::integer::u32{closure_ret@core::integer::u32},
+                                        },
                                     ),
                                 ),
                                 Value(
-                                    Literal(
-                                        ExprLiteral {
-                                            value: 3,
-                                            ty: core::felt252,
+                                    Tuple(
+                                        ExprTuple {
+                                            items: [
+                                                Literal(
+                                                    ExprLiteral {
+                                                        value: 1,
+                                                        ty: core::integer::u32,
+                                                    },
+                                                ),
+                                            ],
+                                            ty: (core::integer::u32,),
                                         },
                                     ),
                                 ),
                             ],
                             coupon_arg: None,
-                            ty: core::felt252,
+                            ty: core::integer::u32,
                         },
                     ),
-                ),
-                ty: core::felt252,
-            },
-        ),
-        params: [
-            Parameter {
-                id: ParamId(test::a),
-                name: "a",
-                ty: core::felt252,
-                mutability: Immutable,
-            },
+                },
+            ),
         ],
-        ty: {closure@lib.cairo:2:1: 2:4},
+        tail: None,
+        ty: (),
     },
 )
 
@@ -130,7 +200,7 @@ Block(
                                     mutability: Immutable,
                                 },
                             ],
-                            ty: {closure@lib.cairo:6:13: 6:16},
+                            ty: {closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128},
                         },
                     ),
                 },
@@ -142,7 +212,7 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}, core::ops::function::FnOnceImpl::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,), core::traits::DestructFromDrop::<{closure@lib.cairo:6:13: 6:16}, Generated core::traits::Drop::<{closure@lib.cairo:6:13: 6:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,)>>>,
+                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128}, core::ops::function::FnOnceImpl::<{closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128}, (core::integer::u8,), core::traits::DestructFromDrop::<{closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128}, Generated core::traits::Drop::<{closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:6:13: 6:16}{closure_params@Map { iter: Iter([TypeId(27)]) }}{closure_ret@core::integer::u128}, (core::integer::u8,)>>>,
                             args: [
                                 Value(
                                     Var(
