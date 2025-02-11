@@ -821,7 +821,8 @@ fn validate_attributes(
     item_ast: &ast::ModuleItem,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let allowed_attributes = extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
+    let allowed_attributes =
+        extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
     validate_attributes_flat(db, &allowed_attributes, item_ast, plugin_diagnostics);
 
     match item_ast {
