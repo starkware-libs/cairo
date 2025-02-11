@@ -27,7 +27,7 @@ pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
@@ -55,9 +55,11 @@ pub trait LanguageElementId {
 
 pub trait NamedLanguageElementLongId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait NamedLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -109,10 +111,17 @@ macro_rules! define_named_language_element_id {
                 let terminal_green = self.1.name_green(syntax_db);
                 terminal_green.identifier(syntax_db)
             }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                let syntax_db = db.upcast();
+                self.1.lookup(syntax_db).name(syntax_db)
+            }
         }
         impl NamedLanguageElementId for $short_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                db.$lookup(*self).name_identifier(db)
             }
         }
     };
@@ -251,6 +260,13 @@ macro_rules! toplevel_enum {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.name(db),
+                    )*
+                }
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.name_identifier(db),
                     )*
                 }
             }
@@ -1192,6 +1208,7 @@ impl ImplItemId {
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
     /// Semantic info lookups should be performed against these items.
