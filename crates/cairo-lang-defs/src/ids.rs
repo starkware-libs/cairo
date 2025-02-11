@@ -25,7 +25,7 @@ use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
-use cairo_lang_syntax::node::ast::{TerminalIdentifierGreen, TerminalIdentifierPtr};
+use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -55,11 +55,11 @@ pub trait LanguageElementId {
 
 pub trait NamedLanguageElementLongId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
-    fn name_stable_ptr(&self, db: &dyn DefsGroup) -> TerminalIdentifierPtr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait NamedLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
-    fn name_stable_ptr(&self, db: &dyn DefsGroup) -> TerminalIdentifierPtr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -111,17 +111,17 @@ macro_rules! define_named_language_element_id {
                 let terminal_green = self.1.name_green(syntax_db);
                 terminal_green.identifier(syntax_db)
             }
-            fn name_stable_ptr(&self, db: &dyn DefsGroup) -> TerminalIdentifierPtr {
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
                 let syntax_db = db.upcast();
-                self.1.lookup(syntax_db).name(syntax_db).stable_ptr()
+                self.1.lookup(syntax_db).name(syntax_db)
             }
         }
         impl NamedLanguageElementId for $short_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
             }
-            fn name_stable_ptr(&self, db: &dyn DefsGroup) -> TerminalIdentifierPtr {
-                db.$lookup(*self).name_stable_ptr(db)
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                db.$lookup(*self).name_identifier(db)
             }
         }
     };
@@ -263,10 +263,10 @@ macro_rules! toplevel_enum {
                     )*
                 }
             }
-            fn name_stable_ptr(&self, db: &dyn DefsGroup) -> TerminalIdentifierPtr {
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
                 match self {
                     $(
-                        $enum_name::$variant(id) => id.name_stable_ptr(db),
+                        $enum_name::$variant(id) => id.name_identifier(db),
                     )*
                 }
             }
