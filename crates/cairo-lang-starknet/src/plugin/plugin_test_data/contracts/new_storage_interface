@@ -3091,6 +3091,11 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 | }
 |_^
 
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> lib.cairo:132:22
+            self.arr.append().write(value);
+                     ^^^^^^
+
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:75:28
         legacy_map_balace: LegacyMap<usize, usize>,
