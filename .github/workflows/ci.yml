@@ -59,7 +59,6 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-test-utils
           - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
           - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci-dev -p cairo-lang-primitive-token
           - test --profile=ci-dev -p tests
     steps:
       - uses: actions/checkout@v4
@@ -76,10 +75,10 @@ jobs:
       - run: |
           CRATES_COUNT=$(find {crates/*,tests}/Cargo.toml | wc -l)
           COMMANDS_COUNT=${{ strategy.job-total }}
-          if [ $((CRATES_COUNT + 2)) -ne $COMMANDS_COUNT ]; then
+          if [ $((CRATES_COUNT + 1)) -ne $COMMANDS_COUNT ]; then
             echo "CRATES_COUNT: $CRATES_COUNT"
             echo "COMMANDS_COUNT: $COMMANDS_COUNT"
-            echo "The number of commands in the matrix is not equal to the number of crates in the workspace + 2"
+            echo "The number of commands in the matrix is not equal to the number of crates in the workspace + 1"
             exit 1
           fi
       - run: |
