@@ -35,7 +35,7 @@ impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
     }
 }
 
-/// Collects compilation diagnostics and presents them in preconfigured way.
+/// Collects compilation diagnostics and presents them in a preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
     // Ignore all warnings, the `ignore_warnings_crate_ids` field is irrelevant in this case.
