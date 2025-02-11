@@ -821,16 +821,15 @@ fn validate_attributes(
     item_ast: &ast::ModuleItem,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let local_allowed_attributes =
-        extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
-    validate_attributes_flat(db, &local_allowed_attributes, item_ast, plugin_diagnostics);
+    let allowed_attributes = extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
+    validate_attributes_flat(db, &allowed_attributes, item_ast, plugin_diagnostics);
 
     match item_ast {
         ast::ModuleItem::Trait(item) => {
             if let ast::MaybeTraitBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    &local_allowed_attributes,
+                    &allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -840,7 +839,7 @@ fn validate_attributes(
             if let ast::MaybeImplBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    &local_allowed_attributes,
+                    &allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -849,7 +848,7 @@ fn validate_attributes(
         ast::ModuleItem::Struct(item) => {
             validate_attributes_element_list(
                 db,
-                &local_allowed_attributes,
+                &allowed_attributes,
                 &item.members(db),
                 plugin_diagnostics,
             );
@@ -857,7 +856,7 @@ fn validate_attributes(
         ast::ModuleItem::Enum(item) => {
             validate_attributes_element_list(
                 db,
-                &local_allowed_attributes,
+                &allowed_attributes,
                 &item.variants(db),
                 plugin_diagnostics,
             );
