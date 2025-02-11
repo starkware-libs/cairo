@@ -27,7 +27,7 @@ pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::{TerminalIdentifierGreen, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, GetName, NameGreen};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;

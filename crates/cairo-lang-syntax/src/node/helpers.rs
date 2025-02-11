@@ -157,30 +157,30 @@ impl NameGreen for TraitItemFunctionPtr {
 }
 
 /// Provides methods to extract a _name_ of AST objects.
-pub trait GetName {
+pub trait HasName {
     /// Gets a [`TerminalIdentifier`] that represents a _name_ of this AST object.
     fn name(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
 }
 
-impl GetName for FunctionWithBody {
+impl HasName for FunctionWithBody {
     fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         self.declaration(db).name(db)
     }
 }
 
-impl GetName for ItemExternFunction {
+impl HasName for ItemExternFunction {
     fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         self.declaration(db).name(db)
     }
 }
 
-impl GetName for TraitItemFunction {
+impl HasName for TraitItemFunction {
     fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         self.declaration(db).name(db)
     }
 }
 
-impl GetName for UsePathLeaf {
+impl HasName for UsePathLeaf {
     fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => self.ident(db).identifier_ast(db),
