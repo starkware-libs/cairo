@@ -57,7 +57,7 @@ pub enum Opcode {
     Ret,
 }
 
-/// The low level representation of a cairo instruction.
+/// The low level-representation of a cairo instruction.
 #[derive(Debug, Eq, PartialEq)]
 pub struct InstructionRepr {
     pub off0: i16,
