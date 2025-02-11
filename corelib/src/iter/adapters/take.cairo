@@ -58,15 +58,20 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
             }
         } else {
             let available = self.n;
-            match self.iter.advance_by(available) {
+            let inner_taken = match self.iter.advance_by(available) {
                 Ok(_) => {
                     self.n = 0;
-                    Err((n - available).try_into().unwrap())
+                    available
                 },
-                Err(rem_nz) => {
-                    self.n = rem_nz.into();
-                    Err((n - (available - rem_nz.into())).try_into().unwrap())
+                Err(inner_untaken) => {
+                    self.n = inner_untaken.into();
+                    available - self.n
                 },
+            };
+            match (n - inner_taken).try_into() {
+                Some(nz) => Err(nz),
+                // Can't actually happen - but preventing the `unwrap` generated code.
+                None => Ok(()),
             }
         }
     }
