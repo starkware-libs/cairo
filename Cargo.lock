@@ -774,7 +774,7 @@ dependencies = [
  "anstream",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
- "cairo-lang-primitive-token 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cairo-lang-primitive-token",
  "cairo-lang-syntax",
  "cairo-lang-syntax-codegen",
  "cairo-lang-test-utils",
@@ -813,10 +813,6 @@ dependencies = [
  "smol_str",
  "test-log",
 ]
-
-[[package]]
-name = "cairo-lang-primitive-token"
-version = "1.0.0"
 
 [[package]]
 name = "cairo-lang-primitive-token"
@@ -1123,7 +1119,7 @@ version = "2.9.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
- "cairo-lang-primitive-token 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cairo-lang-primitive-token",
  "cairo-lang-utils",
  "env_logger",
  "num-bigint",
