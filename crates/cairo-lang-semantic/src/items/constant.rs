@@ -39,7 +39,6 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
 use crate::items::enm::SemanticEnumEx;
-use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
@@ -496,15 +495,6 @@ impl ConstantEvaluateContext<'_> {
                 self.validate(*inner);
             }
             Expr::FunctionCall(expr) => {
-                if let Some(value) = try_extract_minus_literal(self.db, &self.arenas.exprs, expr) {
-                    if let Err(err) = validate_literal(self.db, expr.ty, &value) {
-                        self.diagnostics.report(
-                            expr.stable_ptr.untyped(),
-                            SemanticDiagnosticKind::LiteralError(err),
-                        );
-                    }
-                    return;
-                }
                 for arg in &expr.args {
                     match arg {
                         ExprFunctionCallArg::Value(arg) => self.validate(*arg),
@@ -805,10 +795,6 @@ impl ConstantEvaluateContext<'_> {
     /// Attempts to evaluate constants from a const function call.
     fn evaluate_function_call(&mut self, expr: &ExprFunctionCall) -> ConstValue {
         let db = self.db;
-        if let Some(value) = try_extract_minus_literal(db.upcast(), &self.arenas.exprs, expr) {
-            return value_as_const_value(db, expr.ty, &value)
-                .expect("LiteralError should have been caught on `validate`");
-        }
         let args = expr
             .args
             .iter()

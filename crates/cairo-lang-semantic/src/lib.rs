@@ -9,7 +9,6 @@ pub mod expr;
 pub mod helper;
 pub mod inline_macros;
 pub mod items;
-pub mod literals;
 pub mod lookup_item;
 pub mod lsp_helpers;
 pub mod plugin;

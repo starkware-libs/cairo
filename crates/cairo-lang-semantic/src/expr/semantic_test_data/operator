@@ -26,20 +26,9 @@ FunctionCall(
                                                 function: core::Felt252Add::add,
                                                 args: [
                                                     Value(
-                                                        FunctionCall(
-                                                            ExprFunctionCall {
-                                                                function: core::Felt252Neg::neg,
-                                                                args: [
-                                                                    Value(
-                                                                        Literal(
-                                                                            ExprLiteral {
-                                                                                value: 5,
-                                                                                ty: core::felt252,
-                                                                            },
-                                                                        ),
-                                                                    ),
-                                                                ],
-                                                                coupon_arg: None,
+                                                        Literal(
+                                                            ExprLiteral {
+                                                                value: -5,
                                                                 ty: core::felt252,
                                                             },
                                                         ),

@@ -52,7 +52,7 @@ use super::pattern::{
 use crate::corelib::{
     CoreTraitContext, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
     get_core_trait, get_usize_ty, never_ty, numeric_literal_trait, true_literal_expr,
-    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -70,7 +70,6 @@ use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_b
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
-use crate::literals::try_extract_minus_literal;
 use crate::resolve::{
     EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
 };
@@ -492,11 +491,18 @@ fn compute_expr_unary_semantic(
     syntax: &ast::ExprUnary,
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-
     let unary_op = syntax.op(syntax_db);
-    match unary_op {
-        UnaryOperator::At(_) => {
-            let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let inner = syntax.expr(syntax_db);
+    match (&unary_op, &inner) {
+        // If this is not an actual function call, but actually a minus literal (e.g. -1).
+        (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
+            let (value, ty) = literal.numeric_value_and_suffix(syntax_db).unwrap_or_default();
+            let ty = ty.as_ref().map(SmolStr::as_str);
+
+            Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr().into())?))
+        }
+        (UnaryOperator::At(_), inner) => {
+            let expr = compute_expr_semantic(ctx, inner);
 
             let ty = TypeLongId::Snapshot(expr.ty()).intern(ctx.db);
             Ok(Expr::Snapshot(ExprSnapshot {
@@ -505,18 +511,18 @@ fn compute_expr_unary_semantic(
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        UnaryOperator::Desnap(_) => {
+        (UnaryOperator::Desnap(_), inner) => {
             let (desnapped_expr, desnapped_ty) = {
                 // The expr the desnap acts on. E.g. `x` in `*x`.
-                let desnapped_expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+                let desnapped_expr = compute_expr_semantic(ctx, inner);
                 let desnapped_expr_type = ctx.reduce_ty(desnapped_expr.ty());
 
                 let desnapped_ty = match desnapped_expr_type.lookup_intern(ctx.db) {
                     TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
                         let inference = &mut ctx.resolver.inference();
                         // The type of the full desnap expr. E.g. the type of `*x` for `*x`.
-                        let desnap_expr_type = inference
-                            .new_type_var(Some(syntax.expr(syntax_db).stable_ptr().untyped()));
+                        let desnap_expr_type =
+                            inference.new_type_var(Some(inner.stable_ptr().untyped()));
                         let desnapped_expr_type_var =
                             TypeLongId::Snapshot(desnap_expr_type).intern(ctx.db);
                         if let Err(err_set) =
@@ -545,9 +551,9 @@ fn compute_expr_unary_semantic(
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        _ => {
+        (_, inner) => {
             // TODO(yuval): Unary operators may change the type in the future.
-            let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+            let expr = compute_expr_semantic(ctx, &inner);
 
             let concrete_trait_function = match core_unary_operator(
                 ctx.db,
@@ -2768,7 +2774,7 @@ fn new_literal_expr(
     value: BigInt,
     stable_ptr: ExprPtr,
 ) -> Maybe<ExprLiteral> {
-    let ty = if let Some(ty_str) = ty {
+    if let Some(ty_str) = ty {
         // Requires specific blocking as `NonZero` now has NumericLiteral support.
         if ty_str == "NonZero" {
             return Err(ctx.diagnostics.report(
@@ -2776,11 +2782,14 @@ fn new_literal_expr(
                 SemanticDiagnosticKind::WrongNumberOfArguments { expected: 1, actual: 0 },
             ));
         }
-        try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
-            .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?
-    } else {
-        ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()))
+        let ty = try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
+            .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?;
+        if let Err(err) = validate_literal(ctx.db, ty, &value) {
+            ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+        }
+        return Ok(ExprLiteral { value, ty, stable_ptr });
     };
+    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     // Numeric trait.
     let trait_id = numeric_literal_trait(ctx.db);
@@ -3423,7 +3432,7 @@ fn expr_function_call(
         stable_ptr,
     };
     // Check panicable.
-    if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call) {
+    if signature.panicable && has_panic_incompatibility(ctx) {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
         return Err(ctx.diagnostics.report(call_ptr, PanicableFromNonPanicable));
@@ -3471,15 +3480,7 @@ fn maybe_pop_coupon_argument(
 }
 
 /// Checks if a panicable function is called from a disallowed context.
-fn has_panic_incompatibility(
-    ctx: &mut ComputationContext<'_>,
-    expr_function_call: &ExprFunctionCall,
-) -> bool {
-    // If this is not an actual function call, but actually a minus literal (e.g. -1), then this is
-    // the same as nopanic.
-    if try_extract_minus_literal(ctx.db, &ctx.arenas.exprs, expr_function_call).is_some() {
-        return false;
-    }
+fn has_panic_incompatibility(ctx: &mut ComputationContext<'_>) -> bool {
     if let Some(signature) = ctx.signature {
         // If the caller is nopanic, then this is a panic incompatibility.
         !signature.panicable
