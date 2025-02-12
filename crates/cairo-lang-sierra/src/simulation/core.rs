@@ -255,6 +255,9 @@ pub fn simulate<
             // Returning the same dict since it is exactly the same as the squashed one.
             (vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0)
         }
+        CoreConcreteLibfunc::Felt252SquashedDict(_) => {
+            unimplemented!("Simulation of Felt252SquashedDict is not implemented yet.");
+        }
         CoreConcreteLibfunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
