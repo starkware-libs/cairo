@@ -201,48 +201,66 @@ Statements:
   (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
   (v10: @core::array::Array::<core::bytes_31::bytes31>, v11: @core::felt252, v12: @core::integer::u32) <- struct_destructure(v9)
   (v13: core::array::Span::<core::bytes_31::bytes31>) <- struct_construct(v10)
-  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[120-295](v0, v1, v13, v4)
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, core::LoopResult::<(), core::array::Array::<core::bytes_31::bytes31>>)>) <- core::array::ArrayTCloneImpl::clone[120-295](v0, v1, v13, v4)
 End:
   Match(match_enum(v16) {
     PanicResult::Ok(v17) => blk1,
-    PanicResult::Err(v18) => blk4,
+    PanicResult::Err(v18) => blk7,
   })
 
 blk1:
 Statements:
-  (v19: core::felt252) <- 35697342966884
-  (v20: core::integer::u32) <- 6
-  (v21: core::byte_array::ByteArray) <- struct_construct(v3, v19, v20)
-  (v22: core::byte_array::ByteArray, v23: @core::byte_array::ByteArray) <- snapshot(v21)
-  (v24: core::array::Span::<core::bytes_31::bytes31>, v25: core::array::Array::<core::bytes_31::bytes31>, v26: ()) <- struct_destructure(v17)
-  (v27: @core::array::Array::<core::bytes_31::bytes31>, v28: @core::felt252, v29: @core::integer::u32) <- struct_destructure(v9)
-  (v30: core::felt252) <- desnap(v28)
-  (v31: @core::array::Array::<core::bytes_31::bytes31>, v32: @core::felt252, v33: @core::integer::u32) <- struct_destructure(v9)
-  (v34: core::integer::u32) <- desnap(v33)
-  (v35: core::byte_array::ByteArray) <- struct_construct(v25, v30, v34)
-  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v38: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v14, v15, v35, v23)
+  (v19: core::array::Span::<core::bytes_31::bytes31>, v20: core::array::Array::<core::bytes_31::bytes31>, v21: core::LoopResult::<(), core::array::Array::<core::bytes_31::bytes31>>) <- struct_destructure(v17)
+  (v22: core::felt252) <- 35697342966884
+  (v23: core::integer::u32) <- 6
+  (v24: core::byte_array::ByteArray) <- struct_construct(v3, v22, v23)
+  (v25: core::byte_array::ByteArray, v26: @core::byte_array::ByteArray) <- snapshot(v24)
 End:
-  Match(match_enum(v38) {
-    PanicResult::Ok(v39) => blk2,
-    PanicResult::Err(v40) => blk3,
+  Match(match_enum(v21) {
+    LoopResult::Normal(v27) => blk2,
+    LoopResult::EarlyReturn(v28) => blk3,
   })
 
 blk2:
 Statements:
-  (v41: core::byte_array::ByteArray, v42: ()) <- struct_destructure(v39)
-  (v43: (core::byte_array::ByteArray,)) <- struct_construct(v41)
-  (v44: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v43)
 End:
-  Return(v36, v37, v44)
+  Goto(blk4, {v20 -> v29})
 
 blk3:
 Statements:
-  (v45: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v40)
 End:
-  Return(v36, v37, v45)
+  Goto(blk4, {v28 -> v29})
 
 blk4:
 Statements:
-  (v46: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v18)
+  (v30: @core::array::Array::<core::bytes_31::bytes31>, v31: @core::felt252, v32: @core::integer::u32) <- struct_destructure(v9)
+  (v33: core::felt252) <- desnap(v31)
+  (v34: @core::array::Array::<core::bytes_31::bytes31>, v35: @core::felt252, v36: @core::integer::u32) <- struct_destructure(v9)
+  (v37: core::integer::u32) <- desnap(v36)
+  (v38: core::byte_array::ByteArray) <- struct_construct(v29, v33, v37)
+  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v14, v15, v38, v26)
 End:
-  Return(v14, v15, v46)
+  Match(match_enum(v41) {
+    PanicResult::Ok(v42) => blk5,
+    PanicResult::Err(v43) => blk6,
+  })
+
+blk5:
+Statements:
+  (v44: core::byte_array::ByteArray, v45: ()) <- struct_destructure(v42)
+  (v46: (core::byte_array::ByteArray,)) <- struct_construct(v44)
+  (v47: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v46)
+End:
+  Return(v39, v40, v47)
+
+blk6:
+Statements:
+  (v48: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v43)
+End:
+  Return(v39, v40, v48)
+
+blk7:
+Statements:
+  (v49: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v18)
+End:
+  Return(v14, v15, v49)

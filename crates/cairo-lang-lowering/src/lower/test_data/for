@@ -45,7 +45,25 @@ Statements:
   (v16: core::array::Array::<core::felt252>, v17: @core::array::Array::<core::felt252>) <- snapshot(v15)
   (v18: core::array::Span::<core::felt252>) <- core::array::ArrayToSpan::<core::felt252>::span(v17)
   (v19: core::array::SpanIter::<core::felt252>) <- core::array::SpanIntoIterator::<core::felt252>::into_iter(v18)
-  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v20: ()) <- test::foo[118-164](v19, v0, v2)
+  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v20: core::LoopResult::<(), core::felt252>) <- test::foo[118-164](v19, v0, v2)
+End:
+  Match(match_enum(v20) {
+    LoopResult::Normal(v23) => blk1,
+    LoopResult::EarlyReturn(v24) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v23 -> v25})
+
+blk2:
+Statements:
+End:
+  Return(v24)
+
+blk3:
+Statements:
 End:
   Return(v22)
 
@@ -69,26 +87,41 @@ Statements:
   (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v10)
   (v16: core::array::Span::<core::felt252>) <- struct_construct(v15)
   (v17: core::array::SpanIter::<core::felt252>) <- struct_construct(v16)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v0, v1, v17, v11, v13)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)>) <- test::foo[118-164](v0, v1, v17, v11, v13)
 End:
   Match(match_enum(v20) {
     PanicResult::Ok(v21) => blk1,
-    PanicResult::Err(v22) => blk2,
+    PanicResult::Err(v22) => blk4,
   })
 
 blk1:
 Statements:
-  (v23: core::array::SpanIter::<core::felt252>, v24: core::felt252, v25: ()) <- struct_destructure(v21)
-  (v26: (core::felt252,)) <- struct_construct(v24)
-  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
+  (v23: core::array::SpanIter::<core::felt252>, v24: core::felt252, v25: core::LoopResult::<(), core::felt252>) <- struct_destructure(v21)
 End:
-  Return(v18, v19, v27)
+  Match(match_enum(v25) {
+    LoopResult::Normal(v26) => blk2,
+    LoopResult::EarlyReturn(v27) => blk3,
+  })
 
 blk2:
 Statements:
-  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
+  (v28: (core::felt252,)) <- struct_construct(v24)
+  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v28)
 End:
-  Return(v18, v19, v28)
+  Return(v18, v19, v29)
+
+blk3:
+Statements:
+  (v30: (core::felt252,)) <- struct_construct(v27)
+  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v30)
+End:
+  Return(v18, v19, v31)
+
+blk4:
+Statements:
+  (v32: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
+End:
+  Return(v18, v19, v32)
 
 
 Generated loop lowering for source location:
@@ -111,7 +144,7 @@ End:
 blk1:
 Statements:
   (v6: core::felt252) <- core::Felt252Add::add(v1, v2)
-  (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: ()) <- test::foo[118-164](v4, v6, v2)
+  (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: core::LoopResult::<(), core::felt252>) <- test::foo[118-164](v4, v6, v2)
 End:
   Goto(blk3, {v9 -> v12, v8 -> v13, v7 -> v11})
 
@@ -123,8 +156,9 @@ End:
 
 blk3:
 Statements:
+  (v15: core::LoopResult::<(), core::felt252>) <- LoopResult::Normal(v11)
 End:
-  Return(v13, v12, v11)
+  Return(v13, v12, v15)
 
 
 Final lowering:
@@ -162,61 +196,65 @@ End:
 
 blk4:
 Statements:
-  (v19: core::array::Span::<core::felt252>) <- struct_construct(v15)
 End:
   Match(match_enum(v16) {
-    Option::Some(v20) => blk5,
-    Option::None(v21) => blk6,
+    Option::Some(v19) => blk5,
+    Option::None(v20) => blk8,
   })
 
 blk5:
 Statements:
-  (v22: @core::felt252) <- core::box::unbox::<@core::felt252>(v20)
-  (v23: core::option::Option::<@core::felt252>) <- Option::Some(v22)
+  (v21: @core::felt252) <- core::box::unbox::<@core::felt252>(v19)
+  (v22: core::array::Span::<core::felt252>) <- struct_construct(v15)
+  (v23: core::array::SpanIter::<core::felt252>) <- struct_construct(v22)
+  (v24: core::felt252) <- core::felt252_add(v3, v4)
+  (v25: core::RangeCheck, v26: core::gas::GasBuiltin, v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)>) <- test::foo[118-164](v5, v6, v23, v24, v4)
 End:
-  Goto(blk7, {v23 -> v24})
+  Match(match_enum(v27) {
+    PanicResult::Ok(v28) => blk6,
+    PanicResult::Err(v29) => blk7,
+  })
 
 blk6:
 Statements:
-  (v25: ()) <- struct_construct()
-  (v26: core::option::Option::<@core::felt252>) <- Option::None(v25)
+  (v30: core::array::SpanIter::<core::felt252>, v31: core::felt252, v32: core::LoopResult::<(), core::felt252>) <- struct_destructure(v28)
+  (v33: core::array::Span::<core::felt252>) <- struct_destructure(v30)
+  (v34: @core::array::Array::<core::felt252>) <- struct_destructure(v33)
 End:
-  Goto(blk7, {v26 -> v24})
+  Goto(blk9, {v25 -> v35, v26 -> v36, v31 -> v37, v34 -> v38})
 
 blk7:
 Statements:
-  (v27: core::array::SpanIter::<core::felt252>) <- struct_construct(v19)
+  (v39: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)>) <- PanicResult::Err(v29)
 End:
-  Match(match_enum(v24) {
-    Option::Some(v28) => blk8,
-    Option::None(v29) => blk9,
-  })
+  Return(v25, v26, v39)
 
 blk8:
 Statements:
-  (v30: core::felt252) <- core::felt252_add(v3, v4)
-  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v6, v27, v30, v4)
 End:
-  Return(v31, v32, v33)
+  Goto(blk9, {v5 -> v35, v6 -> v36, v3 -> v37, v15 -> v38})
 
 blk9:
 Statements:
-  (v34: ()) <- struct_construct()
-  (v35: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v27, v3, v34)
-  (v36: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v35)
+  (v40: core::LoopResult::<(), core::felt252>) <- struct_construct()
+  (v41: core::LoopResult::<(), core::felt252>) <- LoopResult::Normal(v40)
+  (v42: core::array::Span::<core::felt252>) <- struct_construct(v38)
+  (v43: core::array::SpanIter::<core::felt252>) <- struct_construct(v42)
+  (v44: (core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)) <- struct_construct(v43, v37, v41)
+  (v45: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)>) <- PanicResult::Ok(v44)
 End:
-  Return(v5, v6, v36)
+  Return(v35, v36, v45)
 
 blk10:
 Statements:
-  (v37: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v38: core::felt252) <- 375233589013918064796019
-  (v39: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v37, v38)
-  (v40: core::panics::Panic) <- struct_construct()
-  (v41: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v40, v39)
-  (v42: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v41)
+  (v46: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v47: core::felt252) <- 375233589013918064796019
+  (v48: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v46, v47)
+  (v49: core::panics::Panic) <- struct_construct()
+  (v50: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v49, v48)
+  (v51: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, core::LoopResult::<(), core::felt252>)>) <- PanicResult::Err(v50)
 End:
-  Return(v7, v8, v42)
+  Return(v7, v8, v51)
 
 //! > ==========================================================================
 
@@ -280,23 +318,38 @@ Statements:
   (v3: core::integer::u32) <- 0
   (v4: core::integer::u32) <- 5
   (v5: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v3, v4)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, ())>) <- test::MyImpl::foo[23-108](v0, v1, v5, v2)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::LoopResult::<(), ()>)>) <- test::MyImpl::foo[23-108](v0, v1, v5, v2)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
-    PanicResult::Err(v10) => blk2,
+    PanicResult::Err(v10) => blk4,
   })
 
 blk1:
 Statements:
-  (v11: core::ops::range::RangeIterator::<core::integer::u32>, v12: ()) <- struct_destructure(v9)
-  (v13: ((),)) <- struct_construct(v12)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+  (v11: core::ops::range::RangeIterator::<core::integer::u32>, v12: core::LoopResult::<(), ()>) <- struct_destructure(v9)
 End:
-  Return(v6, v7, v14)
+  Match(match_enum(v12) {
+    LoopResult::Normal(v13) => blk2,
+    LoopResult::EarlyReturn(v14) => blk3,
+  })
 
 blk2:
 Statements:
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v15: ((),)) <- struct_construct(v13)
+  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v15)
 End:
-  Return(v6, v7, v15)
+  Return(v6, v7, v16)
+
+blk3:
+Statements:
+  (v17: ((),)) <- struct_construct(v14)
+  (v18: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v17)
+End:
+  Return(v6, v7, v18)
+
+blk4:
+Statements:
+  (v19: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+End:
+  Return(v6, v7, v19)
