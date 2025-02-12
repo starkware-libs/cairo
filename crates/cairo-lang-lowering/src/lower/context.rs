@@ -124,7 +124,6 @@ impl<'db> EncapsulatingLoweringContext<'db> {
     }
 }
 
-
 /// The loop result variants for a loop with an early return.
 #[derive(Clone)]
 pub struct LoopEarlyReturnInfo {
