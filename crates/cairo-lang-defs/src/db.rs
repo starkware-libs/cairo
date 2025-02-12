@@ -786,13 +786,11 @@ pub fn validate_attributes_flat(
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let local_allowed_attributes =
+    let allowed_attributes =
         extend_allowed_attributes(db, allowed_attributes, item, plugin_diagnostics);
 
-    // Then validate all attributes against the allowed set
     for attr in item.attributes_elements(db) {
-        if !local_allowed_attributes
-            .contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+        if !allowed_attributes.contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
         {
             plugin_diagnostics
                 .push(PluginDiagnostic::error(&attr, "Unsupported attribute.".to_string()));
