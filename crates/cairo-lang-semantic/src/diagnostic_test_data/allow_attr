@@ -1,9 +1,12 @@
-//! > Test allow_attr functionality
+//! > Test allow_attr attribute
 
 //! > test_runner_name
-test_allow_attr
+test_expr_diagnostics(expect_diagnostics: true)
 
-//! > cairo_code
+//! > expr_code
+{}
+
+//! > module_code
 #[allow_attr(some)]
 #[some]
 fn foo() {}
@@ -95,50 +98,45 @@ struct MyStruct {
     z: felt252,
 }
 
+//! > function_body
+
 //! > expected_diagnostics
-error: Unsupported attribute.
- --> src/lib.cairo:5:1
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:5:1
 #[some]
 ^^^^^^^
 
-
-error: Expected arguments.
- --> src/lib.cairo:8:1
+error: Plugin diagnostic: Expected arguments.
+ --> lib.cairo:8:1
 #[allow_attr]
 ^^^^^^^^^^^^^
 
-
-error: Expected simple identifier.
- --> src/lib.cairo:11:14
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:11:14
 #[allow_attr(my_attr = "value")]
              ^^^^^^^^^^^^^^^^^
 
-
-error: Expected simple identifier.
- --> src/lib.cairo:14:14
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:14:14
 #[allow_attr(1234)]
              ^^^^
 
-
-error: Expected simple identifier.
- --> src/lib.cairo:17:14
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:17:14
 #[allow_attr("string")]
              ^^^^^^^^
 
-
-error: Expected simple identifier.
- --> src/lib.cairo:20:14
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:20:14
 #[allow_attr(a::b)]
              ^^^^
 
-
-error: Unsupported attribute.
- --> src/lib.cairo:31:5
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:31:5
     #[attr4]
     ^^^^^^^^
 
-
-error: Unsupported attribute.
- --> src/lib.cairo:42:5
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:42:5
     #[other]
     ^^^^^^^^
