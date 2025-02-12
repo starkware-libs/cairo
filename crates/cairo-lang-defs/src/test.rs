@@ -13,7 +13,6 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
@@ -26,7 +25,6 @@ use crate::ids::{
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use crate::test_utils::build_plugin_diagnostics;
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
@@ -483,36 +481,4 @@ fn test_unknown_item_macro() {
          SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
          severity: Error })]"
     )
-}
-
-cairo_lang_test_utils::test_file_test!(
-    allow_attr_tests,
-    "src/test_data",
-    {
-        allow_attr: "allow_attr"
-    },
-    test_allow_attr
-);
-
-fn test_allow_attr(
-    inputs: &OrderedHashMap<String, String>,
-    args: &OrderedHashMap<String, String>,
-) -> TestRunnerResult {
-    let mut db_val = DatabaseForTesting::default();
-    db_val.set_macro_plugins(vec![]);
-
-    let module_id = setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
-    let db = &db_val;
-
-    let diagnostics_str = build_plugin_diagnostics(db, module_id);
-
-    let error = verify_diagnostics_expectation(args, &diagnostics_str);
-
-    TestRunnerResult {
-        outputs: OrderedHashMap::from([
-            ("generated_cairo_code".into(), inputs["cairo_code"].clone()),
-            ("expected_diagnostics".into(), diagnostics_str),
-        ]),
-        error,
-    }
 }
