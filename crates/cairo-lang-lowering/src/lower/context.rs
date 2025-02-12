@@ -7,6 +7,7 @@ use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::usage::Usages;
+use cairo_lang_semantic::{ConcreteVariant, TypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -123,6 +124,19 @@ impl<'db> EncapsulatingLoweringContext<'db> {
     }
 }
 
+#[derive(Clone)]
+pub struct LoopEarlyReturnInfo {
+    pub ret_ty: TypeId,
+    pub normal_return_variant: ConcreteVariant,
+    pub early_return_variant: ConcreteVariant,
+}
+
+pub struct LoopContext {
+    /// loop expression needed for recursive calls in `continue`
+    pub loop_expr_id: semantic::ExprId,
+    pub early_return_info: Option<LoopEarlyReturnInfo>,
+}
+
 pub struct LoweringContext<'a, 'db> {
     pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
     /// Variable allocator.
@@ -135,7 +149,7 @@ pub struct LoweringContext<'a, 'db> {
     /// This it the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current loop expression needed for recursive calls in `continue`
-    pub current_loop_expr_id: Option<semantic::ExprId>,
+    pub current_loop_ctx: Option<LoopContext>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -159,7 +173,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr_id: None,
+            current_loop_ctx: None,
             diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })

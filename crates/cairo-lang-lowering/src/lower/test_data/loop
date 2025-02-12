@@ -1606,3 +1606,281 @@ End:
   Return(v3, v4, v11)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test early return within a loop.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> u32 {
+    let mut x = 5;
+    loop {
+        let y = x + 1;
+        x = y;
+        if y == 10 {
+            break true;
+        }
+
+        if y == 5 {
+            return 5;
+        }
+    }
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn impl_in_impl(x: u8) -> bool;
+    fn impl_in_trait() -> u8 {
+        let mut i = 0;
+        loop {
+            if Self::impl_in_impl(i) {
+                break;
+            }
+            i += 1;
+        }
+        i
+    }
+}
+
+impl MyImpl of MyTrait {
+    fn impl_in_impl(x: u8) -> bool {
+        x == 30
+    }
+}
+
+//! > expected_diagnostics
+
+//! > semantic_diagnostics
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+  (v2: core::felt252, v1: core::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-200](v0)
+End:
+  Match(match_enum(v1) {
+    LoopResult::Normal(v3) => blk1,
+    LoopResult::EarlyReturn(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk2:
+Statements:
+End:
+  Return(v4)
+
+blk3:
+Statements:
+  (v6: core::integer::u32) <- 1
+End:
+  Return(v6)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 5
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[37-200](v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk4,
+  })
+
+blk1:
+Statements:
+  (v8: core::felt252, v9: core::LoopResult::<core::bool, core::integer::u32>) <- struct_destructure(v6)
+End:
+  Match(match_enum(v9) {
+    LoopResult::Normal(v10) => blk2,
+    LoopResult::EarlyReturn(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::integer::u32) <- 1
+  (v13: (core::integer::u32,)) <- struct_construct(v12)
+  (v14: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v4, v14)
+
+blk3:
+Statements:
+  (v15: (core::integer::u32,)) <- struct_construct(v11)
+  (v16: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v15)
+End:
+  Return(v3, v4, v16)
+
+blk4:
+Statements:
+  (v17: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v17)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v2)
+  (v5: core::felt252) <- 10
+  (v6: core::felt252, v7: @core::felt252) <- snapshot(v5)
+  (v8: core::bool) <- core::Felt252PartialEq::eq(v4, v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v12) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
+End:
+  Return(v2, v11)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v13: core::felt252, v14: @core::felt252) <- snapshot(v3)
+  (v15: core::felt252) <- 5
+  (v16: core::felt252, v17: @core::felt252) <- snapshot(v15)
+  (v18: core::bool) <- core::Felt252PartialEq::eq(v14, v17)
+End:
+  Match(match_enum(v18) {
+    bool::False(v22) => blk5,
+    bool::True(v19) => blk4,
+  })
+
+blk4:
+Statements:
+  (v20: core::integer::u32) <- 5
+  (v21: core::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::EarlyReturn(v20)
+End:
+  Return(v2, v21)
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v24: core::felt252, v23: core::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-200](v2)
+  (v25: core::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::Normal(v23)
+End:
+  Return(v24, v25)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk8,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+  (v9: core::felt252) <- 10
+  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+End:
+  Match(match core::felt252_is_zero(v10) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: ()) <- struct_construct()
+  (v13: core::bool) <- bool::True(v12)
+  (v14: (core::felt252, core::LoopResult::<core::bool, core::integer::u32>)) <- struct_construct(v8, v13)
+  (v15: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Ok(v14)
+End:
+  Return(v3, v4, v15)
+
+blk3:
+Statements:
+  (v16: core::felt252) <- 5
+  (v17: core::felt252) <- core::felt252_sub(v8, v16)
+End:
+  Match(match core::felt252_is_zero(v17) {
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::integer::u32) <- 5
+  (v20: core::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::EarlyReturn(v19)
+  (v21: (core::felt252, core::LoopResult::<core::bool, core::integer::u32>)) <- struct_construct(v8, v20)
+  (v22: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Ok(v21)
+End:
+  Return(v3, v4, v22)
+
+blk5:
+Statements:
+  (v23: core::RangeCheck, v24: core::gas::GasBuiltin, v25: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[37-200](v3, v4, v8)
+End:
+  Match(match_enum(v25) {
+    PanicResult::Ok(v26) => blk6,
+    PanicResult::Err(v27) => blk7,
+  })
+
+blk6:
+Statements:
+  (v28: core::felt252, v29: core::LoopResult::<core::bool, core::integer::u32>) <- struct_destructure(v26)
+  (v30: core::LoopResult::<core::bool, core::integer::u32>) <- LoopResult::Normal(v29)
+  (v31: (core::felt252, core::LoopResult::<core::bool, core::integer::u32>)) <- struct_construct(v28, v30)
+  (v32: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Ok(v31)
+End:
+  Return(v23, v24, v32)
+
+blk7:
+Statements:
+  (v33: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Err(v27)
+End:
+  Return(v23, v24, v33)
+
+blk8:
+Statements:
+  (v34: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v35: core::felt252) <- 375233589013918064796019
+  (v36: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v34, v35)
+  (v37: core::panics::Panic) <- struct_construct()
+  (v38: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v37, v36)
+  (v39: core::panics::PanicResult::<(core::felt252, core::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Err(v38)
+End:
+  Return(v5, v6, v39)
+
+//! > lowering_diagnostics

@@ -61,6 +61,8 @@ pub struct Usage {
     pub snap_usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
     /// Variables that are defined.
     pub introductions: OrderedHashSet<VarId>,
+    /// indicates that the expression has an early return.
+    pub has_early_return: bool,
 }
 
 impl Usage {
@@ -75,6 +77,7 @@ impl Usage {
         for (path, expr) in usage.snap_usage.iter() {
             self.snap_usage.insert(path.clone(), expr.clone());
         }
+        self.has_early_return |= usage.has_early_return;
     }
 
     /// Removes usage that was introduced current block and usage that is already covered
@@ -237,6 +240,7 @@ impl Usages {
                         Statement::Expr(stmt) => self.handle_expr(arenas, stmt.expr, &mut usage),
                         Statement::Continue(_) => (),
                         Statement::Return(stmt) => {
+                            usage.has_early_return = true;
                             if let Some(expr) = stmt.expr_option {
                                 self.handle_expr(arenas, expr, &mut usage)
                             };
