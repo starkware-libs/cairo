@@ -1464,18 +1464,18 @@ Statements:
   (v15: core::felt252, v14: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2, v13)
   (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[58-134](v15, v11)
 End:
-  Goto(blk3, {v17 -> v21, v18 -> v22, v16 -> v20})
+  Goto(blk3, {v17 -> v22, v18 -> v23, v16 -> v21})
 
 blk2:
 Statements:
-  (v23: ()) <- struct_construct()
+  (v20: ()) <- struct_construct()
 End:
-  Goto(blk3, {v1 -> v21, v2 -> v22, v23 -> v20})
+  Return(v1, v2, v20)
 
 blk3:
 Statements:
 End:
-  Return(v21, v22, v20)
+  Return(v22, v23, v21)
 
 
 Final lowering:

@@ -241,10 +241,12 @@ pub fn lower_for_loop(
         ty: unit_ty,
         location: ctx.get_location(some_block.stable_ptr.untyped()),
     });
-    let sealed_none = lowered_expr_to_block_scope_end(
+    let none_subscope_block_id = none_subscope.block_id;
+    let sealed_none = lower_early_return(
         ctx,
-        none_subscope.clone(),
-        Ok(LoweredExpr::Tuple { exprs: vec![], location: for_location }),
+        none_subscope,
+        LoweredExpr::Tuple { exprs: vec![], location: for_location },
+        for_location,
     )
     .map_err(LoweringFlowError::Failed)?;
 
@@ -259,7 +261,7 @@ pub fn lower_for_loop(
             },
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(none_variant),
-                block_id: none_subscope.block_id,
+                block_id: none_subscope_block_id,
                 var_ids: vec![none_var_id],
             },
         ],
@@ -323,10 +325,11 @@ pub fn lower_while_loop(
     let subscope_else = create_subscope_with_bound_refs(ctx, builder);
     let block_else_id = subscope_else.block_id;
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: while_location });
-    let block_else = lowered_expr_to_block_scope_end(
+    let block_else = lower_early_return(
         ctx,
         subscope_else,
-        Ok(LoweredExpr::Tuple { exprs: vec![], location: while_location }),
+        LoweredExpr::Tuple { exprs: vec![], location: while_location },
+        while_location,
     )
     .map_err(LoweringFlowError::Failed)?;
 
@@ -620,6 +623,20 @@ pub fn lowered_expr_to_block_scope_end(
         },
         Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
     })
+}
+
+/// Converts [`LoweringResult<LoweredExpr>`] into `BlockScopeEnd`.
+pub fn lower_early_return(
+    ctx: &mut LoweringContext<'_, '_>,
+    mut builder: BlockBuilder,
+    ret_expr: LoweredExpr,
+    location: LocationId,
+) -> Maybe<SealedBlockBuilder> {
+    let lowered_expr = (|| {
+        let ret_var_usage = ret_expr.as_var_usage(ctx, &mut builder)?;
+        Err(LoweringFlowError::Return(ret_var_usage, location))
+    })();
+    lowered_expr_to_block_scope_end(ctx, builder, lowered_expr)
 }
 
 /// Lowers a semantic statement.
