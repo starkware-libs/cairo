@@ -890,7 +890,7 @@ impl ConstantEvaluateContext<'_> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_felt252_ty() {
+        if expr.ty == db.core_types_info().felt252 {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",

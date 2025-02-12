@@ -2,7 +2,7 @@ use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
-use crate::{FunctionId, GenericArgumentId, corelib};
+use crate::{FunctionId, GenericArgumentId, TypeId, corelib};
 
 /// Helper for getting functions in the corelib.
 pub struct ModuleHelper<'a> {
@@ -41,5 +41,10 @@ impl<'a> ModuleHelper<'a> {
         generic_args: Vec<GenericArgumentId>,
     ) -> FunctionId {
         corelib::get_function_id(self.db, self.id, name.into(), generic_args)
+    }
+    /// Returns the id of a type named `name` in the current module, with the given
+    /// `generic_args`.
+    pub fn ty(&self, name: impl Into<SmolStr>, generic_args: Vec<GenericArgumentId>) -> TypeId {
+        corelib::get_ty_by_name(self.db, self.id, name.into(), generic_args)
     }
 }

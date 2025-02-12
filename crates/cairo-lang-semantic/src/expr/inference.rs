@@ -692,7 +692,7 @@ impl<'db> Inference<'db> {
         }
 
         let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_felt252_ty();
+        let felt_ty = self.db.core_types_info().felt252;
 
         // Conform all uninferred numeric literals to felt252.
         loop {
