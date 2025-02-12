@@ -110,7 +110,7 @@ impl CodeMapping {
 /// The origin of a code mapping.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CodeOrigin {
-    /// The origin is a copied node staring at the given offset.
+    /// The origin is a copied node starting at the given offset.
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
     Span(TextSpan),
