@@ -1,4 +1,4 @@
-use crate::dict::{Felt252Dict, Felt252DictEntryTrait};
+use crate::dict::{Felt252Dict, Felt252DictEntryTrait, SquashedFelt252DictTrait};
 use crate::test::test_utils::assert_eq;
 use crate::nullable;
 
@@ -163,4 +163,13 @@ fn test_dict_from_iterator() {
 fn test_dict_from_iterator_with_duplicate_keys() {
     let mut dict = array![(0, 1_u32), (0, 2_u32)].into_iter().collect::<Felt252Dict<_>>();
     assert_eq!(dict[0], 2);
+}
+
+#[test]
+fn test_array_from_squash_dict() {
+    let mut dict: Felt252Dict<u32> = (0..5_u32).into_iter().map(|x| (x.into(), x)).collect();
+    let squashed_dict_entries = dict.squash().into_entries();
+    assert_eq!(
+        squashed_dict_entries, array![(0, 0, 0), (1, 0, 1), (2, 0, 2), (3, 0, 3), (4, 0, 4)],
+    );
 }

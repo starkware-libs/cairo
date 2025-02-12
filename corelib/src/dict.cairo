@@ -84,6 +84,10 @@ pub(crate) extern fn felt252_dict_squash<T>(
     dict: Felt252Dict<T>,
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
+extern fn squashed_felt252_dict_into_entries<T>(
+    dict: SquashedFelt252Dict<T>,
+) -> Array<(felt252, T, T)> nopanic;
+
 /// Basic trait for the `Felt252Dict` type.
 pub trait Felt252DictTrait<T> {
     /// Inserts the given value for the given key.
@@ -276,5 +280,24 @@ impl Felt252DictFromIterator<
             dict.insert(key, value);
         }
         dict
+    }
+}
+
+/// Basic trait for the `SquashedFelt252Dict` type.
+pub trait SquashedFelt252DictTrait<T> {
+    /// Returns an array of `(key, first_value, last_value)` tuples.
+    /// The first value is always 0.
+    ///
+    /// # Example
+    /// ```
+    /// let squashed_dict = dict.squash();
+    /// let entries = squashed_dict.entries();
+    /// ```
+    fn into_entries(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>;
+}
+impl SquashedFelt252DictImpl<T, +Drop<T>> of SquashedFelt252DictTrait<T> {
+    #[inline]
+    fn into_entries(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)> {
+        squashed_felt252_dict_into_entries(self)
     }
 }
