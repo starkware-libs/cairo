@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
@@ -123,6 +124,18 @@ impl<'db> EncapsulatingLoweringContext<'db> {
     }
 }
 
+#[derive(Clone)]
+pub struct LoopEarlyReturnInfo {
+    pub normal_return_variant: ConcreteVariant,
+    pub early_return_variant: ConcreteVariant,
+}
+
+pub struct LoopContext {
+    /// loop expression needed for recursive calls in `continue`
+    pub loop_expr_id: semantic::ExprId,
+    pub early_return_info: Option<LoopEarlyReturnInfo>,
+}
+
 pub struct LoweringContext<'a, 'db> {
     pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
     /// Variable allocator.
@@ -135,7 +148,7 @@ pub struct LoweringContext<'a, 'db> {
     /// This it the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current loop expression needed for recursive calls in `continue`
-    pub current_loop_expr_id: Option<semantic::ExprId>,
+    pub current_loop_ctx: Option<LoopContext>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -159,7 +172,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr_id: None,
+            current_loop_ctx: None,
             diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })
