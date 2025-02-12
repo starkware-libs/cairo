@@ -844,9 +844,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
                 "Can only break with a value inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
-                "`return` not allowed inside a `loop`.".into()
-            }
             SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop => {
                 "`?` not allowed inside a `loop`.".into()
             }
@@ -1393,7 +1390,6 @@ pub enum SemanticDiagnosticKind {
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     BreakWithValueOnlyAllowedInsideALoop,
-    ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,

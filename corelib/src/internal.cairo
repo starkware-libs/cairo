@@ -17,3 +17,10 @@ pub enum OptionRev<T> {
     None,
     Some: T,
 }
+
+
+/// The return type for loops with an early return.
+pub enum LoopResult<N, E> {
+    Normal: N,
+    EarlyReturn: E,
+}
