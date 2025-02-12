@@ -159,6 +159,11 @@ fn foo() {}
 //! > function_body
 
 //! > expected_diagnostics
+error: A numeric literal of type core::bool cannot be created.
+ --> lib.cairo:6:14
+    let _b = 123_bool;
+             ^^^^^^^^
+
 error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:7:14
     let _b = 123_NonZero;
@@ -167,11 +172,6 @@ error: Wrong number of arguments. Expected 1, found: 0
 error: Unknown type.
  --> lib.cairo:8:14
     let _b = 123_u129;
-             ^^^^^^^^
-
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:14
-    let _b = 123_bool;
              ^^^^^^^^
 
 //! > ==========================================================================
