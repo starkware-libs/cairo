@@ -4,7 +4,10 @@ use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_semantic::corelib::{ErrorPropagationType, unwrap_error_propagation_type};
+use cairo_lang_semantic::corelib::{
+    ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
+    unwrap_error_propagation_type,
+};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
@@ -50,7 +53,7 @@ use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
     GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature, parameter_as_member_path,
 };
-use crate::lower::context::{LoweringResult, VarRequest};
+use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
 use crate::lower::lower_match::{
     MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
@@ -421,10 +424,11 @@ pub fn lower_loop_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
     loop_signature: Signature,
-    loop_expr_id: semantic::ExprId,
+    loop_ctx: LoopContext,
 ) -> Maybe<FlatLowered> {
+    let loop_expr_id = loop_ctx.loop_expr_id;
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
-    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
+    let old_loop_ctx = std::mem::replace(&mut ctx.current_loop_ctx, Some(loop_ctx));
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -491,7 +495,7 @@ pub fn lower_loop_function(
 
         Ok(root_block_id)
     })();
-    ctx.current_loop_expr_id = old_loop_expr_id;
+    ctx.current_loop_ctx = old_loop_ctx;
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
@@ -537,7 +541,7 @@ fn wrap_sealed_block_as_function(
         }
         _ => {
             // Convert to a return.
-            let var_usage = expr.unwrap_or_else(|| {
+            let mut var_usage = expr.unwrap_or_else(|| {
                 generators::StructConstruct {
                     inputs: vec![],
                     ty: unit_ty(ctx.db.upcast()),
@@ -545,6 +549,20 @@ fn wrap_sealed_block_as_function(
                 }
                 .add(ctx, &mut builder.statements)
             });
+
+            if let Some(LoopContext {
+                early_return_info: Some(LoopEarlyReturnInfo { normal_return_variant, .. }),
+                ..
+            }) = &ctx.current_loop_ctx
+            {
+                var_usage = generators::EnumConstruct {
+                    input: var_usage,
+                    variant: normal_return_variant.clone(),
+                    location,
+                }
+                .add(ctx, &mut builder.statements);
+            }
+
             builder.ret(ctx, var_usage, location)
         }
     }
@@ -625,7 +643,7 @@ pub fn lowered_expr_to_block_scope_end(
     })
 }
 
-/// Converts [`LoweringResult<LoweredExpr>`] into `BlockScopeEnd`.
+/// Generates the lowering for an early return.
 pub fn lower_early_return(
     ctx: &mut LoweringContext<'_, '_>,
     mut builder: BlockBuilder,
@@ -667,7 +685,7 @@ pub fn lower_statement(
                 ctx,
                 ctx.signature.clone(),
                 builder,
-                ctx.current_loop_expr_id.unwrap(),
+                ctx.current_loop_ctx.as_ref().unwrap().loop_expr_id,
                 stable_ptr.untyped(),
             )?;
             let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
@@ -676,13 +694,34 @@ pub fn lower_statement(
         semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
         | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
             log::trace!("Lowering a return | break statement.");
-            let ret_var = match expr_option {
+            let location = ctx.get_location(stable_ptr.untyped());
+            let mut ret_var = match expr_option {
                 None => {
-                    let location = ctx.get_location(stable_ptr.untyped());
                     LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
                 }
                 Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
             };
+
+            if let Some(LoopContext {
+                early_return_info:
+                    Some(LoopEarlyReturnInfo { normal_return_variant, early_return_variant }),
+                ..
+            }) = &ctx.current_loop_ctx
+            {
+                let variant = if matches!(stmt, semantic::Statement::Return(_)) {
+                    early_return_variant
+                } else {
+                    normal_return_variant
+                };
+
+                ret_var = generators::EnumConstruct {
+                    input: ret_var,
+                    variant: variant.clone(),
+                    location,
+                }
+                .add(ctx, &mut builder.statements);
+            }
+
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
         semantic::Statement::Item(_) => {}
@@ -1407,7 +1446,51 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
+    let semantic_db = ctx.db.upcast();
+
     let usage = &ctx.usages.usages[&loop_expr_id];
+    let has_normal_return = return_type != never_ty(semantic_db);
+
+    let (loop_return_ty, early_return_info) = if !has_normal_return {
+        // If the loop does not have a normal return, `LoopResult` is not used
+        // but we need to override the return type of the loop to match the function.
+        (ctx.signature.return_type, None)
+    } else if !usage.has_early_return {
+        (return_type, None)
+    } else {
+        let generic_args = vec![
+            GenericArgumentId::Type(return_type),
+            GenericArgumentId::Type(ctx.signature.return_type),
+        ];
+
+        let internal_module = core_submodule(semantic_db, "internal");
+        let ret_ty = try_get_ty_by_name(
+            semantic_db,
+            internal_module,
+            "LoopResult".into(),
+            generic_args.clone(),
+        )
+        .unwrap();
+        (
+            ret_ty,
+            Some(LoopEarlyReturnInfo {
+                normal_return_variant: get_enum_concrete_variant(
+                    semantic_db,
+                    internal_module,
+                    "LoopResult",
+                    generic_args.clone(),
+                    "Normal",
+                ),
+                early_return_variant: get_enum_concrete_variant(
+                    semantic_db,
+                    internal_module,
+                    "LoopResult",
+                    generic_args,
+                    "EarlyReturn",
+                ),
+            }),
+        )
+    };
 
     // Determine signature.
     let params = usage
@@ -1432,13 +1515,14 @@ fn lower_expr_loop(
         .collect_vec();
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
+    let loop_location = ctx.get_location(stable_ptr.untyped());
     let loop_signature = Signature {
         params,
         extra_rets,
-        return_type,
+        return_type: loop_return_ty,
         implicits: vec![],
         panicable: ctx.signature.panicable,
-        location: ctx.get_location(stable_ptr.untyped()),
+        location: loop_location,
     };
 
     // Get the function id.
@@ -1450,14 +1534,14 @@ fn lower_expr_loop(
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
     let lowered =
-        lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_expr_id)
+        lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_ctx)
             .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
-    let call = call_loop_func_ex(
+    let call_loop_expr = call_loop_func_ex(
         ctx,
         loop_signature,
         builder,
@@ -1474,10 +1558,71 @@ fn lower_expr_loop(
             builder.update_ref(ctx, param, original);
             Some(VarUsage { var_id: snapped, location })
         },
-    );
+    )?;
 
-    ctx.current_loop_expr_id = old_loop_expr_id;
-    call
+    let Some(LoopEarlyReturnInfo { normal_return_variant, early_return_variant }) =
+        early_return_info
+    else {
+        if !has_normal_return {
+            let ret_var_usage = call_loop_expr.as_var_usage(ctx, builder)?;
+            return Err(LoweringFlowError::Return(ret_var_usage, loop_location));
+        }
+
+        return Ok(call_loop_expr);
+    };
+
+    let loop_res = call_loop_expr.as_var_usage(ctx, builder)?;
+
+    let normal_return_subscope = create_subscope(ctx, builder);
+    let normal_return_subscope_block_id = normal_return_subscope.block_id;
+    let normal_return_var_id = ctx.new_var(VarRequest { ty: return_type, location: loop_location });
+
+    let sealed_normal_return = lowered_expr_to_block_scope_end(
+        ctx,
+        normal_return_subscope,
+        Ok(LoweredExpr::AtVariable(VarUsage {
+            var_id: normal_return_var_id,
+            location: loop_location,
+        })),
+    )
+    .map_err(LoweringFlowError::Failed)?;
+
+    let early_return_subscope = create_subscope(ctx, builder);
+    let early_return_var_id =
+        ctx.new_var(VarRequest { ty: ctx.signature.return_type, location: loop_location });
+    let early_return_subscope_block_id = early_return_subscope.block_id;
+    let sealed_early_return = lower_early_return(
+        ctx,
+        early_return_subscope,
+        LoweredExpr::AtVariable(VarUsage { var_id: early_return_var_id, location: loop_location }),
+        loop_location,
+    )
+    .map_err(LoweringFlowError::Failed)?;
+
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: normal_return_variant.concrete_enum_id,
+        input: loop_res,
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(normal_return_variant),
+                block_id: normal_return_subscope_block_id,
+                var_ids: vec![normal_return_var_id],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(early_return_variant),
+                block_id: early_return_subscope_block_id,
+                var_ids: vec![early_return_var_id],
+            },
+        ],
+        location: loop_location,
+    });
+
+    builder.merge_and_end_with_match(
+        ctx,
+        match_info,
+        vec![sealed_normal_return, sealed_early_return],
+        loop_location,
+    )
 }
 
 /// Adds a call to an inner loop-generated function from the loop function itself.
