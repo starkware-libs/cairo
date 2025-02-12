@@ -1003,6 +1003,15 @@ impl<'db> Resolver<'db> {
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
+                if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(self.db) {
+                    let impl_def_id: ImplDefId = concrete_impl.impl_def_id(self.db);
+
+                    if let Ok(Some(impl_item_info)) =
+                        self.db.impl_item_info_by_name(impl_def_id, ident.clone())
+                    {
+                        self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
+                    }
+                }
                 self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
