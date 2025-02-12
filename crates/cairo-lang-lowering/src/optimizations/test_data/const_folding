@@ -3383,7 +3383,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- core::internal::bounded_int::minus_1::const_as_immediate::<core::internal::bounded_int::minus_1::Const::<core::internal::bounded_int::BoundedInt::<-1, -1>, -1>>()
+  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
   (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
@@ -3417,7 +3417,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- core::internal::bounded_int::minus_1::const_as_immediate::<core::internal::bounded_int::minus_1::Const::<core::internal::bounded_int::BoundedInt::<-1, -1>, -1>>()
+  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
   (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
@@ -3474,7 +3474,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- core::internal::bounded_int::minus_1::const_as_immediate::<core::internal::bounded_int::minus_1::Const::<core::internal::bounded_int::BoundedInt::<-1, -1>, -1>>()
+  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
   (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
@@ -3508,9 +3508,9 @@ End:
 
 blk1:
 Statements:
-  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- core::internal::bounded_int::minus_1::const_as_immediate::<core::internal::bounded_int::minus_1::Const::<core::internal::bounded_int::BoundedInt::<-1, -1>, -1>>()
-  (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
-  (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
+  (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
+  (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- 6
+  (v5: core::integer::u8) <- 6
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::True(v6)
   (v8: (core::integer::u8, core::bool)) <- struct_construct(v5, v7)

@@ -224,15 +224,6 @@ impl MulMinus1<
     type Result = BoundedInt<NegMax::VALUE, NegMin::VALUE>;
 }
 
-mod minus_1 {
-    pub extern type Const<T, const VALUE: felt252>;
-    pub extern fn const_as_immediate<C>() -> super::BoundedInt<-1, -1> nopanic;
-}
-mod nz_minus_1 {
-    pub extern type Const<T, C>;
-    pub extern fn const_as_immediate<C>() -> NonZero<super::MinusOne> nopanic;
-}
-
 /// A helper trait for negating a `BoundedInt` instance.
 pub trait NegateHelper<T> {
     /// The result of negating the given value.
@@ -249,16 +240,11 @@ impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<
     type Result = H::Result;
 
     fn negate(self: T) -> H::Result {
-        bounded_int_mul(self, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
+        bounded_int_mul::<_, MinusOne>(self, -1)
     }
 
     fn negate_nz(self: NonZero<T>) -> NonZero<H::Result> {
-        bounded_int_mul(
-            self,
-            nz_minus_1::const_as_immediate::<
-                nz_minus_1::Const<NonZero<MinusOne>, minus_1::Const<MinusOne, -1>>,
-            >(),
-        )
+        bounded_int_mul::<_, NonZero<MinusOne>>(self, -1)
     }
 }
 
