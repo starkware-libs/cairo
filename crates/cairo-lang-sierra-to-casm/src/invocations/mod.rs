@@ -58,6 +58,7 @@ mod pedersen;
 mod poseidon;
 mod range;
 mod range_reduction;
+mod squashed_felt252_dict;
 mod starknet;
 mod structure;
 
@@ -654,6 +655,7 @@ pub fn compile_invocation(
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         Felt252(libfunc) => felt252::build(libfunc, builder),
+        Felt252SquashedDict(libfunc) => squashed_felt252_dict::build(libfunc, builder),
         Bool(libfunc) => boolean::build(libfunc, builder),
         Cast(libfunc) => casts::build(libfunc, builder),
         Ec(libfunc) => ec::build(libfunc, builder),

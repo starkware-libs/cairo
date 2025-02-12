@@ -84,6 +84,10 @@ pub(crate) extern fn felt252_dict_squash<T>(
     dict: Felt252Dict<T>,
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
+extern fn squashed_dict_into_entries<T>(
+    dict: SquashedFelt252Dict<T>,
+) -> Array<(felt252, T, T)> nopanic;
+
 /// Basic trait for the `Felt252Dict` type.
 pub trait Felt252DictTrait<T> {
     /// Inserts the given value for the given key.
@@ -276,5 +280,44 @@ impl Felt252DictFromIterator<
             dict.insert(key, value);
         }
         dict
+    }
+}
+
+#[derive(Drop)]
+struct SquashedDictEntriesIterator<T> {
+    entries: Array<(felt252, T, T)>,
+    index: usize,
+}
+
+impl SquashedDictEntriesIteratorImpl<
+    T, +Drop<T>,
+> of crate::iter::Iterator<SquashedDictEntriesIterator<T>> {
+    type Item = (felt252, T);
+    fn next(ref self: SquashedDictEntriesIterator<T>) -> Option<(felt252, T)> {
+        if let Some(entry) = self.entries.pop_front() {
+            let (key, _old, new) = entry;
+            Some((key, new))
+        } else {
+            None
+        }
+    }
+}
+
+/// Basic trait for the `SquashedFelt252Dict` type.
+pub trait SquashedFelt252DictTrait<T> {
+    /// Returns an array of `(key, value, previous_value)` tuples.
+    ///
+    /// # Example
+    /// ```
+    /// let squashed_dict = dict.squash();
+    /// let entries = squashed_dict.entries();
+    /// ```
+    fn into_entries(self: SquashedFelt252Dict<T>) -> SquashedDictEntriesIterator<T>;
+}
+impl SquashedFelt252DictImpl<T, +Drop<T>> of SquashedFelt252DictTrait<T> {
+    #[inline]
+    fn into_entries(self: SquashedFelt252Dict<T>) -> SquashedDictEntriesIterator<T> {
+        let entries: Array<(felt252, T, T)> = squashed_dict_into_entries(self);
+        SquashedDictEntriesIterator { entries, index: 0 }
     }
 }
