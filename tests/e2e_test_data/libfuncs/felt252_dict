@@ -681,3 +681,40 @@ store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>>([11]) -> ([11]); // 5
 return([11]); // 6
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252, [3]: felt252, [4]: felt252) -> (Tuple<Felt252Dict<felt252>, felt252, felt252>);
+
+//! > ==========================================================================
+
+//! > felt252_dict_squash_entries libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn test_squashed_dict_entries(dict: SquashedFelt252Dict<felt252>) -> Array<(felt252, felt252, felt252)> {
+    dict::SquashedFelt252DictImpl::<felt252>::into_entries(dict)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<Tuple<felt252, felt252, felt252>> = Array<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc squashed_felt252_dict_entries<felt252> = squashed_felt252_dict_entries<felt252>;
+libfunc store_temp<Array<Tuple<felt252, felt252, felt252>>> = store_temp<Array<Tuple<felt252, felt252, felt252>>>;
+
+squashed_felt252_dict_entries<felt252>([0]) -> ([1]); // 0
+store_temp<Array<Tuple<felt252, felt252, felt252>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::test_squashed_dict_entries@0([0]: SquashedFelt252Dict<felt252>) -> (Array<Tuple<felt252, felt252, felt252>>);
+
+//! > function_costs
+test::test_squashed_dict_entries: OrderedHashMap({Const: 200})

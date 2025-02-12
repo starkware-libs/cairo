@@ -136,6 +136,7 @@ pub fn core_libfunc_cost(
     info_provider: &dyn CostInfoProvider,
 ) -> Vec<BranchCost> {
     match libfunc {
+        Felt252SquashedDict(_) => vec![ConstCost::default().into()],
         FunctionCall(SignatureAndFunctionConcreteLibfunc { function, .. }) => {
             vec![BranchCost::FunctionCost {
                 const_cost: ConstCost::steps(2),
