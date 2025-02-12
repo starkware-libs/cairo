@@ -19,7 +19,7 @@ impl ErrorCode {
         Self(code)
     }
 
-    /// Format this error code in a way that is suitable for display in error message.
+    /// Format this error code in a way that is suitable for display in an error message.
     ///
     /// ```
     /// # use cairo_lang_diagnostics::error_code;
