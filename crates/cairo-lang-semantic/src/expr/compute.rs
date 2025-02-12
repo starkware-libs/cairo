@@ -3648,10 +3648,6 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            if ctx.is_inside_loop() {
-                return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
-            }
-
             let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(empty_clause) => {
                     (None, unit_ty(db), empty_clause.stable_ptr().untyped())
@@ -3663,15 +3659,14 @@ pub fn compute_statement_semantic(
                 }
             };
             let expected_ty = match ctx.inner_ctx {
-                None => {
+                Some(InnerContext::Closure { return_type }) => return_type,
+                _ => {
                     ctx.get_signature(
                         return_syntax.into(),
                         UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                     )?
                     .return_type
                 }
-                Some(InnerContext::Closure { return_type }) => return_type,
-                _ => unreachable!("Return statement inside a loop"),
             };
 
             let expected_ty = ctx.reduce_ty(expected_ty);
