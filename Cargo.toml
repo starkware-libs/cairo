@@ -48,7 +48,6 @@ members = [
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
-    "crates/cairo-lang-primitive-token",
     "crates/cairo-lang-starknet",
     "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
@@ -87,6 +86,7 @@ ark-secp256r1 = "0.5.0"
 ark-std = "0.5.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
+cairo-lang-primitive-token = "1"
 cairo-vm = { version = "1.0.2", features = ["mod_builtin"] }
 clap = { version = "4.5.27", features = ["derive"] }
 colored = "3.0.0"
