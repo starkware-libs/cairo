@@ -2361,14 +2361,15 @@ impl I128PartialOrd of PartialOrd<i128> {
 
 mod signed_div_rem {
     use crate::internal::bounded_int::{
-        BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem, is_zero,
+        BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, NegateHelper, UnitInt, constrain,
+        div_rem, is_zero,
     };
     use super::{downcast, upcast};
 
     impl DivRemImpl<
         T,
         impl CH: ConstrainHelper<T, 0>,
-        impl NH: NegateHelper<CH::LowT>,
+        impl NH: MulHelper<CH::LowT, UnitInt<-1>>,
         // Positive by Positive Div Rem (PPDR) Helper.
         impl PPDR: DivRemHelper<CH::HighT, CH::HighT>,
         // Negative by Positive Div Rem (NPDR) Helper.
@@ -2377,10 +2378,10 @@ mod signed_div_rem {
         impl PNDR: DivRemHelper<CH::HighT, NH::Result>,
         // Negative by Negative Div Rem (NNDR) Helper.
         impl NNDR: DivRemHelper<NH::Result, NH::Result>,
-        +NegateHelper<NNDR::RemT>,
-        +NegateHelper<NPDR::DivT>,
-        +NegateHelper<NPDR::RemT>,
-        +NegateHelper<PNDR::DivT>,
+        +MulHelper<NNDR::RemT, UnitInt<-1>>,
+        +MulHelper<NPDR::DivT, UnitInt<-1>>,
+        +MulHelper<NPDR::RemT, UnitInt<-1>>,
+        +MulHelper<PNDR::DivT, UnitInt<-1>>,
         +Drop<T>,
         +Drop<NH::Result>,
         +Drop<CH::LowT>,
@@ -2394,7 +2395,7 @@ mod signed_div_rem {
                 Ok(lhs_lt0) => {
                     match constrain::<NonZero<T>, 0>(rhs) {
                         Ok(rhs_lt0) => {
-                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_lt0.negate_nz());
+                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_lt0.negate());
                             (
                                 // Catching the case for division of `i{8,16,32,64,128}::MIN` by
                                 // `-1`, which overflows.
@@ -2411,7 +2412,7 @@ mod signed_div_rem {
                 Err(lhs_ge0) => {
                     match constrain::<NonZero<T>, 0>(rhs) {
                         Ok(rhs_lt0) => {
-                            let (q, r) = div_rem(lhs_ge0, rhs_lt0.negate_nz());
+                            let (q, r) = div_rem(lhs_ge0, rhs_lt0.negate());
                             (upcast(q.negate()), upcast(r))
                         },
                         Err(rhs_ge0) => {
@@ -3304,16 +3305,14 @@ impl U128SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TS
 impl U256SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
 
 mod bitnot_impls {
-    use core::internal::bounded_int::{BoundedInt, SubHelper};
+    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt};
     use super::upcast;
 
-    impl SubHelperImpl<T, const MAX: felt252> of SubHelper<BoundedInt<MAX, MAX>, T> {
+    impl SubHelperImpl<T, const MAX: felt252> of SubHelper<UnitInt<MAX>, T> {
         type Result = BoundedInt<0, MAX>;
     }
 
-    pub impl Impl<
-        T, const MAX: felt252, const MAX_TYPED: BoundedInt<MAX, MAX>,
-    > of core::traits::BitNot<T> {
+    pub impl Impl<T, const MAX: felt252, const MAX_TYPED: UnitInt<MAX>> of core::traits::BitNot<T> {
         fn bitnot(a: T) -> T {
             upcast::<BoundedInt<0, MAX>, T>(core::internal::bounded_int::sub(MAX_TYPED, a))
         }

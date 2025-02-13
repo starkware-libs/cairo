@@ -232,16 +232,16 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{BoundedInt, DivRemHelper, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, UnitInt, div_rem};
 
-    impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
+    impl DivRemU128By256 of DivRemHelper<u128, UnitInt<256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;
         type RemT = BoundedInt<0, 0xff>;
     }
 
     /// Returns the least significant byte of the given u128.
     pub fn get_lsb(value: u128) -> u8 {
-        let (_, res) = div_rem::<_, BoundedInt<256, 256>>(value, 256);
+        let (_, res) = div_rem::<_, UnitInt<256>>(value, 256);
         core::integer::upcast(res)
     }
 }
