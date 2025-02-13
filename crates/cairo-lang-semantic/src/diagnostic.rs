@@ -584,6 +584,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Type => "Type not found.".into(),
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
+                NotFoundItemType::Macro => "Macro not found.".into(),
             },
             SemanticDiagnosticKind::AmbiguousPath(module_items) => {
                 format!(
@@ -904,6 +905,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::InlineMacroFailed(macro_name) => {
                 format!("Inline macro `{}` failed.", macro_name)
+            }
+            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name) => {
+                format!("No matching rule found in inline macro `{}`.", macro_name)
             }
             SemanticDiagnosticKind::UnknownGenericParam(name) => {
                 format!("Unknown generic parameter `{}`.", name)
@@ -1421,6 +1425,7 @@ pub enum SemanticDiagnosticKind {
     UnknownStatementAttribute,
     InlineMacroNotFound(SmolStr),
     InlineMacroFailed(SmolStr),
+    InlineMacroNoMatchingRule(SmolStr),
     UnknownGenericParam(SmolStr),
     PositionalGenericAfterNamed,
     GenericArgDuplicate(SmolStr),
@@ -1490,6 +1495,7 @@ impl SemanticDiagnosticKind {
     }
 }
 
+// TODO(Gil): It seems to have the same functionality as ElementKind, maybe we can merge them.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum NotFoundItemType {
     Identifier,
@@ -1497,6 +1503,7 @@ pub enum NotFoundItemType {
     Type,
     Trait,
     Impl,
+    Macro,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -1515,6 +1522,7 @@ pub enum ElementKind {
     Variant,
     Trait,
     Impl,
+    Macro,
 }
 impl From<&ResolvedConcreteItem> for ElementKind {
     fn from(val: &ResolvedConcreteItem) -> Self {
@@ -1528,6 +1536,7 @@ impl From<&ResolvedConcreteItem> for ElementKind {
                 ElementKind::Trait
             }
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+            ResolvedConcreteItem::Macro(_) => ElementKind::Macro,
         }
     }
 }
@@ -1546,6 +1555,7 @@ impl From<&ResolvedGenericItem> for ElementKind {
                 ElementKind::Impl
             }
             ResolvedGenericItem::Variable(_) => ElementKind::Variable,
+            ResolvedGenericItem::Macro(_) => ElementKind::Macro,
         }
     }
 }
@@ -1560,6 +1570,7 @@ impl Display for ElementKind {
             ElementKind::Variant => "variant",
             ElementKind::Trait => "trait",
             ElementKind::Impl => "impl",
+            ElementKind::Macro => "macro",
         };
         write!(f, "{res}")
     }

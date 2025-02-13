@@ -969,3 +969,83 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    add_one!(xyz);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_one {
+    ($x:ident) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro overwriting plugin macro.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x = 1;
+    let y = 1;
+    assert_eq!(x, y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assert_eq {
+    ($x:ident, $y:ident) => {
+        if $x != $y {
+            panic!("Panic!");
+        }
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test existing user defined macro with no matching rule.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    add_one!(x z);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro add_one {
+    ($x:ident) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `add_one`.
+ --> lib.cairo:7:5
+    add_one!(x z);
+    ^^^^^^^^^^^^^

@@ -68,6 +68,7 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
+use crate::items::macro_declaration::{expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -434,11 +435,7 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
-    let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
-        return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
-    };
 
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
@@ -456,39 +453,71 @@ fn compute_expr_inline_macro_semantic(
     }) {
         return Err(skip_diagnostic());
     }
+    // We call the resolver with a new diagnostics, since the diagnostics should not be reported
+    // if the macro was found as a plugin.
+    let user_defined_macro = ctx.resolver.resolve_generic_path(
+        &mut Default::default(),
+        &syntax.path(syntax_db),
+        NotFoundItemType::Macro,
+        Some(&mut ctx.environment),
+    );
 
-    let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
-        cfg_set: &ctx.cfg_set,
-        declared_derives: &ctx.db.declared_derives(),
-        allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-        edition: ctx.resolver.settings.edition,
-    });
-    let mut diag_added = None;
-    for diagnostic in result.diagnostics {
-        diag_added = match diagnostic.inner_span {
-            None => {
-                Some(ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)))
+    let (content, name, mappings) = if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) =
+        user_defined_macro
+    {
+        let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
+        let expanded_code = macro_rules.iter().find_map(|rule| {
+            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
+                .map(|captures| expand_macro_rule(ctx.db.upcast(), rule, &captures))
+        });
+        let Some(expanded_code) = expanded_code else {
+            return Err(ctx
+                .diagnostics
+                .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+        };
+        (expanded_code, macro_name.into(), vec![])
+    } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
+        let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
+            cfg_set: &ctx.cfg_set,
+            declared_derives: &ctx.db.declared_derives(),
+            allowed_features: &ctx.resolver.data.feature_config.allowed_features,
+            edition: ctx.resolver.settings.edition,
+        });
+        let mut diag_added = None;
+        for diagnostic in result.diagnostics {
+            diag_added = match diagnostic.inner_span {
+                None => Some(
+                    ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+                ),
+                Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
+                    diagnostic.stable_ptr,
+                    (offset, width),
+                    PluginDiagnostic(diagnostic),
+                )),
             }
-            Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
-                diagnostic.stable_ptr,
-                (offset, width),
-                PluginDiagnostic(diagnostic),
-            )),
         }
-    }
 
-    let Some(code) = result.code else {
-        return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax, InlineMacroFailed(macro_name.into()))
-        }));
+        let Some(code) = result.code else {
+            return Err(diag_added.unwrap_or_else(|| {
+                ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into()))
+            }));
+        };
+        (code.content, code.name, code.code_mappings)
+    } else {
+        return Err(ctx.diagnostics.report(
+            syntax,
+            InlineMacroNotFound(
+                syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db).into(),
+            ),
+        ));
     };
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
-        name: code.name,
-        content: code.content.into(),
-        code_mappings: code.code_mappings.into(),
+        name,
+        content: content.into(),
+        code_mappings: mappings.into(),
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
@@ -3781,7 +3810,8 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Variant(_)
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::Variable(_) => {
+                            | ResolvedGenericItem::Variable(_)
+                            | ResolvedGenericItem::Macro(_) => {
                                 return Err(ctx
                                     .diagnostics
                                     .report(stable_ptr, UnsupportedUseItemInStatement));
