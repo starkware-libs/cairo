@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::starknet::secp256::{
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError, build_syscalls};
 
-/// Builds instructions for Sierra secp256k1 operations.
+/// Builds instructions for Sierra Secp256k1 operations.
 pub fn build(
     libfunc: &Secp256ConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
