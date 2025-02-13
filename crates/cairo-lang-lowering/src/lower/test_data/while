@@ -88,18 +88,18 @@ Statements:
   (v9: core::felt252) <- core::Felt252Sub::sub(v1, v8)
   (v11: core::felt252, v10: ()) <- test::foo[51-95](v9)
 End:
-  Goto(blk3, {v11 -> v14, v10 -> v13})
+  Goto(blk3, {v11 -> v15, v10 -> v14})
 
 blk2:
 Statements:
-  (v15: ()) <- struct_construct()
+  (v13: ()) <- struct_construct()
 End:
-  Goto(blk3, {v1 -> v14, v15 -> v13})
+  Return(v1, v13)
 
 blk3:
 Statements:
 End:
-  Return(v14, v13)
+  Return(v15, v14)
 
 
 Final lowering:
