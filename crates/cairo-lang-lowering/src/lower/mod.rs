@@ -1478,8 +1478,9 @@ fn lower_expr_loop(
                 location: ctx.get_location(snapshot_param.stable_ptr().untyped()),
             }
             .add(ctx, &mut builder.statements);
-            builder.update_snap_ref(snapshot_param, snapped);
+            // `update_ref` invalidates snapshots so it must be called before `update_snap_ref`.
             builder.update_ref(ctx, snapshot_param, original);
+            builder.update_snap_ref(snapshot_param, snapped);
         }
     }
     let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
@@ -1518,7 +1519,9 @@ fn call_loop_func(
                 .ok_or_else(|| {
                     // TODO(TomerStaskware): make sure this is unreachable and remove
                     // `MemberPathLoop` diagnostic.
-                    LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, MemberPathLoop))
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics.report(param.stable_ptr(), MemberPathLoop),
+                    )
                 })
         })
         .collect::<LoweringResult<Vec<_>>>()?;
