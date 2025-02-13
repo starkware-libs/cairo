@@ -108,6 +108,67 @@ fn test_iter_adapter_peekable() {
 }
 
 #[test]
+fn test_iter_adapter_take() {
+    assert_eq!((1_u8..=10).into_iter().take(4).collect(), array![1, 2, 3, 4]);
+    assert_eq!((1_u8..=10).into_iter().take(0).collect(), array![]);
+}
+
+#[test]
+fn test_iter_adapter_take_next() {
+    let mut iter = (1_u8..=10).into_iter().take(2);
+    assert_eq!(iter.next(), Some(1));
+    assert_eq!(iter.next(), Some(2));
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_iter_adapter_take_nth() {
+    // Test when n > requested nth
+    let mut iter = (1_u8..=10).into_iter().take(8);
+    assert_eq!(iter.nth(5), Some(6));
+    assert_eq!(iter.nth(1), Some(8));
+    assert_eq!(iter.nth(0), None);
+
+    // Test when n > 0 but not enough elements
+    let mut iter = (1_u8..=10).into_iter().take(5);
+    assert_eq!(iter.nth(15), None);
+    assert_eq!(iter.next(), None);
+
+    // Test when n = 0
+    let mut iter = (1_u8..=3).into_iter().take(0);
+    assert_eq!(iter.nth(0), None);
+}
+
+#[test]
+fn test_iter_adapter_take_advance_by() {
+    let mut iter = (1_u8..=10).into_iter().take(8);
+    // self.n >= n and inner iterator succeeds
+    assert_eq!(iter.advance_by(7), Ok(()));
+    assert_eq!(iter.next(), Some(8));
+    assert_eq!(iter.next(), None);
+
+    // self.n >= n but inner iterator fails
+    let mut iter = (1_u8..=3).into_iter().take(10);
+    assert_eq!(iter.advance_by(5), Err(2));
+
+    // self.n < n and inner iterator succeeds
+    let mut iter = (1_u8..=10).into_iter().take(8);
+    assert_eq!(iter.advance_by(9), Err(1));
+    assert_eq!(iter.next(), None);
+
+    let mut iter = (1_u8..=2).into_iter().take(10);
+    // self.n < n and inner iterator fails
+    assert_eq!(iter.advance_by(20), Err(18));
+    assert_eq!(iter.next(), None);
+
+    // self.n = 0
+    let mut iter = (1_u8..=10).into_iter().take(8);
+    assert_eq!(iter.advance_by(0), Ok(()));
+    assert_eq!(iter.next(), Some(1));
+    assert_eq!(iter.next(), Some(2));
+}
+
+#[test]
 fn test_iter_accum_sum() {
     assert_eq!(array![1, 2, 3].into_iter().sum(), 6);
     assert_eq!(array![].into_iter().sum(), 0);
