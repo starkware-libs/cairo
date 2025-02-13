@@ -2179,8 +2179,9 @@ fn lower_expr_error_propagate(
         location,
     }
     .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
-    let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
+    let ret_expr = lower_return(ctx, &mut subscope_err, err_res, location, true);
+    let sealed_block_err = lowered_expr_to_block_scope_end(ctx, subscope_err, ret_expr)
+        .map_err(LoweringFlowError::Failed)?;
 
     // Merge blocks.
     let match_info = MatchInfo::Enum(MatchEnumInfo {
@@ -2245,8 +2246,10 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
-    let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
+
+    let ret_expr = lower_return(ctx, &mut subscope_err, err_res, location, true);
+    let sealed_block_err = lowered_expr_to_block_scope_end(ctx, subscope_err, ret_expr)
+        .map_err(LoweringFlowError::Failed)?;
 
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {

@@ -1912,11 +1912,6 @@ fn compute_expr_error_propagate_semantic(
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
 
-    // Disallow error propagation inside a loop.
-    if ctx.is_inside_loop() {
-        ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
-    }
-
     let conformed_err_variant_ty =
         ctx.resolver.inference().conform_ty(func_err_variant.ty, inner_expr_err_variant.ty);
     // If conforming the types failed, the next check will fail and a better diagnostic will be

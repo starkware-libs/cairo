@@ -265,7 +265,7 @@ error: `break` only allowed inside a `loop`.
 //! > Error propagation inside a loop.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<bool> {
@@ -284,10 +284,6 @@ foo
 use option::Option;
 
 //! > expected_diagnostics
-error: `?` not allowed inside a `loop`.
- --> lib.cairo:5:9
-        res?;
-        ^^^^
 
 //! > ==========================================================================
 
