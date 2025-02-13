@@ -229,3 +229,101 @@ Statements:
   () <- test::bar(v3)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test snapshot invalidation
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> usize {
+    let mut array1: Array<u32> = array![14, 2, 37, 9, 0, 123, 7654, 2, 90];
+    let mut i = 0;
+
+    while i < array1.len() {
+        i += 1;
+    }
+
+    clear_scores(ref array1);
+
+    array1.len()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn clear_scores(ref array: Array<u32>) {
+    while array.len() > 0 {
+        array.pop_front().unwrap();
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
+  (v3: core::integer::u32) <- 14
+  (v4: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v2, v3)
+  (v5: core::integer::u32) <- 2
+  (v6: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v4, v5)
+  (v7: core::integer::u32) <- 37
+  (v8: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v6, v7)
+  (v9: core::integer::u32) <- 9
+  (v10: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v8, v9)
+  (v11: core::integer::u32) <- 0
+  (v12: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v10, v11)
+  (v13: core::integer::u32) <- 123
+  (v14: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v12, v13)
+  (v15: core::integer::u32) <- 7654
+  (v16: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v14, v15)
+  (v17: core::integer::u32) <- 2
+  (v18: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v16, v17)
+  (v19: core::integer::u32) <- 90
+  (v20: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v18, v19)
+  (v21: core::array::Array::<core::integer::u32>, v22: @core::array::Array::<core::integer::u32>) <- snapshot(v20)
+  (v23: core::integer::u32) <- 0
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[115-167](v0, v1, v23, v22)
+End:
+  Match(match_enum(v26) {
+    PanicResult::Ok(v27) => blk1,
+    PanicResult::Err(v28) => blk4,
+  })
+
+blk1:
+Statements:
+  (v29: core::RangeCheck, v30: core::gas::GasBuiltin, v31: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, ())>) <- test::clear_scores[41-111](v24, v25, v21)
+End:
+  Match(match_enum(v31) {
+    PanicResult::Ok(v32) => blk2,
+    PanicResult::Err(v33) => blk3,
+  })
+
+blk2:
+Statements:
+  (v34: core::array::Array::<core::integer::u32>, v35: ()) <- struct_destructure(v32)
+  (v36: core::array::Array::<core::integer::u32>, v37: @core::array::Array::<core::integer::u32>) <- snapshot(v34)
+  (v38: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v37)
+  (v39: (core::integer::u32,)) <- struct_construct(v38)
+  (v40: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v39)
+End:
+  Return(v29, v30, v40)
+
+blk3:
+Statements:
+  (v41: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v33)
+End:
+  Return(v29, v30, v41)
+
+blk4:
+Statements:
+  (v42: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v28)
+End:
+  Return(v24, v25, v42)

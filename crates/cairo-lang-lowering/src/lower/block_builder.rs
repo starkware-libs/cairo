@@ -94,12 +94,15 @@ impl BlockBuilder {
         var: VariableId,
         location: LocationId,
     ) {
+        // Invalidate snapshot to the given memberpath.
+        self.snapped_semantics.swap_remove(&member_path);
         self.semantics.update(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
             var,
         );
         self.changed_member_paths.insert(member_path);
+    
     }
 
     pub fn get_ref(
