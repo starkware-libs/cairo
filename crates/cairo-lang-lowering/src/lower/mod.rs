@@ -294,7 +294,7 @@ pub fn lower_while_loop(
     let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
 
     // Main block.
-    let mut subscope_main = create_subscope_with_bound_refs(ctx, builder);
+    let mut subscope_main = create_subscope(ctx, builder);
     let block_main_id = subscope_main.block_id;
     let main_block =
         extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
@@ -320,7 +320,7 @@ pub fn lower_while_loop(
         .map_err(LoweringFlowError::Failed)?;
 
     // Empty else block.
-    let subscope_else = create_subscope_with_bound_refs(ctx, builder);
+    let subscope_else = create_subscope(ctx, builder);
     let block_else_id = subscope_else.block_id;
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: while_location });
     let block_else = lowered_expr_to_block_scope_end(
@@ -1977,13 +1977,13 @@ fn lower_expr_error_propagate(
 
     let match_input = lowered_expr.as_var_usage(ctx, builder)?;
     // Ok arm.
-    let subscope_ok = create_subscope_with_bound_refs(ctx, builder);
+    let subscope_ok = create_subscope(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
     let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
     let sealed_block_ok = subscope_ok.goto_callsite(Some(VarUsage { var_id: expr_var, location }));
 
     // Err arm.
-    let mut subscope_err = create_subscope_with_bound_refs(ctx, builder);
+    let mut subscope_err = create_subscope(ctx, builder);
     let block_err_id = subscope_err.block_id;
     let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
     let err_res = generators::EnumConstruct {
@@ -2134,14 +2134,6 @@ fn alloc_empty_block(ctx: &mut LoweringContext<'_, '_>) -> BlockId {
 }
 
 /// Creates a new subscope of the given builder, with an empty block.
-fn create_subscope_with_bound_refs(
-    ctx: &mut LoweringContext<'_, '_>,
-    builder: &BlockBuilder,
-) -> BlockBuilder {
-    builder.child_block_builder(alloc_empty_block(ctx))
-}
-
-/// Creates a new subscope of the given builder, with unchanged refs and with an empty block.
 fn create_subscope(ctx: &mut LoweringContext<'_, '_>, builder: &BlockBuilder) -> BlockBuilder {
     builder.child_block_builder(alloc_empty_block(ctx))
 }

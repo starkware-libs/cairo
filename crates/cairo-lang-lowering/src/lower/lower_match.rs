@@ -33,8 +33,8 @@ use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::external::extern_facade_expr;
 use crate::lower::{
-    create_subscope, create_subscope_with_bound_refs, lower_expr, lower_single_pattern,
-    match_extern_arm_ref_args_bind, match_extern_variant_arm_input_types,
+    create_subscope, lower_expr, lower_single_pattern, match_extern_arm_ref_args_bind,
+    match_extern_variant_arm_input_types,
 };
 use crate::{
     FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage,
@@ -498,7 +498,7 @@ fn lower_full_match_tree(
         .concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let mut subscope = create_subscope_with_bound_refs(ctx, builder);
+            let mut subscope = create_subscope(ctx, builder);
             let block_id = subscope.block_id;
             let var_id = ctx.new_var(VarRequest {
                 ty: wrap_in_snapshots(
@@ -1159,10 +1159,10 @@ fn lower_expr_felt252_arm(
     let arm = &expr.arms[arm_index];
     let semantic_db = ctx.db.upcast();
 
-    let main_block = create_subscope_with_bound_refs(ctx, builder);
+    let main_block = create_subscope(ctx, builder);
     let main_block_id = main_block.block_id;
 
-    let mut else_block = create_subscope_with_bound_refs(ctx, builder);
+    let mut else_block = create_subscope(ctx, builder);
     let block_else_id = else_block.block_id;
 
     let pattern = &ctx.function_body.arenas.patterns[arm.patterns[pattern_index]];
@@ -1278,7 +1278,7 @@ fn lower_expr_match_index_enum(
     let mut block_ids = vec![];
 
     for index in 0..literals_to_arm_map.len() {
-        let subscope = create_subscope_with_bound_refs(ctx, builder);
+        let subscope = create_subscope(ctx, builder);
         let block_id = subscope.block_id;
         block_ids.push(block_id);
 
@@ -1454,7 +1454,7 @@ fn lower_expr_match_felt252(
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
 
-    let in_range_block = create_subscope_with_bound_refs(ctx, builder);
+    let in_range_block = create_subscope(ctx, builder);
     let in_range_block_id = in_range_block.block_id;
     let inner_match_info = lower_expr_match_index_enum(
         ctx,
@@ -1466,7 +1466,7 @@ fn lower_expr_match_felt252(
     )?;
     in_range_block.finalize(ctx, FlatBlockEnd::Match { info: inner_match_info });
 
-    let otherwise_block = create_subscope_with_bound_refs(ctx, builder);
+    let otherwise_block = create_subscope(ctx, builder);
     let otherwise_block_id = otherwise_block.block_id;
 
     arms_vec.push(MatchLeafBuilder {
