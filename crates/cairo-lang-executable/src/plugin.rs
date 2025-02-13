@@ -63,7 +63,6 @@ impl MacroPlugin for ExecutablePlugin {
                 &generics,
                 "Executable functions cannot have generic params.".to_string(),
             ));
-            return PluginResult { code: None, diagnostics, remove_original_item: false };
         }
         let name = declaration.name(db);
         let implicits_precedence =
@@ -83,6 +82,14 @@ impl MacroPlugin for ExecutablePlugin {
         ));
         let params = declaration.signature(db).parameters(db).elements(db);
         for (param_idx, param) in params.iter().enumerate() {
+            for modifier in param.modifiers(db).elements(db) {
+                if let ast::Modifier::Ref(terminal_ref) = modifier {
+                    diagnostics.push(PluginDiagnostic::error(
+                        &terminal_ref,
+                        "Parameters of an `#[executable]` function can't be `ref`.".into(),
+                    ));
+                }
+            }
             builder.add_modified(
                 RewriteNode::Text(format!(
                     "    let __param{EXECUTABLE_PREFIX}{param_idx} = Serde::deserialize(ref \
@@ -90,6 +97,9 @@ impl MacroPlugin for ExecutablePlugin {
                 ))
                 .mapped(db, param),
             );
+        }
+        if !diagnostics.is_empty() {
+            return PluginResult { code: None, diagnostics, remove_original_item: false };
         }
         builder.add_str(
             "    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');\n",
