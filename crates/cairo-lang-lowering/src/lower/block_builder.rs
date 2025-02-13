@@ -295,9 +295,22 @@ impl BlockBuilder {
             )
             .collect();
 
+        let TypeLongId::Closure(closure_id) = expr.ty.lookup_intern(ctx.db) else {
+            unreachable!("Closure Expr should have a Closure type.");
+        };
+
+        // Assert that the closure type matches the input we pass to it.
+        assert!(
+            closure_id
+                .captured_types
+                .iter()
+                .eq(inputs.iter().map(|var_usage| &ctx.variables[var_usage.var_id].ty))
+        );
+
         let var_usage =
             generators::StructConstruct { inputs: inputs.clone(), ty: expr.ty, location }
                 .add(ctx, &mut self.statements);
+
         let closure_info = ClosureInfo { members, snapshots };
 
         for (var_usage, member) in izip!(inputs, usage.usage.keys()) {
