@@ -141,8 +141,8 @@ fn test_iter_adapter_take_nth() {
 
 #[test]
 fn test_iter_adapter_take_advance_by() {
-    // self.n >= n and inner iterator succeeds
     let mut iter = (1_u8..=10).into_iter().take(8);
+    // self.n >= n and inner iterator succeeds
     assert_eq!(iter.advance_by(7), Ok(()));
     assert_eq!(iter.next(), Some(8));
     assert_eq!(iter.next(), None);
@@ -156,8 +156,8 @@ fn test_iter_adapter_take_advance_by() {
     assert_eq!(iter.advance_by(9), Err(1));
     assert_eq!(iter.next(), None);
 
-    // self.n < n and inner iterator fails
     let mut iter = (1_u8..=2).into_iter().take(10);
+    // self.n < n and inner iterator fails
     assert_eq!(iter.advance_by(20), Err(18));
     assert_eq!(iter.next(), None);
 
