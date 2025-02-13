@@ -29,10 +29,10 @@ use crate::test_utils::{
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = libfunc.lookup_intern(db);
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_types_info().felt252).expect("Can't find core::felt252.");
     let array_ty = db
         .get_concrete_type_id(get_core_ty_by_name(db.upcast(), "Array".into(), vec![
-            GenericArgumentId::Type(db.core_felt252_ty()),
+            GenericArgumentId::Type(db.core_types_info().felt252),
         ]))
         .expect("Can't find core::Array<core::felt252>.");
     let name = libfunc_long_id.generic_id.0;
@@ -226,7 +226,7 @@ fn test_add_store_statements(
     params: &[&str],
 ) -> Vec<String> {
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_types_info().felt252).expect("Can't find core::felt252.");
     add_store_statements(
         db,
         statements,

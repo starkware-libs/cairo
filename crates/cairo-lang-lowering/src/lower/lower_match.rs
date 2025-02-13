@@ -673,7 +673,7 @@ pub(crate) fn lower_expr_match(
     let matched_expr = ctx.function_body.arenas.exprs[expr.matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_felt252_ty() {
+    if ty == ctx.db.core_types_info().felt252 {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
         return lower_expr_match_felt252(ctx, expr, match_input, builder, None);
     }
@@ -1176,7 +1176,7 @@ fn lower_expr_felt252_arm(
         )));
     };
 
-    let felt252_ty = ctx.db.core_felt252_ty();
+    let felt252_ty = ctx.db.core_types_info().felt252;
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
@@ -1413,7 +1413,7 @@ fn lower_expr_match_felt252(
         location,
     });
 
-    let felt252_ty = ctx.db.core_felt252_ty();
+    let felt252_ty = ctx.db.core_types_info().felt252;
 
     // max +2 is the number of arms in the match.
     if max + 2 < numeric_match_optimization_threshold(ctx, convert_function.is_some()) {
