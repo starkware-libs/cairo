@@ -479,7 +479,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let eq = self.parse_token::<TerminalEq>();
-        let ty = self.parse_type_expr();
+        let type = self.parse_type_expr();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ItemTypeAlias::new_green(
             self.db,
