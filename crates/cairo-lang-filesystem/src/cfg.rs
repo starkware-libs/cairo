@@ -12,12 +12,12 @@ pub struct Cfg {
 }
 
 impl Cfg {
-    /// Creates an `cfg` option that is matchable as `#[cfg(name)]`.
+    /// Creates a `cfg` option that is matchable as `#[cfg(name)]`.
     pub fn name(name: impl Into<SmolStr>) -> Self {
         Self { key: name.into(), value: None }
     }
 
-    /// Creates an `cfg` option that is matchable as `#[cfg(key: "value")]`.
+    /// Creates a `cfg` option that is matchable as `#[cfg(key: "value")]`.
     pub fn kv(key: impl Into<SmolStr>, value: impl Into<SmolStr>) -> Self {
         Self { key: key.into(), value: Some(value.into()) }
     }
