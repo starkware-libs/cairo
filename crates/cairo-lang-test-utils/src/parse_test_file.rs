@@ -8,6 +8,11 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use cairo_lang_formatter::CairoFormatter;
+#[cfg(feature = "lean")]
+use cairo_lang_lean::lean_generator::{
+    write_lean_code_file, write_lean_completeness_file, write_lean_completeness_spec_file,
+    write_lean_soundness_file, write_lean_soundness_spec_file,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
 
@@ -158,6 +163,13 @@ impl TestBuilder {
     fn new_test(&mut self) {
         self.close_open_tag();
         let name = self.current_test_name.as_ref().expect("No name found for test.");
+        #[cfg(feature = "lean")]
+        self.current_test
+            .as_mut()
+            .expect("No test found.")
+            .attributes
+            .entry("test_name".into())
+            .or_insert(name.into());
         let old_test =
             self.tests.insert(name.clone(), std::mem::take(&mut self.current_test).unwrap());
         assert!(old_test.is_none(), "Found two tests named {name}.");
@@ -359,6 +371,17 @@ pub fn run_test_file(
     let is_format_mode = std::env::var("CAIRO_SKIP_FORMAT_TESTS") != Ok("1".into());
     let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
 
+    #[cfg(feature = "lean")]
+    let gen_lean_mode = std::env::var("CAIRO_GEN_LEAN") == Ok("1".into());
+    #[cfg(feature = "lean")]
+    let lean_outputs = [
+        "lean_func_name",
+        "lean_soundness_spec",
+        "lean_soundness",
+        "lean_completeness_spec",
+        "lean_completeness",
+        "lean_code",
+    ];
     let tests = parse_test_file(path)?;
 
     let mut new_tests = OrderedHashMap::<String, Test>::default();
@@ -415,10 +438,38 @@ pub fn run_test_file(
         log::debug!("Running test: {test_path}");
         let result = runner.run(&test.attributes, &runner_args);
 
+        #[cfg(feature = "lean")]
+        if gen_lean_mode {
+            let lean_func_name =
+                result.outputs.get("lean_func_name").expect("Lean function name missing.");
+            write_lean_soundness_spec_file(
+                path,
+                lean_func_name,
+                result.outputs.get("lean_soundness_spec"),
+            )?;
+            write_lean_soundness_file(path, lean_func_name, result.outputs.get("lean_soundness"))?;
+            write_lean_completeness_spec_file(
+                path,
+                lean_func_name,
+                result.outputs.get("lean_completeness_spec"),
+            )?;
+            write_lean_completeness_file(
+                path,
+                lean_func_name,
+                result.outputs.get("lean_completeness"),
+            )?;
+            write_lean_code_file(path, lean_func_name, result.outputs.get("lean_code"))?;
+            test.attributes.shift_remove("test_name");
+        }
+
         // Fix if in fix mode, unrelated to the result.
         if is_fix_mode {
             let mut new_test = test.clone();
             for (key, value) in result.outputs.iter() {
+                #[cfg(feature = "lean")]
+                if lean_outputs.contains(&&key[..]) {
+                    continue;
+                }
                 new_test.attributes.insert(key.to_string(), value.trim_end().to_string());
             }
             new_tests.insert(test_name.to_string(), new_test);
@@ -438,6 +489,10 @@ pub fn run_test_file(
         // If not in fix mode, also validate expectations.
         if !is_fix_mode {
             for (key, value) in result.outputs {
+                #[cfg(feature = "lean")]
+                if lean_outputs.contains(&&key[..]) {
+                    continue;
+                }
                 let expected_value =
                     test.attributes.get(&key).unwrap_or_else(|| missing_attribute_panic(&key));
                 let actual_value = value.trim();

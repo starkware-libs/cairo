@@ -42,3 +42,6 @@ test-log.workspace = true
 
 [package.metadata.cargo-machete]
 ignored = ["ark-secp256k1", "ark-secp256r1"]
+
+[features]
+lean = []

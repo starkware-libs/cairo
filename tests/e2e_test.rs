@@ -3,6 +3,11 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+#[cfg(feature = "lean")]
+use cairo_lang_lean::lean_generator::{
+    func_name_from_test_name, generate_lean_code, generate_lean_completeness,
+    generate_lean_soundness,
+};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -254,8 +259,8 @@ fn run_e2e_test(
     let config =
         compiler::SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX };
     // Compile to casm.
-    let casm =
-        compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap().to_string();
+    let cairo_program = compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap();
+    let casm = cairo_program.to_string();
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
@@ -279,6 +284,23 @@ fn run_e2e_test(
             .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
             .join("\n");
         res.insert("function_costs".into(), function_costs_str.to_string());
+    }
+
+    #[cfg(feature = "lean")]
+    {
+        let lean_func_name =
+            func_name_from_test_name(inputs["test_name"].as_str(), &cairo_program.aux_infos);
+        res.insert("lean_func_name".into(), lean_func_name.clone());
+        let (lean_soundness_spec, lean_soundness) =
+            generate_lean_soundness(&lean_func_name, &cairo_program);
+        res.insert("lean_soundness_spec".into(), lean_soundness_spec);
+        res.insert("lean_soundness".into(), lean_soundness);
+        let (lean_completeness_spec, lean_completeness) =
+            generate_lean_completeness(&lean_func_name, &cairo_program);
+        res.insert("lean_completeness_spec".into(), lean_completeness_spec);
+        res.insert("lean_completeness".into(), lean_completeness);
+        let lean_code = generate_lean_code(&lean_func_name, &cairo_program);
+        res.insert("lean_code".into(), lean_code);
     }
 
     TestRunnerResult::success(res)

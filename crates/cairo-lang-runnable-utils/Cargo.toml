@@ -19,3 +19,6 @@ itertools = { workspace = true, default-features = true }
 thiserror.workspace = true
 
 [dev-dependencies]
+
+[features]
+lean = ["cairo-lang-casm/lean", "cairo-lang-sierra-to-casm/lean"]

@@ -1,6 +1,8 @@
 use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+#[cfg(feature = "lean")]
+use cairo_lang_casm::builder_aux_info::CasmBuilderAuxiliaryInfo;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
@@ -284,6 +286,20 @@ pub struct CompiledInvocation {
     pub results: Vec<BranchChanges>,
     /// The environment after the invocation statement.
     pub environment: Environment,
+    #[cfg(feature = "lean")]
+    /// Auxiliary information for verification.
+    pub aux_info: Option<CasmBuilderAuxiliaryInfo>,
+}
+
+#[cfg(feature = "lean")]
+impl CompiledInvocation {
+    pub fn add_aux_info(
+        mut self,
+        aux_info: Option<CasmBuilderAuxiliaryInfo>,
+    ) -> CompiledInvocation {
+        self.aux_info = aux_info;
+        self
+    }
 }
 
 /// Checks that the list of references is contiguous on the stack and ends at ap - 1.
@@ -473,6 +489,8 @@ impl CompiledInvocationBuilder<'_> {
             })
             .collect(),
             environment: self.environment,
+            #[cfg(feature = "lean")]
+            aux_info: None,
         }
     }
 
@@ -498,11 +516,14 @@ impl CompiledInvocationBuilder<'_> {
     /// `pre_instructions` - Instructions to execute before the ones created by the builder.
     fn build_from_casm_builder_ex<const BRANCH_COUNT: usize>(
         self,
-        casm_builder: CasmBuilder,
+        #[cfg(not(feature = "lean"))] casm_builder: CasmBuilder,
+        #[cfg(feature = "lean")] mut casm_builder: CasmBuilder,
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
         cost_validation: CostValidationInfo<BRANCH_COUNT>,
         pre_instructions: InstructionsWithRelocations,
     ) -> CompiledInvocation {
+        #[cfg(feature = "lean")]
+        let aux_info = casm_builder.move_aux_info();
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         let expected_ap_changes = core_libfunc_ap_change(self.libfunc, &self);
@@ -581,11 +602,26 @@ impl CompiledInvocationBuilder<'_> {
                     cells: var_cells.iter().map(|cell| state.get_adjusted(*cell)).collect(),
                 })
             });
-        self.build(
+
+        #[cfg(feature = "lean")]
+        let aux_info = match aux_info {
+            Some(mut info) => {
+                for branch in branch_extractions.iter() {
+                    info.add_return_branch(branch.0, branch.1);
+                }
+                Some(info)
+            }
+            _ => None,
+        };
+
+        let compilation_invocation = self.build(
             chain!(pre_instructions.instructions, instructions).collect(),
             relocations,
             output_expressions,
-        )
+        );
+        #[cfg(feature = "lean")]
+        let compilation_invocation = compilation_invocation.add_aux_info(aux_info);
+        compilation_invocation
     }
 
     /// Creates a new invocation with only reference changes.
@@ -755,6 +791,13 @@ macro_rules! add_input_variables {
         let $var = $casm_builder.add_var(cairo_lang_casm::cell_expression::CellExpression::Deref(
             $var.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
         ));
+        #[cfg(feature = "lean")]
+        {
+            let cell_expr = $casm_builder.get_value($var, false);
+            if let Some(aux_info) = &mut $casm_builder.aux_info {
+                aux_info.add_arg(stringify!($var), $var, cell_expr);
+            }
+        }
         $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
     };
     ($casm_builder:ident, deref_or_immediate $var:ident; $($tok:tt)*) => {
@@ -771,12 +814,26 @@ macro_rules! add_input_variables {
                 }
             },
         );
+        #[cfg(feature = "lean")]
+        {
+            let cell_expr = $casm_builder.get_value($var, false);
+            if let Some(aux_info) = &mut $casm_builder.aux_info {
+                aux_info.add_arg(stringify!($var), $var, cell_expr);
+            }
+        }
         $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
     };
     ($casm_builder:ident, buffer($slack:expr) $var:ident; $($tok:tt)*) => {
         let $var = $casm_builder.add_var(
             $var.to_buffer($slack).ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
         );
+        #[cfg(feature = "lean")]
+        {
+            let cell_expr = $casm_builder.get_value($var, false);
+            if let Some(aux_info) = &mut $casm_builder.aux_info {
+                aux_info.add_arg(stringify!($var), $var, cell_expr);
+            }
+        }
         $crate::invocations::add_input_variables!($casm_builder, $($tok)*)
     };
 }

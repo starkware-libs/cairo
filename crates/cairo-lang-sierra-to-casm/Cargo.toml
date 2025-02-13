@@ -31,3 +31,4 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testin
 
 [features]
 testing = []
+lean = ["testing"]

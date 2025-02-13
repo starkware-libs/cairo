@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = ""
 
+[features]
+lean = ["cairo-lang-lean/lean", "cairo-lang-test-utils/lean"]
+
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }
@@ -25,6 +28,7 @@ cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", feat
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
+cairo-lang-lean = { path = "../crates/cairo-lang-lean" }
 env_logger.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
