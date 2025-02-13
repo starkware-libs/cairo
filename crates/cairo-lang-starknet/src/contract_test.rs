@@ -12,7 +12,7 @@ use crate::starknet_plugin_suite;
 fn test_contract_resolving() {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let crate_id = setup_test_crate(db, indoc! {"

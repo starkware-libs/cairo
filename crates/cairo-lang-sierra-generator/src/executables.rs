@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -24,41 +25,46 @@ pub fn find_executable_function_ids(
     db: &dyn SierraGenGroup,
     main_crate_ids: Vec<CrateId>,
 ) -> HashMap<ConcreteFunctionWithBodyId, Vec<SmolStr>> {
-    let executable_attributes = db
-        .macro_plugins()
-        .iter()
-        .flat_map(|plugin| plugin.executable_attributes())
-        .map(SmolStr::new)
-        .collect::<Vec<_>>();
     let mut executable_function_ids = HashMap::new();
-    if !executable_attributes.is_empty() {
-        for crate_id in main_crate_ids {
-            for module in db.crate_modules(crate_id).iter() {
-                if let Some(free_functions) = db.module_free_functions(*module).to_option() {
-                    for (free_func_id, body) in free_functions.iter() {
-                        let found_attrs = executable_attributes
-                            .clone()
-                            .iter()
-                            .filter(|attr| body.has_attr(db.upcast(), attr.as_str()))
-                            .cloned()
-                            .collect::<Vec<_>>();
-                        if found_attrs.is_empty() {
-                            // No executable attributes found.
-                            continue;
-                        }
-                        // Find function corresponding to the node by full path.
-                        let function_id = ConcreteFunctionWithBodyId::from_no_generics_free(
-                            db.upcast(),
-                            *free_func_id,
-                        );
-                        if let Some(function_id) = function_id {
-                            executable_function_ids.insert(function_id, found_attrs);
-                        }
+
+    for crate_id in main_crate_ids {
+        let executable_attributes = db
+            .crate_macro_plugins(crate_id)
+            .iter()
+            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).executable_attributes())
+            .map(SmolStr::new)
+            .collect::<Vec<_>>();
+
+        if executable_attributes.is_empty() {
+            continue;
+        }
+
+        for module in db.crate_modules(crate_id).iter() {
+            if let Some(free_functions) = db.module_free_functions(*module).to_option() {
+                for (free_func_id, body) in free_functions.iter() {
+                    let found_attrs = executable_attributes
+                        .clone()
+                        .iter()
+                        .filter(|attr| body.has_attr(db.upcast(), attr.as_str()))
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    if found_attrs.is_empty() {
+                        // No executable attributes found.
+                        continue;
+                    }
+                    // Find function corresponding to the node by full path.
+                    let function_id = ConcreteFunctionWithBodyId::from_no_generics_free(
+                        db.upcast(),
+                        *free_func_id,
+                    );
+                    if let Some(function_id) = function_id {
+                        executable_function_ids.insert(function_id, found_attrs);
                     }
                 }
             }
         }
     }
+
     executable_function_ids
 }
 
