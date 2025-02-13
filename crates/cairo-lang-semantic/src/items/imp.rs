@@ -36,6 +36,7 @@ use super::constant::{
     constant_semantic_data_helper,
 };
 use super::enm::SemanticEnumEx;
+use super::feature_kind::{FeatureKind, HasFeatureKind};
 use super::function_with_body::{FunctionBody, FunctionBodyData, get_inline_config};
 use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplGenericFunctionId, InlineConfiguration,
@@ -61,8 +62,8 @@ use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
     CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
-    deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait, get_core_trait,
-    panic_destruct_trait,
+    deref_mut_trait, deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait,
+    get_core_trait, panic_destruct_trait,
 };
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -71,7 +72,7 @@ use crate::expr::compute::{ComputationContext, ContextFunction, Environment, com
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context_with_ty};
 use crate::expr::inference::{
     ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId,
 };
@@ -79,7 +80,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeId, add_type_based_diagnostics, get_impl_at_context, resolve_type};
 use crate::{
     Arenas, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
@@ -274,7 +275,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
     ) -> std::fmt::Result {
         match self {
             ImplLongId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
-            ImplLongId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
+            ImplLongId::GenericParameter(param) => write!(f, "{}", param.debug_name(db.upcast())),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
@@ -410,9 +411,8 @@ impl ImplImplId {
         Ok(ConcreteTraitImplId::new(db, self.impl_id.concrete_trait(db)?, self.trait_impl_id))
     }
 
-    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()),)
-            .into()
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        format!("{:?}", self.debug(db.elongate()))
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
@@ -421,7 +421,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplImplId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.format(db))
+        write!(f, "{:?}::{}", self.impl_id.debug(db), self.trait_impl_id.name(db.upcast()))
     }
 }
 
@@ -582,7 +582,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             );
 
             let impl_concrete_trait_id = db.impl_def_concrete_trait(long_impl.impl_def_id)?;
-            SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
+            substitution.substitute(db, impl_concrete_trait_id)
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
@@ -708,11 +708,34 @@ pub struct ImplDefinitionData {
     item_constant_asts: Arc<OrderedHashMap<ImplConstantDefId, ast::ItemConstant>>,
     item_impl_asts: Arc<OrderedHashMap<ImplImplDefId, ast::ItemImplAlias>>,
 
-    /// Mapping of item names to their IDs. All the IDs should appear in one of the AST maps above.
-    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemId>>,
+    /// Mapping of item names to their meta data info. All the IDs should appear in one of the AST
+    /// maps above.
+    item_id_by_name: Arc<OrderedHashMap<SmolStr, ImplItemInfo>>,
 
     /// Mapping of missing impl names item names to the trait id.
     implicit_impls_id_by_name: Arc<OrderedHashMap<SmolStr, TraitImplId>>,
+}
+
+impl ImplDefinitionData {
+    /// Retrieves impl item information by its name.
+    pub fn get_impl_item_info(&self, item_name: &SmolStr) -> Option<ImplItemInfo> {
+        self.item_id_by_name.get(item_name).cloned()
+    }
+}
+/// Stores metadata for a impl item, including its ID and feature kind.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ImplItemInfo {
+    /// The unique identifier of the impl item.
+    pub id: ImplItemId,
+    /// The feature kind associated with this impl item.
+    pub feature_kind: FeatureKind,
+}
+
+impl HasFeatureKind for ImplItemInfo {
+    /// Returns the feature kind of this impl item.
+    fn feature_kind(&self) -> &FeatureKind {
+        &self.feature_kind
+    }
 }
 
 // --- Selectors ---
@@ -767,6 +790,118 @@ pub fn impl_semantic_definition_diagnostics(
         }
     }
     diagnostics.build()
+}
+
+/// Represents a chain of dereferences.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DerefChain {
+    pub derefs: Arc<[DerefInfo]>,
+}
+
+/// Represents a single steps in a deref chain.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DerefInfo {
+    /// The concrete `Deref::deref` or `MutDeref::mderef_mut` function.
+    pub function_id: FunctionId,
+    /// The mutability of the self argument of the deref function.
+    pub self_mutability: Mutability,
+    /// The target type of the deref function.
+    pub target_ty: TypeId,
+}
+
+/// Cycle handling for  [crate::db::SemanticGroup::deref_chain].
+pub fn deref_chain_cycle(
+    _db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    _ty: &TypeId,
+    _try_deref_mut: &bool,
+) -> Maybe<DerefChain> {
+    // `SemanticDiagnosticKind::DerefCycle` will be reported by `deref_impl_diagnostics`.
+    Maybe::Err(skip_diagnostic())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::deref_chain].
+pub fn deref_chain(db: &dyn SemanticGroup, ty: TypeId, try_deref_mut: bool) -> Maybe<DerefChain> {
+    let mut opt_deref = None;
+    if try_deref_mut {
+        opt_deref = try_get_deref_func_and_target(db, ty, true)?;
+    }
+    let self_mutability = if opt_deref.is_some() {
+        Mutability::Reference
+    } else {
+        opt_deref = try_get_deref_func_and_target(db, ty, false)?;
+        Mutability::Immutable
+    };
+
+    let Some((function_id, target_ty)) = opt_deref else {
+        return Ok(DerefChain { derefs: Arc::new([]) });
+    };
+
+    let inner_chain = db.deref_chain(target_ty, false)?;
+
+    Ok(DerefChain {
+        derefs: chain!(
+            [DerefInfo { function_id, target_ty, self_mutability }],
+            inner_chain.derefs.iter().cloned()
+        )
+        .collect(),
+    })
+}
+
+/// Tries to find the deref function and the target type for a given type and deref trait.
+fn try_get_deref_func_and_target(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+    is_mut_deref: bool,
+) -> Result<Option<(FunctionId, TypeId)>, DiagnosticAdded> {
+    let (deref_trait_id, deref_method) = if is_mut_deref {
+        (deref_mut_trait(db), "deref_mut".into())
+    } else {
+        (deref_trait(db), "deref".into())
+    };
+
+    let defs_db = db.upcast();
+    let mut lookup_context =
+        ImplLookupContext::new(deref_trait_id.module_file_id(defs_db).0, vec![]);
+    enrich_lookup_context_with_ty(db, ty, &mut lookup_context);
+    let concrete_trait = ConcreteTraitLongId {
+        trait_id: deref_trait_id,
+        generic_args: vec![GenericArgumentId::Type(ty)],
+    }
+    .intern(db);
+    let Ok(deref_impl) = get_impl_at_context(db, lookup_context, concrete_trait, None) else {
+        return Ok(None);
+    };
+    let concrete_impl_id = match deref_impl.lookup_intern(db) {
+        ImplLongId::Concrete(concrete_impl_id) => concrete_impl_id,
+        _ => panic!("Expected concrete impl"),
+    };
+
+    let deref_trait_func =
+        db.trait_function_by_name(deref_trait_id, deref_method).unwrap().unwrap();
+    let function_id = FunctionLongId {
+        function: ConcreteFunction {
+            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                impl_id: deref_impl,
+                function: deref_trait_func,
+            }),
+            generic_args: vec![],
+        },
+    }
+    .intern(db);
+
+    let data = db.priv_impl_definition_data(concrete_impl_id.impl_def_id(db)).unwrap();
+    let mut types_iter = data.item_type_asts.iter();
+    let (impl_item_type_id, _) = types_iter.next().unwrap();
+    if types_iter.next().is_some() {
+        panic!(
+            "get_impl_based_on_single_impl_type called with an impl that has more than one type"
+        );
+    }
+    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+    let ty = concrete_impl_id.substitution(db)?.substitute(db, ty).unwrap();
+
+    Ok(Some((function_id, ty)))
 }
 
 /// Reports diagnostic for a deref impl.
@@ -905,7 +1040,17 @@ pub fn impl_item_by_name(
     impl_def_id: ImplDefId,
     name: SmolStr,
 ) -> Maybe<Option<ImplItemId>> {
-    Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).cloned())
+    Ok(db.priv_impl_definition_data(impl_def_id)?.item_id_by_name.get(&name).map(|info| info.id))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_item_info_by_name].
+pub fn impl_item_info_by_name(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    name: SmolStr,
+) -> Maybe<Option<ImplItemInfo>> {
+    let impl_definition_data = db.priv_impl_definition_data(impl_def_id)?;
+    Ok(impl_definition_data.get_impl_item_info(&name))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_implicit_impl_by_name].
@@ -925,7 +1070,7 @@ pub fn impl_all_used_items(
     let mut all_used_items = db.impl_def_resolver_data(impl_def_id)?.used_items.clone();
     let data = db.priv_impl_definition_data(impl_def_id)?;
     for item in data.item_id_by_name.values() {
-        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(*item), db) {
+        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(item.id), db) {
             all_used_items.extend(resolver_data.used_items.iter().cloned());
         }
     }
@@ -1109,7 +1254,7 @@ pub fn priv_impl_definition_data(
     let mut item_type_asts = OrderedHashMap::default();
     let mut item_constant_asts = OrderedHashMap::default();
     let mut item_impl_asts = OrderedHashMap::default();
-    let mut item_id_by_name = OrderedHashMap::default();
+    let mut item_id_by_name: OrderedHashMap<SmolStr, ImplItemInfo> = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -1151,8 +1296,16 @@ pub fn priv_impl_definition_data(
                         ImplFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &func.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Function(impl_function_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Function(impl_function_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
@@ -1164,8 +1317,16 @@ pub fn priv_impl_definition_data(
                         ImplTypeDefLongId(module_file_id, ty.stable_ptr()).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &ty.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Type(impl_type_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Type(impl_type_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
@@ -1177,8 +1338,16 @@ pub fn priv_impl_definition_data(
                         ImplConstantDefLongId(module_file_id, constant.stable_ptr()).intern(db);
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &constant.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Constant(impl_constant_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Constant(impl_constant_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1189,12 +1358,20 @@ pub fn priv_impl_definition_data(
                     item_constant_asts.insert(impl_constant_id, constant);
                 }
                 ImplItem::Impl(imp) => {
-                    let impl_constant_id =
+                    let impl_impl_id =
                         ImplImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
+                    let feature_kind = FeatureKind::from_ast(
+                        db.upcast(),
+                        &mut diagnostics,
+                        &imp.attributes(db.upcast()),
+                    );
                     if item_id_by_name
-                        .insert(name.clone(), ImplItemId::Impl(impl_constant_id))
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Impl(impl_impl_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1202,7 +1379,7 @@ pub fn priv_impl_definition_data(
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
-                    item_impl_asts.insert(impl_constant_id, imp);
+                    item_impl_asts.insert(impl_impl_id, imp);
                 }
                 // Report nothing, a parser diagnostic is reported.
                 ImplItem::Missing(_) => {}
@@ -2236,9 +2413,7 @@ pub fn impl_type_concrete_implized(
     let Ok(ty) = ty else {
         return ty;
     };
-
-    let substitution = &concrete_impl.substitution(db)?;
-    SubstitutionRewriter { db, substitution }.rewrite(ty)
+    concrete_impl.substitution(db)?.substitute(db, ty)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
@@ -2446,13 +2621,11 @@ pub fn impl_constant_concrete_implized_value(
     if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().lookup_intern(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let constant = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?;
-        let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
-        return SubstitutionRewriter { db, substitution }.rewrite(constant);
+        return concrete_impl.substitution(db)?.substitute(db, constant);
     }
-    let substitution = &GenericSubstitution::from_impl(impl_constant_id.impl_id());
-
     Ok(ConstValue::ImplConstant(
-        SubstitutionRewriter { db, substitution }.rewrite(impl_constant_id)?,
+        GenericSubstitution::from_impl(impl_constant_id.impl_id())
+            .substitute(db, impl_constant_id)?,
     )
     .intern(db))
 }
@@ -2476,8 +2649,7 @@ pub fn impl_constant_concrete_implized_type(
         ImplLongId::Concrete(concrete_impl) => {
             let impl_def_id = concrete_impl.impl_def_id(db);
             let ty = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?.ty(db)?;
-            let substitution = &concrete_impl.substitution(db)?;
-            return SubstitutionRewriter { db, substitution }.rewrite(ty);
+            return concrete_impl.substitution(db)?.substitute(db, ty);
         }
         ImplLongId::GenericParameter(param) => {
             let param_impl =
@@ -2495,8 +2667,7 @@ pub fn impl_constant_concrete_implized_type(
         concrete_trait_id,
         impl_constant_id.trait_constant_id(),
     ))?;
-    let substitution = &GenericSubstitution::from_impl(impl_constant_id.impl_id());
-    SubstitutionRewriter { db, substitution }.rewrite(ty)
+    GenericSubstitution::from_impl(impl_constant_id.impl_id()).substitute(db, ty)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
@@ -2679,11 +2850,9 @@ fn validate_impl_item_impl(
     let concrete_trait_impl = ConcreteTraitImplId::new(db, concrete_trait_id, trait_impl_id);
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
 
-    let concrete_trait_impl_concrete_trait =
-        db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
-            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-                .rewrite(concrete_trait_id)
-        });
+    let concrete_trait_impl_concrete_trait = db
+        .concrete_trait_impl_concrete_trait(concrete_trait_impl)
+        .and_then(|concrete_trait_id| impl_def_substitution.substitute(db, concrete_trait_id));
 
     let resolved_impl_concrete_trait =
         impl_data.resolved_impl.and_then(|imp| imp.concrete_trait(db));
@@ -2781,8 +2950,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
         })
         .and_then(|concrete_trait_id| {
             let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-                .rewrite(concrete_trait_id)
+            impl_def_substitution.substitute(db, concrete_trait_id)
         });
     let impl_lookup_context = resolver.impl_lookup_context();
     let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
@@ -2870,13 +3038,13 @@ fn impl_impl_concrete_implized_ex(
     if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().lookup_intern(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
         let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id, in_cycle)?;
-        let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
-        return SubstitutionRewriter { db, substitution }.rewrite(imp);
+        return concrete_impl.substitution(db)?.substitute(db, imp);
     }
-    let substitution = &GenericSubstitution::from_impl(impl_impl_id.impl_id());
 
-    Ok(ImplLongId::ImplImpl(SubstitutionRewriter { db, substitution }.rewrite(impl_impl_id)?)
-        .intern(db))
+    Ok(ImplLongId::ImplImpl(
+        GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, impl_impl_id)?,
+    )
+    .intern(db))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
@@ -2885,10 +3053,8 @@ pub fn impl_impl_concrete_trait(
     impl_impl_id: ImplImplId,
 ) -> Maybe<ConcreteTraitId> {
     let concrete_trait_impl = impl_impl_id.concrete_trait_impl_id(db)?;
-    let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
-
     db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
-        SubstitutionRewriter { db, substitution: &substitution }.rewrite(concrete_trait_id)
+        GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, concrete_trait_id)
     })
 }
 
@@ -3168,9 +3334,7 @@ fn validate_impl_function_signature(
         return Ok(trait_function_id);
     }
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-    let func_generics: Vec<GenericParam> =
-        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-            .rewrite(func_generics)?;
+    let func_generics: Vec<GenericParam> = impl_def_substitution.substitute(db, func_generics)?;
 
     let function_substitution =
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
@@ -3191,11 +3355,9 @@ fn validate_impl_function_signature(
             (GenericParam::Impl(generic_param), GenericParam::Impl(trait_generic_param))
             | (GenericParam::NegImpl(generic_param), GenericParam::NegImpl(trait_generic_param)) => {
                 let rewritten_trait_param_trait =
-                    SubstitutionRewriter { db, substitution: &function_substitution }
-                        .rewrite(trait_generic_param.concrete_trait)?;
+                    function_substitution.substitute(db, trait_generic_param.concrete_trait)?;
                 let rewritten_trait_param_type_constraints =
-                    SubstitutionRewriter { db, substitution: &function_substitution }
-                        .rewrite(trait_generic_param.type_constraints)?;
+                    function_substitution.substitute(db, trait_generic_param.type_constraints)?;
                 generic_param
                     .concrete_trait
                     .map(|actual_trait| {
@@ -3222,8 +3384,7 @@ fn validate_impl_function_signature(
                     .ok();
             }
             (GenericParam::Const(generic_param), GenericParam::Const(trait_generic_param)) => {
-                let expected_ty = SubstitutionRewriter { db, substitution: &function_substitution }
-                    .rewrite(trait_generic_param.ty)?;
+                let expected_ty = function_substitution.substitute(db, trait_generic_param.ty)?;
                 if generic_param.ty != expected_ty {
                     diagnostics.report(generic_param.id.stable_ptr(defs_db), WrongParameterType {
                         impl_def_id,
@@ -3250,8 +3411,7 @@ fn validate_impl_function_signature(
     }
 
     let concrete_trait_signature =
-        SubstitutionRewriter { db, substitution: &function_substitution }
-            .rewrite(concrete_trait_signature)?;
+        function_substitution.substitute(db, concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(&signature_syntax.parameters(syntax_db), WrongNumberOfParameters {
@@ -3263,8 +3423,7 @@ fn validate_impl_function_signature(
         });
     }
     let concrete_trait_signature =
-        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-            .rewrite(concrete_trait_signature)?;
+        impl_def_substitution.substitute(db, concrete_trait_signature)?;
     for (idx, (param, trait_param)) in
         izip!(signature.params.iter(), concrete_trait_signature.params.iter()).enumerate()
     {

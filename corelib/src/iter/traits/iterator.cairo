@@ -1,8 +1,8 @@
 use crate::iter::adapters::{
-    Chain, Enumerate, Map, Peekable, Zip, chained_iterator, enumerated_iterator, mapped_iterator,
+    Chain, Enumerate, Filter, Map, Peekable, Zip, chained_iterator, enumerated_iterator, filter_iterator, mapped_iterator,
     peekable_iterator, zipped_iterator,
 };
-use crate::iter::traits::Product;
+use crate::iter::traits::{Product, Sum};
 use crate::metaprogramming::TypeEqual;
 
 /// A trait for dealing with iterators.
@@ -150,6 +150,55 @@ pub trait Iterator<T> {
             }
         } else {
             Ok(())
+        }
+    }
+
+    /// Returns the `n`th element of the iterator.
+    ///
+    /// Like most indexing operations, the count starts from zero, so `nth(0)`
+    /// returns the first value, `nth(1)` the second, and so on.
+    ///
+    /// Note that all preceding elements, as well as the returned element, will be
+    /// consumed from the iterator. That means that the preceding elements will be
+    /// discarded, and also that calling `nth(0)` multiple times on the same iterator
+    /// will return different elements.
+    ///
+    /// `nth()` will return [`None`] if `n` is greater than or equal to the length of the
+    /// iterator.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// assert_eq!(iter.nth(1), Some(2));
+    /// ```
+    ///
+    /// Calling `nth()` multiple times doesn't rewind the iterator:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    ///
+    /// assert_eq!(iter.nth(1), Some(2));
+    /// assert_eq!(iter.nth(1), None);
+    /// ```
+    ///
+    /// Returning `None` if there are less than `n + 1` elements:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// assert_eq!(iter.nth(10), None);
+    /// ```
+    #[inline]
+    fn nth<+Destruct<T>, +Destruct<Self::Item>>(
+        ref self: T, n: usize,
+    ) -> Option<
+        Self::Item,
+    > {
+        match Self::advance_by(ref self, n) {
+            Result::Ok(_) => Self::next(ref self),
+            Result::Err(_) => Option::None,
         }
     }
 
@@ -333,6 +382,96 @@ pub trait Iterator<T> {
         }
     }
 
+    /// Searches for an element of an iterator that satisfies a predicate.
+    ///
+    /// `find()` takes a closure that returns `true` or `false`. It applies
+    /// this closure to each element of the iterator as a snapshot, and if
+    /// any of them return `true`, then `find()` returns [`Some(element)`].
+    /// If they all return `false`, it returns [`None`].
+    ///
+    /// `find()` is short-circuiting; in other words, it will stop processing
+    /// as soon as the closure returns `true`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    ///
+    /// assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
+    ///
+    /// assert_eq!(iter.find(|x| *x == 5), Option::None);
+    /// ```
+    ///
+    /// Stopping at the first `true`:
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    ///
+    /// assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
+    ///
+    /// // we can still use `iter`, as there are more elements.
+    /// assert_eq!(iter.next(), Option::Some(3));
+    /// ```
+    ///
+    /// Note that `iter.find(f)` is equivalent to `iter.filter(f).next()`.
+    fn find<
+        P,
+        +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        ref self: T, predicate: P,
+    ) -> Option<
+        Self::Item,
+    > {
+        match Self::next(ref self) {
+            Option::None => Option::None,
+            Option::Some(x) => if predicate(@x) {
+                Option::Some(x)
+            } else {
+                Self::find(ref self, predicate)
+            },
+        }
+    }
+
+    /// Creates an iterator which uses a closure to determine if an element
+    /// should be yielded. The closure takes each element as a snapshot.
+    ///
+    /// Given an element the closure must return `true` or `false`. The returned
+    /// iterator will yield only the elements for which the closure returns
+    /// `true`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let a = array![0_u32, 1, 2];
+    ///
+    /// let mut iter = a.into_iter().filter(|x| *x > 0);
+    ///
+    /// assert_eq!(iter.next(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(2));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    ///
+    /// Note that `iter.filter(f).next()` is equivalent to `iter.find(f)`.
+    #[inline]
+    fn filter<
+        P,
+        +core::ops::Fn<P, (@Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        self: T, predicate: P,
+    ) -> Filter<T, P> {
+        filter_iterator(self, predicate)
+    }
+
     /// 'Zips up' two iterators into a single iterator of pairs.
     ///
     /// `zip()` returns a new iterator that will iterate over two other
@@ -371,7 +510,7 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.next(), Some((2, 5)));
     /// assert_eq!(iter.next(), Some((3, 6)));
     /// assert_eq!(iter.next(), None);
-    /// ``
+    /// ```
     ///
     /// [`enumerate`]: Iterator::enumerate
     /// [`next`]: Iterator::next
@@ -472,6 +611,34 @@ pub trait Iterator<T> {
     #[must_use]
     fn peekable(self: T) -> Peekable<T, Self::Item> {
         peekable_iterator(self)
+    }
+
+    /// Sums the elements of an iterator.
+    ///
+    /// Takes each element, adds them together, and returns the result.
+    ///
+    /// An empty iterator returns the zero value of the type.
+    ///
+    /// `sum()` can be used to sum any type implementing [`Sum`][`core::iter::Sum`],
+    /// including [`Option`][`Option::sum`] and [`Result`][`Result::sum`].
+    ///
+    /// # Panics
+    ///
+    /// When calling `sum()` and a primitive integer type is being returned, this
+    /// method will panic if the computation overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut iter = array![1, 2, 3].into_iter();
+    /// let sum: usize = iter.sum();
+    ///
+    /// assert_eq!(sum, 6);
+    /// ```
+    fn sum<+Destruct<T>, +Destruct<Self::Item>, +Sum<Self::Item>>(
+        self: T,
+    ) -> Self::Item {
+        Sum::<Self::Item>::sum::<T, Self>(self)
     }
 
     /// Iterates over the entire iterator, multiplying all the elements

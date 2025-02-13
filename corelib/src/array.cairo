@@ -72,7 +72,7 @@ use crate::gas::withdraw_gas;
 use crate::option::OptionTrait;
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
-/// A collection of elements of the same type continuous in memory.
+/// A collection of elements of the same type contiguous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
 
@@ -150,7 +150,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
                 self.append_span(span);
             },
             None => {},
-        };
+        }
     }
 
     /// Pops a value from the front of the array.
@@ -352,7 +352,7 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
-/// A span is a view into a continuous collection of the same type - such as `Array`.
+/// A span is a view into a contiguous collection of the same type - such as `Array`.
 /// It is a structure with a single field that holds a snapshot of an array.
 /// `Span` implements the `Copy` and the `Drop` traits.
 pub struct Span<T> {
@@ -529,7 +529,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let mut span = array![1, 2, 3].span();
     /// let result = *(span.multi_pop_back::<2>().unwrap());
     /// let unboxed_result = result.unbox();
-    /// assert!(unboxed_result == [2, 3]);;
+    /// assert!(unboxed_result == [2, 3]);
     /// ```
     fn multi_pop_back<const SIZE: usize>(ref self: Span<T>) -> Option<@Box<[T; SIZE]>> {
         array_snapshot_multi_pop_back(ref self.snapshot)
@@ -759,8 +759,8 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
             match span.pop_front() {
                 Some(v) => { response.append(v.clone()); },
                 None => { break (); },
-            };
-        };
+            }
+        }
         response
     }
 }
@@ -784,7 +784,7 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
                     break false;
                 } },
                 None => { break true; },
-            };
+            }
         }
     }
 }
@@ -858,12 +858,28 @@ impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
 }
 
 impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
-    fn from_iter<I, +Iterator<I>[Item: T], +Destruct<I>>(mut iter: I) -> Array<T> {
+    fn from_iter<I, +Iterator<I>[Item: T], +Destruct<I>>(iter: I) -> Array<T> {
         let mut arr = array![];
         for elem in iter {
             arr.append(elem);
-        };
+        }
         arr
+    }
+}
+
+impl ArrayExtend<T, +Drop<T>> of crate::iter::Extend<Array<T>, T> {
+    fn extend<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +TypeEqual<IntoIter::Iterator::Item, T>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        ref self: Array<T>, iter: I,
+    ) {
+        for elem in iter.into_iter() {
+            self.append(elem);
+        };
     }
 }
 

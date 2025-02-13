@@ -39,9 +39,8 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
 use crate::items::enm::SemanticEnumEx;
-use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
@@ -496,15 +495,6 @@ impl ConstantEvaluateContext<'_> {
                 self.validate(*inner);
             }
             Expr::FunctionCall(expr) => {
-                if let Some(value) = try_extract_minus_literal(self.db, &self.arenas.exprs, expr) {
-                    if let Err(err) = validate_literal(self.db, expr.ty, &value) {
-                        self.diagnostics.report(
-                            expr.stable_ptr.untyped(),
-                            SemanticDiagnosticKind::LiteralError(err),
-                        );
-                    }
-                    return;
-                }
                 for arg in &expr.args {
                     match arg {
                         ExprFunctionCallArg::Value(arg) => self.validate(*arg),
@@ -633,8 +623,8 @@ impl ConstantEvaluateContext<'_> {
                 .cloned()
                 .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic())),
             Expr::Constant(expr) => self
-                .rewriter()
-                .rewrite(expr.const_value_id.lookup_intern(db))
+                .generic_substitution
+                .substitute(self.db, expr.const_value_id.lookup_intern(db))
                 .unwrap_or_else(ConstValue::Missing),
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
@@ -805,10 +795,6 @@ impl ConstantEvaluateContext<'_> {
     /// Attempts to evaluate constants from a const function call.
     fn evaluate_function_call(&mut self, expr: &ExprFunctionCall) -> ConstValue {
         let db = self.db;
-        if let Some(value) = try_extract_minus_literal(db.upcast(), &self.arenas.exprs, expr) {
-            return value_as_const_value(db, expr.ty, &value)
-                .expect("LiteralError should have been caught on `validate`");
-        }
         let args = expr
             .args
             .iter()
@@ -821,10 +807,11 @@ impl ConstantEvaluateContext<'_> {
                 SemanticDiagnosticKind::FailedConstantCalculation,
             ));
         }
-        let concrete_function = match self.rewriter().rewrite(expr.function.get_concrete(db)) {
-            Ok(v) => v,
-            Err(err) => return ConstValue::Missing(err),
-        };
+        let concrete_function =
+            match self.generic_substitution.substitute(db, expr.function.get_concrete(db)) {
+                Ok(v) => v,
+                Err(err) => return ConstValue::Missing(err),
+            };
         if let Some(calc_result) =
             self.evaluate_const_function_call(&concrete_function, &args, expr)
         {
@@ -889,7 +876,7 @@ impl ConstantEvaluateContext<'_> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_felt252_ty() {
+        if expr.ty == db.core_types_info().felt252 {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",
@@ -914,7 +901,7 @@ impl ConstantEvaluateContext<'_> {
     ) -> Option<ConstValue> {
         let db = self.db;
         if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
-            let expr_ty = self.rewriter().rewrite(expr.ty).ok()?;
+            let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 return Some(ConstValue::Int(value.clone(), expr_ty));
@@ -1000,11 +987,6 @@ impl ConstantEvaluateContext<'_> {
             );
         }
         Some(value)
-    }
-
-    /// `SubstitutionRewriter` for the current generic substitution.
-    fn rewriter(&self) -> SubstitutionRewriter<'_> {
-        SubstitutionRewriter { db: self.db, substitution: &self.generic_substitution }
     }
 
     /// Extract const member access from a const value.

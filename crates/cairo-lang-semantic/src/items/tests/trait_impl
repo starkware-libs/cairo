@@ -1014,7 +1014,7 @@ fn bar<T, impl I: IntoIterator<T>>(a: T) {
     let mut y: felt252 = 0;
     while let Some(_) = I::Impl::next(ref x) {
         y += 1;
-    };
+    }
     y;
 }
 
@@ -1050,7 +1050,7 @@ fn bar<T, +IntoIterator<T>>(a: T) {
     let mut y: felt252 = 0;
     while let Some(_) = x.next() {
         y += 1;
-    };
+    }
     y;
 }
 
@@ -1363,7 +1363,64 @@ error: Trait has no implementation in context: test::Inner::<core::integer::u32>
 | }
 |_^
 
-error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, OuterU32::test::Inner::<core::integer::u32>::Item>.
+error: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, test::OuterU32::InnerImpl::Item>.
  --> lib.cairo:31:11
     1_u64.foo(1_u32);
           ^^^
+
+//! > ==========================================================================
+
+//! > Trait default implementation with recursive types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    // TODO(orizi): Remove this diagnostic.
+    extra_into_inner(Outer::into_inner(1_u32));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Outer<T> {
+    type Inner;
+    impl Impl: Inner<Self::Inner>;
+    fn into_inner(self: T) -> Self::Inner;
+}
+
+trait Inner<T> {
+    type InnerMost;
+}
+
+fn extra_into_inner<
+    T, impl OuterT: Outer<T>, +core::metaprogramming::TypeEqual<u128, OuterT::Impl::InnerMost>,
+>(
+    t: T,
+) {}
+
+impl OuterU32 of Outer<u32> {
+    type Inner = u64;
+    fn into_inner(self: u32) -> u64 {
+        0
+    }
+}
+
+impl OuterU64 of Outer<u64> {
+    type Inner = u64;
+    fn into_inner(self: u64) -> u64 {
+        self
+    }
+}
+
+impl InnerImpl of Inner<u64> {
+    type InnerMost = u128;
+}
+
+//! > expected_diagnostics
+error: `test::Outer::<core::integer::u64>::Impl::InnerMost` type mismatch: `core::integer::u128` and `test::Outer::<core::integer::u64>::Impl::InnerMost`.
+ --> lib.cairo:36:5
+    extra_into_inner(Outer::into_inner(1_u32));
+    ^^^^^^^^^^^^^^^^

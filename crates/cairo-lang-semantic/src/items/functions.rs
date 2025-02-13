@@ -32,7 +32,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
 use crate::{
     ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericArgumentId, GenericParam,
@@ -131,8 +131,7 @@ impl GenericFunctionId {
                     ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function),
                 )?;
 
-                let substitution = &GenericSubstitution::from_impl(id.impl_id);
-                SubstitutionRewriter { db, substitution }.rewrite(signature)
+                GenericSubstitution::from_impl(id.impl_id).substitute(db, signature)
             }
         }
     }
@@ -144,9 +143,8 @@ impl GenericFunctionId {
                 let concrete_trait_id = db.impl_concrete_trait(id.impl_id)?;
                 let concrete_id =
                     ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
-                let substitution = GenericSubstitution::from_impl(id.impl_id);
-                let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
-                rewriter.rewrite(db.concrete_trait_function_generic_params(concrete_id)?)
+                GenericSubstitution::from_impl(id.impl_id)
+                    .substitute(db, db.concrete_trait_function_generic_params(concrete_id)?)
             }
         }
     }
@@ -843,8 +841,7 @@ pub fn concrete_function_signature(
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
-    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
+    GenericSubstitution::new(&generic_params, &generic_args).substitute(db, generic_signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
@@ -855,9 +852,21 @@ pub fn concrete_function_closure_params(
     let ConcreteFunction { generic_function, generic_args, .. } =
         function_id.lookup_intern(db).function;
     let generic_params = generic_function.generic_params(db)?;
-    let generic_closure_params = db.get_closure_params(generic_function)?;
+    let mut generic_closure_params = db.get_closure_params(generic_function)?;
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_closure_params)
+    let mut changed_keys = vec![];
+    for (key, value) in generic_closure_params.iter_mut() {
+        *value = substitution.substitute(db, *value)?;
+        let updated_key = substitution.substitute(db, *key)?;
+        if updated_key != *key {
+            changed_keys.push((*key, updated_key));
+        }
+    }
+    for (old_key, new_key) in changed_keys {
+        let v = generic_closure_params.swap_remove(&old_key).unwrap();
+        generic_closure_params.insert(new_key, v);
+    }
+    Ok(generic_closure_params)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

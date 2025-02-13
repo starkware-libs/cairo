@@ -48,7 +48,7 @@ pub fn build_single_cell_const(
     ))
 }
 
-/// Handles a jump non zero statement.
+/// Handles a jump-non-zero statement.
 /// For example, this "Sierra statement"
 /// ```ignore
 /// felt252_is_zero(var=[ap-10]) { fallthrough() 1000(var) };

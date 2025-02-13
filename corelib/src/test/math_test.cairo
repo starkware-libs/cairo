@@ -41,13 +41,13 @@ fn test_egcd() {
 
 #[test]
 fn test_inv_mod() {
-    assert(math::inv_mod(5, 24) == Some(5_u256), 'inv_mov(5, 24) != 5');
-    assert(math::inv_mod(29, 24) == Some(5_u128), 'inv_mov(29, 24) != 5');
-    assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mov(1, 24) != 1');
-    assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mov(1, 5) != 1');
-    assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mov(8, 24) != None');
-    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mov(1, 1) != 0');
-    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mov(7, 1) != 0');
+    assert(math::inv_mod(5, 24) == Some(5_u256), 'inv_mod(5, 24) != 5');
+    assert(math::inv_mod(29, 24) == Some(5_u128), 'inv_mod(29, 24) != 5');
+    assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mod(1, 24) != 1');
+    assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mod(1, 5) != 1');
+    assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mod(8, 24) != None');
+    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mod(1, 1) != 0');
+    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mod(7, 1) != 0');
 }
 
 #[test]
@@ -80,15 +80,15 @@ fn test_u256_div_mod_n() {
 
 #[test]
 fn test_u256_inv_mod() {
-    assert(math::u256_inv_mod(5, 24).unwrap().into() == 5_u256, 'inv_mov(5, 24) != 5');
-    assert(math::u256_inv_mod(29, 24).unwrap().into() == 5_u256, 'inv_mov(29, 24) != 5');
-    assert(math::u256_inv_mod(1, 24).unwrap().into() == 1_u256, 'inv_mov(1, 24) != 1');
-    assert(math::u256_inv_mod(1, 5).unwrap().into() == 1_u256, 'inv_mov(1, 5) != 1');
-    assert(math::u256_inv_mod(8, 24).is_none(), 'inv_mov(8, 24) != None');
-    assert(math::u256_inv_mod(1, 1).is_none(), 'inv_mov(1, 1) != None');
-    assert(math::u256_inv_mod(7, 1).is_none(), 'inv_mov(7, 1) != None');
-    assert(math::u256_inv_mod(0, 1).is_none(), 'inv_mov(0, 1) != None');
-    assert(math::u256_inv_mod(0, 7).is_none(), 'inv_mov(0, 7) != None');
+    assert(math::u256_inv_mod(5, 24).unwrap().into() == 5_u256, 'inv_mod(5, 24) != 5');
+    assert(math::u256_inv_mod(29, 24).unwrap().into() == 5_u256, 'inv_mod(29, 24) != 5');
+    assert(math::u256_inv_mod(1, 24).unwrap().into() == 1_u256, 'inv_mod(1, 24) != 1');
+    assert(math::u256_inv_mod(1, 5).unwrap().into() == 1_u256, 'inv_mod(1, 5) != 1');
+    assert(math::u256_inv_mod(8, 24).is_none(), 'inv_mod(8, 24) != None');
+    assert(math::u256_inv_mod(1, 1).is_none(), 'inv_mod(1, 1) != None');
+    assert(math::u256_inv_mod(7, 1).is_none(), 'inv_mod(7, 1) != None');
+    assert(math::u256_inv_mod(0, 1).is_none(), 'inv_mod(0, 1) != None');
+    assert(math::u256_inv_mod(0, 7).is_none(), 'inv_mod(0, 7) != None');
     assert(math::u256_inv_mod(3, 6).is_none(), 'inv_mod(3, 6) != None');
     assert(math::u256_inv_mod(4, 6).is_none(), 'inv_mod(4, 6) != None');
     assert(math::u256_inv_mod(8, 4).is_none(), 'inv_mod(8, 4) != None');

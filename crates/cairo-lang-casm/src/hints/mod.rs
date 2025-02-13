@@ -1,3 +1,4 @@
+#![expect(clippy::literal_string_with_formatting_args)]
 #[cfg(not(feature = "std"))]
 use alloc::{
     format,
@@ -357,6 +358,16 @@ pub enum ExternalHint {
     /// Stores a marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     SetMarker { marker: ResOperand },
+    // TODO(ilya): Remove once the blake2s opecode is supported by the VM.
+    /// Compresses a message using the Blake2s algorithm.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
+    Blake2sCompress {
+        state: ResOperand,
+        byte_count: ResOperand,
+        message: ResOperand,
+        output: ResOperand,
+        finalize: ResOperand,
+    },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -856,6 +867,9 @@ impl PythonicHint for ExternalHint {
             Self::SetMarker { marker } => {
                 let marker = ResOperandAsAddressFormatter(marker);
                 format!(r#"raise NotImplementedError("marker = {}")"#, marker)
+            }
+            Self::Blake2sCompress { .. } => {
+                r#"raise NotImplementedError("blake2s_compress")"#.into()
             }
         }
     }

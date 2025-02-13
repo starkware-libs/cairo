@@ -77,6 +77,7 @@ impl TestFileRunner for CompileExecutableTestRunner {
             None,
             vec![test_module.crate_id],
             DiagnosticsReporter::stderr(),
+            Default::default(),
         )
         .map(|compiled| compiled.to_string())
         .unwrap_or_else(|e| e.to_string());

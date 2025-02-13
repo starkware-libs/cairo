@@ -90,7 +90,7 @@ pub trait Serde<T> {
     /// let value: u256 = 1;
     /// let mut serialized: Array<felt252> = array![];
     /// value.serialize(ref serialized);
-    /// assert!(serialized == array![1, 0]) // `serialized` contains the [low, high] parts of the
+    /// assert!(serialized == array![1, 0]); // `serialized` contains the [low, high] parts of the
     /// `u256` value ```
     fn serialize(self: @T, ref output: Array<felt252>);
 

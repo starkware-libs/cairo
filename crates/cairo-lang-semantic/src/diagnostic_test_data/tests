@@ -159,6 +159,11 @@ fn foo() {}
 //! > function_body
 
 //! > expected_diagnostics
+error: A numeric literal of type core::bool cannot be created.
+ --> lib.cairo:6:14
+    let _b = 123_bool;
+             ^^^^^^^^
+
 error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:7:14
     let _b = 123_NonZero;
@@ -167,11 +172,6 @@ error: Wrong number of arguments. Expected 1, found: 0
 error: Unknown type.
  --> lib.cairo:8:14
     let _b = 123_u129;
-             ^^^^^^^^
-
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:6:14
-    let _b = 123_bool;
              ^^^^^^^^
 
 //! > ==========================================================================
@@ -1267,3 +1267,133 @@ error: Global `use` item is not supported in `V2023_01` edition.
  --> lib.cairo:4:8
 use a::*;
        ^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated trait function via function path.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let x = Struct {};
+  MyTrait::deprecated_method(@x);
+}
+
+//! > module_code
+pub struct Struct {}
+
+pub trait MyTrait {
+    #[deprecated(feature: "deprecated", note: "This method is deprecated", since: "1.0.0")]
+    fn deprecated_method(self: @Struct);
+}
+
+impl MyTraitImpl of MyTrait {
+    fn deprecated_method(self: @Struct) {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "This method is deprecated"
+ --> lib.cairo:14:12
+  MyTrait::deprecated_method(@x);
+           ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated trait function via method.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let x = Struct {};
+  x.deprecated_method();
+}
+
+//! > module_code
+pub struct Struct {}
+
+pub trait MyTrait {
+    #[deprecated(feature: "deprecated", note: "This method is deprecated", since: "1.0.0")]
+    fn deprecated_method(self: @Struct);
+}
+
+impl MyTraitImpl of MyTrait {
+    fn deprecated_method(self: @Struct) {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "This method is deprecated"
+ --> lib.cairo:14:5
+  x.deprecated_method();
+    ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated impl function via the trait path prefix.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+    let s = Struct {};
+    MyTraitImpl::deprecated_method(@s);
+}
+
+//! > module_code
+pub struct Struct {}
+pub trait MyTrait {
+    #[deprecated(feature: "deprecated", note: "This method is deprecated", since: "1.0.0")]
+    fn deprecated_method(self: @Struct);
+}
+
+impl MyTraitImpl of MyTrait {
+    fn deprecated_method(self: @Struct) {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "This method is deprecated"
+ --> lib.cairo:13:18
+    MyTraitImpl::deprecated_method(@s);
+                 ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated impl function via the impl path prefix.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+    let s = Struct {};
+    MyTraitImpl::deprecated_method(@s);
+}
+
+//! > module_code
+pub struct Struct {}
+pub trait MyTrait {
+    fn deprecated_method(self: @Struct);
+}
+
+impl MyTraitImpl of MyTrait {
+    #[deprecated(feature: "deprecated", note: "This method is deprecated", since: "1.0.0")]
+    fn deprecated_method(self: @Struct) {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "This method is deprecated"
+ --> lib.cairo:13:18
+    MyTraitImpl::deprecated_method(@s);
+                 ^^^^^^^^^^^^^^^^^

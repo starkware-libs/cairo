@@ -18,6 +18,11 @@ mod peekable;
 pub(crate) use peekable::peekable_iterator;
 pub use peekable::{Peekable, PeekableTrait};
 
+mod filter;
+pub use filter::Filter;
+#[allow(unused_imports)]
+pub(crate) use filter::filter_iterator;
+
 mod chain;
 pub use chain::Chain;
 #[allow(unused_imports)]

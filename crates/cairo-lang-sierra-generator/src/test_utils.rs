@@ -272,7 +272,7 @@ pub fn dummy_push_values_ex(
     values: &[(&str, &str, bool)],
 ) -> pre_sierra::StatementWithLocation {
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_types_info().felt252).expect("Can't find core::felt252.");
     pre_sierra::Statement::PushValues(
         values
             .iter()

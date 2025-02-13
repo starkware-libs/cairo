@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
@@ -40,11 +41,13 @@ use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{FeatureConfig, FeatureKind, extract_feature_config};
+use crate::items::feature_kind::{
+    FeatureConfig, FeatureKind, HasFeatureKind, extract_feature_config,
+};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
-    ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
+    ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
 };
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
@@ -52,10 +55,10 @@ use crate::items::trt::{
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, ConcreteVariant, ExprId, FunctionId, FunctionLongId,
+    ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
@@ -118,13 +121,10 @@ pub struct EnrichedMembers {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
     pub members: OrderedHashMap<SmolStr, (Member, usize)>,
-    /// The sequence of deref functions needed to access the members.
-    pub deref_functions: Vec<(FunctionId, Mutability)>,
-    /// The tail of deref chain explored so far. The search for additional members will continue
-    /// from this point.
-    /// Useful for partial computation of enriching members where a member was already previously
-    /// found.
-    pub exploration_tail: Option<ExprId>,
+    /// The sequence of deref needed to access the members.
+    pub deref_chain: Arc<[DerefInfo]>,
+    // The number of derefs that were explored.
+    pub explored_derefs: usize,
 }
 impl EnrichedMembers {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
@@ -132,7 +132,12 @@ impl EnrichedMembers {
         let (member, n_derefs) = self.members.get(name)?;
         Some(EnrichedTypeMemberAccess {
             member: member.clone(),
-            deref_functions: self.deref_functions[..*n_derefs].to_vec(),
+            deref_functions: self
+                .deref_chain
+                .iter()
+                .map(|deref_info| (deref_info.function_id, deref_info.self_mutability))
+                .take(*n_derefs)
+                .collect(),
         })
     }
 }
@@ -420,7 +425,7 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedConcreteItem> {
         let generic_args_syntax = segment.generic_args(self.db.upcast());
         let segment_stable_ptr = segment.stable_ptr().untyped();
-        self.validate_item_usability(diagnostics, module_id, identifier, &inner_item_info);
+        self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
         self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
         let inner_generic_item =
             ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
@@ -839,11 +844,18 @@ impl<'db> Resolver<'db> {
             }
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
                 let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(self.db);
-                let Some(trait_item_id) =
-                    self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident)?
+                let Some(trait_item_id) = self
+                    .db
+                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
                 else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                if let Ok(Some(trait_item_info)) = self
+                    .db
+                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                {
+                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
+                }
                 self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
                 Ok(match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -876,11 +888,19 @@ impl<'db> Resolver<'db> {
                 })
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
-                let Some(trait_item_id) =
-                    self.db.trait_item_by_name(concrete_trait_id.trait_id(self.db), ident)?
+                let Some(trait_item_id) = self
+                    .db
+                    .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
                 else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+
+                if let Ok(Some(trait_item_info)) = self
+                    .db
+                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                {
+                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
+                }
                 self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
@@ -973,9 +993,25 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
-                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
+                let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident.clone())?
+                else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                if let Ok(Some(trait_item_info)) = self
+                    .db
+                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                {
+                    self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
+                }
+                if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(self.db) {
+                    let impl_def_id: ImplDefId = concrete_impl.impl_def_id(self.db);
+
+                    if let Ok(Some(impl_item_info)) =
+                        self.db.impl_item_info_by_name(impl_def_id, ident.clone())
+                    {
+                        self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
+                    }
+                }
                 self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
@@ -1083,10 +1119,10 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
-                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-                let ty = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                    .rewrite(ty)?;
-                ResolvedConcreteItem::Type(ty)
+                ResolvedConcreteItem::Type(
+                    GenericSubstitution::new(&generic_params, &generic_args)
+                        .substitute(self.db, ty)?,
+                )
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
                 let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
@@ -1098,10 +1134,10 @@ impl<'db> Resolver<'db> {
                     &generic_args_syntax.unwrap_or_default(),
                     identifier.stable_ptr().untyped(),
                 )?;
-                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-                let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                    .rewrite(impl_id)?;
-                ResolvedConcreteItem::Impl(impl_id)
+                ResolvedConcreteItem::Impl(
+                    GenericSubstitution::new(&generic_params, &generic_args)
+                        .substitute(self.db, impl_id)?,
+                )
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
@@ -1217,7 +1253,12 @@ impl<'db> Resolver<'db> {
                     item_type,
                 )?;
 
-                self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
+                self.validate_module_item_usability(
+                    diagnostics,
+                    *module_id,
+                    identifier,
+                    &inner_item_info,
+                );
                 self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
@@ -1505,8 +1546,7 @@ impl<'db> Resolver<'db> {
             self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
 
         for generic_param in generic_params.iter() {
-            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(generic_param.clone())?;
+            let generic_param = substitution.substitute(self.db, generic_param.clone())?;
             let generic_arg = self.resolve_generic_arg(
                 &generic_param,
                 arg_syntax_per_param
@@ -1677,7 +1717,7 @@ impl<'db> Resolver<'db> {
                     for (trait_ty, ty1) in param.type_constraints.iter() {
                         let ty0 = TypeLongId::ImplType(ImplTypeId::new(
                             resolved_impl,
-                            trait_ty.trait_type(self.db),
+                            *trait_ty,
                             self.db,
                         ))
                         .intern(self.db);
@@ -1707,19 +1747,17 @@ impl<'db> Resolver<'db> {
             || self.settings.edition.ignore_visibility() && module_crate == self.db.core_crate()
     }
 
-    /// Validates that an item is usable from the current module or adds a diagnostic.
-    /// This includes visibility checks and feature checks.
-    fn validate_item_usability(
+    /// Validates whether a given item is allowed based on its feature kind.
+    /// This function checks if the item's feature kind is allowed in the current
+    /// configuration. If the item uses an unstable, deprecated, or internal feature
+    /// that is not permitted, a corresponding diagnostic error is reported.
+    pub fn validate_feature_constraints<T: HasFeatureKind>(
         &self,
         diagnostics: &mut SemanticDiagnostics,
-        containing_module_id: ModuleId,
         identifier: &ast::TerminalIdentifier,
-        item_info: &ModuleItemInfo,
+        item_info: &T,
     ) {
-        if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
-            diagnostics.report(identifier, ItemNotVisible(item_info.item_id, vec![]));
-        }
-        match &item_info.feature_kind {
+        match &item_info.feature_kind() {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
@@ -1747,6 +1785,22 @@ impl<'db> Resolver<'db> {
             }
             _ => {}
         }
+    }
+
+    /// Validates that an item is usable from the current module or adds a diagnostic.
+    /// This includes visibility checks and feature checks.
+    fn validate_module_item_usability(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        containing_module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+        item_info: &ModuleItemInfo,
+    ) {
+        if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
+            diagnostics.report(identifier, ItemNotVisible(item_info.item_id, vec![]));
+        }
+
+        self.validate_feature_constraints(diagnostics, identifier, item_info);
     }
 
     /// Checks if an item is visible from the current module.

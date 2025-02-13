@@ -22,6 +22,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
+use crate::corelib::CoreTypesInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -29,12 +30,12 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
 };
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
-    TraitItemTypeData,
+    TraitItemInfo, TraitItemTypeData,
 };
 use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
@@ -466,6 +467,13 @@ pub trait SemanticGroup:
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
     fn trait_item_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitItemId>>;
+    /// Returns the metadata for a trait item, by the given `name`, if exists.
+    #[salsa::invoke(items::trt::trait_item_info_by_name)]
+    fn trait_item_info_by_name(
+        &self,
+        trait_id: TraitId,
+        name: SmolStr,
+    ) -> Maybe<Option<TraitItemInfo>>;
     /// Returns all the items used within the trait.
     #[salsa::invoke(items::trt::trait_all_used_items)]
     fn trait_all_used_items(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
@@ -774,6 +782,13 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_item_by_name)]
     fn impl_item_by_name(&self, impl_def_id: ImplDefId, name: SmolStr)
     -> Maybe<Option<ImplItemId>>;
+    /// Returns the metadata for an impl item, by the given `name`, if exists.
+    #[salsa::invoke(items::imp::impl_item_info_by_name)]
+    fn impl_item_info_by_name(
+        &self,
+        impl_def_id: ImplDefId,
+        name: SmolStr,
+    ) -> Maybe<Option<ImplItemInfo>>;
     /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
     #[salsa::invoke(items::imp::impl_implicit_impl_by_name)]
     fn impl_implicit_impl_by_name(
@@ -925,6 +940,11 @@ pub trait SemanticGroup:
         &self,
         impl_type_def_id: ImplTypeDefId,
     ) -> Maybe<GenericParamsData>;
+
+    /// Returns the deref chain and diagnostics for a given type.
+    #[salsa::invoke(items::imp::deref_chain)]
+    #[salsa::cycle(items::imp::deref_chain_cycle)]
+    fn deref_chain(&self, ty: TypeId, try_deref_mut: bool) -> Maybe<items::imp::DerefChain>;
 
     // Impl type.
     // ================
@@ -1579,8 +1599,8 @@ pub trait SemanticGroup:
     fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
-    #[salsa::invoke(corelib::core_felt252_ty)]
-    fn core_felt252_ty(&self) -> semantic::TypeId;
+    #[salsa::invoke(corelib::core_types_info)]
+    fn core_types_info(&self) -> Arc<CoreTypesInfo>;
 
     // Analyzer plugins.
     // ========

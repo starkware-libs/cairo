@@ -261,8 +261,8 @@ pub fn simulate<
         CoreConcreteLibfunc::Poseidon(_) => {
             unimplemented!("Simulation of the Poseidon hash function is not implemented yet.");
         }
-        CoreConcreteLibfunc::StarkNet(_) => {
-            unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
+        CoreConcreteLibfunc::Starknet(_) => {
+            unimplemented!("Simulation of the Starknet functionalities is not implemented yet.")
         }
         CoreConcreteLibfunc::Nullable(_) => {
             unimplemented!("Simulation of nullable is not implemented yet.")
@@ -295,6 +295,7 @@ pub fn simulate<
         CoreConcreteLibfunc::BoundedInt(_) => unimplemented!(),
         CoreConcreteLibfunc::Circuit(_) => unimplemented!(),
         CoreConcreteLibfunc::IntRange(_) => unimplemented!(),
+        CoreConcreteLibfunc::Blake(_) => unimplemented!(),
     })
 }
 

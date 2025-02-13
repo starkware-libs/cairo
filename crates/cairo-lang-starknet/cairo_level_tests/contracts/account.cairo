@@ -84,8 +84,8 @@ mod account {
                     None => {
                         break; // Can't break result; because of 'variable was previously moved'
                     },
-                };
-            };
+                }
+            }
             result
         }
     }

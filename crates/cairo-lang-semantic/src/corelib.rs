@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::ids::{
     EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitFunctionId, TraitId,
@@ -18,6 +20,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
+use crate::helper::ModuleHelper;
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -33,6 +36,7 @@ use crate::{
     ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId, semantic,
 };
 
+/// Query implementation of [SemanticGroup::core_module].
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
@@ -61,12 +65,9 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
         .unwrap_or_else(|| panic!("`{submodule_name}` is not a core submodule."))
 }
 
+/// Query implementation of [SemanticGroup::core_crate].
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
     CrateId::core(db)
-}
-
-pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "felt252".into(), vec![])
 }
 
 /// Returns the concrete type of a bounded int type with a given min and max.
@@ -74,9 +75,9 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let internal = core_submodule(db, "internal");
     let bounded_int = get_submodule(db, internal, "bounded_int")
         .expect("Could not find bounded_int submodule in corelib.");
-    let size_ty = db.core_felt252_ty();
-    let lower_id = ConstValue::Int(min, size_ty).intern(db);
-    let upper_id = ConstValue::Int(max, size_ty).intern(db);
+    let felt252_ty = db.core_types_info().felt252;
+    let lower_id = ConstValue::Int(min, felt252_ty).intern(db);
+    let upper_id = ConstValue::Int(max, felt252_ty).intern(db);
     try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
         GenericArgumentId::Constant(lower_id),
         GenericArgumentId::Constant(upper_id),
@@ -110,7 +111,9 @@ pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(db.core_felt252_ty())])
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(
+        db.core_types_info().felt252,
+    )])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -851,25 +854,26 @@ pub fn get_convert_to_felt252_libfunc_name_by_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
 ) -> Option<FunctionId> {
-    if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
+    let info = db.core_types_info();
+    if ty == info.u8 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u8_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
+    } else if ty == info.u16 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u16_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
+    } else if ty == info.u32 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u32_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
+    } else if ty == info.u64 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u64_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
+    } else if ty == info.u128 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u128_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
+    } else if ty == info.i8 {
         Some(get_function_id(db, core_submodule(db, "integer"), "i8_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
+    } else if ty == info.i16 {
         Some(get_function_id(db, core_submodule(db, "integer"), "i16_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
+    } else if ty == info.i32 {
         Some(get_function_id(db, core_submodule(db, "integer"), "i32_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
+    } else if ty == info.i64 {
         Some(get_function_id(db, core_submodule(db, "integer"), "i64_to_felt252".into(), vec![]))
-    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
+    } else if ty == info.i128 {
         Some(get_function_id(db, core_submodule(db, "integer"), "i128_to_felt252".into(), vec![]))
     } else {
         None
@@ -902,48 +906,52 @@ pub fn validate_literal(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<(), LiteralError> {
-    if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
-        return if value.is_zero() {
+    let info = db.core_types_info();
+    let validate_out_of_range = |is_out_of_range: bool| {
+        if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
+    };
+    if ty == info.felt252 {
+        validate_out_of_range(
+            value.abs()
+                > BigInt::from_str_radix(
+                    "800000000000011000000000000000000000000000000000000000000000000",
+                    16,
+                )
+                .unwrap(),
+        )
+    } else if ty == info.u8 {
+        validate_out_of_range(value.to_u8().is_none())
+    } else if ty == info.u16 {
+        validate_out_of_range(value.to_u16().is_none())
+    } else if ty == info.u32 {
+        validate_out_of_range(value.to_u32().is_none())
+    } else if ty == info.u64 {
+        validate_out_of_range(value.to_u64().is_none())
+    } else if ty == info.u128 {
+        validate_out_of_range(value.to_u128().is_none())
+    } else if ty == info.i8 {
+        validate_out_of_range(value.to_i8().is_none())
+    } else if ty == info.i16 {
+        validate_out_of_range(value.to_i16().is_none())
+    } else if ty == info.i32 {
+        validate_out_of_range(value.to_i32().is_none())
+    } else if ty == info.i64 {
+        validate_out_of_range(value.to_i64().is_none())
+    } else if ty == info.i128 {
+        validate_out_of_range(value.to_i128().is_none())
+    } else if ty == info.u256 {
+        validate_out_of_range(value.is_negative() || value.bits() > 256)
+    } else if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
+        if value.is_zero() {
             Err(LiteralError::OutOfRange(ty))
         } else {
             validate_literal(db, nz_wrapped_ty, value)
-        };
-    }
-    let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
-        *value < min || *value > max
-    } else if ty == db.core_felt252_ty() {
-        value.abs()
-            > BigInt::from_str_radix(
-                "800000000000011000000000000000000000000000000000000000000000000",
-                16,
-            )
-            .unwrap()
-    } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
-        value.to_u8().is_none()
-    } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
-        value.to_u16().is_none()
-    } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
-        value.to_u32().is_none()
-    } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
-        value.to_u64().is_none()
-    } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
-        value.to_u128().is_none()
-    } else if ty == get_core_ty_by_name(db, "u256".into(), vec![]) {
-        value.is_negative() || value.bits() > 256
-    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
-        value.to_i8().is_none()
-    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
-        value.to_i16().is_none()
-    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
-        value.to_i32().is_none()
-    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
-        value.to_i64().is_none()
-    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
-        value.to_i128().is_none()
+        }
+    } else if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
+        validate_out_of_range(*value < min || *value > max)
     } else {
-        return Err(LiteralError::InvalidTypeForLiteral(ty));
-    };
-    if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
+        Err(LiteralError::InvalidTypeForLiteral(ty))
+    }
 }
 
 /// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.
@@ -972,4 +980,46 @@ fn try_extract_bounded_int_type_ranges(
     let to_int = |id| db.lookup_intern_const_value(id).into_int();
 
     Some((to_int(min)?, to_int(max)?))
+}
+
+/// Information about various core types.
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct CoreTypesInfo {
+    pub felt252: TypeId,
+    pub u8: TypeId,
+    pub u16: TypeId,
+    pub u32: TypeId,
+    pub u64: TypeId,
+    pub u128: TypeId,
+    pub u256: TypeId,
+    pub i8: TypeId,
+    pub i16: TypeId,
+    pub i32: TypeId,
+    pub i64: TypeId,
+    pub i128: TypeId,
+}
+impl CoreTypesInfo {
+    fn new(db: &dyn SemanticGroup) -> Self {
+        let core = ModuleHelper::core(db);
+        let integer = core.submodule("integer");
+        Self {
+            felt252: core.ty("felt252", vec![]),
+            u8: integer.ty("u8", vec![]),
+            u16: integer.ty("u16", vec![]),
+            u32: integer.ty("u32", vec![]),
+            u64: integer.ty("u64", vec![]),
+            u128: integer.ty("u128", vec![]),
+            u256: integer.ty("u256", vec![]),
+            i8: integer.ty("i8", vec![]),
+            i16: integer.ty("i16", vec![]),
+            i32: integer.ty("i32", vec![]),
+            i64: integer.ty("i64", vec![]),
+            i128: integer.ty("i128", vec![]),
+        }
+    }
+}
+
+/// Query implementation of [SemanticGroup::core_types_info].
+pub fn core_types_info(db: &dyn SemanticGroup) -> Arc<CoreTypesInfo> {
+    CoreTypesInfo::new(db).into()
 }

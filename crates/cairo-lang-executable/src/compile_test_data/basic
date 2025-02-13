@@ -489,7 +489,7 @@ ap += 2;
 [ap + -1] = [[ap + -3] + 2];
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -4] + 3, ap++;
-[ap + 0] = 170141183460469231731687303715884105727, ap++;
+[ap + 0] = 9223372036854775807, ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
@@ -795,7 +795,7 @@ ret;
 
 //! > ==========================================================================
 
-//! > Test use System implicit.
+//! > Test use System implicit with keccak.
 
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
@@ -807,6 +807,24 @@ fn use_system() {
 }
 
 //! > result
-Emulated builtin `System` not allowed for executable.
+The function is using libfunc `keccak_syscall`. Syscalls are not supported in `#[executable]`.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use System implicit with sha256.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn use_system() {
+    core::sha256::compute_sha256_byte_array(@"not allowed without starknet.");
+}
+
+//! > result
+The function is using libfunc `sha256_process_block_syscall`. Syscalls are not supported in `#[executable]`.
 
 //! > expected_diagnostics

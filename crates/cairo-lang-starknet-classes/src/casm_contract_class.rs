@@ -467,20 +467,26 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
 
             // The expected return types are [builtins.., gas_builtin, system, PanicResult].
-            require(function.signature.ret_types.len() >= 3)
+            let (panic_result, output_builtins) = function
+                .signature
+                .ret_types
+                .split_last()
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            let (builtins, [gas_ty, system_ty]) = output_builtins
+                .split_last_chunk()
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            let (input_span, input_builtins) = function
+                .signature
+                .param_types
+                .split_last()
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
-
-            let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
+            require(input_builtins == output_builtins)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             let type_resolver = TypeResolver { type_decl: &program.type_declarations };
             require(type_resolver.is_felt252_span(input_span))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            let (panic_result, output_builtins) =
-                function.signature.ret_types.split_last().unwrap();
-
-            require(input_builtins == output_builtins)
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
             require(type_resolver.is_valid_entry_point_return_type(panic_result))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
@@ -491,8 +497,6 @@ impl CasmContractClass {
                     ));
                 }
             }
-            let (system_ty, builtins) = input_builtins.split_last().unwrap();
-            let (gas_ty, builtins) = builtins.split_last().unwrap();
 
             // Check that the last builtins are gas and system.
             if *type_resolver.get_generic_id(system_ty) != SystemType::id()

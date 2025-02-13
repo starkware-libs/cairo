@@ -1,4 +1,5 @@
 use crate::test::test_utils::assert_eq;
+use crate::iter::Extend;
 
 #[test]
 fn test_array() {
@@ -243,6 +244,13 @@ fn test_array_from_iterator() {
 }
 
 #[test]
+fn test_array_extend() {
+    let mut arr = array![1_u32, 2, 3];
+    arr.extend(4..6_u32);
+    assert_eq!(arr, array![1, 2, 3, 4, 5]);
+}
+
+#[test]
 fn test_array_into_span() {
     assert_eq!(array![1, 2, 3].span(), array![1, 2, 3].into())
 }
@@ -268,7 +276,7 @@ fn nested_for_loop() {
     for arr in mat {
         for i in arr {
             result += i;
-        };
-    };
+        }
+    }
     assert_eq!(result, 21);
 }

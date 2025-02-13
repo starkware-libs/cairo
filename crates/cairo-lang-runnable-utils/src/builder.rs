@@ -50,8 +50,6 @@ pub enum BuildError {
     SierraCompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
-    #[error("Emulated builtin `{0}` not allowed for executable.")]
-    DisallowedBuiltinForExecutable(GenericTypeId),
 }
 
 impl BuildError {
@@ -246,8 +244,6 @@ pub struct EntryCodeConfig {
     /// Array<felt252>`. And will inject the output builtin to be the supplied array input, and
     /// to be the result of the output.
     pub outputting_function: bool,
-    /// Whether the compiled code is for performing a proof.
-    pub is_proof_mode: bool,
 }
 impl EntryCodeConfig {
     /// Returns a configuration for testing purposes.
@@ -255,12 +251,12 @@ impl EntryCodeConfig {
     /// This configuration will not finalize the segment arena after calling the function, to
     /// prevent failure in case of functions returning values.
     pub fn testing() -> Self {
-        Self { finalize_segment_arena: false, outputting_function: false, is_proof_mode: false }
+        Self { finalize_segment_arena: false, outputting_function: false }
     }
 
     /// Returns a configuration for execution purposes.
     pub fn executable() -> Self {
-        Self { finalize_segment_arena: true, outputting_function: true, is_proof_mode: true }
+        Self { finalize_segment_arena: true, outputting_function: true }
     }
 }
 
@@ -373,11 +369,6 @@ pub fn create_entry_code_from_params(
             let var = builtin_vars[&name];
             casm_build_extend!(ctx, tempvar _builtin = var;);
         } else if emulated_builtins.contains(generic_ty) {
-            if config.is_proof_mode {
-                // Emulated builtins are not supported when compiling for proof, as they are not
-                // proven.
-                return Err(BuildError::DisallowedBuiltinForExecutable(generic_ty.clone()));
-            }
             casm_build_extend! {ctx,
                 tempvar system;
                 hint AllocSegment into {dst: system};
@@ -397,9 +388,9 @@ pub fn create_entry_code_from_params(
             param_index += 1;
             unallocated_count += ty_size;
         } else if generic_ty == &GasBuiltinType::ID {
-            // Setting gas to be far from u128 boundaries.
+            // Setting gas to be far from u64 boundaries.
             casm_build_extend! {ctx,
-                const max_gas = i128::MAX;
+                const max_gas = i64::MAX;
                 tempvar gas = max_gas;
             };
         }

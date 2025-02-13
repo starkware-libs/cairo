@@ -10,8 +10,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
-    LocalVarId, LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
-    TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
+    LocalVarId, LookupItemId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
+    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -45,7 +45,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
 };
-use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeById, ImplTypeId,
@@ -170,6 +170,12 @@ pub enum InferenceError {
         trt0: TraitId,
         trt1: TraitId,
     },
+    ImplTypeMismatch {
+        impl_id: ImplId,
+        trait_type_id: TraitTypeId,
+        ty0: TypeId,
+        ty1: TypeId,
+    },
     GenericFunctionMismatch {
         func0: GenericFunctionId,
         func1: GenericFunctionId,
@@ -245,6 +251,15 @@ impl InferenceError {
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
                 format!("Function mismatch: `{}` and `{}`.", func0.format(db), func1.format(db))
+            }
+            InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 } => {
+                format!(
+                    "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
+                    impl_id.format(db.upcast()),
+                    trait_type_id.name(db.upcast()),
+                    ty0.debug(db),
+                    ty1.debug(db)
+                )
             }
         }
     }
@@ -677,7 +692,7 @@ impl<'db> Inference<'db> {
         }
 
         let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_felt252_ty();
+        let felt_ty = self.db.core_types_info().felt252;
 
         // Conform all uninferred numeric literals to felt252.
         loop {
@@ -791,13 +806,20 @@ impl<'db> Inference<'db> {
         }
         self.impl_assignment.insert(var, impl_id);
         if let Some(mappings) = self.impl_vars_trait_item_mappings.remove(&var) {
-            for (trait_ty, ty) in mappings.types {
-                self.conform_ty(
-                    ty,
-                    self.db
-                        .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
-                        .map_err(|_| ErrorSet)?,
-                )?;
+            for (trait_type_id, ty) in mappings.types {
+                let impl_ty = self
+                    .db
+                    .impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_type_id, self.db))
+                    .map_err(|_| ErrorSet)?;
+                if let Err(err_set) = self.conform_ty(ty, impl_ty) {
+                    // Override the error with ImplTypeMismatch.
+                    let ty0 = self.rewrite(ty).no_err();
+                    let ty1 = self.rewrite(impl_ty).no_err();
+
+                    self.error =
+                        Some(InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 });
+                    return Err(err_set);
+                }
             }
             for (trait_constant, constant_id) in mappings.constants {
                 self.conform_const(
@@ -1024,12 +1046,9 @@ impl<'db> Inference<'db> {
         }
         match canonical_impl.0.lookup_intern(self.db) {
             ImplLongId::Concrete(concrete_impl) => {
-                let mut rewriter = SubstitutionRewriter {
-                    db: self.db,
-                    substitution: &concrete_impl.substitution(self.db).map_err(|diag_added| {
-                        self.set_error(InferenceError::Reported(diag_added))
-                    })?,
-                };
+                let substitution = concrete_impl
+                    .substitution(self.db)
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 let generic_params = self
                     .db
                     .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
@@ -1040,8 +1059,8 @@ impl<'db> Inference<'db> {
                         try_extract_matches!(generic_param, GenericParam::NegImpl)
                     })
                     .map(|generic_param| {
-                        rewriter
-                            .rewrite(generic_param.clone())
+                        substitution
+                            .substitute(self.db, generic_param.clone())
                             .and_then(|generic_param| generic_param.concrete_trait)
                     });
                 validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)
@@ -1230,15 +1249,9 @@ impl SemanticRewriter<TypeLongId, NoError> for Inference<'_> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) => {
-                        impl_type_id_rewrite_result
-                    }
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_type_id_rewrite_result
-                    }
+                    ImplLongId::GenericParameter(_)
+                    | ImplLongId::SelfImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_type_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(ty) = self.db.impl_type_concrete_implized(ImplTypeId::new(
                             impl_id, trait_ty, self.db,
@@ -1297,13 +1310,8 @@ impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_constant_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_constant_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_constant_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
                             ImplConstantId::new(impl_id, trait_constant, self.db),
@@ -1350,13 +1358,8 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_impl_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_impl_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_impl_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(imp) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
                             *value = self.rewrite(imp).no_err().lookup_intern(self.db);

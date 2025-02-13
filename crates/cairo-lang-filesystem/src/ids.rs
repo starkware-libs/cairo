@@ -110,7 +110,7 @@ impl CodeMapping {
 /// The origin of a code mapping.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CodeOrigin {
-    /// The origin is a copied node staring at the given offset.
+    /// The origin is a copied node starting at the given offset.
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
     Span(TextSpan),
@@ -191,7 +191,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
         match self {
-            Directory::Real(path) => FileId::new(db, path.join(name.to_string())),
+            Directory::Real(path) => FileId::new(db, path.join(&name)),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
                 .copied()
@@ -203,7 +203,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, name: SmolStr) -> Directory {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(name.to_string())),
+            Directory::Real(path) => Directory::Real(path.join(&name)),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()

@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
-use crate::plugin::aux_data::StarkNetEventAuxData;
+use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     EVENT_TRAIT, EVENT_TYPE_NAME, FLAT_ATTR, KEY_ATTR, NESTED_ATTR, SERDE_ATTR,
 };
@@ -17,7 +17,7 @@ pub fn handle_event_derive(
     db: &dyn SyntaxGroup,
     item_ast: &ast::ModuleItem,
     diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<(RewriteNode, StarkNetEventAuxData)> {
+) -> Option<(RewriteNode, StarknetEventAuxData)> {
     match item_ast {
         ast::ModuleItem::Struct(struct_ast) => handle_struct(db, struct_ast, diagnostics),
         ast::ModuleItem::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
@@ -31,7 +31,7 @@ fn handle_struct(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
     diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<(RewriteNode, StarkNetEventAuxData)> {
+) -> Option<(RewriteNode, StarknetEventAuxData)> {
     // TODO(spapini): Support generics.
     let generic_params = struct_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
@@ -98,7 +98,7 @@ fn handle_struct(
         ]
         .into(),
     );
-    Some((event_impl, StarkNetEventAuxData { event_data }))
+    Some((event_impl, StarknetEventAuxData { event_data }))
 }
 
 /// Retrieves the field kind for a given struct member,
@@ -180,7 +180,7 @@ fn handle_enum(
     db: &dyn SyntaxGroup,
     enum_ast: &ast::ItemEnum,
     diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<(RewriteNode, StarkNetEventAuxData)> {
+) -> Option<(RewriteNode, StarknetEventAuxData)> {
     const SELECTOR: &str = "__selector__";
     let enum_name = RewriteNode::from_ast_trimmed(&enum_ast.name(db));
 
@@ -333,7 +333,7 @@ fn handle_enum(
         .into(),
     );
 
-    Some((event_impl, StarkNetEventAuxData { event_data }))
+    Some((event_impl, StarknetEventAuxData { event_data }))
 }
 
 /// Generates code to emit an event for a field

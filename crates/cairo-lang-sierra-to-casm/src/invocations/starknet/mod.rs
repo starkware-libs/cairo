@@ -1,7 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::StarknetHint;
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -22,70 +22,70 @@ mod storage;
 
 /// Builds instructions for Sierra starknet operations.
 pub fn build(
-    libfunc: &StarkNetConcreteLibfunc,
+    libfunc: &StarknetConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StarkNetConcreteLibfunc::ClassHashConst(libfunc)
-        | StarkNetConcreteLibfunc::ContractAddressConst(libfunc)
-        | StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
+        StarknetConcreteLibfunc::ClassHashConst(libfunc)
+        | StarknetConcreteLibfunc::ContractAddressConst(libfunc)
+        | StarknetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_single_cell_const(builder, libfunc.c.clone())
         }
-        StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
-        | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
-        | StarkNetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
+        StarknetConcreteLibfunc::ClassHashTryFromFelt252(_)
+        | StarknetConcreteLibfunc::ContractAddressTryFromFelt252(_)
+        | StarknetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
             build_unsigned_try_from_felt252(builder, 251)
         }
-        StarkNetConcreteLibfunc::ClassHashToFelt252(_)
-        | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
-        | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
+        StarknetConcreteLibfunc::ClassHashToFelt252(_)
+        | StarknetConcreteLibfunc::ContractAddressToFelt252(_)
+        | StarknetConcreteLibfunc::StorageAddressToFelt252(_) => build_identity(builder),
+        StarknetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
             build_storage_base_address_from_felt252(builder)
         }
-        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
+        StarknetConcreteLibfunc::StorageAddressFromBase(_) => build_identity(builder),
+        StarknetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
             build_storage_address_from_base_and_offset(builder)
         }
-        StarkNetConcreteLibfunc::StorageRead(_) => {
+        StarknetConcreteLibfunc::StorageRead(_) => {
             build_syscalls(builder, "StorageRead", [1, 1], [1])
         }
-        StarkNetConcreteLibfunc::StorageWrite(_) => {
+        StarknetConcreteLibfunc::StorageWrite(_) => {
             build_syscalls(builder, "StorageWrite", [1, 1, 1], [])
         }
-        StarkNetConcreteLibfunc::CallContract(_) => {
+        StarknetConcreteLibfunc::CallContract(_) => {
             build_syscalls(builder, "CallContract", [1, 1, 2], [2])
         }
-        StarkNetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
-        StarkNetConcreteLibfunc::GetBlockHash(_) => {
+        StarknetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
+        StarknetConcreteLibfunc::GetBlockHash(_) => {
             build_syscalls(builder, "GetBlockHash", [1], [1])
         }
-        StarkNetConcreteLibfunc::GetExecutionInfo(_)
-        | StarkNetConcreteLibfunc::GetExecutionInfoV2(_) => {
+        StarknetConcreteLibfunc::GetExecutionInfo(_)
+        | StarknetConcreteLibfunc::GetExecutionInfoV2(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }
-        StarkNetConcreteLibfunc::Deploy(_) => {
+        StarknetConcreteLibfunc::Deploy(_) => {
             build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
         }
-        StarkNetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
-        StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => {
+        StarknetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
+        StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             build_syscalls(builder, "Sha256ProcessBlock", [1, 1], [1])
         }
-        StarkNetConcreteLibfunc::Sha256StateHandleInit(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::Sha256StateHandleDigest(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::LibraryCall(_) => {
+        StarknetConcreteLibfunc::Sha256StateHandleInit(_) => build_identity(builder),
+        StarknetConcreteLibfunc::Sha256StateHandleDigest(_) => build_identity(builder),
+        StarknetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
-        StarkNetConcreteLibfunc::ReplaceClass(_) => {
+        StarknetConcreteLibfunc::ReplaceClass(_) => {
             build_syscalls(builder, "ReplaceClass", [1], [])
         }
-        StarkNetConcreteLibfunc::GetClassHashAt(_) => {
+        StarknetConcreteLibfunc::GetClassHashAt(_) => {
             build_syscalls(builder, "GetClassHashAt", [1], [1])
         }
-        StarkNetConcreteLibfunc::SendMessageToL1(_) => {
+        StarknetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
-        StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
-        StarkNetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
+        StarknetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
+        StarknetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
     }
 }
 

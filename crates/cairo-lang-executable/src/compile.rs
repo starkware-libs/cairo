@@ -50,12 +50,21 @@ impl std::fmt::Display for CompiledFunction {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct ExecutableConfig {
+    /// If true, will allow syscalls in the program.
+    ///
+    /// In general, syscalls are not allowed in executables, as they are currently not verified.
+    pub allow_syscalls: bool,
+}
+
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
 pub fn compile_executable(
     path: &Path,
     executable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
+    config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
@@ -66,7 +75,13 @@ pub fn compile_executable(
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
-    compile_executable_in_prepared_db(&db, executable_path, main_crate_ids, diagnostics_reporter)
+    compile_executable_in_prepared_db(
+        &db,
+        executable_path,
+        main_crate_ids,
+        diagnostics_reporter,
+        config,
+    )
 }
 
 /// Runs compiler on the specified executable function.
@@ -77,18 +92,10 @@ pub fn compile_executable_in_prepared_db(
     executable_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
+    config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
-    let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
-        .into_iter()
-        .filter_map(|(id, labels)| {
-            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
-        })
-        .collect();
+    let executables = find_executable_functions(db, main_crate_ids, executable_path);
 
-    if let Some(executable_path) = executable_path {
-        executables
-            .retain(|executable| originating_function_path(db, *executable) == executable_path);
-    };
     let executable = match executables.len() {
         0 => {
             // Report diagnostics as they might reveal the reason why no executable was found.
@@ -109,13 +116,34 @@ pub fn compile_executable_in_prepared_db(
         }
     };
 
-    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter)
+    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter, config)
+}
+
+/// Search crates identified by `main_crate_ids` for executable functions.
+/// If `executable_path` is provided, only functions with exactly the same path will be returned.
+pub fn find_executable_functions(
+    db: &RootDatabase,
+    main_crate_ids: Vec<CrateId>,
+    executable_path: Option<&str>,
+) -> Vec<ConcreteFunctionWithBodyId> {
+    let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
+        .into_iter()
+        .filter_map(|(id, labels)| {
+            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
+        })
+        .collect();
+
+    if let Some(executable_path) = executable_path {
+        executables
+            .retain(|executable| originating_function_path(db, *executable) == executable_path);
+    };
+    executables
 }
 
 /// Returns the path to the function that the executable is wrapping.
 ///
 /// If the executable is not wrapping a function, returns the full path of the executable.
-fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
+pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let semantic = wrapper.base_semantic_function(db);
     let wrapper_name = semantic.name(db);
     let wrapper_full_path = semantic.full_path(db.upcast());
@@ -133,7 +161,8 @@ fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBod
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `executable` - [`ConcreteFunctionWithBodyId`]s to compile.
-/// * `compiler_config` - The compiler configuration.
+/// * `diagnostics_reporter` - The diagnostics reporter.
+/// * `config` - If true, the compilation will not fail if the program is not sound.
 /// # Returns
 /// * `Ok(Vec<String>)` - The result artifact of the compilation.
 /// * `Err(anyhow::Error)` - Compilation failed.
@@ -141,6 +170,7 @@ pub fn compile_executable_function_in_prepared_db(
     db: &RootDatabase,
     executable: ConcreteFunctionWithBodyId,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
+    config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
     diagnostics_reporter.ensure(db)?;
     let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
@@ -148,6 +178,17 @@ pub fn compile_executable_function_in_prepared_db(
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
+    if !config.allow_syscalls {
+        for libfunc in &sierra_program.libfunc_declarations {
+            if libfunc.long_id.generic_id.0.ends_with("_syscall") {
+                anyhow::bail!(
+                    "The function is using libfunc `{}`. Syscalls are not supported in \
+                     `#[executable]`.",
+                    libfunc.long_id.generic_id
+                );
+            }
+        }
+    }
 
     let executable_func = sierra_program.funcs[0].clone();
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {

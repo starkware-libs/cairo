@@ -10,7 +10,7 @@ use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use sha3::{Digest, Keccak256};
@@ -225,7 +225,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
                 write!(f, "{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::ImplType(impl_type_id) => {
-                write!(f, "{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
+                write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(def_db))
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
@@ -946,7 +946,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         // a var free ImplType needs to be rewritten if has impl bounds constraints.
         TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_var_free(db))
+            chain!(&closure.captured_types, &closure.param_tys).all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
     }

@@ -30,6 +30,15 @@ fn test_advance_by() {
 }
 
 #[test]
+fn test_iter_nth() {
+    let mut iter = array![1_u8, 2, 3].into_iter();
+
+    assert_eq!(iter.nth(1), Some(2));
+    assert_eq!(iter.nth(0), Some(3));
+    assert_eq!(iter.nth(0), None);
+}
+
+#[test]
 fn test_iter_adapter_map() {
     let mut iter = array![1, 2, 3].into_iter().map(|x| 2 * x);
 
@@ -100,10 +109,35 @@ fn test_iter_adapter_peekable() {
 }
 
 #[test]
+fn test_iter_accum_sum() {
+    assert_eq!(array![1, 2, 3].into_iter().sum(), 6);
+    assert_eq!(array![].into_iter().sum(), 0);
+}
+
+#[test]
 fn test_iter_accum_product() {
     assert_eq!((1_usize..=0).into_iter().product(), 1);
     assert_eq!((1_usize..=1).into_iter().product(), 1);
     assert_eq!((1_usize..=5).into_iter().product(), 120);
+}
+
+#[test]
+fn test_iter_find() {
+    let mut iter = array![1, 2, 3].into_iter();
+    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
+    assert_eq!(iter.find(|x| *x == 5), Option::None);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+}
+
+#[test]
+fn test_iter_adapter_filter() {
+    let mut iter = array![0_u32, 1, 2].into_iter().filter(|x| *x > 0);
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::None);
 }
 
 #[test]

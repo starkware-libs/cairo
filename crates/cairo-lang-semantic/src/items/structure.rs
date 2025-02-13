@@ -21,7 +21,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteStructId, add_type_based_diagnostics, resolve_type};
 use crate::{GenericParam, SemanticDiagnostic, semantic};
 
@@ -286,8 +286,7 @@ pub fn concrete_struct_members(
         generic_members
             .iter()
             .map(|(name, member)| {
-                let ty =
-                    SubstitutionRewriter { db, substitution: &substitution }.rewrite(member.ty)?;
+                let ty = substitution.substitute(db, member.ty)?;
                 Ok((name.clone(), semantic::Member { ty, ..member.clone() }))
             })
             .collect::<Maybe<_>>()?,

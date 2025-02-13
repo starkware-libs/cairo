@@ -1,6 +1,6 @@
 use cairo_lang_sierra::extensions::circuit::CircuitTypeConcrete;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
-use cairo_lang_sierra::extensions::starknet::StarkNetTypeConcrete;
+use cairo_lang_sierra::extensions::starknet::StarknetTypeConcrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -36,13 +36,13 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::RangeCheck96(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageBaseAddress(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Secp256Point(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Sha256StateHandle(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::System(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::StorageBaseAddress(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::StorageAddress(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::ContractAddress(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::ClassHash(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::Secp256Point(_))
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::Sha256StateHandle(_))
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
@@ -103,6 +103,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::InverseGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::MulModGate(_))
             | CoreTypeConcrete::Circuit(CircuitTypeConcrete::SubModGate(_)) => continue,
+            CoreTypeConcrete::Blake(_) => Some(1),
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

@@ -9,11 +9,11 @@ fn closure() {
 }
 
 #[derive(Destruct)]
-struct DestuctOnly {}
+struct DestructOnly {}
 
 #[test]
 fn closure_destruct() {
-    let a = DestuctOnly {};
+    let a = DestructOnly {};
     || {
         let _b = a;
     };
@@ -93,7 +93,7 @@ impl ArrayExt of ArrayExtTrait {
         let mut output: Array<func::Output> = array![];
         for elem in self {
             output.append(f(elem));
-        };
+        }
         output
     }
 }

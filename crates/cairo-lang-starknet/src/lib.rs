@@ -15,11 +15,11 @@ pub mod contract;
 pub mod inline_macros;
 pub mod plugin;
 
-/// Get the suite of plugins for compilation with StarkNet.
+/// Get the suite of plugins for compilation with Starknet.
 pub fn starknet_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
-        .add_plugin::<plugin::StarkNetPlugin>()
+        .add_plugin::<plugin::StarknetPlugin>()
         .add_plugin::<plugin::storage_interfaces::StorageInterfacesPlugin>()
         .add_inline_macro_plugin::<inline_macros::selector::SelectorMacro>()
         .add_inline_macro_plugin::<inline_macros::get_dep_component::GetDepComponentMacro>()

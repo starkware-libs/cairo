@@ -60,6 +60,7 @@ mod issue7071;
 mod issue7083;
 mod issue7095;
 mod issue7155;
+mod issue7233;
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;

@@ -4,11 +4,11 @@ use super::events::EventData;
 
 /// Contract related auxiliary data of the Starknet plugin.
 #[derive(Debug, PartialEq, Eq)]
-pub struct StarkNetContractAuxData {
+pub struct StarknetContractAuxData {
     /// A list of contracts that were processed by the plugin.
     pub contract_name: smol_str::SmolStr,
 }
-impl GeneratedFileAuxData for StarkNetContractAuxData {
+impl GeneratedFileAuxData for StarknetContractAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -18,10 +18,10 @@ impl GeneratedFileAuxData for StarkNetContractAuxData {
 }
 /// Contract related auxiliary data of the Starknet plugin.
 #[derive(Debug, PartialEq, Eq)]
-pub struct StarkNetEventAuxData {
+pub struct StarknetEventAuxData {
     pub event_data: EventData,
 }
-impl GeneratedFileAuxData for StarkNetEventAuxData {
+impl GeneratedFileAuxData for StarknetEventAuxData {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
