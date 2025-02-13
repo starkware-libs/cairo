@@ -362,6 +362,11 @@ pub const fn assert(cond: bool, err_code: felt252) {
     }
 }
 
+pub enum LoopResult<N, E> {
+    Normal: N,
+    EarlyReturn: E,
+}
+
 pub mod hash;
 
 pub mod keccak;
