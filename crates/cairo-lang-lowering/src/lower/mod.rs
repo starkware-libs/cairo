@@ -26,7 +26,6 @@ use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
 use semantic::items::constant::{ConstValue, value_as_const_value};
-use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
@@ -1213,11 +1212,6 @@ fn lower_expr_function_call(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a function call expression: {:?}", expr.debug(&ctx.expr_formatter));
-    if let Some(value) =
-        try_extract_minus_literal(ctx.db.upcast(), &ctx.function_body.arenas.exprs, expr)
-    {
-        return lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &value, builder);
-    }
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
     // TODO(spapini): Use the correct stable pointer.

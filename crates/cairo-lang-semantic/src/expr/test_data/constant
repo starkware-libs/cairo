@@ -186,7 +186,7 @@ foo
 const B: u8 = -1;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>.
+error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:15
 const B: u8 = -1;
               ^^
