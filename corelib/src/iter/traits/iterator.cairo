@@ -1,6 +1,6 @@
 use crate::iter::adapters::{
-    Chain, Enumerate, Filter, Map, Peekable, Zip, chained_iterator, enumerated_iterator, filter_iterator, mapped_iterator,
-    peekable_iterator, zipped_iterator,
+    Chain, Enumerate, Filter, Map, Peekable, Zip, chained_iterator, enumerated_iterator,
+    filter_iterator, mapped_iterator, peekable_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
 use crate::metaprogramming::TypeEqual;
