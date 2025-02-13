@@ -683,7 +683,7 @@ foo
 
 //! > expected_diagnostics
 error: Call expression requires a function, found `core::integer::u32`.
-Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?6>.
  --> lib.cairo:4:5
     x()
     ^^^
