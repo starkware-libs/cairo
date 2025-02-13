@@ -103,7 +103,7 @@ const fn call_myself() -> felt252 {
 }
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:17
 const MY_CONST: MissingType = {
                 ^^^^^^^^^^^
@@ -343,7 +343,7 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
         const X: u8 = 2;
               ^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:5:13
     let y = X;
             ^
