@@ -161,7 +161,7 @@ impl OtherStructImpl of MyTrait<OtherStruct> {
 }
 
 //! > expected_diagnostics
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:12:5
     bar(0);
     ^^^

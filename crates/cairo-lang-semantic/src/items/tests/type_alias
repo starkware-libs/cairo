@@ -230,7 +230,7 @@ foo
 type Alias = bad_type;
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:14
 type Alias = bad_type;
              ^^^^^^^^

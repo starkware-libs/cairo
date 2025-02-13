@@ -17,7 +17,7 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
 3 + 4 +;
 ^^^^^^^^
 
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:3:5
 1 + foo()
     ^^^
@@ -48,7 +48,7 @@ mod submod {
 //! > function_body
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:10:3
   bad_module::foo();
   ^^^^^^^^^^
@@ -58,7 +58,7 @@ error: 'super' cannot be used for the crate's root module.
   super::foo();
   ^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:12:3
   test::super::foo();
   ^^^^
@@ -221,7 +221,7 @@ use bad_module_name;
 //! > function_body
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:1:5
 use bad_module_name;
     ^^^^^^^^^^^^^^^
@@ -251,7 +251,7 @@ error: Missing tokens. Expected an item after attributes.
   #[aaa]
         ^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:6:12
   let _x = y;
            ^
@@ -954,7 +954,7 @@ use undefined_item::*;
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:1:5
 use undefined_item::*;
     ^^^^^^^^^^^^^^

@@ -40,7 +40,7 @@ use NonExisting;
 use internal::bar;
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:4:5
 use NonExisting;
     ^^^^^^^^^^^

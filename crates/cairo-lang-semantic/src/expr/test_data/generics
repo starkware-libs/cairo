@@ -110,7 +110,7 @@ impl MyImpl of Generics {
 foo
 
 //! > expected_diagnostics
-error: Trait not found.
+error[E0006]: Trait not found.
  --> lib.cairo:1:35
 fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
                                   ^^^^^^^
@@ -130,7 +130,7 @@ error: The value does not fit within the range of type core::integer::u32.
     bar::<usize, -1, A>();
                  ^^
 
-error: Impl not found.
+error[E0006]: Impl not found.
  --> lib.cairo:13:22
     bar::<usize, -1, A>();
                      ^
@@ -425,7 +425,7 @@ foo
 fn bar<+unknown>() {}
 
 //! > expected_diagnostics
-error: Trait not found.
+error[E0006]: Trait not found.
  --> lib.cairo:1:9
 fn bar<+unknown>() {}
         ^^^^^^^
@@ -447,7 +447,7 @@ foo
 fn bar<impl X: unknown>() {}
 
 //! > expected_diagnostics
-error: Trait not found.
+error[E0006]: Trait not found.
  --> lib.cairo:1:16
 fn bar<impl X: unknown>() {}
                ^^^^^^^
@@ -524,12 +524,12 @@ trait MyTrait<+Drop<T>, +Copy<T>> {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:21
 trait MyTrait<+Drop<T>, +Copy<T>> {}
                     ^
 
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:31
 trait MyTrait<+Drop<T>, +Copy<T>> {}
                               ^
