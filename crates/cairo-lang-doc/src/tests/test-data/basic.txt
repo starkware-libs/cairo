@@ -184,7 +184,7 @@ Content(" ")
 Content("Test module used to check if the documentation is being attached to the nodes correctly.")
 
 //! > Item signature #8
-pub fn inner_test_module_function() -> ()
+pub fn inner_test_module_function()
 
 //! > Item documentation #8
 Just a function outside the test_module. Above that module there is a [trait](super::TraitTest). Just a function inside the test_module.
