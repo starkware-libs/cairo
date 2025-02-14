@@ -26,7 +26,9 @@ pub mod secp256r1;
 pub mod testing;
 
 pub mod interoperability;
-use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
+use interoperability::{
+    CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType, MetaTxV0Libfunc,
+};
 
 use self::getter::{GetExecutionInfoTrait, GetExecutionInfoV2Trait, GetterLibfunc};
 use self::interoperability::{
@@ -92,6 +94,7 @@ define_libfunc_hierarchy! {
          ReplaceClass(ReplaceClassLibfunc),
          GetClassHashAt(GetClassHashAtLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
+         MetaTxV0(MetaTxV0Libfunc),
          Testing(TestingLibfunc),
          Secp256(Secp256Libfunc),
     }, StarknetConcreteLibfunc

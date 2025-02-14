@@ -84,6 +84,9 @@ pub fn build(
         StarknetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
+        StarknetConcreteLibfunc::MetaTxV0(_) => {
+            build_syscalls(builder, "MetaTxV0", [1, 1, 2, 2], [2])
+        }
         StarknetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
         StarknetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
     }
