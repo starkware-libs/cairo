@@ -8,6 +8,8 @@ extern crate alloc;
 pub mod ap_change;
 pub mod assembler;
 pub mod builder;
+#[cfg(feature = "lean")]
+pub mod builder_aux_info;
 pub mod cell_expression;
 pub mod encoder;
 pub mod hints;
