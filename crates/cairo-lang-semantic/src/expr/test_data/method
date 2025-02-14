@@ -162,7 +162,7 @@ mod callable {
 }
 
 //! > expected_diagnostics
-error: Trait not found.
+error[E0006]: Trait not found.
  --> lib.cairo:1:12
 fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
            ^^^^^^^

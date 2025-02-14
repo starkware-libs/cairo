@@ -282,17 +282,17 @@ error: Plugin diagnostic: Contracts must define a 'Storage' struct.
 | }
 |_^
 
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:4:39
     fn l1_handler_no_params(ref self: ContractState) {}
                                       ^^^^^^^^^^^^^
 
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:7:52
     fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
                                                    ^^^^^^^^^^^^^
 
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:10:52
     fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
                                                    ^^^^^^^^^^^^^

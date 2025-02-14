@@ -230,7 +230,7 @@ fn test_expr_call_failures() {
 
     // Check expr.
     assert_eq!(diagnostics, indoc! { "
-            error: Function not found.
+            error[E0006]: Function not found.
              --> lib.cairo:2:1
             foo()
             ^^^

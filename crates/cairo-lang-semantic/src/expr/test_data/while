@@ -60,7 +60,7 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option
     while let Some(x) = Some(5) && 4 == 7 {
               ^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:4:15
         break x;
               ^

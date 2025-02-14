@@ -544,7 +544,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let bar2 = |b: Option<u32>| {
                 ^^^^^^^^^^^^^^
 
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:10:19
     let _f: u32 = bar(a).unwrap();
                   ^^^
