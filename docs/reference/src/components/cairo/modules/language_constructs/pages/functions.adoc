@@ -107,4 +107,4 @@ See xref:function-calls.adoc[Function calls].
 // TODO(yuval): mention methods/self?
 // TODO(yuval): mention panics/implicits? (it's part of the signature).
 // TODO(yuval): mention inline.
-// TODO(yuval): mention local compilability.
+// TODO(yuval): mention local compatibility.
