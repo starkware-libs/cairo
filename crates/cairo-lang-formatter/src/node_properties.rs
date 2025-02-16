@@ -415,6 +415,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::TypeClause => Some(12),
                 _ => None,
             },
+            Some(SyntaxKind::MacroRulesList | SyntaxKind::MacroRule) => match self.kind(db) {
+                SyntaxKind::ItemMacroDeclaration => Some(3),
+                SyntaxKind::ParenthesizedMacroMatcher => Some(2),
+                _ => Some(1),
+            },
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
