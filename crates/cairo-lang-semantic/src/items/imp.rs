@@ -60,11 +60,7 @@ use super::type_aliases::{
 };
 use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
-use crate::corelib::{
-    CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
-    deref_mut_trait, deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait,
-    get_core_trait, numeric_literal_trait, panic_destruct_trait, string_literal_trait,
-};
+use crate::corelib::{concrete_destruct_trait, concrete_drop_trait, core_crate};
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -655,15 +651,17 @@ pub fn priv_impl_declaration_data_inner(
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
 
+    let info = db.core_info();
+
     // Check for reimplementation of compilers' Traits.
     if let Ok(concrete_trait) = concrete_trait {
         if [
-            get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()),
-            fn_trait(db),
-            fn_once_trait(db),
-            get_core_trait(db, CoreTraitContext::Traits, "Felt252DictValue".into()),
-            numeric_literal_trait(db),
-            string_literal_trait(db),
+            info.type_eq_trt,
+            info.fn_trt,
+            info.fn_once_trt,
+            info.felt252_dict_value_trt,
+            info.numeric_literal_trt,
+            info.string_literal_trt,
         ]
         .contains(&concrete_trait.trait_id(db))
             && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)
@@ -788,7 +786,7 @@ pub fn impl_semantic_definition_diagnostics(
             db.priv_impl_declaration_data(impl_def_id).unwrap().concrete_trait.unwrap();
 
         let trait_id = concrete_trait.trait_id(db);
-        if trait_id == deref_trait(db) {
+        if trait_id == db.core_info().deref_trt {
             deref_impl_diagnostics(db, impl_def_id, concrete_trait, &mut diagnostics);
         }
     }
@@ -857,10 +855,11 @@ fn try_get_deref_func_and_target(
     ty: TypeId,
     is_mut_deref: bool,
 ) -> Result<Option<(FunctionId, TypeId)>, DiagnosticAdded> {
+    let info = db.core_info();
     let (deref_trait_id, deref_method) = if is_mut_deref {
-        (deref_mut_trait(db), "deref_mut".into())
+        (info.deref_mut_trt, info.deref_mut_fn)
     } else {
-        (deref_trait(db), "deref".into())
+        (info.deref_trt, info.deref_fn)
     };
 
     let defs_db = db.upcast();
@@ -880,13 +879,11 @@ fn try_get_deref_func_and_target(
         _ => panic!("Expected concrete impl"),
     };
 
-    let deref_trait_func =
-        db.trait_function_by_name(deref_trait_id, deref_method).unwrap().unwrap();
     let function_id = FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                 impl_id: deref_impl,
-                function: deref_trait_func,
+                function: deref_method,
             }),
             generic_args: vec![],
         },
@@ -1452,8 +1449,9 @@ fn check_special_impls(
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<()> {
     let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait.lookup_intern(db);
-    let copy = copy_trait(db);
-    let drop = drop_trait(db);
+    let info = db.core_info();
+    let copy = info.copy_trt;
+    let drop = info.drop_trt;
 
     if trait_id == copy {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
@@ -1958,6 +1956,8 @@ pub fn find_closure_generated_candidate(
         return None;
     };
 
+    let info = db.core_info();
+
     // Handles the special cases of `Copy`, `Drop`, `Destruct` and `PanicDestruct`.
     let mem_trait_generic_params = |trait_id, neg_impl_trait: Option<_>| {
         let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
@@ -1986,7 +1986,7 @@ pub fn find_closure_generated_candidate(
         (concrete_trait_id, mem_trait_generic_params(trait_id, neg_impl_trait), [].into())
     };
     let (concrete_trait, generic_params, impl_items) = match concrete_trait_id.trait_id(db) {
-        trait_id if trait_id == fn_once_trait(db) => {
+        trait_id if trait_id == info.fn_once_trt => {
             let concrete_trait = ConcreteTraitLongId {
                 trait_id,
                 generic_args: vec![
@@ -2005,7 +2005,7 @@ pub fn find_closure_generated_candidate(
                 id,
                 concrete_trait: Maybe::Ok(
                     ConcreteTraitLongId {
-                        trait_id: fn_trait(db),
+                        trait_id: info.fn_trt,
                         generic_args: vec![
                             GenericArgumentId::Type(closure_type),
                             GenericArgumentId::Type(
@@ -2019,7 +2019,7 @@ pub fn find_closure_generated_candidate(
             });
             (concrete_trait, vec![param], [(ret_ty, closure_type_long.ret_ty)].into())
         }
-        trait_id if trait_id == fn_trait(db) => {
+        trait_id if trait_id == info.fn_trt => {
             let concrete_trait = ConcreteTraitLongId {
                 trait_id,
                 generic_args: vec![
@@ -2035,18 +2035,18 @@ pub fn find_closure_generated_candidate(
             (
                 concrete_trait,
                 // Makes the generated impl of fn_trait available only if the closure is copyable.
-                mem_trait_generic_params(copy_trait(db), None),
+                mem_trait_generic_params(info.copy_trt, None),
                 [(ret_ty, closure_type_long.ret_ty)].into(),
             )
         }
-        trait_id if trait_id == drop_trait(db) => handle_mem_trait(trait_id, None),
-        trait_id if trait_id == destruct_trait(db) => {
+        trait_id if trait_id == info.drop_trt => handle_mem_trait(trait_id, None),
+        trait_id if trait_id == info.destruct_trt => {
             handle_mem_trait(trait_id, Some(concrete_drop_trait(db, closure_type)))
         }
-        trait_id if trait_id == panic_destruct_trait(db) => {
+        trait_id if trait_id == info.panic_destruct_trt => {
             handle_mem_trait(trait_id, Some(concrete_destruct_trait(db, closure_type)))
         }
-        trait_id if trait_id == copy_trait(db) => handle_mem_trait(trait_id, None),
+        trait_id if trait_id == info.copy_trt => handle_mem_trait(trait_id, None),
         _ => return None,
     };
     Some(UninferredImpl::GeneratedImpl(
