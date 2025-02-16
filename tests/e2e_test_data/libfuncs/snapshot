@@ -5,14 +5,13 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: Array::<felt252>) -> Array::<felt252> {
+//! > cairo_code
+fn foo(a: Array<felt252>) -> Array<felt252> {
     bar(@a);
     a
 }
 #[inline(never)]
-fn bar(a: @Array::<felt252>) {
-}
+fn bar(a: @Array::<felt252>) {}
 
 //! > casm
 [ap + 0] = [fp + -4], ap++;
@@ -59,20 +58,19 @@ test::bar@5([0]: Snapshot<Array<felt252>>) -> ();
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 struct A {
-    a: Array::<felt252>,
+    a: Array<felt252>,
     b: felt252,
 }
-fn foo(orig: @A) -> @A{
+fn foo(orig: @A) -> @A {
     bar(orig.a, orig.b);
-    let A {a, b} = orig;
+    let A { a, b } = orig;
     bar(a, b);
     orig
 }
 #[inline(never)]
-fn bar(a: @Array::<felt252>, b: @felt252) {
-}
+fn bar(a: @Array::<felt252>, b: @felt252) {}
 
 //! > casm
 [ap + 0] = [fp + -5], ap++;
@@ -142,24 +140,22 @@ test::bar@16([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum A {
-    A: Array::<felt252>,
+    A: Array<felt252>,
     B: felt252,
 }
 #[inline(never)]
-fn bar0(a: @Array::<felt252>) {
-}
+fn bar0(a: @Array::<felt252>) {}
 #[inline(never)]
-fn bar1(b: @felt252) {
-}
+fn bar1(b: @felt252) {}
 fn foo(orig: @A) -> @A {
     match orig {
-      A::A(a) => bar0(a),
-      A::B(b) => bar1(b),
+        A::A(a) => bar0(a),
+        A::B(b) => bar1(b),
     }
     orig
-  }
+}
 
 //! > casm
 ret;

@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use integer::u512;
 fn foo(a: u512, b: NonZero<u256>) -> (u512, u256) {
     integer::u512_safe_div_rem_by_u256(a, b)

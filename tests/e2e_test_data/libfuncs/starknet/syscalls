@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(keys: Span<felt252>, data: Span<felt252>) -> starknet::SyscallResult<()> {
     starknet::syscalls::emit_event_syscall(keys, data)
 }
@@ -82,7 +82,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::array::Span::<core::felt252
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(block_number: u64) -> starknet::SyscallResult<felt252> {
     starknet::syscalls::get_block_hash_syscall(block_number)
 }
@@ -152,7 +152,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: u64) -> (GasBuiltin, System, core
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> starknet::SyscallResult<Box<starknet::info::ExecutionInfo>> {
     starknet::info::get_execution_info_syscall()
 }
@@ -231,7 +231,7 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> starknet::SyscallResult<Box<starknet::info::v2::ExecutionInfo>> {
     starknet::syscalls::get_execution_info_v2_syscall()
 }
@@ -315,9 +315,9 @@ test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
-    address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Span::<felt252>
+    address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Span<felt252>,
 ) -> starknet::SyscallResult<Span<felt252>> {
     starknet::syscalls::call_contract_syscall(address, entry_point_selector, calldata)
 }
@@ -392,10 +392,8 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt252, [4
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(
-    address_domain: u32, address: starknet::StorageAddress,
-) -> starknet::SyscallResult<felt252> {
+//! > cairo_code
+fn foo(address_domain: u32, address: starknet::StorageAddress) -> starknet::SyscallResult<felt252> {
     starknet::storage_read_syscall(address_domain, address)
 }
 
@@ -466,7 +464,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress) -> (Gas
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     address_domain: u32, address: starknet::StorageAddress, value: felt252,
 ) -> starknet::SyscallResult<()> {
@@ -544,7 +542,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress, [4]: fe
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     class_hash: starknet::ClassHash,
     contract_address_salt: felt252,
@@ -552,10 +550,7 @@ fn foo(
     deploy_from_zero: bool,
 ) -> starknet::SyscallResult<(starknet::ContractAddress, Span::<felt252>)> {
     starknet::syscalls::deploy_syscall(
-        class_hash,
-        contract_address_salt,
-        calldata,
-        deploy_from_zero,
+        class_hash, contract_address_salt, calldata, deploy_from_zero,
     )
 }
 
@@ -638,8 +633,8 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: cor
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(input: Array::<u64>) -> starknet::SyscallResult<u256> {
+//! > cairo_code
+fn foo(input: Array<u64>) -> starknet::SyscallResult<u256> {
     starknet::syscalls::keccak_syscall(input.span())
 }
 
@@ -720,9 +715,9 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: Array<u64>) -> (GasBuiltin, Syste
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
-    class_hash: starknet::ClassHash, function_selector: felt252, calldata: Span<felt252>
+    class_hash: starknet::ClassHash, function_selector: felt252, calldata: Span<felt252>,
 ) -> starknet::SyscallResult<Span<felt252>> implicits(GasBuiltin, System) {
     starknet::syscalls::library_call_syscall(class_hash, function_selector, calldata)
 }
@@ -797,9 +792,9 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: cor
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
-    to_address: felt252, payload: Span<felt252>
+    to_address: felt252, payload: Span<felt252>,
 ) -> starknet::SyscallResult<()> implicits(GasBuiltin, System) {
     starknet::syscalls::send_message_to_l1_syscall(to_address, payload)
 }
@@ -875,7 +870,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: core::array::Span::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     address: starknet::contract_address::ContractAddress,
 ) -> starknet::SyscallResult<starknet::class_hash::ClassHash> {

@@ -5,8 +5,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u256, b: NonZero::<u256>) -> (u256, u256) {
+//! > cairo_code
+fn foo(a: u256, b: NonZero<u256>) -> (u256, u256) {
     integer::u256_safe_div_rem(a, b)
 }
 
@@ -128,11 +128,11 @@ test::foo@0([0]: RangeCheck, [1]: core::integer::u256, [2]: NonZero<core::intege
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(a: u256) -> u256 {
     match integer::u256_is_zero(a) {
-        IsZeroResult::Zero => u256{low: 0, high: 0},
+        IsZeroResult::Zero => u256 { low: 0, high: 0 },
         IsZeroResult::NonZero(x) => x.into(),
     }
 }
@@ -186,7 +186,7 @@ test::foo@0([0]: core::integer::u256) -> (core::integer::u256);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: u256) -> u128 {
     integer::u256_sqrt(a)
@@ -268,7 +268,7 @@ test::foo@0([0]: RangeCheck, [1]: core::integer::u256) -> (RangeCheck, u128);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(b: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match math::u256_guarantee_inv_mod_n(b, n) {
         Ok((r, _, _, _, _, _, _, _, _)) => Some(r),

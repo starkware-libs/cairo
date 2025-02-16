@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(s0: felt252, s1: felt252, s2: felt252) -> (felt252, felt252, felt252) {
     poseidon::hades_permutation(s0, s1, s2)
 }
@@ -46,8 +46,8 @@ test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseido
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use hash::{HashStateTrait, HashStateExTrait};
+//! > cairo_code
+use hash::{HashStateExTrait, HashStateTrait};
 
 fn foo(s0: felt252, s1: felt252, s2: felt252) -> felt252 {
     poseidon::PoseidonTrait::new().update_with((s0, s1, s2)).finalize()

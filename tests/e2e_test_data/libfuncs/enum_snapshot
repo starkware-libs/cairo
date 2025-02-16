@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum SingleVariant {
     Variant: felt252,
 }
@@ -48,7 +48,7 @@ test::foo@0([0]: test::SingleVariant) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Option {
     Some: felt252,
     None: (),
@@ -107,7 +107,7 @@ test::foo@0([0]: test::Option) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Color {
     Red: felt252,
     Green: felt252,
@@ -177,11 +177,11 @@ test::foo@0([0]: test::Color) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Color {
     White: (),
     Black: (),
-    Colorful: Array::<felt252>,
+    Colorful: Array<felt252>,
 }
 
 fn foo(e: @Color) -> felt252 {

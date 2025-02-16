@@ -3,9 +3,9 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
-fn foo(a: u8, b: u8) -> Result::<u8, u8> {
+fn foo(a: u8, b: u8) -> Result<u8, u8> {
     integer::u8_overflowing_add(a, b)
 }
 
@@ -64,9 +64,9 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
-fn foo(a: u8, b: u8) -> Result::<u8, u8> {
+fn foo(a: u8, b: u8) -> Result<u8, u8> {
     integer::u8_overflowing_sub(a, b)
 }
 
@@ -124,7 +124,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u8, b: u8) -> bool {
     integer::u8_eq(a, b)
 }
@@ -174,7 +174,7 @@ test::foo@0([0]: u8, [1]: u8) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::u8_eq(11_u8, 12_u8)
 }
@@ -233,8 +233,8 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(v: felt252) -> Option::<u8> {
+//! > cairo_code
+fn foo(v: felt252) -> Option<u8> {
     integer::u8_try_from_felt252(v)
 }
 
@@ -311,7 +311,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(a: u8) -> u8 {
     match integer::u8_is_zero(a) {
@@ -360,8 +360,8 @@ test::foo@0([0]: u8) -> (u8);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u8, b: NonZero::<u8>) -> (u8, u8) {
+//! > cairo_code
+fn foo(a: u8, b: NonZero<u8>) -> (u8, u8) {
     integer::u8_safe_divmod(a, b)
 }
 
@@ -408,7 +408,7 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: NonZero<u8>) -> (RangeCheck, Tuple<u8
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(value: u8) -> u8 {
     integer::u8_sqrt(value)
@@ -457,7 +457,7 @@ test::foo@0([0]: RangeCheck, [1]: u8) -> (RangeCheck, u8);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: u8, b: u8) -> u16 {
     integer::u8_wide_mul(a, b)

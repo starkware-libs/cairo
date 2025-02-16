@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: i8) -> felt252 {
     integer::i8_to_felt252(v)
 }
@@ -35,7 +35,7 @@ test::foo@0([0]: i8) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> Option<i8> {
     integer::i8_try_from_felt252(v)
 }
@@ -114,7 +114,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i8, b: i8) -> bool {
     integer::i8_eq(a, b)
 }
@@ -164,7 +164,7 @@ test::foo@0([0]: i8, [1]: i8) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::i8_eq(11_i8, 12_i8)
 }
@@ -223,7 +223,7 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i8, b: i8) -> integer::SignedIntegerResult<i8> {
     integer::i8_overflowing_add_impl(a, b)
 }
@@ -299,7 +299,7 @@ test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::Si
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i8, b: i8) -> integer::SignedIntegerResult<i8> {
     integer::i8_overflowing_sub_impl(a, b)
 }
@@ -375,7 +375,7 @@ test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::Si
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(a: i8) -> i8 {
     match integer::i8_is_zero(a) {
@@ -424,7 +424,7 @@ test::foo@0([0]: i8) -> (i8);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i8, b: i8) -> Result<u8, u8> {
     integer::i8_diff(a, b)
 }
@@ -484,7 +484,7 @@ test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::result::Res
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: i8, b: i8) -> i16 {
     integer::i8_wide_mul(a, b)

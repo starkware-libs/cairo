@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
@@ -84,7 +84,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
@@ -168,7 +168,7 @@ This tests the upper limit for felt252 to small range casting for K == 2.
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
@@ -253,7 +253,7 @@ Range moved to have an upper bound 0.
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
@@ -338,14 +338,15 @@ Range moved to have an upper bound 2**128.
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
-fn foo(index: felt252) -> Option<BoundedInt<
-    329648542954659136166549501696463077377,
-    340282366920938463463374607431768211456,
->> {
+fn foo(
+    index: felt252,
+) -> Option<
+    BoundedInt<329648542954659136166549501696463077377, 340282366920938463463374607431768211456>,
+> {
     downcast(index)
 }
 
@@ -426,12 +427,13 @@ Validiting the basic shrinking of a destination type.
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
 
-fn foo(index: BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0>) ->
-  Option<BoundedInt<0, 10>> {
+fn foo(
+    index: BoundedInt<-0x800000000000011000000000000000000000000000000000000000000000000, 0>,
+) -> Option<BoundedInt<0, 10>> {
     downcast(index)
 }
 
