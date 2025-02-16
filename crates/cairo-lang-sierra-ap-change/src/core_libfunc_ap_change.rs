@@ -61,6 +61,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
     info_provider: &InfoProvider,
 ) -> Vec<ApChange> {
     match libfunc {
+        CoreConcreteLibfunc::Felt252SquashedDict(_) => {
+            vec![ApChange::Known(0)]
+        }
         ApTracking(ApTrackingConcreteLibfunc::Revoke(_)) => {
             vec![ApChange::Unknown]
         }
