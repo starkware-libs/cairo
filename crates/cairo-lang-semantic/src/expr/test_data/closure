@@ -714,7 +714,7 @@ impl MyImpl of core::ops::FnOnce<u32, ()> {
 }
 
 //! > expected_diagnostics
-error: Trait `core::ops::function::FnOnce` should not be re-implemented.
+error: Trait `core::ops::function::FnOnce` should not be implemented outside of the corelib.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
                ^^^^^^^^^^^^^^^^^^^^^^^^^^

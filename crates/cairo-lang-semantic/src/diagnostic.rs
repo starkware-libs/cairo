@@ -985,7 +985,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 }
             }
             SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
-                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
+                format!(
+                    "Trait `{}` should not be implemented outside of the corelib.",
+                    trait_id.full_path(db.upcast())
+                )
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
