@@ -368,7 +368,7 @@ pub fn lower_expr_while_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_types_info().felt252
+    if ty == ctx.db.core_info().felt252
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
@@ -1056,8 +1056,8 @@ fn add_pending_word(
 ) -> (VarUsage, VarUsage) {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let u32_ty = ctx.db.core_types_info().u32;
-    let felt252_ty = ctx.db.core_types_info().felt252;
+    let u32_ty = ctx.db.core_info().u32;
+    let felt252_ty = ctx.db.core_info().felt252;
 
     let pending_word_usage = generators::Const {
         value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
@@ -1851,9 +1851,8 @@ fn add_closure_call_function(
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
-    let (closure_param_var_id, closure_var) = if trait_id
-        == semantic::corelib::fn_once_trait(semantic_db)
-    {
+    let info = ctx.db.core_info();
+    let (closure_param_var_id, closure_var) = if trait_id == info.fn_once_trt {
         // If the closure is FnOnce, the closure is passed by value.
         let closure_param_var = ctx.new_var(VarRequest { ty: expr.ty, location: expr_location });
         let closure_var = VarUsage { var_id: closure_param_var, location: expr_location };
@@ -1954,9 +1953,9 @@ fn lower_expr_closure(
         expr,
         builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
         if ctx.variables[capture_var_usage.var_id].copyable.is_ok() {
-            semantic::corelib::fn_trait(ctx.db.upcast())
+            ctx.db.core_info().fn_trt
         } else {
-            semantic::corelib::fn_once_trait(ctx.db.upcast())
+            ctx.db.core_info().fn_once_trt
         },
     )
     .map_err(LoweringFlowError::Failed)?;

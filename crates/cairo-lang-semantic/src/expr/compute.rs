@@ -50,10 +50,9 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    CoreTraitContext, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
-    get_core_trait, get_usize_ty, never_ty, numeric_literal_trait, string_literal_trait,
-    true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
-    validate_literal,
+    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_usize_ty,
+    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -844,9 +843,10 @@ fn compute_expr_function_call_semantic(
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
             if ctx.are_closures_in_context {
+                let info = db.core_info();
                 // TODO(TomerStarkware): find the correct trait based on captured variables.
-                let fn_once_trait = crate::corelib::fn_once_trait(db);
-                let fn_trait = crate::corelib::fn_trait(db);
+                let fn_once_trait = info.fn_once_trt;
+                let fn_trait = info.fn_trt;
                 let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
                 let mut closure_call_data = |call_trait| {
                     compute_method_function_call_data(
@@ -1519,8 +1519,7 @@ fn compute_expr_for_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let expr_id = expr.id;
 
-    let into_iterator_trait =
-        get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
+    let into_iterator_trait = ctx.db.core_info().into_iterator_trt;
 
     let (into_iterator_function_id, _, fixed_into_iter_var, into_iter_mutability) =
         compute_method_function_call_data(
@@ -1569,7 +1568,7 @@ fn compute_expr_for_semantic(
     });
     let into_iter_expr_id = ctx.arenas.exprs.alloc(into_iter_expr.clone());
 
-    let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
+    let iterator_trait = ctx.db.core_info().iterator_trt;
 
     let (next_function_id, _, _, _) = compute_method_function_call_data(
         ctx,
@@ -1924,10 +1923,8 @@ fn compute_expr_indexed_semantic(
     // Make sure the maximal amount of types is known when trying to access. Ignoring the returned
     // value, as any errors will be reported later.
     ctx.resolver.inference().solve().ok();
-    let candidate_traits: Vec<_> = ["Index", "IndexView"]
-        .iter()
-        .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
-        .collect();
+    let info = ctx.db.core_info();
+    let candidate_traits = [info.index_trt, info.index_view_trt];
     let (function_id, _, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
         &candidate_traits[..],
@@ -2792,7 +2789,7 @@ fn new_literal_expr(
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
     // Numeric trait.
-    let trait_id = numeric_literal_trait(ctx.db);
+    let trait_id = ctx.db.core_info().numeric_literal_trt;
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
@@ -2840,8 +2837,7 @@ fn new_string_literal_expr(
 ) -> Maybe<ExprStringLiteral> {
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
-    // String trait.
-    let trait_id = string_literal_trait(ctx.db);
+    let trait_id = ctx.db.core_info().string_literal_trt;
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();

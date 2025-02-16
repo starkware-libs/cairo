@@ -4,7 +4,6 @@ mod test;
 
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
-use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -290,8 +289,9 @@ pub fn borrow_check(
     }
     let mut diagnostics = LoweringDiagnostics::default();
     diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
-    let destruct_fn = destruct_trait_fn(db.upcast());
-    let panic_destruct_fn = panic_destruct_trait_fn(db.upcast());
+    let info = db.core_info();
+    let destruct_fn = info.destruct_fn;
+    let panic_destruct_fn = info.panic_destruct_fn;
 
     let checker = BorrowChecker {
         db,
