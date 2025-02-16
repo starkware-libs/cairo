@@ -7,22 +7,10 @@ license-file.workspace = true
 description = "Sierra gas computation."
 
 [dependencies]
-<<<<<<< HEAD
-cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "~2.9.3" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.9.3" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.9.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.3" }
-||||||| 63dc720fc
-cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "~2.9.2" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.9.2" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.9.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.2" }
-=======
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "~2.10.0" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.10.0" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.10.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.10.0" }
->>>>>>> origin/dev-v2.10.0
 itertools = { workspace = true, default-features = true }
 thiserror.workspace = true
 num-bigint = { workspace = true }

@@ -143,14 +143,8 @@ End:
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-149](v3, v4, v8)
-||||||| 63dc720fc
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v3, v4, v8)
-=======
   (v18: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr17](v3, v18, v9)
->>>>>>> origin/dev-v2.10.0
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-149](v3, v18, v9)
 End:
   Return(v19, v20, v21)
 
@@ -312,14 +306,8 @@ End:
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-130](v3, v4, v8)
-||||||| 63dc720fc
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v3, v4, v8)
-=======
   (v18: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr16](v3, v18, v9)
->>>>>>> origin/dev-v2.10.0
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-130](v3, v18, v9)
 End:
   Return(v19, v20, v21)
 
@@ -667,14 +655,8 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v3, v4, v8)
-||||||| 63dc720fc
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v4, v8)
-=======
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v13, v9)
->>>>>>> origin/dev-v2.10.0
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v3, v13, v9)
 End:
   Return(v14, v15, v16)
 
@@ -701,14 +683,8 @@ End:
 
 blk5:
 Statements:
-<<<<<<< HEAD
-  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v3, v4, v8)
-||||||| 63dc720fc
-  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v4, v8)
-=======
   (v26: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v27: core::RangeCheck, v28: core::gas::GasBuiltin, v29: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[expr24](v3, v26, v9)
->>>>>>> origin/dev-v2.10.0
+  (v27: core::RangeCheck, v28: core::gas::GasBuiltin, v29: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v3, v26, v9)
 End:
   Return(v27, v28, v29)
 
@@ -965,14 +941,8 @@ End:
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[45-203](v3, v4, v7)
-||||||| 63dc720fc
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v3, v4, v7)
-=======
   (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[expr25](v3, v14, v8)
->>>>>>> origin/dev-v2.10.0
+  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[45-203](v3, v14, v8)
 End:
   Return(v15, v16, v17)
 
@@ -1572,29 +1542,13 @@ End:
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v14: test::A) <- struct_construct(v2)
-  (v15: test::A, v16: @test::A) <- snapshot(v14)
-  () <- test::use_a(v16)
-  (v17: core::felt252) <- 1
-  (v18: core::felt252) <- core::felt252_add(v2, v17)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[58-134](v4, v5, v18, v15)
-||||||| 63dc720fc
-  (v14: test::A) <- struct_construct(v2)
-  (v15: test::A, v16: @test::A) <- snapshot(v14)
-  () <- test::use_a(v16)
-  (v17: core::felt252) <- 1
-  (v18: core::felt252) <- core::felt252_add(v2, v17)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v4, v5, v18, v15)
-=======
   (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
   (v17: test::A) <- struct_construct(v2)
   (v18: test::A, v19: @test::A) <- snapshot(v17)
   () <- test::use_a(v19)
   (v20: core::felt252) <- 1
   (v21: core::felt252) <- core::felt252_add(v2, v20)
-  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[expr19](v4, v16, v21, v18)
->>>>>>> origin/dev-v2.10.0
+  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v24: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[58-134](v4, v16, v21, v18)
 End:
   Return(v22, v23, v24)
 
@@ -1608,8 +1562,7 @@ Statements:
   (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v29, v28)
   (v31: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- PanicResult::Err(v30)
 End:
-<<<<<<< HEAD
-  Return(v6, v7, v27)
+  Return(v6, v25, v31)
 
 //! > ==========================================================================
 
@@ -1676,21 +1629,18 @@ End:
 
 blk1:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: ((),)) <- struct_construct(v8)
-  (v10: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v9)
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: ()) <- struct_construct()
+  (v10: ((),)) <- struct_construct(v9)
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
 End:
-  Return(v3, v4, v10)
+  Return(v3, v8, v11)
 
 blk2:
 Statements:
-  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v4, v11)
+  Return(v3, v12, v13)
 
 //! > lowering_diagnostics
-||||||| 63dc720fc
-  Return(v6, v7, v27)
-=======
-  Return(v6, v25, v31)
->>>>>>> origin/dev-v2.10.0

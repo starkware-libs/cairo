@@ -355,7 +355,6 @@ pub enum ExternalHint {
     /// Writes a run argument of number `index` to `dst` and on.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     WriteRunParam { index: ResOperand, dst: CellRef },
-<<<<<<< HEAD
     /// Stores a marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     SetMarker { marker: ResOperand },
@@ -369,12 +368,6 @@ pub enum ExternalHint {
         output: ResOperand,
         finalize: ResOperand,
     },
-||||||| 63dc720fc
-=======
-    /// Stores a marker in the HintProcessor. Useful for debugging.
-    #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
-    SetMarker { marker: ResOperand },
->>>>>>> origin/dev-v2.10.0
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -871,7 +864,6 @@ impl PythonicHint for ExternalHint {
                 let index = ResOperandAsIntegerFormatter(index);
                 format!(r#"raise NotImplementedError("memory{dst}.. = params[{index}])")"#)
             }
-<<<<<<< HEAD
             Self::SetMarker { marker } => {
                 let marker = ResOperandAsAddressFormatter(marker);
                 format!(r#"raise NotImplementedError("marker = {}")"#, marker)
@@ -879,13 +871,6 @@ impl PythonicHint for ExternalHint {
             Self::Blake2sCompress { .. } => {
                 r#"raise NotImplementedError("blake2s_compress")"#.into()
             }
-||||||| 63dc720fc
-=======
-            Self::SetMarker { marker } => {
-                let marker = ResOperandAsAddressFormatter(marker);
-                format!(r#"raise NotImplementedError("marker = {}")"#, marker)
-            }
->>>>>>> origin/dev-v2.10.0
         }
     }
 }

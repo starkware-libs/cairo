@@ -4,22 +4,10 @@
     "0x7",
     "0x0",
     "0x2",
-<<<<<<< HEAD
-    "0x9",
-    "0x3",
-    "0x1ce",
-    "0x32",
-||||||| 63dc720fc
-    "0x9",
-    "0x2",
-    "0x1ce",
-    "0x32",
-=======
     "0xa",
     "0x0",
     "0x1d3",
     "0x2d",
->>>>>>> origin/dev-v2.10.0
     "0x58",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
@@ -2021,17 +2009,11 @@
       ],
       [
         145,
-<<<<<<< HEAD
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>"
-||||||| 63dc720fc
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
-=======
         "store_temp<Array<core::array::Span::<core::felt252>>>"
->>>>>>> origin/dev-v2.10.0
       ],
       [
         146,
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>"
       ],
       [
         147,

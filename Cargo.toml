@@ -72,13 +72,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-<<<<<<< HEAD
-version = "2.9.3"
-||||||| 63dc720fc
-version = "2.9.2"
-=======
 version = "2.10.0"
->>>>>>> origin/dev-v2.10.0
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"

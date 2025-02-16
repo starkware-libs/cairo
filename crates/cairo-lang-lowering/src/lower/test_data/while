@@ -134,20 +134,10 @@ End:
 
 blk3:
 Statements:
-<<<<<<< HEAD
-  (v11: core::felt252) <- 1
-  (v12: core::felt252) <- core::felt252_sub(v2, v11)
-  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v3, v4, v12)
-||||||| 63dc720fc
-  (v11: core::felt252) <- 1
-  (v12: core::felt252) <- core::felt252_sub(v2, v11)
-  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v3, v4, v12)
-=======
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
   (v14: core::felt252) <- 1
   (v15: core::felt252) <- core::felt252_sub(v2, v14)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr12](v3, v13, v15)
->>>>>>> origin/dev-v2.10.0
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v3, v13, v15)
 End:
   Return(v16, v17, v18)
 
@@ -438,17 +428,9 @@ End:
 
 blk2:
 Statements:
-<<<<<<< HEAD
-  (v8: core::felt252) <- core::felt252_add(v2, v7)
-  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v3, v4, v8)
-||||||| 63dc720fc
-  (v8: core::felt252) <- core::felt252_add(v2, v7)
-  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v3, v4, v8)
-=======
   (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
   (v10: core::felt252) <- core::felt252_add(v2, v8)
-  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v13: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[expr8](v3, v9, v10)
->>>>>>> origin/dev-v2.10.0
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v13: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v3, v9, v10)
 End:
   Return(v11, v12, v13)
 

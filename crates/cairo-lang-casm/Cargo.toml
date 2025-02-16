@@ -7,13 +7,7 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
-<<<<<<< HEAD
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.3", default-features = false }
-||||||| 63dc720fc
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.2", default-features = false }
-=======
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.10.0", default-features = false }
->>>>>>> origin/dev-v2.10.0
 indoc.workspace = true
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
