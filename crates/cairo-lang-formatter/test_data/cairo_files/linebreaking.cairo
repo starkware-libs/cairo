@@ -87,3 +87,8 @@ fn closure_line_breaking() {
             left + right
         };
 }
+macro many_elements {
+    ($x:ident) => {
+        1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9
+    };
+}

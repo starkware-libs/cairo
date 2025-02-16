@@ -751,6 +751,7 @@ fn module_lowering_diagnostics(
             }
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
+            ModuleItemId::MacroDeclaration(_) => {}
         }
     }
     Ok(diagnostics.build())

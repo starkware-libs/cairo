@@ -1120,6 +1120,9 @@ impl<'db> Resolver<'db> {
                 )?)
                 .intern(self.db),
             ),
+            ResolvedGenericItem::Macro(macro_declaration_id) => {
+                ResolvedConcreteItem::Macro(macro_declaration_id)
+            }
             ResolvedGenericItem::Variant(var) => {
                 ResolvedConcreteItem::Variant(self.specialize_variant(
                     diagnostics,
