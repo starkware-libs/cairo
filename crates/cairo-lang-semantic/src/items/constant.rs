@@ -1229,19 +1229,19 @@ pub struct ConstCalcInfo {
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
     fn new(db: &dyn SemanticGroup) -> Self {
-        let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
-        let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
-        let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
-        let mul_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into());
-        let div_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Div".into());
-        let rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into());
-        let div_rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "DivRem".into());
-        let bit_and_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into());
-        let bit_or_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into());
-        let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
-        let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
-        let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
-        let not_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Not".into());
+        let neg_trait = get_core_trait(db, CoreTraitContext::Traits, "Neg".into());
+        let add_trait = get_core_trait(db, CoreTraitContext::Traits, "Add".into());
+        let sub_trait = get_core_trait(db, CoreTraitContext::Traits, "Sub".into());
+        let mul_trait = get_core_trait(db, CoreTraitContext::Traits, "Mul".into());
+        let div_trait = get_core_trait(db, CoreTraitContext::Traits, "Div".into());
+        let rem_trait = get_core_trait(db, CoreTraitContext::Traits, "Rem".into());
+        let div_rem_trait = get_core_trait(db, CoreTraitContext::Traits, "DivRem".into());
+        let bit_and_trait = get_core_trait(db, CoreTraitContext::Traits, "BitAnd".into());
+        let bit_or_trait = get_core_trait(db, CoreTraitContext::Traits, "BitOr".into());
+        let bit_xor_trait = get_core_trait(db, CoreTraitContext::Traits, "BitXor".into());
+        let partial_eq_trait = get_core_trait(db, CoreTraitContext::Traits, "PartialEq".into());
+        let partial_ord_trait = get_core_trait(db, CoreTraitContext::Traits, "PartialOrd".into());
+        let not_trait = get_core_trait(db, CoreTraitContext::Traits, "Not".into());
         let trait_fn = |trait_id, name: &str| {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };

@@ -502,25 +502,25 @@ pub fn core_binary_operator(
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<(ConcreteTraitGenericFunctionId, bool), SemanticDiagnosticKind>> {
     let (trait_name, function_name, snapshot, context) = match binary_op {
-        BinaryOperator::Plus(_) => ("Add", "add", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Plus(_) => ("Add", "add", false, CoreTraitContext::Traits),
         BinaryOperator::PlusEq(_) => ("AddAssign", "add_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Minus(_) => ("Sub", "sub", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Minus(_) => ("Sub", "sub", false, CoreTraitContext::Traits),
         BinaryOperator::MinusEq(_) => ("SubAssign", "sub_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Mul(_) => ("Mul", "mul", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Mul(_) => ("Mul", "mul", false, CoreTraitContext::Traits),
         BinaryOperator::MulEq(_) => ("MulAssign", "mul_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Div(_) => ("Div", "div", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Div(_) => ("Div", "div", false, CoreTraitContext::Traits),
         BinaryOperator::DivEq(_) => ("DivAssign", "div_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Mod(_) => ("Rem", "rem", false, CoreTraitContext::TopLevel),
+        BinaryOperator::Mod(_) => ("Rem", "rem", false, CoreTraitContext::Traits),
         BinaryOperator::ModEq(_) => ("RemAssign", "rem_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true, CoreTraitContext::TopLevel),
-        BinaryOperator::Neq(_) => ("PartialEq", "ne", true, CoreTraitContext::TopLevel),
-        BinaryOperator::LE(_) => ("PartialOrd", "le", false, CoreTraitContext::TopLevel),
-        BinaryOperator::GE(_) => ("PartialOrd", "ge", false, CoreTraitContext::TopLevel),
-        BinaryOperator::LT(_) => ("PartialOrd", "lt", false, CoreTraitContext::TopLevel),
-        BinaryOperator::GT(_) => ("PartialOrd", "gt", false, CoreTraitContext::TopLevel),
-        BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::TopLevel),
-        BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
-        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
+        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true, CoreTraitContext::Traits),
+        BinaryOperator::Neq(_) => ("PartialEq", "ne", true, CoreTraitContext::Traits),
+        BinaryOperator::LE(_) => ("PartialOrd", "le", false, CoreTraitContext::Traits),
+        BinaryOperator::GE(_) => ("PartialOrd", "ge", false, CoreTraitContext::Traits),
+        BinaryOperator::LT(_) => ("PartialOrd", "lt", false, CoreTraitContext::Traits),
+        BinaryOperator::GT(_) => ("PartialOrd", "gt", false, CoreTraitContext::Traits),
+        BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::Traits),
+        BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::Traits),
+        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::Traits),
         BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
         BinaryOperator::DotDotEq(_) => {
             ("RangeInclusiveOp", "range_inclusive", false, CoreTraitContext::Ops)
@@ -661,19 +661,19 @@ pub fn get_generic_function_id(
 }
 
 pub fn concrete_copy_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, "Copy".into(), vec![GenericArgumentId::Type(ty)])
+    get_core_concrete_trait(db, copy_trait(db), vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, "Drop".into(), vec![GenericArgumentId::Type(ty)])
+    get_core_concrete_trait(db, drop_trait(db), vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
+    get_core_concrete_trait(db, destruct_trait(db), vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
+    get_core_concrete_trait(db, panic_destruct_trait(db), vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
@@ -703,19 +703,19 @@ pub fn fn_call_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
 }
 
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
+    get_core_trait(db, CoreTraitContext::Traits, "Copy".into())
 }
 
 pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "Drop".into())
+    get_core_trait(db, CoreTraitContext::Traits, "Drop".into())
 }
 
 pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "Destruct".into())
+    get_core_trait(db, CoreTraitContext::Traits, "Destruct".into())
 }
 
 pub fn panic_destruct_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "PanicDestruct".into())
+    get_core_trait(db, CoreTraitContext::Traits, "PanicDestruct".into())
 }
 
 pub fn deref_trait(db: &dyn SemanticGroup) -> TraitId {
@@ -727,16 +727,11 @@ pub fn deref_mut_trait(db: &dyn SemanticGroup) -> TraitId {
 }
 
 pub fn destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(db, CoreTraitContext::TopLevel, "Destruct".into(), "destruct".into())
+    get_core_trait_fn(db, CoreTraitContext::Traits, "Destruct".into(), "destruct".into())
 }
 
 pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(
-        db,
-        CoreTraitContext::TopLevel,
-        "PanicDestruct".into(),
-        "panic_destruct".into(),
-    )
+    get_core_trait_fn(db, CoreTraitContext::Traits, "PanicDestruct".into(), "panic_destruct".into())
 }
 
 pub fn into_iterator_trait(db: &dyn SemanticGroup) -> TraitId {
@@ -747,13 +742,16 @@ pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "NumericLiteral".into())
 }
 
-/// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
+pub fn string_literal_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
+}
+
+/// Given a core library generic trait and its generic arguments, returns [ConcreteTraitId].
 fn get_core_concrete_trait(
     db: &dyn SemanticGroup,
-    name: SmolStr,
+    trait_id: TraitId,
     generic_args: Vec<GenericArgumentId>,
 ) -> ConcreteTraitId {
-    let trait_id = get_core_trait(db, CoreTraitContext::TopLevel, name);
     semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db)
 }
 
