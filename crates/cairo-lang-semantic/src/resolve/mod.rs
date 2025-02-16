@@ -1834,7 +1834,7 @@ impl<'db> Resolver<'db> {
 
     // TODO(yuval): on a breaking version change, consider changing warnings to errors.
     /// Warns about the use of a trait in a path inside the same trait or an impl of it, and the use
-    /// of an impl in a path inside the same impl, addditionally, converts a `Self` equivalent
+    /// of an impl in a path inside the same impl, additionally, converts a `Self` equivalent
     /// trait to be resolved as `Self`.
     /// That is, warns about using the actual path equivalent to `Self`, where `Self` can be used.
     fn handle_same_impl_trait(

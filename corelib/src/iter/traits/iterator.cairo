@@ -312,7 +312,7 @@ pub trait Iterator<T> {
     /// operators like `+`, the order the elements are combined in is not important, but for
     /// non-associative operators like `-` the order will affect the final result.
     ///
-    /// # Note to Implementors
+    /// # Note to Implementers
     ///
     /// Several of the other (forward) methods have default implementations in
     /// terms of this one, so try to implement this explicitly if it can
