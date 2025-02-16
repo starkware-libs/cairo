@@ -453,3 +453,161 @@ blk2:
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Test passing non-inlined closure to a generic function.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+    let diary = |mut a| {
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+        a = a + 10;
+
+        return a;
+    };
+
+    // Call the function which applies the closure.
+    apply(diary);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn apply<F, +Drop<F>, impl func: core::ops::FnOnce<F, (felt252,)>, +Drop<func::Output>>(f: F) {
+    f(2);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@lib.cairo:5:17: 5:24}) <- struct_construct()
+  (v1: ()) <- test::apply::<{closure@lib.cairo:5:17: 5:24}, Generated core::traits::Drop::<{closure@lib.cairo:5:17: 5:24}>, core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:17: 5:24}, (core::felt252,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:17: 5:24}, Generated core::traits::Drop::<{closure@lib.cairo:5:17: 5:24}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:17: 5:24}, (core::felt252,)>>, core::felt252Drop>(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: {closure@lib.cairo:5:17: 5:24}) <- struct_construct()
+  (v2: {closure@lib.cairo:5:17: 5:24}, v3: @{closure@lib.cairo:5:17: 5:24}) <- snapshot(v1)
+  (v4: (core::felt252,)) <- struct_construct(v0)
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:5:17: 5:24}(v3, v4)
+End:
+  Return()
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let diary = |mut a| {
+                ^^^^^^^
+
+Parameters: v0: {closure@lib.cairo:5:17: 5:24}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:5:17: 5:24}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let diary = |mut a| {
+                ^^^^^^^
+
+Parameters: v0: @{closure@lib.cairo:5:17: 5:24}, v2: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:5:17: 5:24}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::felt252) <- struct_destructure(v2)
+  (v4: core::felt252) <- 10
+  (v5: core::felt252) <- core::Felt252Add::add(v3, v4)
+  (v6: core::felt252) <- 10
+  (v7: core::felt252) <- core::Felt252Add::add(v5, v6)
+  (v8: core::felt252) <- 10
+  (v9: core::felt252) <- core::Felt252Add::add(v7, v8)
+  (v10: core::felt252) <- 10
+  (v11: core::felt252) <- core::Felt252Add::add(v9, v10)
+  (v12: core::felt252) <- 10
+  (v13: core::felt252) <- core::Felt252Add::add(v11, v12)
+  (v14: core::felt252) <- 10
+  (v15: core::felt252) <- core::Felt252Add::add(v13, v14)
+  (v16: core::felt252) <- 10
+  (v17: core::felt252) <- core::Felt252Add::add(v15, v16)
+  (v18: core::felt252) <- 10
+  (v19: core::felt252) <- core::Felt252Add::add(v17, v18)
+  (v20: core::felt252) <- 10
+  (v21: core::felt252) <- core::Felt252Add::add(v19, v20)
+  (v22: core::felt252) <- 10
+  (v23: core::felt252) <- core::Felt252Add::add(v21, v22)
+  (v24: core::felt252) <- 10
+  (v25: core::felt252) <- core::Felt252Add::add(v23, v24)
+  (v26: core::felt252) <- 10
+  (v27: core::felt252) <- core::Felt252Add::add(v25, v26)
+End:
+  Return(v27)
+
+
+Final lowering:
+Parameters: v0: @{closure@lib.cairo:5:17: 5:24}, v1: (core::felt252,)
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: core::felt252) <- 10
+  (v4: core::felt252) <- core::felt252_add(v2, v3)
+  (v5: core::felt252) <- 10
+  (v6: core::felt252) <- core::felt252_add(v4, v5)
+  (v7: core::felt252) <- 10
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
+  (v9: core::felt252) <- 10
+  (v10: core::felt252) <- core::felt252_add(v8, v9)
+  (v11: core::felt252) <- 10
+  (v12: core::felt252) <- core::felt252_add(v10, v11)
+  (v13: core::felt252) <- 10
+  (v14: core::felt252) <- core::felt252_add(v12, v13)
+  (v15: core::felt252) <- 10
+  (v16: core::felt252) <- core::felt252_add(v14, v15)
+  (v17: core::felt252) <- 10
+  (v18: core::felt252) <- core::felt252_add(v16, v17)
+  (v19: core::felt252) <- 10
+  (v20: core::felt252) <- core::felt252_add(v18, v19)
+  (v21: core::felt252) <- 10
+  (v22: core::felt252) <- core::felt252_add(v20, v21)
+  (v23: core::felt252) <- 10
+  (v24: core::felt252) <- core::felt252_add(v22, v23)
+  (v25: core::felt252) <- 10
+  (v26: core::felt252) <- core::felt252_add(v24, v25)
+End:
+  Return(v26)
