@@ -3,7 +3,7 @@ use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction};
+use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunctionIdEx};
 use crate::{FlatBlockEnd, FlatLowered, MatchArm, Statement};
 
 /// Rewrites a [FunctionId] with a [GenericSubstitution].
@@ -12,18 +12,19 @@ fn concretize_function(
     substitution: &GenericSubstitution,
     function: FunctionId,
 ) -> Maybe<FunctionId> {
-    let long_id = match function.lookup_intern(db) {
+    match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => {
-            FunctionLongId::Semantic(substitution.substitute(db.upcast(), id)?)
+            // We call `lowered` here in case the function will be substituted to a generated one.
+            Ok(substitution.substitute(db.upcast(), id)?.lowered(db))
         }
         FunctionLongId::Generated(GeneratedFunction { parent, key }) => {
-            FunctionLongId::Generated(GeneratedFunction {
+            Ok(FunctionLongId::Generated(GeneratedFunction {
                 parent: substitution.substitute(db.upcast(), parent)?,
                 key,
             })
+            .intern(db))
         }
-    };
-    Ok(long_id.intern(db))
+    }
 }
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
