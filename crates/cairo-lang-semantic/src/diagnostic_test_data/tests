@@ -1397,3 +1397,31 @@ warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecat
  --> lib.cairo:13:18
     MyTraitImpl::deprecated_method(@s);
                  ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test implementation of dict value outside of the corelib.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+struct S {}
+
+impl SDictValue of Felt252DictValue<S> {
+    fn zero_default() -> S nopanic {
+        S {}
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Trait `core::traits::Felt252DictValue` should not be re-implemented.
+ --> lib.cairo:3:20
+impl SDictValue of Felt252DictValue<S> {
+                   ^^^^^^^^^^^^^^^^^^^

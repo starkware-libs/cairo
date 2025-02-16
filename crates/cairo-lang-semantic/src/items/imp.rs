@@ -661,6 +661,7 @@ pub fn priv_impl_declaration_data_inner(
             get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()),
             fn_trait(db),
             fn_once_trait(db),
+            get_core_trait(db, CoreTraitContext::Traits, "Felt252DictValue".into()),
         ]
         .contains(&concrete_trait.trait_id(db))
             && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)

@@ -767,6 +767,8 @@ pub enum CoreTraitContext {
     Iterator,
     /// The meta programming core library context.
     MetaProgramming,
+    /// The core traits module context.
+    Traits,
 }
 
 /// Given a core library context and trait name, returns [TraitId].
@@ -776,6 +778,7 @@ pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: S
         CoreTraitContext::Ops => core_submodule(db, "ops"),
         CoreTraitContext::Iterator => core_submodule(db, "iter"),
         CoreTraitContext::MetaProgramming => core_submodule(db, "metaprogramming"),
+        CoreTraitContext::Traits => core_submodule(db, "traits"),
     };
     // This should not fail if the corelib is present.
     let item_id = db
