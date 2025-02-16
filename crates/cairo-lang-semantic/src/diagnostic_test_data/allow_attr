@@ -1,0 +1,142 @@
+//! > Test allow_attr attribute
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow_attr(some)]
+#[some]
+fn foo() {}
+
+#[some]
+fn bar() {}
+
+#[allow_attr]
+fn empty() {}
+
+#[allow_attr(my_attr = "value")]
+fn named_arg() {}
+
+#[allow_attr(1234)]
+fn number() {}
+
+#[allow_attr("string")]
+fn string() {}
+
+#[allow_attr(a::b)]
+fn path() {}
+
+#[allow_attr(attr1, attr2, attr3)]
+struct MultiAttr {
+    #[attr1]
+    x: felt252,
+    #[attr2]
+    y: felt252,
+    #[attr3]
+    z: felt252,
+    #[attr4]
+    w: felt252,
+}
+
+#[allow_attr(outer)]
+struct MyStruct {
+    #[allow_attr(inner)]
+    #[inner]
+    x: felt252,
+    #[outer]
+    y: felt252,
+    #[other]
+    z: felt252,
+}
+
+//! > generated_cairo_code
+#[allow_attr(some)]
+#[some]
+fn foo() {}
+
+#[some]
+fn bar() {}
+
+#[allow_attr]
+fn empty() {}
+
+#[allow_attr(my_attr = "value")]
+fn named_arg() {}
+
+#[allow_attr(1234)]
+fn number() {}
+
+#[allow_attr("string")]
+fn string() {}
+
+#[allow_attr(a::b)]
+fn path() {}
+
+#[allow_attr(attr1, attr2, attr3)]
+struct MultiAttr {
+    #[attr1]
+    x: felt252,
+    #[attr2]
+    y: felt252,
+    #[attr3]
+    z: felt252,
+    #[attr4]
+    w: felt252,
+}
+
+#[allow_attr(outer)]
+struct MyStruct {
+    #[allow_attr(inner)]
+    #[inner]
+    x: felt252,
+    #[outer]
+    y: felt252,
+    #[other]
+    z: felt252,
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:5:1
+#[some]
+^^^^^^^
+
+error: Plugin diagnostic: Expected arguments.
+ --> lib.cairo:8:1
+#[allow_attr]
+^^^^^^^^^^^^^
+
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:11:14
+#[allow_attr(my_attr = "value")]
+             ^^^^^^^^^^^^^^^^^
+
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:14:14
+#[allow_attr(1234)]
+             ^^^^
+
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:17:14
+#[allow_attr("string")]
+             ^^^^^^^^
+
+error: Plugin diagnostic: Expected simple identifier.
+ --> lib.cairo:20:14
+#[allow_attr(a::b)]
+             ^^^^
+
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:31:5
+    #[attr4]
+    ^^^^^^^^
+
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:42:5
+    #[other]
+    ^^^^^^^^

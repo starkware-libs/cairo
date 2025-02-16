@@ -26,6 +26,9 @@ pub const INTERNAL_ATTR: &str = "internal";
 /// An attribute to allow code that would normally result in a warning.
 pub const ALLOW_ATTR: &str = "allow";
 
+/// An attribute to allow additional attributes on an item.
+pub const ALLOW_ATTR_ATTR: &str = "allow_attr";
+
 /// An attribute to allow usage of a feature under a statement.
 pub const FEATURE_ATTR: &str = "feature";
 
