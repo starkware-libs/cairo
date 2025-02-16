@@ -23,7 +23,6 @@ use cairo_lang_utils::{
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::{numeric_literal_trait, string_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -216,8 +215,9 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound(concrete_trait_id) => {
+                let info = db.core_info();
                 let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == numeric_literal_trait(db) {
+                if trait_id == info.numeric_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -227,7 +227,7 @@ impl InferenceError {
                          literal.",
                         generic_type.debug(db)
                     );
-                } else if trait_id == string_literal_trait(db) {
+                } else if trait_id == info.string_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -688,9 +688,9 @@ impl<'db> Inference<'db> {
             // TODO(yuval): consider adding error location to the set error.
             return Err((ErrorSet, None));
         }
-
-        let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_types_info().felt252;
+        let info = self.db.core_info();
+        let numeric_trait_id = info.numeric_literal_trt;
+        let felt_ty = info.felt252;
 
         // Conform all uninferred numeric literals to felt252.
         loop {

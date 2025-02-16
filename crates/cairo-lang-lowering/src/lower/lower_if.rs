@@ -106,7 +106,7 @@ pub fn lower_expr_if_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_types_info().felt252
+    if ty == ctx.db.core_info().felt252
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(

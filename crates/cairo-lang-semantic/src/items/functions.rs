@@ -27,7 +27,7 @@ use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::{fn_traits, panic_destruct_trait_fn, unit_ty};
+use crate::corelib::{fn_traits, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
@@ -651,7 +651,7 @@ impl ConcreteFunctionWithBodyId {
             }
             GenericFunctionWithBodyId::Trait(trait_func) => trait_func.trait_function(db),
         };
-        Ok(trait_function == panic_destruct_trait_fn(db.upcast()))
+        Ok(trait_function == db.core_info().panic_destruct_fn)
     }
 }
 

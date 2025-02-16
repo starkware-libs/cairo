@@ -21,7 +21,6 @@ use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
-use crate::corelib::{CoreTraitContext, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -407,7 +406,7 @@ pub fn generic_params_type_constraints(
             constraints.push((impl_type, ty1));
         }
         let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.lookup_intern(db);
-        if trait_id != get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()) {
+        if trait_id != db.core_info().type_eq_trt {
             continue;
         }
         let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()

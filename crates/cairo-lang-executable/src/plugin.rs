@@ -181,7 +181,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             };
             if input.ty
                 != corelib::get_core_ty_by_name(db, "Span".into(), vec![GenericArgumentId::Type(
-                    db.core_types_info().felt252,
+                    db.core_info().felt252,
                 )])
             {
                 diagnostics.push(PluginDiagnostic::error(

@@ -12,7 +12,6 @@ use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFuncti
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use itertools::{Itertools, chain, zip_eq};
-use semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use semantic::{TypeId, TypeLongId};
 
 use crate::borrow_check::Demand;
@@ -312,8 +311,9 @@ pub fn add_destructs(
     )
     .unwrap();
 
-    let plain_trait_function = destruct_trait_fn(db.upcast());
-    let panic_trait_function = panic_destruct_trait_fn(db.upcast());
+    let info = db.core_info();
+    let plain_trait_function = info.destruct_fn;
+    let panic_trait_function = info.panic_destruct_fn;
 
     // Add destructions.
     let stable_ptr = function_id

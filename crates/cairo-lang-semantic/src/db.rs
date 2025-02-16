@@ -22,7 +22,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
-use crate::corelib::CoreTypesInfo;
+use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
@@ -1599,8 +1599,8 @@ pub trait SemanticGroup:
     fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
-    #[salsa::invoke(corelib::core_types_info)]
-    fn core_types_info(&self) -> Arc<CoreTypesInfo>;
+    #[salsa::invoke(corelib::core_info)]
+    fn core_info(&self) -> Arc<CoreInfo>;
 
     // Analyzer plugins.
     // ========
