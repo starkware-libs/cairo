@@ -270,7 +270,15 @@ impl Felt252DictFromIterator<
     /// Constructs a `Felt252Dict<T>` from an iterator of (felt252, T) key-value pairs.
     /// If the iterator contains repeating keys,
     /// only the last value in the iterator for each key will be kept.
-    fn from_iter<I, +Iterator<I>[Item: (felt252, T)], +Destruct<I>>(iter: I) -> Felt252Dict<T> {
+    fn from_iter<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +core::metaprogramming::TypeEqual<IntoIter::Iterator::Item, (felt252, T)>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        iter: I,
+    ) -> Felt252Dict<T> {
         let mut dict = Default::default();
         for (key, value) in iter {
             dict.insert(key, value);

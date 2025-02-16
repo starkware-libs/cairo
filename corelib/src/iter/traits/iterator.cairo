@@ -1,3 +1,4 @@
+use core::metaprogramming::TypeEqual;
 use crate::iter::adapters::{
     Enumerate, Filter, Map, Peekable, Take, Zip, enumerated_iterator, filter_iterator,
     mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
@@ -569,10 +570,17 @@ pub trait Iterator<T> {
     /// ```
     #[inline]
     #[must_use]
-    fn collect<B, +FromIterator<B, Self::Item>, +Destruct<T>>(
+    fn collect<
+        B,
+        impl IntoIter: IntoIterator<T>,
+        impl ItemEqual: TypeEqual<IntoIter::Iterator::Item, Self::Item>,
+        +Destruct<IntoIter::IntoIter>,
+        +FromIterator<B, Self::Item>,
+        +Destruct<T>,
+    >(
         self: T,
     ) -> B {
-        FromIterator::<B, Self::Item>::from_iter::<T, Self>(self)
+        FromIterator::<B, Self::Item>::from_iter::<T, IntoIter, ItemEqual>(self)
     }
 
     /// Creates an iterator which can use the [`peek`] method to look at the next element of the
