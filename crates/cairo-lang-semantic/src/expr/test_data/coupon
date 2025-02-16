@@ -195,7 +195,7 @@ fn foo(x: bar::<u8, u16>::Coupon) {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::bar2::<?6, ?7>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
+error: Unexpected argument type. Expected: "test::bar2::<?8, ?9>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
  --> lib.cairo:8:25
     bar2(1, __coupon__: x); // Wrong coupon type.
                         ^

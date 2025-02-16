@@ -904,8 +904,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Type `core::integer::u32` could not be indexed.
-Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?2>.
-Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?2>.
+Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?3>.
+Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?3>.
  --> lib.cairo:8:9
         x[0];
         ^^^^
@@ -1975,25 +1975,25 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?2>.
  --> lib.cairo:20:43
         let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
                                           ^^^^^^^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?3>.
  --> lib.cairo:20:60
         let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
                                                            ^^^^^^^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?4>.
  --> lib.cairo:21:16
         (3_u16.my_into(), 3_u16.my_into())
                ^^^^^^^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?5>.
  --> lib.cairo:21:33
         (3_u16.my_into(), 3_u16.my_into())
                                 ^^^^^^^
