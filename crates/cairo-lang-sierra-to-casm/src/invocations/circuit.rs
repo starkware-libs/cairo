@@ -52,7 +52,7 @@ pub fn build(
     }
 }
 
-/// Handles a Sierra statement for initializing circuit data.
+/// Handles a Sierra statement for initializing Circuit data.
 fn build_init_circuit_data(
     circuit_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
