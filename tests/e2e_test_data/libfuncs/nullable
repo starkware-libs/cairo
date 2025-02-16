@@ -3,8 +3,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo() -> Nullable::<felt252> {
+//! > cairo_code
+fn foo() -> Nullable<felt252> {
     null::<felt252>()
 }
 
@@ -35,8 +35,8 @@ test::foo@0() -> (Nullable<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: Box::<felt252>) -> Nullable::<felt252> {
+//! > cairo_code
+fn foo(x: Box<felt252>) -> Nullable<felt252> {
     nullable_from_box::<felt252>(x)
 }
 
@@ -68,7 +68,7 @@ test::foo@0([0]: Box<felt252>) -> (Nullable<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(x: Nullable<felt252>, y: Box<felt252>) -> Box<felt252> {
     match match_nullable::<felt252>(x) {
         nullable::FromNullableResult::Null(_) => y,
@@ -114,7 +114,7 @@ test::foo@0([0]: Nullable<felt252>, [1]: Box<felt252>) -> (Box<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(value: @Nullable::<Array<felt252>>) -> Nullable<@Array<felt252>> {
     core::nullable::nullable_forward_snapshot(value)
 }
@@ -150,8 +150,8 @@ test::foo@0([0]: Snapshot<Nullable<Array<felt252>>>) -> (Nullable<Snapshot<Array
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: @Nullable::<Array<felt252>>, y: Box::<@Array<felt252>>) -> Box::<@Array<felt252>> {
+//! > cairo_code
+fn foo(x: @Nullable::<Array<felt252>>, y: Box<@Array<felt252>>) -> Box<@Array<felt252>> {
     match core::nullable::match_nullable(core::nullable::nullable_forward_snapshot(x)) {
         nullable::FromNullableResult::Null(_) => y,
         nullable::FromNullableResult::NotNull(x) => x,
@@ -202,7 +202,7 @@ test::foo@0([0]: Snapshot<Nullable<Array<felt252>>>, [1]: Box<Snapshot<Array<fel
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> felt252 {
     match match_nullable::<felt252>(nullable_from_box::<felt252>(BoxTrait::new(v))) {
         nullable::FromNullableResult::Null(_) => 555,
@@ -262,7 +262,7 @@ test::foo@0([0]: felt252) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(e: ()) -> felt252 {
     match match_nullable(nullable_from_box(BoxTrait::new(e))) {
         nullable::FromNullableResult::Null(_) => 0,

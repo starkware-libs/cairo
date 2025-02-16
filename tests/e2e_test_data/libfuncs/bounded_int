@@ -3,11 +3,11 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
-type AddType = BoundedInt<{MIN_I8 + MIN_I8}, {MAX_I8 + MAX_I8}>;
+type AddType = BoundedInt<{ MIN_I8 + MIN_I8 }, { MAX_I8 + MAX_I8 }>;
 
 extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
 
@@ -42,11 +42,11 @@ test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-256, 254>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
-type SubType = BoundedInt<{MIN_I8 - MAX_I8}, {MAX_I8 - MIN_I8}>;
+type SubType = BoundedInt<{ MIN_I8 - MAX_I8 }, { MAX_I8 - MIN_I8 }>;
 
 extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> SubType nopanic;
 
@@ -81,11 +81,11 @@ test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-255, 255>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
-type MulType = BoundedInt<{MIN_I8 * MAX_I8}, {MIN_I8 * MIN_I8}>;
+type MulType = BoundedInt<{ MIN_I8 * MAX_I8 }, { MIN_I8 * MIN_I8 }>;
 
 extern fn bounded_int_mul<T1, T2>(a: T1, b: T2) -> MulType nopanic;
 
@@ -120,11 +120,11 @@ test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
-type MulType = NonZero<BoundedInt<{MIN_I8 * MAX_I8}, {MIN_I8 * MIN_I8}>>;
+type MulType = NonZero<BoundedInt<{ MIN_I8 * MAX_I8 }, { MIN_I8 * MIN_I8 }>>;
 
 extern fn bounded_int_mul<T1, T2>(a: T1, b: T2) -> MulType nopanic;
 
@@ -161,11 +161,11 @@ test::foo@0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 1
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
-type AddType = BoundedInt<{MIN_I8 + MIN_I8}, {MAX_I8 + MAX_I8}>;
+type AddType = BoundedInt<{ MIN_I8 + MIN_I8 }, { MAX_I8 + MAX_I8 }>;
 
 extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
 
@@ -203,14 +203,13 @@ test::foo@0([0]: i8) -> (BoundedInt<-256, 254>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
-type DivRemType = (
-    BoundedInt<16, 85>,
-    BoundedInt<0, 7>,
-);
+type DivRemType = (BoundedInt<16, 85>, BoundedInt<0, 7>);
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(
+    a: T1, b: NonZero<T2>,
+) -> DivRemType implicits(RangeCheck) nopanic;
 
 fn foo(a: BoundedInt<128, 255>, b: NonZero<BoundedInt<3, 8>>) -> DivRemType {
     bounded_int_div_rem(a, b)
@@ -262,14 +261,16 @@ test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type DivRemType = (
     BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
     BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>,
 );
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(
+    a: T1, b: NonZero<T2>,
+) -> DivRemType implicits(RangeCheck) nopanic;
 
 fn foo(a: u128, b: NonZero<BoundedInt<1, 0xffffffffffffffffffffffffffffffff>>) -> DivRemType {
     bounded_int_div_rem(a, b)
@@ -327,16 +328,18 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 3402823669209
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
-type DivRemType = (
-    BoundedInt<0, 0xf>,
-    BoundedInt<0, 0xfffffffffffffffffffffffffffffff>,
-);
+type DivRemType = (BoundedInt<0, 0xf>, BoundedInt<0, 0xfffffffffffffffffffffffffffffff>);
 
-extern fn bounded_int_div_rem<T1, T2>(a: T1, b: NonZero<T2>) -> DivRemType implicits(RangeCheck) nopanic;
+extern fn bounded_int_div_rem<T1, T2>(
+    a: T1, b: NonZero<T2>,
+) -> DivRemType implicits(RangeCheck) nopanic;
 
-fn foo(a: u128, b: NonZero<BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>>) -> DivRemType {
+fn foo(
+    a: u128,
+    b: NonZero<BoundedInt<0x10000000000000000000000000000000, 0x10000000000000000000000000000000>>,
+) -> DivRemType {
     bounded_int_div_rem(a, b)
 }
 
@@ -388,11 +391,13 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<2126764793255865
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<BoundedInt<0, 0x7f>, BoundedInt<0x80, 0xff>>;
 
-extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(value: T) -> Res implicits(RangeCheck) nopanic;
+extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
+    value: T,
+) -> Res implicits(RangeCheck) nopanic;
 
 fn foo(value: u8) -> Res {
     bounded_int_constrain::<_, 0x80>(value)
@@ -453,11 +458,13 @@ test::foo@0([0]: RangeCheck, [1]: u8) -> (RangeCheck, core::result::Result::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<BoundedInt<-0x80, -1>, BoundedInt<0, 0x7f>>;
 
-extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(value: T) -> Res implicits(RangeCheck) nopanic;
+extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
+    value: T,
+) -> Res implicits(RangeCheck) nopanic;
 
 fn foo(value: i8) -> Res {
     bounded_int_constrain::<_, 0>(value)
@@ -518,14 +525,17 @@ test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::result::Result::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
-type Res = Result<
-    BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
-    BoundedInt<0x100000000000000000000000000000000, 0x1ffffffffffffffffffffffffffffffff>,
->;
+type Res =
+    Result<
+        BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
+        BoundedInt<0x100000000000000000000000000000000, 0x1ffffffffffffffffffffffffffffffff>,
+    >;
 
-extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(value: T) -> Res implicits(RangeCheck) nopanic;
+extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
+    value: T,
+) -> Res implicits(RangeCheck) nopanic;
 
 fn foo(value: BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>) -> Res {
     bounded_int_constrain::<_, 0x100000000000000000000000000000000>(value)
@@ -586,11 +596,13 @@ test::foo@0([0]: RangeCheck, [1]: BoundedInt<0, 68056473384187692692674921486353
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<NonZero<BoundedInt<0, 0x7f>>, NonZero<BoundedInt<0x80, 0xff>>>;
 
-extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(value: T) -> Res implicits(RangeCheck) nopanic;
+extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
+    value: T,
+) -> Res implicits(RangeCheck) nopanic;
 
 fn foo(value: NonZero<u8>) -> Res {
     bounded_int_constrain::<_, 0x80>(value)
@@ -654,7 +666,7 @@ test::foo@0([0]: RangeCheck, [1]: NonZero<u8>) -> (RangeCheck, core::result::Res
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::zeroable::IsZeroResult;
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 
@@ -707,12 +719,14 @@ test::foo@0([0]: i8) -> (core::zeroable::IsZeroResult::<core::integer::i8>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::zeroable::IsZeroResult;
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 
-fn foo(value: BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>) -> IsZeroResult<BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>> {
+fn foo(
+    value: BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>,
+) -> IsZeroResult<BoundedInt<0, 0x1ffffffffffffffffffffffffffffffff>> {
     bounded_int_is_zero(value)
 }
 
@@ -761,11 +775,13 @@ test::foo@0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (cor
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
 
-fn foo(value: BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>) -> NonZero<BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>> {
+fn foo(
+    value: BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>,
+) -> NonZero<BoundedInt<1, 0x1ffffffffffffffffffffffffffffffff>> {
     bounded_int_wrap_non_zero(value)
 }
 
@@ -796,11 +812,13 @@ test::foo@0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (Non
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
 
-fn foo(value: BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>) -> NonZero<BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>> {
+fn foo(
+    value: BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>,
+) -> NonZero<BoundedInt<-0x1ffffffffffffffffffffffffffffffff, -1>> {
     bounded_int_wrap_non_zero(value)
 }
 
@@ -831,7 +849,7 @@ test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (N
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<1, 0xff>>;
 extern fn bounded_int_trim_min<T>(value: T) -> Res nopanic;
@@ -885,7 +903,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<-0xff, -1>>;
 extern fn bounded_int_trim_max<T>(value: T) -> Res nopanic;
@@ -939,7 +957,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<-0x7f, 0x7f>>;
 extern fn bounded_int_trim_min<T>(value: T) -> Res nopanic;
@@ -994,7 +1012,7 @@ test::foo: OrderedHashMap({Const: 400})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<0, 0xfe>>;
 extern fn bounded_int_trim_max<T>(value: T) -> Res nopanic;

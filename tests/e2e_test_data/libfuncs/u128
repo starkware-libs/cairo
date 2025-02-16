@@ -3,9 +3,9 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
-fn foo(a: u128, b: u128) -> Result::<u128, u128> {
+fn foo(a: u128, b: u128) -> Result<u128, u128> {
     integer::u128_overflowing_add(a, b)
 }
 
@@ -63,9 +63,9 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
-fn foo(a: u128, b: u128) -> Result::<u128, u128> {
+fn foo(a: u128, b: u128) -> Result<u128, u128> {
     integer::u128_overflowing_sub(a, b)
 }
 
@@ -123,7 +123,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: u128, b: u128) -> (u128, u128) {
     integer::u128_wide_mul(a, b)
@@ -194,8 +194,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u128, b: NonZero::<u128>) -> (u128, u128) {
+//! > cairo_code
+fn foo(a: u128, b: NonZero<u128>) -> (u128, u128) {
     integer::u128_safe_divmod(a, b)
 }
 
@@ -248,7 +248,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> integer::U128sFromFelt252Result {
     integer::u128s_from_felt252(v)
 }
@@ -322,7 +322,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sF
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u128, b: u128) -> bool {
     integer::u128_eq(a, b)
 }
@@ -372,7 +372,7 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::u128_eq(11_u128, 12_u128)
 }
@@ -431,7 +431,7 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(value: u128) -> u64 {
     integer::u128_sqrt(value)
@@ -483,7 +483,7 @@ test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(input: u128) -> u128 {
     integer::u128_byte_reverse(input)
 }

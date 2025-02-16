@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 impl DropCoupon<T, impl DropImpl: Drop<T>> of Drop<bar::<T, DropImpl>::Coupon>;
 
 fn foo(x: bar::<u8>::Coupon) {
@@ -38,7 +38,7 @@ test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Dro
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 impl DropCoupon<T, impl DropImpl: Drop<T>> of Drop<bar::<T, DropImpl>::Coupon>;
 extern fn coupon_buy<T>() -> T nopanic;
 
@@ -123,7 +123,7 @@ test::bar::<core::integer::u8, core::integer::u8Drop>@12([0]: u8) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c: bar::<u8>::Coupon) {
@@ -186,7 +186,7 @@ test::bar::<core::integer::u8, core::integer::u8Drop>@6([0]: u8) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern fn drop<T>(c: T) nopanic;
 
 struct NonDroppable {
@@ -195,7 +195,9 @@ struct NonDroppable {
 
 fn destruct(arr: Array<(NonDroppable, destruct::Coupon)>) nopanic {
     match arr.pop_front_consume() {
-        Some((rem, (elm, coupon))) => {
+        Some((
+            rem, (elm, coupon),
+        )) => {
             destruct(rem, __coupon__: coupon);
             integer::u64_bitwise(elm.x, elm.x);
             drop(elm);
@@ -290,7 +292,7 @@ test::destruct@0([0]: Bitwise, [1]: Array<Tuple<test::NonDroppable, Coupon<user@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern fn coupon_buy<T>() -> T nopanic;
 extern fn coupon_refund<T>(c: T) nopanic;
 impl CouponRecursiveBuyDrop of Drop<recursive_buy::<u8>::Coupon>;

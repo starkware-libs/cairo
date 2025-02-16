@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bytes31 {
     bytes31_const::<0x100>()
 }
@@ -34,7 +34,7 @@ test::foo@0() -> (bytes31);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(value: felt252) -> Option<bytes31> {
     bytes_31::bytes31_try_from_felt252(value)
 }
@@ -120,7 +120,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(value: bytes31) -> felt252 {
     bytes_31::bytes31_to_felt252(value)
 }
@@ -152,7 +152,7 @@ test::foo@0([0]: bytes31) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(value: u8) -> bytes31 {
     integer::upcast::<u8, bytes31>(value)
 }

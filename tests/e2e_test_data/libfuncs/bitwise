@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u8, b: u8) -> (u8, u8, u8) {
     integer::u8_bitwise(a, b)
 }
@@ -49,7 +49,7 @@ test::foo@0([0]: Bitwise, [1]: u8, [2]: u8) -> (Bitwise, Tuple<u8, u8, u8>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u16, b: u16) -> (u16, u16, u16) {
     integer::u16_bitwise(a, b)
 }
@@ -93,7 +93,7 @@ test::foo@0([0]: Bitwise, [1]: u16, [2]: u16) -> (Bitwise, Tuple<u16, u16, u16>)
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u32, b: u32) -> (u32, u32, u32) {
     integer::u32_bitwise(a, b)
 }
@@ -137,7 +137,7 @@ test::foo@0([0]: Bitwise, [1]: u32, [2]: u32) -> (Bitwise, Tuple<u32, u32, u32>)
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u64, b: u64) -> (u64, u64, u64) {
     integer::u64_bitwise(a, b)
 }
@@ -181,7 +181,7 @@ test::foo@0([0]: Bitwise, [1]: u64, [2]: u64) -> (Bitwise, Tuple<u64, u64, u64>)
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u128, b: u128) -> (u128, u128, u128) {
     integer::bitwise(a, b)
 }

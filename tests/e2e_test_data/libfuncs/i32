@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: i32) -> felt252 {
     integer::i32_to_felt252(v)
 }
@@ -35,7 +35,7 @@ test::foo@0([0]: i32) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> Option<i32> {
     integer::i32_try_from_felt252(v)
 }
@@ -114,7 +114,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i32, b: i32) -> bool {
     integer::i32_eq(a, b)
 }
@@ -164,7 +164,7 @@ test::foo@0([0]: i32, [1]: i32) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::i32_eq(11_i32, 12_i32)
 }
@@ -223,7 +223,7 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i32, b: i32) -> integer::SignedIntegerResult<i32> {
     integer::i32_overflowing_add_impl(a, b)
 }
@@ -299,7 +299,7 @@ test::foo@0([0]: RangeCheck, [1]: i32, [2]: i32) -> (RangeCheck, core::integer::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i32, b: i32) -> integer::SignedIntegerResult<i32> {
     integer::i32_overflowing_sub_impl(a, b)
 }
@@ -375,7 +375,7 @@ test::foo@0([0]: RangeCheck, [1]: i32, [2]: i32) -> (RangeCheck, core::integer::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(a: i32) -> i32 {
     match integer::i32_is_zero(a) {
@@ -424,7 +424,7 @@ test::foo@0([0]: i32) -> (i32);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i32, b: i32) -> Result<u32, u32> {
     integer::i32_diff(a, b)
 }
@@ -484,7 +484,7 @@ test::foo@0([0]: RangeCheck, [1]: i32, [2]: i32) -> (RangeCheck, core::result::R
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: i32, b: i32) -> i64 {
     integer::i32_wide_mul(a, b)

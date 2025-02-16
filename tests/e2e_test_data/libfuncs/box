@@ -3,8 +3,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: felt252) -> Box::<felt252> {
+//! > cairo_code
+fn foo(x: felt252) -> Box<felt252> {
     BoxTrait::new(x)
 }
 
@@ -39,8 +39,8 @@ test::foo@0([0]: felt252) -> (Box<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: Box::<felt252>) -> felt252 {
+//! > cairo_code
+fn foo(x: Box<felt252>) -> felt252 {
     x.unbox()
 }
 
@@ -71,8 +71,8 @@ test::foo@0([0]: Box<felt252>) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: u256) -> Box::<u256> {
+//! > cairo_code
+fn foo(x: u256) -> Box<u256> {
     BoxTrait::new(x)
 }
 
@@ -109,8 +109,8 @@ test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: Box::<u256>) -> u256 {
+//! > cairo_code
+fn foo(x: Box<u256>) -> u256 {
     x.unbox()
 }
 
@@ -143,8 +143,8 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(e: ()) -> Box::<()> {
+//! > cairo_code
+fn foo(e: ()) -> Box<()> {
     BoxTrait::new(e)
 }
 
@@ -173,8 +173,8 @@ test::foo@0([0]: Unit) -> (Box<Unit>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(x: Box::<()>) -> () {
+//! > cairo_code
+fn foo(x: Box<()>) -> () {
     x.unbox()
 }
 
@@ -204,9 +204,9 @@ test::foo@0([0]: Box<Unit>) -> ();
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 struct Empty {}
-fn foo(e: Empty) -> Box::<Empty> {
+fn foo(e: Empty) -> Box<Empty> {
     BoxTrait::new(e)
 }
 
@@ -235,9 +235,9 @@ test::foo@0([0]: test::Empty) -> (Box<test::Empty>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 struct Empty {}
-fn foo(x: Box::<Empty>) -> Empty {
+fn foo(x: Box<Empty>) -> Empty {
     x.unbox()
 }
 
@@ -265,7 +265,7 @@ test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(value: @Box::<Array<felt252>>) -> Box<@Array<felt252>> {
     core::box::box_forward_snapshot(value)
 }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::internal::OptionRev;
 use core::ops::range::internal::{IntRange, int_range_pop_front};
 
@@ -64,7 +64,7 @@ test::foo@0([0]: IntRange<i16>) -> (core::internal::OptionRev::<(core::ops::rang
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::ops::range::internal::{IntRange, int_range_try_new};
 
 fn foo(x: i16, y: i16) -> Result<IntRange<i16>, IntRange<i16>> {
@@ -128,13 +128,12 @@ test::foo@0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::result::R
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Remove the marker once it is added to range.cairo.
 impl SierraIntRangeSupportU8 of core::ops::range::SierraIntRangeSupport<u8>;
 
 fn foo() {
-    for _i in 1_u8..10 {
-    }
+    for _i in 1_u8..10 {}
 }
 
 //! > casm
@@ -233,7 +232,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<IntRange<u8>> = store_temp<IntRange<u8>>;
 libfunc jump = jump;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc function_call<user@test::foo[12-43]> = function_call<user@test::foo[12-43]>;
+libfunc function_call<user@test::foo[12-38]> = function_call<user@test::foo[12-38]>;
 libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
 libfunc struct_deconstruct<Tuple<IntRange<u8>, Unit>> = struct_deconstruct<Tuple<IntRange<u8>, Unit>>;
 libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
@@ -273,7 +272,7 @@ store_temp<IntRange<u8>>([7]) -> ([9]); // 12
 store_temp<RangeCheck>([8]) -> ([8]); // 13
 store_temp<GasBuiltin>([1]) -> ([1]); // 14
 store_temp<IntRange<u8>>([9]) -> ([9]); // 15
-function_call<user@test::foo[12-43]>([8], [1], [9]) -> ([10], [11], [12]); // 16
+function_call<user@test::foo[12-38]>([8], [1], [9]) -> ([10], [11], [12]); // 16
 enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([12]) { fallthrough([13]) 27([14]) }; // 17
 branch_align() -> (); // 18
 struct_deconstruct<Tuple<IntRange<u8>, Unit>>([13]) -> ([15], [16]); // 19
@@ -310,7 +309,7 @@ drop<IntRange<u8>>([2]) -> (); // 49
 store_temp<RangeCheck>([3]) -> ([3]); // 50
 store_temp<GasBuiltin>([4]) -> ([4]); // 51
 store_temp<IntRange<u8>>([8]) -> ([8]); // 52
-function_call<user@test::foo[12-43]>([3], [4], [8]) -> ([13], [14], [15]); // 53
+function_call<user@test::foo[12-38]>([3], [4], [8]) -> ([13], [14], [15]); // 53
 return([13], [14], [15]); // 54
 branch_align() -> (); // 55
 drop<IntRange<u8>>([2]) -> (); // 56
@@ -327,8 +326,8 @@ store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<c
 return([5], [6], [21]); // 67
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
-test::foo[12-43]@33([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
+test::foo[12-38]@33([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 3540})
-test::foo[12-43]: OrderedHashMap({Const: 1270})
+test::foo[12-38]: OrderedHashMap({Const: 1270})

@@ -3,9 +3,9 @@
 //! > test_runner_name
 test_program_generator
 
-//! > cairo
+//! > cairo_code
 use box::BoxTrait;
-fn unbox_twice(a: Box::<Box::<Box::<felt252>>>) -> Box::<felt252> {
+fn unbox_twice(a: Box<Box<Box<felt252>>>) -> Box<felt252> {
     a.unbox().unbox()
 }
 

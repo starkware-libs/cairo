@@ -3,9 +3,9 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{AddModGate, CircuitInput, CircuitInputAccumulator, init_circuit_data, Circuit};
-type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+//! > cairo_code
+use core::circuit::{AddModGate, Circuit, CircuitInput, CircuitInputAccumulator, init_circuit_data};
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>)>;
 
 fn foo() -> CircuitInputAccumulator<MyCircuit> {
     init_circuit_data::<MyCircuit>()
@@ -48,9 +48,9 @@ test::foo@0([0]: RangeCheck96) -> (RangeCheck96, CircuitInputAccumulator<Circuit
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{AddModGate, CircuitInput, CircuitInputAccumulator, init_circuit_data, Circuit};
-type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+//! > cairo_code
+use core::circuit::{AddModGate, Circuit, CircuitInput, CircuitInputAccumulator, init_circuit_data};
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>)>;
 
 fn foo() -> (CircuitInputAccumulator<MyCircuit>, CircuitInputAccumulator<MyCircuit>) {
     (init_circuit_data::<MyCircuit>(), init_circuit_data::<MyCircuit>())
@@ -99,15 +99,15 @@ test::foo@0([0]: RangeCheck96) -> (RangeCheck96, Tuple<CircuitInputAccumulator<C
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{
-    U96Guarantee, AddModGate, add_circuit_input, AddInputResult, CircuitInput,
-    CircuitInputAccumulator, Circuit
+    AddInputResult, AddModGate, Circuit, CircuitInput, CircuitInputAccumulator, U96Guarantee,
+    add_circuit_input,
 };
-type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>)>;
 
 fn foo(
-    accumulator: CircuitInputAccumulator<MyCircuit>, val: [U96Guarantee; 4]
+    accumulator: CircuitInputAccumulator<MyCircuit>, val: [U96Guarantee; 4],
 ) -> AddInputResult<MyCircuit> {
     add_circuit_input(accumulator, val)
 }
@@ -170,16 +170,21 @@ test::foo: OrderedHashMap({Const: 1000})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{
-    AddModGate, get_circuit_descriptor, CircuitInput, CircuitDescriptor, Circuit, InverseGate,
-    MulModGate, SubModGate,
+    AddModGate, Circuit, CircuitDescriptor, CircuitInput, InverseGate, MulModGate, SubModGate,
+    get_circuit_descriptor,
 };
 // Represents the circuit `(x + y, 1 / z, y * z, z - x)`.
 type MyCircuit =
-    Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, InverseGate<CircuitInput<2>>,
-        MulModGate<CircuitInput<1>, CircuitInput<2>>,
-        SubModGate<CircuitInput<2>, CircuitInput<0>>)>;
+    Circuit<
+        (
+            AddModGate<CircuitInput<0>, CircuitInput<1>>,
+            InverseGate<CircuitInput<2>>,
+            MulModGate<CircuitInput<1>, CircuitInput<2>>,
+            SubModGate<CircuitInput<2>, CircuitInput<0>>,
+        ),
+    >;
 
 fn foo() -> CircuitDescriptor<MyCircuit> {
     get_circuit_descriptor::<MyCircuit>()
@@ -244,8 +249,8 @@ test::foo: OrderedHashMap({Const: 600})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{u96, CircuitModulus, try_into_circuit_modulus};
+//! > cairo_code
+use core::circuit::{CircuitModulus, try_into_circuit_modulus, u96};
 
 fn foo(a: [u96; 4]) -> Option<CircuitModulus> {
     try_into_circuit_modulus(a)
@@ -310,15 +315,15 @@ test::foo: OrderedHashMap({Const: 1200})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{
-    AddModGate, Circuit, CircuitData, CircuitInput, CircuitDescriptor, EvalCircuitResult,
-    eval_circuit, CircuitModulus
+    AddModGate, Circuit, CircuitData, CircuitDescriptor, CircuitInput, CircuitModulus,
+    EvalCircuitResult, eval_circuit,
 };
-type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>)>;
 
 fn foo(
-    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus
+    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus,
 ) -> EvalCircuitResult<MyCircuit> {
     eval_circuit::<MyCircuit>(desc, data, modulus, 0, 1)
 }
@@ -460,15 +465,15 @@ test::foo: OrderedHashMap({AddMod: 1, MulMod: 3, Const: 4100})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{
-    InverseGate, Circuit, CircuitData, CircuitInput, CircuitDescriptor, EvalCircuitResult,
-    eval_circuit, CircuitModulus
+    Circuit, CircuitData, CircuitDescriptor, CircuitInput, CircuitModulus, EvalCircuitResult,
+    InverseGate, eval_circuit,
 };
 type MyCircuit = Circuit<(InverseGate<CircuitInput<0>>,)>;
 
 fn foo(
-    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus
+    desc: CircuitDescriptor<MyCircuit>, data: CircuitData<MyCircuit>, modulus: CircuitModulus,
 ) -> EvalCircuitResult<MyCircuit> {
     eval_circuit::<MyCircuit>(desc, data, modulus, 0, 1)
 }
@@ -601,13 +606,10 @@ test::foo: OrderedHashMap({MulMod: 2, Const: 3400})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{CircuitFailureGuarantee, U96LimbsLtGuarantee,
-    circuit_failure_guarantee_verify};
+//! > cairo_code
+use core::circuit::{CircuitFailureGuarantee, U96LimbsLtGuarantee, circuit_failure_guarantee_verify};
 
-fn foo(
-    guarantee: CircuitFailureGuarantee,
-) -> U96LimbsLtGuarantee<4> {
+fn foo(guarantee: CircuitFailureGuarantee) -> U96LimbsLtGuarantee<4> {
     circuit_failure_guarantee_verify(guarantee, 0, 1)
 }
 
@@ -701,17 +703,17 @@ test::foo: OrderedHashMap({Const: 4736})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{u384, AddModGate, CircuitInput, Circuit, CircuitOutputs, get_circuit_output,
- U96LimbsLtGuarantee};
+//! > cairo_code
+use core::circuit::{
+    AddModGate, Circuit, CircuitInput, CircuitOutputs, U96LimbsLtGuarantee, get_circuit_output,
+    u384,
+};
 
 
-type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>,)>;
+type MyCircuit = Circuit<(AddModGate<CircuitInput<0>, CircuitInput<1>>, CircuitInput<2>)>;
 
-fn foo(
-    outputs: CircuitOutputs<MyCircuit>,
-) -> (u384, U96LimbsLtGuarantee::<4>) {
-    get_circuit_output::<MyCircuit, CircuitInput::<1>>(outputs)
+fn foo(outputs: CircuitOutputs<MyCircuit>) -> (u384, U96LimbsLtGuarantee::<4>) {
+    get_circuit_output::<MyCircuit, CircuitInput<1>>(outputs)
 }
 
 //! > casm
@@ -768,7 +770,7 @@ test::foo: OrderedHashMap({Const: 1700})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{U96Guarantee, into_u96_guarantee};
 
 
@@ -803,7 +805,7 @@ test::foo: OrderedHashMap({Const: 100})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{U96Guarantee, u96_guarantee_verify};
 
 
@@ -840,9 +842,9 @@ test::foo: OrderedHashMap({Const: 256})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::circuit::{
-    NextU96LessThanGuarantee, U96LimbsLtGuarantee, u96_limbs_less_than_guarantee_verify
+    NextU96LessThanGuarantee, U96LimbsLtGuarantee, u96_limbs_less_than_guarantee_verify,
 };
 
 fn foo(guarantee: U96LimbsLtGuarantee<4>) -> NextU96LessThanGuarantee<3> {
@@ -903,10 +905,8 @@ test::foo: OrderedHashMap({Const: 900})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::circuit::{
-    U96LimbsLtGuarantee, U96Guarantee, u96_single_limb_less_than_guarantee_verify
-};
+//! > cairo_code
+use core::circuit::{U96Guarantee, U96LimbsLtGuarantee, u96_single_limb_less_than_guarantee_verify};
 
 fn foo(guarantee: U96LimbsLtGuarantee<1>) -> U96Guarantee {
     u96_single_limb_less_than_guarantee_verify(guarantee)
@@ -939,7 +939,7 @@ test::foo: OrderedHashMap({Const: 100})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(guarantee: core::circuit::U96LimbsLtGuarantee<4>) {}
 
 //! > casm

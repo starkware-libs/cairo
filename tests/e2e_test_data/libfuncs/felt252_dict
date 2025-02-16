@@ -5,8 +5,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo() -> Felt252Dict::<felt252> {
+//! > cairo_code
+fn foo() -> Felt252Dict<felt252> {
     felt252_dict_new::<felt252>()
 }
 
@@ -78,8 +78,8 @@ test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252, value: felt252) {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252, value: felt252) {
     dict.insert(key, value);
 }
 
@@ -129,8 +129,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Di
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) -> felt252 {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252) -> felt252 {
     dict.get(key)
 }
 
@@ -184,8 +184,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, f
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252) {
     dict.get(key);
     let a = dict.get(key);
     dict.insert(key, a);
@@ -289,8 +289,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
+//! > cairo_code
+fn foo(dict: Felt252Dict<felt252>) -> SquashedFelt252Dict<felt252> {
     felt252_dict_squash::<felt252>(dict)
 }
 
@@ -536,7 +536,7 @@ test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dic
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(dict: Felt252Dict<felt252>, key: felt252) -> (dict::Felt252DictEntry<felt252>, felt252) {
     dict::felt252_dict_entry_get(dict, key)
 }
@@ -581,7 +581,7 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Tuple<Felt252DictEntry<
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(entry: dict::Felt252DictEntry<felt252>, value: felt252) -> Felt252Dict<felt252> {
     dict::felt252_dict_entry_finalize(entry, value)
 }
@@ -621,8 +621,10 @@ test::foo@0([0]: Felt252DictEntry<felt252>, [1]: felt252) -> (Felt252Dict<felt25
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(dict: Felt252Dict<felt252>, k1: felt252, v1: felt252, k2: felt252, v2: felt252) -> (Felt252Dict<felt252>, felt252, felt252) {
+//! > cairo_code
+fn foo(
+    dict: Felt252Dict<felt252>, k1: felt252, v1: felt252, k2: felt252, v2: felt252,
+) -> (Felt252Dict<felt252>, felt252, felt252) {
     let (entry, old1) = dict::felt252_dict_entry_get(dict, k1);
     let dict = dict::felt252_dict_entry_finalize(entry, v1);
     let (entry, old2) = dict::felt252_dict_entry_get(dict, k2);

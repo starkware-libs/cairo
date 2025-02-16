@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     p0: starknet::secp256r1::Secp256r1Point, p1: starknet::secp256r1::Secp256r1Point,
 ) -> starknet::SyscallResult<starknet::secp256r1::Secp256r1Point> {
@@ -74,7 +74,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256r1Point, [3]: Secp256r1Poi
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     p: starknet::secp256r1::Secp256r1Point, scalar: u256,
 ) -> starknet::SyscallResult<starknet::secp256r1::Secp256r1Point> {
@@ -148,7 +148,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256r1Point, [3]: core::intege
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
     x: u256, y_parity: bool,
 ) -> starknet::SyscallResult<Option<starknet::secp256r1::Secp256r1Point>> {
@@ -225,10 +225,8 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::b
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(
-    x: u256, y: u256,
-) -> starknet::SyscallResult<Option<starknet::secp256r1::Secp256r1Point>> {
+//! > cairo_code
+fn foo(x: u256, y: u256) -> starknet::SyscallResult<Option<starknet::secp256r1::Secp256r1Point>> {
     starknet::secp256r1::secp256r1_new_syscall(x, y)
 }
 
@@ -302,7 +300,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::i
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(p: starknet::secp256r1::Secp256r1Point) -> starknet::SyscallResult<(u256, u256)> {
     starknet::secp256r1::secp256r1_get_xy_syscall(p)
 }

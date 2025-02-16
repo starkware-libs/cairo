@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u16) -> u64 {
     integer::upcast(a)
 }
@@ -35,7 +35,7 @@ test::foo@0([0]: u16) -> (u64);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u64) -> u64 {
     integer::upcast(a)
 }
@@ -66,8 +66,8 @@ test::foo@0([0]: u64) -> (u64);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u64) -> Option::<u16> {
+//! > cairo_code
+fn foo(a: u64) -> Option<u16> {
     integer::downcast(a)
 }
 
@@ -128,8 +128,8 @@ test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u64) -> Option::<u64> {
+//! > cairo_code
+fn foo(a: u64) -> Option<u64> {
     integer::downcast(a)
 }
 
@@ -189,8 +189,8 @@ test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: i64) -> Option::<i64> {
+//! > cairo_code
+fn foo(a: i64) -> Option<i64> {
     integer::downcast(a)
 }
 
@@ -243,8 +243,8 @@ test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u32) -> Option::<u64> {
+//! > cairo_code
+fn foo(a: u32) -> Option<u64> {
     integer::downcast(a)
 }
 
@@ -298,8 +298,8 @@ test::foo@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: i64) -> Option::<u16> {
+//! > cairo_code
+fn foo(a: i64) -> Option<u16> {
     integer::downcast(a)
 }
 
@@ -367,8 +367,8 @@ test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u64) -> Option::<i16> {
+//! > cairo_code
+fn foo(a: u64) -> Option<i16> {
     integer::downcast(a)
 }
 
@@ -429,8 +429,8 @@ test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: i64) -> Option::<i16> {
+//! > cairo_code
+fn foo(a: i64) -> Option<i16> {
     integer::downcast(a)
 }
 
@@ -498,8 +498,8 @@ test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: i16) -> Option::<u64> {
+//! > cairo_code
+fn foo(a: i16) -> Option<u64> {
     integer::downcast(a)
 }
 
@@ -560,8 +560,8 @@ test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: i16) -> Option::<u16> {
+//! > cairo_code
+fn foo(a: i16) -> Option<u16> {
     integer::downcast(a)
 }
 
@@ -622,8 +622,8 @@ test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: u16) -> Option::<i16> {
+//! > cairo_code
+fn foo(a: u16) -> Option<i16> {
     integer::downcast(a)
 }
 
@@ -684,10 +684,10 @@ test::foo@0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<co
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: i8) -> Option::<BoundedInt<-3, 5>> {
+fn foo(a: i8) -> Option<BoundedInt<-3, 5>> {
     integer::downcast(a)
 }
 
@@ -755,10 +755,10 @@ test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: i8) -> Option::<BoundedInt<0, 5>> {
+fn foo(a: i8) -> Option<BoundedInt<0, 5>> {
     integer::downcast(a)
 }
 
@@ -826,10 +826,10 @@ test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: i8) -> Option::<BoundedInt<-5, 0>> {
+fn foo(a: i8) -> Option<BoundedInt<-5, 0>> {
     integer::downcast(a)
 }
 
@@ -897,10 +897,10 @@ test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: i8) -> Option::<BoundedInt<-5, -1>> {
+fn foo(a: i8) -> Option<BoundedInt<-5, -1>> {
     integer::downcast(a)
 }
 
@@ -967,10 +967,10 @@ test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<tes
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: BoundedInt<100, 200>) -> Option::<BoundedInt<120, 180>> {
+fn foo(a: BoundedInt<100, 200>) -> Option<BoundedInt<120, 180>> {
     integer::downcast(a)
 }
 
@@ -1038,11 +1038,12 @@ test::foo: OrderedHashMap({Const: 940})
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
-fn foo(a: BoundedInt<0x100000000000000000000000000000064, 0x1000000000000000000000000000000c8>)
- -> Option::<BoundedInt<0x100000000000000000000000000000078, 0x1000000000000000000000000000000b4>> {
+fn foo(
+    a: BoundedInt<0x100000000000000000000000000000064, 0x1000000000000000000000000000000c8>,
+) -> Option<BoundedInt<0x100000000000000000000000000000078, 0x1000000000000000000000000000000b4>> {
     integer::downcast(a)
 }
 

@@ -3,8 +3,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo() -> Array::<felt252> {
+//! > cairo_code
+fn foo() -> Array<felt252> {
     array::array_new::<felt252>()
 }
 
@@ -38,8 +38,8 @@ test::foo@0() -> (Array<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: Array::<felt252>, value: felt252) {
+//! > cairo_code
+fn foo(ref arr: Array<felt252>, value: felt252) {
     array::array_append::<felt252>(ref arr, value);
 }
 
@@ -73,8 +73,8 @@ test::foo@0([0]: Array<felt252>, [1]: felt252) -> (Array<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: Array::<felt252>, value1: felt252, value2: felt252) {
+//! > cairo_code
+fn foo(ref arr: Array<felt252>, value1: felt252, value2: felt252) {
     array::array_append::<felt252>(ref arr, value1);
     array::array_append::<felt252>(ref arr, value2);
 }
@@ -111,8 +111,8 @@ test::foo@0([0]: Array<felt252>, [1]: felt252, [2]: felt252) -> (Array<felt252>)
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: Array::<felt252>) -> Option::<Box<felt252>> {
+//! > cairo_code
+fn foo(ref arr: Array<felt252>) -> Option<Box<felt252>> {
     array::array_pop_front::<felt252>(ref arr)
 }
 
@@ -171,8 +171,8 @@ test::foo@0([0]: Array<felt252>) -> (Array<felt252>, core::option::Option::<core
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: Array<felt252>) -> Option::<(Array<felt252>, Box<felt252>)> {
+//! > cairo_code
+fn foo(arr: Array<felt252>) -> Option<(Array<felt252>, Box<felt252>)> {
     array::array_pop_front_consume::<felt252>(arr)
 }
 
@@ -231,8 +231,8 @@ test::foo@0([0]: Array<felt252>) -> (core::option::Option::<(core::array::Array:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<Box<@felt252>> {
+//! > cairo_code
+fn foo(ref arr: @Array::<felt252>) -> Option<Box<@felt252>> {
     array::array_snapshot_pop_front::<felt252>(ref arr)
 }
 
@@ -292,8 +292,8 @@ test::foo@0([0]: Snapshot<Array<felt252>>) -> (Snapshot<Array<felt252>>, core::o
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<Box<@felt252>> {
+//! > cairo_code
+fn foo(ref arr: @Array::<felt252>) -> Option<Box<@felt252>> {
     array::array_snapshot_pop_back::<felt252>(ref arr)
 }
 
@@ -353,8 +353,8 @@ test::foo@0([0]: Snapshot<Array<felt252>>) -> (Snapshot<Array<felt252>>, core::o
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: @Array::<felt252>, idx: usize) -> Option::<Box<@felt252>> {
+//! > cairo_code
+fn foo(arr: @Array::<felt252>, idx: usize) -> Option<Box<@felt252>> {
     array::array_get(arr, idx)
 }
 
@@ -421,8 +421,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>, [2]: u32) -> (RangeC
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: @Array::<u256>, idx: usize) -> Option::<Box<@u256>> {
+//! > cairo_code
+fn foo(arr: @Array::<u256>, idx: usize) -> Option<Box<@u256>> {
     array::array_get(arr, idx)
 }
 
@@ -491,8 +491,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: @Array::<Array::<felt252>>, idx: usize) -> Option::<Box<@Array::<felt252>>> {
+//! > cairo_code
+fn foo(arr: @Array::<Array<felt252>>, idx: usize) -> Option<Box<@Array::<felt252>>> {
     array::array_get(arr, idx)
 }
 
@@ -562,8 +562,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<Array<felt252>>>, [2]: u32) -> 
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: @Array::<felt252>, start: usize, length: usize) -> Option::<@Array::<felt252>> {
+//! > cairo_code
+fn foo(arr: @Array::<felt252>, start: usize, length: usize) -> Option<@Array::<felt252>> {
     array::array_slice(arr, start, length)
 }
 
@@ -632,8 +632,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>, [2]: u32, [3]: u32) 
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(arr: @Array::<u256>, start: usize, length: usize) -> Option::<@Array::<u256>> {
+//! > cairo_code
+fn foo(arr: @Array::<u256>, start: usize, length: usize) -> Option<@Array::<u256>> {
     array::array_slice(arr, start, length)
 }
 
@@ -704,10 +704,10 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(
-    arr: @Array::<Array::<felt252>>, start: usize, length: usize,
-) -> Option::<@Array::<Array::<felt252>>> {
+    arr: @Array::<Array<felt252>>, start: usize, length: usize,
+) -> Option<@Array::<Array<felt252>>> {
     array::array_slice(arr, start, length)
 }
 
@@ -778,8 +778,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<Array<felt252>>>, [2]: u32, [3]
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: Array::<felt252>) -> usize {
+//! > cairo_code
+fn foo(ref arr: Array<felt252>) -> usize {
     array::array_len::<felt252>(@arr)
 }
 
@@ -818,8 +818,8 @@ test::foo@0([0]: Array<felt252>) -> (Array<felt252>, u32);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: Array::<u256>) -> usize {
+//! > cairo_code
+fn foo(ref arr: Array<u256>) -> usize {
     array::array_len::<u256>(@arr)
 }
 
@@ -860,10 +860,10 @@ test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
 
-fn foo(x1:Box<@(felt252, felt252, felt252)>) -> @Array<felt252> {
+fn foo(x1: Box<@(felt252, felt252, felt252)>) -> @Array<felt252> {
     span_from_tuple(x1)
 }
 
@@ -898,7 +898,7 @@ test::foo@0([0]: Box<Tuple<felt252, felt252, felt252>>) -> (Snapshot<Array<felt2
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 extern fn tuple_from_span<T>(span: @Array<felt252>) -> Option<@Box<T>> nopanic;
 
 fn foo(span: @Array<felt252>) -> Option<@Box<(felt252, felt252, felt252)>> {
@@ -955,8 +955,8 @@ test::foo@0([0]: Snapshot<Array<felt252>>) -> (core::option::Option::<@core::box
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
+//! > cairo_code
+fn foo(ref arr: @Array::<felt252>) -> Option<@Box<[felt252; 2]>> {
     core::array::array_snapshot_multi_pop_front(ref arr)
 }
 
@@ -1029,8 +1029,8 @@ test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>) -> (RangeCheck, Snap
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<@Box<[felt252; 2]>> {
+//! > cairo_code
+fn foo(ref arr: @Array::<felt252>) -> Option<@Box<[felt252; 2]>> {
     core::array::array_snapshot_multi_pop_back(ref arr)
 }
 

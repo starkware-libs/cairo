@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -20,8 +20,7 @@ fn foo(x: felt252) {
 }
 
 #[inline(never)]
-fn bar() {
-}
+fn bar() {}
 
 //! > casm
 [fp + -3] = [ap + 0] + 0, ap++;
@@ -84,7 +83,7 @@ test::bar@15() -> ();
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -216,8 +215,8 @@ test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasB
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo() -> Option::<()> {
+//! > cairo_code
+fn foo() -> Option<()> {
     gas::withdraw_gas()?;
     foo()
 }
@@ -282,8 +281,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo() -> Option::<()> {
+//! > cairo_code
+fn foo() -> Option<()> {
     gas::withdraw_gas()?;
     pedersen::pedersen(1, 1);
     foo()
@@ -377,8 +376,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen) -> (RangeCheck, Gas
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo() -> Option::<()> {
+//! > cairo_code
+fn foo() -> Option<()> {
     gas::withdraw_gas()?;
     pedersen::pedersen(1, 1);
     integer::bitwise(1_u128, 1_u128);
@@ -513,8 +512,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen) -> (R
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo(costs: BuiltinCosts) -> Option::<()> {
+//! > cairo_code
+fn foo(costs: BuiltinCosts) -> Option<()> {
     gas::withdraw_gas_all(costs)?;
     foo(costs)
 }
@@ -588,8 +587,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck,
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo(costs: BuiltinCosts) -> Option::<()> {
+//! > cairo_code
+fn foo(costs: BuiltinCosts) -> Option<()> {
     gas::withdraw_gas_all(costs)?;
     pedersen::pedersen(1, 1);
     foo(costs)
@@ -688,8 +687,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) 
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo(costs: BuiltinCosts) -> Option::<()> {
+//! > cairo_code
+fn foo(costs: BuiltinCosts) -> Option<()> {
     gas::withdraw_gas_all(costs)?;
     integer::bitwise(1_u128, 1_u128);
     foo(costs)
@@ -790,8 +789,8 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -
 //! > test_runner_name
 SmallE2ETestRunnerSkipAddGas
 
-//! > cairo
-fn foo(costs: BuiltinCosts) -> Option::<()> {
+//! > cairo_code
+fn foo(costs: BuiltinCosts) -> Option<()> {
     gas::withdraw_gas_all(costs)?;
     pedersen::pedersen(1, 1);
     integer::bitwise(1_u128, 1_u128);

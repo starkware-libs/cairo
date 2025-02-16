@@ -5,10 +5,10 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::blake::{Blake2sState, blake2s_compress, Blake2sInput};
+//! > cairo_code
+use core::blake::{Blake2sInput, Blake2sState, blake2s_compress};
 
-fn foo(s: Blake2sState, byte_count: u32,  m: Blake2sInput) -> Blake2sState {
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInput) -> Blake2sState {
     blake2s_compress(s, byte_count, m)
 }
 
@@ -49,10 +49,10 @@ test::foo@0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-use core::blake::{Blake2sState, blake2s_finalize, Blake2sInput};
+//! > cairo_code
+use core::blake::{Blake2sInput, Blake2sState, blake2s_finalize};
 
-fn foo(s: Blake2sState, byte_count: u32,  m: Blake2sInput) -> Blake2sState {
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInput) -> Blake2sState {
     blake2s_finalize(s, byte_count, m)
 }
 
