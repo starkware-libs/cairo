@@ -736,113 +736,7 @@ dependencies = [
  "rust-analyzer-salsa",
  "serde",
  "test-case",
-<<<<<<< HEAD
  "thiserror 2.0.11",
-||||||| 35b299291
- "thiserror",
-]
-
-[[package]]
-name = "cairo-lang-language-server"
-version = "2.9.2"
-dependencies = [
- "anyhow",
- "assert_fs",
- "cairo-lang-compiler",
- "cairo-lang-defs",
- "cairo-lang-diagnostics",
- "cairo-lang-doc",
- "cairo-lang-filesystem",
- "cairo-lang-formatter",
- "cairo-lang-language-server",
- "cairo-lang-lowering",
- "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-project",
- "cairo-lang-semantic",
- "cairo-lang-starknet",
- "cairo-lang-syntax",
- "cairo-lang-test-plugin",
- "cairo-lang-test-utils",
- "cairo-lang-utils",
- "convert_case",
- "crossbeam",
- "governor",
- "indent",
- "indoc",
- "itertools 0.12.1",
- "jod-thread",
- "libc",
- "lsp-server",
- "lsp-types",
- "pathdiff",
- "pretty_assertions",
- "rust-analyzer-salsa",
- "rustc-hash",
- "scarb-metadata",
- "scarb-proc-macro-server-types",
- "scarb-stable-hash",
- "serde",
- "serde_json",
- "smol_str",
- "tempfile",
- "test-log",
- "tracing",
- "tracing-chrome",
- "tracing-subscriber",
-=======
- "thiserror",
-]
-
-[[package]]
-name = "cairo-lang-language-server"
-version = "2.9.3"
-dependencies = [
- "anyhow",
- "assert_fs",
- "cairo-lang-compiler",
- "cairo-lang-defs",
- "cairo-lang-diagnostics",
- "cairo-lang-doc",
- "cairo-lang-filesystem",
- "cairo-lang-formatter",
- "cairo-lang-language-server",
- "cairo-lang-lowering",
- "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-project",
- "cairo-lang-semantic",
- "cairo-lang-starknet",
- "cairo-lang-syntax",
- "cairo-lang-test-plugin",
- "cairo-lang-test-utils",
- "cairo-lang-utils",
- "convert_case",
- "crossbeam",
- "governor",
- "indent",
- "indoc",
- "itertools 0.12.1",
- "jod-thread",
- "libc",
- "lsp-server",
- "lsp-types",
- "pathdiff",
- "pretty_assertions",
- "rust-analyzer-salsa",
- "rustc-hash",
- "scarb-metadata",
- "scarb-proc-macro-server-types",
- "scarb-stable-hash",
- "serde",
- "serde_json",
- "smol_str",
- "tempfile",
- "test-log",
- "tracing",
- "tracing-chrome",
- "tracing-subscriber",
->>>>>>> origin/dev-v2.9.3
 ]
 
 [[package]]
@@ -1328,24 +1222,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-||||||| 35b299291
-name = "cairo-language-server"
-version = "2.9.2"
-dependencies = [
- "cairo-lang-language-server",
-]
-
-[[package]]
-=======
-name = "cairo-language-server"
-version = "2.9.3"
-dependencies = [
- "cairo-lang-language-server",
-]
-
-[[package]]
->>>>>>> origin/dev-v2.9.3
 name = "cairo-run"
 version = "2.9.3"
 dependencies = [
