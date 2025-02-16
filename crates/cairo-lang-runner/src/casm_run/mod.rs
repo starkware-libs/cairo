@@ -827,6 +827,9 @@ impl CairoHintProcessor<'_> {
             "GetClassHashAt" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.get_class_hash_at(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
+            "MetaTxV0" => execute_handle_helper(&mut |_system_buffer, _gas_counter| {
+                panic!("Meta transaction is not supported.")
+            }),
             _ => panic!("Unknown selector for system call!"),
         }
     }

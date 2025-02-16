@@ -335,7 +335,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarknetConcreteLibfunc::ReplaceClass(_)
             | StarknetConcreteLibfunc::SendMessageToL1(_)
             | StarknetConcreteLibfunc::Secp256(_)
-            | StarknetConcreteLibfunc::GetClassHashAt(_) => {
+            | StarknetConcreteLibfunc::GetClassHashAt(_)
+            | StarknetConcreteLibfunc::MetaTxV0(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarknetConcreteLibfunc::Testing(libfunc) => match libfunc {

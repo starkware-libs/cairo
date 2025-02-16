@@ -75,6 +75,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarknetConcreteLibfunc) -> Vec<Cons
             }
         }
         StarknetConcreteLibfunc::GetClassHashAt(_) => syscall_cost(1),
+        StarknetConcreteLibfunc::MetaTxV0(_) => syscall_cost(6),
     }
 }
 
