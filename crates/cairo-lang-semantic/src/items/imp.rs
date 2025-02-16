@@ -1962,7 +1962,7 @@ pub fn find_closure_generated_candidate(
     let mem_trait_generic_params = |trait_id, neg_impl_trait: Option<_>| {
         let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
         chain!(
-            closure_type_long.captured_types.iter().map(|ty| {
+            closure_type_long.captured_types.iter().unique().map(|ty| {
                 GenericParam::Impl(GenericParamImpl {
                     id,
                     concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
