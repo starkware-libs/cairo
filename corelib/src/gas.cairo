@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 //! Utilities for handling gas in Cairo code.
 
 #[cfg(not(gas: "disabled"))]
+||||||| 63dc720fc
+=======
+#[cfg(not(gas: "disabled"))]
+>>>>>>> origin/dev-v2.10.0
 use crate::RangeCheck;
 
 /// Type representing the table of the costs of the different builtin usages.
@@ -39,6 +44,11 @@ pub extern type GasBuiltin;
 /// ```
 #[cfg(not(gas: "disabled"))]
 pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn withdraw_gas() -> Option<()> nopanic {
+    Option::Some(())
+}
 
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
@@ -54,6 +64,11 @@ pub fn withdraw_gas() -> Option<()> nopanic {
 pub extern fn withdraw_gas_all(
     costs: BuiltinCosts,
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn withdraw_gas_all(costs: BuiltinCosts) -> Option<()> nopanic {
+    Option::Some(())
+}
 
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
@@ -70,9 +85,18 @@ pub extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 /// Returns the `BuiltinCosts` table to be used in `withdraw_gas_all`.
 #[cfg(not(gas: "disabled"))]
 pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
+<<<<<<< HEAD
 
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn get_builtin_costs() -> BuiltinCosts nopanic {
     BuiltinCosts {}
 }
+||||||| 63dc720fc
+=======
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn get_builtin_costs() -> BuiltinCosts nopanic {
+    BuiltinCosts {}
+}
+>>>>>>> origin/dev-v2.10.0

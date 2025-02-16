@@ -116,6 +116,7 @@ pub fn compile_executable_in_prepared_db(
         }
     };
 
+<<<<<<< HEAD
     compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter, config)
 }
 
@@ -138,6 +139,11 @@ pub fn find_executable_functions(
             .retain(|executable| originating_function_path(db, *executable) == executable_path);
     };
     executables
+||||||| 63dc720fc
+    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter)
+=======
+    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter, config)
+>>>>>>> origin/dev-v2.10.0
 }
 
 /// Returns the path to the function that the executable is wrapping.
