@@ -1421,7 +1421,38 @@ impl SDictValue of Felt252DictValue<S> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait `core::traits::Felt252DictValue` should not be re-implemented.
+error: Trait `core::traits::Felt252DictValue` should not be implemented outside of the corelib.
  --> lib.cairo:3:20
 impl SDictValue of Felt252DictValue<S> {
                    ^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test implementation of numeric and string literal traits outside of the corelib.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+struct S {}
+
+impl SNumericLiteral of NumericLiteral<S> {}
+
+impl SStringLiteral of StringLiteral<S> {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Trait `core::integer::NumericLiteral` should not be implemented outside of the corelib.
+ --> lib.cairo:3:25
+impl SNumericLiteral of NumericLiteral<S> {}
+                        ^^^^^^^^^^^^^^^^^
+
+error: Trait `core::string::StringLiteral` should not be implemented outside of the corelib.
+ --> lib.cairo:5:24
+impl SStringLiteral of StringLiteral<S> {}
+                       ^^^^^^^^^^^^^^^^

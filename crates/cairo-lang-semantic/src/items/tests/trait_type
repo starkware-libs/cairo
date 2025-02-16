@@ -2578,7 +2578,7 @@ foo
 impl I of core::metaprogramming::TypeEqual<u32, felt252>;
 
 //! > expected_diagnostics
-error: Trait `core::metaprogramming::TypeEqual` should not be re-implemented.
+error: Trait `core::metaprogramming::TypeEqual` should not be implemented outside of the corelib.
  --> lib.cairo:1:11
 impl I of core::metaprogramming::TypeEqual<u32, felt252>;
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -63,7 +63,7 @@ use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
     CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
     deref_mut_trait, deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait,
-    get_core_trait, panic_destruct_trait,
+    get_core_trait, numeric_literal_trait, panic_destruct_trait, string_literal_trait,
 };
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -662,6 +662,8 @@ pub fn priv_impl_declaration_data_inner(
             fn_trait(db),
             fn_once_trait(db),
             get_core_trait(db, CoreTraitContext::Traits, "Felt252DictValue".into()),
+            numeric_literal_trait(db),
+            string_literal_trait(db),
         ]
         .contains(&concrete_trait.trait_id(db))
             && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)
