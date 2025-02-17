@@ -34,6 +34,10 @@ pub extern type ContractAddress;
 ///
 /// let contract_address = contract_address_const::<0x0>();
 /// ```
+#[deprecated(
+    feature: "deprecated-starknet-consts",
+    note: "Use `TryInto::try_into` in const context instead.",
+)]
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
 
 pub(crate) extern const fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
@@ -55,6 +59,7 @@ pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
 }
 
 impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
+    #[feature("deprecated-starknet-consts")]
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }

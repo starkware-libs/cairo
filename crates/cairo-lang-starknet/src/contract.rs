@@ -5,7 +5,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
@@ -25,7 +24,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
-use cairo_lang_utils::{Intern, extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
@@ -315,12 +314,8 @@ fn analyze_contract<T: SierraIdReplacer>(
     let item =
         db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
-    let constant = db.constant_semantic_data(constant_id).unwrap();
     let class_hash: Felt252 =
-        extract_matches!(&constant.arenas.exprs[constant.value], Expr::Literal)
-            .value
-            .clone()
-            .into();
+        db.constant_const_value(constant_id).unwrap().lookup_intern(db).into_int().unwrap().into();
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =

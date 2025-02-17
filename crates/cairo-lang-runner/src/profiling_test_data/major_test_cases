@@ -836,7 +836,7 @@ trait IERC20<TContractState> {
 mod erc_20 {
     use core::num::traits::Zero;
     use starknet::storage::Map;
-    use starknet::{ContractAddress, contract_address_const, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address};
 
 
     #[storage]
@@ -894,9 +894,8 @@ mod erc_20 {
 }
 
 fn erc20_transfer() {
-    starknet::testing::set_caller_address(
-        starknet::contract_address::contract_address_const::<2>(),
-    );
+    const CONTRACT_ADDRESS: ContractAddress = 2_felt252.try_into().unwrap();
+    starknet::testing::set_caller_address(CONTRACT_ADDRESS);
     erc_20::__external::transfer(array![1, 0, 0].span());
 }
 

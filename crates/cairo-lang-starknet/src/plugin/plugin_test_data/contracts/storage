@@ -363,7 +363,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255.try_into().unwrap();
 
 
 pub mod __external {
