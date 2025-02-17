@@ -36,43 +36,47 @@ impl MacroPlugin for DerivePlugin {
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
-        generate_derive_code_for_type(db, metadata, match item_ast {
-            ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
-                db,
-                struct_ast.name(db),
-                struct_ast.attributes(db),
-                struct_ast.generic_params(db),
-                TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
-            ),
-            ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
-                db,
-                enum_ast.name(db),
-                enum_ast.attributes(db),
-                enum_ast.generic_params(db),
-                TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
-            ),
-            ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
-                db,
-                extern_type_ast.name(db),
-                extern_type_ast.attributes(db),
-                extern_type_ast.generic_params(db),
-                TypeVariantInfo::Extern,
-            ),
-            _ => {
-                let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
-                    vec![PluginDiagnostic::error(
-                        derive_attr.as_syntax_node().stable_ptr(),
-                        "`derive` may only be applied to `struct`s, `enum`s and `extern type`s"
-                            .to_string(),
-                    )]
-                });
+        generate_derive_code_for_type(
+            db,
+            metadata,
+            match item_ast {
+                ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
+                    db,
+                    struct_ast.name(db),
+                    struct_ast.attributes(db),
+                    struct_ast.generic_params(db),
+                    TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
+                ),
+                ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
+                    db,
+                    enum_ast.name(db),
+                    enum_ast.attributes(db),
+                    enum_ast.generic_params(db),
+                    TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
+                ),
+                ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
+                    db,
+                    extern_type_ast.name(db),
+                    extern_type_ast.attributes(db),
+                    extern_type_ast.generic_params(db),
+                    TypeVariantInfo::Extern,
+                ),
+                _ => {
+                    let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
+                        vec![PluginDiagnostic::error(
+                            derive_attr.as_syntax_node().stable_ptr(),
+                            "`derive` may only be applied to `struct`s, `enum`s and `extern type`s"
+                                .to_string(),
+                        )]
+                    });
 
-                return PluginResult {
-                    diagnostics: maybe_error.unwrap_or_default(),
-                    ..PluginResult::default()
-                };
-            }
-        })
+                    return PluginResult {
+                        diagnostics: maybe_error.unwrap_or_default(),
+                        ..PluginResult::default()
+                    };
+                }
+            },
+        )
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -330,9 +334,11 @@ fn generate_derive_code_for_type(
 fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
     format!(
         "{};\n",
-        info.format_impl_header("core::traits", derived_trait, &[&format!(
-            "core::traits::{derived_trait}"
-        )])
+        info.format_impl_header(
+            "core::traits",
+            derived_trait,
+            &[&format!("core::traits::{derived_trait}")]
+        )
     )
 }
 

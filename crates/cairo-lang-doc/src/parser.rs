@@ -124,7 +124,7 @@ impl<'a> DocumentationCommentParser<'a> {
                         }
                     }
                 }
-                Event::End(TagEnd::Link { .. }) => {
+                Event::End(TagEnd::Link) => {
                     if let Some(link) = current_link.take() {
                         tokens.push(DocumentationCommentToken::Link(link));
                     }

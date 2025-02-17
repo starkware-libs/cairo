@@ -178,10 +178,11 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
             ("Fallthrough", &success_vars, None),
             (
                 "Failure",
-                &[&updated_gas_builtin, &failure_final_system[..], &[
-                    response_vars[0],
-                    response_vars[1],
-                ]],
+                &[
+                    &updated_gas_builtin,
+                    &failure_final_system[..],
+                    &[response_vars[0], response_vars[1]],
+                ],
                 Some(failure_handle_statement_id),
             ),
         ],

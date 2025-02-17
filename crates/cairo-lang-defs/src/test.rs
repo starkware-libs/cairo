@@ -142,9 +142,12 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
 #[test]
 fn test_module_file() {
     let mut db_val = DatabaseForTesting::default();
-    let module_id = setup_test_module(&mut db_val, indoc! {"
+    let module_id = setup_test_module(
+        &mut db_val,
+        indoc! {"
             mod mysubmodule;
-        "});
+        "},
+    );
     let db = &db_val;
     let item_id =
         extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
@@ -193,15 +196,18 @@ fn test_submodules() {
     );
 
     // Test file mappings.
-    assert_eq!(&db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..], vec![
-        module_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..], vec![
-        submodule_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..], vec![
-        subsubmodule_id
-    ]);
+    assert_eq!(
+        &db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..],
+        vec![module_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..],
+        vec![submodule_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
+        vec![subsubmodule_id]
+    );
 }
 
 #[derive(Debug)]

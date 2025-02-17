@@ -11,11 +11,10 @@ use crate::ref_expr;
 #[test]
 fn test_bitwise() {
     assert_eq!(
-        compile_libfunc("bitwise", vec![
-            ref_expr!([fp + 1] + (i16::MAX - 4)),
-            ref_expr!([fp + 2]),
-            ref_expr!([ap + 5])
-        ]),
+        compile_libfunc(
+            "bitwise",
+            vec![ref_expr!([fp + 1] + (i16::MAX - 4)), ref_expr!([fp + 2]), ref_expr!([ap + 5])]
+        ),
         ReducedCompiledInvocation {
             instructions: casm! {
                 [fp + 2] = [[fp + 1] + 32763];

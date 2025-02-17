@@ -358,11 +358,14 @@ impl CasmBuilder {
     /// Increments a buffer and allocates and returns variable pointing to its previous value.
     pub fn get_ref_and_inc(&mut self, buffer: Var) -> Var {
         let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
-        self.main_state.vars.insert(buffer, CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: cell,
-            b: deref_or_immediate!(BigInt::from(offset) + 1),
-        });
+        self.main_state.vars.insert(
+            buffer,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: cell,
+                b: deref_or_immediate!(BigInt::from(offset) + 1),
+            },
+        );
         self.add_var(CellExpression::DoubleDeref(cell, offset))
     }
 
@@ -379,11 +382,14 @@ impl CasmBuilder {
             } => (a, imm.value.try_into().expect("Too many buffer writes.")),
             _ => panic!("Not a valid buffer."),
         };
-        self.main_state.vars.insert(buffer, CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: base,
-            b: deref_or_immediate!(offset + 1),
-        });
+        self.main_state.vars.insert(
+            buffer,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: base,
+                b: deref_or_immediate!(offset + 1),
+            },
+        );
         (base, offset)
     }
 

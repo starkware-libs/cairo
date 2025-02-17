@@ -180,9 +180,11 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
                 continue;
             };
             if input.ty
-                != corelib::get_core_ty_by_name(db, "Span".into(), vec![GenericArgumentId::Type(
-                    db.core_info().felt252,
-                )])
+                != corelib::get_core_ty_by_name(
+                    db,
+                    "Span".into(),
+                    vec![GenericArgumentId::Type(db.core_info().felt252)],
+                )
             {
                 diagnostics.push(PluginDiagnostic::error(
                     input.stable_ptr.untyped(),

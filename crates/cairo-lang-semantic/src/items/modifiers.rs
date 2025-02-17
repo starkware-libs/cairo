@@ -25,16 +25,22 @@ pub fn compute_mutability(
             }
             Mutability::Mutable | Mutability::Reference => match modifier {
                 Modifier::Ref(terminal) => {
-                    diagnostics.report(terminal, RedundantModifier {
-                        current_modifier: terminal.text(syntax_db),
-                        previous_modifier: get_relevant_modifier(&mutability),
-                    });
+                    diagnostics.report(
+                        terminal,
+                        RedundantModifier {
+                            current_modifier: terminal.text(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability),
+                        },
+                    );
                 }
                 Modifier::Mut(terminal) => {
-                    diagnostics.report(terminal, RedundantModifier {
-                        current_modifier: terminal.text(syntax_db),
-                        previous_modifier: get_relevant_modifier(&mutability),
-                    });
+                    diagnostics.report(
+                        terminal,
+                        RedundantModifier {
+                            current_modifier: terminal.text(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability),
+                        },
+                    );
                 }
             },
         }

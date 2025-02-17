@@ -581,9 +581,10 @@ fn lower_expr_block(
                 let end_stmt =
                     &ctx.function_body.arenas.statements[*expr_block.statements.last().unwrap()];
                 // Emit diagnostic for the rest of the statements with unreachable.
-                ctx.diagnostics.report(start_stmt.stable_ptr().untyped(), Unreachable {
-                    last_statement_ptr: end_stmt.into(),
-                });
+                ctx.diagnostics.report(
+                    start_stmt.stable_ptr().untyped(),
+                    Unreachable { last_statement_ptr: end_stmt.into() },
+                );
             }
         }
         return Err(err);

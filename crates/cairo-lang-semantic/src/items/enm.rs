@@ -313,12 +313,10 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = concrete_enum_id.lookup_intern(db).generic_args;
-        GenericSubstitution::new(&generic_params, &generic_args).substitute(db, ConcreteVariant {
-            concrete_enum_id,
-            id: variant.id,
-            ty: variant.ty,
-            idx: variant.idx,
-        })
+        GenericSubstitution::new(&generic_params, &generic_args).substitute(
+            db,
+            ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty, idx: variant.idx },
+        )
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].

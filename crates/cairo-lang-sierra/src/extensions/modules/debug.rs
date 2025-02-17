@@ -26,8 +26,10 @@ impl NoGenericArgsGenericLibfunc for PrintLibfunc {
         // (Span<StringLimb>, len), or something like that.
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?;
-        Ok(LibfuncSignature::new_non_branch(vec![arr_type], vec![], SierraApChange::Known {
-            new_vars_only: true,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![arr_type],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }

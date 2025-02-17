@@ -423,18 +423,24 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
                 // Note that the ValueInfo::StructConstruct can only be removed by
                 // a StructDeconstruct statement that produces its non-interchangeable inputs so
                 // allowing undroppable inputs is ok here.
-                info.replace(*output, ValueInfo::StructConstruct {
-                    ty: self.lowered.variables[*output].ty,
-                    var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
-                });
+                info.replace(
+                    *output,
+                    ValueInfo::StructConstruct {
+                        ty: self.lowered.variables[*output].ty,
+                        var_infos: inputs.iter().map(|input| self.get_var_info(input)).collect(),
+                    },
+                );
             }
 
             Statement::StructDestructure(stmt) => info.apply_deconstruct(self, stmt),
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                info.replace(*output, ValueInfo::EnumConstruct {
-                    var_info: Box::new(self.get_var_info(input)),
-                    variant: variant.clone(),
-                });
+                info.replace(
+                    *output,
+                    ValueInfo::EnumConstruct {
+                        var_info: Box::new(self.get_var_info(input)),
+                        variant: variant.clone(),
+                    },
+                );
             }
             _ => info.invalidate(),
         }

@@ -23,12 +23,10 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarknetConcreteLibfunc) -> Vec<Cons
         StarknetConcreteLibfunc::ClassHashTryFromFelt252(_)
         | StarknetConcreteLibfunc::ContractAddressTryFromFelt252(_)
         | StarknetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
-            vec![ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 }, ConstCost {
-                steps: 9,
-                holes: 0,
-                range_checks: 3,
-                range_checks96: 0,
-            }]
+            vec![
+                ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 },
+                ConstCost { steps: 9, holes: 0, range_checks: 3, range_checks96: 0 },
+            ]
         }
         StarknetConcreteLibfunc::ClassHashToFelt252(_)
         | StarknetConcreteLibfunc::ContractAddressToFelt252(_)

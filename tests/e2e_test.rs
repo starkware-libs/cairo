@@ -154,10 +154,10 @@ impl TestFileRunner for WithOptsE2ETestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams {
-            skip_optimization_passes: false,
-            ..Default::default()
-        })
+        run_e2e_test(
+            inputs,
+            E2eTestParams { skip_optimization_passes: false, ..Default::default() },
+        )
     }
 }
 
@@ -181,11 +181,14 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams {
-            add_withdraw_gas: false,
-            metadata_computation: true,
-            skip_optimization_passes: true,
-        })
+        run_e2e_test(
+            inputs,
+            E2eTestParams {
+                add_withdraw_gas: false,
+                metadata_computation: true,
+                skip_optimization_passes: true,
+            },
+        )
     }
 }
 

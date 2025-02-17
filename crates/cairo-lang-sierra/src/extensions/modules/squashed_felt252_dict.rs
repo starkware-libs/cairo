@@ -64,12 +64,15 @@ impl SignatureAndTypeGenericLibfunc for SquashedDictAsEntriesLibfuncWrapped {
         let squashed_dict_ty =
             context.get_wrapped_concrete_type(SquashedFelt252DictType::id(), ty.clone())?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        let tuple_ty = context.get_concrete_type(StructType::id(), &[
-            GenericArg::UserType(UserTypeId::from_string("Tuple")),
-            GenericArg::Type(felt252_ty.clone()),
-            GenericArg::Type(ty.clone()),
-            GenericArg::Type(ty.clone()),
-        ])?;
+        let tuple_ty = context.get_concrete_type(
+            StructType::id(),
+            &[
+                GenericArg::UserType(UserTypeId::from_string("Tuple")),
+                GenericArg::Type(felt252_ty.clone()),
+                GenericArg::Type(ty.clone()),
+                GenericArg::Type(ty.clone()),
+            ],
+        )?;
         let array_ty = context.get_wrapped_concrete_type(ArrayType::id(), tuple_ty)?;
         Ok(reinterpret_cast_signature(squashed_dict_ty, array_ty))
     }

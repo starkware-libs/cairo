@@ -77,12 +77,15 @@ impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature::new(uninitialized_type), ParamSignature {
-                ty: ty.clone(),
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
+            vec![
+                ParamSignature::new(uninitialized_type),
+                ParamSignature {
+                    ty: ty.clone(),
+                    allow_deferred: true,
+                    allow_add_const: true,
+                    allow_const: true,
+                },
+            ],
             vec![OutputVarInfo {
                 ty,
                 ref_info: if type_info.zero_sized {
@@ -107,9 +110,11 @@ impl NoGenericArgsGenericLibfunc for FinalizeLocalsLibfunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known {
-            new_vars_only: false,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
 
