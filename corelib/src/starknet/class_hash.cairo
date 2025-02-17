@@ -35,20 +35,20 @@ pub extern type ClassHash;
 /// ```
 pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
 
-pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
+pub(crate) extern const fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
-pub(crate) extern fn class_hash_try_from_felt252(
+pub(crate) extern const fn class_hash_try_from_felt252(
     address: felt252,
 ) -> Option<ClassHash> implicits(RangeCheck) nopanic;
 
 pub(crate) impl Felt252TryIntoClassHash of TryInto<felt252, ClassHash> {
-    fn try_into(self: felt252) -> Option<ClassHash> {
+    const fn try_into(self: felt252) -> Option<ClassHash> {
         class_hash_try_from_felt252(self)
     }
 }
 
 pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
-    fn into(self: ClassHash) -> felt252 {
+    const fn into(self: ClassHash) -> felt252 {
         class_hash_to_felt252(self)
     }
 }
