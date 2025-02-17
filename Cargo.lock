@@ -764,6 +764,8 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "serde",
+ "smol_str",
  "test-log",
 ]
 
@@ -1126,6 +1128,7 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "serde",
  "smol_str",
  "test-log",
  "unescaper",
