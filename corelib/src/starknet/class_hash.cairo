@@ -33,6 +33,10 @@ pub extern type ClassHash;
 ///
 /// let class_hash = class_hash_const::<0x123>();
 /// ```
+#[deprecated(
+    feature: "deprecated-starknet-consts",
+    note: "Use `TryInto::try_into` in const context instead.",
+)]
 pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
 
 pub(crate) extern const fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
@@ -54,6 +58,7 @@ pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
 }
 
 impl ClassHashZero of core::num::traits::Zero<ClassHash> {
+    #[feature("deprecated-starknet-consts")]
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
