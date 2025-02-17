@@ -171,6 +171,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Felt252Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
+        Felt252SquashedDict(_) => {
+            vec![ApChange::Known(0)]
+        }
         FunctionCall(libfunc) | CouponCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }

@@ -411,6 +411,7 @@ pub fn core_libfunc_cost(
                 vec![DICT_SQUASH_FIXED_COST.into()]
             }
         },
+        Felt252SquashedDict(_) => vec![ConstCost::default().into()],
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => {
                 vec![BranchCost::Regular {
