@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
+use cairo_lang_filesystem::ids::{BlobLongId, CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
@@ -83,9 +83,15 @@ pub fn update_crate_root(
     root: Directory,
 ) {
     let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_identifier, config);
+    println!("Updating crate root: {:?}", crate_id.name(db.upcast()));
     db.set_crate_config(
         crate_id,
-        Some(CrateConfiguration { root, settings: crate_settings.clone(), cache_file: None }),
+        Some(CrateConfiguration {
+            root,
+            settings: crate_settings.clone(),
+            cache_file: None,
+            // cache_file: Some(BlobLongId::OnDisk("abc.json".into()).intern(db)),
+        }),
     );
 }
 

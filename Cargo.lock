@@ -523,6 +523,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cache-crate"
+version = "2.10.0"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-filesystem",
+ "cairo-lang-lowering",
+ "cairo-lang-semantic",
+ "cairo-lang-starknet",
+ "cairo-lang-utils",
+ "clap",
+ "convert_case",
+ "itertools 0.14.0",
+]
+
+[[package]]
 name = "cairo-compile"
 version = "2.10.0"
 dependencies = [
