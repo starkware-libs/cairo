@@ -864,7 +864,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591.try_into().unwrap();
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -2360,7 +2360,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b.try_into().unwrap();
 
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
@@ -3214,7 +3214,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47.try_into().unwrap();
 
 impl ContractStateOutsideImplWithDrop of
     super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {
