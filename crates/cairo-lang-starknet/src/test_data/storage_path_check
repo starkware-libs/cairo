@@ -255,7 +255,7 @@ warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or
 test_storage_path_check(expect_diagnostics: true)
 
 //! > cairo_code
-use core::starknet::storage::{Map, Vec};
+use starknet::storage::{Map, Vec};
 #[starknet::storage_node]
 struct ValidStorageStruct {
     pub valid_field: felt252,
@@ -314,7 +314,7 @@ warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inf
 test_storage_path_check(expect_diagnostics: false)
 
 //! > cairo_code
-use core::starknet::storage::{Map, Vec};
+use starknet::storage::{Map, Vec};
 struct InvalidStorageStruct {}
 #[starknet::storage_node]
 #[allow(starknet::invalid_storage_member_types)]
@@ -344,7 +344,7 @@ struct PartiallyIgnoredStorage {
 test_storage_path_check(expect_diagnostics: true)
 
 //! > cairo_code
-use core::starknet::storage::{Map, Vec};
+use starknet::storage::{Map, Vec};
 
 struct InvalidStorageStruct {}
 
