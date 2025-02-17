@@ -22,6 +22,7 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::{Itertools, chain};
 use salsa::InternKey;
 
+use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
 use crate::ids::*;
 use crate::plugin::{
     DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata,
@@ -134,6 +135,11 @@ pub trait DefsGroup:
     fn crate_modules(&self, crate_id: CrateId) -> Arc<[ModuleId]>;
     fn priv_file_to_module_mapping(&self) -> Arc<OrderedHashMap<FileId, Vec<ModuleId>>>;
     fn file_modules(&self, file_id: FileId) -> Maybe<Arc<[ModuleId]>>;
+
+    fn cached_crate_modules(
+        &self,
+        crate_id: CrateId,
+    ) -> Option<(Arc<OrderedHashMap<ModuleId, ModuleData>>, Arc<DefCacheLoadingData>)>;
 
     // Module level resolving.
     fn priv_module_data(&self, module_id: ModuleId) -> Maybe<ModuleData>;
@@ -395,31 +401,31 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Arc<[ModuleId]>> {
 pub struct ModuleData {
     /// The list of IDs of all items in the module. Each ID here is guaranteed to be a key in one
     /// of the specific-item-kind maps.
-    items: Arc<[ModuleItemId]>,
+    pub items: Arc<[ModuleItemId]>,
 
     // Specific-item-kind maps
-    constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
-    submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
-    uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
-    free_functions: Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>,
-    structs: Arc<OrderedHashMap<StructId, ast::ItemStruct>>,
-    enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
-    type_aliases: Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>,
-    impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
-    traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
-    impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
-    extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
-    extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
-    global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
+    pub constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
+    pub submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
+    pub uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
+    pub free_functions: Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>,
+    pub structs: Arc<OrderedHashMap<StructId, ast::ItemStruct>>,
+    pub enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
+    pub type_aliases: Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>,
+    pub impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
+    pub traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
+    pub impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
+    pub extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
+    pub extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+    pub global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
 
-    files: Vec<FileId>,
+    pub files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
-    generated_file_aux_data: Vec<Option<DynGeneratedFileAuxData>>,
-    plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
-    /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
+    pub generated_file_aux_data: Vec<Option<DynGeneratedFileAuxData>>,
+    pub plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
+    // Diagnostic notes for diagnostics originating in the plugin generated files identified by
     /// [`FileId`].
     /// Diagnostic notes are added with `note: ` prefix at the end of diagnostic display.
-    diagnostics_notes: PluginFileDiagnosticNotes,
+    pub diagnostics_notes: PluginFileDiagnosticNotes,
 }
 
 /// Information about generated files from running on a module file.
@@ -607,6 +613,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         diagnostics_notes,
     };
     Ok(res)
+}
+
+fn cached_crate_modules(
+    db: &dyn DefsGroup,
+    crate_id: CrateId,
+) -> Option<(Arc<OrderedHashMap<ModuleId, ModuleData>>, Arc<DefCacheLoadingData>)> {
+    load_cached_crate_modules(db, crate_id)
 }
 
 /// Returns the `VirtualFile` matching the given external id.

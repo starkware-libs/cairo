@@ -24,7 +24,7 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::{FunctionId, FunctionLongId, GeneratedFunctionKey};
 use crate::inline::get_inline_diagnostics;
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
@@ -422,6 +422,16 @@ fn priv_function_with_body_lowering(
     let lowered = match &function_id.lookup_intern(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { key, .. } => {
+            if !multi_lowering.generated_lowerings.contains_key(key) {
+                if let GeneratedFunctionKey::TraitFunc(tr, _) = key {
+                    println!("key11 {:?}\n--", tr.debug(db))
+                }
+                for k in multi_lowering.generated_lowerings.keys() {
+                    if let GeneratedFunctionKey::TraitFunc(tr, _) = k {
+                        println!("key {:?}\n--", tr.debug(db))
+                    }
+                }
+            }
             multi_lowering.generated_lowerings[key].clone()
         }
     };
