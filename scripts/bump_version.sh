@@ -4,7 +4,13 @@ set -euo pipefail
 
 SCARB_REPO="https://github.com/software-mansion/scarb"
 
+<<<<<<< HEAD
 CURRENT_VERSION='2.9.3'
+||||||| 63dc720fc
+CURRENT_VERSION='2.9.2'
+=======
+CURRENT_VERSION='2.10.0'
+>>>>>>> origin/dev-v2.10.0
 NEW_VERSION="$@"
 
 # NOTE: These two functions were copied from asdf-scarb.

@@ -252,7 +252,18 @@ impl NonZeroMulMinusOneNegateHelper<
 }
 
 pub use {
+<<<<<<< HEAD
     bounded_int_add as add, bounded_int_constrain as constrain, bounded_int_div_rem as div_rem,
     bounded_int_is_zero as is_zero, bounded_int_mul as mul, bounded_int_sub as sub,
     bounded_int_trim_max as trim_max, bounded_int_trim_min as trim_min,
+||||||| 63dc720fc
+    bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
+    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
+    bounded_int_is_zero as is_zero, bounded_int_trim as trim,
+=======
+    bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
+    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
+    bounded_int_is_zero as is_zero, bounded_int_trim_min as trim_min,
+    bounded_int_trim_max as trim_max,
+>>>>>>> origin/dev-v2.10.0
 };
