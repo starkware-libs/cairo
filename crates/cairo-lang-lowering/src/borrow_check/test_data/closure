@@ -399,3 +399,45 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > lowering_diagnostics
 
 //! > lowering
+
+//! > ==========================================================================
+
+//! > capturing two destructables variables of the same type.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(a: Destructable, b: Destructable) {
+    let c = || {
+        let Destructable { } = a;
+        let Destructable { } = b;
+    };
+    c.destruct();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Destructable {}
+
+impl MyDesruct of Destruct<Destructable> {
+    fn destruct(self: Destructable) nopanic {
+        let Destructable { } = self;
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: test::Destructable, v1: test::Destructable
+blk0 (root):
+Statements:
+  (v2: {closure@lib.cairo:9:13: 9:15}) <- struct_construct(v0{`a`}, v1{`b`})
+  (v3: ()) <- Generated `core::traits::Destruct::destruct` for {closure@lib.cairo:9:13: 9:15}(v2{`c`})
+  (v4: ()) <- struct_construct()
+End:
+  Return(v4)

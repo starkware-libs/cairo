@@ -37,7 +37,6 @@ use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use salsa::InternKey;
 use smol_str::SmolStr;
 
 use super::inference::canonic::ResultNoErrEx;
@@ -1789,11 +1788,9 @@ fn compute_expr_closure_semantic(
     }
 
     let captured_types = chain!(
+        chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty()),
         usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
-        chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty())
     )
-    .sorted_by_key(|ty| ty.as_intern_id())
-    .dedup()
     .collect_vec();
 
     let ty = TypeLongId::Closure(ClosureTypeLongId {
