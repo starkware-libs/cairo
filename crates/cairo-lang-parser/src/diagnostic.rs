@@ -13,16 +13,82 @@ pub struct ParserDiagnostic {
 }
 impl ParserDiagnostic {
     /// Converts a `SyntaxKind` to its corresponding operator string.
-    fn operator_to_string(&self, kind: SyntaxKind) -> String {
-        match kind {
-            SyntaxKind::TerminalLT => "<".to_string(),
-            SyntaxKind::TerminalGT => ">".to_string(),
-            SyntaxKind::TerminalLE => "<=".to_string(),
-            SyntaxKind::TerminalGE => ">=".to_string(),
-            SyntaxKind::TerminalEqEq => "==".to_string(),
-            SyntaxKind::TerminalNeq => "!=".to_string(),
-            _ => format!("{:?}", kind),
-        }
+    fn kind_to_string(&self, kind: SyntaxKind) -> String {
+        format!("'{}'", match kind {
+            SyntaxKind::TerminalAnd => "&",
+            SyntaxKind::TerminalAndAnd => "&&",
+            SyntaxKind::TerminalArrow => "->",
+            SyntaxKind::TerminalAs => "as",
+            SyntaxKind::TerminalAt => "@",
+            SyntaxKind::TerminalBitNot => "~",
+            SyntaxKind::TerminalBreak => "break",
+            SyntaxKind::TerminalColon => ":",
+            SyntaxKind::TerminalColonColon => "::",
+            SyntaxKind::TerminalComma => ",",
+            SyntaxKind::TerminalConst => "const",
+            SyntaxKind::TerminalContinue => "continue",
+            SyntaxKind::TerminalDiv => "/",
+            SyntaxKind::TerminalDivEq => "/=",
+            SyntaxKind::TerminalDot => ".",
+            SyntaxKind::TerminalDotDot => "..",
+            SyntaxKind::TerminalDotDotEq => "..=",
+            SyntaxKind::TerminalElse => "else",
+            SyntaxKind::TerminalEnum => "enum",
+            SyntaxKind::TerminalEq => "=",
+            SyntaxKind::TerminalEqEq => "==",
+            SyntaxKind::TerminalExtern => "extern",
+            SyntaxKind::TerminalFalse => "false",
+            SyntaxKind::TerminalFor => "for",
+            SyntaxKind::TerminalFunction => "fn",
+            SyntaxKind::TerminalGE => ">=",
+            SyntaxKind::TerminalGT => ">",
+            SyntaxKind::TerminalHash => "#",
+            SyntaxKind::TerminalIf => "if",
+            SyntaxKind::TerminalImpl => "impl",
+            SyntaxKind::TerminalImplicits => "implicits",
+            SyntaxKind::TerminalLBrace => "{",
+            SyntaxKind::TerminalLBrack => "[",
+            SyntaxKind::TerminalLE => "<=",
+            SyntaxKind::TerminalLParen => "(",
+            SyntaxKind::TerminalLT => "<",
+            SyntaxKind::TerminalLet => "let",
+            SyntaxKind::TerminalLoop => "loop",
+            SyntaxKind::TerminalMatch => "match",
+            SyntaxKind::TerminalMatchArrow => "=>",
+            SyntaxKind::TerminalMinus => "-",
+            SyntaxKind::TerminalMinusEq => "-=",
+            SyntaxKind::TerminalMod => "%",
+            SyntaxKind::TerminalModEq => "%=",
+            SyntaxKind::TerminalModule => "mod",
+            SyntaxKind::TerminalMul => "*",
+            SyntaxKind::TerminalMulEq => "*=",
+            SyntaxKind::TerminalMut => "mut",
+            SyntaxKind::TerminalNeq => "!=",
+            SyntaxKind::TerminalNoPanic => "nopanic",
+            SyntaxKind::TerminalNot => "!",
+            SyntaxKind::TerminalOf => "of",
+            SyntaxKind::TerminalOr => "|",
+            SyntaxKind::TerminalOrOr => "||",
+            SyntaxKind::TerminalPlus => "+",
+            SyntaxKind::TerminalPlusEq => "+=",
+            SyntaxKind::TerminalPub => "pub",
+            SyntaxKind::TerminalQuestionMark => "?",
+            SyntaxKind::TerminalRBrace => "}",
+            SyntaxKind::TerminalRBrack => "]",
+            SyntaxKind::TerminalRParen => ")",
+            SyntaxKind::TerminalRef => "ref",
+            SyntaxKind::TerminalReturn => "return",
+            SyntaxKind::TerminalSemicolon => ";",
+            SyntaxKind::TerminalStruct => "struct",
+            SyntaxKind::TerminalTrait => "trait",
+            SyntaxKind::TerminalTrue => "true",
+            SyntaxKind::TerminalType => "type",
+            SyntaxKind::TerminalUnderscore => "_",
+            SyntaxKind::TerminalUse => "use",
+            SyntaxKind::TerminalWhile => "while",
+            SyntaxKind::TerminalXor => "^",
+            _ => return format!("{:?}", kind),
+        })
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -64,7 +130,7 @@ impl DiagnosticEntry for ParserDiagnostic {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
             ParserDiagnosticKind::MissingToken(kind) => {
-                format!("Missing token {kind:?}.")
+                format!("Missing token {}.", self.kind_to_string(*kind))
             }
             ParserDiagnosticKind::MissingExpression => {
                 "Missing tokens. Expected an expression.".to_string()
@@ -141,9 +207,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
                 format!(
-                    "Consecutive comparison operators are not allowed: '{}' followed by '{}'",
-                    self.operator_to_string(*first_op),
-                    self.operator_to_string(*second_op)
+                    "Consecutive comparison operators are not allowed: {} followed by {}",
+                    self.kind_to_string(*first_op),
+                    self.kind_to_string(*second_op)
                 )
             }
         }
