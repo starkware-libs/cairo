@@ -1207,8 +1207,11 @@ impl ConstCalcInfo {
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         let core = ModuleHelper::core(db);
         let integer = core.submodule("integer");
+        let starknet = core.submodule("starknet");
+        let class_hash_module = starknet.submodule("class_hash");
+        let contract_address_module = starknet.submodule("contract_address");
         Self {
-            const_traits: [
+            const_traits: FromIterator::from_iter([
                 core_info.neg_trt,
                 core_info.add_trt,
                 core_info.sub_trt,
@@ -1222,44 +1225,40 @@ impl ConstCalcInfo {
                 core_info.partialeq_trt,
                 core_info.partialord_trt,
                 core_info.not_trt,
-            ]
-            .into_iter()
-            .collect(),
+            ]),
             true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
-            upcast_fns: [
-                "upcast",
-                "u8_to_felt252",
-                "u16_to_felt252",
-                "u32_to_felt252",
-                "u64_to_felt252",
-                "u128_to_felt252",
-                "i8_to_felt252",
-                "i16_to_felt252",
-                "i32_to_felt252",
-                "i64_to_felt252",
-                "i128_to_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
-            downcast_fns: [
-                "downcast",
-                "u8_try_from_felt252",
-                "u16_try_from_felt252",
-                "u32_try_from_felt252",
-                "u64_try_from_felt252",
-                "i8_try_from_felt252",
-                "i16_try_from_felt252",
-                "i32_try_from_felt252",
-                "i64_try_from_felt252",
-                "i128_try_from_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
+            upcast_fns: FromIterator::from_iter([
+                integer.extern_function_id("upcast"),
+                integer.extern_function_id("u8_to_felt252"),
+                integer.extern_function_id("u16_to_felt252"),
+                integer.extern_function_id("u32_to_felt252"),
+                integer.extern_function_id("u64_to_felt252"),
+                integer.extern_function_id("u128_to_felt252"),
+                integer.extern_function_id("i8_to_felt252"),
+                integer.extern_function_id("i16_to_felt252"),
+                integer.extern_function_id("i32_to_felt252"),
+                integer.extern_function_id("i64_to_felt252"),
+                integer.extern_function_id("i128_to_felt252"),
+                class_hash_module.extern_function_id("class_hash_to_felt252"),
+                contract_address_module.extern_function_id("contract_address_to_felt252"),
+            ]),
+            downcast_fns: FromIterator::from_iter([
+                integer.extern_function_id("downcast"),
+                integer.extern_function_id("u8_try_from_felt252"),
+                integer.extern_function_id("u16_try_from_felt252"),
+                integer.extern_function_id("u32_try_from_felt252"),
+                integer.extern_function_id("u64_try_from_felt252"),
+                integer.extern_function_id("i8_try_from_felt252"),
+                integer.extern_function_id("i16_try_from_felt252"),
+                integer.extern_function_id("i32_try_from_felt252"),
+                integer.extern_function_id("i64_try_from_felt252"),
+                integer.extern_function_id("i128_try_from_felt252"),
+                class_hash_module.extern_function_id("class_hash_try_from_felt252"),
+                contract_address_module.extern_function_id("contract_address_try_from_felt252"),
+            ]),
             core_info,
         }
     }

@@ -806,6 +806,8 @@ pub fn validate_literal(
         validate_out_of_range(value.to_i128().is_none())
     } else if ty == info.u256 {
         validate_out_of_range(value.is_negative() || value.bits() > 256)
+    } else if ty == info.class_hash || ty == info.contract_address {
+        validate_out_of_range(value.is_negative() || value.bits() > 251)
     } else if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
         if value.is_zero() {
             Err(LiteralError::OutOfRange(ty))
@@ -863,6 +865,8 @@ pub struct CoreInfo {
     pub i32: TypeId,
     pub i64: TypeId,
     pub i128: TypeId,
+    pub class_hash: TypeId,
+    pub contract_address: TypeId,
     // Traits.
     pub numeric_literal_trt: TraitId,
     pub string_literal_trt: TraitId,
@@ -977,6 +981,7 @@ impl CoreInfo {
         let fn_trt = fn_module.trait_id("Fn");
         let fn_once_trt = fn_module.trait_id("FnOnce");
         let index_module = ops.submodule("index");
+        let starknet = core.submodule("starknet");
         let trait_fn = |trait_id: TraitId, name: &str| {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
@@ -993,6 +998,8 @@ impl CoreInfo {
             i32: integer.ty("i32", vec![]),
             i64: integer.ty("i64", vec![]),
             i128: integer.ty("i128", vec![]),
+            class_hash: starknet.submodule("class_hash").ty("ClassHash", vec![]),
+            contract_address: starknet.submodule("contract_address").ty("ContractAddress", vec![]),
             numeric_literal_trt: integer.trait_id("NumericLiteral"),
             string_literal_trt: core.submodule("string").trait_id("StringLiteral"),
             index_trt: index_module.trait_id("Index"),

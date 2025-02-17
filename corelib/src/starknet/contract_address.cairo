@@ -36,20 +36,20 @@ pub extern type ContractAddress;
 /// ```
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
 
-pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub(crate) extern const fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-pub(crate) extern fn contract_address_try_from_felt252(
+pub(crate) extern const fn contract_address_try_from_felt252(
     address: felt252,
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
 pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
-    fn try_into(self: felt252) -> Option<ContractAddress> {
+    const fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
 
 pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
-    fn into(self: ContractAddress) -> felt252 {
+    const fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
