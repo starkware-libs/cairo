@@ -150,6 +150,7 @@
         "sha256_process_block_syscall",
         "library_call_syscall",
         "match_nullable",
+        "meta_tx_v0_syscall",
         "null",
         "nullable_forward_snapshot",
         "nullable_from_box",
