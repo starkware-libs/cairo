@@ -1,0 +1,41 @@
+//! > Basic cache valid.
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo(x: ACopy, y: ADrop) {
+    if true {
+        use_a_copy(x);
+        use_a_drop(y);
+    } else {
+        use_a_drop(y);
+    }
+    use_a_copy(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type ACopy;
+impl ACopyCopy of Copy<ACopy>;
+extern type ADrop;
+impl ADropDrop of Drop<ADrop>;
+
+extern fn use_a_copy(x: ACopy) nopanic;
+extern fn use_a_drop(x: ADrop) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::ACopy, v1: test::ADrop
+blk0 (root):
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+  () <- test::use_a_copy(v0)
+End:
+  Return()
