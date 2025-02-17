@@ -322,7 +322,7 @@ pub trait MutableVecTrait<T> {
     /// ```
     #[deprecated(
         feature: "starknet-storage-deprecation",
-        note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead",
+        note: "Use `starknet::storage::MutableVecTrait::push` instead.",
     )]
     fn append(self: T) -> StoragePath<Mutable<Self::ElementType>> {
         Self::allocate(self)
@@ -374,6 +374,11 @@ pub trait MutableVecTrait<T> {
     /// This operation:
     /// 1. Increments the vector's length.
     /// 2. Writes the provided value to the new storage location at the end of the vector.
+    ///
+    /// # Note
+    ///
+    /// If you need to allocate storage without writing a value (e.g., when appending another
+    /// vector), consider using [`allocate`] instead.
     ///
     /// # Examples
     ///
