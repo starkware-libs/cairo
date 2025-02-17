@@ -219,8 +219,6 @@ impl TestCompiler {
             if !gas_enabled {
                 cfg.insert(Cfg::kv("gas", "disabled"));
                 b.skip_auto_withdraw_gas();
-            } else {
-                b.with_add_redeposit_gas();
             }
             b.detect_corelib();
             b.with_cfg(cfg);
