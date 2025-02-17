@@ -20,6 +20,7 @@ pub use crate::poseidon::Poseidon;
 pub use crate::result::Result::{Err, Ok};
 pub use crate::result::{Result, ResultTrait};
 pub use crate::serde::Serde;
+#[feature("corelib-internal-use")]
 pub use crate::starknet::System;
 pub use crate::traits::{
     Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
@@ -28,8 +29,10 @@ pub use crate::traits::{
 pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 pub use crate::zeroable::NonZero;
 pub use crate::{
-    RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, starknet, to_byte_array, usize,
+    RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, to_byte_array, usize,
 };
+#[feature("corelib-internal-use")]
+pub use crate::starknet;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]

@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use core::starknet::contract_address::contract_address_const;
+//! use starknet::contract_address::contract_address_const;
 //!
 //! let contract_address = contract_address_const::<0x0>();
 //! ```
@@ -30,7 +30,7 @@ pub extern type ContractAddress;
 /// # Examples
 ///
 /// ```
-/// use core::starknet::contract_address::contract_address_const;
+/// use starknet::contract_address::contract_address_const;
 ///
 /// let contract_address = contract_address_const::<0x0>();
 /// ```

@@ -32,7 +32,6 @@ use crate::poseidon::Poseidon;
 use crate::result::Result::{Err, Ok};
 use crate::result::{Result, ResultTrait};
 use crate::serde::Serde;
-use crate::starknet::System;
 use crate::string::StringLiteral;
 use crate::traits::{
     Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
@@ -49,9 +48,13 @@ use crate::{
     bool_not_impl, bool_or_impl, bool_to_felt252, bool_xor_impl, box, byte_array, bytes_31, clone,
     cmp, debug, dict, drop, dup, ec, ecdsa, felt252, felt252_add, felt252_const, felt252_div,
     felt252_is_zero, felt252_mul, felt252_sub, gas, hash, integer, internal, keccak, math, never,
-    nullable, option, panic_with_felt252, panics, pedersen, poseidon, result, serde, starknet,
-    string, testing, to_byte_array, traits, usize, zeroable,
+    nullable, option, panic_with_felt252, panics, pedersen, poseidon, result, serde, string,
+    testing, to_byte_array, traits, usize, zeroable,
 };
+#[feature("corelib-internal-use")]
+use crate::starknet::System;
+#[feature("corelib-internal-use")]
+use crate::starknet;
 #[feature("corelib-internal-use")]
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 use crate::integer::{u128_sqrt, u256_sqrt};
