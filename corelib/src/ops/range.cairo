@@ -84,8 +84,10 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
 /// Handles the range binary operator (`..`).
 /// Used by the compiler to create a `Range` from the given `start` (inclusive) and `end`
 /// (exclusive) values.
-#[generate_trait]
-pub impl RangeOpImpl<T> of RangeOp<T> {
+pub trait RangeOp<T> {
+    fn range(start: T, end: T) -> Range<T>;
+}
+impl RangeOpImpl<T> of RangeOp<T> {
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
@@ -165,8 +167,11 @@ pub struct RangeInclusiveIterator<T> {
 
 /// Handles the range inclusive operator (`..=`).
 #[generate_trait]
-pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
+pub trait RangeInclusiveOp<T> {
     /// Handles the `..=` operator. Returns the value of the expression `start..=end`.
+    fn range_inclusive(start: T, end: T) -> RangeInclusive<T>;
+}
+impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
     fn range_inclusive(start: T, end: T) -> RangeInclusive<T> {
         RangeInclusive { start, end }
     }

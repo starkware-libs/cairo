@@ -75,7 +75,7 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let internal = core_submodule(db, "internal");
     let bounded_int = get_submodule(db, internal, "bounded_int")
         .expect("Could not find bounded_int submodule in corelib.");
-    let felt252_ty = db.core_types_info().felt252;
+    let felt252_ty = db.core_info().felt252;
     let lower_id = ConstValue::Int(min, felt252_ty).intern(db);
     let upper_id = ConstValue::Int(max, felt252_ty).intern(db);
     try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
@@ -111,9 +111,7 @@ pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(
-        db.core_types_info().felt252,
-    )])
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(db.core_info().felt252)])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -478,21 +476,15 @@ pub fn core_unary_operator(
     unary_op: &UnaryOperator,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<ConcreteTraitGenericFunctionId, SemanticDiagnosticKind>> {
-    let (trait_name, function_name) = match unary_op {
-        UnaryOperator::Minus(_) => ("Neg", "neg"),
-        UnaryOperator::Not(_) => ("Not", "not"),
-        UnaryOperator::BitNot(_) => ("BitNot", "bitnot"),
+    let info = db.core_info();
+    let (trait_id, trait_fn) = match unary_op {
+        UnaryOperator::Minus(_) => (info.neg_trt, info.neg_fn),
+        UnaryOperator::Not(_) => (info.not_trt, info.not_fn),
+        UnaryOperator::BitNot(_) => (info.bitnot_trt, info.bitnot_fn),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
         UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
     };
-    Ok(Ok(get_core_trait_function_infer(
-        db,
-        inference,
-        CoreTraitContext::TopLevel,
-        trait_name.into(),
-        function_name.into(),
-        stable_ptr,
-    )))
+    Ok(Ok(get_core_trait_function_infer(db, inference, trait_id, trait_fn, stable_ptr)))
 }
 
 pub fn core_binary_operator(
@@ -501,47 +493,34 @@ pub fn core_binary_operator(
     binary_op: &BinaryOperator,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Result<(ConcreteTraitGenericFunctionId, bool), SemanticDiagnosticKind>> {
-    let (trait_name, function_name, snapshot, context) = match binary_op {
-        BinaryOperator::Plus(_) => ("Add", "add", false, CoreTraitContext::Traits),
-        BinaryOperator::PlusEq(_) => ("AddAssign", "add_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Minus(_) => ("Sub", "sub", false, CoreTraitContext::Traits),
-        BinaryOperator::MinusEq(_) => ("SubAssign", "sub_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Mul(_) => ("Mul", "mul", false, CoreTraitContext::Traits),
-        BinaryOperator::MulEq(_) => ("MulAssign", "mul_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Div(_) => ("Div", "div", false, CoreTraitContext::Traits),
-        BinaryOperator::DivEq(_) => ("DivAssign", "div_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::Mod(_) => ("Rem", "rem", false, CoreTraitContext::Traits),
-        BinaryOperator::ModEq(_) => ("RemAssign", "rem_assign", false, CoreTraitContext::Ops),
-        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true, CoreTraitContext::Traits),
-        BinaryOperator::Neq(_) => ("PartialEq", "ne", true, CoreTraitContext::Traits),
-        BinaryOperator::LE(_) => ("PartialOrd", "le", false, CoreTraitContext::Traits),
-        BinaryOperator::GE(_) => ("PartialOrd", "ge", false, CoreTraitContext::Traits),
-        BinaryOperator::LT(_) => ("PartialOrd", "lt", false, CoreTraitContext::Traits),
-        BinaryOperator::GT(_) => ("PartialOrd", "gt", false, CoreTraitContext::Traits),
-        BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::Traits),
-        BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::Traits),
-        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::Traits),
-        BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
+    let info = db.core_info();
+    let (trait_id, trait_fn, snapshot) = match binary_op {
+        BinaryOperator::Plus(_) => (info.add_trt, info.add_fn, false),
+        BinaryOperator::PlusEq(_) => (info.add_assign_trt, info.add_assign_fn, false),
+        BinaryOperator::Minus(_) => (info.sub_trt, info.sub_fn, false),
+        BinaryOperator::MinusEq(_) => (info.sub_assign_trt, info.sub_assign_fn, false),
+        BinaryOperator::Mul(_) => (info.mul_trt, info.mul_fn, false),
+        BinaryOperator::MulEq(_) => (info.mul_assign_trt, info.mul_assign_fn, false),
+        BinaryOperator::Div(_) => (info.div_trt, info.div_fn, false),
+        BinaryOperator::DivEq(_) => (info.div_assign_trt, info.div_assign_fn, false),
+        BinaryOperator::Mod(_) => (info.rem_trt, info.rem_fn, false),
+        BinaryOperator::ModEq(_) => (info.rem_assign_trt, info.rem_assign_fn, false),
+        BinaryOperator::EqEq(_) => (info.partialeq_trt, info.eq_fn, true),
+        BinaryOperator::Neq(_) => (info.partialeq_trt, info.ne_fn, true),
+        BinaryOperator::LE(_) => (info.partialord_trt, info.le_fn, false),
+        BinaryOperator::GE(_) => (info.partialord_trt, info.ge_fn, false),
+        BinaryOperator::LT(_) => (info.partialord_trt, info.lt_fn, false),
+        BinaryOperator::GT(_) => (info.partialord_trt, info.gt_fn, false),
+        BinaryOperator::And(_) => (info.bitand_trt, info.bitand_fn, false),
+        BinaryOperator::Or(_) => (info.bitor_trt, info.bitor_fn, false),
+        BinaryOperator::Xor(_) => (info.bitxor_trt, info.bitxor_fn, false),
+        BinaryOperator::DotDot(_) => (info.range_op_trt, info.range_fn, false),
         BinaryOperator::DotDotEq(_) => {
-            ("RangeInclusiveOp", "range_inclusive", false, CoreTraitContext::Ops)
+            (info.range_inclusive_op_trt, info.range_inclusive_fn, false)
         }
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
-    Ok(Ok((
-        get_core_trait_function_infer(
-            db,
-            inference,
-            context,
-            trait_name.into(),
-            function_name.into(),
-            stable_ptr,
-        ),
-        snapshot,
-    )))
-}
-
-pub fn felt252_eq(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_impl_method(db, "Felt252PartialEq".into(), "eq".into())
+    Ok(Ok((get_core_trait_function_infer(db, inference, trait_id, trait_fn, stable_ptr), snapshot)))
 }
 
 pub fn felt252_sub(db: &dyn SemanticGroup) -> FunctionId {
@@ -661,93 +640,32 @@ pub fn get_generic_function_id(
 }
 
 pub fn concrete_copy_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, copy_trait(db), vec![GenericArgumentId::Type(ty)])
+    concrete_trait(db, db.core_info().copy_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, drop_trait(db), vec![GenericArgumentId::Type(ty)])
+    concrete_trait(db, db.core_info().drop_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, destruct_trait(db), vec![GenericArgumentId::Type(ty)])
+    concrete_trait(db, db.core_info().destruct_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    get_core_concrete_trait(db, panic_destruct_trait(db), vec![GenericArgumentId::Type(ty)])
+    concrete_trait(db, db.core_info().panic_destruct_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
-    let trait_id = get_core_trait(db, CoreTraitContext::Iterator, "Iterator".into());
-    semantic::ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }
-        .intern(db)
-}
-
-pub fn fn_once_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Ops, "FnOnce".into())
-}
-
-pub fn fn_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Ops, "Fn".into())
+    concrete_trait(db, db.core_info().iterator_trt, vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn fn_traits(db: &dyn SemanticGroup) -> [TraitId; 2] {
-    [fn_trait(db), fn_once_trait(db)]
-}
-
-pub fn fn_once_call_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(db, CoreTraitContext::Ops, "FnOnce".into(), "call".into())
-}
-
-pub fn fn_call_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(db, CoreTraitContext::Ops, "Fn".into(), "call".into())
-}
-
-pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Traits, "Copy".into())
-}
-
-pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Traits, "Drop".into())
-}
-
-pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Traits, "Destruct".into())
-}
-
-pub fn panic_destruct_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Traits, "PanicDestruct".into())
-}
-
-pub fn deref_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Ops, "Deref".into())
-}
-
-pub fn deref_mut_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Ops, "DerefMut".into())
-}
-
-pub fn destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(db, CoreTraitContext::Traits, "Destruct".into(), "destruct".into())
-}
-
-pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
-    get_core_trait_fn(db, CoreTraitContext::Traits, "PanicDestruct".into(), "panic_destruct".into())
-}
-
-pub fn into_iterator_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::Iterator, "IntoIterator".into())
-}
-
-pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "NumericLiteral".into())
-}
-
-pub fn string_literal_trait(db: &dyn SemanticGroup) -> TraitId {
-    get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
+    let info = db.core_info();
+    [info.fn_trt, info.fn_once_trt]
 }
 
 /// Given a core library generic trait and its generic arguments, returns [ConcreteTraitId].
-fn get_core_concrete_trait(
+fn concrete_trait(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
     generic_args: Vec<GenericArgumentId>,
@@ -755,90 +673,21 @@ fn get_core_concrete_trait(
     semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db)
 }
 
-/// The context for a core library trait.
-pub enum CoreTraitContext {
-    /// The top level core library context.
-    TopLevel,
-    /// The ops core library context.
-    Ops,
-    /// The iterator core library context.
-    Iterator,
-    /// The meta programming core library context.
-    MetaProgramming,
-    /// The core traits module context.
-    Traits,
-}
-
-/// Given a core library context and trait name, returns [TraitId].
-pub fn get_core_trait(db: &dyn SemanticGroup, context: CoreTraitContext, name: SmolStr) -> TraitId {
-    let base_module = match context {
-        CoreTraitContext::TopLevel => db.core_module(),
-        CoreTraitContext::Ops => core_submodule(db, "ops"),
-        CoreTraitContext::Iterator => core_submodule(db, "iter"),
-        CoreTraitContext::MetaProgramming => core_submodule(db, "metaprogramming"),
-        CoreTraitContext::Traits => core_submodule(db, "traits"),
-    };
-    // This should not fail if the corelib is present.
-    let item_id = db
-        .module_item_by_name(base_module, name.clone())
-        .unwrap_or_else(|_| {
-            panic!(
-                "Core module `{module}` failed to compile.",
-                module = base_module.full_path(db.upcast())
-            )
-        })
-        .unwrap_or_else(|| {
-            panic!(
-                "Core module `{module}` is missing an use item for trait `{name}`.",
-                module = base_module.full_path(db.upcast()),
-            )
-        });
-    match item_id {
-        ModuleItemId::Trait(id) => id,
-        ModuleItemId::Use(use_id) => {
-            extract_matches!(
-                db.use_resolved_item(use_id).unwrap_or_else(|_| panic!(
-                    "Could not resolve core trait `{module}::{name}`.",
-                    module = base_module.full_path(db.upcast()),
-                )),
-                ResolvedGenericItem::Trait
-            )
-        }
-        _ => panic!("Expecting only traits, or uses pointing to traits."),
-    }
-}
-
-/// Given a core library context, trait name and fn name, returns [TraitFunctionId].
-fn get_core_trait_fn(
-    db: &dyn SemanticGroup,
-    context: CoreTraitContext,
-    trait_name: SmolStr,
-    fn_name: SmolStr,
-) -> TraitFunctionId {
-    db.trait_function_by_name(get_core_trait(db, context, trait_name), fn_name).unwrap().unwrap()
-}
-
 /// Retrieves a trait function from the core library with type variables as generic arguments, to
 /// be inferred later.
 fn get_core_trait_function_infer(
     db: &dyn SemanticGroup,
     inference: &mut Inference<'_>,
-    context: CoreTraitContext,
-    trait_name: SmolStr,
-    function_name: SmolStr,
+    trait_id: TraitId,
+    trait_function: TraitFunctionId,
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
-    let trait_id = get_core_trait(db, context, trait_name.clone());
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db);
-    let trait_function = db
-        .trait_function_by_name(trait_id, function_name.clone())
-        .unwrap()
-        .unwrap_or_else(move || panic!("Missing function '{function_name}' in '{trait_name}'."));
     ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 
@@ -855,7 +704,7 @@ pub fn get_convert_to_felt252_libfunc_name_by_type(
     db: &dyn SemanticGroup,
     ty: TypeId,
 ) -> Option<FunctionId> {
-    let info = db.core_types_info();
+    let info = db.core_info();
     if ty == info.u8 {
         Some(get_function_id(db, core_submodule(db, "integer"), "u8_to_felt252".into(), vec![]))
     } else if ty == info.u16 {
@@ -907,7 +756,7 @@ pub fn validate_literal(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<(), LiteralError> {
-    let info = db.core_types_info();
+    let info = db.core_info();
     let validate_out_of_range = |is_out_of_range: bool| {
         if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
     };
@@ -983,9 +832,10 @@ fn try_extract_bounded_int_type_ranges(
     Some((to_int(min)?, to_int(max)?))
 }
 
-/// Information about various core types.
+/// Information about various core types and traits.
 #[derive(Debug, Eq, PartialEq, Hash)]
-pub struct CoreTypesInfo {
+pub struct CoreInfo {
+    // Types.
     pub felt252: TypeId,
     pub u8: TypeId,
     pub u16: TypeId,
@@ -998,11 +848,123 @@ pub struct CoreTypesInfo {
     pub i32: TypeId,
     pub i64: TypeId,
     pub i128: TypeId,
+    // Traits.
+    pub numeric_literal_trt: TraitId,
+    pub string_literal_trt: TraitId,
+    pub deref_trt: TraitId,
+    pub deref_mut_trt: TraitId,
+    pub index_trt: TraitId,
+    pub index_view_trt: TraitId,
+    pub copy_trt: TraitId,
+    pub drop_trt: TraitId,
+    pub destruct_trt: TraitId,
+    pub panic_destruct_trt: TraitId,
+    pub add_trt: TraitId,
+    pub sub_trt: TraitId,
+    pub mul_trt: TraitId,
+    pub div_trt: TraitId,
+    pub rem_trt: TraitId,
+    pub div_rem_trt: TraitId,
+    pub neg_trt: TraitId,
+    pub add_assign_trt: TraitId,
+    pub sub_assign_trt: TraitId,
+    pub mul_assign_trt: TraitId,
+    pub div_assign_trt: TraitId,
+    pub rem_assign_trt: TraitId,
+    pub bitnot_trt: TraitId,
+    pub bitand_trt: TraitId,
+    pub bitor_trt: TraitId,
+    pub bitxor_trt: TraitId,
+    pub not_trt: TraitId,
+    pub partialeq_trt: TraitId,
+    pub partialord_trt: TraitId,
+    pub range_op_trt: TraitId,
+    pub range_inclusive_op_trt: TraitId,
+    pub into_iterator_trt: TraitId,
+    pub iterator_trt: TraitId,
+    pub fn_trt: TraitId,
+    pub fn_once_trt: TraitId,
+    pub type_eq_trt: TraitId,
+    pub felt252_dict_value_trt: TraitId,
+    // Trait fns.
+    pub deref_fn: TraitFunctionId,
+    pub deref_mut_fn: TraitFunctionId,
+    pub destruct_fn: TraitFunctionId,
+    pub panic_destruct_fn: TraitFunctionId,
+    pub add_fn: TraitFunctionId,
+    pub sub_fn: TraitFunctionId,
+    pub mul_fn: TraitFunctionId,
+    pub div_fn: TraitFunctionId,
+    pub rem_fn: TraitFunctionId,
+    pub div_rem_fn: TraitFunctionId,
+    pub neg_fn: TraitFunctionId,
+    pub add_assign_fn: TraitFunctionId,
+    pub sub_assign_fn: TraitFunctionId,
+    pub mul_assign_fn: TraitFunctionId,
+    pub div_assign_fn: TraitFunctionId,
+    pub rem_assign_fn: TraitFunctionId,
+    pub bitnot_fn: TraitFunctionId,
+    pub bitand_fn: TraitFunctionId,
+    pub bitor_fn: TraitFunctionId,
+    pub bitxor_fn: TraitFunctionId,
+    pub not_fn: TraitFunctionId,
+    pub eq_fn: TraitFunctionId,
+    pub ne_fn: TraitFunctionId,
+    pub lt_fn: TraitFunctionId,
+    pub gt_fn: TraitFunctionId,
+    pub le_fn: TraitFunctionId,
+    pub ge_fn: TraitFunctionId,
+    pub range_fn: TraitFunctionId,
+    pub range_inclusive_fn: TraitFunctionId,
+    pub into_iter_fn: TraitFunctionId,
+    pub next_fn: TraitFunctionId,
+    pub call_fn: TraitFunctionId,
+    pub call_once_fn: TraitFunctionId,
 }
-impl CoreTypesInfo {
+impl CoreInfo {
     fn new(db: &dyn SemanticGroup) -> Self {
         let core = ModuleHelper::core(db);
         let integer = core.submodule("integer");
+        let traits = core.submodule("traits");
+        let ops = core.submodule("ops");
+        let deref_module = ops.submodule("deref");
+        let deref_trt = deref_module.trait_id("Deref");
+        let deref_mut_trt = deref_module.trait_id("DerefMut");
+        let destruct_trt = traits.trait_id("Destruct");
+        let panic_destruct_trt = traits.trait_id("PanicDestruct");
+        let add_trt = traits.trait_id("Add");
+        let sub_trt = traits.trait_id("Sub");
+        let mul_trt = traits.trait_id("Mul");
+        let div_trt = traits.trait_id("Div");
+        let rem_trt = traits.trait_id("Rem");
+        let div_rem_trt = traits.trait_id("DivRem");
+        let neg_trt = traits.trait_id("Neg");
+        let arith_module = ops.submodule("arith");
+        let add_assign_trt = arith_module.trait_id("AddAssign");
+        let sub_assign_trt = arith_module.trait_id("SubAssign");
+        let mul_assign_trt = arith_module.trait_id("MulAssign");
+        let div_assign_trt = arith_module.trait_id("DivAssign");
+        let rem_assign_trt = arith_module.trait_id("RemAssign");
+        let bitnot_trt = traits.trait_id("BitNot");
+        let bitand_trt = traits.trait_id("BitAnd");
+        let bitor_trt = traits.trait_id("BitOr");
+        let bitxor_trt = traits.trait_id("BitXor");
+        let not_trt = traits.trait_id("Not");
+        let partialeq_trt = traits.trait_id("PartialEq");
+        let partialord_trt = traits.trait_id("PartialOrd");
+        let range_module = ops.submodule("range");
+        let range_op_trt = range_module.trait_id("RangeOp");
+        let range_inclusive_op_trt = range_module.trait_id("RangeInclusiveOp");
+        let iter_traits = core.submodule("iter").submodule("traits");
+        let into_iterator_trt = iter_traits.submodule("collect").trait_id("IntoIterator");
+        let iterator_trt = iter_traits.submodule("iterator").trait_id("Iterator");
+        let fn_module = ops.submodule("function");
+        let fn_trt = fn_module.trait_id("Fn");
+        let fn_once_trt = fn_module.trait_id("FnOnce");
+        let index_module = ops.submodule("index");
+        let trait_fn = |trait_id: TraitId, name: &str| {
+            db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
+        };
         Self {
             felt252: core.ty("felt252", vec![]),
             u8: integer.ty("u8", vec![]),
@@ -1016,11 +978,81 @@ impl CoreTypesInfo {
             i32: integer.ty("i32", vec![]),
             i64: integer.ty("i64", vec![]),
             i128: integer.ty("i128", vec![]),
+            numeric_literal_trt: integer.trait_id("NumericLiteral"),
+            string_literal_trt: core.submodule("string").trait_id("StringLiteral"),
+            index_trt: index_module.trait_id("Index"),
+            index_view_trt: index_module.trait_id("IndexView"),
+            deref_trt,
+            deref_mut_trt,
+            copy_trt: traits.trait_id("Copy"),
+            drop_trt: traits.trait_id("Drop"),
+            destruct_trt,
+            panic_destruct_trt,
+            add_trt,
+            sub_trt,
+            mul_trt,
+            div_trt,
+            rem_trt,
+            div_rem_trt,
+            neg_trt,
+            add_assign_trt,
+            sub_assign_trt,
+            mul_assign_trt,
+            div_assign_trt,
+            rem_assign_trt,
+            bitnot_trt,
+            bitand_trt,
+            bitor_trt,
+            bitxor_trt,
+            not_trt,
+            partialeq_trt,
+            partialord_trt,
+            range_op_trt,
+            range_inclusive_op_trt,
+            into_iterator_trt,
+            iterator_trt,
+            fn_trt,
+            fn_once_trt,
+            type_eq_trt: core.submodule("metaprogramming").trait_id("TypeEqual"),
+            felt252_dict_value_trt: traits.trait_id("Felt252DictValue"),
+            deref_fn: trait_fn(deref_trt, "deref"),
+            deref_mut_fn: trait_fn(deref_mut_trt, "deref_mut"),
+            destruct_fn: trait_fn(destruct_trt, "destruct"),
+            panic_destruct_fn: trait_fn(panic_destruct_trt, "panic_destruct"),
+            add_fn: trait_fn(add_trt, "add"),
+            sub_fn: trait_fn(sub_trt, "sub"),
+            mul_fn: trait_fn(mul_trt, "mul"),
+            div_fn: trait_fn(div_trt, "div"),
+            rem_fn: trait_fn(rem_trt, "rem"),
+            div_rem_fn: trait_fn(div_rem_trt, "div_rem"),
+            neg_fn: trait_fn(neg_trt, "neg"),
+            add_assign_fn: trait_fn(add_assign_trt, "add_assign"),
+            sub_assign_fn: trait_fn(sub_assign_trt, "sub_assign"),
+            mul_assign_fn: trait_fn(mul_assign_trt, "mul_assign"),
+            div_assign_fn: trait_fn(div_assign_trt, "div_assign"),
+            rem_assign_fn: trait_fn(rem_assign_trt, "rem_assign"),
+            bitnot_fn: trait_fn(bitnot_trt, "bitnot"),
+            bitand_fn: trait_fn(bitand_trt, "bitand"),
+            bitor_fn: trait_fn(bitor_trt, "bitor"),
+            bitxor_fn: trait_fn(bitxor_trt, "bitxor"),
+            not_fn: trait_fn(not_trt, "not"),
+            eq_fn: trait_fn(partialeq_trt, "eq"),
+            ne_fn: trait_fn(partialeq_trt, "ne"),
+            lt_fn: trait_fn(partialord_trt, "lt"),
+            gt_fn: trait_fn(partialord_trt, "gt"),
+            le_fn: trait_fn(partialord_trt, "le"),
+            ge_fn: trait_fn(partialord_trt, "ge"),
+            range_fn: trait_fn(range_op_trt, "range"),
+            range_inclusive_fn: trait_fn(range_inclusive_op_trt, "range_inclusive"),
+            into_iter_fn: trait_fn(into_iterator_trt, "into_iter"),
+            next_fn: trait_fn(iterator_trt, "next"),
+            call_fn: trait_fn(fn_trt, "call"),
+            call_once_fn: trait_fn(fn_once_trt, "call"),
         }
     }
 }
 
-/// Query implementation of [SemanticGroup::core_types_info].
-pub fn core_types_info(db: &dyn SemanticGroup) -> Arc<CoreTypesInfo> {
-    CoreTypesInfo::new(db).into()
+/// Query implementation of [SemanticGroup::core_info].
+pub fn core_info(db: &dyn SemanticGroup) -> Arc<CoreInfo> {
+    CoreInfo::new(db).into()
 }

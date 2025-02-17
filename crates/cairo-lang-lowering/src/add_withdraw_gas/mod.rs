@@ -99,8 +99,7 @@ fn create_panic_block(
     )?;
     let new_array_var =
         variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
-    let out_of_gas_err_var =
-        variables.new_var(VarRequest { ty: db.core_types_info().felt252, location });
+    let out_of_gas_err_var = variables.new_var(VarRequest { ty: db.core_info().felt252, location });
     let panic_instance_var = variables.new_var(VarRequest {
         ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
         location,
@@ -124,7 +123,7 @@ fn create_panic_block(
         statements: vec![
             Statement::Call(StatementCall {
                 function: get_function_id(db.upcast(), array_module, "array_new".into(), vec![
-                    GenericArgumentId::Type(db.core_types_info().felt252),
+                    GenericArgumentId::Type(db.core_info().felt252),
                 ])
                 .lowered(db),
                 inputs: vec![],
@@ -135,13 +134,13 @@ fn create_panic_block(
             Statement::Const(StatementConst {
                 value: ConstValue::Int(
                     BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
-                    db.core_types_info().felt252,
+                    db.core_info().felt252,
                 ),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {
                 function: get_function_id(db.upcast(), array_module, "array_append".into(), vec![
-                    GenericArgumentId::Type(db.core_types_info().felt252),
+                    GenericArgumentId::Type(db.core_info().felt252),
                 ])
                 .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var]
