@@ -15,12 +15,10 @@ macro count_idents {
         3
     };
 
-($x:ident
-    | $y:ident
-    | $z:ident) => {
+    ($x:ident | $y:ident | $z:ident) => {
         3
     };
-    }
+}
 
 #[test]
 fn test_macro_count_idents() {
