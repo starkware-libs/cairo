@@ -343,7 +343,7 @@ pub trait MutableVecTrait<T> {
     /// space first, then write the nested vector into the allocated space using `.write()`.
     ///
     /// This is necessary because pushing directly (e.g., `vec.push(nested_vec)`) is not supported
-    /// due to the size constraints of the inner vector being dynamic.
+    /// due to `Vec` being only a storage abstraction.
     ///
     /// # Deprecation Note
     ///
@@ -360,11 +360,12 @@ pub trait MutableVecTrait<T> {
     ///     numbers: Vec<Vec<u256>>,
     /// }
     ///
-    /// fn append_nested_vector(ref self: ContractState, nested: Vec<u256>) {
+    /// fn append_nested_vector(ref self: ContractState, elements: Array<u256>) {
     ///     // Allocate space for the nested vector in the outer vector.
-    ///     let storage_path = self.numbers.allocate();
-    ///     // Write the nested vector into the allocated space.
-    ///     storage_path.write(nested);
+    ///     let new_vec_storage_path = self.numbers.allocate();
+    ///     for element in elements {
+    ///         new_vec_storage_path.push(element)
+    ///     }
     /// }
     /// ```
     fn allocate(self: T) -> StoragePath<Mutable<Self::ElementType>>;
