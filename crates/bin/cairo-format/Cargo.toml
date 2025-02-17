@@ -12,15 +12,7 @@ log.workspace = true
 colored.workspace = true
 ignore.workspace = true
 
-<<<<<<< HEAD
-cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.9.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.9.3", features = [
-||||||| 63dc720fc
-cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.9.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.9.2", features = [
-=======
 cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.10.0" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.10.0", features = [
->>>>>>> origin/dev-v2.10.0
     "env_logger",
 ] }

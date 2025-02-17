@@ -201,17 +201,9 @@ End:
 
 blk8:
 Statements:
-<<<<<<< HEAD
-  (v30: core::felt252) <- core::felt252_add(v3, v4)
-  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v6, v27, v30, v4)
-||||||| 63dc720fc
-  (v30: core::felt252) <- core::felt252_add(v3, v4)
-  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v5, v6, v27, v30, v4)
-=======
   (v37: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
   (v38: core::felt252) <- core::felt252_add(v3, v4)
-  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v5, v37, v34, v38, v4)
->>>>>>> origin/dev-v2.10.0
+  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v37, v34, v38, v4)
 End:
   Return(v39, v40, v41)
 
@@ -234,8 +226,7 @@ Statements:
   (v51: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v50, v49)
   (v52: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v51)
 End:
-<<<<<<< HEAD
-  Return(v7, v8, v42)
+  Return(v7, v46, v52)
 
 //! > ==========================================================================
 
@@ -308,19 +299,16 @@ End:
 
 blk1:
 Statements:
-  (v11: core::ops::range::RangeIterator::<core::integer::u32>, v12: ()) <- struct_destructure(v9)
-  (v13: ((),)) <- struct_construct(v12)
-  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v12: core::ops::range::RangeIterator::<core::integer::u32>, v13: ()) <- struct_destructure(v9)
+  (v14: ((),)) <- struct_construct(v13)
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v14)
 End:
-  Return(v6, v7, v14)
+  Return(v6, v11, v15)
 
 blk2:
 Statements:
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v6, v7, v15)
-||||||| 63dc720fc
-  Return(v7, v8, v42)
-=======
-  Return(v7, v46, v52)
->>>>>>> origin/dev-v2.10.0
+  Return(v6, v16, v17)

@@ -1058,14 +1058,16 @@ fn foo(
 [fp + -3] = [[fp + -9] + 7];
 %{ syscall_handler.syscall(syscall_ptr=memory[fp + -9]) %}
 [ap + 0] = [[fp + -9] + 9], ap++;
-jmp rel 10 if [ap + -1] != 0;
+jmp rel 11 if [ap + -1] != 0;
 [ap + 0] = [[fp + -9] + 8], ap++;
+[ap + 0] = [ap + -1], ap++;
 [ap + 0] = [fp + -9] + 12, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[fp + -9] + 10], ap++;
 [ap + 0] = [[fp + -9] + 11], ap++;
 ret;
 [ap + 0] = [[fp + -9] + 8], ap++;
+[ap + 0] = [ap + -1], ap++;
 [ap + 0] = [fp + -9] + 12, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [[fp + -9] + 10], ap++;
@@ -1073,7 +1075,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11600})
+test::foo: OrderedHashMap({Const: 11700})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
@@ -1087,24 +1089,29 @@ type System = System [storable: true, drop: false, dup: false, zero_sized: false
 
 libfunc meta_tx_v0_syscall = meta_tx_v0_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc redeposit_gas = redeposit_gas;
+libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<System> = store_temp<System>;
 libfunc store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
 libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>;
 
-meta_tx_v0_syscall([0], [1], [2], [3], [4], [5]) { fallthrough([6], [7], [8]) 7([9], [10], [11]) }; // 0
+meta_tx_v0_syscall([0], [1], [2], [3], [4], [5]) { fallthrough([6], [7], [8]) 9([9], [10], [11]) }; // 0
 branch_align() -> (); // 1
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>([8]) -> ([12]); // 2
-store_temp<GasBuiltin>([6]) -> ([6]); // 3
-store_temp<System>([7]) -> ([7]); // 4
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([12]) -> ([12]); // 5
-return([6], [7], [12]); // 6
-branch_align() -> (); // 7
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>([11]) -> ([13]); // 8
-store_temp<GasBuiltin>([9]) -> ([9]); // 9
-store_temp<System>([10]) -> ([10]); // 10
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([13]) -> ([13]); // 11
-return([9], [10], [13]); // 12
+store_temp<GasBuiltin>([6]) -> ([6]); // 2
+redeposit_gas([6]) -> ([12]); // 3
+enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>([8]) -> ([13]); // 4
+store_temp<GasBuiltin>([12]) -> ([12]); // 5
+store_temp<System>([7]) -> ([7]); // 6
+store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([13]) -> ([13]); // 7
+return([12], [7], [13]); // 8
+branch_align() -> (); // 9
+store_temp<GasBuiltin>([9]) -> ([9]); // 10
+redeposit_gas([9]) -> ([14]); // 11
+enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>([11]) -> ([15]); // 12
+store_temp<GasBuiltin>([14]) -> ([14]); // 13
+store_temp<System>([10]) -> ([10]); // 14
+store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([15]) -> ([15]); // 15
+return([14], [10], [15]); // 16
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt252, [4]: core::array::Span::<core::felt252>, [5]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>);

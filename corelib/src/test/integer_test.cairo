@@ -2146,7 +2146,6 @@ mod bounded_int {
     #[test]
     fn test_trim() {
         use core::internal::OptionRev;
-<<<<<<< HEAD
         assert!(bounded_int::trim_min::<u8>(0) == OptionRev::None);
         assert!(bounded_int::trim_min::<u8>(1) == OptionRev::Some(1));
         assert!(bounded_int::trim_max::<u8>(0xff) == OptionRev::None);
@@ -2184,91 +2183,6 @@ mod bounded_int {
         assert!(bounded_int::trim_min::<i64>(1) == OptionRev::Some(1));
         assert!(bounded_int::trim_max::<i64>(0x7fffffffffffffff) == OptionRev::None);
         assert!(bounded_int::trim_max::<i64>(1) == OptionRev::Some(1));
-||||||| 63dc720fc
-        assert!(bounded_int::trim::<u8, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u8, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u8, 0xff>(0xff) == OptionRev::None);
-        assert!(bounded_int::trim::<u8, 0xff>(0xfe) == OptionRev::Some(0xfe));
-        assert!(bounded_int::trim::<i8, -0x80>(-0x80) == OptionRev::None);
-        assert!(bounded_int::trim::<i8, -0x80>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i8, 0x7f>(0x7f) == OptionRev::None);
-        assert!(bounded_int::trim::<i8, 0x7f>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim::<u16, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u16, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u16, 0xffff>(0xffff) == OptionRev::None);
-        assert!(bounded_int::trim::<u16, 0xffff>(0xfffe) == OptionRev::Some(0xfffe));
-        assert!(bounded_int::trim::<i16, -0x8000>(-0x8000) == OptionRev::None);
-        assert!(bounded_int::trim::<i16, -0x8000>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i16, 0x7fff>(0x7fff) == OptionRev::None);
-        assert!(bounded_int::trim::<i16, 0x7fff>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim::<u32, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u32, 0>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<u32, 0xffffffff>(0xffffffff) == OptionRev::None);
-        assert!(bounded_int::trim::<u32, 0xffffffff>(0xfffffffe) == OptionRev::Some(0xfffffffe));
-        assert!(bounded_int::trim::<i32, -0x80000000>(-0x80000000) == OptionRev::None);
-        assert!(bounded_int::trim::<i32, -0x80000000>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim::<i32, 0x7fffffff>(0x7fffffff) == OptionRev::None);
-        assert!(bounded_int::trim::<i32, 0x7fffffff>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim::<u64, 0>(0) == OptionRev::None);
-        assert!(bounded_int::trim::<u64, 0>(1) == OptionRev::Some(1));
-        assert!(
-            bounded_int::trim::<u64, 0xffffffffffffffff>(0xffffffffffffffff) == OptionRev::None,
-        );
-        assert!(
-            bounded_int::trim::<
-                u64, 0xffffffffffffffff,
-            >(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe),
-        );
-        assert!(
-            bounded_int::trim::<i64, -0x8000000000000000>(-0x8000000000000000) == OptionRev::None,
-        );
-        assert!(bounded_int::trim::<i64, -0x8000000000000000>(1) == OptionRev::Some(1));
-        assert!(
-            bounded_int::trim::<i64, 0x7fffffffffffffff>(0x7fffffffffffffff) == OptionRev::None,
-        );
-        assert!(bounded_int::trim::<i64, 0x7fffffffffffffff>(1) == OptionRev::Some(1));
-=======
-        assert!(bounded_int::trim_min::<u8>(0) == OptionRev::None);
-        assert!(bounded_int::trim_min::<u8>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<u8>(0xff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<u8>(0xfe) == OptionRev::Some(0xfe));
-        assert!(bounded_int::trim_min::<i8>(-0x80) == OptionRev::None);
-        assert!(bounded_int::trim_min::<i8>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<i8>(0x7f) == OptionRev::None);
-        assert!(bounded_int::trim_max::<i8>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim_min::<u16>(0) == OptionRev::None);
-        assert!(bounded_int::trim_min::<u16>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<u16>(0xffff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<u16>(0xfffe) == OptionRev::Some(0xfffe));
-        assert!(bounded_int::trim_min::<i16>(-0x8000) == OptionRev::None);
-        assert!(bounded_int::trim_min::<i16>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<i16>(0x7fff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<i16>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim_min::<u32>(0) == OptionRev::None);
-        assert!(bounded_int::trim_min::<u32>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<u32>(0xffffffff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<u32>(0xfffffffe) == OptionRev::Some(0xfffffffe));
-        assert!(bounded_int::trim_min::<i32>(-0x80000000) == OptionRev::None);
-        assert!(bounded_int::trim_min::<i32>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<i32>(0x7fffffff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<i32>(1) == OptionRev::Some(1));
-
-        assert!(bounded_int::trim_min::<u64>(0) == OptionRev::None);
-        assert!(bounded_int::trim_min::<u64>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<u64>(0xffffffffffffffff) == OptionRev::None);
-        assert!(
-            bounded_int::trim_max::<u64>(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe),
-        );
-        assert!(bounded_int::trim_min::<i64>(-0x8000000000000000) == OptionRev::None);
-        assert!(bounded_int::trim_min::<i64>(1) == OptionRev::Some(1));
-        assert!(bounded_int::trim_max::<i64>(0x7fffffffffffffff) == OptionRev::None);
-        assert!(bounded_int::trim_max::<i64>(1) == OptionRev::Some(1));
->>>>>>> origin/dev-v2.10.0
 
         assert!(bounded_int::trim_min::<u128>(0) == OptionRev::None);
         assert!(bounded_int::trim_min::<u128>(1) == OptionRev::Some(1));
@@ -2283,34 +2197,11 @@ mod bounded_int {
             ) == OptionRev::Some(0xfffffffffffffffffffffffffffffffe),
         );
         assert!(
-<<<<<<< HEAD
             bounded_int::trim_min::<i128>(-0x80000000000000000000000000000000) == OptionRev::None,
         );
         assert!(bounded_int::trim_min::<i128>(1) == OptionRev::Some(1));
         assert!(
             bounded_int::trim_max::<i128>(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
-||||||| 63dc720fc
-            bounded_int::trim::<
-                i128, -0x80000000000000000000000000000000,
-            >(-0x80000000000000000000000000000000) == OptionRev::None,
-        );
-        assert!(
-            bounded_int::trim::<i128, -0x80000000000000000000000000000000>(1) == OptionRev::Some(1),
-        );
-        assert!(
-            bounded_int::trim::<
-                i128, 0x7fffffffffffffffffffffffffffffff,
-            >(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
-        );
-        assert!(
-            bounded_int::trim::<i128, 0x7fffffffffffffffffffffffffffffff>(1) == OptionRev::Some(1),
-=======
-            bounded_int::trim_min::<i128>(-0x80000000000000000000000000000000) == OptionRev::None,
-        );
-        assert!(bounded_int::trim_min::<i128>(1) == OptionRev::Some(1));
-        assert!(
-            bounded_int::trim_max::<i128>(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
->>>>>>> origin/dev-v2.10.0
         );
         assert!(bounded_int::trim_max::<i128>(1) == OptionRev::Some(1));
     }

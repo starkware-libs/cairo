@@ -1342,7 +1342,6 @@ impl CairoHintProcessor<'_> {
                         }
                     }
                 }
-<<<<<<< HEAD
             }
             ExternalHint::SetMarker { marker } => {
                 self.markers.push(extract_relocatable(vm, marker)?);
@@ -1395,13 +1394,6 @@ impl CairoHintProcessor<'_> {
                 for (i, &val) in new_state.iter().enumerate() {
                     vm.insert_value((output + i)?, MaybeRelocatable::Int(Felt252::from(val)))?;
                 }
-||||||| 63dc720fc
-                Ok(())
-=======
-            }
-            ExternalHint::SetMarker { marker } => {
-                self.markers.push(extract_relocatable(vm, marker)?);
->>>>>>> origin/dev-v2.10.0
             }
         }
         Ok(())
