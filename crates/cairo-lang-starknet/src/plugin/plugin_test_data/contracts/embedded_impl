@@ -345,7 +345,9 @@ starknet_derive:
 
 impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitDispatcher {
                 contract_address,
@@ -353,11 +355,19 @@ impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitDispatcher {
                 contract_address,
@@ -366,7 +376,13 @@ impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -443,7 +459,9 @@ starknet_derive:
 
 impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitLibraryDispatcher {
                 class_hash,
@@ -451,11 +469,19 @@ impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibrary
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitLibraryDispatcher {
                 class_hash,
@@ -464,7 +490,13 @@ impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibrary
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -541,7 +573,9 @@ starknet_derive:
 
 impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitSafeLibraryDispatcher {
                 class_hash,
@@ -549,11 +583,19 @@ impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSaf
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitSafeLibraryDispatcher {
                 class_hash,
@@ -562,7 +604,13 @@ impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSaf
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -639,7 +687,9 @@ starknet_derive:
 
 impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitSafeDispatcher {
                 contract_address,
@@ -647,11 +697,19 @@ impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispat
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitSafeDispatcher {
                 contract_address,
@@ -660,7 +718,13 @@ impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispat
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1384,7 +1448,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWithDestructDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructDispatcher {
                 contract_address,
@@ -1392,11 +1458,19 @@ impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWi
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructDispatcher {
                 contract_address,
@@ -1405,7 +1479,13 @@ impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWi
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1482,7 +1562,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructLibraryDispatcher {
                 class_hash,
@@ -1490,11 +1572,19 @@ impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<Outside
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructLibraryDispatcher {
                 class_hash,
@@ -1503,7 +1593,13 @@ impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<Outside
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1580,7 +1676,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeLibraryDispatcher {
                 class_hash,
@@ -1588,11 +1686,19 @@ impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<Out
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeLibraryDispatcher {
                 class_hash,
@@ -1601,7 +1707,13 @@ impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<Out
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1678,7 +1790,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTraitWithDestructSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeDispatcher {
                 contract_address,
@@ -1686,11 +1800,19 @@ impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTra
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeDispatcher {
                 contract_address,
@@ -1699,7 +1821,13 @@ impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTra
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1776,7 +1904,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTraitWithPanicDestructDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructDispatcher {
                 contract_address,
@@ -1784,11 +1914,19 @@ impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTr
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructDispatcher {
                 contract_address,
@@ -1797,7 +1935,13 @@ impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTr
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1874,7 +2018,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructLibraryDispatcher {
                 class_hash,
@@ -1882,11 +2028,19 @@ impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<Ou
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructLibraryDispatcher {
                 class_hash,
@@ -1895,7 +2049,13 @@ impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<Ou
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1972,7 +2132,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeLibraryDispatcher {
                 class_hash,
@@ -1980,11 +2142,19 @@ impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store:
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeLibraryDispatcher {
                 class_hash,
@@ -1993,7 +2163,13 @@ impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store:
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2070,7 +2246,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeDispatcher {
                 contract_address,
@@ -2078,11 +2256,19 @@ impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<Outsi
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeDispatcher {
                 contract_address,
@@ -2091,7 +2277,13 @@ impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<Outsi
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2702,7 +2894,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDropDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropDispatcher {
                 contract_address,
@@ -2710,11 +2904,19 @@ impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDr
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropDispatcher {
                 contract_address,
@@ -2723,7 +2925,13 @@ impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDr
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2800,7 +3008,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTraitWithDropLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropLibraryDispatcher {
                 class_hash,
@@ -2808,11 +3018,19 @@ impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTrai
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropLibraryDispatcher {
                 class_hash,
@@ -2821,7 +3039,13 @@ impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTrai
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2898,7 +3122,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDropSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeLibraryDispatcher {
                 class_hash,
@@ -2906,11 +3132,19 @@ impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<Outside
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeLibraryDispatcher {
                 class_hash,
@@ -2919,7 +3153,13 @@ impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<Outside
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2996,7 +3236,9 @@ starknet_derive:
 
 impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWithDropSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeDispatcher {
                 contract_address,
@@ -3004,11 +3246,19 @@ impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWi
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeDispatcher {
                 contract_address,
@@ -3017,7 +3267,13 @@ impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWi
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]

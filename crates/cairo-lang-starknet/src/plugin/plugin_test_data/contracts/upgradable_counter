@@ -661,7 +661,9 @@ impl ICounterContractDispatcherSerde of core::serde::Serde::<ICounterContractDis
 }
 impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             ICounterContractDispatcher {
                 contract_address,
@@ -669,11 +671,19 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let ICounterContractDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             ICounterContractDispatcher {
                 contract_address,
@@ -682,7 +692,13 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let ICounterContractDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -745,7 +761,9 @@ impl ICounterContractLibraryDispatcherSerde of core::serde::Serde::<ICounterCont
 }
 impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             ICounterContractLibraryDispatcher {
                 class_hash,
@@ -753,11 +771,19 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let ICounterContractLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             ICounterContractLibraryDispatcher {
                 class_hash,
@@ -766,7 +792,13 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let ICounterContractLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -829,7 +861,9 @@ impl ICounterContractSafeLibraryDispatcherSerde of core::serde::Serde::<ICounter
 }
 impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             ICounterContractSafeLibraryDispatcher {
                 class_hash,
@@ -837,11 +871,19 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let ICounterContractSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             ICounterContractSafeLibraryDispatcher {
                 class_hash,
@@ -850,7 +892,13 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let ICounterContractSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -913,7 +961,9 @@ impl ICounterContractSafeDispatcherSerde of core::serde::Serde::<ICounterContrac
 }
 impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             ICounterContractSafeDispatcher {
                 contract_address,
@@ -921,11 +971,19 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let ICounterContractSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             ICounterContractSafeDispatcher {
                 contract_address,
@@ -934,7 +992,13 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let ICounterContractSafeDispatcher {
+            contract_address,
+        } = value;
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
