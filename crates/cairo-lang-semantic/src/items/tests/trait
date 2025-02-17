@@ -47,12 +47,12 @@ impl MyImpl2<T> of MyTrait::<T> {
 impl abc of abc;
 
 //! > expected_diagnostics
-error: Missing token TerminalEq.
+error: Missing token '='.
  --> lib.cairo:16:20
     impl DummyImpl2 of MyTrait::<T>;
                    ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> lib.cairo:16:23
     impl DummyImpl2 of MyTrait::<T>;
                       ^

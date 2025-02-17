@@ -347,7 +347,7 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
 macro!
       ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:7
 macro!
       ^
@@ -380,12 +380,12 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalRParen.
+error: Missing token ')'.
  --> dummy_file.cairo:1:16
 identifier!(1,2
                ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:16
 identifier!(1,2
                ^
@@ -430,7 +430,7 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:17
 identifier!(1,2)
                 ^
@@ -481,7 +481,7 @@ Did you mean to write `identifier!(...)'?
 identifier(x)
 ^^^^^^^^^^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:14
 identifier(x)
              ^

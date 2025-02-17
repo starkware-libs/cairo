@@ -19,7 +19,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
@@ -29,7 +29,7 @@ error: Skipped tokens. Expected: pattern.
     match MyStruct{a: 1} {
                     ^
 
-error: Missing token TerminalMatchArrow.
+error: Missing token '=>'.
  --> dummy_file.cairo:2:24
     match MyStruct{a: 1} {
                        ^
@@ -39,7 +39,7 @@ error: Missing tokens. Expected an expression.
     match MyStruct{a: 1} {
                        ^
 
-error: Missing token TerminalUnderscore.
+error: Missing token '_'.
  --> dummy_file.cairo:8:19
       bool::False() => {}
                   ^
@@ -64,7 +64,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:4:10
         0 = 1,
          ^
@@ -74,7 +74,7 @@ error: Skipped tokens. Expected: pattern.
         0 = 1,
           ^
 
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:4:14
         0 = 1,
              ^
