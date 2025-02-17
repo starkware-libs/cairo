@@ -415,6 +415,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::TypeClause => Some(12),
                 _ => None,
             },
+            Some(SyntaxKind::MacroRulesList | SyntaxKind::MacroRule) => Some(21),
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
@@ -870,6 +871,17 @@ impl SyntaxNodeFormat for SyntaxNode {
 
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
+            SyntaxKind::MacroRule => {
+                let mut properties = BreakLinePointProperties::new(
+                    20,
+                    BreakLinePointIndentation::IndentedWithTail,
+                    true,
+                    false,
+                );
+                properties.set_single_breakpoint();
+                BreakLinePointsPositions::Both { leading: properties.clone(), trailing: properties }
+            }
+
             SyntaxKind::MatchArms | SyntaxKind::MemberList | SyntaxKind::VariantList => {
                 BreakLinePointsPositions::List {
                     properties: BreakLinePointProperties::new(
