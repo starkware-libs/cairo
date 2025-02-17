@@ -56,7 +56,9 @@ fn test_diagnostics() {
     let diagnostic = SimpleDiag { file_id };
     diagnostics.add(diagnostic);
 
-    assert_eq!(diagnostics.build().format(&db_val), indoc! { "
+    assert_eq!(
+        diagnostics.build().format(&db_val),
+        indoc! { "
             error: Simple diagnostic.
              --> dummy_file.sierra:1:1-2:1
               abcd
@@ -64,5 +66,6 @@ fn test_diagnostics() {
             | efg.
             |_^
 
-        " });
+        " }
+    );
 }

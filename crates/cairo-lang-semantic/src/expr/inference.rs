@@ -413,23 +413,26 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (*k, ImplVarTraitItemMappings {
-                        types: mappings
-                            .types
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        constants: mappings
-                            .constants
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        impls: mappings
-                            .impls
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                    })
+                    (
+                        *k,
+                        ImplVarTraitItemMappings {
+                            types: mappings
+                                .types
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            constants: mappings
+                                .constants
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            impls: mappings
+                                .impls
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                        },
+                    )
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),

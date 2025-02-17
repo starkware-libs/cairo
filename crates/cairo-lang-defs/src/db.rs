@@ -698,13 +698,16 @@ fn priv_module_sub_files(
                     diagnostics_notes
                         .insert(generated_file_id, DiagnosticNote { text, location: None });
                 }
-                files.insert(generated_file_id, VirtualFile {
-                    parent: Some(file_id),
-                    name: generated.name,
-                    content: generated.content.into(),
-                    code_mappings: generated.code_mappings.into(),
-                    kind: FileKind::Module,
-                });
+                files.insert(
+                    generated_file_id,
+                    VirtualFile {
+                        parent: Some(file_id),
+                        name: generated.name,
+                        content: generated.content.into(),
+                        code_mappings: generated.code_mappings.into(),
+                        kind: FileKind::Module,
+                    },
+                );
                 aux_data.push(generated.aux_data);
             }
             if remove_original_item {

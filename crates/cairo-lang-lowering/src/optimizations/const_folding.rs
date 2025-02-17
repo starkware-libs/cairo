@@ -278,11 +278,12 @@ impl ConstFoldingContext<'_> {
                 stmt.inputs.clear();
                 stmt.function =
                     ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
-                        .function_id("storage_base_address_const", vec![
-                            GenericArgumentId::Constant(
+                        .function_id(
+                            "storage_base_address_const",
+                            vec![GenericArgumentId::Constant(
                                 ConstValue::Int(val.clone(), *ty).intern(self.db),
-                            ),
-                        ])
+                            )],
+                        )
                         .lowered(self.db);
             }
             None
@@ -374,29 +375,32 @@ impl ConstFoldingContext<'_> {
                     var.location,
                 );
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
-                return Some((None, FlatBlockEnd::Match {
-                    info: MatchInfo::Extern(MatchExternInfo {
-                        function,
-                        inputs: vec![nz_input],
-                        arms: vec![
-                            MatchArm {
-                                arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_zero_variant(db, var.ty),
-                                ),
-                                block_id: info.arms[1].block_id,
-                                var_ids: vec![],
-                            },
-                            MatchArm {
-                                arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_nonzero_variant(db, var.ty),
-                                ),
-                                block_id: info.arms[0].block_id,
-                                var_ids: vec![unused_nz_var],
-                            },
-                        ],
-                        location: info.location,
-                    }),
-                }));
+                return Some((
+                    None,
+                    FlatBlockEnd::Match {
+                        info: MatchInfo::Extern(MatchExternInfo {
+                            function,
+                            inputs: vec![nz_input],
+                            arms: vec![
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_zero_variant(db, var.ty),
+                                    ),
+                                    block_id: info.arms[1].block_id,
+                                    var_ids: vec![],
+                                },
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_nonzero_variant(db, var.ty),
+                                    ),
+                                    block_id: info.arms[0].block_id,
+                                    var_ids: vec![unused_nz_var],
+                                },
+                            ],
+                            location: info.location,
+                        }),
+                    },
+                ));
             }
             Some((
                 None,

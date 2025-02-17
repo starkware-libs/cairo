@@ -75,7 +75,9 @@ fn test_populate_names() {
     }
     .populate(&mut program);
 
-    assert_eq!(program.to_string(), indoc! {"
+    assert_eq!(
+        program.to_string(),
+        indoc! {"
             type u128 = u128;
             type GasBuiltin = GasBuiltin;
             type NonZeroInt = NonZero<u128>;
@@ -88,5 +90,6 @@ fn test_populate_names() {
 
             Func1@1(a: u128, gb: GasBuiltin) -> (GasBuiltin);
             Func2@6() -> ();
-        "});
+        "}
+    );
 }

@@ -106,15 +106,18 @@ fn span_ty(
     wrapped_ty: ConcreteTypeId,
     wrapped_ty_name: &str,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string(format!(
-            "core::array::Span::<{wrapped_ty_name}>"
-        ))),
-        GenericArg::Type(snapshot_ty(
-            context,
-            context.get_wrapped_concrete_type(ArrayType::id(), wrapped_ty)?,
-        )?),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(format!(
+                "core::array::Span::<{wrapped_ty_name}>"
+            ))),
+            GenericArg::Type(snapshot_ty(
+                context,
+                context.get_wrapped_concrete_type(ArrayType::id(), wrapped_ty)?,
+            )?),
+        ],
+    )
 }
 
 /// User type for `Span<felt252>`.

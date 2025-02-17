@@ -98,17 +98,20 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             ],
             branch_signatures: vec![
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
-                    vars: vec![rc_output_info, OutputVarInfo {
-                        ty,
-                        ref_info: wrapping_result_ref_info,
-                    }],
+                    vars: vec![
+                        rc_output_info,
+                        OutputVarInfo { ty, ref_info: wrapping_result_ref_info },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -148,10 +151,13 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
-            vec![OutputVarInfo::new_builtin(range_check_type, 0), OutputVarInfo {
-                ty: sqrt_ty,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-            }],
+            vec![
+                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo {
+                    ty: sqrt_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

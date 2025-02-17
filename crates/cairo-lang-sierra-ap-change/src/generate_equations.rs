@@ -62,24 +62,30 @@ pub fn generate_equations<
 ) -> Result<Vec<ApChangeExpr>, ApChangeError> {
     let mut generator = EquationGenerator::new(program.statements.len());
     for func in &program.funcs {
-        generator.set_or_add_constraint(&func.entry_point, StatementInfo {
-            base: ChangeBase::FunctionStart(func.id.clone()),
-            past_ap_change: Some(Expr::from_const(0)),
-            past_locals: 0,
-        })?;
+        generator.set_or_add_constraint(
+            &func.entry_point,
+            StatementInfo {
+                base: ChangeBase::FunctionStart(func.id.clone()),
+                past_ap_change: Some(Expr::from_const(0)),
+                past_locals: 0,
+            },
+        )?;
     }
     for idx in (0..program.statements.len()).map(StatementIdx) {
         let base_info = generator.get_info(&idx)?;
         match &program.get_statement(&idx).unwrap() {
             cairo_lang_sierra::program::Statement::Return(_) => {
                 if let ChangeBase::FunctionStart(func_id) = &base_info.base {
-                    generator.set_or_add_constraint(&idx, StatementInfo {
-                        base: base_info.base.clone(),
-                        past_ap_change: Some(Expr::from_var(Var::FunctionApChange(
-                            func_id.clone(),
-                        ))),
-                        past_locals: base_info.past_locals,
-                    })?;
+                    generator.set_or_add_constraint(
+                        &idx,
+                        StatementInfo {
+                            base: base_info.base.clone(),
+                            past_ap_change: Some(Expr::from_var(Var::FunctionApChange(
+                                func_id.clone(),
+                            ))),
+                            past_locals: base_info.past_locals,
+                        },
+                    )?;
                 }
             }
             cairo_lang_sierra::program::Statement::Invocation(invocation) => {

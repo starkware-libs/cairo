@@ -28,9 +28,11 @@ pub fn test_abi_failure(
         .iter()
         .find(|submodule| submodule.has_attr(db, CONTRACT_ATTR).unwrap())
         .expect("No starknet::contract found in input code.");
-    let abi_error = AbiBuilder::from_submodule(db, *contract_submodule, BuilderConfig {
-        account_contract_validations: true,
-    })
+    let abi_error = AbiBuilder::from_submodule(
+        db,
+        *contract_submodule,
+        BuilderConfig { account_contract_validations: true },
+    )
     .expect("No basic errors")
     .finalize()
     .unwrap_err();

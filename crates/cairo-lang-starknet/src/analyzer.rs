@@ -77,9 +77,11 @@ fn add_abi_diagnostics(
     let Some(contract) = module_contract(db, module_id) else {
         return;
     };
-    let Ok(abi_builder) = AbiBuilder::from_submodule(db, contract.submodule_id, BuilderConfig {
-        account_contract_validations: true,
-    }) else {
+    let Ok(abi_builder) = AbiBuilder::from_submodule(
+        db,
+        contract.submodule_id,
+        BuilderConfig { account_contract_validations: true },
+    ) else {
         return;
     };
     for err in abi_builder.errors() {
@@ -162,12 +164,13 @@ fn analyze_storage_struct(
     let allow_collisions =
         struct_id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
 
-    let lookup_context = ImplLookupContext::new(struct_id.module_file_id(db.upcast()).0, match db
-        .struct_generic_params(struct_id)
-    {
-        Ok(params) => params.into_iter().map(|p| p.id()).collect(),
-        Err(_) => return,
-    });
+    let lookup_context = ImplLookupContext::new(
+        struct_id.module_file_id(db.upcast()).0,
+        match db.struct_generic_params(struct_id) {
+            Ok(params) => params.into_iter().map(|p| p.id()).collect(),
+            Err(_) => return,
+        },
+    );
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
     for (member_name, member) in members.iter() {

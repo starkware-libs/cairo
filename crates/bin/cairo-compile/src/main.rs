@@ -55,11 +55,14 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let sierra_program = compile_cairo_project_at_path(&args.path, CompilerConfig {
-        replace_ids: args.replace_ids,
-        inlining_strategy: args.inlining_strategy.into(),
-        ..CompilerConfig::default()
-    })?;
+    let sierra_program = compile_cairo_project_at_path(
+        &args.path,
+        CompilerConfig {
+            replace_ids: args.replace_ids,
+            inlining_strategy: args.inlining_strategy.into(),
+            ..CompilerConfig::default()
+        },
+    )?;
 
     match args.output {
         Some(path) => {

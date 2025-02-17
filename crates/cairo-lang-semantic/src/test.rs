@@ -17,10 +17,13 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 #[test]
 fn test_resolve() {
     let db_val = SemanticDatabaseForTesting::default();
-    let (test_module, _diagnostics) = setup_test_module(&db_val, indoc! {"
+    let (test_module, _diagnostics) = setup_test_module(
+        &db_val,
+        indoc! {"
             fn foo() -> felt252 { 5 }
             extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
-        "})
+        "},
+    )
     .split();
 
     let module_id = test_module.module_id;
@@ -125,11 +128,14 @@ fn test_mapping_translate_consecutive_spans() {
     let db = &mut db_val;
     let diags = db.module_semantic_diagnostics(module_id).unwrap();
     let diags = diags.format(db);
-    assert_eq!(diags, indoc! {r#"
+    assert_eq!(
+        diags,
+        indoc! {r#"
         error: Cannot assign to an immutable variable.
          --> lib.cairo:3:5
             x = 2;
             ^^^^^^
 
-    "#});
+    "#}
+    );
 }

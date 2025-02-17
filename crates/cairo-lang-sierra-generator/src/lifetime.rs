@@ -219,10 +219,10 @@ impl Analyzer<'_> for VariableLifetimeContext<'_> {
             if self.local_vars.contains(dst) {
                 assert!(
                     info.vars
-                        .insert(SierraGenVar::UninitializedLocal(*dst), UseLocation {
-                            statement_location,
-                            idx
-                        })
+                        .insert(
+                            SierraGenVar::UninitializedLocal(*dst),
+                            UseLocation { statement_location, idx }
+                        )
                         .is_none(),
                     "Variable introduced multiple times."
                 );
@@ -290,10 +290,10 @@ impl VariableLifetimeContext<'_> {
             if self.local_vars.contains(var_id) {
                 assert!(
                     info.vars
-                        .insert(SierraGenVar::UninitializedLocal(*var_id), UseLocation {
-                            statement_location,
-                            idx
-                        })
+                        .insert(
+                            SierraGenVar::UninitializedLocal(*var_id),
+                            UseLocation { statement_location, idx }
+                        )
                         .is_none(),
                     "Variable introduced multiple times."
                 );

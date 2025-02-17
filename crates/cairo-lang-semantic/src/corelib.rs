@@ -78,36 +78,49 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let felt252_ty = db.core_info().felt252;
     let lower_id = ConstValue::Int(min, felt252_ty).intern(db);
     let upper_id = ConstValue::Int(max, felt252_ty).intern(db);
-    try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
-        GenericArgumentId::Constant(lower_id),
-        GenericArgumentId::Constant(upper_id),
-    ])
+    try_get_ty_by_name(
+        db,
+        bounded_int,
+        "BoundedInt".into(),
+        vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
+    )
     .expect("could not find")
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_ty_by_name(db, core_submodule(db, "zeroable"), "NonZero".into(), vec![
-        GenericArgumentId::Type(inner_type),
-    ])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "zeroable"),
+        "NonZero".into(),
+        vec![GenericArgumentId::Type(inner_type)],
+    )
 }
 
 pub fn core_result_ty(db: &dyn SemanticGroup, ok_type: TypeId, err_type: TypeId) -> TypeId {
-    get_ty_by_name(db, core_submodule(db, "result"), "Result".into(), vec![
-        GenericArgumentId::Type(ok_type),
-        GenericArgumentId::Type(err_type),
-    ])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "result"),
+        "Result".into(),
+        vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
+    )
 }
 
 pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
-    get_ty_by_name(db, core_submodule(db, "option"), "Option".into(), vec![
-        GenericArgumentId::Type(some_type),
-    ])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "option"),
+        "Option".into(),
+        vec![GenericArgumentId::Type(some_type)],
+    )
 }
 
 pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_ty_by_name(db, core_submodule(db, "box"), "Box".into(), vec![GenericArgumentId::Type(
-        inner_type,
-    )])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "box"),
+        "Box".into(),
+        vec![GenericArgumentId::Type(inner_type)],
+    )
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -587,10 +600,12 @@ pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
 pub fn core_downcast(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
     let internal = core_submodule(db, "integer");
 
-    get_function_id(db, internal, "downcast".into(), vec![
-        GenericArgumentId::Type(input),
-        GenericArgumentId::Type(output),
-    ])
+    get_function_id(
+        db,
+        internal,
+        "downcast".into(),
+        vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
+    )
 }
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(

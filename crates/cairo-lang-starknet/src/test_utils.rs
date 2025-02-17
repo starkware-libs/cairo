@@ -75,13 +75,18 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
     let main_crate_ids = vec![**contracts_crate_id];
     let diagnostics_reporter =
         DiagnosticsReporter::default().with_crates(&main_crate_ids).allow_warnings();
-    compile_contract_in_prepared_db(&db, Some(example_file_name), main_crate_ids, CompilerConfig {
-        replace_ids: true,
-        allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
-        diagnostics_reporter,
-        add_statements_functions: false,
-        add_statements_code_locations: false,
-        inlining_strategy: InliningStrategy::Default,
-    })
+    compile_contract_in_prepared_db(
+        &db,
+        Some(example_file_name),
+        main_crate_ids,
+        CompilerConfig {
+            replace_ids: true,
+            allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
+            diagnostics_reporter,
+            add_statements_functions: false,
+            add_statements_code_locations: false,
+            inlining_strategy: InliningStrategy::Default,
+        },
+    )
     .expect("compile_path failed")
 }
