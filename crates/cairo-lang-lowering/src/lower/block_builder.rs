@@ -132,8 +132,8 @@ impl BlockBuilder {
         self.snapped_semantics.insert(member_path.into(), var);
     }
 
-    /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing a
-    /// its parents.
+    /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its
+    /// parents.
     pub fn get_snap_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
