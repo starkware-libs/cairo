@@ -221,7 +221,7 @@ pub fn lower_for_loop(
                 lower_expr_block(ctx, &mut some_subscope, &some_block)?;
                 // Add recursive call.
                 let signature = ctx.signature.clone();
-                call_loop_func(
+                call_loop_func_inner(
                     ctx,
                     signature,
                     &mut some_subscope,
@@ -309,7 +309,7 @@ pub fn lower_while_loop(
         lower_expr_block(ctx, &mut subscope_main, &main_block)?;
         // Add recursive call.
         let signature = ctx.signature.clone();
-        call_loop_func(
+        call_loop_func_inner(
             ctx,
             signature,
             &mut subscope_main,
@@ -460,7 +460,7 @@ pub fn lower_loop_function(
                     lower_expr_block(&mut ctx, &mut builder, &semantic_block)?;
                     // Add recursive call.
                     let signature = ctx.signature.clone();
-                    call_loop_func(
+                    call_loop_func_inner(
                         &mut ctx,
                         signature,
                         &mut builder,
@@ -663,7 +663,7 @@ pub fn lower_statement(
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
             log::trace!("Lowering a continue statement.");
-            let lowered_expr = call_loop_func(
+            let lowered_expr = call_loop_func_inner(
                 ctx,
                 ctx.signature.clone(),
                 builder,
@@ -1448,8 +1448,6 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-    let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
-
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
     let lowered = lower_loop_function(
@@ -1457,31 +1455,44 @@ fn lower_expr_loop(
         function,
         loop_signature.clone(),
         loop_expr_id,
-        &snap_usage,
+        &ctx.usages.usages[&loop_expr_id].snap_usage,
     )
     .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
-    for snapshot_param in snap_usage.values() {
-        // if we have access to the real member we generate a snapshot, otherwise it should be
-        // accessible with `builder.get_snap_ref`
-        if let Some(input) = builder.get_ref(ctx, snapshot_param) {
-            let (original, snapped) = generators::Snapshot {
-                input,
-                location: ctx.get_location(snapshot_param.stable_ptr().untyped()),
-            }
-            .add(ctx, &mut builder.statements);
-            // `update_ref` invalidates snapshots so it must be called before `update_snap_ref`.
-            builder.update_ref(ctx, snapshot_param, original);
-            builder.update_snap_ref(snapshot_param, snapped);
-        }
-    }
-    let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
+    let call = call_loop_func(
+        ctx,
+        loop_signature,
+        builder,
+        loop_expr_id,
+        stable_ptr.untyped(),
+        |ctx, builder, param| {
+            let input = builder.get_ref(ctx, param)?;
+            let location = ctx.get_location(param.stable_ptr().untyped());
+            let (original, snapped) =
+                generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
+            builder.update_ref(ctx, param, original);
+            Some(VarUsage { var_id: snapped, location })
+        },
+    );
 
     ctx.current_loop_expr_id = old_loop_expr_id;
     call
+}
+
+/// Adds a call to an inner loop-generated function from the loop function itself.
+fn call_loop_func_inner(
+    ctx: &mut LoweringContext<'_, '_>,
+    loop_signature: Signature,
+    builder: &mut BlockBuilder,
+    loop_expr_id: ExprId,
+    stable_ptr: SyntaxStablePtrId,
+) -> LoweringResult<LoweredExpr> {
+    call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr, |ctx, builder, param| {
+        builder.get_snap_ref(ctx, param)
+    })
 }
 
 /// Adds a call to an inner loop-generated function.
@@ -1491,6 +1502,11 @@ fn call_loop_func(
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId,
+    handle_snap: impl Fn(
+        &mut LoweringContext<'_, '_>,
+        &mut BlockBuilder,
+        &ExprVarMemberPath,
+    ) -> Option<VarUsage>,
 ) -> LoweringResult<LoweredExpr> {
     let location = ctx.get_location(stable_ptr);
     let loop_stable_ptr = ctx.function_body.arenas.exprs[loop_expr_id].stable_ptr();
@@ -1508,7 +1524,7 @@ fn call_loop_func(
                 .get_ref(ctx, &param)
                 .and_then(|var| (ctx.variables[var.var_id].ty == param.ty()).then_some(var))
                 .or_else(|| {
-                    let var = builder.get_snap_ref(ctx, &param)?;
+                    let var = handle_snap(ctx, builder, &param)?;
                     (ctx.variables[var.var_id].ty == param.ty()).then_some(var)
                 })
                 .ok_or_else(|| {
