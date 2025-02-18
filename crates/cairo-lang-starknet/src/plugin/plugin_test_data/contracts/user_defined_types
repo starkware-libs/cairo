@@ -251,7 +251,9 @@ starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
-        let value = starknet::Store::<felt252>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let value = starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
                 value,
@@ -259,11 +261,19 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-        starknet::Store::<felt252>::write(address_domain, base, value.value)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let WrappedFelt252 {
+            value,
+        } = value;
+        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-        let value = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let value = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
                 value,
@@ -272,7 +282,13 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.value)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let WrappedFelt252 {
+            value,
+        } = value;
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -359,6 +375,8 @@ starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
         
         starknet::SyscallResult::Ok(
             ZeroSize {
@@ -367,10 +385,18 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ZeroSize) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let ZeroSize {
+            
+        } = value;
         
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ZeroSize> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
         
         starknet::SyscallResult::Ok(
             ZeroSize {
@@ -380,6 +406,12 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ZeroSize) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let ZeroSize {
+            
+        } = value;
         
         starknet::SyscallResult::Ok(())
     }

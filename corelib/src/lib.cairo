@@ -383,8 +383,10 @@ pub mod debug;
 pub mod fmt;
 
 #[feature("corelib-internal-use")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `starknet` directly")]
 pub mod starknet;
 #[allow(unused_imports)]
+#[feature("corelib-internal-use")]
 use starknet::System;
 
 pub mod internal;

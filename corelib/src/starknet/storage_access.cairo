@@ -58,7 +58,7 @@ pub extern type StorageBaseAddress;
 /// # Examples
 ///
 /// ```
-/// use core::starknet::storage_access::storage_base_address_const;
+/// use starknet::storage_access::storage_base_address_const;
 ///
 /// let base_address = storage_base_address_const::<0>();
 /// ```
@@ -136,8 +136,8 @@ impl LowerHexStorageBaseAddress of core::fmt::LowerHex<StorageBaseAddress> {
 /// etc.) do not implement `Store` directly. Instead, use specialized storage types, such as [`Vec`]
 /// or [`Map`].
 ///
-/// [`Map`]: crate::starknet::storage::Map
-/// [`Vec`]: crate::starknet::storage::Vec
+/// [`Map`]: starknet::storage::Map
+/// [`Vec`]: starknet::storage::Vec
 ///
 /// # Derivation
 ///
@@ -262,7 +262,7 @@ pub trait Store<T> {
 /// Packing multiple integer fields into a single storage slot:
 ///
 /// ```
-/// use core::starknet::storage_access::StorePacking;
+/// use starknet::storage_access::StorePacking;
 ///
 /// #[derive(Drop)]
 /// struct Sizes {
