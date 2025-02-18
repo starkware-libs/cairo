@@ -854,6 +854,21 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 }
 
+impl TIntoOption<T> of Into<T, Option<T>> {
+    /// Moves `self` into a new [`Some`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let o: Option<u8> = 67_u8.into()
+    /// assert_eq!(Some(67), o);
+    /// ```
+    #[inline]
+    fn into(self: T) -> Option<T> {
+        Some(self)
+    }
+}
+
 
 /// An iterator over the value in the [`Some`] variant of an [`Option`].
 ///
