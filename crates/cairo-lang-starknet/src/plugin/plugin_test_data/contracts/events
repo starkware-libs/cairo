@@ -119,9 +119,11 @@ impl AIsEvent of starknet::Event<A> {
 }
 impl StoreA of starknet::Store::<A> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<A> {
-        let x = starknet::Store::<felt252>::read(address_domain, base)?;
-        let mut current_offset = starknet::Store::<felt252>::size();
-        let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let x = starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let mut __store_derive_current_offset__ = starknet::Store::<felt252>::size();
+        let data = starknet::Store::<usize>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
         starknet::SyscallResult::Ok(
             A {
                 x,
@@ -130,15 +132,24 @@ impl StoreA of starknet::Store::<A> {
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: A) -> starknet::SyscallResult<()> {
-        starknet::Store::<felt252>::write(address_domain, base, value.x)?;
-        let mut current_offset = starknet::Store::<felt252>::size();
-        starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let A {
+            x,
+                data,
+        } = value;
+        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, x)?;
+        let mut __store_derive_current_offset__ = starknet::Store::<felt252>::size();
+        starknet::Store::<usize>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, data)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<A> {
-        let x = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
-        let mut current_offset = offset + starknet::Store::<felt252>::size();
-        let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let x = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let mut __store_derive_current_offset__ = __store_derive_offset__ + starknet::Store::<felt252>::size();
+        let data = starknet::Store::<usize>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
         starknet::SyscallResult::Ok(
             A {
                 x,
@@ -148,9 +159,16 @@ impl StoreA of starknet::Store::<A> {
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: A) -> starknet::SyscallResult<()> {
-        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.x)?;
-        let mut current_offset = offset + starknet::Store::<felt252>::size();
-        starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let A {
+            x,
+                data,
+        } = value;
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x)?;
+        let mut __store_derive_current_offset__ = __store_derive_offset__ + starknet::Store::<felt252>::size();
+        starknet::Store::<usize>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, data)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
