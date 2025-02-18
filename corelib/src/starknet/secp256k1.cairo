@@ -20,25 +20,17 @@ use starknet::secp256_trait::{
 #[allow(unused_imports)]
 use starknet::{SyscallResult, SyscallResultTrait};
 
-pub mod secp256k1_curve {
+mod secp256k1_curve {
     /// The value of b for the secp256k1 curve equation
-    pub const B: u256 = u256 { low: 0x07, high: 0x00 };
+    pub const B: u256 = 0x07;
     /// The order of the base field
-    pub const Q: u256 = u256 {
-        low: 0xfffffffffffffffffffffffefffffc2f, high: 0xffffffffffffffffffffffffffffffff,
-    };
+    pub const Q: u256 = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f;
     /// The order (number of points) of the secp256k1 Curve.
-    pub const R: u256 = u256 {
-        low: 0xbaaedce6af48a03bbfd25e8cd0364141, high: 0xfffffffffffffffffffffffffffffffe,
-    };
+    pub const R: u256 = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
     /// The x coordinate of the generator point.
-    pub const GEN_X: u256 = u256 {
-        low: 0x029bfcdb2dce28d959f2815b16f81798, high: 0x79be667ef9dcbbac55a06295ce870b07,
-    };
+    pub const GEN_X: u256 = 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798;
     /// The y coordinate of the generator point.
-    pub const GEN_Y: u256 = u256 {
-        low: 0xfd17b448a68554199c47d08ffb10d4b8, high: 0x483ada7726a3c4655da4fbfc0e1108a8,
-    };
+    pub const GEN_Y: u256 = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8;
 }
 
 /// A point on the secp256k1 curve.
