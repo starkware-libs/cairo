@@ -30,19 +30,19 @@ pub struct CompiledFunction {
 }
 impl std::fmt::Display for CompiledFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "# builtins:")?;
+        write!(f, "// builtins:")?;
         if !self.wrapper.builtins.is_empty() {
             write!(f, " ")?;
             write_comma_separated(f, self.wrapper.builtins.iter().map(|b| b.to_str()))?;
         }
         writeln!(f)?;
-        writeln!(f, "# header #")?;
+        writeln!(f, "// header")?;
         for instruction in &self.wrapper.header {
             writeln!(f, "{};", instruction)?;
         }
-        writeln!(f, "# sierra based code #")?;
+        writeln!(f, "// sierra based code")?;
         write!(f, "{}", self.program)?;
-        writeln!(f, "# footer #")?;
+        writeln!(f, "// footer")?;
         for instruction in &self.wrapper.footer {
             writeln!(f, "{};", instruction)?;
         }
@@ -208,6 +208,9 @@ pub fn compile_executable_function_in_prepared_db(
         anyhow::anyhow!("Failed to create runnable builder: {}\n{}", err, locs.join("\n"))
     })?;
 
-    let wrapper = builder.create_wrapper_info(&executable_func, EntryCodeConfig::executable())?;
+    let wrapper = builder.create_wrapper_info(
+        &executable_func,
+        EntryCodeConfig::executable(config.allow_syscalls),
+    )?;
     Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
 }

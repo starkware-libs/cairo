@@ -7,7 +7,6 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
 use cairo_lang_executable::executable::{EntryPointKind, Executable};
-use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
@@ -250,16 +249,6 @@ fn main() -> anyhow::Result<()> {
         let mut output_buffer = "Program Output:\n".to_string();
         runner.vm.write_output(&mut output_buffer)?;
         print!("{output_buffer}");
-        if let [.., start_marker, end_marker] = &hint_processor.markers[..] {
-            let size = (*end_marker - *start_marker).with_context(|| {
-                format!("Panic data markers mismatch: start={start_marker}, end={end_marker}")
-            })?;
-            let panic_data = runner
-                .vm
-                .get_integer_range(*start_marker, size)
-                .with_context(|| "Failed reading panic data.")?;
-            println!("{}", format_for_panic(panic_data.into_iter().map(|value| *value)));
-        }
     }
 
     if let Some(trace_path) = &args.run.proof_outputs.trace_file {
