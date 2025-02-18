@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    FileIndex, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId, TraitFunctionId,
-    TraitId,
+    FileIndex, GenericTypeId, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
@@ -12,9 +12,11 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 use smol_str::SmolStr;
 
+use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
+use crate::items::functions::GenericFunctionId;
 use crate::items::us::SemanticUseEx;
 use crate::items::visibility::peek_visible_in;
 use crate::resolve::{ResolvedGenericItem, Resolver};
@@ -88,15 +90,15 @@ pub fn methods_in_crate(
     result.into()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_traits_in_module].
-pub fn visible_traits_in_module(
+/// Query implementation of [crate::db::SemanticGroup::visible_items_in_module].
+pub fn visible_items_in_module(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     user_module_file_id: ModuleFileId,
     include_parent: bool,
-) -> Arc<[(TraitId, String)]> {
+) -> Arc<[(ResolvedGenericItem, String)]> {
     let mut visited_modules = UnorderedHashSet::default();
-    visible_traits_in_module_ex(
+    visible_items_in_module_ex(
         db,
         module_id,
         user_module_file_id,
@@ -106,15 +108,15 @@ pub fn visible_traits_in_module(
     .unwrap_or_else(|| Vec::new().into())
 }
 
-/// Returns the visible traits in a module, including the traits in the parent module if needed.
+/// Returns the visible items in a module, including the items in the parent module if needed.
 /// The visibility is relative to the module `user_module_id`.
-fn visible_traits_in_module_ex(
+fn visible_items_in_module_ex(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     user_module_file_id: ModuleFileId,
     include_parent: bool,
     visited_modules: &mut UnorderedHashSet<ModuleId>,
-) -> Option<Arc<[(TraitId, String)]>> {
+) -> Option<Arc<[(ResolvedGenericItem, String)]>> {
     let mut result = Vec::new();
     if visited_modules.contains(&module_id) {
         return Some(result.into());
@@ -138,21 +140,30 @@ fn visible_traits_in_module_ex(
     };
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
-    // Add traits and traverse modules imported into the current module.
+    // Add items and traverse modules imported into the current module.
     for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
         if !is_visible(use_id.name(db.upcast()))? {
             continue;
         }
         let resolved_item = db.use_resolved_item(use_id).ok()?;
-        match resolved_item {
+        let name = match &resolved_item {
             ResolvedGenericItem::Module(inner_module_id) => {
-                modules_to_visit.push(inner_module_id);
+                modules_to_visit.push(*inner_module_id);
+
+                inner_module_id.name(db.upcast())
             }
-            ResolvedGenericItem::Trait(trait_id) => {
-                result.push((trait_id, trait_id.name(db.upcast()).to_string()));
-            }
-            _ => continue,
-        }
+            ResolvedGenericItem::GenericConstant(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::GenericFunction(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::GenericType(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::GenericTypeAlias(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::GenericImplAlias(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::Variant(Variant { id, .. }) => id.name(db.upcast()),
+            ResolvedGenericItem::Trait(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::Impl(item_id) => item_id.name(db.upcast()),
+            ResolvedGenericItem::Variable(_) => continue,
+        };
+
+        result.push((resolved_item, name.to_string()));
     }
     for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
         if !is_visible(submodule_id.name(db.upcast()))? {
@@ -160,19 +171,45 @@ fn visible_traits_in_module_ex(
         }
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
-    for trait_id in db.module_traits_ids(module_id).ok()?.iter().copied() {
-        if !is_visible(trait_id.name(db.upcast()))? {
-            continue;
-        }
-        result.push((trait_id, trait_id.name(db.upcast()).to_string()));
+
+    macro_rules! module_items {
+        ($query:ident, $map:expr) => {
+            for item_id in db.$query(module_id).ok()?.iter().copied() {
+                if !is_visible(item_id.name(db.upcast()))? {
+                    continue;
+                }
+                result.push(($map(item_id), item_id.name(db.upcast()).to_string()));
+            }
+        };
     }
 
+    module_items!(module_constants_ids, ResolvedGenericItem::GenericConstant);
+    module_items!(module_free_functions_ids, |item_id| ResolvedGenericItem::GenericFunction(
+        GenericFunctionId::Free(item_id)
+    ));
+    module_items!(module_extern_functions_ids, |item_id| ResolvedGenericItem::GenericFunction(
+        GenericFunctionId::Extern(item_id)
+    ));
+    module_items!(module_structs_ids, |item_id| ResolvedGenericItem::GenericType(
+        GenericTypeId::Struct(item_id)
+    ));
+    module_items!(module_enums_ids, |item_id| ResolvedGenericItem::GenericType(
+        GenericTypeId::Enum(item_id)
+    ));
+    module_items!(module_extern_types_ids, |item_id| ResolvedGenericItem::GenericType(
+        GenericTypeId::Extern(item_id)
+    ));
+    module_items!(module_type_aliases_ids, ResolvedGenericItem::GenericTypeAlias);
+    module_items!(module_impl_aliases_ids, ResolvedGenericItem::GenericImplAlias);
+    module_items!(module_traits_ids, ResolvedGenericItem::Trait);
+    module_items!(module_impls_ids, ResolvedGenericItem::Impl);
+
     for submodule in modules_to_visit {
-        for (trait_id, path) in
-            visible_traits_in_module_ex(db, submodule, user_module_file_id, false, visited_modules)?
+        for (item_id, path) in
+            visible_items_in_module_ex(db, submodule, user_module_file_id, false, visited_modules)?
                 .iter()
         {
-            result.push((*trait_id, format!("{}::{}", submodule.name(db.upcast()), path)));
+            result.push((item_id.clone(), format!("{}::{}", submodule.name(db.upcast()), path)));
         }
     }
     // Traverse the parent module if needed.
@@ -181,7 +218,7 @@ fn visible_traits_in_module_ex(
             ModuleId::CrateRoot(_) => {}
             ModuleId::Submodule(submodule_id) => {
                 let parent_module_id = submodule_id.parent_module(db.upcast());
-                for (trait_id, path) in visible_traits_in_module_ex(
+                for (item_id, path) in visible_items_in_module_ex(
                     db,
                     parent_module_id,
                     user_module_file_id,
@@ -190,7 +227,7 @@ fn visible_traits_in_module_ex(
                 )?
                 .iter()
                 {
-                    result.push((*trait_id, format!("super::{}", path)));
+                    result.push((item_id.clone(), format!("super::{}", path)));
                 }
             }
         }
@@ -198,28 +235,28 @@ fn visible_traits_in_module_ex(
     Some(result.into())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_traits_in_crate].
-pub fn visible_traits_in_crate(
+/// Query implementation of [crate::db::SemanticGroup::visible_items_in_crate].
+pub fn visible_items_in_crate(
     db: &dyn SemanticGroup,
     crate_id: CrateId,
     user_module_file_id: ModuleFileId,
-) -> Arc<[(TraitId, String)]> {
+) -> Arc<[(ResolvedGenericItem, String)]> {
     let is_current_crate = user_module_file_id.0.owning_crate(db.upcast()) == crate_id;
     let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db.upcast()) };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
-    db.visible_traits_in_module(crate_as_module, user_module_file_id, false)
+    db.visible_items_in_module(crate_as_module, user_module_file_id, false)
         .iter()
         .cloned()
-        .map(|(trait_id, path)| (trait_id, format!("{crate_name}::{path}",)))
+        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}",)))
         .collect::<Vec<_>>()
         .into()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
-pub fn visible_traits_from_module(
+/// Query implementation of [crate::db::SemanticGroup::visible_items_from_module].
+pub fn visible_items_from_module(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
-) -> Option<Arc<OrderedHashMap<TraitId, String>>> {
+) -> Option<Arc<OrderedHashMap<ResolvedGenericItem, String>>> {
     let module_id = module_file_id.0;
     let mut current_top_module = module_id;
     while let ModuleId::Submodule(submodule_id) = current_top_module {
@@ -235,12 +272,12 @@ pub fn visible_traits_from_module(
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
     let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
 
-    let mut module_visible_traits = Vec::new();
-    // Collect traits from the prelude.
-    module_visible_traits.extend_from_slice(
-        &db.visible_traits_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
+    let mut module_visible_items = Vec::new();
+    // Collect items from the prelude.
+    module_visible_items.extend_from_slice(
+        &db.visible_items_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
-    // Collect traits from all visible crates, including the current crate.
+    // Collect items from all visible crates, including the current crate.
     let settings = db.crate_config(current_crate_id).map(|c| c.settings).unwrap_or_default();
     for crate_id in chain!(
         [current_crate_id],
@@ -253,20 +290,20 @@ pub fn visible_traits_from_module(
             .intern(db)
         })
     ) {
-        module_visible_traits
-            .extend_from_slice(&db.visible_traits_in_crate(crate_id, module_file_id)[..]);
+        module_visible_items
+            .extend_from_slice(&db.visible_items_in_crate(crate_id, module_file_id)[..]);
     }
 
-    // Collect traits visible in the current module.
-    module_visible_traits
-        .extend_from_slice(&db.visible_traits_in_module(module_id, module_file_id, true)[..]);
+    // Collect items visible in the current module.
+    module_visible_items
+        .extend_from_slice(&db.visible_items_in_module(module_id, module_file_id, true)[..]);
 
-    // Deduplicate traits, preferring shorter paths.
+    // Deduplicate items, preferring shorter paths.
     // This is the reason for searching in the crates before the current module- to prioritize
     // shorter, canonical paths prefixed with `crate::` over paths using `super::` or local
     // imports.
-    let mut result: OrderedHashMap<TraitId, String> = OrderedHashMap::default();
-    for (trait_id, path) in module_visible_traits {
+    let mut result: OrderedHashMap<ResolvedGenericItem, String> = OrderedHashMap::default();
+    for (trait_id, path) in module_visible_items {
         match result.entry(trait_id) {
             Entry::Occupied(existing_path) => {
                 if path.split("::").count() < existing_path.get().split("::").count() {
@@ -279,4 +316,26 @@ pub fn visible_traits_from_module(
         }
     }
     Some(result.into())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
+pub fn visible_traits_from_module(
+    db: &dyn SemanticGroup,
+    module_file_id: ModuleFileId,
+) -> Option<Arc<OrderedHashMap<TraitId, String>>> {
+    let items = db.visible_items_from_module(module_file_id)?;
+
+    let traits = items
+        .iter()
+        .filter_map(|(item, path)| {
+            if let ResolvedGenericItem::Trait(trait_id) = item {
+                Some((*trait_id, path.clone()))
+            } else {
+                None
+            }
+        })
+        .collect::<OrderedHashMap<_, _>>()
+        .into();
+
+    Some(traits)
 }

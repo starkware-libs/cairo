@@ -17,7 +17,7 @@ use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Va
 // ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
 // ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
 
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedGenericItem {
     GenericConstant(ConstantId),
