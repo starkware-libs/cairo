@@ -165,7 +165,7 @@ impl<'a> DocumentationCommentParser<'a> {
         let mut resolver =
             Resolver::new(self.db.upcast(), containing_module, InferenceId::NoContext);
         let mut diagnostics = SemanticDiagnostics::default();
-        let segments = self.prase_comment_link_path(path)?;
+        let segments = self.parse_comment_link_path(path)?;
         resolver
             .resolve_generic_path(
                 &mut diagnostics,
@@ -178,7 +178,7 @@ impl<'a> DocumentationCommentParser<'a> {
     }
 
     /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
-    fn prase_comment_link_path(&self, path: String) -> Option<ExprPath> {
+    fn parse_comment_link_path(&self, path: String) -> Option<ExprPath> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: Default::default(),
