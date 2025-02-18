@@ -13,13 +13,33 @@
 //! * Curve equation: y^2 = x^3 + 7
 
 use core::gas::GasBuiltin;
-use core::option::OptionTrait;
 #[allow(unused_imports)]
 use starknet::secp256_trait::{
     Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, recover_public_key,
 };
 #[allow(unused_imports)]
 use starknet::{SyscallResult, SyscallResultTrait};
+
+pub mod secp256k1_curve {
+    /// The value of b for the secp256k1 curve equation
+    pub const B: u256 = u256 { low: 0x07, high: 0x00 };
+    /// The order of the base field
+    pub const Q: u256 = u256 {
+        low: 0xfffffffffffffffffffffffefffffc2f, high: 0xffffffffffffffffffffffffffffffff,
+    };
+    /// The order (number of points) of the secp256k1 Curve.
+    pub const R: u256 = u256 {
+        low: 0xbaaedce6af48a03bbfd25e8cd0364141, high: 0xfffffffffffffffffffffffffffffffe,
+    };
+    /// The x coordinate of the generator point.
+    pub const GEN_X: u256 = u256 {
+        low: 0x029bfcdb2dce28d959f2815b16f81798, high: 0x79be667ef9dcbbac55a06295ce870b07,
+    };
+    /// The y coordinate of the generator point.
+    pub const GEN_Y: u256 = u256 {
+        low: 0xfd17b448a68554199c47d08ffb10d4b8, high: 0x483ada7726a3c4655da4fbfc0e1108a8,
+    };
+}
 
 /// A point on the secp256k1 curve.
 #[derive(Copy, Drop)]
@@ -28,14 +48,11 @@ pub extern type Secp256k1Point;
 pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
-        0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+        secp256k1_curve::R
     }
 
     fn get_generator_point() -> Secp256k1Point {
-        secp256k1_new_syscall(
-            0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
-            0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
-        )
+        secp256k1_new_syscall(secp256k1_curve::GEN_X, secp256k1_curve::GEN_Y)
             .unwrap_syscall()
             .unwrap()
     }
