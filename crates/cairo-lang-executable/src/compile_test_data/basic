@@ -8,23 +8,28 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 fn main() {}
 
 //! > result
-# builtins: output
-# header #
+// builtins: output
+// header
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
 call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -3] + 0];
+jmp rel 4 if [ap + -4] != 0;
+jmp rel 3;
+%{
+curr = memory[ap + -3]
+end = memory[ap + -2]
+while curr != end:
+    print(hex(memory[curr]))
+    curr += 1
+%}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 13;
@@ -41,7 +46,7 @@ ap += 2;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -60,23 +65,28 @@ fn main(a: felt252, b: felt252) -> felt252 {
 }
 
 //! > result
-# builtins: output
-# header #
+// builtins: output
+// header
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
 call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -3] + 0];
+jmp rel 4 if [ap + -4] != 0;
+jmp rel 3;
+%{
+curr = memory[ap + -3]
+end = memory[ap + -2]
+while curr != end:
+    print(hex(memory[curr]))
+    curr += 1
+%}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 54;
@@ -125,7 +135,7 @@ ap += 1;
 [ap + 0] = [ap + -3], ap++;
 [ap + 0] = [ap + -4] + 1, ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -148,25 +158,30 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 }
 
 //! > result
-# builtins: output, range_check
-# header #
+// builtins: output, range_check
+// header
 [ap + 0] = [fp + -3], ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
 call rel 13;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -4] + 1;
-[ap + -4] = [[fp + -4] + 0];
-[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 4 if [ap + -4] != 0;
+jmp rel 3;
+%{
+curr = memory[ap + -3]
+end = memory[ap + -2]
+while curr != end:
+    print(hex(memory[curr]))
+    curr += 1
+%}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -6], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 10;
@@ -370,7 +385,7 @@ ap += 1;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -5] + 1, ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -387,8 +402,8 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 
 //! > result
-# builtins: output
-# header #
+// builtins: output
+// header
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
@@ -398,11 +413,11 @@ call rel 7;
 [ap + -1] = [[fp + -3] + 0];
 [ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -424,23 +439,28 @@ fn require_gas() -> felt252 {
 }
 
 //! > result
-# builtins: output
-# header #
+// builtins: output
+// header
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
 call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -3] + 0];
+jmp rel 4 if [ap + -4] != 0;
+jmp rel 3;
+%{
+curr = memory[ap + -3]
+end = memory[ap + -2]
+while curr != end:
+    print(hex(memory[curr]))
+    curr += 1
+%}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 13;
@@ -459,7 +479,7 @@ ap += 1;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3] + 1, ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -478,8 +498,8 @@ fn use_dict() {
 }
 
 //! > result
-# builtins: output, range_check
-# header #
+// builtins: output, range_check
+// header
 ap += 2;
 %{ memory[ap + 0] = segments.add() %}
 %{ memory[ap + 1] = segments.add() %}
@@ -495,15 +515,20 @@ ap += 2;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
 call rel 39;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -4] + 1;
-[ap + -4] = [[fp + -4] + 0];
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 4 if [ap + -4] != 0;
+jmp rel 3;
+%{
+curr = memory[ap + -3]
+end = memory[ap + -2]
+while curr != end:
+    print(hex(memory[curr]))
+    curr += 1
+%}
+[ap + -1] = [ap + -4];
 [fp + 0] = [ap + -7];
-[fp + 1] = [ap + -1];
+[fp + 1] = [ap + -2];
 [ap + 0] = [[ap + -6] + -2], ap++;
 [ap + 0] = [[ap + -7] + -1], ap++;
 [ap + -2] = [ap + -1];
@@ -523,7 +548,7 @@ jmp rel -12;
 [ap + 0] = [fp + 1], ap++;
 [ap + 0] = [fp + 0], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 16;
@@ -788,7 +813,7 @@ ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
