@@ -46,7 +46,6 @@ pub mod secp256k1_curve {
 pub extern type Secp256k1Point;
 
 pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
-    // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
         secp256k1_curve::R
     }
