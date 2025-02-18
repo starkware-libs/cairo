@@ -6,7 +6,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
-    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableItemId,
     InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
     ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
     TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
@@ -1641,30 +1641,36 @@ pub trait SemanticGroup:
         crate_id: CrateId,
         type_filter: lsp_helpers::TypeFilter,
     ) -> Arc<[TraitFunctionId]>;
+    /// Returns all the items visible from a module, alongside a visible use path to the trait.
+    #[salsa::invoke(lsp_helpers::visible_items_from_module)]
+    fn visible_items_from_module(
+        &self,
+        module_id: ModuleFileId,
+    ) -> Option<Arc<OrderedHashMap<ImportableItemId, String>>>;
+    /// Returns all visible items in a module, alongside a visible use path to the trait.
+    /// `user_module_file_id` is the module from which the items are should be visible. If
+    /// `include_parent` is true, the parent module of `module_id` is also considered.
+    #[salsa::invoke(lsp_helpers::visible_items_in_module)]
+    fn visible_items_in_module(
+        &self,
+        module_id: ModuleId,
+        user_module_file_id: ModuleFileId,
+        include_parent: bool,
+    ) -> Arc<[(ImportableItemId, String)]>;
+    /// Returns all visible items in a crate, alongside a visible use path to the trait.
+    /// `user_module_file_id` is the module from which the items are should be visible.
+    #[salsa::invoke(lsp_helpers::visible_items_in_crate)]
+    fn visible_items_in_crate(
+        &self,
+        crate_id: CrateId,
+        user_module_file_id: ModuleFileId,
+    ) -> Arc<[(ImportableItemId, String)]>;
     /// Returns all the traits visible from a module, alongside a visible use path to the trait.
     #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
     fn visible_traits_from_module(
         &self,
         module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<TraitId, String>>>;
-    /// Returns all visible traits in a module, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the traits are should be visible. If
-    /// `include_parent` is true, the parent module of `module_id` is also considered.
-    #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
-    fn visible_traits_in_module(
-        &self,
-        module_id: ModuleId,
-        user_module_file_id: ModuleFileId,
-        include_parent: bool,
-    ) -> Arc<[(TraitId, String)]>;
-    /// Returns all visible traits in a crate, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the traits are should be visible.
-    #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
-    fn visible_traits_in_crate(
-        &self,
-        crate_id: CrateId,
-        user_module_file_id: ModuleFileId,
-    ) -> Arc<[(TraitId, String)]>;
 }
 
 /// Initializes the [`SemanticGroup`] database to a proper state.
