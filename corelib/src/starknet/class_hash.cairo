@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use core::starknet::class_hash::class_hash_const;
+//! use starknet::class_hash::class_hash_const;
 //!
 //! let hash = class_hash_const::<0x123>();
 //! let hash = 0x123.try_into().unwrap();
@@ -29,7 +29,7 @@ pub extern type ClassHash;
 /// # Examples
 ///
 /// ```
-/// use core::starknet::class_hash::class_hash_const;
+/// use starknet::class_hash::class_hash_const;
 ///
 /// let class_hash = class_hash_const::<0x123>();
 /// ```

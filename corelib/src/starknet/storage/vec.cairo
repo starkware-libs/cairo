@@ -42,7 +42,7 @@
 //! Basic usage:
 //!
 //! ```
-//! use core::starknet::storage::{Vec, VecTrait, MutableVecTrait, StoragePointerReadAccess,
+//! use starknet::storage::{Vec, VecTrait, MutableVecTrait, StoragePointerReadAccess,
 //! StoragePointerWriteAccess};
 //!
 //! #[storage]
@@ -65,7 +65,7 @@
 //! Loading the numbers into a memory array:
 //!
 //! ```
-//! use core::starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
+//! use starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
 //!
 //! fn to_array(self: @ContractState) -> Array<u256> {
 //!     let mut arr = array![];
@@ -123,7 +123,7 @@ pub trait VecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
+    /// use starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -145,7 +145,7 @@ pub trait VecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
+    /// use starknet::storage::{Vec, VecTrait, StoragePointerReadAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -166,7 +166,7 @@ pub trait VecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, VecTrait};
+    /// use starknet::storage::{Vec, VecTrait};
     ///
     /// #[storage]
     /// struct Storage {
@@ -239,7 +239,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    /// use starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -266,7 +266,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    /// use starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -287,7 +287,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait};
+    /// use starknet::storage::{Vec, MutableVecTrait};
     ///
     /// #[storage]
     /// struct Storage {
@@ -309,7 +309,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    /// use starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -353,7 +353,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
+    /// use starknet::storage::{Vec, MutableVecTrait, StoragePointerWriteAccess};
     ///
     /// #[storage]
     /// struct Storage {
@@ -384,7 +384,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait};
+    /// use starknet::storage::{Vec, MutableVecTrait};
     ///
     /// #[storage]
     /// struct Storage {
@@ -409,7 +409,7 @@ pub trait MutableVecTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::starknet::storage::{Vec, MutableVecTrait};
+    /// use starknet::storage::{Vec, MutableVecTrait};
     ///
     /// #[storage]
     /// struct Storage {
@@ -644,5 +644,5 @@ pub impl PathableMutableVecIntoIterRange<
 /// as long as the contained type `T` is itself a valid storage type (`ValidStorageTypeTrait<T>`).
 /// This allows vectors to be stored in contract storage, provided that their elements
 /// conform to the required storage constraints.
-use crate::starknet::storage::ValidStorageTypeTrait;
+use starknet::storage::ValidStorageTypeTrait;
 impl ValidStorageTypeVecTrait<T, +ValidStorageTypeTrait<T>> of ValidStorageTypeTrait<Vec<T>>;
