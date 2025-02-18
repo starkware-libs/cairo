@@ -75,7 +75,7 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
+    ClosureTypeLongId, ConcreteTypeId, ImplTypeId, add_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
     resolve_type_with_environment, verify_fixed_size_array_size, wrap_in_snapshots,
 };
@@ -2818,7 +2818,17 @@ fn new_literal_expr(
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
+    let impl_id =
+        inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
+    let impl_ty = TypeLongId::ImplType(ImplTypeId::new(
+        impl_id,
+        ctx.db.trait_type_by_name(trait_id, "Type".into())?.unwrap(),
+        ctx.db,
+    ))
+    .intern(ctx.db);
+    inference.conform_ty(ty, impl_ty).map_err(|err_set| {
+        inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped())
+    })?;
 
     Ok(ExprLiteral { value, ty, stable_ptr })
 }
