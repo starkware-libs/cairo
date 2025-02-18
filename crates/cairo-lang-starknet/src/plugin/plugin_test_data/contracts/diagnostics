@@ -105,7 +105,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b.try_into().unwrap();
 
 
 pub mod __external {
@@ -301,7 +301,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -513,7 +513,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x547f368ac55821b57d7da42588a2985edb69dd87af9e9c16e740d6e14b2420;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x547f368ac55821b57d7da42588a2985edb69dd87af9e9c16e740d6e14b2420.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -783,7 +783,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x16fce813e4d7f676441c2cffa36b5101b7e75cb787a8aec7259094fdbacb80e;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x16fce813e4d7f676441c2cffa36b5101b7e75cb787a8aec7259094fdbacb80e.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -992,7 +992,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2c31752790f50b7f25195fc7cc9dcc1234d7af736c5ed771c69ddc8bb9fd8d4;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2c31752790f50b7f25195fc7cc9dcc1234d7af736c5ed771c69ddc8bb9fd8d4.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1197,7 +1197,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2bcbd7e08add1bbb62c174729940be27dbe922f83afd842f02af5355af726a1;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2bcbd7e08add1bbb62c174729940be27dbe922f83afd842f02af5355af726a1.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1427,7 +1427,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x51e947dc07c2918ff505d4f848310fd40dc215c7a78b8e0ec19a8c6ab47ce3;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x51e947dc07c2918ff505d4f848310fd40dc215c7a78b8e0ec19a8c6ab47ce3.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1651,7 +1651,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1978,7 +1978,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xe6da8c1c7f4f4eacbcd1e253492a549cdbe26d925524eeed0c44aaaf75d668;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0xe6da8c1c7f4f4eacbcd1e253492a549cdbe26d925524eeed0c44aaaf75d668.try_into().unwrap();
 
 
 pub mod __external {
@@ -2205,7 +2205,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343fe167b82768570a896;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343fe167b82768570a896.try_into().unwrap();
 
 
 pub mod __external {
@@ -2469,7 +2469,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1f35904b8fc9bed6ac08457ded74e522aa254844ebb1d7da8eaff06532a8b4d;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1f35904b8fc9bed6ac08457ded74e522aa254844ebb1d7da8eaff06532a8b4d.try_into().unwrap();
 
 
 pub mod __external {
@@ -3475,7 +3475,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xb2b80f78cee80a1a53222a998e318822f6d9d701bdc8037948c5964158503c;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0xb2b80f78cee80a1a53222a998e318822f6d9d701bdc8037948c5964158503c.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -3790,7 +3790,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x820d41c225755fd6813443e1db69b44d323763bb1bdc6c58da9d8011855f0b;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x820d41c225755fd6813443e1db69b44d323763bb1bdc6c58da9d8011855f0b.try_into().unwrap();
 
 
 pub mod __external {
@@ -3978,7 +3978,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1786cd1474db7f1bf61efa820fedb6cc8a9892313c56a8ab854a488db0d2879;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1786cd1474db7f1bf61efa820fedb6cc8a9892313c56a8ab854a488db0d2879.try_into().unwrap();
 
 
 pub mod __external {
@@ -8259,7 +8259,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x291a893aaae68e6364fac8003da0089f1c976946ebe457ce78ed62b5e680be2;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x291a893aaae68e6364fac8003da0089f1c976946ebe457ce78ed62b5e680be2.try_into().unwrap();
 
 impl ContractStateMyEmbeddableImpl of
     super::component::UnsafeNewContractStateTraitForMyEmbeddableImpl<ContractState> {
@@ -8525,7 +8525,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x7bfb361123ab6c75c9b1db29acd3b69ea425da0db94322a959835a160c41da;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x7bfb361123ab6c75c9b1db29acd3b69ea425da0db94322a959835a160c41da.try_into().unwrap();
 
 
 pub mod __external {
@@ -11865,7 +11865,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3232c860888b3e1c54dda19284c63d6667fbbdebe403a54921a6dfbbe3134c9;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3232c860888b3e1c54dda19284c63d6667fbbdebe403a54921a6dfbbe3134c9.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -12846,7 +12846,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x29df08f1d7a448905745936c947da165c96a5e2fdbd90ffd2bdabbc7a7e0b1d;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x29df08f1d7a448905745936c947da165c96a5e2fdbd90ffd2bdabbc7a7e0b1d.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -13784,7 +13784,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0xc5af418eb5eed4ff51ca2888dc884ade488de0dea59772fe757c6cfc2d73f3;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0xc5af418eb5eed4ff51ca2888dc884ade488de0dea59772fe757c6cfc2d73f3.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -14807,7 +14807,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3168f720317a98a00e5727dec4873607cd97bfa1e65fef0524f5661f2b767ed;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3168f720317a98a00e5727dec4873607cd97bfa1e65fef0524f5661f2b767ed.try_into().unwrap();
 
 impl ContractStateMyImpl of
     super::component::UnsafeNewContractStateTraitForMyImpl<ContractState> {

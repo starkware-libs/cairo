@@ -117,12 +117,12 @@ fn test_events() {
 
 #[test]
 fn test_pop_log() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::set_contract_address(contract_address);
+    const CONTRACT_ADDRESS: starknet::ContractAddress = 0x1234_felt252.try_into().unwrap();
+    starknet::testing::set_contract_address(CONTRACT_ADDRESS);
     let (keys, data) = ([1234].span(), [2345].span());
     starknet::syscalls::emit_event_syscall(keys, data).unwrap_syscall();
     starknet::syscalls::emit_event_syscall(keys, data).unwrap_syscall();
 
-    assert_eq!(starknet::testing::pop_log_raw(contract_address), Some((keys, data)));
-    assert_eq!(starknet::testing::pop_log_raw(contract_address), Some((keys, data)));
+    assert_eq!(starknet::testing::pop_log_raw(CONTRACT_ADDRESS), Some((keys, data)));
+    assert_eq!(starknet::testing::pop_log_raw(CONTRACT_ADDRESS), Some((keys, data)));
 }

@@ -48,16 +48,16 @@ mod test_contract {
 
 #[test]
 fn test_dispatcher_serialization() {
-    let a = starknet::contract_address_const::<11>();
-    test_contract::__external::set_another_address(serialized(a));
-    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a));
+    const A: starknet::ContractAddress = 11_felt252.try_into().unwrap();
+    test_contract::__external::set_another_address(serialized(A));
+    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(A));
 }
 
 #[test]
 fn test_library_dispatcher_serialization() {
-    let a = starknet::contract_address_const::<11>();
-    test_contract::__external::set_another_class_hash(serialized(a));
-    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a));
+    const A: starknet::ClassHash = 11_felt252.try_into().unwrap();
+    test_contract::__external::set_another_class_hash(serialized(A));
+    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(A));
 }
 
 
@@ -74,11 +74,11 @@ pub fn withdraw_and_get_available_gas() -> u128 {
 // Tests the serialization and deserialize of the arguments to `__validate__`.
 #[test]
 fn test_validate_gas_cost() {
-    let contract_address = starknet::contract_address_const::<11>();
+    const CONTRACT_ADDRESS: starknet::ContractAddress = 11_felt252.try_into().unwrap();
     let base_gas = withdraw_and_get_available_gas();
     let calls = [
         Call {
-            to: contract_address,
+            to: CONTRACT_ADDRESS,
             selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
             calldata: [
                 0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0,
@@ -86,7 +86,7 @@ fn test_validate_gas_cost() {
                 .span(),
         },
         Call {
-            to: contract_address,
+            to: CONTRACT_ADDRESS,
             selector: 0x2c0f7bf2d6cf5304c29171bf493feb222fef84bdaf17805a6574b0c2e8bcc87,
             calldata: [
                 0x4db5d32, 0x0, 0x896ba264a31df2, 0x0, 0x2,
