@@ -20,21 +20,33 @@ use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait};
 #[allow(unused_imports)]
 use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
+
+mod secp256r1_curve {
+    /// The value of a the secp256r1 curve equation
+    pub const A: u256 = 0x2d33;
+    /// The value of b for the secp256r1 curve equation
+    pub const B: u256 = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b;
+    /// The order of the base field
+    pub const Q: u256 = 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff;
+    /// The order (number of points) of the secp256r1 Curve.
+    pub const R: u256 = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551;
+    /// The x coordinate of the generator point.
+    pub const GEN_X: u256 = 0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296;
+    /// The y coordinate of the generator point.
+    pub const GEN_Y: u256 = 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5;
+}
+
 /// Represents a point on the secp256r1 elliptic curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;
 
 pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
-    // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
-        0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+        secp256r1_curve::R
     }
 
     fn get_generator_point() -> Secp256r1Point {
-        secp256r1_new_syscall(
-            0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
-            0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5,
-        )
+        secp256r1_new_syscall(secp256r1_curve::GEN_X, secp256r1_curve::GEN_Y)
             .unwrap_syscall()
             .unwrap()
     }
