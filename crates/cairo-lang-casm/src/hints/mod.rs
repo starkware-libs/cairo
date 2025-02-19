@@ -862,14 +862,25 @@ impl PythonicHint for ExternalHint {
             }
             Self::WriteRunParam { index, dst } => {
                 let index = ResOperandAsIntegerFormatter(index);
-                format!(r#"raise NotImplementedError("memory{dst}.. = params[{index}])")"#)
+                format!("WriteRunParam {{ dst: {dst}, index: {index} }}",)
             }
             Self::SetMarker { marker } => {
-                let marker = ResOperandAsAddressFormatter(marker);
-                format!(r#"raise NotImplementedError("marker = {}")"#, marker)
+                format!("SetMarker {{ marker: {} }}", ResOperandAsAddressFormatter(marker))
             }
-            Self::Blake2sCompress { .. } => {
-                r#"raise NotImplementedError("blake2s_compress")"#.into()
+            Self::Blake2sCompress { state, byte_count, message, output, finalize } => {
+                let [state, byte_count, message, output] =
+                    [state, byte_count, message, output].map(ResOperandAsAddressFormatter);
+                let finalize = ResOperandAsIntegerFormatter(finalize);
+                formatdoc! {"
+                    
+                    Blake2sCompress {{
+                        state: {state},
+                        byte_count: {byte_count},
+                        message: {message},
+                        output: {output},
+                        finalize: {finalize}
+                    }}
+                "}
             }
         }
     }
