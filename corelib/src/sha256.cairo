@@ -16,8 +16,10 @@
 use starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
-#[derive(Copy, Drop)]
 pub(crate) extern type Sha256StateHandle;
+
+impl Sha256StateHandleCopy of Copy<Sha256StateHandle>;
+impl Sha256StateHandleDrop of Drop<Sha256StateHandle>;
 
 /// Initializes a new SHA-256 state handle with the given initial state.
 extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> Sha256StateHandle nopanic;

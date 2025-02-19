@@ -124,8 +124,10 @@ use felt_252::{Felt252One, Felt252Zero};
 /// a very large prime number currently equal to 2^251 + 17⋅2^192 + 1.
 ///
 /// Any operation that uses `felt252` will be computed modulo P.
-#[derive(Copy, Drop)]
 pub extern type felt252;
+
+impl felt252Copy of Copy<felt252>;
+impl felt252Drop of Drop<felt252>;
 
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 

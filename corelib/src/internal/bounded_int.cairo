@@ -1,8 +1,10 @@
 use crate::integer::{downcast, upcast};
 use crate::RangeCheck;
 
-#[derive(Copy, Drop)]
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+
+impl BoundedIntCopy<const MIN: felt252, const MAX: felt252> of Copy<BoundedInt<MIN, MAX>>;
+impl BoundedIntDrop<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
 
 impl NumericLiteralBoundedInt<
     const MIN: felt252, const MAX: felt252,

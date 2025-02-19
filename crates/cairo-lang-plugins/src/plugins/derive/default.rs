@@ -6,7 +6,7 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{DeriveInfo, unsupported_for_extern_diagnostic};
+use super::DeriveInfo;
 use crate::plugins::derive::TypeVariantInfo;
 
 pub const DEFAULT_ATTR: &str = "default";
@@ -60,10 +60,6 @@ pub fn handle_default(
                         )
                     }).join("\n"))
                 }
-            }
-            TypeVariantInfo::Extern => {
-                diagnostics.push(unsupported_for_extern_diagnostic(derived));
-                return None;
             }
         },
     );

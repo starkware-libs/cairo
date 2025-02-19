@@ -37,9 +37,6 @@ enum TwoVariantEnum {
     Second: B,
 }
 
-#[derive(Copy, Drop)]
-extern type ExternType;
-
 //! > expanded_cairo_code
 #[derive(Copy, Debug, Default, Drop, Hash)]
 struct A {}
@@ -73,9 +70,6 @@ enum TwoVariantEnum {
     #[default]
     Second: B,
 }
-
-#[derive(Copy, Drop)]
-extern type ExternType;
 impl ACopy of core::traits::Copy::<A>;
 impl ADebug of core::fmt::Debug::<A> {
     fn fmt(self: @A, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
@@ -386,8 +380,6 @@ impl TwoVariantEnumSerde of core::serde::Serde::<TwoVariantEnum> {
         )
     }
 }
-impl ExternTypeCopy of core::traits::Copy::<ExternType>;
-impl ExternTypeDrop of core::traits::Drop::<ExternType>;
 
 //! > expected_diagnostics
 
@@ -494,16 +486,16 @@ error: Unknown derive `long::path` - a plugin might be missing.
          ^^^^^^^^^^
 
 
-error: `derive` may only be applied to `struct`s, `enum`s and `extern type`s
+error: `derive` may only be applied to `struct`s and `enum`s
  --> test_src/lib.cairo:13:1
 #[derive(Copy, Debug, Destruct, PanicDestruct, Default, Hash)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-error: Unsupported trait for derive for extern types.
- --> test_src/lib.cairo:16:10
+error: `derive` may only be applied to `struct`s and `enum`s
+ --> test_src/lib.cairo:16:1
 #[derive(Clone)]
-         ^^^^^
+^^^^^^^^^^^^^^^^
 
 
 error: derive `Default` for enum only supported with a default variant.

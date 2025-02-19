@@ -27,8 +27,10 @@ pub(crate) const POW_2_128: felt252 = 0x100000000000000000000000000000000;
 pub(crate) const POW_2_8: u128 = 0x100;
 
 /// Represents a 31-byte fixed-size byte type.
-#[derive(Copy, Drop)]
 pub extern type bytes31;
+
+impl bytes31Copy of Copy<bytes31>;
+impl bytes31Drop of Drop<bytes31>;
 
 pub(crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
