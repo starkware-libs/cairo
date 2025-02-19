@@ -10,7 +10,7 @@ fn main() {}
 //! > result
 // builtins: output
 // header
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
@@ -67,7 +67,7 @@ fn main(a: felt252, b: felt252) -> felt252 {
 //! > result
 // builtins: output
 // header
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
@@ -161,7 +161,7 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 // builtins: output, range_check
 // header
 [ap + 0] = [fp + -3], ap++;
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
@@ -404,7 +404,7 @@ fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 //! > result
 // builtins: output
 // header
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
@@ -441,7 +441,7 @@ fn require_gas() -> felt252 {
 //! > result
 // builtins: output
 // header
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
@@ -510,7 +510,7 @@ ap += 2;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -4] + 3, ap++;
 [ap + 0] = 9223372036854775807, ap++;
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
