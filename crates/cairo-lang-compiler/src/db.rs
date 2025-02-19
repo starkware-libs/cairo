@@ -18,7 +18,7 @@ use cairo_lang_semantic::db::{
 };
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_sierra_generator::db::SierraGenDatabase;
+use cairo_lang_sierra_generator::db::{SierraGenDatabase, SierraGenGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
@@ -221,6 +221,11 @@ impl Upcast<dyn SemanticGroup> for RootDatabase {
 }
 impl Upcast<dyn LoweringGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn SierraGenGroup> for RootDatabase {
+    fn upcast(&self) -> &(dyn SierraGenGroup + 'static) {
         self
     }
 }

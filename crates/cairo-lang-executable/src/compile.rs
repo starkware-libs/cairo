@@ -16,7 +16,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
-use cairo_lang_utils::{Upcast, write_comma_separated};
+use cairo_lang_utils::{Intern, Upcast, write_comma_separated};
 use itertools::Itertools;
 
 use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
@@ -180,6 +180,8 @@ pub fn compile_executable_function_in_prepared_db(
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
     if !config.allow_syscalls {
+        // Finding if any syscall libfuncs are used in the program.
+        // If any are found, the compilation will fail, as syscalls are not proved in executables.
         for libfunc in &sierra_program.libfunc_declarations {
             if libfunc.long_id.generic_id.0.ends_with("_syscall") {
                 anyhow::bail!(
@@ -191,7 +193,10 @@ pub fn compile_executable_function_in_prepared_db(
         }
     }
 
+    // Since we build the entry point asking for a single function - we know it will be first, and
+    // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
+    assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
@@ -209,9 +214,9 @@ pub fn compile_executable_function_in_prepared_db(
         anyhow::anyhow!("Failed to create runnable builder: {}\n{}", err, locs.join("\n"))
     })?;
 
-    let wrapper = builder.create_wrapper_info(
-        &executable_func,
-        EntryCodeConfig::executable(config.allow_syscalls),
-    )?;
+    // If syscalls are allowed it means we allow for unsound programs.
+    let allow_unsound = config.allow_syscalls;
+    let wrapper = builder
+        .create_wrapper_info(&executable_func, EntryCodeConfig::executable(allow_unsound))?;
     Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
 }
