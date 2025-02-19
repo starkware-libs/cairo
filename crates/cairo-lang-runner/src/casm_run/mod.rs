@@ -104,7 +104,7 @@ pub struct CairoHintProcessor<'a> {
     /// Avoid allocating memory segments so finalization of segment arena may not occur.
     pub no_temporary_segments: bool,
     /// A set of markers created by the run.
-    pub markers: Vec<Relocatable>,
+    pub markers: Vec<Vec<Felt252>>,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -1343,8 +1343,8 @@ impl CairoHintProcessor<'_> {
                     }
                 }
             }
-            ExternalHint::SetMarker { marker } => {
-                self.markers.push(extract_relocatable(vm, marker)?);
+            ExternalHint::AddMarker { start, end } => {
+                self.markers.push(read_felts(vm, start, end)?);
             }
             ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize } => {
                 let state = extract_relocatable(vm, state)?;

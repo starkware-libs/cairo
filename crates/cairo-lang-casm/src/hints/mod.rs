@@ -355,9 +355,9 @@ pub enum ExternalHint {
     /// Writes a run argument of number `index` to `dst` and on.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     WriteRunParam { index: ResOperand, dst: CellRef },
-    /// Stores a marker in the HintProcessor. Useful for debugging.
+    /// Stores an array marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
-    SetMarker { marker: ResOperand },
+    AddMarker { start: ResOperand, end: ResOperand },
     // TODO(ilya): Remove once the blake2s opecode is supported by the VM.
     /// Compresses a message using the Blake2s algorithm.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
@@ -864,8 +864,9 @@ impl PythonicHint for ExternalHint {
                 let index = ResOperandAsIntegerFormatter(index);
                 format!("WriteRunParam {{ dst: {dst}, index: {index} }}",)
             }
-            Self::SetMarker { marker } => {
-                format!("SetMarker {{ marker: {} }}", ResOperandAsAddressFormatter(marker))
+            Self::AddMarker { start, end } => {
+                let [start, end] = [start, end].map(ResOperandAsAddressFormatter);
+                format!("AddMarker {{ start: {start}, end: {end} }}")
             }
             Self::Blake2sCompress { state, byte_count, message, output, finalize } => {
                 let [state, byte_count, message, output] =

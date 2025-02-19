@@ -14,18 +14,10 @@ fn main() {}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
-call rel 12;
+call rel 8;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -3] + 0];
-jmp rel 4 if [ap + -4] != 0;
-jmp rel 3;
-%{
-curr = memory[ap + -3]
-end = memory[ap + -2]
-while curr != end:
-    print(hex(memory[curr]))
-    curr += 1
-%}
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
 ret;
@@ -71,18 +63,10 @@ fn main(a: felt252, b: felt252) -> felt252 {
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
-call rel 12;
+call rel 8;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -3] + 0];
-jmp rel 4 if [ap + -4] != 0;
-jmp rel 3;
-%{
-curr = memory[ap + -3]
-end = memory[ap + -2]
-while curr != end:
-    print(hex(memory[curr]))
-    curr += 1
-%}
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
 ret;
@@ -165,18 +149,10 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
-call rel 13;
+call rel 9;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -4] + 0];
-jmp rel 4 if [ap + -4] != 0;
-jmp rel 3;
-%{
-curr = memory[ap + -3]
-end = memory[ap + -2]
-while curr != end:
-    print(hex(memory[curr]))
-    curr += 1
-%}
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -6], ap++;
@@ -445,18 +421,10 @@ fn require_gas() -> felt252 {
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
-call rel 12;
+call rel 8;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -3] + 0];
-jmp rel 4 if [ap + -4] != 0;
-jmp rel 3;
-%{
-curr = memory[ap + -3]
-end = memory[ap + -2]
-while curr != end:
-    print(hex(memory[curr]))
-    curr += 1
-%}
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
 ret;
@@ -514,18 +482,10 @@ ap += 2;
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
 ap += 2;
-call rel 39;
+call rel 35;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -4] + 0];
-jmp rel 4 if [ap + -4] != 0;
-jmp rel 3;
-%{
-curr = memory[ap + -3]
-end = memory[ap + -2]
-while curr != end:
-    print(hex(memory[curr]))
-    curr += 1
-%}
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [fp + 0] = [ap + -7];
 [fp + 1] = [ap + -2];

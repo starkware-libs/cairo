@@ -505,13 +505,8 @@ impl EntryCodeHelper {
             let ptr_end = self.ctx.add_var(next_unprocessed_deref());
             if let Some(panic_indicator) = opt_panic_indicator {
                 casm_build_extend! {self.ctx,
-                    jump PANIC if panic_indicator != 0;
-                    jump NON_PANIC;
-                    PANIC:
-                    // Printing the panic message in case of a panic.
-                    hint DebugPrint { start: ptr_start, end: ptr_end };
+                    hint ExternalHint::AddMarker { start: ptr_start, end: ptr_end };
                     assert zero = panic_indicator;
-                    NON_PANIC:
                 };
             }
             self.output_builtin_vars.insert(BuiltinName::output, ptr_end);
