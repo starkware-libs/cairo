@@ -65,15 +65,15 @@ impl BuildError {
 
 /// Builder for creating a runnable CASM program from Sierra code.
 pub struct RunnableBuilder {
-    /// The sierra program.
+    /// The Sierra program.
     sierra_program: SierraProgram,
     /// Metadata for the Sierra program.
     metadata: Metadata,
     /// Program registry for the Sierra program.
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    /// Program registry for the Sierra program.
+    /// Type sizes for the Sierra program.
     type_sizes: TypeSizeMap,
-    /// The casm program matching the Sierra code.
+    /// The CASM program matching the Sierra code.
     casm_program: CairoProgram,
     /// The types of the non-user argument variables.
     non_args_types: UnorderedHashSet<GenericTypeId>,
@@ -138,7 +138,7 @@ impl RunnableBuilder {
         &self.sierra_program_registry
     }
 
-    /// Finds first function ending with `name_suffix`.
+    /// Finds the first function ending with `name_suffix`.
     pub fn find_function(&self, name_suffix: &str) -> Result<&Function, BuildError> {
         self.sierra_program
             .funcs
@@ -159,12 +159,12 @@ impl RunnableBuilder {
         &self.type_info(ty).long_id
     }
 
-    /// Returns the long id of a given `ConcreteTypeId`.
+    /// Returns the size of a given `ConcreteTypeId`.
     pub fn type_size(&self, ty: &ConcreteTypeId) -> i16 {
         self.type_sizes[ty]
     }
 
-    /// Returns whether `ty` is a user arg sort of type.
+    /// Returns whether `ty` is a user argument type (e.g., not a builtin).
     pub fn is_user_arg_type(&self, ty: &GenericTypeId) -> bool {
         !self.non_args_types.contains(ty)
     }
@@ -192,6 +192,16 @@ impl RunnableBuilder {
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
+    ///
+    /// # Arguments
+    ///
+    /// * `func` - The function to create the entry code for.
+    /// * `config` - The entry code configuration.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a tuple with a vector of `Instruction`s and a vector of
+    /// `BuiltinName`s, or a `BuildError`.
     fn create_entry_code(
         &self,
         func: &Function,
@@ -229,13 +239,13 @@ impl RunnableBuilder {
 pub struct EntryCodeConfig {
     /// Whether this is a testing configuration.
     ///
-    /// On the case of testing - we allow the function signature to be anything.
-    /// On the case of execution - we expect the function signature to be
-    /// `(Span<felt252>, Array<felt252>) -> Array<felt252>` And will inject the output builtin to
-    /// be the supplied array input, and to be the result of the output.
+    /// In the case of testing, the function signature can be anything.
+    /// In the case of execution, the function signature is expected to be
+    /// `(Span<felt252>, Array<felt252>) -> Array<felt252>`.
+    /// Additionally, the output builtin will be injected to be the supplied array input,
+    /// and to be the result of the output.
     ///
-    /// Currently we additionally will perform finalization of the segment arena if available in
-    /// execution mode as well.
+    /// Currently, if exists in params, the segment arena will also be finalized in execution mode.
     pub testing: bool,
     /// Whether to allow unsound operations in the program.
     /// Currently relevant for supporting emulated builtins.
@@ -266,10 +276,20 @@ pub struct CasmProgramWrapperInfo {
     pub footer: Vec<Instruction>,
 }
 
-/// Returns the entry code to call the function with `param_types` as its inputs and
-/// `return_types` as outputs, located at `code_offset`. If `finalize_for_proof` is true,
-/// will make sure to remove the segment arena after calling the function. For testing purposes,
-/// `finalize_for_proof` can be set to false, to avoid a failure of the segment arena validation.
+/// Creates the entry code to call the function.
+///
+/// # Arguments
+///
+/// * `param_types` - The types and sizes of the parameters of the function.
+/// * `return_types` - The types and sizes of the return values of the function.
+/// * `code_offset` - The offset of the entry_point in the CASM program (before adding the
+///   executable header).
+/// * `config` - The configuration for the entry code creation.
+///
+/// # Returns
+///
+/// A `Result` containing a tuple with a vector of `Instruction`s and a vector of `BuiltinName`s, or
+/// a `BuildError`.
 pub fn create_entry_code_from_params(
     param_types: &[(GenericTypeId, i16)],
     return_types: &[(GenericTypeId, i16)],
