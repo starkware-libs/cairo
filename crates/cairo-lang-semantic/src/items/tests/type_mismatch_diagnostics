@@ -14,7 +14,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
+error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?2)".
  --> lib.cairo:2:22
     let _: felt252 = (3, 3);
                      ^^^^^^

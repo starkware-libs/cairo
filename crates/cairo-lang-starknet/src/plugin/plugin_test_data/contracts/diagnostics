@@ -9167,7 +9167,7 @@ error: Invalid path.
             get_dep_component!(@self, super::NotHasComponent).foo1();
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
+error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?15>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:62:32

@@ -74,18 +74,32 @@ use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
 use crate::RangeCheck;
 
-// TODO(spapini): Add method for const creation from Integer.
-pub trait NumericLiteral<T>;
+/// Internal trait only allowed for compiler supported numeric types.
+pub trait NumericLiteral<T> {
+    /// The same type as `T` only additionally internally supplies the attached traits.
+    type Type;
+    // Attached traits for all numeric literals.
+    impl Copy: Copy<Self::Type>;
+    impl Drop: Drop<Self::Type>;
+}
 
-impl NumericLiteralfelt252 of NumericLiteral<felt252>;
+impl NumericLiteralfelt252 of NumericLiteral<felt252> {
+    type Type = felt252;
+}
 
-impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
+impl NumericLiteralNonZero<
+    T, +Copy<T>, +Drop<T>, +NumericLiteral<T>,
+> of NumericLiteral<NonZero<T>> {
+    type Type = NonZero<T>;
+}
 
 /// The 128-bit unsigned integer type.
 #[derive(Copy, Drop)]
 pub extern type u128;
 
-impl NumericLiteralu128 of NumericLiteral<u128>;
+impl NumericLiteralu128 of NumericLiteral<u128> {
+    type Type = u128;
+}
 
 impl U128Serde = crate::serde::into_felt252_based::SerdeImpl<u128>;
 
@@ -304,7 +318,9 @@ pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 #[derive(Copy, Drop)]
 pub extern type u8;
 
-impl NumericLiteralu8 of NumericLiteral<u8>;
+impl NumericLiteralu8 of NumericLiteral<u8> {
+    type Type = u8;
+}
 
 extern const fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
@@ -458,7 +474,9 @@ impl U8BitSize of crate::num::traits::BitSize<u8> {
 #[derive(Copy, Drop)]
 pub extern type u16;
 
-impl NumericLiteralu16 of NumericLiteral<u16>;
+impl NumericLiteralu16 of NumericLiteral<u16> {
+    type Type = u16;
+}
 
 extern const fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
@@ -618,7 +636,9 @@ impl U16BitSize of crate::num::traits::BitSize<u16> {
 #[derive(Copy, Drop)]
 pub extern type u32;
 
-impl NumericLiteralu32 of NumericLiteral<u32>;
+impl NumericLiteralu32 of NumericLiteral<u32> {
+    type Type = u32;
+}
 
 extern const fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
@@ -778,7 +798,9 @@ impl U32BitSize of crate::num::traits::BitSize<u32> {
 #[derive(Copy, Drop)]
 pub extern type u64;
 
-impl NumericLiteralu64 of NumericLiteral<u64>;
+impl NumericLiteralu64 of NumericLiteral<u64> {
+    type Type = u64;
+}
 
 extern const fn u64_to_felt252(a: u64) -> felt252 nopanic;
 
@@ -941,7 +963,9 @@ pub struct u256 {
     pub high: u128,
 }
 
-impl NumericLiteralU256 of NumericLiteral<u256>;
+impl NumericLiteralU256 of NumericLiteral<u256> {
+    type Type = u256;
+}
 
 #[deprecated(
     feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead",
@@ -1927,7 +1951,9 @@ impl I128WrappingSub = signed_int_impls::WrappingSubImpl<i128>;
 #[derive(Copy, Drop)]
 pub extern type i8;
 
-impl NumericLiterali8 of NumericLiteral<i8>;
+impl NumericLiterali8 of NumericLiteral<i8> {
+    type Type = i8;
+}
 
 extern const fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
 extern const fn i8_to_felt252(a: i8) -> felt252 nopanic;
@@ -2012,7 +2038,9 @@ impl I8BitSize of crate::num::traits::BitSize<i8> {
 #[derive(Copy, Drop)]
 pub extern type i16;
 
-impl NumericLiterali16 of NumericLiteral<i16>;
+impl NumericLiterali16 of NumericLiteral<i16> {
+    type Type = i16;
+}
 
 extern const fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
 extern const fn i16_to_felt252(a: i16) -> felt252 nopanic;
@@ -2098,7 +2126,9 @@ impl I16BitSize of crate::num::traits::BitSize<i16> {
 #[derive(Copy, Drop)]
 pub extern type i32;
 
-impl NumericLiterali32 of NumericLiteral<i32>;
+impl NumericLiterali32 of NumericLiteral<i32> {
+    type Type = i32;
+}
 
 extern const fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
 extern const fn i32_to_felt252(a: i32) -> felt252 nopanic;
@@ -2184,7 +2214,9 @@ impl I32BitSize of crate::num::traits::BitSize<i32> {
 #[derive(Copy, Drop)]
 pub extern type i64;
 
-impl NumericLiterali64 of NumericLiteral<i64>;
+impl NumericLiterali64 of NumericLiteral<i64> {
+    type Type = i64;
+}
 
 extern const fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
 extern const fn i64_to_felt252(a: i64) -> felt252 nopanic;
@@ -2270,7 +2302,9 @@ impl I64BitSize of crate::num::traits::BitSize<i64> {
 #[derive(Copy, Drop)]
 pub extern type i128;
 
-impl NumericLiterali128 of NumericLiteral<i128>;
+impl NumericLiterali128 of NumericLiteral<i128> {
+    type Type = i128;
+}
 
 extern const fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
 extern const fn i128_to_felt252(a: i128) -> felt252 nopanic;

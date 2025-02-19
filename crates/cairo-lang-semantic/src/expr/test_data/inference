@@ -726,7 +726,7 @@ foo
 fn takes_snapshots<T>(x: @T, y: @T) {}
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
+error: Unexpected argument type. Expected: "@?4", found: "core::integer::u32".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:5:24
