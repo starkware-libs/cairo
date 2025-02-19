@@ -165,6 +165,7 @@ enum StarknetLibfuncs {
     GetExecutionInfoV2,
     ReplaceClass: starknet::ClassHash,
     SendMessageToL1: (felt252, Span<felt252>),
+    GetClassHashAt: starknet::ContractAddress,
 }
 
 enum ConstsLibfuncs {
@@ -480,6 +481,9 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         StarknetLibfuncs::SendMessageToL1((
             address, data,
         )) => use_and_panic(syscalls::send_message_to_l1_syscall(address, data)),
+        StarknetLibfuncs::GetClassHashAt(address) => use_and_panic(
+            syscalls::get_class_hash_at_syscall(address),
+        ),
     }
 }
 
