@@ -15,7 +15,7 @@ fn main() {
     // `farewell` by value.
     let diary = || {
         // `greeting` is by snapshot: requires `Fn`.
-        println!("I said {}.", greeting);
+        let _ignore_greeting = format!("I said {greeting}.");
 
         // Using farewell by value requires `FnOnce`.
         // Convert farewell to uppercase to demonstrate value capture through `into_iter`
@@ -25,7 +25,7 @@ fn main() {
         } else {
             c
         }).collect();
-        println!("Then I screamed {}!", uppercase);
+        let _ignore_farewell = format!("Then I screamed {uppercase}!");
     };
 
     // Call the function which applies the closure.
