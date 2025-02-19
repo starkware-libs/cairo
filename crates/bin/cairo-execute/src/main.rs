@@ -7,6 +7,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
 use cairo_lang_executable::executable::{EntryPointKind, Executable};
+use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
@@ -244,7 +245,13 @@ fn main() -> anyhow::Result<()> {
     };
 
     let mut runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)
-        .with_context(|| "Failed running program.")?;
+        .with_context(|| {
+            if let Some(panic_data) = hint_processor.markers.last() {
+                format_for_panic(panic_data.iter().copied())
+            } else {
+                "Failed running program.".into()
+            }
+        })?;
     if args.run.print_outputs {
         let mut output_buffer = "Program Output:\n".to_string();
         runner.vm.write_output(&mut output_buffer)?;
