@@ -19,7 +19,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::{Itertools, chain};
 use salsa::InternKey;
 
@@ -732,51 +732,33 @@ fn extend_allowed_attributes(
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> OrderedHashSet<String> {
-    let mut empty_args_diagnostics = Vec::new();
-    let mut identifier_diadnostics = Vec::new();
+    let mut allowed_attributes = base_allowed_attributes.clone();
 
-    let additional_attributes: OrderedHashSet<String> = item
-        .attributes_elements(db)
-        .into_iter()
-        .filter(|attr| {
-            attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR
-        })
-        .flat_map(|attr| {
+    for attr in item.attributes_elements(db) {
+        if attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR {
             let args = attr.clone().structurize(db).args;
             if args.is_empty() {
-                empty_args_diagnostics.push(PluginDiagnostic::error(
+                plugin_diagnostics.push(PluginDiagnostic::error(
                     attr.stable_ptr(),
                     "Expected arguments.".to_string(),
                 ));
+                continue;
             }
-            args.into_iter()
-        })
-        .filter_map(|arg| {
-            try_extract_unnamed_arg(db, &arg.arg)
-                .and_then(|expr| {
-                    if let ast::Expr::Path(path) = expr {
-                        if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
-                            Some(segment.ident(db).text(db).into())
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
+            for arg in args {
+                if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
+                    if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                        allowed_attributes.insert(segment.ident(db).text(db).into());
+                        continue;
                     }
-                })
-                .on_none(|| {
-                    identifier_diadnostics.push(PluginDiagnostic::error(
-                        &arg.arg,
-                        "Expected simple identifier.".to_string(),
-                    ));
-                })
-        })
-        .collect();
-
-    plugin_diagnostics.extend(empty_args_diagnostics);
-    plugin_diagnostics.extend(identifier_diadnostics);
-
-    base_allowed_attributes.union(&additional_attributes).cloned().collect()
+                }
+                plugin_diagnostics.push(PluginDiagnostic::error(
+                    &arg.arg,
+                    "Expected simple identifier.".to_string(),
+                ));
+            }
+        }
+    }
+    allowed_attributes
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
