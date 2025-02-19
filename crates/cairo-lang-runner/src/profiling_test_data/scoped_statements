@@ -35,8 +35,8 @@ test::pow2_14000;store_temp<felt252> 1
 test::pow2_14000;function_call<user@test::pow2_by_add_loop> 1
 test::pow2_14000;test::pow2_by_add_loop;withdraw_gas 42003
 test::pow2_14000;test::pow2_by_add_loop;store_temp<RangeCheck> 1
-test::pow2_14000;test::pow2_by_add_loop;felt252_is_zero 14001
 test::pow2_14000;test::pow2_by_add_loop;store_temp<GasBuiltin> 1
+test::pow2_14000;test::pow2_by_add_loop;felt252_is_zero 14001
 test::pow2_14000;test::pow2_by_add_loop;store_temp<felt252> 14000
 test::pow2_14000;test::pow2_by_add_loop;function_call<user@test::pow2_by_add_loop> 14000
 test::pow2_14000;test::pow2_by_add_loop;store_temp<core::panics::PanicResult::<(core::felt252,)>> 3

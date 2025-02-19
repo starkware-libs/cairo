@@ -57,6 +57,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         array: "array",
         bitwise: "bitwise",
+        blake: "blake",
         bool: "bool",
         bounded_int: "bounded_int",
         box_: "box",
@@ -153,10 +154,10 @@ impl TestFileRunner for WithOptsE2ETestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams {
-            skip_optimization_passes: false,
-            ..Default::default()
-        })
+        run_e2e_test(
+            inputs,
+            E2eTestParams { skip_optimization_passes: false, ..Default::default() },
+        )
     }
 }
 
@@ -180,11 +181,14 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams {
-            add_withdraw_gas: false,
-            metadata_computation: true,
-            skip_optimization_passes: true,
-        })
+        run_e2e_test(
+            inputs,
+            E2eTestParams {
+                add_withdraw_gas: false,
+                metadata_computation: true,
+                skip_optimization_passes: true,
+            },
+        )
     }
 }
 
@@ -222,7 +226,8 @@ fn run_e2e_test(
         &SHARED_DB_NO_GAS_NO_OPTS
     });
     // Parse code and create semantic model.
-    let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
+    let test_module =
+        setup_test_module(locked_db.deref_mut(), inputs["cairo_code"].as_str()).unwrap();
     let db = locked_db.snapshot();
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 

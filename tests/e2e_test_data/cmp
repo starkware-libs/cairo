@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u128, b: u128) -> bool {
     a < b
 }
@@ -67,7 +67,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u32, b: u32) -> bool {
     a < b
 }
@@ -131,7 +131,7 @@ test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u128, b: u128) -> bool {
     a <= b
 }
@@ -195,7 +195,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: u32, b: u32) -> bool {
     a <= b
 }

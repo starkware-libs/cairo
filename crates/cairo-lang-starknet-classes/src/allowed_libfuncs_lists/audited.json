@@ -143,6 +143,7 @@
         "nullable_forward_snapshot",
         "nullable_from_box",
         "pedersen",
+        "redeposit_gas",
         "rename",
         "replace_class_syscall",
         "revoke_ap_tracking",

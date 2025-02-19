@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_program_generator
 
-//! > cairo
+//! > cairo_code
 fn foo(a: felt252) -> felt252 {
     bar(5)
 }

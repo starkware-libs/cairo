@@ -228,13 +228,16 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 input: VarUsage { var_id: inner_ok_value, location },
                 outputs: inner_ok_values.clone(),
             })],
-            end: FlatBlockEnd::Goto(block_continuation, VarRemapping {
-                remapping: zip_eq(
-                    original_outputs,
-                    inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
-                )
-                .collect(),
-            }),
+            end: FlatBlockEnd::Goto(
+                block_continuation,
+                VarRemapping {
+                    remapping: zip_eq(
+                        original_outputs,
+                        inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
+                    )
+                    .collect(),
+                },
+            ),
         });
 
         // Prepare Err() match arm block.

@@ -6,9 +6,9 @@ use super::ast::{
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
     ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
     ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
-    TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
-    TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
+    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifier,
+    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
+    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -153,6 +153,39 @@ impl NameGreen for ItemExternFunctionPtr {
 impl NameGreen for TraitItemFunctionPtr {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         self.declaration_green(db).name_green(db)
+    }
+}
+
+/// Provides methods to extract a _name_ of AST objects.
+pub trait HasName {
+    /// Gets a [`TerminalIdentifier`] that represents a _name_ of this AST object.
+    fn name(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
+}
+
+impl HasName for FunctionWithBody {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for ItemExternFunction {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for TraitItemFunction {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for UsePathLeaf {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        match self.alias_clause(db) {
+            ast::OptionAliasClause::Empty(_) => self.ident(db).identifier_ast(db),
+            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db),
+        }
     }
 }
 

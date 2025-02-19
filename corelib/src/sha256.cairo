@@ -13,7 +13,7 @@
 //! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
 //! 0x7d17648, 0x26381969]);
 //! ```
-use crate::starknet::SyscallResultTrait;
+use starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
 #[derive(Copy, Drop)]

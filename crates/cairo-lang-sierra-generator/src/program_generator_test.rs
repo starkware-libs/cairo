@@ -32,7 +32,7 @@ fn test_program_generator(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let program = checked_compile_to_sierra(inputs["cairo"].as_str());
+    let program = checked_compile_to_sierra(inputs["cairo_code"].as_str());
     TestRunnerResult::success(OrderedHashMap::from([("sierra_code".into(), program.to_string())]))
 }
 

@@ -236,8 +236,8 @@ impl DestructU96Guarantee of Destruct<U96Guarantee> {
 extern type U96Guarantee;
 
 /// Expose the const required by the libfunc to allow the compiler const reusage.
-pub type ConstZero = crate::internal::bounded_int::BoundedInt<0, 0>;
-pub type ConstOne = crate::internal::bounded_int::BoundedInt<1, 1>;
+pub type ConstZero = crate::internal::bounded_int::UnitInt<0>;
+pub type ConstOne = crate::internal::bounded_int::UnitInt<1>;
 
 /// A type that creates a circuit from a tuple of outputs.
 ///
@@ -764,51 +764,50 @@ extern fn get_circuit_output<C, Output>(
 /// Helper module to convert into `u384`.
 mod conversions {
     use crate::integer::{downcast, upcast};
-    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper};
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
     use crate::internal::bounded_int;
     use super::{u384, u96};
 
-    type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
     const POW128: felt252 = 0x100000000000000000000000000000000;
     const POW96: felt252 = 0x1000000000000000000000000;
-    const POW96_TYPED: ConstValue<POW96> = 0x1000000000000000000000000;
-    const NZ_POW96_TYPED: NonZero<ConstValue<POW96>> = 0x1000000000000000000000000;
+    const POW96_TYPED: UnitInt<POW96> = 0x1000000000000000000000000;
+    const NZ_POW96_TYPED: NonZero<UnitInt<POW96>> = 0x1000000000000000000000000;
     const POW64: felt252 = 0x10000000000000000;
-    const POW64_TYPED: ConstValue<POW64> = 0x10000000000000000;
-    const NZ_POW64_TYPED: NonZero<ConstValue<POW64>> = 0x10000000000000000;
+    const POW64_TYPED: UnitInt<POW64> = 0x10000000000000000;
+    const NZ_POW64_TYPED: NonZero<UnitInt<POW64>> = 0x10000000000000000;
     const POW32: felt252 = 0x100000000;
-    const POW32_TYPED: ConstValue<POW32> = 0x100000000;
-    const NZ_POW32_TYPED: NonZero<ConstValue<POW32>> = 0x100000000;
+    const POW32_TYPED: UnitInt<POW32> = 0x100000000;
+    const NZ_POW32_TYPED: NonZero<UnitInt<POW32>> = 0x100000000;
 
-    impl DivRemU128By96 of DivRemHelper<u128, ConstValue<POW96>> {
+    impl DivRemU128By96 of DivRemHelper<u128, UnitInt<POW96>> {
         type DivT = BoundedInt<0, { POW32 - 1 }>;
         type RemT = BoundedInt<0, { POW96 - 1 }>;
     }
 
-    impl DivRemU128By64 of DivRemHelper<u128, ConstValue<POW64>> {
+    impl DivRemU128By64 of DivRemHelper<u128, UnitInt<POW64>> {
         type DivT = BoundedInt<0, { POW64 - 1 }>;
         type RemT = BoundedInt<0, { POW64 - 1 }>;
     }
 
-    impl DivRemU96By32 of DivRemHelper<u96, ConstValue<POW32>> {
+    impl DivRemU96By32 of DivRemHelper<u96, UnitInt<POW32>> {
         type DivT = BoundedInt<0, { POW64 - 1 }>;
         type RemT = BoundedInt<0, { POW32 - 1 }>;
     }
 
-    impl DivRemU96By64 of DivRemHelper<u96, ConstValue<POW64>> {
+    impl DivRemU96By64 of DivRemHelper<u96, UnitInt<POW64>> {
         type DivT = BoundedInt<0, { POW32 - 1 }>;
         type RemT = BoundedInt<0, { POW64 - 1 }>;
     }
 
-    impl MulHelper64By32Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, ConstValue<POW32>> {
+    impl MulHelper64By32Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, UnitInt<POW32>> {
         type Result = BoundedInt<0, { POW96 - POW32 }>;
     }
 
-    impl MulHelper32By96Impl of MulHelper<BoundedInt<0, { POW32 - 1 }>, ConstValue<POW96>> {
+    impl MulHelper32By96Impl of MulHelper<BoundedInt<0, { POW32 - 1 }>, UnitInt<POW96>> {
         type Result = BoundedInt<0, { POW128 - POW96 }>;
     }
 
-    impl MulHelper64By64Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, ConstValue<POW64>> {
+    impl MulHelper64By64Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, UnitInt<POW64>> {
         type Result = BoundedInt<0, { POW128 - POW64 }>;
     }
 

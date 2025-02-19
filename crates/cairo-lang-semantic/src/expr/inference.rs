@@ -23,7 +23,6 @@ use cairo_lang_utils::{
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::{CoreTraitContext, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -216,8 +215,9 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound(concrete_trait_id) => {
+                let info = db.core_info();
                 let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == numeric_literal_trait(db) {
+                if trait_id == info.numeric_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -227,9 +227,7 @@ impl InferenceError {
                          literal.",
                         generic_type.debug(db)
                     );
-                } else if trait_id
-                    == get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
-                {
+                } else if trait_id == info.string_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -415,23 +413,26 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (*k, ImplVarTraitItemMappings {
-                        types: mappings
-                            .types
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        constants: mappings
-                            .constants
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        impls: mappings
-                            .impls
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                    })
+                    (
+                        *k,
+                        ImplVarTraitItemMappings {
+                            types: mappings
+                                .types
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            constants: mappings
+                                .constants
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            impls: mappings
+                                .impls
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                        },
+                    )
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
@@ -690,9 +691,9 @@ impl<'db> Inference<'db> {
             // TODO(yuval): consider adding error location to the set error.
             return Err((ErrorSet, None));
         }
-
-        let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_felt252_ty();
+        let info = self.db.core_info();
+        let numeric_trait_id = info.numeric_literal_trt;
+        let felt_ty = info.felt252;
 
         // Conform all uninferred numeric literals to felt252.
         loop {

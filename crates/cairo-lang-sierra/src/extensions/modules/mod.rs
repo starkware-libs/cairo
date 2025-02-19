@@ -9,6 +9,7 @@ use crate::program::GenericArg;
 pub mod ap_tracking;
 pub mod array;
 pub mod bitwise;
+pub mod blake;
 pub mod boolean;
 pub mod bounded_int;
 pub mod boxing;
@@ -52,9 +53,10 @@ pub mod utils;
 fn get_unit_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    context.get_concrete_type(StructType::id(), &[GenericArg::UserType(UserTypeId::from_string(
-        "Tuple",
-    ))])
+    context.get_concrete_type(
+        StructType::id(),
+        &[GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+    )
 }
 
 /// Helper for Bool type def.
@@ -62,11 +64,14 @@ fn get_bool_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let unit_type = get_unit_type(context)?;
-    context.get_concrete_type(EnumType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::bool")),
-        GenericArg::Type(unit_type.clone()),
-        GenericArg::Type(unit_type),
-    ])
+    context.get_concrete_type(
+        EnumType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::bool")),
+            GenericArg::Type(unit_type.clone()),
+            GenericArg::Type(unit_type),
+        ],
+    )
 }
 
 /// Helper for u256 type def.
@@ -74,9 +79,12 @@ fn get_u256_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::integer::u256")),
-        GenericArg::Type(u128_ty.clone()),
-        GenericArg::Type(u128_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::integer::u256")),
+            GenericArg::Type(u128_ty.clone()),
+            GenericArg::Type(u128_ty),
+        ],
+    )
 }

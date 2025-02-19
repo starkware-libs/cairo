@@ -1,0 +1,101 @@
+//! > blake_compress libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::blake::{Blake2sInput, Blake2sState, blake2s_compress};
+
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInput) -> Blake2sState {
+    blake2s_compress(s, byte_count, m)
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 8
+%}
+%{
+Blake2sCompress {
+    state: memory[fp + -5],
+    byte_count: memory[fp + -4],
+    message: memory[fp + -3],
+    output: memory[ap + 0],
+    finalize: 0
+}
+%}
+ap += 1;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc blake2s_compress = blake2s_compress;
+
+blake2s_compress([0], [1], [2]) -> ([3]); // 0
+return([3]); // 1
+
+test::foo@0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
+
+//! > ==========================================================================
+
+//! > blake2s_finalize libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::blake::{Blake2sInput, Blake2sState, blake2s_finalize};
+
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInput) -> Blake2sState {
+    blake2s_finalize(s, byte_count, m)
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 8
+%}
+%{
+Blake2sCompress {
+    state: memory[fp + -5],
+    byte_count: memory[fp + -4],
+    message: memory[fp + -3],
+    output: memory[ap + 0],
+    finalize: 1
+}
+%}
+ap += 1;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc blake2s_finalize = blake2s_finalize;
+
+blake2s_finalize([0], [1], [2]) -> ([3]); // 0
+return([3]); // 1
+
+test::foo@0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);

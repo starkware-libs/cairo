@@ -411,6 +411,7 @@ pub fn core_libfunc_cost(
                 vec![DICT_SQUASH_FIXED_COST.into()]
             }
         },
+        Felt252SquashedDict(_) => vec![ConstCost::default().into()],
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => {
                 vec![BranchCost::Regular {
@@ -608,6 +609,8 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
+        // TODO(ilya): Add blake token to blake gas cost..
+        Blake(_) => vec![ConstCost::steps(1).into()],
     }
 }
 
@@ -858,12 +861,10 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
             vec![ConstCost { steps: 30, holes: 0, range_checks: 7, range_checks96: 0 }]
         }
         Uint256Concrete::InvModN(_) => {
-            vec![ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 }, ConstCost {
-                steps: 25,
-                holes: 0,
-                range_checks: 7,
-                range_checks96: 0,
-            }]
+            vec![
+                ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 },
+                ConstCost { steps: 25, holes: 0, range_checks: 7, range_checks96: 0 },
+            ]
         }
     }
 }

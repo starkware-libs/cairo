@@ -1,6 +1,7 @@
 use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::BitwiseType;
+use super::blake::{Blake2sState, BlakeLibfunc};
 use super::boolean::BoolLibfunc;
 use super::bounded_int::{BoundedIntLibfunc, BoundedIntType};
 use super::branch_align::BranchAlignLibfunc;
@@ -46,7 +47,7 @@ use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
-use super::squashed_felt252_dict::SquashedFelt252DictType;
+use super::squashed_felt252_dict::{SquashedFelt252DictLibfunc, SquashedFelt252DictType};
 use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
 use super::uninitialized::UninitializedType;
@@ -57,6 +58,7 @@ define_type_hierarchy! {
         Array(ArrayType),
         Coupon(CouponType),
         Bitwise(BitwiseType),
+        Blake(Blake2sState),
         Box(BoxType),
         Circuit(CircuitType),
         Const(ConstType),
@@ -104,6 +106,7 @@ define_libfunc_hierarchy! {
         ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
         BranchAlign(BranchAlignLibfunc),
+        Blake(BlakeLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
@@ -138,6 +141,7 @@ define_libfunc_hierarchy! {
         Struct(StructLibfunc),
         Felt252Dict(Felt252DictLibfunc),
         Felt252DictEntry(Felt252DictEntryLibfunc),
+        Felt252SquashedDict(SquashedFelt252DictLibfunc),
         Pedersen(PedersenLibfunc),
         Poseidon(PoseidonLibfunc),
         Starknet(StarknetLibfunc),

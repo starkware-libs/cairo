@@ -22,3 +22,8 @@ mod filter;
 pub use filter::Filter;
 #[allow(unused_imports)]
 pub(crate) use filter::filter_iterator;
+
+mod take;
+pub use take::Take;
+#[allow(unused_imports)]
+pub(crate) use take::take_iterator;

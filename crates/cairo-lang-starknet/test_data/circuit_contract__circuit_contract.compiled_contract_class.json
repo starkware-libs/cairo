@@ -1,6 +1,6 @@
 {
   "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-  "compiler_version": "2.9.2",
+  "compiler_version": "2.10.0",
   "bytecode": [
     "0xa0680017fff8000",
     "0x7",
@@ -8,27 +8,30 @@
     "0x100000000000000000000000000000000",
     "0x400280007ff67fff",
     "0x10780017fff7fff",
-    "0x68",
+    "0x6e",
     "0x4825800180007ffa",
     "0x0",
     "0x400280007ff67fff",
     "0x482680017ff68000",
     "0x1",
+    "0x482480017ffe8000",
+    "0x1874",
     "0x48297ffc80007ffd",
     "0x20680017fff7fff",
     "0x4",
     "0x10780017fff7fff",
-    "0x13",
+    "0x14",
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
     "0x400080007ffe7fff",
-    "0x48127ffc7fff8000",
+    "0x48127ffb7fff8000",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
-    "0x48127ff77fff8000",
+    "0x482480017ff88000",
+    "0x6ea",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -37,73 +40,76 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x196",
+    "0x19a",
     "0x482480017fff8000",
-    "0x195",
-    "0x480080007fff8000",
+    "0x199",
+    "0x48127ffb7fff8000",
+    "0x480080007ffe8000",
     "0x480080047fff8000",
     "0x484480017fff8000",
     "0xe",
     "0x482480017fff8000",
-    "0x2c94",
+    "0x4634",
     "0x480080057ffc8000",
     "0x484480017fff8000",
     "0x3",
     "0x48307ffd7fff8000",
     "0xa0680017fff8000",
     "0x8",
-    "0x48307ffe80007ff2",
+    "0x48307ffe80007ff7",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
-    "0x400080007ff17fff",
+    "0x400080007fef7fff",
     "0x10780017fff7fff",
-    "0x25",
-    "0x48307ffe80007ff2",
-    "0x400080007ff27fff",
+    "0x27",
+    "0x48307ffe80007ff7",
+    "0x400080007ff07fff",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
     "0x480a7ff77fff8000",
     "0x1104800180018000",
-    "0x42",
-    "0x482480017fac8000",
+    "0x45",
+    "0x482480017faa8000",
     "0x1",
-    "0x20680017fff7ffc",
+    "0x48127fb87fff8000",
+    "0x20680017fff7ffb",
     "0xf",
     "0x40780017fff7fff",
     "0x1",
-    "0x48127ffe7fff8000",
-    "0x48127ff97fff8000",
-    "0x48127ff67fff8000",
-    "0x48127ff67fff8000",
-    "0x48127fb37fff8000",
+    "0x48127ffd7fff8000",
+    "0x48127ff87fff8000",
+    "0x48127ff57fff8000",
+    "0x48127ff57fff8000",
+    "0x48127ffa7fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x0",
     "0x48127ff87fff8000",
     "0x48127ff77fff8000",
     "0x208b7fff7fff7ffe",
-    "0x48127fff7fff8000",
-    "0x48127ffa7fff8000",
-    "0x48127ff77fff8000",
-    "0x48127ff77fff8000",
-    "0x48127fb47fff8000",
+    "0x48127ffe7fff8000",
+    "0x48127ff97fff8000",
+    "0x48127ff67fff8000",
+    "0x48127ff67fff8000",
+    "0x482480017ffb8000",
+    "0x64",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
-    "0x48127ff67fff8000",
-    "0x48127ff67fff8000",
+    "0x48127ff57fff8000",
+    "0x48127ff57fff8000",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x1",
     "0x480680017fff8000",
     "0x4f7574206f6620676173",
     "0x400080007ffe7fff",
-    "0x482480017fef8000",
+    "0x482480017fed8000",
     "0x1",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
-    "0x48127fea7fff8000",
+    "0x48127fef7fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -121,7 +127,8 @@
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
-    "0x480a7ffa7fff8000",
+    "0x482680017ffa8000",
+    "0x208a",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
@@ -444,7 +451,7 @@
     "0x0"
   ],
   "bytecode_segment_lengths": [
-    127,
+    134,
     261,
     52
   ],
@@ -472,7 +479,7 @@
       ]
     ],
     [
-      17,
+      19,
       [
         {
           "AllocSegment": {
@@ -485,7 +492,7 @@
       ]
     ],
     [
-      48,
+      52,
       [
         {
           "TestLessThanOrEqual": {
@@ -498,7 +505,7 @@
             "rhs": {
               "Deref": {
                 "register": "AP",
-                "offset": -13
+                "offset": -8
               }
             },
             "dst": {
@@ -510,7 +517,7 @@
       ]
     ],
     [
-      67,
+      72,
       [
         {
           "AllocSegment": {
@@ -523,7 +530,7 @@
       ]
     ],
     [
-      91,
+      97,
       [
         {
           "AllocSegment": {
@@ -536,7 +543,7 @@
       ]
     ],
     [
-      109,
+      115,
       [
         {
           "AllocSegment": {
@@ -549,7 +556,7 @@
       ]
     ],
     [
-      176,
+      183,
       [
         {
           "AllocSegment": {
@@ -562,7 +569,7 @@
       ]
     ],
     [
-      240,
+      247,
       [
         {
           "EvalCircuit": {
@@ -595,7 +602,7 @@
       ]
     ],
     [
-      275,
+      282,
       [
         {
           "AllocSegment": {
@@ -608,7 +615,7 @@
       ]
     ],
     [
-      332,
+      339,
       [
         {
           "AllocSegment": {
@@ -621,7 +628,7 @@
       ]
     ],
     [
-      358,
+      365,
       [
         {
           "AllocSegment": {
@@ -634,7 +641,7 @@
       ]
     ],
     [
-      374,
+      381,
       [
         {
           "AllocSegment": {
@@ -655,67 +662,67 @@
       ]
     ],
     [
-      17,
+      19,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      48,
+      52,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[ap + -13]"
+        "memory[ap + 0] = memory[ap + -1] <= memory[ap + -8]"
       ]
     ],
     [
-      67,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      91,
+      72,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      109,
+      97,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      176,
+      115,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      240,
+      183,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      247,
       [
         "\nfrom starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner\n\nModBuiltinRunner.fill_memory(\n        memory=memory,\n        add_mod=(memory[fp + -5], builtin_runners[\"add_mod_builtin\"], memory[ap + -6]),\n        mul_mod=(memory[fp + -4], builtin_runners[\"mul_mod_builtin\"], memory[ap + -4]),\n)\n"
       ]
     ],
     [
-      275,
+      282,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      332,
+      339,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      358,
+      365,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      374,
+      381,
       [
         "memory[ap + 0] = segments.add()"
       ]

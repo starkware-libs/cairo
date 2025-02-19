@@ -10,7 +10,7 @@ use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use sha3::{Digest, Keccak256};
@@ -144,18 +144,36 @@ impl TypeLongId {
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let phantom_type_attributes = db.declared_phantom_type_attributes();
+        let defs_db = db.upcast();
+
         match self {
             TypeLongId::Concrete(id) => match id {
-                ConcreteTypeId::Struct(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Enum(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Extern(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Struct(id) => {
+                    let crate_id =
+                        db.lookup_intern_struct(id.struct_id(db)).0.0.owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Enum(id) => {
+                    let crate_id = db.lookup_intern_enum(id.enum_id(db)).0.0.owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Extern(id) => {
+                    let crate_id = db
+                        .lookup_intern_extern_type(id.extern_type_id(db))
+                        .0
+                        .0
+                        .owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
@@ -946,7 +964,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         // a var free ImplType needs to be rewritten if has impl bounds constraints.
         TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_var_free(db))
+            chain!(&closure.captured_types, &closure.param_tys).all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
     }

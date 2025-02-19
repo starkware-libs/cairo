@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use core::starknet::contract_address::contract_address_const;
+//! use starknet::contract_address::contract_address_const;
 //!
 //! let contract_address = contract_address_const::<0x0>();
 //! ```
@@ -30,31 +30,36 @@ pub extern type ContractAddress;
 /// # Examples
 ///
 /// ```
-/// use core::starknet::contract_address::contract_address_const;
+/// use starknet::contract_address::contract_address_const;
 ///
 /// let contract_address = contract_address_const::<0x0>();
 /// ```
+#[deprecated(
+    feature: "deprecated-starknet-consts",
+    note: "Use `TryInto::try_into` in const context instead.",
+)]
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
 
-pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub(crate) extern const fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-pub(crate) extern fn contract_address_try_from_felt252(
+pub(crate) extern const fn contract_address_try_from_felt252(
     address: felt252,
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
 pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
-    fn try_into(self: felt252) -> Option<ContractAddress> {
+    const fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
 
 pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
-    fn into(self: ContractAddress) -> felt252 {
+    const fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
 
 impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
+    #[feature("deprecated-starknet-consts")]
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }

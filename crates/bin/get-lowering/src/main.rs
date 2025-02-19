@@ -37,7 +37,7 @@ use itertools::Itertools;
 fn test_lowering_consistency() {
     let db_val = RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
 
@@ -225,7 +225,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut db_val = RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db_val, Path::new(&args.path))?;
@@ -246,9 +246,9 @@ fn main() -> anyhow::Result<()> {
                     GeneratedFunctionKey::Loop(id) => {
                         (id.0.lookup(db).span_without_trivia(db.upcast()), "".into())
                     }
-                    GeneratedFunctionKey::TraitFunc(trat_function, id) => (
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
                         id.syntax_node(db).span_without_trivia(db.upcast()),
-                        trat_function.name(db),
+                        trait_function.name(db),
                     ),
                 })
                 .take(generated_function_index + 1)

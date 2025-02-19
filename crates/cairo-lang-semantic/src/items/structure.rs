@@ -165,7 +165,10 @@ pub fn priv_struct_definition_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<StructDefinitionData> {
-    let module_file_id = struct_id.module_file_id(db.upcast());
+    let defs_db = db.upcast();
+
+    let module_file_id = struct_id.module_file_id(defs_db);
+    let crate_id = module_file_id.0.owning_crate(defs_db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -191,7 +194,7 @@ pub fn priv_struct_definition_data(
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, &member, &mut diagnostics));
+            .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
         let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
         let ty = resolve_type(
             db,
@@ -234,10 +237,13 @@ pub fn struct_definition_diagnostics(
     let Ok(data) = db.priv_struct_definition_data(struct_id) else {
         return Default::default();
     };
+
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.
     if db
-        .declared_phantom_type_attributes()
+        .declared_phantom_type_attributes(crate_id)
         .iter()
         .any(|attr| struct_id.has_attr(db, attr).unwrap_or_default())
     {

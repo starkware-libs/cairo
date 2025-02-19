@@ -298,10 +298,10 @@ impl<'a> AbiBuilder<'a> {
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let f = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_entry_point(function.name(self.db.upcast()).into(), EntryPointInfo {
-                source,
-                inputs: f.inputs.clone(),
-            })?;
+            self.add_entry_point(
+                function.name(self.db.upcast()).into(),
+                EntryPointInfo { source, inputs: f.inputs.clone() },
+            )?;
             items.push(Item::Function(f));
         }
 

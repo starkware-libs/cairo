@@ -323,7 +323,7 @@ pub(super) fn generate_contract_specific_code(
 
     generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
         "#[cfg(target: 'test')]
-            pub const TEST_CLASS_HASH: felt252 = {test_class_hash};
+            pub const TEST_CLASS_HASH: starknet::ClassHash = {test_class_hash}.try_into().unwrap();
 "
     ));
 

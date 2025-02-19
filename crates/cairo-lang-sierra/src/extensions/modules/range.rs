@@ -119,10 +119,13 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo::new_builtin(range_check_type, 0), OutputVarInfo {
-                        ty: range_ty,
-                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                    }],
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_type, 0),
+                        OutputVarInfo {
+                            ty: range_ty,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

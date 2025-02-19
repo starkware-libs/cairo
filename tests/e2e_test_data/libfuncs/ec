@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> EcPoint {
     ec::ec_point_zero()
 }
@@ -39,8 +39,8 @@ test::foo@0() -> (EcPoint);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: felt252, b: felt252) -> Option::<ec::NonZeroEcPoint> {
+//! > cairo_code
+fn foo(a: felt252, b: felt252) -> Option<ec::NonZeroEcPoint> {
     ec::ec_point_try_new_nz(a, b)
 }
 
@@ -100,10 +100,10 @@ test::foo@0([0]: felt252, [1]: felt252) -> (core::option::Option::<core::zeroabl
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::ec::ec_point_from_x_nz;
 
-fn foo(x: felt252) -> Option::<ec::NonZeroEcPoint> {
+fn foo(x: felt252) -> Option<ec::NonZeroEcPoint> {
     ec_point_from_x_nz(x)
 }
 
@@ -196,7 +196,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(p: ec::NonZeroEcPoint) -> (felt252, felt252) {
     ec::ec_point_unwrap(p)
 }
@@ -235,7 +235,7 @@ test::foo@0([0]: NonZero<EcPoint>) -> (Tuple<felt252, felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(p: ec::EcPoint) -> felt252 {
     match ec::ec_point_is_zero(p) {
@@ -292,7 +292,7 @@ test::foo@0([0]: EcPoint) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: ec::EcPoint) -> ec::EcPoint {
     ec::ec_neg(a)
 }
@@ -326,7 +326,7 @@ test::foo@0([0]: EcPoint) -> (EcPoint);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> ec::EcState {
     ec::ec_state_init()
 }
@@ -374,7 +374,7 @@ test::foo@0() -> (EcState);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(ref s: ec::EcState, p: ec::NonZeroEcPoint) {
     ec::ec_state_add(ref s, p);
 }
@@ -423,7 +423,7 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(s: ec::EcState) -> Option<ec::NonZeroEcPoint> {
     ec::ec_state_try_finalize_nz(s)
 }
@@ -492,7 +492,7 @@ test::foo@0([0]: EcState) -> (core::option::Option::<core::zeroable::NonZero::<c
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(ref s: ec::EcState, m: felt252, p: ec::NonZeroEcPoint) {
     ec::ec_state_add_mul(ref s, m, p);
 }

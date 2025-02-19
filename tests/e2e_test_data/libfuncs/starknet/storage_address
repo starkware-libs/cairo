@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(addr: felt252) -> starknet::StorageBaseAddress {
     starknet::storage_base_address_from_felt252(addr)
 }
@@ -77,7 +77,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, StorageBaseAddress);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(base: starknet::StorageBaseAddress, offset: u8) -> starknet::StorageAddress {
     starknet::storage_address_from_base_and_offset(base, offset)
 }
@@ -112,8 +112,8 @@ test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(address: felt252) -> Option::<starknet::StorageAddress> {
+//! > cairo_code
+fn foo(address: felt252) -> Option<starknet::StorageAddress> {
     starknet::storage_address_try_from_felt252(address)
 }
 

@@ -1,4 +1,4 @@
-use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
 #[starknet::storage_node]
 struct A {

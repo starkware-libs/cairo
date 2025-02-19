@@ -25,9 +25,9 @@
 //! 0x85c9aab73219c1e95c5b5966a4ecc8db4418c3500072a830cfb5a2d13d2c2249);
 //! ```
 
+use starknet::SyscallResultTrait;
 use crate::array::{ArrayTrait, Span, SpanTrait};
 use crate::option::OptionTrait;
-use crate::starknet::SyscallResultTrait;
 use crate::traits::TryInto;
 
 const KECCAK_FULL_RATE_IN_BYTES: usize = 136;

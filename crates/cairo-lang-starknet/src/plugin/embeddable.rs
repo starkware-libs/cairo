@@ -167,11 +167,14 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         "
         ),
         &[
-            ("visibility".to_string(), RewriteNode::Trimmed {
-                node: item_impl.visibility(db).as_syntax_node(),
-                trim_left: true,
-                trim_right: false,
-            }),
+            (
+                "visibility".to_string(),
+                RewriteNode::Trimmed {
+                    node: item_impl.visibility(db).as_syntax_node(),
+                    trim_left: true,
+                    trim_right: false,
+                },
+            ),
             ("impl_name".to_string(), impl_name),
             (
                 "generated_wrapper_functions".to_string(),

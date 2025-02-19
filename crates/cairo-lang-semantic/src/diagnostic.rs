@@ -985,7 +985,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 }
             }
             SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
-                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
+                format!(
+                    "Trait `{}` should not be implemented outside of the corelib.",
+                    trait_id.full_path(db.upcast())
+                )
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
@@ -1465,6 +1468,7 @@ impl SemanticDiagnosticKind {
             Self::MissingMember(_) => error_code!(E0003),
             Self::MissingItemsInImpl(_) => error_code!(E0004),
             Self::ModuleFileNotFound(_) => error_code!(E0005),
+            Self::PathNotFound(_) => error_code!(E0006),
             _ => return None,
         })
     }

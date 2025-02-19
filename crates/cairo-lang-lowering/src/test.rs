@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setup_test_module};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
@@ -15,7 +15,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module_ex;
 
 use crate::FlatLowered;
 use crate::db::LoweringGroup;
@@ -133,7 +132,9 @@ fn test_location_and_diagnostics() {
         )
         .lookup_intern(db);
 
-    assert_eq!(format!("{:?}", location.debug(db)), indoc::indoc! {"
+    assert_eq!(
+        format!("{:?}", location.debug(db)),
+        indoc::indoc! {"
 lib.cairo:1:1-3:4
   fn test_func() { let mut a = 5; {
  _^
@@ -144,7 +145,8 @@ note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
 a = a * 3
-^^^^^^^^^"});
+^^^^^^^^^"}
+    );
 
     let mut builder = DiagnosticsBuilder::default();
 
@@ -153,7 +155,9 @@ a = a * 3
         kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
     });
 
-    assert_eq!(builder.build().format(db), indoc::indoc! {"
+    assert_eq!(
+        builder.build().format(db),
+        indoc::indoc! {"
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1-3:4
   fn test_func() { let mut a = 5; {
@@ -167,7 +171,8 @@ note: Adding destructor for:
 a = a * 3
 ^^^^^^^^^
 
-"});
+"}
+    );
 }
 
 #[test]
@@ -198,14 +203,13 @@ fn test_sizes() {
         ("core::cmp::min::<u8>::Coupon", 0),
     ];
 
-    let test_module = setup_test_module_ex(
+    let test_module = setup_test_module(
         db,
         &type_to_size
             .iter()
             .enumerate()
             .map(|(i, (ty_str, _))| format!("type T{i} = {ty_str};\n"))
             .join(""),
-        None,
     )
     .unwrap();
     let db: &LoweringDatabaseForTesting = db;

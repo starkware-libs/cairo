@@ -6,8 +6,8 @@
 //! [`StoragePointerWriteAccess`] traits, along with useful storage-only collection types like
 //! [`Vec`] and [`Map`].
 //!
-//! [`Vec`]: crate::starknet::storage::vec::Vec
-//! [`Map`]: crate::starknet::storage::map::Map
+//! [`Vec`]: starknet::storage::vec::Vec
+//! [`Map`]: starknet::storage::map::Map
 //!
 //! # Overview
 //!
@@ -54,11 +54,11 @@
 //! with the `StoragePointer` traits to read and write in these entries.
 //! - [`VecTrait`] and [`MutableVecTrait`] allow for interacting with storage [`Vec`]s.
 //!
-//! [`VecTrait`]: crate::starknet::storage::vec::VecTrait
-//! [`MutableVecTrait`]: crate::starknet::storage::vec::MutableVecTrait
-//! [`StorageMapReadAccess`]: crate::starknet::storage::map::StorageMapReadAccess
-//! [`StorageMapWriteAccess`]: crate::starknet::storage::map::StorageMapWriteAccess
-//! [`StoragePathEntry`]: crate::starknet::storage::map::StoragePathEntry
+//! [`VecTrait`]: starknet::storage::vec::VecTrait
+//! [`MutableVecTrait`]: starknet::storage::vec::MutableVecTrait
+//! [`StorageMapReadAccess`]: starknet::storage::map::StorageMapReadAccess
+//! [`StorageMapWriteAccess`]: starknet::storage::map::StorageMapWriteAccess
+//! [`StoragePathEntry`]: starknet::storage::map::StoragePathEntry
 //!
 //! ## Examples
 //!
@@ -215,7 +215,7 @@ pub trait StorageAsPointer<TMemberState> {
 /// # Examples
 ///
 //! ```
-//! use core::starknet::storage::StoragePointerReadAccess;
+//! use starknet::storage::StoragePointerReadAccess;
 //!
 //! #[storage]
 //! struct Storage {
@@ -236,7 +236,7 @@ pub trait StoragePointerReadAccess<T> {
 /// # Examples
 ///
 //! ```
-//! use core::starknet::storage::StoragePointerWriteAccess;
+//! use starknet::storage::StoragePointerWriteAccess;
 //!
 //! #[storage]
 //! struct Storage {

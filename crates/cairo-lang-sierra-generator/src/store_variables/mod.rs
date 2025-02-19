@@ -354,9 +354,10 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
                         if *dup {
                             self.dup(var, var_on_stack, ty);
-                            state.variables.insert(var.clone(), VarState::Deferred {
-                                info: deferred_info.clone(),
-                            });
+                            state.variables.insert(
+                                var.clone(),
+                                VarState::Deferred { info: deferred_info.clone() },
+                            );
                             self.store_temp(&mut state.known_stack, var_on_stack, var_on_stack, ty);
                         } else {
                             self.store_temp(&mut state.known_stack, var, var_on_stack, ty);
@@ -519,10 +520,11 @@ impl<'a> AddStoreVariableStatements<'a> {
         dup_var: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
-        self.result.push(simple_statement(dup_libfunc_id(self.db, ty.clone()), &[var.clone()], &[
-            var.clone(),
-            dup_var.clone(),
-        ]));
+        self.result.push(simple_statement(
+            dup_libfunc_id(self.db, ty.clone()),
+            &[var.clone()],
+            &[var.clone(), dup_var.clone()],
+        ));
     }
 
     /// Adds a call to the rename() libfunc, renaming `src` to `dst`.

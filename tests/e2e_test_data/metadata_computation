@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 fn foo(x: felt252) {
     if x == 0 {
         holes(x);
@@ -218,7 +218,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -393,7 +393,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -407,9 +407,7 @@ fn foo(x: felt252) {
                 // Here we don't need to withdraw gas, since we have excess created by the external
                 // failing branch.
                 match gas::withdraw_gas() {
-                    Some(_) => {
-                        bar();
-                    },
+                    Some(_) => { bar(); },
                     None(_) => {},
                 }
             } else {
@@ -587,7 +585,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -599,9 +597,7 @@ fn foo(x: felt252) {
             Some(_) => {
                 // Here we have used the excess and we need to withdraw gas.
                 match gas::withdraw_gas() {
-                    Some(_) => {
-                        bar();
-                    },
+                    Some(_) => { bar(); },
                     None(_) => {},
                 }
             },
@@ -766,7 +762,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -922,7 +918,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 fn foo() -> u128 {
     match core::gas::withdraw_gas() {
         None => 2,
@@ -1036,7 +1032,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
@@ -1178,10 +1174,14 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 #[inline(never)]
 fn function_with_branch_align(cond: bool) -> felt252 {
-    if cond { 1 } else { 2 }
+    if cond {
+        1
+    } else {
+        2
+    }
 }
 
 fn foo(cond: bool) {
@@ -1872,7 +1872,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 extern fn coupon_buy<T>() -> T nopanic;
@@ -1958,7 +1958,7 @@ ret;
 //! > test_runner_name
 SmallE2ETestRunnerMetadataComputation
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 extern fn coupon_refund<T>(c: T) nopanic;
@@ -1968,7 +1968,7 @@ fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {
     coupon_refund(c0);
     bar20000();
     bar20000();
-    redeposit_gas();  // Zero redeposit.
+    redeposit_gas(); // Zero redeposit.
 
     // Refund more than used - rest is redeposited.
     coupon_refund(c1);

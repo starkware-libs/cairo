@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum SingleVariant {
     Variant: felt252,
 }
@@ -43,7 +43,7 @@ test::foo@0() -> (test::SingleVariant);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum SingleVariant {
     Variant: felt252,
 }
@@ -88,7 +88,7 @@ test::foo@0([0]: test::SingleVariant) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Option {
     Some: felt252,
     None: (),
@@ -130,7 +130,7 @@ test::foo@0() -> (test::Option);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Option {
     Some: felt252,
     None: (),
@@ -189,7 +189,7 @@ test::foo@0([0]: test::Option) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Color {
     Red: felt252,
     Green: felt252,
@@ -231,7 +231,7 @@ test::foo@0() -> (test::Color);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Color {
     Red: felt252,
     Green: felt252,
@@ -273,7 +273,7 @@ test::foo@0() -> (test::Color);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum Color {
     Red: felt252,
     Green: felt252,
@@ -343,7 +343,7 @@ test::foo@0([0]: test::Color) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum IndexEnum5 {
     Zero,
     One,
@@ -395,7 +395,7 @@ test::foo@0([0]: BoundedInt<0, 4>) -> (test::IndexEnum5);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum IndexEnum2 {
     Zero,
     One,
@@ -443,7 +443,7 @@ test::foo@0([0]: BoundedInt<0, 1>) -> (test::IndexEnum2);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum IndexEnum1 {
     Zero,
 }

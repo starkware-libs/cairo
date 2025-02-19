@@ -1,13 +1,13 @@
 {
   "sierra_program": [
     "0x1",
-    "0x6",
+    "0x7",
     "0x0",
     "0x2",
-    "0x9",
-    "0x2",
-    "0x54",
-    "0xac",
+    "0xa",
+    "0x0",
+    "0x5b",
+    "0xa5",
     "0xf",
     "0x52616e6765436865636b",
     "0x800000000000000100000000000000000000000000000000",
@@ -43,12 +43,14 @@
     "0x66656c74323532",
     "0x426f78",
     "0x4761734275696c74696e",
-    "0x1c",
+    "0x1d",
     "0x7265766f6b655f61705f747261636b696e67",
     "0x77697468647261775f676173",
     "0x6272616e63685f616c69676e",
+    "0x72656465706f7369745f676173",
     "0x7374727563745f6465636f6e737472756374",
     "0x73746f72655f74656d70",
+    "0xe",
     "0x61727261795f736e617073686f745f706f705f66726f6e74",
     "0x64726f70",
     "0xd",
@@ -59,29 +61,28 @@
     "0x7374727563745f636f6e737472756374",
     "0x656e756d5f696e6974",
     "0xa",
-    "0xe",
     "0x7",
     "0x6765745f6275696c74696e5f636f737473",
     "0x6",
     "0x77697468647261775f6761735f616c6c",
     "0x736e617073686f745f74616b65",
-    "0x41",
+    "0x49",
     "0xffffffffffffffff",
-    "0x33",
-    "0x15",
+    "0x3a",
+    "0x18",
     "0x10",
     "0x11",
     "0x12",
     "0x13",
     "0x14",
-    "0x26",
+    "0x15",
     "0x16",
     "0x17",
-    "0x18",
+    "0x2c",
     "0x19",
     "0x1a",
     "0x1b",
-    "0x1d",
+    "0x1c",
     "0x1e",
     "0x1f",
     "0x20",
@@ -90,32 +91,40 @@
     "0x23",
     "0x24",
     "0x25",
+    "0x26",
     "0x27",
     "0x28",
-    "0x2b9",
+    "0x29",
+    "0x2a",
+    "0x2b",
+    "0x2d",
+    "0x2e",
+    "0x2fb",
     "0x15141305120f0e0d1105100f0e0d07050c0b06050a09080706050403020100",
     "0x2115201f07060504031e051d051c0f191b07051a05120f190d180f170d0216",
-    "0x5052a1105052a060505290f050528130505270f260f250f2423022206050c",
-    "0x507320507311e0505301a0505300605052f060505282e05052d0605052c2b",
-    "0x505300705052a070505380f37360505280f35320505283405052833050528",
-    "0x50f07050f0f3a050f0f0f391305052a0505052d0f07320507311d05053013",
-    "0x13053a051305130f1a053a051105110f0f3a050f070f3436073b1d13073a07",
-    "0x3a053205340f0f3a051e05360f0f3a050f070f2e053c321e073a071a051d0f",
-    "0x53a052b06072e0f2b053a052b05320f2b053a050f1e0f06053a050f1a0f0f",
-    "0x3a051305130f3e053a053d05330f3d053a053300072b0f00053a050f060f33",
-    "0x71d1313053e053a053e053e0f07053a0507053d0f1d053a051d05000f1305",
-    "0x410f3f053a053f05400f3f053a050f3f0f0f3a052e05360f0f3a050f070f3e",
-    "0x544053c0f44053a050f1a0f0f3a050f070f433c07424140073a073f1d1311",
-    "0x4805460f48053a054705450f47053a054605440f0f3a054505430f4645073a",
-    "0x53e0f07053a0507053d0f41053a054105000f40053a054005130f23053a05",
-    "0x4a053a050f470f49053a050f1a0f0f3a050f070f23074140130523053a0523",
-    "0x3a054b4c072b0f4c053a050f060f4b053a054a49072e0f4a053a054a05320f",
-    "0x507053d0f43053a054305000f3c053a053c05130f4e053a054d05330f4d05",
-    "0xf0f3a051105480f0f3a050f070f4e07433c13054e053a054e053e0f07053a",
-    "0xf51053a05504f072e0f50053a055005320f50053a050f470f4f053a050f1a",
-    "0x36053a053605130f53053a055205330f52053a055142072b0f42053a050f06",
-    "0x553073436130553053a0553053e0f07053a0507053d0f34053a053405000f",
-    "0xf1107050f3234330f131334330f13"
+    "0x2c0605052b2a0505290f050529130505280f270f260f250f2423022206050c",
+    "0x1e0505321a05053206050531060505293005052f0605052e2d05052c110505",
+    "0x320705052c070505390f38370505290f363405052935050529050734050733",
+    "0x7050f0f3b050f0f0f3a1305052c0505052f0f07340507331d050532130505",
+    "0x3b051105130f1a053b051d05110f0f3b050f070f3537073c1d13073b07050f",
+    "0xf06053d3034073b071e05350f1a053b051a05370f13053b0513051d0f1e05",
+    "0x50f340f2d053b051a05110f0f3b0530051e0f0f3b0534051a0f0f3b050f07",
+    "0x50f2a0f3e053b05002a072d0f00053b050005060f00053b050f300f2a053b",
+    "0x5370f13053b0513051d0f41053b0540053e0f40053b053e3f07000f3f053b",
+    "0x50f070f41072d13130541053b054105400f07053b0507053f0f2d053b052d",
+    "0x53b054205370f43053b050f410f42053b051a05110f0f3b0506051a0f0f3b",
+    "0xf0f3b050f070f473d07464544073b0743421311430f43053b054305420f42",
+    "0xf0f3b054a05450f234a073b054905440f49053b050f340f48053b05450511",
+    "0x44053b0544051d0f4d053b054c05480f4c053b054b05470f4b053b0523053d",
+    "0xf4d07484413054d053b054d05400f07053b0507053f0f48053b054805370f",
+    "0x5005060f50053b050f490f4f053b050f340f4e053b054705110f0f3b050f07",
+    "0x3e0f53053b05515207000f52053b050f2a0f51053b05504f072d0f50053b05",
+    "0xf07053b0507053f0f4e053b054e05370f3d053b053d051d0f54053b055305",
+    "0x53505110f0f3b0511054a0f0f3b050f070f54074e3d130554053b05540540",
+    "0x55756072d0f57053b055705060f57053b050f490f56053b050f340f55053b",
+    "0x37051d0f5a053b0559053e0f59053b05584607000f46053b050f2a0f58053b",
+    "0x3713055a053b055a05400f07053b0507053f0f55053b055505370f37053b05",
+    "0xf1107050f34352a0f1313352a0f13055a0755"
   ],
   "sierra_program_debug_info": {
     "type_names": [
@@ -195,102 +204,106 @@
       ],
       [
         3,
-        "struct_deconstruct<core::array::Span::<core::felt252>>"
+        "redeposit_gas"
       ],
       [
         4,
-        "store_temp<RangeCheck>"
+        "struct_deconstruct<core::array::Span::<core::felt252>>"
       ],
       [
         5,
-        "array_snapshot_pop_front<felt252>"
+        "store_temp<RangeCheck>"
       ],
       [
         6,
-        "drop<Snapshot<Array<felt252>>>"
-      ],
-      [
-        7,
-        "drop<Box<felt252>>"
-      ],
-      [
-        8,
-        "array_new<felt252>"
-      ],
-      [
-        9,
-        "const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>"
-      ],
-      [
-        10,
-        "store_temp<felt252>"
-      ],
-      [
-        11,
-        "array_append<felt252>"
-      ],
-      [
-        12,
-        "struct_construct<core::panics::Panic>"
-      ],
-      [
-        13,
-        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
-      ],
-      [
-        14,
-        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
-      ],
-      [
-        15,
         "store_temp<GasBuiltin>"
       ],
       [
+        7,
+        "array_snapshot_pop_front<felt252>"
+      ],
+      [
+        8,
+        "drop<Snapshot<Array<felt252>>>"
+      ],
+      [
+        9,
+        "drop<Box<felt252>>"
+      ],
+      [
+        10,
+        "array_new<felt252>"
+      ],
+      [
+        11,
+        "const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>"
+      ],
+      [
+        12,
+        "store_temp<felt252>"
+      ],
+      [
+        13,
+        "array_append<felt252>"
+      ],
+      [
+        14,
+        "struct_construct<core::panics::Panic>"
+      ],
+      [
+        15,
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
+      ],
+      [
         16,
-        "store_temp<System>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         17,
-        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<System>"
       ],
       [
         18,
-        "get_builtin_costs"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         19,
-        "store_temp<BuiltinCosts>"
+        "get_builtin_costs"
       ],
       [
         20,
-        "withdraw_gas_all"
+        "store_temp<BuiltinCosts>"
       ],
       [
         21,
-        "snapshot_take<Array<felt252>>"
+        "withdraw_gas_all"
       ],
       [
         22,
-        "drop<Array<felt252>>"
+        "snapshot_take<Array<felt252>>"
       ],
       [
         23,
-        "struct_construct<core::array::Span::<core::felt252>>"
+        "drop<Array<felt252>>"
       ],
       [
         24,
-        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
+        "struct_construct<core::array::Span::<core::felt252>>"
       ],
       [
         25,
-        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
       ],
       [
         26,
-        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         27,
+        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
+      ],
+      [
+        28,
         "drop<core::array::Span::<core::felt252>>"
       ]
     ],

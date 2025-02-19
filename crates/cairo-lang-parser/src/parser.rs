@@ -2812,10 +2812,10 @@ impl<'a> Parser<'a> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.add_diagnostic(diagnostic_kind, TextSpan {
-                            start: self.offset,
-                            end: self.offset,
-                        });
+                        self.add_diagnostic(
+                            diagnostic_kind,
+                            TextSpan { start: self.offset, end: self.offset },
+                        );
                     }
                     break;
                 }

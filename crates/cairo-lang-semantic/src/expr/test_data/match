@@ -26,7 +26,7 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:9:21
         (7, 1) => { x },
                     ^
@@ -36,7 +36,7 @@ error: Wrong number of tuple elements in pattern. Expected: 2. Got: 3.
         (A::b(x), 1, _) => { x },
         ^^^^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:10:30
         (A::b(x), 1, _) => { x },
                              ^
