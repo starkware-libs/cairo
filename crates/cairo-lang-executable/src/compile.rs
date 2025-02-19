@@ -74,6 +74,7 @@ pub fn compile_executable(
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
+    let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
 
     compile_executable_in_prepared_db(
         &db,

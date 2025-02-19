@@ -242,8 +242,7 @@ impl TestCompiler {
 
     /// Build the tests and collect metadata.
     pub fn build(&self) -> Result<TestCompilation> {
-        let mut diag_reporter =
-            DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids.clone());
+        let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids);
         if self.allow_warnings {
             diag_reporter = diag_reporter.allow_warnings();
         }
