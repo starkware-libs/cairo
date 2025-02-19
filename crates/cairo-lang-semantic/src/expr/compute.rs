@@ -3887,7 +3887,13 @@ fn check_struct_member_is_visible(
 fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast::Statement) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
-    validate_attributes_flat(ctx.db.upcast(), &allowed_attributes, syntax, &mut diagnostics);
+    validate_attributes_flat(
+        ctx.db.upcast(),
+        &allowed_attributes,
+        &OrderedHashSet::default(),
+        syntax,
+        &mut diagnostics,
+    );
     // Translate the plugin diagnostics to semantic diagnostics.
     for diagnostic in diagnostics {
         ctx.diagnostics

@@ -725,15 +725,13 @@ fn priv_module_sub_files(
     Ok(res.into())
 }
 
-/// Collects attributes allowed by `allow_attr` attribute and adds them to the base set.
-fn extend_allowed_attributes(
+/// Collects attributes allowed by `allow_attr` attribute.
+fn collect_extra_allowed_attributes(
     db: &dyn SyntaxGroup,
-    base_allowed_attributes: &OrderedHashSet<String>,
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> OrderedHashSet<String> {
-    let mut allowed_attributes = base_allowed_attributes.clone();
-
+    let mut extra_allowed_attributes = OrderedHashSet::default();
     for attr in item.attributes_elements(db) {
         if attr.attr(db).as_syntax_node().get_text_without_trivia(db) == ALLOW_ATTR_ATTR {
             let args = attr.clone().structurize(db).args;
@@ -747,7 +745,7 @@ fn extend_allowed_attributes(
             for arg in args {
                 if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
                     if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
-                        allowed_attributes.insert(segment.ident(db).text(db).into());
+                        extra_allowed_attributes.insert(segment.ident(db).text(db).into());
                         continue;
                     }
                 }
@@ -758,21 +756,23 @@ fn extend_allowed_attributes(
             }
         }
     }
-    allowed_attributes
+    extra_allowed_attributes
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
 pub fn validate_attributes_flat(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
+    extra_allowed_attributes: &OrderedHashSet<String>,
     item: &impl QueryAttrs,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let allowed_attributes =
-        extend_allowed_attributes(db, allowed_attributes, item, plugin_diagnostics);
-
+    let local_extra_attributes = collect_extra_allowed_attributes(db, item, plugin_diagnostics);
     for attr in item.attributes_elements(db) {
-        if !allowed_attributes.contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+        let attr_text = attr.attr(db).as_syntax_node().get_text_without_trivia(db);
+        if !(allowed_attributes.contains(&attr_text)
+            || extra_allowed_attributes.contains(&attr_text)
+            || local_extra_attributes.contains(&attr_text))
         {
             plugin_diagnostics
                 .push(PluginDiagnostic::error(&attr, "Unsupported attribute.".to_string()));
@@ -785,11 +785,18 @@ pub fn validate_attributes_flat(
 fn validate_attributes_element_list<Item: QueryAttrs + TypedSyntaxNode, const STEP: usize>(
     db: &dyn SyntaxGroup,
     allowed_attributes: &OrderedHashSet<String>,
+    extra_allowed_attributes: &OrderedHashSet<String>,
     items: &ElementList<Item, STEP>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
     for item in items.elements(db) {
-        validate_attributes_flat(db, allowed_attributes, &item, plugin_diagnostics);
+        validate_attributes_flat(
+            db,
+            allowed_attributes,
+            extra_allowed_attributes,
+            &item,
+            plugin_diagnostics,
+        );
     }
 }
 
@@ -801,16 +808,23 @@ fn validate_attributes(
     item_ast: &ast::ModuleItem,
     plugin_diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let allowed_attributes =
-        extend_allowed_attributes(db, allowed_attributes, item_ast, plugin_diagnostics);
-    validate_attributes_flat(db, &allowed_attributes, item_ast, plugin_diagnostics);
+    let extra_allowed_attributes =
+        collect_extra_allowed_attributes(db, item_ast, plugin_diagnostics);
+    validate_attributes_flat(
+        db,
+        allowed_attributes,
+        &extra_allowed_attributes,
+        item_ast,
+        plugin_diagnostics,
+    );
 
     match item_ast {
         ast::ModuleItem::Trait(item) => {
             if let ast::MaybeTraitBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    &allowed_attributes,
+                    allowed_attributes,
+                    &extra_allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -820,7 +834,8 @@ fn validate_attributes(
             if let ast::MaybeImplBody::Some(body) = item.body(db) {
                 validate_attributes_element_list(
                     db,
-                    &allowed_attributes,
+                    allowed_attributes,
+                    &extra_allowed_attributes,
                     &body.items(db),
                     plugin_diagnostics,
                 );
@@ -829,7 +844,8 @@ fn validate_attributes(
         ast::ModuleItem::Struct(item) => {
             validate_attributes_element_list(
                 db,
-                &allowed_attributes,
+                allowed_attributes,
+                &extra_allowed_attributes,
                 &item.members(db),
                 plugin_diagnostics,
             );
@@ -837,7 +853,8 @@ fn validate_attributes(
         ast::ModuleItem::Enum(item) => {
             validate_attributes_element_list(
                 db,
-                &allowed_attributes,
+                allowed_attributes,
+                &extra_allowed_attributes,
                 &item.variants(db),
                 plugin_diagnostics,
             );
