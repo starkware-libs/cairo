@@ -58,7 +58,7 @@ lib.cairo:1:10
          ^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:16
@@ -122,7 +122,7 @@ lib.cairo:6:10
          ^^^^
 impls:
 
-impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
+impl AwesomeEventDrop<> of core::traits::Drop::<AwesomeEvent>;
 
 
 lib.cairo:6:16
@@ -148,7 +148,7 @@ lib.cairo:8:10
          ^^^^
 impls:
 
-impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
+impl BestEventEverDrop<> of core::traits::Drop::<BestEventEver>;
 
 
 lib.cairo:8:16
@@ -275,8 +275,8 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:16:5
@@ -284,7 +284,7 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
