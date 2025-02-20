@@ -1,6 +1,5 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_sierra::extensions::blake::BlakeConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -34,11 +33,9 @@ fn build_compress(
     casm_build_extend! {casm_builder,
         tempvar output;
         const state_size = 8;
-        const finalize = finalize;
-        hint AllocConstantSize { size: state_size } into {dst: output};
-        hint ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize};
-        ap += 1;
+        hint AllocConstantSize { size: state_size } into { dst: output };
     };
+    casm_builder.blake2s_compress(state, byte_count, message, finalize);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[output]], None)],
