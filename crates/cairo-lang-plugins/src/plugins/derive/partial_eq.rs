@@ -1,18 +1,12 @@
-use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{DeriveInfo, unsupported_for_extern_diagnostic};
+use super::DeriveInfo;
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `PartialEq` trait.
-pub fn handle_partial_eq(
-    info: &DeriveInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<String> {
+pub fn handle_partial_eq(info: &DeriveInfo) -> Option<String> {
     let header = info.format_impl_header("core::traits", "PartialEq", &["core::traits::PartialEq"]);
     let full_typename = info.full_typename();
     let body = indent_by(
@@ -49,10 +43,6 @@ pub fn handle_partial_eq(
                         .map(|member| format!("lhs.{member} == rhs.{member}", member = member.name))
                         .join(" && ")
                 }
-            }
-            TypeVariantInfo::Extern => {
-                diagnostics.push(unsupported_for_extern_diagnostic(derived));
-                return None;
             }
         },
     );

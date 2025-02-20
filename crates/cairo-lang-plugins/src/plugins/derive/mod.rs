@@ -54,19 +54,11 @@ impl MacroPlugin for DerivePlugin {
                     enum_ast.generic_params(db),
                     TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
                 ),
-                ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
-                    db,
-                    extern_type_ast.name(db),
-                    extern_type_ast.attributes(db),
-                    extern_type_ast.generic_params(db),
-                    TypeVariantInfo::Extern,
-                ),
                 _ => {
                     let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
                         vec![PluginDiagnostic::error(
                             derive_attr.as_syntax_node().stable_ptr(),
-                            "`derive` may only be applied to `struct`s, `enum`s and `extern type`s"
-                                .to_string(),
+                            "`derive` may only be applied to `struct`s and `enum`s".to_string(),
                         )]
                     });
 
@@ -110,7 +102,6 @@ struct MemberInfo {
 enum TypeVariantInfo {
     Enum(Vec<MemberInfo>),
     Struct(Vec<MemberInfo>),
-    Extern,
 }
 
 /// Information on generic params.
@@ -291,18 +282,14 @@ fn generate_derive_code_for_type(
             let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
             if let Some(code) = match derived.as_str() {
                 "Copy" | "Drop" => Some(get_empty_impl(&derived, &info)),
-                "Clone" => clone::handle_clone(&info, &derived_path, &mut diagnostics),
-                "Debug" => debug::handle_debug(&info, &derived_path, &mut diagnostics),
+                "Clone" => clone::handle_clone(&info),
+                "Debug" => debug::handle_debug(&info),
                 "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
-                "Destruct" => destruct::handle_destruct(&info, &derived_path, &mut diagnostics),
-                "Hash" => hash::handle_hash(&info, &derived_path, &mut diagnostics),
-                "PanicDestruct" => {
-                    panic_destruct::handle_panic_destruct(&info, &derived_path, &mut diagnostics)
-                }
-                "PartialEq" => {
-                    partial_eq::handle_partial_eq(&info, &derived_path, &mut diagnostics)
-                }
-                "Serde" => serde::handle_serde(&info, &derived_path, &mut diagnostics),
+                "Destruct" => destruct::handle_destruct(&info),
+                "Hash" => hash::handle_hash(&info),
+                "PanicDestruct" => panic_destruct::handle_panic_destruct(&info),
+                "PartialEq" => partial_eq::handle_partial_eq(&info),
+                "Serde" => serde::handle_serde(&info),
                 _ => {
                     if !metadata.declared_derives.contains(&derived) {
                         diagnostics.push(PluginDiagnostic::error(
@@ -340,9 +327,4 @@ fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
             &[&format!("core::traits::{derived_trait}")]
         )
     )
-}
-
-/// Returns a diagnostic for when a derive is not supported for extern types.
-fn unsupported_for_extern_diagnostic(path: &ast::ExprPath) -> PluginDiagnostic {
-    PluginDiagnostic::error(path, "Unsupported trait for derive for extern types.".into())
 }

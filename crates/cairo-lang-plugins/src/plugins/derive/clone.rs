@@ -1,18 +1,12 @@
-use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{DeriveInfo, unsupported_for_extern_diagnostic};
+use super::DeriveInfo;
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Clone` trait.
-pub fn handle_clone(
-    info: &DeriveInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<String> {
+pub fn handle_clone(info: &DeriveInfo) -> Option<String> {
     let header =
         info.format_impl_header("core::clone", "Clone", &["core::clone::Clone", "Destruct"]);
     let full_typename = info.full_typename();
@@ -44,10 +38,6 @@ pub fn handle_clone(
                         )
                     }).join("\n"))
                 }
-            }
-            TypeVariantInfo::Extern => {
-                diagnostics.push(unsupported_for_extern_diagnostic(derived));
-                return None;
             }
         },
     );

@@ -82,8 +82,10 @@ impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
 
 /// The 128-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u128;
+
+impl u128Copy of Copy<u128>;
+impl u128Drop of Drop<u128>;
 
 impl NumericLiteralu128 of NumericLiteral<u128>;
 
@@ -301,8 +303,10 @@ pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nop
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
 /// The 8-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u8;
+
+impl u8Copy of Copy<u8>;
+impl u8Drop of Drop<u8>;
 
 impl NumericLiteralu8 of NumericLiteral<u8>;
 
@@ -455,8 +459,10 @@ impl U8BitSize of crate::num::traits::BitSize<u8> {
 }
 
 /// The 16-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u16;
+
+impl u16Copy of Copy<u16>;
+impl u16Drop of Drop<u16>;
 
 impl NumericLiteralu16 of NumericLiteral<u16>;
 
@@ -615,8 +621,10 @@ impl U16BitSize of crate::num::traits::BitSize<u16> {
 }
 
 /// The 32-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u32;
+
+impl u32Copy of Copy<u32>;
+impl u32Drop of Drop<u32>;
 
 impl NumericLiteralu32 of NumericLiteral<u32>;
 
@@ -775,8 +783,10 @@ impl U32BitSize of crate::num::traits::BitSize<u32> {
 }
 
 /// The 64-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u64;
+
+impl u64Copy of Copy<u64>;
+impl u64Drop of Drop<u64>;
 
 impl NumericLiteralu64 of NumericLiteral<u64>;
 
@@ -1924,8 +1934,10 @@ impl I128WrappingAdd = signed_int_impls::WrappingAddImpl<i128>;
 impl I128WrappingSub = signed_int_impls::WrappingSubImpl<i128>;
 
 /// The 8-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i8;
+
+impl i8Copy of Copy<i8>;
+impl i8Drop of Drop<i8>;
 
 impl NumericLiterali8 of NumericLiteral<i8>;
 
@@ -2009,8 +2021,10 @@ impl I8BitSize of crate::num::traits::BitSize<i8> {
 }
 
 /// The 16-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i16;
+
+impl i16Copy of Copy<i16>;
+impl i16Drop of Drop<i16>;
 
 impl NumericLiterali16 of NumericLiteral<i16>;
 
@@ -2095,8 +2109,10 @@ impl I16BitSize of crate::num::traits::BitSize<i16> {
 }
 
 /// The 32-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i32;
+
+impl i32Copy of Copy<i32>;
+impl i32Drop of Drop<i32>;
 
 impl NumericLiterali32 of NumericLiteral<i32>;
 
@@ -2181,8 +2197,10 @@ impl I32BitSize of crate::num::traits::BitSize<i32> {
 }
 
 /// The 64-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i64;
+
+impl i64Copy of Copy<i64>;
+impl i64Drop of Drop<i64>;
 
 impl NumericLiterali64 of NumericLiteral<i64>;
 
@@ -2267,8 +2285,10 @@ impl I64BitSize of crate::num::traits::BitSize<i64> {
 }
 
 /// The 128-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i128;
+
+impl i128Copy of Copy<i128>;
+impl i128Drop of Drop<i128>;
 
 impl NumericLiterali128 of NumericLiteral<i128>;
 

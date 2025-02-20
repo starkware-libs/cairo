@@ -21,8 +21,10 @@ use core::serde::Serde;
 
 /// Represents a Starknet contract class hash.
 /// The value range of this type is `[0, 2**251)`.
-#[derive(Copy, Drop)]
 pub extern type ClassHash;
+
+impl ClassHashCopy of Copy<ClassHash>;
+impl ClassHashDrop of Drop<ClassHash>;
 
 /// Returns a `ClassHash` given a `felt252` value.
 ///

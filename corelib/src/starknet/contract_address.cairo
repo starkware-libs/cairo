@@ -22,8 +22,10 @@ use core::zeroable::Zeroable;
 
 /// Represents a Starknet contract address.
 /// The value range of this type is `[0, 2**251)`.
-#[derive(Copy, Drop)]
 pub extern type ContractAddress;
+
+impl ContractAddressCopy of Copy<ContractAddress>;
+impl ContractAddressDrop of Drop<ContractAddress>;
 
 /// Returns a `ContractAddress` given a `felt252` value.
 ///
