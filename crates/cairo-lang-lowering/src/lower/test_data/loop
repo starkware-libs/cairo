@@ -1003,24 +1003,11 @@ blk0 (root):
 Statements:
   (v0: test::S) <- struct_construct()
   (v1: test::S, v2: @test::S) <- snapshot(v0)
-<<<<<<< HEAD
   (v3: ()) <- test::foo[41-90](v2)
   (v4: test::S, v5: @test::S) <- snapshot(v1)
   (v6: ()) <- test::I::foo(v5)
   (v7: ()) <- struct_construct()
   (v8: core::bool) <- bool::False(v7)
-||||||| 3d5631d3f
-  (v3: ()) <- test::foo[expr5](v2)
-  (v4: ()) <- test::I::foo(v2)
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::False(v5)
-=======
-  (v3: ()) <- test::foo[expr5](v2)
-  (v4: test::S, v5: @test::S) <- snapshot(v1)
-  (v6: ()) <- test::I::foo(v5)
-  (v7: ()) <- struct_construct()
-  (v8: core::bool) <- bool::False(v7)
->>>>>>> origin/dev-v2.10.1
 End:
   Return(v8)
 
@@ -1108,21 +1095,10 @@ Statements:
   (v1: test::T) <- struct_construct(v0)
   (v2: test::S) <- struct_destructure(v1)
   (v3: test::S, v4: @test::S) <- snapshot(v2)
-<<<<<<< HEAD
   (v5: ()) <- test::foo[38-94](v4)
   (v6: test::S, v7: @test::S) <- snapshot(v3)
   (v8: ()) <- test::STT::f1oo(v7)
   (v9: ()) <- struct_construct()
-||||||| 3d5631d3f
-  (v5: ()) <- test::foo[expr7](v4)
-  (v6: ()) <- test::STT::f1oo(v4)
-  (v7: ()) <- struct_construct()
-=======
-  (v5: ()) <- test::foo[expr7](v4)
-  (v6: test::S, v7: @test::S) <- snapshot(v3)
-  (v8: ()) <- test::STT::f1oo(v7)
-  (v9: ()) <- struct_construct()
->>>>>>> origin/dev-v2.10.1
 End:
   Return(v9)
 
@@ -1211,22 +1187,10 @@ Statements:
   (v1: test::B) <- struct_construct(v0)
   (v2: test::A) <- struct_construct(v1)
   (v3: test::B) <- struct_destructure(v2)
-<<<<<<< HEAD
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v5: test::B) <- struct_construct(v4)
   (v6: test::B, v7: @test::B) <- snapshot(v5)
   (v8: ()) <- test::foo[44-207](v4, v7)
-||||||| 3d5631d3f
-  (v4: test::B, v5: @test::B) <- snapshot(v3)
-  (v6: core::integer::u32) <- struct_destructure(v4)
-  (v7: test::B) <- struct_construct(v6)
-  (v8: ()) <- test::foo[expr16](v6, v5)
-=======
-  (v4: core::integer::u32) <- struct_destructure(v3)
-  (v5: test::B) <- struct_construct(v4)
-  (v6: test::B, v7: @test::B) <- snapshot(v5)
-  (v8: ()) <- test::foo[expr16](v4, v7)
->>>>>>> origin/dev-v2.10.1
   (v9: ()) <- struct_construct()
 End:
   Return(v9)
