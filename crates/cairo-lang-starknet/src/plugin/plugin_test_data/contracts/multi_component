@@ -372,7 +372,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
         ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -467,10 +467,10 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
@@ -577,15 +577,16 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
-impl GetSupplyDispatcherCopy of core::traits::Copy::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherDrop of core::traits::Drop::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherSerde of core::serde::Serde::<GetSupplyDispatcher> {
+impl GetSupplyDispatcherCopy<> of core::traits::Copy::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherDrop<> of core::traits::Drop::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherSerde<> of core::serde::Serde::<GetSupplyDispatcher> {
     fn serialize(self: @GetSupplyDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -677,15 +678,16 @@ impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
         }
     }
 }
-impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
+impl GetSupplyLibraryDispatcherCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplyLibraryDispatcher> {
     fn serialize(self: @GetSupplyLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -777,15 +779,16 @@ impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
         }
     }
 }
-impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
+impl GetSupplySafeLibraryDispatcherCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
     fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -877,15 +880,16 @@ impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
         }
     }
 }
-impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherDrop of core::traits::Drop::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatcher> {
+impl GetSupplySafeDispatcherCopy<> of core::traits::Copy::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherDrop<> of core::traits::Drop::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherSerde<> of core::serde::Serde::<GetSupplySafeDispatcher> {
     fn serialize(self: @GetSupplySafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -977,22 +981,22 @@ impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
-impl GetSupplyDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
-impl GetSupplyDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
-impl GetSupplyDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyDispatcherSubPointersMut>;
-impl GetSupplyDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyDispatcherSubPointersMut>;
-impl GetSupplyLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
-impl GetSupplyLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
-impl GetSupplyLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointersMut>;
-impl GetSupplyLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
-impl GetSupplySafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
-impl GetSupplySafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
-impl GetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
-impl GetSupplySafeDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
-impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
+impl GetSupplyDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
 
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
@@ -1352,7 +1356,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
         ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1447,9 +1451,9 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
