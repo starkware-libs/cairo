@@ -2332,7 +2332,7 @@ pub fn build_cairo_runner(
         None,
     )
     .map_err(CairoRunError::from)?;
-    CairoRunner::new(&program, LayoutName::all_cairo, false, true)
+    CairoRunner::new(&program, LayoutName::all_cairo, None, false, true, true)
         .map_err(CairoRunError::from)
         .map_err(Box::new)
 }
