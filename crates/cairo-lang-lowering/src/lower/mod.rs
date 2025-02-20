@@ -1488,6 +1488,7 @@ fn call_loop_func(
     loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId,
 ) -> LoweringResult<LoweredExpr> {
+<<<<<<< HEAD
     call_loop_func_ex(
         ctx,
         loop_signature,
@@ -1497,6 +1498,34 @@ fn call_loop_func(
         |ctx, builder, param| builder.get_snap_ref(ctx, param),
     )
 }
+||||||| 83124a92b
+    let location = ctx.get_location(stable_ptr);
+=======
+    call_loop_func_ex(
+        ctx,
+        loop_signature,
+        builder,
+        loop_expr_id,
+        stable_ptr,
+        |ctx, builder, param| builder.get_snap_ref(ctx, param),
+    )
+}
+
+/// Adds a call to an inner loop-generated function.
+fn call_loop_func_ex(
+    ctx: &mut LoweringContext<'_, '_>,
+    loop_signature: Signature,
+    builder: &mut BlockBuilder,
+    loop_expr_id: ExprId,
+    stable_ptr: SyntaxStablePtrId,
+    handle_snap: impl Fn(
+        &mut LoweringContext<'_, '_>,
+        &mut BlockBuilder,
+        &ExprVarMemberPath,
+    ) -> Option<VarUsage>,
+) -> LoweringResult<LoweredExpr> {
+    let location = ctx.get_location(stable_ptr);
+>>>>>>> origin/dev-v2.9.4
 
 /// Adds a call to an inner loop-generated function.
 fn call_loop_func_ex(
