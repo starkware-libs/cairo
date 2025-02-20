@@ -31,6 +31,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
@@ -3950,7 +3951,13 @@ fn check_struct_member_is_visible(
 fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast::Statement) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
-    validate_attributes_flat(ctx.db.upcast(), &allowed_attributes, syntax, &mut diagnostics);
+    validate_attributes_flat(
+        ctx.db.upcast(),
+        &allowed_attributes,
+        &OrderedHashSet::default(),
+        syntax,
+        &mut diagnostics,
+    );
     // Translate the plugin diagnostics to semantic diagnostics.
     for diagnostic in diagnostics {
         ctx.diagnostics
