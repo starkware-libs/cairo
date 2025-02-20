@@ -2533,12 +2533,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2554,12 +2554,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2575,12 +2575,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2596,12 +2596,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2617,12 +2617,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2638,12 +2638,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -2768,8 +2768,8 @@ Originating location:
 In function: println_macro::println_macro
 dup<Snapshot<core::byte_array::ByteArray>>([27]) -> ([27], [28])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2781,8 +2781,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([28]) -> ([29], [30], [31])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2794,8 +2794,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<felt252>([30]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2807,8 +2807,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<u32>([31]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2828,8 +2828,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2849,8 +2849,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2874,8 +2874,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2899,8 +2899,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2924,8 +2924,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2949,8 +2949,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2966,8 +2966,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2983,8 +2983,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3000,8 +3000,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3013,8 +3013,8 @@ Inlined at:
 In function: println_macro::println_macro
 dup<Snapshot<core::byte_array::ByteArray>>([27]) -> ([27], [38])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3026,8 +3026,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([38]) -> ([39], [40], [41])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3039,8 +3039,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<Snapshot<Array<bytes31>>>([39]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3052,8 +3052,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<u32>([41]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3069,8 +3069,8 @@ Originating location:
                        ^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3090,8 +3090,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3103,8 +3103,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([27]) -> ([44], [45], [46])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3116,8 +3116,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<Snapshot<Array<bytes31>>>([44]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3129,8 +3129,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<felt252>([45]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3146,8 +3146,8 @@ Originating location:
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3167,8 +3167,8 @@ Inlined at:
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3188,8 +3188,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3337,12 +3337,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3358,12 +3358,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3379,12 +3379,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3400,12 +3400,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3421,12 +3421,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3442,12 +3442,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
@@ -3572,8 +3572,8 @@ Originating location:
 In function: println_macro::println_macro
 dup<Snapshot<core::byte_array::ByteArray>>([66]) -> ([66], [67])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3585,8 +3585,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([67]) -> ([68], [69], [70])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3598,8 +3598,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<felt252>([69]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3611,8 +3611,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<u32>([70]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3632,8 +3632,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3653,8 +3653,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3678,8 +3678,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3703,8 +3703,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3728,8 +3728,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3753,8 +3753,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3770,8 +3770,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3787,8 +3787,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3804,8 +3804,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3817,8 +3817,8 @@ Inlined at:
 In function: println_macro::println_macro
 dup<Snapshot<core::byte_array::ByteArray>>([66]) -> ([66], [77])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3830,8 +3830,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([77]) -> ([78], [79], [80])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3843,8 +3843,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<Snapshot<Array<bytes31>>>([78]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3856,8 +3856,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<u32>([80]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3873,8 +3873,8 @@ Originating location:
                        ^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3894,8 +3894,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3907,8 +3907,8 @@ Inlined at:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([66]) -> ([83], [84], [85])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3920,8 +3920,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<Snapshot<Array<bytes31>>>([83]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3933,8 +3933,8 @@ Inlined at:
 In function: println_macro::println_macro
 drop<felt252>([84]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3950,8 +3950,8 @@ Originating location:
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3971,8 +3971,8 @@ Inlined at:
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -3992,8 +3992,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -5385,12 +5385,12 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-            data: core::traits::Default::default(),
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-            buffer: core::traits::Default::default(),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::fmt::FormatterDefault::default
 Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
@@ -5504,8 +5504,8 @@ Originating location:
 In function: assert_macro::assert_macro
 dup<Snapshot<core::byte_array::ByteArray>>([52]) -> ([52], [53])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5517,8 +5517,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([53]) -> ([54], [55], [56])
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5530,8 +5530,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<felt252>([55]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5543,8 +5543,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<u32>([56]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.data, ref output);
-                                      ^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+                                                        ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5564,8 +5564,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5585,8 +5585,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5610,8 +5610,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5635,8 +5635,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5660,8 +5660,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5685,8 +5685,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5702,8 +5702,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5719,8 +5719,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5736,8 +5736,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5749,8 +5749,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 dup<Snapshot<core::byte_array::ByteArray>>([52]) -> ([52], [63])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5762,8 +5762,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([63]) -> ([64], [65], [66])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5775,8 +5775,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<Snapshot<Array<bytes31>>>([64]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5788,8 +5788,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<u32>([66]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-                                      ^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+                                                 ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5805,8 +5805,8 @@ Originating location:
                        ^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5826,8 +5826,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5839,8 +5839,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([52]) -> ([69], [70], [71])
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5852,8 +5852,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<Snapshot<Array<bytes31>>>([69]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5865,8 +5865,8 @@ Inlined at:
 In function: assert_macro::assert_macro
 drop<felt252>([70]) -> ()
 Originating location:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-                                      ^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+                                               ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5882,8 +5882,8 @@ Originating location:
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5903,8 +5903,8 @@ Inlined at:
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5924,8 +5924,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5945,8 +5945,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);
@@ -5966,8 +5966,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     err.serialize(ref serialized);

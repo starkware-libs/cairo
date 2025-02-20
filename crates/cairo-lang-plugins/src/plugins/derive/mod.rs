@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::ast::{
     AttributeList, MemberList, OptionWrappedGenericParamList, VariantList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use itertools::{Itertools, chain};
 use smol_str::SmolStr;
@@ -40,20 +40,38 @@ impl MacroPlugin for DerivePlugin {
             db,
             metadata,
             match item_ast {
-                ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
-                    db,
-                    struct_ast.name(db),
-                    struct_ast.attributes(db),
-                    struct_ast.generic_params(db),
-                    TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
-                ),
-                ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
-                    db,
-                    enum_ast.name(db),
-                    enum_ast.attributes(db),
-                    enum_ast.generic_params(db),
-                    TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
-                ),
+                ast::ModuleItem::Struct(struct_ast) => {
+                    let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
+                    let member_info = extract_members(
+                        db,
+                        struct_ast.members(db),
+                        &generics.param_names.iter().map(|p| p.as_str()).collect_vec(),
+                    );
+                    DeriveInfo::new(
+                        db,
+                        struct_ast.name(db),
+                        struct_ast.attributes(db),
+                        generics,
+                        member_info,
+                        TypeVariant::Struct,
+                    )
+                }
+                ast::ModuleItem::Enum(enum_ast) => {
+                    let generics = GenericParamsInfo::new(db, enum_ast.generic_params(db));
+                    let member_info = extract_variants(
+                        db,
+                        enum_ast.variants(db),
+                        &generics.param_names.iter().map(|p| p.as_str()).collect_vec(),
+                    );
+                    DeriveInfo::new(
+                        db,
+                        enum_ast.name(db),
+                        enum_ast.attributes(db),
+                        generics,
+                        member_info,
+                        TypeVariant::Enum,
+                    )
+                }
                 _ => {
                     let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
                         vec![PluginDiagnostic::error(
@@ -94,78 +112,64 @@ impl MacroPlugin for DerivePlugin {
 /// Information on struct members or enum variants.
 struct MemberInfo {
     name: SmolStr,
-    _ty: String,
+    ty: String,
     attributes: AttributeList,
+    is_generics_dependent: bool,
+}
+impl MemberInfo {
+    fn impl_name(&self, trt: &str) -> String {
+        if self.is_generics_dependent {
+            let short_name = trt.split("::").last().unwrap_or(trt);
+            format!("__MEMBER_IMPL_{}_{short_name}", self.name)
+        } else {
+            format!("{}::<{}>", trt, self.ty)
+        }
+    }
+    fn drop_with(&self) -> String {
+        if self.is_generics_dependent {
+            format!("core::internal::DropWith::<{}, {}>", self.ty, self.impl_name("Drop"))
+        } else {
+            format!("core::internal::InferDrop::<{}>", self.ty)
+        }
+    }
+    fn destruct_with(&self) -> String {
+        if self.is_generics_dependent {
+            format!("core::internal::DestructWith::<{}, {}>", self.ty, self.impl_name("Destruct"))
+        } else {
+            format!("core::internal::InferDestruct::<{}>", self.ty)
+        }
+    }
 }
 
 /// Information on the type being derived.
-enum TypeVariantInfo {
-    Enum(Vec<MemberInfo>),
-    Struct(Vec<MemberInfo>),
+enum TypeVariant {
+    Enum,
+    Struct,
 }
 
 /// Information on generic params.
 struct GenericParamsInfo {
-    /// All the generic params name, at the original order.
-    ordered: Vec<SmolStr>,
-    /// The generic params name that are types.
-    type_generics: Vec<SmolStr>,
-    /// The generic params name that are not types.
-    other_generics: Vec<String>,
+    /// All the generic param names, at the original order.
+    pub param_names: Vec<SmolStr>,
+    /// The full genaric params, including keywords and definitions.
+    pub full_params: Vec<String>,
 }
 impl GenericParamsInfo {
     /// Extracts the information on generic params.
     fn new(db: &dyn SyntaxGroup, generic_params: OptionWrappedGenericParamList) -> Self {
-        let mut ordered = vec![];
-        let mut type_generics = vec![];
-        let mut other_generics = vec![];
-        if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params {
-            for param in gens.generic_params(db).elements(db) {
-                ordered.push(param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into()));
-                if let ast::GenericParam::Type(t) = param {
-                    type_generics.push(t.name(db).text(db));
-                } else {
-                    other_generics.push(param.as_syntax_node().get_text_without_trivia(db));
-                }
-            }
-        }
-        Self { ordered, type_generics, other_generics }
-    }
-
-    /// Formats the generic params for the type.
-    /// `additional_demands` formats the generic type params as additional trait bounds.
-    /// Does not print including the `<>`.
-    fn format_generics_with_trait_params_only(
-        &self,
-        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
-    ) -> String {
-        chain!(
-            self.type_generics.iter().map(|s| s.to_string()),
-            self.other_generics.iter().cloned(),
-            self.type_generics.iter().flat_map(additional_demands)
-        )
-        .join(", ")
-    }
-
-    /// Formats the generic params for the type.
-    /// `additional_demands` formats the generic type params as additional trait bounds.
-    fn format_generics_with_trait(
-        &self,
-        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
-    ) -> String {
-        if self.ordered.is_empty() {
-            "".to_string()
-        } else {
-            format!("<{}>", self.format_generics_with_trait_params_only(additional_demands))
-        }
-    }
-
-    /// Formats the generic params for the type.
-    fn format_generics(&self) -> String {
-        if self.ordered.is_empty() {
-            "".to_string()
-        } else {
-            format!("<{}>", self.ordered.iter().join(", "))
+        let OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params else {
+            return Self { param_names: Default::default(), full_params: Default::default() };
+        };
+        let params = gens.generic_params(db).elements(db);
+        Self {
+            param_names: params
+                .iter()
+                .map(|param| param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into()))
+                .collect(),
+            full_params: params
+                .iter()
+                .map(|param| param.as_syntax_node().get_text_without_trivia(db))
+                .collect(),
         }
     }
 }
@@ -175,7 +179,8 @@ pub struct DeriveInfo {
     name: SmolStr,
     attributes: AttributeList,
     generics: GenericParamsInfo,
-    specific_info: TypeVariantInfo,
+    members_info: Vec<MemberInfo>,
+    type_variant: TypeVariant,
 }
 impl DeriveInfo {
     /// Extracts the information on the type being derived.
@@ -183,69 +188,96 @@ impl DeriveInfo {
         db: &dyn SyntaxGroup,
         ident: ast::TerminalIdentifier,
         attributes: AttributeList,
-        generic_args: OptionWrappedGenericParamList,
-        specific_info: TypeVariantInfo,
+        generics: GenericParamsInfo,
+        members_info: Vec<MemberInfo>,
+        type_variant: TypeVariant,
     ) -> Self {
-        Self {
-            name: ident.text(db),
-            attributes,
-            generics: GenericParamsInfo::new(db, generic_args),
-            specific_info,
-        }
+        Self { name: ident.text(db), attributes, generics, members_info, type_variant }
     }
 
-    /// Formats the header of the impl.
-    fn format_impl_header(
-        &self,
-        derived_trait_module: &str,
-        derived_trait_name: &str,
-        dependent_traits: &[&str],
-    ) -> String {
+    /// Returns a full derived impl header - given `derived_trait` - and the `dependent_traits`
+    /// required for its all its members.
+    fn impl_header(&self, derived_trait: &str, dependent_traits: &[&str]) -> String {
+        let derived_trait_name = derived_trait.split("::").last().unwrap_or(derived_trait);
         format!(
-            "impl {name}{derived_trait_name}{generics_impl} of \
-             {derived_trait_module}::{derived_trait_name}::<{full_typename}>",
+            "impl {name}{derived_trait_name}<{generics}> of {derived_trait}::<{full_typename}>",
             name = self.name,
-            generics_impl = self.generics.format_generics_with_trait(|t| dependent_traits
-                .iter()
-                .map(|d| format!("+{d}<{t}>"))
-                .collect()),
+            generics =
+                self.impl_generics(dependent_traits, |trt, ty| format!("{trt}<{ty}>")).join(", "),
             full_typename = self.full_typename(),
         )
     }
 
+    /// Returns the expected generics parameters for a derived impl definition.
+    ///
+    /// `dep_req` - is the formatting of a trait and the type as a concrete trait.
+    fn impl_generics(
+        &self,
+        dependent_traits: &[&str],
+        dep_req: fn(&str, &str) -> String,
+    ) -> Vec<String> {
+        chain!(
+            self.generics.full_params.iter().cloned(),
+            self.members_info.iter().filter(|m| m.is_generics_dependent).flat_map(|m| {
+                dependent_traits
+                    .iter()
+                    .cloned()
+                    .map(move |trt| format!("impl {}: {}", m.impl_name(trt), dep_req(trt, &m.ty)))
+            })
+        )
+        .collect()
+    }
+
     /// Formats the full typename of the type, including generic args.
     fn full_typename(&self) -> String {
-        format!("{name}{generics}", name = self.name, generics = self.generics.format_generics())
+        if self.generics.param_names.is_empty() {
+            self.name.to_string()
+        } else {
+            format!("{}<{}>", self.name, self.generics.param_names.iter().join(", "))
+        }
     }
 }
 
 /// Extracts the information on the members of the struct.
-fn extract_members(db: &dyn SyntaxGroup, members: MemberList) -> Vec<MemberInfo> {
+fn extract_members(
+    db: &dyn SyntaxGroup,
+    members: MemberList,
+    generics: &[&str],
+) -> Vec<MemberInfo> {
     members
         .elements(db)
         .into_iter()
         .map(|member| MemberInfo {
             name: member.name(db).text(db),
-            _ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
+            ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
             attributes: member.attributes(db),
+            is_generics_dependent: member.type_clause(db).ty(db).is_dependent_type(db, generics),
         })
         .collect()
 }
 
 /// Extracts the information on the variants of the enum.
-fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberInfo> {
+fn extract_variants(
+    db: &dyn SyntaxGroup,
+    variants: VariantList,
+    generics: &[&str],
+) -> Vec<MemberInfo> {
     variants
         .elements(db)
         .into_iter()
         .map(|variant| MemberInfo {
             name: variant.name(db).text(db),
-            _ty: match variant.type_clause(db) {
+            ty: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => "()".to_string(),
                 ast::OptionTypeClause::TypeClause(t) => {
                     t.ty(db).as_syntax_node().get_text_without_trivia(db)
                 }
             },
             attributes: variant.attributes(db),
+            is_generics_dependent: match variant.type_clause(db) {
+                ast::OptionTypeClause::Empty(_) => false,
+                ast::OptionTypeClause::TypeClause(t) => t.ty(db).is_dependent_type(db, generics),
+            },
         })
         .collect()
 }
@@ -282,14 +314,14 @@ fn generate_derive_code_for_type(
             let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
             if let Some(code) = match derived.as_str() {
                 "Copy" | "Drop" => Some(get_empty_impl(&derived, &info)),
-                "Clone" => clone::handle_clone(&info),
-                "Debug" => debug::handle_debug(&info),
+                "Clone" => Some(clone::handle_clone(&info)),
+                "Debug" => Some(debug::handle_debug(&info)),
                 "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
-                "Destruct" => destruct::handle_destruct(&info),
-                "Hash" => hash::handle_hash(&info),
-                "PanicDestruct" => panic_destruct::handle_panic_destruct(&info),
-                "PartialEq" => partial_eq::handle_partial_eq(&info),
-                "Serde" => serde::handle_serde(&info),
+                "Destruct" => Some(destruct::handle_destruct(&info)),
+                "Hash" => Some(hash::handle_hash(&info)),
+                "PanicDestruct" => Some(panic_destruct::handle_panic_destruct(&info)),
+                "PartialEq" => Some(partial_eq::handle_partial_eq(&info)),
+                "Serde" => Some(serde::handle_serde(&info)),
                 _ => {
                     if !metadata.declared_derives.contains(&derived) {
                         diagnostics.push(PluginDiagnostic::error(
@@ -319,12 +351,6 @@ fn generate_derive_code_for_type(
 }
 
 fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
-    format!(
-        "{};\n",
-        info.format_impl_header(
-            "core::traits",
-            derived_trait,
-            &[&format!("core::traits::{derived_trait}")]
-        )
-    )
+    let derive_trait = format!("core::traits::{derived_trait}");
+    format!("{};\n", info.impl_header(&derive_trait, &[&derive_trait]))
 }
