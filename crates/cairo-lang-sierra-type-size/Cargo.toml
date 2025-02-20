@@ -7,13 +7,5 @@ license-file.workspace = true
 description = "Sierra type sizes computation."
 
 [dependencies]
-<<<<<<< HEAD
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.10.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.10.0" }
-||||||| 83124a92b
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.9.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.3" }
-=======
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.9.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.4" }
->>>>>>> origin/dev-v2.9.4

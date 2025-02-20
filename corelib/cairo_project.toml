@@ -2,13 +2,7 @@
 core = "src"
 
 [config.global]
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 edition = "2024_07"
 
 [config.global.experimental_features]

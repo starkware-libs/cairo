@@ -524,13 +524,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-compile"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -542,13 +536,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-execute"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "bincode 2.0.0-rc.3",
@@ -564,13 +552,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-format"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
@@ -582,13 +564,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -606,13 +582,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -636,13 +606,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
@@ -653,13 +617,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
@@ -679,13 +637,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -699,13 +651,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-doc"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-debug",
@@ -728,13 +674,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -744,13 +684,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -779,13 +713,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -802,13 +730,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -823,124 +745,12 @@ dependencies = [
  "rust-analyzer-salsa",
  "serde",
  "test-case",
-<<<<<<< HEAD
  "thiserror 2.0.11",
-||||||| 83124a92b
- "thiserror",
-]
-
-[[package]]
-name = "cairo-lang-language-server"
-version = "2.9.3"
-dependencies = [
- "anyhow",
- "assert_fs",
- "cairo-lang-compiler",
- "cairo-lang-defs",
- "cairo-lang-diagnostics",
- "cairo-lang-doc",
- "cairo-lang-filesystem",
- "cairo-lang-formatter",
- "cairo-lang-language-server",
- "cairo-lang-lowering",
- "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-project",
- "cairo-lang-semantic",
- "cairo-lang-starknet",
- "cairo-lang-syntax",
- "cairo-lang-test-plugin",
- "cairo-lang-test-utils",
- "cairo-lang-utils",
- "convert_case",
- "crossbeam",
- "governor",
- "indent",
- "indoc",
- "itertools 0.12.1",
- "jod-thread",
- "libc",
- "lsp-server",
- "lsp-types",
- "pathdiff",
- "pretty_assertions",
- "rust-analyzer-salsa",
- "rustc-hash",
- "scarb-metadata",
- "scarb-proc-macro-server-types",
- "scarb-stable-hash",
- "serde",
- "serde_json",
- "smol_str",
- "tempfile",
- "test-log",
- "tracing",
- "tracing-chrome",
- "tracing-subscriber",
-=======
- "thiserror",
-]
-
-[[package]]
-name = "cairo-lang-language-server"
-version = "2.9.4"
-dependencies = [
- "anyhow",
- "assert_fs",
- "cairo-lang-compiler",
- "cairo-lang-defs",
- "cairo-lang-diagnostics",
- "cairo-lang-doc",
- "cairo-lang-filesystem",
- "cairo-lang-formatter",
- "cairo-lang-language-server",
- "cairo-lang-lowering",
- "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-project",
- "cairo-lang-semantic",
- "cairo-lang-starknet",
- "cairo-lang-syntax",
- "cairo-lang-test-plugin",
- "cairo-lang-test-utils",
- "cairo-lang-utils",
- "convert_case",
- "crossbeam",
- "governor",
- "indent",
- "indoc",
- "itertools 0.12.1",
- "jod-thread",
- "libc",
- "lsp-server",
- "lsp-types",
- "pathdiff",
- "pretty_assertions",
- "rust-analyzer-salsa",
- "rustc-hash",
- "scarb-metadata",
- "scarb-proc-macro-server-types",
- "scarb-stable-hash",
- "serde",
- "serde_json",
- "smol_str",
- "tempfile",
- "test-log",
- "tracing",
- "tracing-chrome",
- "tracing-subscriber",
->>>>>>> origin/dev-v2.9.4
 ]
 
 [[package]]
 name = "cairo-lang-lowering"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "bincode 1.3.3",
  "cairo-lang-debug",
@@ -971,13 +781,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anstream",
  "cairo-lang-diagnostics",
@@ -1002,13 +806,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -1036,13 +834,7 @@ checksum = "123ac0ecadf31bacae77436d72b88fa9caef2b8e92c89ce63a125ae911a12fae"
 
 [[package]]
 name = "cairo-lang-proc-macros"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "quote",
@@ -1051,13 +843,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -1070,13 +856,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runnable-utils"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -1092,13 +872,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "ark-ff 0.5.0",
  "ark-secp256k1",
@@ -1133,13 +907,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -1168,13 +936,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "bimap",
@@ -1206,13 +968,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -1227,13 +983,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -1253,13 +1003,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -1289,13 +1033,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -1319,13 +1057,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
@@ -1333,13 +1065,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1373,13 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet-classes"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -1407,13 +1127,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -1432,13 +1146,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "env_logger",
  "genco",
@@ -1448,13 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-plugin"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1479,13 +1181,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1507,13 +1203,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
@@ -1526,13 +1216,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "env_logger",
  "hashbrown 0.15.2",
@@ -1551,32 +1235,8 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-||||||| 83124a92b
-name = "cairo-language-server"
-version = "2.9.3"
-dependencies = [
- "cairo-lang-language-server",
-]
-
-[[package]]
-=======
-name = "cairo-language-server"
-version = "2.9.4"
-dependencies = [
- "cairo-lang-language-server",
-]
-
-[[package]]
->>>>>>> origin/dev-v2.9.4
 name = "cairo-run"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1591,13 +1251,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-test"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -2200,13 +1854,7 @@ dependencies = [
 
 [[package]]
 name = "generate-syntax"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
@@ -2225,13 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "get-lowering"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -4029,13 +3671,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sierra-compile"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -4122,13 +3758,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starknet-compile"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -4191,13 +3821,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-compile"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -4210,13 +3834,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-extract-code"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "cairo-lang-starknet-classes",
@@ -4226,13 +3844,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-upgrade-validate"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "anyhow",
  "async-channel",
@@ -4437,13 +4049,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-<<<<<<< HEAD
 version = "2.10.0"
-||||||| 83124a92b
-version = "2.9.3"
-=======
-version = "2.9.4"
->>>>>>> origin/dev-v2.9.4
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
