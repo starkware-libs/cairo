@@ -314,6 +314,7 @@ Statements:
   (v32: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
 End:
   Return(v8, v31, v32)
+<<<<<<< HEAD
 
 //! > ==========================================================================
 
@@ -395,3 +396,87 @@ blk0 (root):
 Statements:
 End:
   Return()
+||||||| 3d5631d3f
+=======
+
+//! > ==========================================================================
+
+//! > Test snapshot invalidation partial var.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @u8 {
+    let mut a = A { b: 8 };
+    loop {
+        let _v = @(a.b);
+        break;
+    };
+    a = A { b: 7 };
+
+    @(a.b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 7
+  (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test snapshot use same snapshot inner loop.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let a = A { b: 7 };
+    loop {
+        let _ = @a;
+        loop {
+            let _ = @a;
+            break;
+        };
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()
+>>>>>>> origin/dev-v2.10.1
