@@ -17,3 +17,25 @@ pub enum OptionRev<T> {
     None,
     Some: T,
 }
+
+/// Helper to have the same outside signature as `DropWith` and `DestructWith`.
+#[derive(Destruct)]
+pub struct Wrapper<T> {
+    pub value: T,
+}
+
+/// Wrapper type to ensure that a type `T` is dropped using a specific `Drop` impl.
+pub struct DropWith<T, impl DropT: Drop<T>> {
+    pub value: T,
+}
+impl DropWithDrop<T, impl DropT: Drop<T>> of Drop<DropWith<T, DropT>>;
+
+/// Wrapper type to ensure that a type `T` is destructed using a specific `Destruct` impl.
+pub struct DestructWith<T, impl DestructT: Destruct<T>> {
+    pub value: T,
+}
+impl DestructWithDestruct<T, impl DestructT: Destruct<T>> of Destruct<DestructWith<T, DestructT>> {
+    fn destruct(self: DestructWith<T, DestructT>) nopanic {
+        DestructT::destruct(self.value)
+    }
+}

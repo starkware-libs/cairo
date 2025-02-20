@@ -230,16 +230,18 @@ lib.cairo:13:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
+impl WrappedFelt252Drop<> of core::traits::Drop::<WrappedFelt252>;
 impl WrappedFelt252Hash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<WrappedFelt252, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: WrappedFelt252) -> __State {
-        let state = core::hash::Hash::update_state(state, value.value);
-        state
+        let __hash_derive_state = state;
+        let value = core::internal::Wrapper::<felt252> { value: value.value };
+        let __hash_derive_state = core::hash::Hash::<felt252>::update_state(__hash_derive_state, value.value);
+        __hash_derive_state
     }
 }
 
@@ -344,23 +346,25 @@ lib.cairo:17:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
+impl ZeroSizeDrop<> of core::traits::Drop::<ZeroSize>;
 impl ZeroSizeHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<ZeroSize, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: ZeroSize) -> __State {
+        let __hash_derive_state = state;
         
-        state
+        __hash_derive_state
     }
 }
-impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
+impl ZeroSizeSerde<> of core::serde::Serde::<ZeroSize> {
     fn serialize(self: @ZeroSize, ref output: core::array::Array<felt252>) {
         
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ZeroSize> {
+        
         core::option::Option::Some(ZeroSize {
             
         })
@@ -428,20 +432,23 @@ lib.cairo:20:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
-impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
+impl SimpleEnumDrop<> of core::traits::Drop::<SimpleEnum>;
+impl SimpleEnumSerde<
+        
+    > of core::serde::Serde<SimpleEnum>
+ {
     fn serialize(self: @SimpleEnum, ref output: core::array::Array<felt252>) {
         match self {
-            SimpleEnum::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            SimpleEnum::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
+            SimpleEnum::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            SimpleEnum::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<SimpleEnum> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => SimpleEnum::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => SimpleEnum::B(core::serde::Serde::deserialize(ref serialized)?),
+                0 => SimpleEnum::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => SimpleEnum::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -538,22 +545,25 @@ lib.cairo:26:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
-impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
+impl EnumWithDefaultDrop<> of core::traits::Drop::<EnumWithDefault>;
+impl EnumWithDefaultSerde<
+        
+    > of core::serde::Serde<EnumWithDefault>
+ {
     fn serialize(self: @EnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            EnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            EnumWithDefault::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
+            EnumWithDefault::C(x) => { core::serde::Serde::<felt252>::serialize(@2, ref output); core::serde::Serde::<u32>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<EnumWithDefault> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => EnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => EnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
-                2 => EnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                0 => EnumWithDefault::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => EnumWithDefault::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
+                2 => EnumWithDefault::C(core::serde::Serde::<u32>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -672,22 +682,25 @@ lib.cairo:34:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
-impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
+impl BadEnumWithDefaultDrop<> of core::traits::Drop::<BadEnumWithDefault>;
+impl BadEnumWithDefaultSerde<
+        
+    > of core::serde::Serde<BadEnumWithDefault>
+ {
     fn serialize(self: @BadEnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            BadEnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            BadEnumWithDefault::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
+            BadEnumWithDefault::C(x) => { core::serde::Serde::<felt252>::serialize(@2, ref output); core::serde::Serde::<u32>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<BadEnumWithDefault> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => BadEnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => BadEnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
-                2 => BadEnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                0 => BadEnumWithDefault::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => BadEnumWithDefault::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
+                2 => BadEnumWithDefault::C(core::serde::Serde::<u32>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -700,7 +713,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -730,8 +743,8 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:6:5
@@ -739,8 +752,8 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:13:26
@@ -748,8 +761,8 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
-impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersDrop<> of core::traits::Drop::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersCopy<> of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
 lib.cairo:13:26
@@ -757,8 +770,8 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;
-impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubPointersMut>;
+impl WrappedFelt252SubPointersMutDrop<> of core::traits::Drop::<WrappedFelt252SubPointersMut>;
+impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252SubPointersMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
