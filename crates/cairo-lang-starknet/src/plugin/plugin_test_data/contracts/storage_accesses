@@ -541,7 +541,7 @@ pub mod __constructor {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         );
     }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -556,10 +556,10 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
@@ -1229,24 +1229,28 @@ self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256,
     }
 
 }
-impl UserInfoSerde of core::serde::Serde::<UserInfo> {
+impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
     fn serialize(self: @UserInfo, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.name, ref output);
-        core::serde::Serde::serialize(self.symbol, ref output);
-        core::serde::Serde::serialize(self.decimals, ref output);
-        core::serde::Serde::serialize(self.total_supply, ref output)
+        core::serde::Serde::<felt252>::serialize(self.name, ref output);
+        core::serde::Serde::<felt252>::serialize(self.symbol, ref output);
+        core::serde::Serde::<u8>::serialize(self.decimals, ref output);
+        core::serde::Serde::<u256>::serialize(self.total_supply, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<UserInfo> {
+        let name = core::internal::Wrapper::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let symbol = core::internal::Wrapper::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let decimals = core::internal::Wrapper::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
+        let total_supply = core::internal::Wrapper::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
         core::option::Option::Some(UserInfo {
-            name: core::serde::Serde::deserialize(ref serialized)?,
-            symbol: core::serde::Serde::deserialize(ref serialized)?,
-            decimals: core::serde::Serde::deserialize(ref serialized)?,
-            total_supply: core::serde::Serde::deserialize(ref serialized)?,
+            name: name.value,
+            symbol: symbol.value,
+            decimals: decimals.value,
+            total_supply: total_supply.value,
         })
     }
 }
-impl UserInfoDrop of core::traits::Drop::<UserInfo>;
-impl UserInfoCopy of core::traits::Copy::<UserInfo>;
+impl UserInfoDrop<> of core::traits::Drop::<UserInfo>;
+impl UserInfoCopy<> of core::traits::Copy::<UserInfo>;
 impl StoreUserInfo of starknet::Store::<UserInfo> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<UserInfo> {
         let __store_derive_address_domain__ = address_domain;
@@ -1500,15 +1504,16 @@ impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<Tran
         }
     }
 }
-impl IERC20DispatcherCopy of core::traits::Copy::<IERC20Dispatcher>;
-impl IERC20DispatcherDrop of core::traits::Drop::<IERC20Dispatcher>;
-impl IERC20DispatcherSerde of core::serde::Serde::<IERC20Dispatcher> {
+impl IERC20DispatcherCopy<> of core::traits::Copy::<IERC20Dispatcher>;
+impl IERC20DispatcherDrop<> of core::traits::Drop::<IERC20Dispatcher>;
+impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
     fn serialize(self: @IERC20Dispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20Dispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20Dispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1600,15 +1605,16 @@ impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IER
         }
     }
 }
-impl IERC20LibraryDispatcherCopy of core::traits::Copy::<IERC20LibraryDispatcher>;
-impl IERC20LibraryDispatcherDrop of core::traits::Drop::<IERC20LibraryDispatcher>;
-impl IERC20LibraryDispatcherSerde of core::serde::Serde::<IERC20LibraryDispatcher> {
+impl IERC20LibraryDispatcherCopy<> of core::traits::Copy::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherDrop<> of core::traits::Drop::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatcher> {
     fn serialize(self: @IERC20LibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20LibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20LibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1700,15 +1706,16 @@ impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
-impl IERC20SafeLibraryDispatcherCopy of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
-impl IERC20SafeLibraryDispatcherDrop of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
-impl IERC20SafeLibraryDispatcherSerde of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
+impl IERC20SafeLibraryDispatcherCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
     fn serialize(self: @IERC20SafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1800,15 +1807,16 @@ impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
         }
     }
 }
-impl IERC20SafeDispatcherCopy of core::traits::Copy::<IERC20SafeDispatcher>;
-impl IERC20SafeDispatcherDrop of core::traits::Drop::<IERC20SafeDispatcher>;
-impl IERC20SafeDispatcherSerde of core::serde::Serde::<IERC20SafeDispatcher> {
+impl IERC20SafeDispatcherCopy<> of core::traits::Copy::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherDrop<> of core::traits::Drop::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
     fn serialize(self: @IERC20SafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1900,34 +1908,34 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
         }
     }
 }
-impl UserInfoSubPointersDrop of core::traits::Drop::<UserInfoSubPointers>;
-impl UserInfoSubPointersCopy of core::traits::Copy::<UserInfoSubPointers>;
-impl UserInfoSubPointersMutDrop of core::traits::Drop::<UserInfoSubPointersMut>;
-impl UserInfoSubPointersMutCopy of core::traits::Copy::<UserInfoSubPointersMut>;
-impl TransactionInfoStorageBaseDrop of core::traits::Drop::<TransactionInfoStorageBase>;
-impl TransactionInfoStorageBaseCopy of core::traits::Copy::<TransactionInfoStorageBase>;
-impl TransactionInfoStorageBaseMutDrop of core::traits::Drop::<TransactionInfoStorageBaseMut>;
-impl TransactionInfoStorageBaseMutCopy of core::traits::Copy::<TransactionInfoStorageBaseMut>;
-impl TransactionInfoStorageNodeDrop of core::traits::Drop::<TransactionInfoStorageNode>;
-impl TransactionInfoStorageNodeCopy of core::traits::Copy::<TransactionInfoStorageNode>;
-impl TransactionInfoStorageNodeMutDrop of core::traits::Drop::<TransactionInfoStorageNodeMut>;
-impl TransactionInfoStorageNodeMutCopy of core::traits::Copy::<TransactionInfoStorageNodeMut>;
-impl IERC20DispatcherSubPointersDrop of core::traits::Drop::<IERC20DispatcherSubPointers>;
-impl IERC20DispatcherSubPointersCopy of core::traits::Copy::<IERC20DispatcherSubPointers>;
-impl IERC20DispatcherSubPointersMutDrop of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
-impl IERC20DispatcherSubPointersMutCopy of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
-impl IERC20LibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
-impl IERC20LibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
-impl IERC20LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
-impl IERC20LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
-impl IERC20SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
-impl IERC20SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
-impl IERC20SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
-impl IERC20SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
-impl IERC20SafeDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
-impl IERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
-impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
-impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
+impl UserInfoSubPointersDrop<> of core::traits::Drop::<UserInfoSubPointers>;
+impl UserInfoSubPointersCopy<> of core::traits::Copy::<UserInfoSubPointers>;
+impl UserInfoSubPointersMutDrop<> of core::traits::Drop::<UserInfoSubPointersMut>;
+impl UserInfoSubPointersMutCopy<> of core::traits::Copy::<UserInfoSubPointersMut>;
+impl TransactionInfoStorageBaseDrop<> of core::traits::Drop::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseCopy<> of core::traits::Copy::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseMutDrop<> of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageBaseMutCopy<> of core::traits::Copy::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageNodeDrop<> of core::traits::Drop::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeCopy<> of core::traits::Copy::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeMutDrop<> of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+impl TransactionInfoStorageNodeMutCopy<> of core::traits::Copy::<TransactionInfoStorageNodeMut>;
+impl IERC20DispatcherSubPointersDrop<> of core::traits::Drop::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersCopy<> of core::traits::Copy::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+impl IERC20DispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
     use starknet::storage::{
@@ -2428,7 +2436,7 @@ pub mod __constructor {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         );
     }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -2443,9 +2451,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

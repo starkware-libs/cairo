@@ -140,7 +140,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -170,8 +170,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -179,8 +179,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first parameter of an entry point must be `self`.
@@ -356,7 +356,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -386,8 +386,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -395,8 +395,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The constructor function must be called `constructor`.
@@ -617,7 +617,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -647,8 +647,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -656,8 +656,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Only #[external(v0)] is supported.
@@ -706,7 +706,7 @@ lib.cairo:8:10
          ^^^^
 impls:
 
-impl MyTypeDrop of core::traits::Drop::<MyType>;
+impl MyTypeDrop<> of core::traits::Drop::<MyType>;
 
 
 lib.cairo:1:1
@@ -841,7 +841,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -871,8 +871,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -880,8 +880,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
@@ -1048,7 +1048,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -1078,8 +1078,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -1087,8 +1087,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
@@ -1255,7 +1255,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -1285,8 +1285,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -1294,8 +1294,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
@@ -1490,7 +1490,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -1520,8 +1520,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -1529,8 +1529,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
@@ -1766,7 +1766,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -1796,8 +1796,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -1805,8 +1805,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
@@ -2013,7 +2013,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -2043,8 +2043,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -2052,8 +2052,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
@@ -2240,7 +2240,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -2270,8 +2270,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -2279,8 +2279,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 
@@ -2526,7 +2526,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -2556,8 +2556,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -2565,8 +2565,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
@@ -2942,15 +2942,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitDispatcherCopy of core::traits::Copy::<InterfaceTraitDispatcher>;
-impl InterfaceTraitDispatcherDrop of core::traits::Drop::<InterfaceTraitDispatcher>;
-impl InterfaceTraitDispatcherSerde of core::serde::Serde::<InterfaceTraitDispatcher> {
+impl InterfaceTraitDispatcherCopy<> of core::traits::Copy::<InterfaceTraitDispatcher>;
+impl InterfaceTraitDispatcherDrop<> of core::traits::Drop::<InterfaceTraitDispatcher>;
+impl InterfaceTraitDispatcherSerde<> of core::serde::Serde::<InterfaceTraitDispatcher> {
     fn serialize(self: @InterfaceTraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -3056,15 +3057,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcher>;
-impl InterfaceTraitLibraryDispatcherDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcher>;
-impl InterfaceTraitLibraryDispatcherSerde of core::serde::Serde::<InterfaceTraitLibraryDispatcher> {
+impl InterfaceTraitLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceTraitLibraryDispatcher>;
+impl InterfaceTraitLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceTraitLibraryDispatcher>;
+impl InterfaceTraitLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceTraitLibraryDispatcher> {
     fn serialize(self: @InterfaceTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -3170,15 +3172,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcher>;
-impl InterfaceTraitSafeLibraryDispatcherDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcher>;
-impl InterfaceTraitSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceTraitSafeLibraryDispatcher> {
+impl InterfaceTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcher>;
+impl InterfaceTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcher>;
+impl InterfaceTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceTraitSafeLibraryDispatcher> {
     fn serialize(self: @InterfaceTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -3284,15 +3287,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeDispatcherCopy of core::traits::Copy::<InterfaceTraitSafeDispatcher>;
-impl InterfaceTraitSafeDispatcherDrop of core::traits::Drop::<InterfaceTraitSafeDispatcher>;
-impl InterfaceTraitSafeDispatcherSerde of core::serde::Serde::<InterfaceTraitSafeDispatcher> {
+impl InterfaceTraitSafeDispatcherCopy<> of core::traits::Copy::<InterfaceTraitSafeDispatcher>;
+impl InterfaceTraitSafeDispatcherDrop<> of core::traits::Drop::<InterfaceTraitSafeDispatcher>;
+impl InterfaceTraitSafeDispatcherSerde<> of core::serde::Serde::<InterfaceTraitSafeDispatcher> {
     fn serialize(self: @InterfaceTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -3398,8 +3402,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitDispatcherSubPointers>;
-impl InterfaceTraitDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitDispatcherSubPointers>;
+impl InterfaceTraitDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceTraitDispatcherSubPointers>;
+impl InterfaceTraitDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceTraitDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3407,8 +3411,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitDispatcherSubPointersMut>;
-impl InterfaceTraitDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceTraitDispatcherSubPointersMut>;
+impl InterfaceTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceTraitDispatcherSubPointersMut>;
+impl InterfaceTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceTraitDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3416,8 +3420,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointers>;
-impl InterfaceTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcherSubPointers>;
+impl InterfaceTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointers>;
+impl InterfaceTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceTraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3425,8 +3429,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointersMut>;
-impl InterfaceTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceTraitLibraryDispatcherSubPointersMut>;
+impl InterfaceTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceTraitLibraryDispatcherSubPointersMut>;
+impl InterfaceTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceTraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3434,8 +3438,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
-impl InterfaceTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
+impl InterfaceTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
+impl InterfaceTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3443,8 +3447,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointersMut>;
-impl InterfaceTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceTraitSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceTraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3452,8 +3456,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointers>;
-impl InterfaceTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceTraitSafeDispatcherSubPointers>;
+impl InterfaceTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointers>;
+impl InterfaceTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceTraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3461,8 +3465,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointersMut>;
-impl InterfaceTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceTraitSafeDispatcherSubPointersMut>;
+impl InterfaceTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceTraitSafeDispatcherSubPointersMut>;
+impl InterfaceTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceTraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:8:1
@@ -3712,7 +3716,7 @@ lib.cairo:8:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:8:1
@@ -3742,8 +3746,8 @@ lib.cairo:10:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:10:5
@@ -3751,8 +3755,8 @@ lib.cairo:10:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -3889,7 +3893,7 @@ lib.cairo:6:14
              ^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:6:20
@@ -3919,8 +3923,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -3928,8 +3932,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
@@ -4077,7 +4081,7 @@ lib.cairo:7:14
              ^^^^
 impls:
 
-impl MyEventDrop of core::traits::Drop::<MyEvent>;
+impl MyEventDrop<> of core::traits::Drop::<MyEvent>;
 
 
 lib.cairo:7:20
@@ -4107,7 +4111,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -4137,8 +4141,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -4146,8 +4150,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
@@ -4318,15 +4322,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -4432,15 +4437,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -4546,15 +4552,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -4660,15 +4667,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -4774,8 +4782,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -4783,8 +4791,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -4792,8 +4800,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -4801,8 +4809,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -4810,8 +4818,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -4819,8 +4827,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -4828,8 +4836,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -4837,8 +4845,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > ==========================================================================
 
@@ -4955,15 +4963,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -5069,15 +5078,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -5183,15 +5193,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -5297,15 +5308,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -5411,8 +5423,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -5420,8 +5432,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -5429,8 +5441,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -5438,8 +5450,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -5447,8 +5459,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -5456,8 +5468,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -5465,8 +5477,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -5474,8 +5486,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > ==========================================================================
 
@@ -5558,15 +5570,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -5672,15 +5685,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -5786,15 +5800,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -5900,15 +5915,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -6014,8 +6030,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6023,8 +6039,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6032,8 +6048,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6041,8 +6057,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6050,8 +6066,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6059,8 +6075,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6068,8 +6084,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6077,8 +6093,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > ==========================================================================
 
@@ -6168,15 +6184,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -6282,15 +6299,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -6396,15 +6414,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -6510,15 +6529,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -6624,8 +6644,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6633,8 +6653,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6642,8 +6662,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6651,8 +6671,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6660,8 +6680,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6669,8 +6689,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -6678,8 +6698,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -6687,8 +6707,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > ==========================================================================
 
@@ -7030,15 +7050,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
-impl InterfaceDispatcherDrop of core::traits::Drop::<InterfaceDispatcher>;
-impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
+impl InterfaceDispatcherCopy<> of core::traits::Copy::<InterfaceDispatcher>;
+impl InterfaceDispatcherDrop<> of core::traits::Drop::<InterfaceDispatcher>;
+impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
     fn serialize(self: @InterfaceDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -7144,15 +7165,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherDrop of core::traits::Drop::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDispatcher> {
+impl InterfaceLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryDispatcher> {
     fn serialize(self: @InterfaceLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -7258,15 +7280,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
+impl InterfaceSafeLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
     fn serialize(self: @InterfaceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -7372,15 +7395,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherDrop of core::traits::Drop::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatcher> {
+impl InterfaceSafeDispatcherCopy<> of core::traits::Copy::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherDrop<> of core::traits::Drop::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatcher> {
     fn serialize(self: @InterfaceSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -7486,8 +7510,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
-impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -7495,8 +7519,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
-impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -7504,8 +7528,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
-impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -7513,8 +7537,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
-impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -7522,8 +7546,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
-impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -7531,8 +7555,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
-impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -7540,8 +7564,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
-impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -7549,8 +7573,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
-impl InterfaceSafeDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
 
 //! > ==========================================================================
 
@@ -7862,15 +7886,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
-impl InterfaceDispatcherDrop of core::traits::Drop::<InterfaceDispatcher>;
-impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
+impl InterfaceDispatcherCopy<> of core::traits::Copy::<InterfaceDispatcher>;
+impl InterfaceDispatcherDrop<> of core::traits::Drop::<InterfaceDispatcher>;
+impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
     fn serialize(self: @InterfaceDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -7976,15 +8001,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherDrop of core::traits::Drop::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDispatcher> {
+impl InterfaceLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryDispatcher> {
     fn serialize(self: @InterfaceLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -8090,15 +8116,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
+impl InterfaceSafeLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
     fn serialize(self: @InterfaceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -8204,15 +8231,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherDrop of core::traits::Drop::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatcher> {
+impl InterfaceSafeDispatcherCopy<> of core::traits::Copy::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherDrop<> of core::traits::Drop::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatcher> {
     fn serialize(self: @InterfaceSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -8318,8 +8346,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
-impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -8327,8 +8355,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
-impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -8336,8 +8364,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
-impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -8345,8 +8373,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
-impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -8354,8 +8382,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
-impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -8363,8 +8391,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
-impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -8372,8 +8400,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
-impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -8381,8 +8409,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
-impl InterfaceSafeDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:7:1
@@ -8494,7 +8522,7 @@ lib.cairo:7:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:7:1
@@ -8524,8 +8552,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:9:5
@@ -8533,8 +8561,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:12:5
@@ -8767,7 +8795,7 @@ lib.cairo:34:14
              ^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:34:20
@@ -8814,8 +8842,8 @@ lib.cairo:27:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:27:5
@@ -8823,8 +8851,8 @@ lib.cairo:27:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -9008,7 +9036,7 @@ lib.cairo:5:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:5:1
@@ -9038,8 +9066,8 @@ lib.cairo:7:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:7:5
@@ -9047,8 +9075,8 @@ lib.cairo:7:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -9401,15 +9429,16 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
-impl Comp3TraitDispatcherDrop of core::traits::Drop::<Comp3TraitDispatcher>;
-impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
+impl Comp3TraitDispatcherCopy<> of core::traits::Copy::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherDrop<> of core::traits::Drop::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherSerde<> of core::serde::Serde::<Comp3TraitDispatcher> {
     fn serialize(self: @Comp3TraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -9515,15 +9544,16 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
-impl Comp3TraitLibraryDispatcherDrop of core::traits::Drop::<Comp3TraitLibraryDispatcher>;
-impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryDispatcher> {
+impl Comp3TraitLibraryDispatcherCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitLibraryDispatcher> {
     fn serialize(self: @Comp3TraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -9629,15 +9659,16 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
-impl Comp3TraitSafeLibraryDispatcherDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcher>;
-impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafeLibraryDispatcher> {
+impl Comp3TraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeLibraryDispatcher> {
     fn serialize(self: @Comp3TraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -9743,15 +9774,16 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
-impl Comp3TraitSafeDispatcherDrop of core::traits::Drop::<Comp3TraitSafeDispatcher>;
-impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatcher> {
+impl Comp3TraitSafeDispatcherCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeDispatcher> {
     fn serialize(self: @Comp3TraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -9857,8 +9889,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
-impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
+impl Comp3TraitDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
+impl Comp3TraitDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
 
 
 lib.cairo:30:1
@@ -9866,8 +9898,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
-impl Comp3TraitDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointersMut>;
+impl Comp3TraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
+impl Comp3TraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitDispatcherSubPointersMut>;
 
 
 lib.cairo:30:1
@@ -9875,8 +9907,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
-impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
+impl Comp3TraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
+impl Comp3TraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:30:1
@@ -9884,8 +9916,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
-impl Comp3TraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointersMut>;
+impl Comp3TraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
+impl Comp3TraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:30:1
@@ -9893,8 +9925,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
-impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:30:1
@@ -9902,8 +9934,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
-impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:30:1
@@ -9911,8 +9943,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
-impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
+impl Comp3TraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
+impl Comp3TraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:30:1
@@ -9920,8 +9952,8 @@ lib.cairo:30:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
-impl Comp3TraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointersMut>;
+impl Comp3TraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
+impl Comp3TraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -10028,7 +10060,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -10058,8 +10090,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -10067,8 +10099,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:14:1
@@ -10175,7 +10207,7 @@ lib.cairo:14:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:14:1
@@ -10205,8 +10237,8 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:16:5
@@ -10214,8 +10246,8 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:36:1
@@ -10326,7 +10358,7 @@ lib.cairo:36:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:36:1
@@ -10356,8 +10388,8 @@ lib.cairo:39:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:39:5
@@ -10365,8 +10397,8 @@ lib.cairo:39:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:42:5
@@ -10722,15 +10754,16 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherCopy of core::traits::Copy::<Comp3TraitDispatcher>;
-impl Comp3TraitDispatcherDrop of core::traits::Drop::<Comp3TraitDispatcher>;
-impl Comp3TraitDispatcherSerde of core::serde::Serde::<Comp3TraitDispatcher> {
+impl Comp3TraitDispatcherCopy<> of core::traits::Copy::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherDrop<> of core::traits::Drop::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherSerde<> of core::serde::Serde::<Comp3TraitDispatcher> {
     fn serialize(self: @Comp3TraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -10836,15 +10869,16 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
-impl Comp3TraitLibraryDispatcherDrop of core::traits::Drop::<Comp3TraitLibraryDispatcher>;
-impl Comp3TraitLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitLibraryDispatcher> {
+impl Comp3TraitLibraryDispatcherCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitLibraryDispatcher> {
     fn serialize(self: @Comp3TraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -10950,15 +10984,16 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
-impl Comp3TraitSafeLibraryDispatcherDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcher>;
-impl Comp3TraitSafeLibraryDispatcherSerde of core::serde::Serde::<Comp3TraitSafeLibraryDispatcher> {
+impl Comp3TraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeLibraryDispatcher> {
     fn serialize(self: @Comp3TraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -11064,15 +11099,16 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherCopy of core::traits::Copy::<Comp3TraitSafeDispatcher>;
-impl Comp3TraitSafeDispatcherDrop of core::traits::Drop::<Comp3TraitSafeDispatcher>;
-impl Comp3TraitSafeDispatcherSerde of core::serde::Serde::<Comp3TraitSafeDispatcher> {
+impl Comp3TraitSafeDispatcherCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeDispatcher> {
     fn serialize(self: @Comp3TraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -11178,8 +11214,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
-impl Comp3TraitDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
+impl Comp3TraitDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitDispatcherSubPointers>;
+impl Comp3TraitDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitDispatcherSubPointers>;
 
 
 lib.cairo:27:1
@@ -11187,8 +11223,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
-impl Comp3TraitDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitDispatcherSubPointersMut>;
+impl Comp3TraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitDispatcherSubPointersMut>;
+impl Comp3TraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitDispatcherSubPointersMut>;
 
 
 lib.cairo:27:1
@@ -11196,8 +11232,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
-impl Comp3TraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
+impl Comp3TraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointers>;
+impl Comp3TraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:27:1
@@ -11205,8 +11241,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
-impl Comp3TraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointersMut>;
+impl Comp3TraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitLibraryDispatcherSubPointersMut>;
+impl Comp3TraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:27:1
@@ -11214,8 +11250,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
-impl Comp3TraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointers>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:27:1
@@ -11223,8 +11259,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
-impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
+impl Comp3TraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:27:1
@@ -11232,8 +11268,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherSubPointersDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
-impl Comp3TraitSafeDispatcherSubPointersCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
+impl Comp3TraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointers>;
+impl Comp3TraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:27:1
@@ -11241,8 +11277,8 @@ lib.cairo:27:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl Comp3TraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
-impl Comp3TraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointersMut>;
+impl Comp3TraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<Comp3TraitSafeDispatcherSubPointersMut>;
+impl Comp3TraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<Comp3TraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -11349,7 +11385,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -11379,8 +11415,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -11388,8 +11424,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:14:1
@@ -11496,7 +11532,7 @@ lib.cairo:14:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:14:1
@@ -11526,8 +11562,8 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:16:5
@@ -11535,8 +11571,8 @@ lib.cairo:16:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:32:1
@@ -11642,7 +11678,7 @@ lib.cairo:32:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:32:1
@@ -11672,8 +11708,8 @@ lib.cairo:35:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:35:5
@@ -11681,8 +11717,8 @@ lib.cairo:35:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:38:5
@@ -11901,15 +11937,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherDrop of core::traits::Drop::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatcher> {
+impl ContractTraitDispatcherCopy<> of core::traits::Copy::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherDrop<> of core::traits::Drop::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatcher> {
     fn serialize(self: @ContractTraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -12015,15 +12052,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherDrop of core::traits::Drop::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLibraryDispatcher> {
+impl ContractTraitLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitLibraryDispatcher> {
     fn serialize(self: @ContractTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -12129,15 +12167,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
+impl ContractTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
     fn serialize(self: @ContractTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -12243,15 +12282,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherDrop of core::traits::Drop::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeDispatcher> {
+impl ContractTraitSafeDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeDispatcher> {
     fn serialize(self: @ContractTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -12357,8 +12397,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
-impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -12366,8 +12406,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
-impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -12375,8 +12415,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
-impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -12384,8 +12424,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
-impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -12393,8 +12433,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
-impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -12402,8 +12442,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
-impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -12411,8 +12451,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
-impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -12420,8 +12460,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
-impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:6:1
@@ -12560,7 +12600,7 @@ lib.cairo:6:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:6:1
@@ -12590,8 +12630,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:9:5
@@ -12599,8 +12639,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -12804,15 +12844,16 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherDrop of core::traits::Drop::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatcher> {
+impl ContractTraitDispatcherCopy<> of core::traits::Copy::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherDrop<> of core::traits::Drop::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatcher> {
     fn serialize(self: @ContractTraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -12918,15 +12959,16 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherDrop of core::traits::Drop::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLibraryDispatcher> {
+impl ContractTraitLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitLibraryDispatcher> {
     fn serialize(self: @ContractTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -13032,15 +13074,16 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
+impl ContractTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
     fn serialize(self: @ContractTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -13146,15 +13189,16 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherDrop of core::traits::Drop::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeDispatcher> {
+impl ContractTraitSafeDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeDispatcher> {
     fn serialize(self: @ContractTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -13260,8 +13304,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
-impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
 lib.cairo:9:1
@@ -13269,8 +13313,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
-impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
 
 
 lib.cairo:9:1
@@ -13278,8 +13322,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
-impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:9:1
@@ -13287,8 +13331,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
-impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:9:1
@@ -13296,8 +13340,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
-impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:9:1
@@ -13305,8 +13349,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
-impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:9:1
@@ -13314,8 +13358,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
-impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:9:1
@@ -13323,8 +13367,8 @@ lib.cairo:9:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
-impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -13423,7 +13467,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -13453,8 +13497,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:3:5
@@ -13462,8 +13506,8 @@ lib.cairo:3:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:14:1
@@ -13624,7 +13668,7 @@ lib.cairo:25:14
              ^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:25:20
@@ -13671,8 +13715,8 @@ lib.cairo:18:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:18:5
@@ -13680,8 +13724,8 @@ lib.cairo:18:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -13948,15 +13992,16 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherCopy of core::traits::Copy::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherDrop of core::traits::Drop::<ContractTraitDispatcher>;
-impl ContractTraitDispatcherSerde of core::serde::Serde::<ContractTraitDispatcher> {
+impl ContractTraitDispatcherCopy<> of core::traits::Copy::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherDrop<> of core::traits::Drop::<ContractTraitDispatcher>;
+impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatcher> {
     fn serialize(self: @ContractTraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -14062,15 +14107,16 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherCopy of core::traits::Copy::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherDrop of core::traits::Drop::<ContractTraitLibraryDispatcher>;
-impl ContractTraitLibraryDispatcherSerde of core::serde::Serde::<ContractTraitLibraryDispatcher> {
+impl ContractTraitLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcher>;
+impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitLibraryDispatcher> {
     fn serialize(self: @ContractTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -14176,15 +14222,16 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
-impl ContractTraitSafeLibraryDispatcherSerde of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
+impl ContractTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcher>;
+impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeLibraryDispatcher> {
     fn serialize(self: @ContractTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -14290,15 +14337,16 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherCopy of core::traits::Copy::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherDrop of core::traits::Drop::<ContractTraitSafeDispatcher>;
-impl ContractTraitSafeDispatcherSerde of core::serde::Serde::<ContractTraitSafeDispatcher> {
+impl ContractTraitSafeDispatcherCopy<> of core::traits::Copy::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherDrop<> of core::traits::Drop::<ContractTraitSafeDispatcher>;
+impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSafeDispatcher> {
     fn serialize(self: @ContractTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -14404,8 +14452,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
-impl ContractTraitDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointers>;
+impl ContractTraitDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointers>;
 
 
 lib.cairo:43:1
@@ -14413,8 +14461,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
-impl ContractTraitDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitDispatcherSubPointersMut>;
+impl ContractTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitDispatcherSubPointersMut>;
 
 
 lib.cairo:43:1
@@ -14422,8 +14470,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
-impl ContractTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointers>;
+impl ContractTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:43:1
@@ -14431,8 +14479,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
-impl ContractTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitLibraryDispatcherSubPointersMut>;
+impl ContractTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:43:1
@@ -14440,8 +14488,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
-impl ContractTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointers>;
+impl ContractTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:43:1
@@ -14449,8 +14497,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
-impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
+impl ContractTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:43:1
@@ -14458,8 +14506,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
-impl ContractTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointers>;
+impl ContractTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:43:1
@@ -14467,8 +14515,8 @@ lib.cairo:43:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ContractTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
-impl ContractTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ContractTraitSafeDispatcherSubPointersMut>;
+impl ContractTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ContractTraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:48:1
@@ -14608,7 +14656,7 @@ lib.cairo:48:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:48:1
@@ -14638,8 +14686,8 @@ lib.cairo:51:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:51:5
@@ -14647,8 +14695,8 @@ lib.cairo:51:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -14846,15 +14894,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherCopy of core::traits::Copy::<InterfaceDispatcher>;
-impl InterfaceDispatcherDrop of core::traits::Drop::<InterfaceDispatcher>;
-impl InterfaceDispatcherSerde of core::serde::Serde::<InterfaceDispatcher> {
+impl InterfaceDispatcherCopy<> of core::traits::Copy::<InterfaceDispatcher>;
+impl InterfaceDispatcherDrop<> of core::traits::Drop::<InterfaceDispatcher>;
+impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
     fn serialize(self: @InterfaceDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -14960,15 +15009,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherCopy of core::traits::Copy::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherDrop of core::traits::Drop::<InterfaceLibraryDispatcher>;
-impl InterfaceLibraryDispatcherSerde of core::serde::Serde::<InterfaceLibraryDispatcher> {
+impl InterfaceLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceLibraryDispatcher>;
+impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryDispatcher> {
     fn serialize(self: @InterfaceLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -15074,15 +15124,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
-impl InterfaceSafeLibraryDispatcherSerde of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
+impl InterfaceSafeLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
+impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
     fn serialize(self: @InterfaceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
+        let class_hash = core::internal::Wrapper::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -15188,15 +15239,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherCopy of core::traits::Copy::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherDrop of core::traits::Drop::<InterfaceSafeDispatcher>;
-impl InterfaceSafeDispatcherSerde of core::serde::Serde::<InterfaceSafeDispatcher> {
+impl InterfaceSafeDispatcherCopy<> of core::traits::Copy::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherDrop<> of core::traits::Drop::<InterfaceSafeDispatcher>;
+impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatcher> {
     fn serialize(self: @InterfaceSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
+        let contract_address = core::internal::Wrapper::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -15302,8 +15354,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersDrop of core::traits::Drop::<InterfaceDispatcherSubPointers>;
-impl InterfaceDispatcherSubPointersCopy of core::traits::Copy::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointers>;
+impl InterfaceDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -15311,8 +15363,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
-impl InterfaceDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
+impl InterfaceDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -15320,8 +15372,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
-impl InterfaceLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
+impl InterfaceLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -15329,8 +15381,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
-impl InterfaceLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
+impl InterfaceLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -15338,8 +15390,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
-impl InterfaceSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
+impl InterfaceSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -15347,8 +15399,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
-impl InterfaceSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+impl InterfaceSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -15356,8 +15408,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
-impl InterfaceSafeDispatcherSubPointersCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
+impl InterfaceSafeDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -15365,8 +15417,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl InterfaceSafeDispatcherSubPointersMutDrop of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
-impl InterfaceSafeDispatcherSubPointersMutCopy of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
+impl InterfaceSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:6:1
@@ -15468,7 +15520,7 @@ lib.cairo:6:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:6:1
@@ -15498,8 +15550,8 @@ lib.cairo:8:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:8:5
@@ -15507,8 +15559,8 @@ lib.cairo:8:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:11:5
@@ -15699,7 +15751,7 @@ lib.cairo:28:14
              ^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:28:20
@@ -15746,8 +15798,8 @@ lib.cairo:21:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:21:5
@@ -15755,8 +15807,8 @@ lib.cairo:21:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -15820,7 +15872,7 @@ lib.cairo:3:14
              ^^^^
 impls:
 
-impl InvalidStorageStructCopy of core::traits::Copy::<InvalidStorageStruct>;
+impl InvalidStorageStructCopy<> of core::traits::Copy::<InvalidStorageStruct>;
 
 
 lib.cairo:3:20
@@ -16054,8 +16106,8 @@ lib.cairo:3:20
                    ^^^^^^^^^^^^^^^
 impls:
 
-impl InvalidStorageStructSubPointersDrop of core::traits::Drop::<InvalidStorageStructSubPointers>;
-impl InvalidStorageStructSubPointersCopy of core::traits::Copy::<InvalidStorageStructSubPointers>;
+impl InvalidStorageStructSubPointersDrop<> of core::traits::Drop::<InvalidStorageStructSubPointers>;
+impl InvalidStorageStructSubPointersCopy<> of core::traits::Copy::<InvalidStorageStructSubPointers>;
 
 
 lib.cairo:3:20
@@ -16063,8 +16115,8 @@ lib.cairo:3:20
                    ^^^^^^^^^^^^^^^
 impls:
 
-impl InvalidStorageStructSubPointersMutDrop of core::traits::Drop::<InvalidStorageStructSubPointersMut>;
-impl InvalidStorageStructSubPointersMutCopy of core::traits::Copy::<InvalidStorageStructSubPointersMut>;
+impl InvalidStorageStructSubPointersMutDrop<> of core::traits::Drop::<InvalidStorageStructSubPointersMut>;
+impl InvalidStorageStructSubPointersMutCopy<> of core::traits::Copy::<InvalidStorageStructSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -16072,7 +16124,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -16102,8 +16154,8 @@ lib.cairo:8:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:8:5
@@ -16111,5 +16163,5 @@ lib.cairo:8:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;

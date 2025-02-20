@@ -3,50 +3,52 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariantInfo;
+use crate::plugins::derive::TypeVariant;
 
 /// Adds derive result for the `PanicDestruct` trait.
-pub fn handle_panic_destruct(info: &DeriveInfo) -> Option<String> {
-    let header =
-        info.format_impl_header("core::traits", "PanicDestruct", &["core::traits::PanicDestruct"]);
+pub fn handle_panic_destruct(info: &DeriveInfo) -> String {
+    const PANIC_DESTRUCT_TRAIT: &str = "core::traits::PanicDestruct";
+    let header = info.impl_header(PANIC_DESTRUCT_TRAIT, &[PANIC_DESTRUCT_TRAIT]);
     let full_typename = info.full_typename();
     let ty = &info.name;
     let body = indent_by(
         8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
+        match &info.type_variant {
+            TypeVariant::Enum => {
                 formatdoc! {"
                     match self {{
                         {}
                     }}",
-                variants.iter().map(|variant| {
+                info.members_info.iter().map(|variant| {
                     format!(
                         "{ty}::{}(x) => \
-                        core::traits::PanicDestruct::panic_destruct(x, ref panic),",
+                        {imp}::panic_destruct(x, ref panic),",
                         variant.name,
+                        imp=variant.impl_name(PANIC_DESTRUCT_TRAIT),
                     )
                 }).join("\n    ")}
             }
-            TypeVariantInfo::Struct(members) => {
+            TypeVariant::Struct => {
                 format!(
                     "let {ty} {{ {} }} = self;{}",
-                    members.iter().map(|member| &member.name).join(", "),
-                    members
+                    info.members_info.iter().map(|member| &member.name).join(", "),
+                    info.members_info
                         .iter()
                         .map(|member| format!(
-                            "\ncore::traits::PanicDestruct::panic_destruct({}, ref panic);",
-                            member.name
+                            "\n{imp}::panic_destruct({}, ref panic);",
+                            member.name,
+                            imp = member.impl_name(PANIC_DESTRUCT_TRAIT),
                         ))
                         .join(""),
                 )
             }
         },
     );
-    Some(formatdoc! {"
+    formatdoc! {"
         {header} {{
             fn panic_destruct(self: {full_typename}, ref panic: Panic) nopanic {{
                 {body}
             }}
         }}
-    "})
+    "}
 }
