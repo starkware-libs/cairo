@@ -29,8 +29,7 @@ const AP_ADD1_BIT: i32 = 11;
 const OPCODE_CALL_BIT: i32 = 12;
 const OPCODE_RET_BIT: i32 = 13;
 const OPCODE_ASSERT_EQ_BIT: i32 = 14;
-const BLAKE_EXT_BIT: u64 = 63;
-const BLAKE_FINALIZE_EXT_BIT: u64 = 64;
+const OPCODE_EXT_OFFSET: u64 = 63;
 
 impl InstructionRepr {
     pub fn encode(&self) -> Vec<BigInt> {
@@ -120,10 +119,11 @@ impl InstructionRepr {
         let mut bigint_encoding = BigInt::from(encoding);
         match self.opcode_extension {
             OpcodeExtension::Stone => {}
-            OpcodeExtension::Blake2s => bigint_encoding.set_bit(BLAKE_EXT_BIT, true),
+            OpcodeExtension::Blake2s => bigint_encoding |= BigInt::from(1) << OPCODE_EXT_OFFSET,
             OpcodeExtension::Blake2sFinalize => {
-                bigint_encoding.set_bit(BLAKE_FINALIZE_EXT_BIT, true)
+                bigint_encoding |= BigInt::from(2) << OPCODE_EXT_OFFSET
             }
+            OpcodeExtension::QM31 => bigint_encoding |= BigInt::from(3) << OPCODE_EXT_OFFSET,
         };
         if let Some(imm) = self.imm.clone() {
             vec![bigint_encoding, imm]
