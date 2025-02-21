@@ -14,6 +14,7 @@ mod test;
 pub enum InstructionBody {
     AddAp(AddApInstruction),
     AssertEq(AssertEqInstruction),
+    QM31AssertEq(AssertEqInstruction),
     Call(CallInstruction),
     Jnz(JnzInstruction),
     Jump(JumpInstruction),
@@ -25,7 +26,7 @@ impl InstructionBody {
         // TODO(spapini): Make this correct.
         match self {
             InstructionBody::AddAp(insn) => insn.op_size(),
-            InstructionBody::AssertEq(insn) => insn.op_size(),
+            InstructionBody::AssertEq(insn) | InstructionBody::QM31AssertEq(insn) => insn.op_size(),
             InstructionBody::Call(insn) => insn.op_size(),
             InstructionBody::Jump(insn) => insn.op_size(),
             InstructionBody::Jnz(insn) => insn.op_size(),
@@ -39,6 +40,7 @@ impl Display for InstructionBody {
         match self {
             InstructionBody::AddAp(insn) => write!(f, "{insn}",),
             InstructionBody::AssertEq(insn) => write!(f, "{insn}",),
+            InstructionBody::QM31AssertEq(insn) => write!(f, "{{QM31}} {insn}",),
             InstructionBody::Call(insn) => write!(f, "{insn}",),
             InstructionBody::Jnz(insn) => write!(f, "{insn}",),
             InstructionBody::Jump(insn) => write!(f, "{insn}",),
