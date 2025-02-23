@@ -148,10 +148,13 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: nonzero_ecpoint_ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: nonzero_ecpoint_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.
@@ -356,10 +359,13 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
                 ParamSignature::new(nonzero_ecpoint_ty),
             ],
-            vec![OutputVarInfo::new_builtin(ec_builtin_ty, 0), OutputVarInfo {
-                ty: ec_state_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-            }],
+            vec![
+                OutputVarInfo::new_builtin(ec_builtin_ty, 0),
+                OutputVarInfo {
+                    ty: ec_state_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

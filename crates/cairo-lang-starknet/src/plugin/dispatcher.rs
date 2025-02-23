@@ -451,9 +451,10 @@ fn dispatcher_signature(
         .as_mut()
         .unwrap();
     let maybe_comma = if params.len() > 2 { ", " } else { "" };
-    params.splice(0..std::cmp::min(2, params.len()), [RewriteNode::Text(format!(
-        "self: {self_type_name}{maybe_comma}"
-    ))]);
+    params.splice(
+        0..std::cmp::min(2, params.len()),
+        [RewriteNode::Text(format!("self: {self_type_name}{maybe_comma}"))],
+    );
     if unwrap {
         return func_declaration;
     }

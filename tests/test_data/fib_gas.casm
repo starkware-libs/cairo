@@ -1,24 +1,25 @@
-%{ memory[ap + 0] = 1270 <= memory[fp + -6] %}
+%{ memory[ap + 0] = 1370 <= memory[fp + -6] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -6] + 340282366920938463463374607431768210186, ap++;
+[ap + 0] = [fp + -6] + 340282366920938463463374607431768210086, ap++;
 [ap + -1] = [[fp + -7] + 0];
-jmp rel 26;
-[fp + -6] = [ap + 0] + 1270, ap++;
+jmp rel 28;
+[fp + -6] = [ap + 0] + 1370, ap++;
 [ap + -1] = [[fp + -7] + 0];
 [ap + 0] = [fp + -7] + 1, ap++;
-jmp rel 10 if [fp + -3] != 0;
-[ap + 0] = [ap + -1], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 11 if [fp + -3] != 0;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -2] + 1470, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -5], ap++;
 ret;
-[ap + 0] = [ap + -1], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -2], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -5] + [fp + -4], ap++;
 [fp + -3] = [ap + 0] + 1, ap++;
-call rel -28;
+call rel -30;
 ret;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;

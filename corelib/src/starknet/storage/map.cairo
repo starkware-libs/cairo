@@ -61,8 +61,8 @@
 //! Basic usage with a single mapping:
 //!
 //! ```
-//! use core::starknet::ContractAddress;
-//! use core::starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry,
+//! use starknet::ContractAddress;
+//! use starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry,
 //! StoragePointerReadAccess};
 //!
 //! #[storage]
@@ -101,8 +101,8 @@ use super::{
 /// # Examples
 ///
 /// ```
-/// use core::starknet::ContractAddress;
-/// use core::starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry};
+/// use starknet::ContractAddress;
+/// use starknet::storage::{Map, StorageMapReadAccess, StoragePathEntry};
 ///
 /// #[storage]
 /// struct Storage {
@@ -130,8 +130,8 @@ pub trait StorageMapReadAccess<TMemberState> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::ContractAddress;
-/// use core::starknet::storage::{Map, StorageMapWriteAccess, StoragePathEntry};
+/// use starknet::ContractAddress;
+/// use starknet::storage::{Map, StorageMapWriteAccess, StoragePathEntry};
 ///
 /// #[storage]
 /// struct Storage {
@@ -161,8 +161,8 @@ pub trait StorageMapWriteAccess<TMemberState> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::ContractAddress;
-/// use core::starknet::storage::{Map, StoragePathEntry};
+/// use starknet::ContractAddress;
+/// use starknet::storage::{Map, StoragePathEntry};
 ///
 /// #[storage]
 /// struct Storage {
@@ -332,7 +332,7 @@ impl PathableStorageEntryImpl<
 /// - The `key` type implements `core::hash::Hash`, which allows it to be used in storage mappings.
 /// - The `value` type implements `ValidStorageTypeTrait`, meaning it is itself a valid storage
 /// type.
-use crate::starknet::storage::ValidStorageTypeTrait;
+use starknet::storage::ValidStorageTypeTrait;
 impl ValidStorageTypeTraitMapImpl<
     Key, Value, +core::hash::Hash<Key, StoragePathHashState>, +ValidStorageTypeTrait<Value>,
 > of ValidStorageTypeTrait<Map<Key, Value>>;

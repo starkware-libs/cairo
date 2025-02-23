@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: felt252, b: NonZero<felt252>) -> felt252 {
     let _x = felt252_div(a, b);
     felt252_div(a, b)
@@ -42,7 +42,7 @@ test::foo@0([0]: felt252, [1]: NonZero<felt252>) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     let _x = felt252_add(a, b);
     felt252_add(a, b)

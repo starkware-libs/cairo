@@ -5,8 +5,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo() -> Felt252Dict::<felt252> {
+//! > cairo_code
+fn foo() -> Felt252Dict<felt252> {
     felt252_dict_new::<felt252>()
 }
 
@@ -78,8 +78,8 @@ test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252, value: felt252) {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252, value: felt252) {
     dict.insert(key, value);
 }
 
@@ -129,8 +129,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Di
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) -> felt252 {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252) -> felt252 {
     dict.get(key)
 }
 
@@ -184,8 +184,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, f
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) {
+//! > cairo_code
+fn foo(ref dict: Felt252Dict<felt252>, key: felt252) {
     dict.get(key);
     let a = dict.get(key);
     dict.insert(key, a);
@@ -289,8 +289,8 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
+//! > cairo_code
+fn foo(dict: Felt252Dict<felt252>) -> SquashedFelt252Dict<felt252> {
     felt252_dict_squash::<felt252>(dict)
 }
 
@@ -536,7 +536,7 @@ test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dic
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(dict: Felt252Dict<felt252>, key: felt252) -> (dict::Felt252DictEntry<felt252>, felt252) {
     dict::felt252_dict_entry_get(dict, key)
 }
@@ -581,7 +581,7 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Tuple<Felt252DictEntry<
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(entry: dict::Felt252DictEntry<felt252>, value: felt252) -> Felt252Dict<felt252> {
     dict::felt252_dict_entry_finalize(entry, value)
 }
@@ -621,8 +621,10 @@ test::foo@0([0]: Felt252DictEntry<felt252>, [1]: felt252) -> (Felt252Dict<felt25
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(dict: Felt252Dict<felt252>, k1: felt252, v1: felt252, k2: felt252, v2: felt252) -> (Felt252Dict<felt252>, felt252, felt252) {
+//! > cairo_code
+fn foo(
+    dict: Felt252Dict<felt252>, k1: felt252, v1: felt252, k2: felt252, v2: felt252,
+) -> (Felt252Dict<felt252>, felt252, felt252) {
     let (entry, old1) = dict::felt252_dict_entry_get(dict, k1);
     let dict = dict::felt252_dict_entry_finalize(entry, v1);
     let (entry, old2) = dict::felt252_dict_entry_get(dict, k2);
@@ -681,3 +683,89 @@ store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>>([11]) -> ([11]); // 5
 return([11]); // 6
 
 test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252, [3]: felt252, [4]: felt252) -> (Tuple<Felt252Dict<felt252>, felt252, felt252>);
+
+//! > ==========================================================================
+
+//! > felt252_dict_squash_entries libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn test_squashed_dict_entries(
+    dict: SquashedFelt252Dict<felt252>,
+) -> Array<(felt252, felt252, felt252)> {
+    dict::SquashedFelt252DictImpl::<felt252>::into_entries(dict)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<Tuple<felt252, felt252, felt252>> = Array<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc squashed_felt252_dict_entries<felt252> = squashed_felt252_dict_entries<felt252>;
+libfunc store_temp<Array<Tuple<felt252, felt252, felt252>>> = store_temp<Array<Tuple<felt252, felt252, felt252>>>;
+
+squashed_felt252_dict_entries<felt252>([0]) -> ([1]); // 0
+store_temp<Array<Tuple<felt252, felt252, felt252>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::test_squashed_dict_entries@0([0]: SquashedFelt252Dict<felt252>) -> (Array<Tuple<felt252, felt252, felt252>>);
+
+//! > function_costs
+test::test_squashed_dict_entries: OrderedHashMap({Const: 200})
+
+//! > ==========================================================================
+
+//! > Test dict get with nullable
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn test_squashed_dict_entries(
+    dict: SquashedFelt252Dict<Nullable<u256>>,
+) -> core::option::Option<core::array::Array<(felt252, Nullable<u256>, Nullable<u256>)>> {
+    Some(dict::SquashedFelt252DictImpl::<Nullable<u256>>::into_entries(dict))
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type SquashedFelt252Dict<Nullable<core::integer::u256>> = SquashedFelt252Dict<Nullable<core::integer::u256>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Array<Tuple<felt252, Nullable<core::integer::u256>, Nullable<core::integer::u256>>> = Array<Tuple<felt252, Nullable<core::integer::u256>, Nullable<core::integer::u256>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>> = Enum<ut@core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>, Array<Tuple<felt252, Nullable<core::integer::u256>, Nullable<core::integer::u256>>>, Unit> [storable: true, drop: true, dup: false, zero_sized: false];
+type Nullable<core::integer::u256> = Nullable<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, Nullable<core::integer::u256>, Nullable<core::integer::u256>> = Struct<ut@Tuple, felt252, Nullable<core::integer::u256>, Nullable<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc squashed_felt252_dict_entries<Nullable<core::integer::u256>> = squashed_felt252_dict_entries<Nullable<core::integer::u256>>;
+libfunc enum_init<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>, 0> = enum_init<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>, 0>;
+libfunc store_temp<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>> = store_temp<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>>;
+
+squashed_felt252_dict_entries<Nullable<core::integer::u256>>([0]) -> ([1]); // 0
+enum_init<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>, 0>([1]) -> ([2]); // 1
+store_temp<core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>>([2]) -> ([2]); // 2
+return([2]); // 3
+
+test::test_squashed_dict_entries@0([0]: SquashedFelt252Dict<Nullable<core::integer::u256>>) -> (core::option::Option::<core::array::Array::<(core::felt252, core::nullable::Nullable::<core::integer::u256>, core::nullable::Nullable::<core::integer::u256>)>>);
+
+//! > function_costs
+test::test_squashed_dict_entries: OrderedHashMap({Const: 300})

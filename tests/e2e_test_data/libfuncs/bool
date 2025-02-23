@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(mut a: bool, b: bool) -> bool {
     a ^ b
 }
@@ -40,7 +40,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool, b: bool) -> bool {
     a | b
 }
@@ -76,7 +76,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool, b: bool) -> bool {
     a & b
 }
@@ -110,7 +110,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool) -> bool {
     // TODO(orizi): When inlining is supported move to calling `bool_not` directly.
     !a
@@ -147,7 +147,7 @@ test::foo@0([0]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool) -> felt252 {
     bool_to_felt252(a)
 }

@@ -5,8 +5,8 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(address: felt252) -> Option::<starknet::ContractAddress> {
+//! > cairo_code
+fn foo(address: felt252) -> Option<starknet::ContractAddress> {
     starknet::contract_address_try_from_felt252(address)
 }
 
@@ -93,7 +93,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(address: starknet::ContractAddress) -> felt252 {
     starknet::contract_address_to_felt252(address)
 }

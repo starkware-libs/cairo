@@ -103,7 +103,7 @@ const fn call_myself() -> felt252 {
 }
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:17
 const MY_CONST: MissingType = {
                 ^^^^^^^^^^^
@@ -343,7 +343,7 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
         const X: u8 = 2;
               ^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:5:13
     let y = X;
             ^
@@ -443,3 +443,47 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:11
     const C: u8 = 6;
           ^
+
+//! > ==========================================================================
+
+//! > Starknet consts diagnostics
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const ADDRESS: starknet::ContractAddress = my_unwrap((-1).try_into());
+const CLASS_HASH: starknet::ClassHash = my_unwrap((-1).try_into());
+
+// To avoid getting corelib filesystem paths.
+const fn my_unwrap<T>(v: Option<T>) -> T {
+    match v {
+        Some(v) => v,
+        None => core::panic_with_felt252('bad value'),
+    }
+}
+
+//! > expected_diagnostics
+error: Failed to calculate constant.
+ --> lib.cairo:1:44
+const ADDRESS: starknet::ContractAddress = my_unwrap((-1).try_into());
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `test::my_unwrap::<core::starknet::contract_address::ContractAddress>`:
+  --> lib.cairo:8:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:2:41
+const CLASS_HASH: starknet::ClassHash = my_unwrap((-1).try_into());
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
+  --> lib.cairo:8:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

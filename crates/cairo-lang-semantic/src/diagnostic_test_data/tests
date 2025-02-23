@@ -17,7 +17,7 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
 3 + 4 +;
 ^^^^^^^^
 
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:3:5
 1 + foo()
     ^^^
@@ -48,7 +48,7 @@ mod submod {
 //! > function_body
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:10:3
   bad_module::foo();
   ^^^^^^^^^^
@@ -58,7 +58,7 @@ error: 'super' cannot be used for the crate's root module.
   super::foo();
   ^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:12:3
   test::super::foo();
   ^^^^
@@ -221,7 +221,7 @@ use bad_module_name;
 //! > function_body
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:1:5
 use bad_module_name;
     ^^^^^^^^^^^^^^^
@@ -251,7 +251,7 @@ error: Missing tokens. Expected an item after attributes.
   #[aaa]
         ^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:6:12
   let _x = y;
            ^
@@ -954,7 +954,7 @@ use undefined_item::*;
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:1:5
 use undefined_item::*;
     ^^^^^^^^^^^^^^
@@ -1397,3 +1397,62 @@ warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecat
  --> lib.cairo:13:18
     MyTraitImpl::deprecated_method(@s);
                  ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test implementation of dict value outside of the corelib.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+struct S {}
+
+impl SDictValue of Felt252DictValue<S> {
+    fn zero_default() -> S nopanic {
+        S {}
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Trait `core::traits::Felt252DictValue` should not be implemented outside of the corelib.
+ --> lib.cairo:3:20
+impl SDictValue of Felt252DictValue<S> {
+                   ^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test implementation of numeric and string literal traits outside of the corelib.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+struct S {}
+
+impl SNumericLiteral of NumericLiteral<S> {}
+
+impl SStringLiteral of StringLiteral<S> {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Trait `core::integer::NumericLiteral` should not be implemented outside of the corelib.
+ --> lib.cairo:3:25
+impl SNumericLiteral of NumericLiteral<S> {}
+                        ^^^^^^^^^^^^^^^^^
+
+error: Trait `core::string::StringLiteral` should not be implemented outside of the corelib.
+ --> lib.cairo:5:24
+impl SStringLiteral of StringLiteral<S> {}
+                       ^^^^^^^^^^^^^^^^

@@ -727,10 +727,13 @@ pub fn priv_trait_definition_data(
                     let feature_kind =
                         FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemInfo {
-                            id: TraitItemId::Function(trait_func_id),
-                            feature_kind,
-                        })
+                        .insert(
+                            name.clone(),
+                            TraitItemInfo {
+                                id: TraitItemId::Function(trait_func_id),
+                                feature_kind,
+                            },
+                        )
                         .is_some()
                     {
                         diagnostics.report(
@@ -748,10 +751,10 @@ pub fn priv_trait_definition_data(
                     let feature_kind =
                         FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemInfo {
-                            id: TraitItemId::Type(trait_type_id),
-                            feature_kind,
-                        })
+                        .insert(
+                            name.clone(),
+                            TraitItemInfo { id: TraitItemId::Type(trait_type_id), feature_kind },
+                        )
                         .is_some()
                     {
                         diagnostics.report(
@@ -771,10 +774,13 @@ pub fn priv_trait_definition_data(
                     let feature_kind =
                         FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemInfo {
-                            id: TraitItemId::Constant(trait_constant),
-                            feature_kind,
-                        })
+                        .insert(
+                            name.clone(),
+                            TraitItemInfo {
+                                id: TraitItemId::Constant(trait_constant),
+                                feature_kind,
+                            },
+                        )
                         .is_some()
                     {
                         diagnostics.report(
@@ -793,10 +799,10 @@ pub fn priv_trait_definition_data(
                     let feature_kind =
                         FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
                     if item_id_by_name
-                        .insert(name.clone(), TraitItemInfo {
-                            id: TraitItemId::Impl(trait_impl),
-                            feature_kind,
-                        })
+                        .insert(
+                            name.clone(),
+                            TraitItemInfo { id: TraitItemId::Impl(trait_impl), feature_kind },
+                        )
                         .is_some()
                     {
                         diagnostics.report(
@@ -900,10 +906,10 @@ pub fn priv_trait_type_generic_params_data(
     // TODO(yuval): support generics in impls (including validation), then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(&generic_params_node, GenericsNotSupportedInItem {
-            scope: "Trait".into(),
-            item_kind: "type".into(),
-        });
+        diagnostics.report(
+            &generic_params_node,
+            GenericsNotSupportedInItem { scope: "Trait".into(), item_kind: "type".into() },
+        );
     }
 
     let resolver_data = Arc::new(resolver.data);

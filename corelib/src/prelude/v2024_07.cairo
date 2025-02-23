@@ -13,12 +13,15 @@ pub use crate::panics::{Panic, PanicResult, panic};
 pub use crate::result::Result::{Err, Ok};
 pub use crate::result::{Result, ResultTrait};
 pub use crate::serde::Serde;
-pub use crate::starknet::System;
 pub use crate::traits::{
     Add, Copy, Default, Destruct, Div, DivRem, Drop, Felt252DictValue, Into, Mul, Neg, Not,
     PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
 pub use crate::iter::{FromIterator, IntoIterator, Iterator};
-pub use crate::{assert, bool, felt252, starknet, usize};
+pub use crate::{assert, bool, felt252, usize};
+#[feature("corelib-internal-use")]
+pub use crate::starknet::System;
+#[feature("corelib-internal-use")]
+pub use crate::starknet;
 
 pub use crate::zeroable::NonZero;

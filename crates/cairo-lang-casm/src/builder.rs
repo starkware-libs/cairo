@@ -358,11 +358,14 @@ impl CasmBuilder {
     /// Increments a buffer and allocates and returns variable pointing to its previous value.
     pub fn get_ref_and_inc(&mut self, buffer: Var) -> Var {
         let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
-        self.main_state.vars.insert(buffer, CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: cell,
-            b: deref_or_immediate!(BigInt::from(offset) + 1),
-        });
+        self.main_state.vars.insert(
+            buffer,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: cell,
+                b: deref_or_immediate!(BigInt::from(offset) + 1),
+            },
+        );
         self.add_var(CellExpression::DoubleDeref(cell, offset))
     }
 
@@ -379,11 +382,14 @@ impl CasmBuilder {
             } => (a, imm.value.try_into().expect("Too many buffer writes.")),
             _ => panic!("Not a valid buffer."),
         };
-        self.main_state.vars.insert(buffer, CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: base,
-            b: deref_or_immediate!(offset + 1),
-        });
+        self.main_state.vars.insert(
+            buffer,
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: base,
+                b: deref_or_immediate!(offset + 1),
+            },
+        );
         (base, offset)
     }
 
@@ -702,194 +708,194 @@ impl Default for CasmBuilder {
 
 #[macro_export]
 macro_rules! casm_build_extend {
-    ($builder:ident,) => {};
-    ($builder:ident, tempvar $var:ident; $($tok:tt)*) => {
+    ($builder:expr,) => {};
+    ($builder:expr, tempvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var(false);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, localvar $var:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var(true);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ap += $value:expr; $($tok:tt)*) => {
+    ($builder:expr, ap += $value:expr; $($tok:tt)*) => {
         $builder.add_ap($value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, const $imm:ident = $value:expr; $($tok:tt)*) => {
+    ($builder:expr, const $imm:ident = $value:expr; $($tok:tt)*) => {
         let $imm = $builder.add_var($crate::cell_expression::CellExpression::Immediate(($value).into()));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $res:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $res:ident; $($tok:tt)*) => {
         $builder.assert_vars_eq($dst, $res);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
             let __sum = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
             $builder.assert_vars_eq($dst, __sum);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
             let __product = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
             $builder.assert_vars_eq($dst, __product);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         {
             let __diff = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
             $builder.assert_vars_eq($dst, __diff);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         {
             let __division = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
             $builder.assert_vars_eq($dst, __division);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, $offset);
             $builder.assert_vars_eq($dst, __deref);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
+    ($builder:expr, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, 0);
             $builder.assert_vars_eq($dst, __deref);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+    ($builder:expr, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, tempvar $var:ident = $value:ident; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $value:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $value; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs + $rhs; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs * $rhs; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs - $rhs; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $lhs / $rhs; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = *($buffer++); $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = $buffer:ident [ $offset:expr ]; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = $buffer:ident [ $offset:expr ]; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = $buffer[$offset]; $($tok)*);
     };
-    ($builder:ident, tempvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
+    ($builder:expr, tempvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, tempvar $var; assert $var = *$buffer; $($tok)*);
     };
-    ($builder:ident, maybe_tempvar $var:ident = $value:ident; $($tok:tt)*) => {
+    ($builder:expr, maybe_tempvar $var:ident = $value:ident; $($tok:tt)*) => {
         let $var = $builder.maybe_add_tempvar($value);
         $crate::casm_build_extend!($builder, $($tok)*);
     };
-    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, maybe_tempvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             let $var = $lhs + $rhs;
             maybe_tempvar $var = $var;
             $($tok)*
         };
     };
-    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, maybe_tempvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             let $var = $lhs * $rhs;
             maybe_tempvar $var = $var;
             $($tok)*
         };
     };
-    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, maybe_tempvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             let $var = $lhs - $rhs;
             maybe_tempvar $var = $var;
             $($tok)*
         };
     };
-    ($builder:ident, maybe_tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, maybe_tempvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             let $var = $lhs / $rhs;
             maybe_tempvar $var = $var;
             $($tok)*
         };
     };
-    ($builder:ident, localvar $var:ident = $value:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $value:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $value; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $lhs:ident + $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $lhs + $rhs; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $lhs:ident * $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $lhs * $rhs; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $lhs:ident - $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $lhs - $rhs; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $lhs:ident / $rhs:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $lhs / $rhs; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = *($buffer++); $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = $buffer:ident [ $offset:expr ]; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = $buffer:ident [ $offset:expr ]; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = $buffer[$offset]; $($tok)*);
     };
-    ($builder:ident, localvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
+    ($builder:expr, localvar $var:ident = * $buffer:ident ; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, localvar $var; assert $var = *$buffer; $($tok)*);
     };
-    ($builder:ident, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         let $dst = $builder.get_ref_and_inc($buffer);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, $offset);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = *$buffer:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = *$buffer:ident; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, 0);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let $dst:ident = $src:ident; $($tok:tt)*) => {
+    ($builder:expr, let $dst:ident = $src:ident; $($tok:tt)*) => {
         let $dst = $builder.duplicate_var($src);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, jump $target:ident; $($tok:tt)*) => {
+    ($builder:expr, jump $target:ident; $($tok:tt)*) => {
         $builder.jump($crate::builder::ToOwned::to_owned(core::stringify!($target)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
+    ($builder:expr, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
         $builder.jump_nz($condition, $crate::builder::ToOwned::to_owned(core::stringify!($target)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
+    ($builder:expr, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
         $builder.call($crate::builder::ToOwned::to_owned(core::stringify!($target)));
 
         let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
@@ -903,24 +909,24 @@ macro_rules! casm_build_extend {
         )*
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, ret; $($tok:tt)*) => {
+    ($builder:expr, ret; $($tok:tt)*) => {
         $builder.ret();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, $label:ident: $($tok:tt)*) => {
+    ($builder:expr, $label:ident: $($tok:tt)*) => {
         $builder.label($crate::builder::ToOwned::to_owned(core::stringify!($label)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, fail; $($tok:tt)*) => {
+    ($builder:expr, fail; $($tok:tt)*) => {
         $builder.fail();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, unsatisfiable_assert $dst:ident = $res:ident; $($tok:tt)*) => {
+    ($builder:expr, unsatisfiable_assert $dst:ident = $res:ident; $($tok:tt)*) => {
         $crate::casm_build_extend!($builder, assert $dst = $res;);
         $builder.mark_unreachable();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
+    ($builder:expr, hint $hint_head:ident$(::$hint_tail:ident)+ {
             $($input_name:ident $(: $input_value:ident)?),*
         } into {
             $($output_name:ident $(: $output_value:ident)?),*
@@ -934,37 +940,37 @@ macro_rules! casm_build_extend {
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_name:ident { $($inputs:tt)* } into { $($outputs:tt)* }; $($tok:tt)*) => {
+    ($builder:expr, hint $hint_name:ident { $($inputs:tt)* } into { $($outputs:tt)* }; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             hint $crate::hints::CoreHint::$hint_name { $($inputs)* } into { $($outputs)* };
             $($tok)*
         }
     };
-    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* { $($inputs:tt)* }; $($tok:tt)*) => {
+    ($builder:expr, hint $hint_head:ident$(::$hint_tail:ident)* { $($inputs:tt)* }; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             hint $hint_head$(::$hint_tail)* { $($inputs)* } into {};
             $($tok)*
         }
     };
-    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* into { $($outputs:tt)* }; $($tok:tt)*) => {
+    ($builder:expr, hint $hint_head:ident$(::$hint_tail:ident)* into { $($outputs:tt)* }; $($tok:tt)*) => {
         $crate::casm_build_extend! {$builder,
             hint $hint_head$(::$hint_tail)* {} into { $($outputs)* };
             $($tok)*
         }
     };
-    ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
+    ($builder:expr, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, #{ validate steps == $count:expr; } $($tok:tt)*) => {
+    ($builder:expr, #{ validate steps == $count:expr; } $($tok:tt)*) => {
         assert_eq!($builder.steps(), $count);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, #{ steps = 0; } $($tok:tt)*) => {
+    ($builder:expr, #{ steps = 0; } $($tok:tt)*) => {
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, #{ $counter:ident += steps; steps = 0; } $($tok:tt)*) => {
+    ($builder:expr, #{ $counter:ident += steps; steps = 0; } $($tok:tt)*) => {
         $counter += $builder.steps() as i32;
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)

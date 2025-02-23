@@ -207,10 +207,13 @@ pub fn priv_global_use_semantic_data(
     let last_segment = segments.last().unwrap();
     let imported_module = match resolved_item {
         ResolvedGenericItem::Module(module_id) => Ok(module_id),
-        _ => Err(diagnostics.report(last_segment.stable_ptr(), UnexpectedElement {
-            expected: vec![ElementKind::Module],
-            actual: (&resolved_item).into(),
-        })),
+        _ => Err(diagnostics.report(
+            last_segment.stable_ptr(),
+            UnexpectedElement {
+                expected: vec![ElementKind::Module],
+                actual: (&resolved_item).into(),
+            },
+        )),
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
 }

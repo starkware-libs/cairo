@@ -27,8 +27,10 @@ pub(crate) const POW_2_128: felt252 = 0x100000000000000000000000000000000;
 pub(crate) const POW_2_8: u128 = 0x100;
 
 /// Represents a 31-byte fixed-size byte type.
-#[derive(Copy, Drop)]
 pub extern type bytes31;
+
+impl bytes31Copy of Copy<bytes31>;
+impl bytes31Drop of Drop<bytes31>;
 
 pub(crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
@@ -232,16 +234,16 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{BoundedInt, DivRemHelper, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, UnitInt, div_rem};
 
-    impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
+    impl DivRemU128By256 of DivRemHelper<u128, UnitInt<256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;
         type RemT = BoundedInt<0, 0xff>;
     }
 
     /// Returns the least significant byte of the given u128.
     pub fn get_lsb(value: u128) -> u8 {
-        let (_, res) = div_rem::<_, BoundedInt<256, 256>>(value, 256);
+        let (_, res) = div_rem::<_, UnitInt<256>>(value, 256);
         core::integer::upcast(res)
     }
 }

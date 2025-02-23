@@ -77,8 +77,10 @@ pub extern type EcOp;
 ///
 /// Points can be created using [`EcPointTrait::new`] or [`EcPointTrait::new_from_x`].
 /// The zero point represents the point at infinity.
-#[derive(Copy, Drop)]
 pub extern type EcPoint;
+
+impl EcPointCopy of Copy<EcPoint>;
+impl EcPointDrop of Drop<EcPoint>;
 
 /// A non-zero point on the STARK curve (cannot be the point at infinity).
 pub type NonZeroEcPoint = NonZero<EcPoint>;
@@ -119,8 +121,9 @@ impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
 /// Use this to perform multiple point operations efficiently.
 /// Initialize with [`EcStateTrait::init`], add points with [`EcStateTrait::add`]
 /// or [`EcStateTrait::add_mul`], and finalize with [`EcStateTrait::finalize`].
-#[derive(Drop)]
 pub extern type EcState;
+
+impl EcStateDrop of Drop<EcState>;
 
 mod internal {
     impl EcStateCopy of Copy<super::EcState>;

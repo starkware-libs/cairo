@@ -469,10 +469,10 @@ pub fn handle_storage_interface_struct<'a>(
     // Run for both StorageNode and StorageTrait
     let (origin, storage_interface_types) =
         if let Some(attr) = struct_ast.find_attr(db, STORAGE_NODE_ATTR) {
-            (attr.as_syntax_node(), vec![
-                StorageInterfaceType::StorageTrait,
-                StorageInterfaceType::StorageNode,
-            ])
+            (
+                attr.as_syntax_node(),
+                vec![StorageInterfaceType::StorageTrait, StorageInterfaceType::StorageNode],
+            )
         } else if let Some(attr) = struct_ast.find_attr(db, STORAGE_ATTR) {
             (attr.as_syntax_node(), vec![StorageInterfaceType::StorageTrait])
         } else if let Some(arg) = has_derive(struct_ast, db, STORE_TRAIT) {

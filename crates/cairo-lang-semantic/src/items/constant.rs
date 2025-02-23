@@ -4,8 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId,
-    VarId,
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
@@ -27,8 +26,8 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreInfo, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_ty_by_name,
+    true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -854,9 +853,9 @@ impl ConstantEvaluateContext<'_> {
             }
             id if id == self.div_fn => &args[0].v / &args[1].v,
             id if id == self.rem_fn => &args[0].v % &args[1].v,
-            id if id == self.bit_and_fn => &args[0].v & &args[1].v,
-            id if id == self.bit_or_fn => &args[0].v | &args[1].v,
-            id if id == self.bit_xor_fn => &args[0].v ^ &args[1].v,
+            id if id == self.bitand_fn => &args[0].v & &args[1].v,
+            id if id == self.bitor_fn => &args[0].v | &args[1].v,
+            id if id == self.bitxor_fn => &args[0].v ^ &args[1].v,
             id if id == self.lt_fn => return bool_value(args[0].v < args[1].v),
             id if id == self.le_fn => return bool_value(args[0].v <= args[1].v),
             id if id == self.gt_fn => return bool_value(args[0].v > args[1].v),
@@ -876,7 +875,7 @@ impl ConstantEvaluateContext<'_> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_types_info().felt252 {
+        if expr.ty == db.core_info().felt252 {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",
@@ -1178,40 +1177,6 @@ pub fn const_calc_info(db: &dyn SemanticGroup) -> Arc<ConstCalcInfo> {
 pub struct ConstCalcInfo {
     /// Traits that are allowed for consts if their impls is in the corelib.
     const_traits: UnorderedHashSet<TraitId>,
-    /// The trait function for `Neg::neg`.
-    neg_fn: TraitFunctionId,
-    /// The trait function for `Add::add`.
-    add_fn: TraitFunctionId,
-    /// The trait function for `Sub::sub`.
-    sub_fn: TraitFunctionId,
-    /// The trait function for `Mul::mul`.
-    mul_fn: TraitFunctionId,
-    /// The trait function for `Div::div`.
-    div_fn: TraitFunctionId,
-    /// The trait function for `Rem::rem`.
-    rem_fn: TraitFunctionId,
-    /// The trait function for `DivRem::div_rem`.
-    div_rem_fn: TraitFunctionId,
-    /// The trait function for `BitAnd::bitand`.
-    bit_and_fn: TraitFunctionId,
-    /// The trait function for `BitOr::bitor`.
-    bit_or_fn: TraitFunctionId,
-    /// The trait function for `BitXor::bitxor`.
-    bit_xor_fn: TraitFunctionId,
-    /// The trait function for `PartialEq::eq`.
-    eq_fn: TraitFunctionId,
-    /// The trait function for `PartialEq::ne`.
-    ne_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::lt`.
-    lt_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::le`.
-    le_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::gt`.
-    gt_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::ge`.
-    ge_fn: TraitFunctionId,
-    /// The trait function for `Not::not`.
-    not_fn: TraitFunctionId,
     /// The const value for the unit type `()`.
     unit_const: ConstValue,
     /// The const value for `true`.
@@ -1224,100 +1189,77 @@ pub struct ConstCalcInfo {
     upcast_fns: UnorderedHashSet<ExternFunctionId>,
     /// The integer `downcast` function.
     downcast_fns: UnorderedHashSet<ExternFunctionId>,
+
+    core_info: Arc<CoreInfo>,
+}
+
+impl std::ops::Deref for ConstCalcInfo {
+    type Target = CoreInfo;
+    fn deref(&self) -> &CoreInfo {
+        &self.core_info
+    }
 }
 
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
     fn new(db: &dyn SemanticGroup) -> Self {
-        let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
-        let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
-        let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
-        let mul_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into());
-        let div_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Div".into());
-        let rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into());
-        let div_rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "DivRem".into());
-        let bit_and_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into());
-        let bit_or_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into());
-        let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
-        let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
-        let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
-        let not_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Not".into());
-        let trait_fn = |trait_id, name: &str| {
-            db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
-        };
+        let core_info = db.core_info();
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         let core = ModuleHelper::core(db);
         let integer = core.submodule("integer");
+        let starknet = core.submodule("starknet");
+        let class_hash_module = starknet.submodule("class_hash");
+        let contract_address_module = starknet.submodule("contract_address");
         Self {
-            const_traits: [
-                neg_trait,
-                add_trait,
-                sub_trait,
-                mul_trait,
-                div_trait,
-                rem_trait,
-                div_rem_trait,
-                bit_and_trait,
-                bit_or_trait,
-                bit_xor_trait,
-                partial_eq_trait,
-                partial_ord_trait,
-                not_trait,
-            ]
-            .into_iter()
-            .collect(),
-            neg_fn: trait_fn(neg_trait, "neg"),
-            add_fn: trait_fn(add_trait, "add"),
-            sub_fn: trait_fn(sub_trait, "sub"),
-            mul_fn: trait_fn(mul_trait, "mul"),
-            div_fn: trait_fn(div_trait, "div"),
-            rem_fn: trait_fn(rem_trait, "rem"),
-            div_rem_fn: trait_fn(div_rem_trait, "div_rem"),
-            bit_and_fn: trait_fn(bit_and_trait, "bitand"),
-            bit_or_fn: trait_fn(bit_or_trait, "bitor"),
-            bit_xor_fn: trait_fn(bit_xor_trait, "bitxor"),
-            eq_fn: trait_fn(partial_eq_trait, "eq"),
-            ne_fn: trait_fn(partial_eq_trait, "ne"),
-            lt_fn: trait_fn(partial_ord_trait, "lt"),
-            le_fn: trait_fn(partial_ord_trait, "le"),
-            gt_fn: trait_fn(partial_ord_trait, "gt"),
-            ge_fn: trait_fn(partial_ord_trait, "ge"),
-            not_fn: trait_fn(not_trait, "not"),
+            const_traits: FromIterator::from_iter([
+                core_info.neg_trt,
+                core_info.add_trt,
+                core_info.sub_trt,
+                core_info.mul_trt,
+                core_info.div_trt,
+                core_info.rem_trt,
+                core_info.div_rem_trt,
+                core_info.bitand_trt,
+                core_info.bitor_trt,
+                core_info.bitxor_trt,
+                core_info.partialeq_trt,
+                core_info.partialord_trt,
+                core_info.not_trt,
+            ]),
             true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
-            upcast_fns: [
-                "upcast",
-                "u8_to_felt252",
-                "u16_to_felt252",
-                "u32_to_felt252",
-                "u64_to_felt252",
-                "u128_to_felt252",
-                "i8_to_felt252",
-                "i16_to_felt252",
-                "i32_to_felt252",
-                "i64_to_felt252",
-                "i128_to_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
-            downcast_fns: [
-                "downcast",
-                "u8_try_from_felt252",
-                "u16_try_from_felt252",
-                "u32_try_from_felt252",
-                "u64_try_from_felt252",
-                "i8_try_from_felt252",
-                "i16_try_from_felt252",
-                "i32_try_from_felt252",
-                "i64_try_from_felt252",
-                "i128_try_from_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
+            upcast_fns: FromIterator::from_iter([
+                integer.extern_function_id("upcast"),
+                integer.extern_function_id("u8_to_felt252"),
+                integer.extern_function_id("u16_to_felt252"),
+                integer.extern_function_id("u32_to_felt252"),
+                integer.extern_function_id("u64_to_felt252"),
+                integer.extern_function_id("u128_to_felt252"),
+                integer.extern_function_id("i8_to_felt252"),
+                integer.extern_function_id("i16_to_felt252"),
+                integer.extern_function_id("i32_to_felt252"),
+                integer.extern_function_id("i64_to_felt252"),
+                integer.extern_function_id("i128_to_felt252"),
+                class_hash_module.extern_function_id("class_hash_to_felt252"),
+                contract_address_module.extern_function_id("contract_address_to_felt252"),
+            ]),
+            downcast_fns: FromIterator::from_iter([
+                integer.extern_function_id("downcast"),
+                integer.extern_function_id("u8_try_from_felt252"),
+                integer.extern_function_id("u16_try_from_felt252"),
+                integer.extern_function_id("u32_try_from_felt252"),
+                integer.extern_function_id("u64_try_from_felt252"),
+                integer.extern_function_id("i8_try_from_felt252"),
+                integer.extern_function_id("i16_try_from_felt252"),
+                integer.extern_function_id("i32_try_from_felt252"),
+                integer.extern_function_id("i64_try_from_felt252"),
+                integer.extern_function_id("i128_try_from_felt252"),
+                class_hash_module.extern_function_id("class_hash_try_from_felt252"),
+                contract_address_module.extern_function_id("contract_address_try_from_felt252"),
+            ]),
+            core_info,
         }
     }
 }

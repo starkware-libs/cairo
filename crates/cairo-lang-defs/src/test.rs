@@ -17,10 +17,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
-use crate::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use crate::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use crate::ids::{
-    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    SubmoduleLongId,
+    FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleLongId,
 };
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -40,11 +40,12 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![
-            Arc::new(FooToBarPlugin),
-            Arc::new(RemoveOrigPlugin),
-            Arc::new(DummyPlugin),
-        ]);
+        init_defs_group(&mut res);
+        res.set_default_macro_plugins(Arc::new([
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(FooToBarPlugin))),
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(RemoveOrigPlugin))),
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(DummyPlugin))),
+        ]));
         res
     }
 }
@@ -142,9 +143,12 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
 #[test]
 fn test_module_file() {
     let mut db_val = DatabaseForTesting::default();
-    let module_id = setup_test_module(&mut db_val, indoc! {"
+    let module_id = setup_test_module(
+        &mut db_val,
+        indoc! {"
             mod mysubmodule;
-        "});
+        "},
+    );
     let db = &db_val;
     let item_id =
         extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
@@ -193,15 +197,18 @@ fn test_submodules() {
     );
 
     // Test file mappings.
-    assert_eq!(&db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..], vec![
-        module_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..], vec![
-        submodule_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..], vec![
-        subsubmodule_id
-    ]);
+    assert_eq!(
+        &db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..],
+        vec![module_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..],
+        vec![submodule_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
+        vec![subsubmodule_id]
+    );
 }
 
 #[derive(Debug)]

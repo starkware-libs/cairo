@@ -73,8 +73,10 @@ type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_size
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc withdraw_gas = withdraw_gas;
 libfunc branch_align = branch_align;
+libfunc redeposit_gas = redeposit_gas;
 libfunc struct_deconstruct<core::array::Span::<core::felt252>> = struct_deconstruct<core::array::Span::<core::felt252>>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc array_snapshot_pop_front<felt252> = array_snapshot_pop_front<felt252>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
@@ -88,7 +90,6 @@ libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252
 libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
 libfunc store_temp<AddMod> = store_temp<AddMod>;
 libfunc store_temp<MulMod> = store_temp<MulMod>;
-libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
 libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>> = store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>;
 libfunc get_builtin_costs = get_builtin_costs;
@@ -152,249 +153,260 @@ libfunc const_as_immediate<Const<felt252, 13858329566109216670149129705443334903
 libfunc const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>> = const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>;
 
 revoke_ap_tracking() -> (); // 0
-withdraw_gas([0], [4]) { fallthrough([7], [8]) 79([9], [10]) }; // 1
+withdraw_gas([0], [4]) { fallthrough([7], [8]) 89([9], [10]) }; // 1
 branch_align() -> (); // 2
-struct_deconstruct<core::array::Span::<core::felt252>>([6]) -> ([11]); // 3
-store_temp<RangeCheck>([7]) -> ([7]); // 4
-array_snapshot_pop_front<felt252>([11]) { fallthrough([12], [13]) 24([14]) }; // 5
-branch_align() -> (); // 6
-drop<Snapshot<Array<felt252>>>([12]) -> (); // 7
-drop<Box<felt252>>([13]) -> (); // 8
-array_new<felt252>() -> ([15]); // 9
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([16]); // 10
-store_temp<felt252>([16]) -> ([16]); // 11
-array_append<felt252>([15], [16]) -> ([17]); // 12
-struct_construct<core::panics::Panic>() -> ([18]); // 13
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([18], [17]) -> ([19]); // 14
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([19]) -> ([20]); // 15
-store_temp<RangeCheck>([7]) -> ([7]); // 16
-store_temp<RangeCheck96>([1]) -> ([1]); // 17
-store_temp<AddMod>([2]) -> ([2]); // 18
-store_temp<MulMod>([3]) -> ([3]); // 19
-store_temp<GasBuiltin>([8]) -> ([8]); // 20
-store_temp<System>([5]) -> ([5]); // 21
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([20]) -> ([20]); // 22
-return([7], [1], [2], [3], [8], [5], [20]); // 23
-branch_align() -> (); // 24
-drop<Snapshot<Array<felt252>>>([14]) -> (); // 25
-get_builtin_costs() -> ([21]); // 26
-store_temp<BuiltinCosts>([21]) -> ([21]); // 27
-withdraw_gas_all([7], [8], [21]) { fallthrough([22], [23]) 63([24], [25]) }; // 28
-branch_align() -> (); // 29
-struct_construct<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>() -> ([26]); // 30
-store_temp<AddMod>([2]) -> ([2]); // 31
-store_temp<MulMod>([3]) -> ([3]); // 32
-store_temp<RangeCheck96>([1]) -> ([1]); // 33
-function_call<user@cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins>([2], [3], [1], [26]) -> ([27], [28], [29], [30]); // 34
-store_temp<RangeCheck>([22]) -> ([22]); // 35
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([30]) { fallthrough([31]) 53([32]) }; // 36
-branch_align() -> (); // 37
-drop<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([31]) -> (); // 38
-array_new<felt252>() -> ([33]); // 39
-snapshot_take<Array<felt252>>([33]) -> ([34], [35]); // 40
-drop<Array<felt252>>([34]) -> (); // 41
-struct_construct<core::array::Span::<core::felt252>>([35]) -> ([36]); // 42
-struct_construct<Tuple<core::array::Span::<core::felt252>>>([36]) -> ([37]); // 43
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([37]) -> ([38]); // 44
-store_temp<RangeCheck>([22]) -> ([22]); // 45
-store_temp<RangeCheck96>([29]) -> ([29]); // 46
-store_temp<AddMod>([27]) -> ([27]); // 47
-store_temp<MulMod>([28]) -> ([28]); // 48
-store_temp<GasBuiltin>([23]) -> ([23]); // 49
-store_temp<System>([5]) -> ([5]); // 50
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([38]) -> ([38]); // 51
-return([22], [29], [27], [28], [23], [5], [38]); // 52
-branch_align() -> (); // 53
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([32]) -> ([39]); // 54
-store_temp<RangeCheck>([22]) -> ([22]); // 55
-store_temp<RangeCheck96>([29]) -> ([29]); // 56
-store_temp<AddMod>([27]) -> ([27]); // 57
-store_temp<MulMod>([28]) -> ([28]); // 58
-store_temp<GasBuiltin>([23]) -> ([23]); // 59
-store_temp<System>([5]) -> ([5]); // 60
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([39]) -> ([39]); // 61
-return([22], [29], [27], [28], [23], [5], [39]); // 62
-branch_align() -> (); // 63
-array_new<felt252>() -> ([40]); // 64
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([41]); // 65
-store_temp<felt252>([41]) -> ([41]); // 66
-array_append<felt252>([40], [41]) -> ([42]); // 67
-struct_construct<core::panics::Panic>() -> ([43]); // 68
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([43], [42]) -> ([44]); // 69
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([44]) -> ([45]); // 70
-store_temp<RangeCheck>([24]) -> ([24]); // 71
-store_temp<RangeCheck96>([1]) -> ([1]); // 72
-store_temp<AddMod>([2]) -> ([2]); // 73
-store_temp<MulMod>([3]) -> ([3]); // 74
-store_temp<GasBuiltin>([25]) -> ([25]); // 75
-store_temp<System>([5]) -> ([5]); // 76
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([45]) -> ([45]); // 77
-return([24], [1], [2], [3], [25], [5], [45]); // 78
-branch_align() -> (); // 79
-drop<core::array::Span::<core::felt252>>([6]) -> (); // 80
-array_new<felt252>() -> ([46]); // 81
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([47]); // 82
-store_temp<felt252>([47]) -> ([47]); // 83
-array_append<felt252>([46], [47]) -> ([48]); // 84
-struct_construct<core::panics::Panic>() -> ([49]); // 85
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([49], [48]) -> ([50]); // 86
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([50]) -> ([51]); // 87
-store_temp<RangeCheck>([9]) -> ([9]); // 88
-store_temp<RangeCheck96>([1]) -> ([1]); // 89
-store_temp<AddMod>([2]) -> ([2]); // 90
-store_temp<MulMod>([3]) -> ([3]); // 91
-store_temp<GasBuiltin>([10]) -> ([10]); // 92
-store_temp<System>([5]) -> ([5]); // 93
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([51]) -> ([51]); // 94
-return([9], [1], [2], [3], [10], [5], [51]); // 95
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 7>>() -> ([4]); // 96
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([5]); // 97
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([6]); // 98
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([7]); // 99
-struct_construct<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([4], [5], [6], [7]) -> ([8]); // 100
-store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([8]) -> ([8]); // 101
-try_into_circuit_modulus([8]) { fallthrough([9]) 230() }; // 102
-branch_align() -> (); // 103
-init_circuit_data<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([2]) -> ([10], [11]); // 104
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 3>>() -> ([12]); // 105
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([12]) -> ([13]); // 106
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([14]); // 107
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([14]) -> ([15]); // 108
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([16]); // 109
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([16]) -> ([17]); // 110
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([18]); // 111
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([18]) -> ([19]); // 112
-struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([13], [15], [17], [19]) -> ([20]); // 113
-store_temp<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([11]) -> ([11]); // 114
-store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([20]) -> ([20]); // 115
-store_temp<RangeCheck96>([10]) -> ([10]); // 116
-add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([11], [20]) { fallthrough([21]) 134([22]) }; // 117
-branch_align() -> (); // 118
-drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([21]) -> (); // 119
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 120
-drop<CircuitModulus>([9]) -> (); // 121
-array_new<felt252>() -> ([23]); // 122
-const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>() -> ([24]); // 123
-store_temp<felt252>([24]) -> ([24]); // 124
-array_append<felt252>([23], [24]) -> ([25]); // 125
-struct_construct<core::panics::Panic>() -> ([26]); // 126
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([26], [25]) -> ([27]); // 127
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([27]) -> ([28]); // 128
-store_temp<AddMod>([0]) -> ([0]); // 129
-store_temp<MulMod>([1]) -> ([1]); // 130
-store_temp<RangeCheck96>([10]) -> ([10]); // 131
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([28]) -> ([28]); // 132
-return([0], [1], [10], [28]); // 133
-branch_align() -> (); // 134
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>() -> ([29]); // 135
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([29]) -> ([30]); // 136
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([31]); // 137
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([31]) -> ([32]); // 138
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([33]); // 139
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([33]) -> ([34]); // 140
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([35]); // 141
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([35]) -> ([36]); // 142
-struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([30], [32], [34], [36]) -> ([37]); // 143
-store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([37]) -> ([37]); // 144
-add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([22], [37]) { fallthrough([38]) 214([39]) }; // 145
-branch_align() -> (); // 146
-get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>() -> ([40]); // 147
-const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([41]); // 148
-const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([42]); // 149
-store_temp<BoundedInt<0, 0>>([41]) -> ([41]); // 150
-store_temp<BoundedInt<1, 1>>([42]) -> ([42]); // 151
-eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([0], [1], [40], [38], [9], [41], [42]) { fallthrough([43], [44], [45]) 163([46], [47], [48], [49]) }; // 152
-branch_align() -> (); // 153
-drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([45]) -> (); // 154
-struct_construct<Unit>() -> ([50]); // 155
-struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([3], [50]) -> ([51]); // 156
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>([51]) -> ([52]); // 157
-store_temp<AddMod>([43]) -> ([43]); // 158
-store_temp<MulMod>([44]) -> ([44]); // 159
-store_temp<RangeCheck96>([10]) -> ([10]); // 160
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([52]) -> ([52]); // 161
-return([43], [44], [10], [52]); // 162
-branch_align() -> (); // 163
-drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([48]) -> (); // 164
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 165
-const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([53]); // 166
-const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([54]); // 167
-store_temp<MulMod>([47]) -> ([47]); // 168
-store_temp<BoundedInt<0, 0>>([53]) -> ([53]); // 169
-store_temp<BoundedInt<1, 1>>([54]) -> ([54]); // 170
-circuit_failure_guarantee_verify([10], [47], [49], [53], [54]) -> ([55], [56], [57]); // 171
-store_temp<AddMod>([46]) -> ([46]); // 172
-store_temp<RangeCheck96>([55]) -> ([55]); // 173
-store_temp<MulMod>([56]) -> ([56]); // 174
-u96_limbs_less_than_guarantee_verify<4>([57]) { fallthrough([58]) 190([59]) }; // 175
-branch_align() -> (); // 176
-u96_limbs_less_than_guarantee_verify<3>([58]) { fallthrough([60]) 187([61]) }; // 177
-branch_align() -> (); // 178
-u96_limbs_less_than_guarantee_verify<2>([60]) { fallthrough([62]) 184([63]) }; // 179
-branch_align() -> (); // 180
-u96_single_limb_less_than_guarantee_verify([62]) -> ([64]); // 181
-store_temp<U96Guarantee>([64]) -> ([65]); // 182
-jump() { 192() }; // 183
-branch_align() -> (); // 184
-store_temp<U96Guarantee>([63]) -> ([65]); // 185
-jump() { 192() }; // 186
+redeposit_gas([8]) -> ([11]); // 3
+struct_deconstruct<core::array::Span::<core::felt252>>([6]) -> ([12]); // 4
+store_temp<RangeCheck>([7]) -> ([7]); // 5
+store_temp<GasBuiltin>([11]) -> ([11]); // 6
+array_snapshot_pop_front<felt252>([12]) { fallthrough([13], [14]) 27([15]) }; // 7
+branch_align() -> (); // 8
+drop<Snapshot<Array<felt252>>>([13]) -> (); // 9
+drop<Box<felt252>>([14]) -> (); // 10
+redeposit_gas([11]) -> ([16]); // 11
+array_new<felt252>() -> ([17]); // 12
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([18]); // 13
+store_temp<felt252>([18]) -> ([18]); // 14
+array_append<felt252>([17], [18]) -> ([19]); // 15
+struct_construct<core::panics::Panic>() -> ([20]); // 16
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([20], [19]) -> ([21]); // 17
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([21]) -> ([22]); // 18
+store_temp<RangeCheck>([7]) -> ([7]); // 19
+store_temp<RangeCheck96>([1]) -> ([1]); // 20
+store_temp<AddMod>([2]) -> ([2]); // 21
+store_temp<MulMod>([3]) -> ([3]); // 22
+store_temp<GasBuiltin>([16]) -> ([16]); // 23
+store_temp<System>([5]) -> ([5]); // 24
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([22]) -> ([22]); // 25
+return([7], [1], [2], [3], [16], [5], [22]); // 26
+branch_align() -> (); // 27
+drop<Snapshot<Array<felt252>>>([15]) -> (); // 28
+redeposit_gas([11]) -> ([23]); // 29
+get_builtin_costs() -> ([24]); // 30
+store_temp<GasBuiltin>([23]) -> ([23]); // 31
+store_temp<BuiltinCosts>([24]) -> ([24]); // 32
+withdraw_gas_all([7], [23], [24]) { fallthrough([25], [26]) 72([27], [28]) }; // 33
+branch_align() -> (); // 34
+redeposit_gas([26]) -> ([29]); // 35
+struct_construct<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>() -> ([30]); // 36
+store_temp<AddMod>([2]) -> ([2]); // 37
+store_temp<MulMod>([3]) -> ([3]); // 38
+store_temp<RangeCheck96>([1]) -> ([1]); // 39
+function_call<user@cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins>([2], [3], [1], [30]) -> ([31], [32], [33], [34]); // 40
+store_temp<RangeCheck>([25]) -> ([25]); // 41
+store_temp<GasBuiltin>([29]) -> ([29]); // 42
+enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([34]) { fallthrough([35]) 61([36]) }; // 43
+branch_align() -> (); // 44
+drop<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([35]) -> (); // 45
+redeposit_gas([29]) -> ([37]); // 46
+array_new<felt252>() -> ([38]); // 47
+snapshot_take<Array<felt252>>([38]) -> ([39], [40]); // 48
+drop<Array<felt252>>([39]) -> (); // 49
+struct_construct<core::array::Span::<core::felt252>>([40]) -> ([41]); // 50
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([41]) -> ([42]); // 51
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([42]) -> ([43]); // 52
+store_temp<RangeCheck>([25]) -> ([25]); // 53
+store_temp<RangeCheck96>([33]) -> ([33]); // 54
+store_temp<AddMod>([31]) -> ([31]); // 55
+store_temp<MulMod>([32]) -> ([32]); // 56
+store_temp<GasBuiltin>([37]) -> ([37]); // 57
+store_temp<System>([5]) -> ([5]); // 58
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([43]) -> ([43]); // 59
+return([25], [33], [31], [32], [37], [5], [43]); // 60
+branch_align() -> (); // 61
+redeposit_gas([29]) -> ([44]); // 62
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([36]) -> ([45]); // 63
+store_temp<RangeCheck>([25]) -> ([25]); // 64
+store_temp<RangeCheck96>([33]) -> ([33]); // 65
+store_temp<AddMod>([31]) -> ([31]); // 66
+store_temp<MulMod>([32]) -> ([32]); // 67
+store_temp<GasBuiltin>([44]) -> ([44]); // 68
+store_temp<System>([5]) -> ([5]); // 69
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([45]) -> ([45]); // 70
+return([25], [33], [31], [32], [44], [5], [45]); // 71
+branch_align() -> (); // 72
+redeposit_gas([28]) -> ([46]); // 73
+array_new<felt252>() -> ([47]); // 74
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([48]); // 75
+store_temp<felt252>([48]) -> ([48]); // 76
+array_append<felt252>([47], [48]) -> ([49]); // 77
+struct_construct<core::panics::Panic>() -> ([50]); // 78
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 79
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([51]) -> ([52]); // 80
+store_temp<RangeCheck>([27]) -> ([27]); // 81
+store_temp<RangeCheck96>([1]) -> ([1]); // 82
+store_temp<AddMod>([2]) -> ([2]); // 83
+store_temp<MulMod>([3]) -> ([3]); // 84
+store_temp<GasBuiltin>([46]) -> ([46]); // 85
+store_temp<System>([5]) -> ([5]); // 86
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([52]) -> ([52]); // 87
+return([27], [1], [2], [3], [46], [5], [52]); // 88
+branch_align() -> (); // 89
+drop<core::array::Span::<core::felt252>>([6]) -> (); // 90
+redeposit_gas([10]) -> ([53]); // 91
+array_new<felt252>() -> ([54]); // 92
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([55]); // 93
+store_temp<felt252>([55]) -> ([55]); // 94
+array_append<felt252>([54], [55]) -> ([56]); // 95
+struct_construct<core::panics::Panic>() -> ([57]); // 96
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([57], [56]) -> ([58]); // 97
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([58]) -> ([59]); // 98
+store_temp<RangeCheck>([9]) -> ([9]); // 99
+store_temp<RangeCheck96>([1]) -> ([1]); // 100
+store_temp<AddMod>([2]) -> ([2]); // 101
+store_temp<MulMod>([3]) -> ([3]); // 102
+store_temp<GasBuiltin>([53]) -> ([53]); // 103
+store_temp<System>([5]) -> ([5]); // 104
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([59]) -> ([59]); // 105
+return([9], [1], [2], [3], [53], [5], [59]); // 106
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 7>>() -> ([4]); // 107
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([5]); // 108
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([6]); // 109
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([7]); // 110
+struct_construct<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([4], [5], [6], [7]) -> ([8]); // 111
+store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([8]) -> ([8]); // 112
+try_into_circuit_modulus([8]) { fallthrough([9]) 241() }; // 113
+branch_align() -> (); // 114
+init_circuit_data<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([2]) -> ([10], [11]); // 115
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 3>>() -> ([12]); // 116
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([12]) -> ([13]); // 117
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([14]); // 118
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([14]) -> ([15]); // 119
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([16]); // 120
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([16]) -> ([17]); // 121
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([18]); // 122
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([18]) -> ([19]); // 123
+struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([13], [15], [17], [19]) -> ([20]); // 124
+store_temp<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([11]) -> ([11]); // 125
+store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([20]) -> ([20]); // 126
+store_temp<RangeCheck96>([10]) -> ([10]); // 127
+add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([11], [20]) { fallthrough([21]) 145([22]) }; // 128
+branch_align() -> (); // 129
+drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([21]) -> (); // 130
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 131
+drop<CircuitModulus>([9]) -> (); // 132
+array_new<felt252>() -> ([23]); // 133
+const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>() -> ([24]); // 134
+store_temp<felt252>([24]) -> ([24]); // 135
+array_append<felt252>([23], [24]) -> ([25]); // 136
+struct_construct<core::panics::Panic>() -> ([26]); // 137
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([26], [25]) -> ([27]); // 138
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([27]) -> ([28]); // 139
+store_temp<AddMod>([0]) -> ([0]); // 140
+store_temp<MulMod>([1]) -> ([1]); // 141
+store_temp<RangeCheck96>([10]) -> ([10]); // 142
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([28]) -> ([28]); // 143
+return([0], [1], [10], [28]); // 144
+branch_align() -> (); // 145
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>() -> ([29]); // 146
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([29]) -> ([30]); // 147
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([31]); // 148
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([31]) -> ([32]); // 149
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([33]); // 150
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([33]) -> ([34]); // 151
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([35]); // 152
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([35]) -> ([36]); // 153
+struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([30], [32], [34], [36]) -> ([37]); // 154
+store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([37]) -> ([37]); // 155
+add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([22], [37]) { fallthrough([38]) 225([39]) }; // 156
+branch_align() -> (); // 157
+get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>() -> ([40]); // 158
+const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([41]); // 159
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([42]); // 160
+store_temp<BoundedInt<0, 0>>([41]) -> ([41]); // 161
+store_temp<BoundedInt<1, 1>>([42]) -> ([42]); // 162
+eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>([0], [1], [40], [38], [9], [41], [42]) { fallthrough([43], [44], [45]) 174([46], [47], [48], [49]) }; // 163
+branch_align() -> (); // 164
+drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([45]) -> (); // 165
+struct_construct<Unit>() -> ([50]); // 166
+struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([3], [50]) -> ([51]); // 167
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>([51]) -> ([52]); // 168
+store_temp<AddMod>([43]) -> ([43]); // 169
+store_temp<MulMod>([44]) -> ([44]); // 170
+store_temp<RangeCheck96>([10]) -> ([10]); // 171
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([52]) -> ([52]); // 172
+return([43], [44], [10], [52]); // 173
+branch_align() -> (); // 174
+drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([48]) -> (); // 175
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 176
+const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([53]); // 177
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([54]); // 178
+store_temp<MulMod>([47]) -> ([47]); // 179
+store_temp<BoundedInt<0, 0>>([53]) -> ([53]); // 180
+store_temp<BoundedInt<1, 1>>([54]) -> ([54]); // 181
+circuit_failure_guarantee_verify([10], [47], [49], [53], [54]) -> ([55], [56], [57]); // 182
+store_temp<AddMod>([46]) -> ([46]); // 183
+store_temp<RangeCheck96>([55]) -> ([55]); // 184
+store_temp<MulMod>([56]) -> ([56]); // 185
+u96_limbs_less_than_guarantee_verify<4>([57]) { fallthrough([58]) 201([59]) }; // 186
 branch_align() -> (); // 187
-store_temp<U96Guarantee>([61]) -> ([65]); // 188
-jump() { 192() }; // 189
-branch_align() -> (); // 190
-store_temp<U96Guarantee>([59]) -> ([65]); // 191
-u96_guarantee_verify([55], [65]) -> ([66]); // 192
-array_new<felt252>() -> ([67]); // 193
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([68]); // 194
-store_temp<felt252>([68]) -> ([68]); // 195
-array_append<felt252>([67], [68]) -> ([69]); // 196
-const_as_immediate<Const<felt252, 0>>() -> ([70]); // 197
-store_temp<felt252>([70]) -> ([70]); // 198
-array_append<felt252>([69], [70]) -> ([71]); // 199
-const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>() -> ([72]); // 200
-store_temp<felt252>([72]) -> ([72]); // 201
-array_append<felt252>([71], [72]) -> ([73]); // 202
-const_as_immediate<Const<felt252, 16>>() -> ([74]); // 203
-store_temp<felt252>([74]) -> ([74]); // 204
-array_append<felt252>([73], [74]) -> ([75]); // 205
-struct_construct<core::panics::Panic>() -> ([76]); // 206
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([76], [75]) -> ([77]); // 207
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([77]) -> ([78]); // 208
-store_temp<AddMod>([46]) -> ([46]); // 209
-store_temp<MulMod>([56]) -> ([56]); // 210
-store_temp<RangeCheck96>([66]) -> ([66]); // 211
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([78]) -> ([78]); // 212
-return([46], [56], [66], [78]); // 213
-branch_align() -> (); // 214
-drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([39]) -> (); // 215
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 216
-drop<CircuitModulus>([9]) -> (); // 217
-array_new<felt252>() -> ([79]); // 218
-const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>() -> ([80]); // 219
-store_temp<felt252>([80]) -> ([80]); // 220
-array_append<felt252>([79], [80]) -> ([81]); // 221
-struct_construct<core::panics::Panic>() -> ([82]); // 222
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([82], [81]) -> ([83]); // 223
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([83]) -> ([84]); // 224
-store_temp<AddMod>([0]) -> ([0]); // 225
-store_temp<MulMod>([1]) -> ([1]); // 226
-store_temp<RangeCheck96>([10]) -> ([10]); // 227
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([84]) -> ([84]); // 228
-return([0], [1], [10], [84]); // 229
-branch_align() -> (); // 230
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 231
-array_new<felt252>() -> ([85]); // 232
-const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([86]); // 233
-store_temp<felt252>([86]) -> ([86]); // 234
-array_append<felt252>([85], [86]) -> ([87]); // 235
-struct_construct<core::panics::Panic>() -> ([88]); // 236
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([88], [87]) -> ([89]); // 237
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([89]) -> ([90]); // 238
-store_temp<AddMod>([0]) -> ([0]); // 239
-store_temp<MulMod>([1]) -> ([1]); // 240
-store_temp<RangeCheck96>([2]) -> ([2]); // 241
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([90]) -> ([90]); // 242
-return([0], [1], [2], [90]); // 243
+u96_limbs_less_than_guarantee_verify<3>([58]) { fallthrough([60]) 198([61]) }; // 188
+branch_align() -> (); // 189
+u96_limbs_less_than_guarantee_verify<2>([60]) { fallthrough([62]) 195([63]) }; // 190
+branch_align() -> (); // 191
+u96_single_limb_less_than_guarantee_verify([62]) -> ([64]); // 192
+store_temp<U96Guarantee>([64]) -> ([65]); // 193
+jump() { 203() }; // 194
+branch_align() -> (); // 195
+store_temp<U96Guarantee>([63]) -> ([65]); // 196
+jump() { 203() }; // 197
+branch_align() -> (); // 198
+store_temp<U96Guarantee>([61]) -> ([65]); // 199
+jump() { 203() }; // 200
+branch_align() -> (); // 201
+store_temp<U96Guarantee>([59]) -> ([65]); // 202
+u96_guarantee_verify([55], [65]) -> ([66]); // 203
+array_new<felt252>() -> ([67]); // 204
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([68]); // 205
+store_temp<felt252>([68]) -> ([68]); // 206
+array_append<felt252>([67], [68]) -> ([69]); // 207
+const_as_immediate<Const<felt252, 0>>() -> ([70]); // 208
+store_temp<felt252>([70]) -> ([70]); // 209
+array_append<felt252>([69], [70]) -> ([71]); // 210
+const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>() -> ([72]); // 211
+store_temp<felt252>([72]) -> ([72]); // 212
+array_append<felt252>([71], [72]) -> ([73]); // 213
+const_as_immediate<Const<felt252, 16>>() -> ([74]); // 214
+store_temp<felt252>([74]) -> ([74]); // 215
+array_append<felt252>([73], [74]) -> ([75]); // 216
+struct_construct<core::panics::Panic>() -> ([76]); // 217
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([76], [75]) -> ([77]); // 218
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([77]) -> ([78]); // 219
+store_temp<AddMod>([46]) -> ([46]); // 220
+store_temp<MulMod>([56]) -> ([56]); // 221
+store_temp<RangeCheck96>([66]) -> ([66]); // 222
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([78]) -> ([78]); // 223
+return([46], [56], [66], [78]); // 224
+branch_align() -> (); // 225
+drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, core::circuit::AddModGate::<h0x5fb1b744f124983eb8ef92e84fb8f64df5ba91eab3215392dfb2b11f7e964047>>, core::circuit::AddModGate::<h0x36fd521c6896997914a7a1f8df6378b96a34cbe8facd14b138aaa141aac19ea>>, core::circuit::AddModGate::<h0x45f490149bccfaab8ea1633893d872f7224eaca311782e3b79a0955ddc1c7>>, core::circuit::AddModGate::<h0x561f3b4f47bd3f297f6672c6cb5a57ef350a0554d4983121d9aeb51164c2>>, core::circuit::AddModGate::<h0x227d73d0d182988d965d42c73c5c0b497a6aa7ed1676424ba9e80799c3e3c9d>>, core::circuit::AddModGate::<h0x1296d7b932e771d066c2f8748a76cf18cbde1957d9c15886ee2791826cf>>, core::circuit::AddModGate::<h0x67058363fc2d283879cfb9bee16bdea4c3610b84cb0dc22849281cd3b34f4>>, core::circuit::AddModGate::<h0x21c4187460958382233cad338948829dd87ca8b4fe532e1ed246fc46ba399ce>>, core::circuit::AddModGate::<h0xee2ec0a82613577cc52f6feb452179e53d0ac4fb8e7356c439fbe5d2b4d91c>>, core::circuit::AddModGate::<h0x23a5c3fd604bbbfc84436a8c3fb78ab3a9a0b3bbb2b4a7f56696fbc0ed15>>, core::circuit::AddModGate::<h0x2acde4affba9fc91fc7bd9d9830c39039dd5a83a7c2a62c5789e11544eaf892>>>,)>>>([39]) -> (); // 226
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 227
+drop<CircuitModulus>([9]) -> (); // 228
+array_new<felt252>() -> ([79]); // 229
+const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>() -> ([80]); // 230
+store_temp<felt252>([80]) -> ([80]); // 231
+array_append<felt252>([79], [80]) -> ([81]); // 232
+struct_construct<core::panics::Panic>() -> ([82]); // 233
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([82], [81]) -> ([83]); // 234
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([83]) -> ([84]); // 235
+store_temp<AddMod>([0]) -> ([0]); // 236
+store_temp<MulMod>([1]) -> ([1]); // 237
+store_temp<RangeCheck96>([10]) -> ([10]); // 238
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([84]) -> ([84]); // 239
+return([0], [1], [10], [84]); // 240
+branch_align() -> (); // 241
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 242
+array_new<felt252>() -> ([85]); // 243
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([86]); // 244
+store_temp<felt252>([86]) -> ([86]); // 245
+array_append<felt252>([85], [86]) -> ([87]); // 246
+struct_construct<core::panics::Panic>() -> ([88]); // 247
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([88], [87]) -> ([89]); // 248
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([89]) -> ([90]); // 249
+store_temp<AddMod>([0]) -> ([0]); // 250
+store_temp<MulMod>([1]) -> ([1]); // 251
+store_temp<RangeCheck96>([2]) -> ([2]); // 252
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([90]) -> ([90]); // 253
+return([0], [1], [2], [90]); // 254
 
 cairo_level_tests::contracts::circuit_contract::circuit_contract::__wrapper__circuit_builtins@0([0]: RangeCheck, [1]: RangeCheck96, [2]: AddMod, [3]: MulMod, [4]: GasBuiltin, [5]: System, [6]: core::array::Span::<core::felt252>) -> (RangeCheck, RangeCheck96, AddMod, MulMod, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins@96([0]: AddMod, [1]: MulMod, [2]: RangeCheck96, [3]: cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState) -> (AddMod, MulMod, RangeCheck96, core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>);
+cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins@107([0]: AddMod, [1]: MulMod, [2]: RangeCheck96, [3]: cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState) -> (AddMod, MulMod, RangeCheck96, core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>);

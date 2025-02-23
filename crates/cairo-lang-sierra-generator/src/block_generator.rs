@@ -624,10 +624,14 @@ fn generate_statement_snapshot(
 
     let ty = context.get_variable_sierra_type(statement.input.var_id)?;
     let func = snapshot_take_libfunc_id(context.get_db(), ty);
-    let stmt = simple_basic_statement(func, &[input], &[
-        context.get_sierra_variable(statement.original()),
-        context.get_sierra_variable(statement.snapshot()),
-    ]);
+    let stmt = simple_basic_statement(
+        func,
+        &[input],
+        &[
+            context.get_sierra_variable(statement.original()),
+            context.get_sierra_variable(statement.snapshot()),
+        ],
+    );
     context.push_statement(stmt);
     Ok(())
 }

@@ -17,7 +17,7 @@ pub fn test_abi_failure(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
@@ -28,9 +28,11 @@ pub fn test_abi_failure(
         .iter()
         .find(|submodule| submodule.has_attr(db, CONTRACT_ATTR).unwrap())
         .expect("No starknet::contract found in input code.");
-    let abi_error = AbiBuilder::from_submodule(db, *contract_submodule, BuilderConfig {
-        account_contract_validations: true,
-    })
+    let abi_error = AbiBuilder::from_submodule(
+        db,
+        *contract_submodule,
+        BuilderConfig { account_contract_validations: true },
+    )
     .expect("No basic errors")
     .finalize()
     .unwrap_err();
@@ -62,7 +64,7 @@ pub fn test_storage_path_check(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);

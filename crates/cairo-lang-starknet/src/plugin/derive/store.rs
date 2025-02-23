@@ -46,9 +46,9 @@ pub fn handle_store_derive(
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
 fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<RewriteNode> {
+    let mut fields = Vec::new();
     let mut reads_values = Vec::new();
     let mut reads_values_at_offset = Vec::new();
-    let mut reads_fields = Vec::new();
     let mut writes = Vec::new();
     let mut writes_at_offset = Vec::new();
     let mut sizes = Vec::new();
@@ -56,18 +56,24 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
         let field_name = field.name(db).as_syntax_node().get_text_without_trivia(db);
         let field_type = field.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
 
+        fields.push(format!("{field_name},"));
+
         if i == 0 {
             reads_values.push(format!(
-                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read(address_domain, base)?;"
+                "let {field_name} = \
+                 {STORE_TRAIT}::<{field_type}>::read(__store_derive_address_domain__, \
+                 __store_derive_base__)?;"
             ));
             reads_values_at_offset.push(format!(
-                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read_at_offset(address_domain, \
-                 base, offset)?;"
+                "let {field_name} = \
+                 {STORE_TRAIT}::<{field_type}>::read_at_offset(__store_derive_address_domain__, \
+                 __store_derive_base__, __store_derive_offset__)?;"
             ));
         } else {
             let subsequent_read = format!(
-                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read_at_offset(address_domain, \
-                 base, current_offset)?;"
+                "let {field_name} = \
+                 {STORE_TRAIT}::<{field_type}>::read_at_offset(__store_derive_address_domain__, \
+                 __store_derive_base__, __store_derive_current_offset__)?;"
             );
             reads_values.push(subsequent_read.clone());
             reads_values_at_offset.push(subsequent_read);
@@ -75,33 +81,35 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 reads_values.push(format!(
-                    "let mut current_offset = {STORE_TRAIT}::<{field_type}>::size();"
+                    "let mut __store_derive_current_offset__ = \
+                     {STORE_TRAIT}::<{field_type}>::size();"
                 ));
                 reads_values_at_offset.push(format!(
-                    "let mut current_offset = offset + {STORE_TRAIT}::<{field_type}>::size();"
+                    "let mut __store_derive_current_offset__ = __store_derive_offset__ + \
+                     {STORE_TRAIT}::<{field_type}>::size();"
                 ));
             } else {
-                let subsequent_read =
-                    format!("current_offset += {STORE_TRAIT}::<{field_type}>::size();");
+                let subsequent_read = format!(
+                    "__store_derive_current_offset__ += {STORE_TRAIT}::<{field_type}>::size();"
+                );
                 reads_values.push(subsequent_read.clone());
                 reads_values_at_offset.push(subsequent_read);
             }
         }
 
-        reads_fields.push(format!("{field_name},"));
-
         if i == 0 {
             writes.push(format!(
-                "{STORE_TRAIT}::<{field_type}>::write(address_domain, base, value.{field_name})?;"
+                "{STORE_TRAIT}::<{field_type}>::write(__store_derive_address_domain__, \
+                 __store_derive_base__, {field_name})?;"
             ));
             writes_at_offset.push(format!(
-                "{STORE_TRAIT}::<{field_type}>::write_at_offset(address_domain, base, offset, \
-                 value.{field_name})?;"
+                "{STORE_TRAIT}::<{field_type}>::write_at_offset(__store_derive_address_domain__, \
+                 __store_derive_base__, __store_derive_offset__, {field_name})?;"
             ));
         } else {
             let subsequent_write = format!(
-                "{STORE_TRAIT}::<{field_type}>::write_at_offset(address_domain, base, \
-                 current_offset, value.{field_name})?;"
+                "{STORE_TRAIT}::<{field_type}>::write_at_offset(__store_derive_address_domain__, \
+                 __store_derive_base__, __store_derive_current_offset__, {field_name})?;"
             );
             writes.push(subsequent_write.clone());
             writes_at_offset.push(subsequent_write);
@@ -110,14 +118,17 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 writes.push(format!(
-                    "let mut current_offset = {STORE_TRAIT}::<{field_type}>::size();"
+                    "let mut __store_derive_current_offset__ = \
+                     {STORE_TRAIT}::<{field_type}>::size();"
                 ));
                 writes_at_offset.push(format!(
-                    "let mut current_offset = offset + {STORE_TRAIT}::<{field_type}>::size();"
+                    "let mut __store_derive_current_offset__ = __store_derive_offset__ + \
+                     {STORE_TRAIT}::<{field_type}>::size();"
                 ));
             } else {
-                let subsequent_write =
-                    format!("current_offset += {STORE_TRAIT}::<{field_type}>::size();");
+                let subsequent_write = format!(
+                    "__store_derive_current_offset__ += {STORE_TRAIT}::<{field_type}>::size();"
+                );
                 writes.push(subsequent_write.clone());
                 writes_at_offset.push(subsequent_write);
             }
@@ -130,25 +141,35 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
         impl Store{struct_name} of {STORE_TRAIT}::<{struct_name}> {{
             fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
+                let __store_derive_address_domain__ = address_domain;
+                let __store_derive_base__ = base;
                 {reads_values}
                 starknet::SyscallResult::Ok(
                     {struct_name} {{
-                        {reads_fields}
+                        {fields}
                     }}
                 )
             }}
             fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, \
          value: {struct_name}) -> starknet::SyscallResult<()> {{
+                let __store_derive_address_domain__ = address_domain;
+                let __store_derive_base__ = base;
+                let {struct_name} {{
+                    {fields}
+                }} = value;
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
             fn read_at_offset(address_domain: u32, base: \
          starknet::storage_access::StorageBaseAddress, offset: u8) -> \
          starknet::SyscallResult<{struct_name}> {{
+                let __store_derive_address_domain__ = address_domain;
+                let __store_derive_base__ = base;
+                let __store_derive_offset__ = offset;
                 {reads_values_at_offset}
                 starknet::SyscallResult::Ok(
                     {struct_name} {{
-                        {reads_fields}
+                        {fields}
                     }}
                 )
             }}
@@ -156,6 +177,12 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
             fn write_at_offset(address_domain: u32, base: \
          starknet::storage_access::StorageBaseAddress, offset: u8, value: {struct_name}) -> \
          starknet::SyscallResult<()> {{
+                let __store_derive_address_domain__ = address_domain;
+                let __store_derive_base__ = base;
+                let __store_derive_offset__ = offset;
+                let {struct_name} {{
+                    {fields}
+                }} = value;
                 {writes_at_offset}
                 starknet::SyscallResult::Ok(())
             }}
@@ -166,9 +193,9 @@ fn handle_struct_store(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Op
         }}
         ",
         struct_name = struct_ast.name(db).as_syntax_node().get_text_without_trivia(db),
+        fields = fields.join("\n                "),
         reads_values_at_offset = reads_values_at_offset.join("\n        "),
         reads_values = reads_values.join("\n        "),
-        reads_fields = reads_fields.join("\n                "),
         writes = writes.join("\n        "),
         writes_at_offset = writes_at_offset.join("\n        "),
         sizes = if sizes.is_empty() { "0".to_string() } else { sizes.join(" +\n        ") }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> BuiltinCosts {
     let res = get_builtin_costs();
     // Add a dummy second invocation.

@@ -346,10 +346,13 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
             // First (success) branch returns rc, array and element; failure branch does not return
             // an element.
             BranchSignature {
-                vars: vec![rc_output_info.clone(), OutputVarInfo {
-                    ty: box_ty(context, snapshot_ty(context, ty)?)?,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                }],
+                vars: vec![
+                    rc_output_info.clone(),
+                    OutputVarInfo {
+                        ty: box_ty(context, snapshot_ty(context, ty)?)?,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
             BranchSignature {
@@ -544,10 +547,13 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo::new_builtin(range_check_ty, 0), OutputVarInfo {
-                        ty: arr_snapshot_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    }],
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -609,10 +615,13 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo::new_builtin(range_check_ty, 0), OutputVarInfo {
-                        ty: arr_snapshot_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    }],
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

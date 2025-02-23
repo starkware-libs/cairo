@@ -40,10 +40,13 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Second liné.
                         ^
-        "});
+        "}
+    );
 
     // Span of length 1.
     let location = DiagnosticLocation {
@@ -54,10 +57,13 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Third liné.
                ^
-        "});
+        "}
+    );
 
     // Span of length 2.
     let location = DiagnosticLocation {
@@ -68,10 +74,13 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Third liné.
                ^^
-        "});
+        "}
+    );
 
     // Span of length > 1.
     let location = DiagnosticLocation {
@@ -82,10 +91,13 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Second liné.
                    ^^^^
-        "});
+        "}
+    );
 
     // Multiline span.
     let location = DiagnosticLocation {
@@ -96,12 +108,15 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
               Second liné.
              ________^
             | Third liné.
             |__^
-        "});
+        "}
+    );
 
     // Span that ends past the end of the file.
     let location = DiagnosticLocation {
@@ -112,10 +127,13 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Third liné.
                    ^^^^
-        "});
+        "}
+    );
 
     // Empty span past the end of the file.
     let location = DiagnosticLocation {
@@ -123,8 +141,11 @@ fn test_location_marks() {
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
-    assert_eq!(get_location_marks(&db, &location, true) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location, true) + "\n",
+        indoc! {"
             Third liné.
                        ^
-        "});
+        "}
+    );
 }

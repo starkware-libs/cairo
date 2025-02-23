@@ -28,14 +28,15 @@ pub struct SourceCodeSpan {
 }
 
 /// The mapping between sierra statement indexes and locations in cairo code
-/// (if obtainable) which caused the statement to be generated.
+/// (if obtainable) which caused the statement to be generated. Contains the additional information
+/// if the location is a part of a macro expansion.
 ///
 /// Should be created using
 /// [`crate::statements_locations::StatementsLocations::extract_statements_source_code_locations`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StatementsSourceCodeLocations {
     pub statements_to_code_location_map:
-        HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
+        HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan, bool)>>,
 }
 
 impl From<StatementsSourceCodeLocations> for Annotations {

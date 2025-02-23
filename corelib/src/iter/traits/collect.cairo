@@ -19,9 +19,7 @@ use crate::metaprogramming::TypeEqual;
 /// Basic usage:
 ///
 /// ```
-/// let iter = (0..5_u32).into_iter();
-///
-/// let v = FromIterator::from_iter(iter);
+/// let v = FromIterator::from_iter(0..5_u32);
 ///
 /// assert_eq!(v, array![0, 1, 2, 3, 4]);
 /// ```
@@ -29,6 +27,8 @@ use crate::metaprogramming::TypeEqual;
 /// Implementing `FromIterator` for your type:
 ///
 /// ```
+/// use core::metaprogramming::TypeEqual;
+///
 /// // A sample collection, that's just a wrapper over Array<T>
 /// #[derive(Drop, Debug)]
 /// struct MyCollection {
@@ -50,7 +50,15 @@ use crate::metaprogramming::TypeEqual;
 ///
 /// // and we'll implement FromIterator
 /// impl MyCollectionFromIterator of FromIterator<MyCollection, u32> {
-///     fn from_iter<I, +Iterator<I>[Item: u32], +Drop<I>>(iter: I) -> MyCollection {
+///     fn from_iter<
+///             I,
+///             impl IntoIter: IntoIterator<I>,
+///             +TypeEqual<IntoIter::Iterator::Item, u32>,
+///             +Destruct<IntoIter::IntoIter>,
+///             +Destruct<I>,
+///         >(
+///             iter: I
+///         ) -> MyCollection {
 ///         let mut c = MyCollectionTrait::new();
 ///         for i in iter {
 ///             c.add(i);
@@ -83,7 +91,15 @@ pub trait FromIterator<T, A> {
     ///
     /// assert_eq!(v, array![0, 1, 2, 3, 4]);
     /// ```
-    fn from_iter<I, +Iterator<I>[Item: A], +Destruct<I>>(iter: I) -> T;
+    fn from_iter<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +TypeEqual<IntoIter::Iterator::Item, A>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        iter: I,
+    ) -> T;
 }
 
 /// Conversion into an [`Iterator`].

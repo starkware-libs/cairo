@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::internal::OptionRev;
 use core::ops::range::internal::{IntRange, int_range_pop_front};
 
@@ -64,7 +64,7 @@ test::foo@0([0]: IntRange<i16>) -> (core::internal::OptionRev::<(core::ops::rang
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use core::ops::range::internal::{IntRange, int_range_try_new};
 
 fn foo(x: i16, y: i16) -> Result<IntRange<i16>, IntRange<i16>> {
@@ -128,13 +128,12 @@ test::foo@0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::result::R
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 // TODO(lior): Remove the marker once it is added to range.cairo.
 impl SierraIntRangeSupportU8 of core::ops::range::SierraIntRangeSupport<u8>;
 
 fn foo() {
-    for _i in 1_u8..10 {
-    }
+    for _i in 1_u8..10 {}
 }
 
 //! > casm
@@ -145,19 +144,17 @@ fn foo() {
 jmp rel 7 if [ap + 0] != 0, ap++;
 [ap + 0] = [ap + -2] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -4] + 0];
-jmp rel 9;
+jmp rel 11;
 [ap + -2] = [[fp + -4] + 0];
 [ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -5], ap++;
-jmp rel 6;
-[ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [fp + -3] + 100, ap++;
 [ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -6], ap++;
+jmp rel 7;
+[ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -7], ap++;
 call rel 20;
 jmp rel 11 if [ap + -3] != 0;
 [ap + 0] = [ap + -5], ap++;
@@ -172,27 +169,28 @@ ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 ret;
-%{ memory[ap + 0] = 1270 <= memory[fp + -5] %}
+%{ memory[ap + 0] = 1370 <= memory[fp + -5] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -5] + 340282366920938463463374607431768210186, ap++;
+[ap + 0] = [fp + -5] + 340282366920938463463374607431768210086, ap++;
 [ap + -1] = [[fp + -6] + 0];
-jmp rel 25;
-[fp + -5] = [ap + 0] + 1270, ap++;
+jmp rel 27;
+[fp + -5] = [ap + 0] + 1370, ap++;
 [ap + -1] = [[fp + -6] + 0];
 [ap + 0] = [fp + -6] + 1, ap++;
-[fp + -3] = [ap + 0] + [fp + -4], ap++;
-jmp rel 9 if [ap + -1] != 0;
 [ap + 0] = [ap + -2], ap++;
-[ap + 0] = [ap + -4], ap++;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 10 if [ap + -1] != 0;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3] + 1370, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-[ap + 0] = [ap + -2], ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
 [ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -27;
+call rel -29;
 ret;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;
@@ -229,11 +227,12 @@ libfunc const_as_immediate<Const<u8, 10>> = const_as_immediate<Const<u8, 10>>;
 libfunc store_temp<u8> = store_temp<u8>;
 libfunc int_range_try_new<u8> = int_range_try_new<u8>;
 libfunc branch_align = branch_align;
+libfunc redeposit_gas = redeposit_gas;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<IntRange<u8>> = store_temp<IntRange<u8>>;
 libfunc jump = jump;
-libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc function_call<user@test::foo[12-43]> = function_call<user@test::foo[12-43]>;
+libfunc function_call<user@test::foo[12-38]> = function_call<user@test::foo[12-38]>;
 libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
 libfunc struct_deconstruct<Tuple<IntRange<u8>, Unit>> = struct_deconstruct<Tuple<IntRange<u8>, Unit>>;
 libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
@@ -262,73 +261,81 @@ const_as_immediate<Const<u8, 1>>() -> ([2]); // 1
 const_as_immediate<Const<u8, 10>>() -> ([3]); // 2
 store_temp<u8>([2]) -> ([2]); // 3
 store_temp<u8>([3]) -> ([3]); // 4
-int_range_try_new<u8>([0], [2], [3]) { fallthrough([4], [5]) 10([6], [7]) }; // 5
+int_range_try_new<u8>([0], [2], [3]) { fallthrough([4], [5]) 12([6], [7]) }; // 5
 branch_align() -> (); // 6
-store_temp<RangeCheck>([4]) -> ([8]); // 7
-store_temp<IntRange<u8>>([5]) -> ([9]); // 8
-jump() { 13() }; // 9
-branch_align() -> (); // 10
-store_temp<RangeCheck>([6]) -> ([8]); // 11
-store_temp<IntRange<u8>>([7]) -> ([9]); // 12
-store_temp<RangeCheck>([8]) -> ([8]); // 13
-store_temp<GasBuiltin>([1]) -> ([1]); // 14
-store_temp<IntRange<u8>>([9]) -> ([9]); // 15
-function_call<user@test::foo[12-43]>([8], [1], [9]) -> ([10], [11], [12]); // 16
-enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([12]) { fallthrough([13]) 27([14]) }; // 17
-branch_align() -> (); // 18
-struct_deconstruct<Tuple<IntRange<u8>, Unit>>([13]) -> ([15], [16]); // 19
-drop<IntRange<u8>>([15]) -> (); // 20
-struct_construct<Tuple<Unit>>([16]) -> ([17]); // 21
-enum_init<core::panics::PanicResult::<((),)>, 0>([17]) -> ([18]); // 22
-store_temp<RangeCheck>([10]) -> ([10]); // 23
-store_temp<GasBuiltin>([11]) -> ([11]); // 24
-store_temp<core::panics::PanicResult::<((),)>>([18]) -> ([18]); // 25
-return([10], [11], [18]); // 26
-branch_align() -> (); // 27
-enum_init<core::panics::PanicResult::<((),)>, 1>([14]) -> ([19]); // 28
-store_temp<RangeCheck>([10]) -> ([10]); // 29
-store_temp<GasBuiltin>([11]) -> ([11]); // 30
-store_temp<core::panics::PanicResult::<((),)>>([19]) -> ([19]); // 31
-return([10], [11], [19]); // 32
-disable_ap_tracking() -> (); // 33
-withdraw_gas([0], [1]) { fallthrough([3], [4]) 55([5], [6]) }; // 34
-branch_align() -> (); // 35
-dup<IntRange<u8>>([2]) -> ([2], [7]); // 36
-store_temp<RangeCheck>([3]) -> ([3]); // 37
-int_range_pop_front<u8>([7]) { fallthrough() 47([8], [9]) }; // 38
-branch_align() -> (); // 39
-struct_construct<Unit>() -> ([10]); // 40
-struct_construct<Tuple<IntRange<u8>, Unit>>([2], [10]) -> ([11]); // 41
-enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 0>([11]) -> ([12]); // 42
-store_temp<RangeCheck>([3]) -> ([3]); // 43
-store_temp<GasBuiltin>([4]) -> ([4]); // 44
-store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([12]) -> ([12]); // 45
-return([3], [4], [12]); // 46
-branch_align() -> (); // 47
-drop<u8>([9]) -> (); // 48
-drop<IntRange<u8>>([2]) -> (); // 49
-store_temp<RangeCheck>([3]) -> ([3]); // 50
-store_temp<GasBuiltin>([4]) -> ([4]); // 51
-store_temp<IntRange<u8>>([8]) -> ([8]); // 52
-function_call<user@test::foo[12-43]>([3], [4], [8]) -> ([13], [14], [15]); // 53
-return([13], [14], [15]); // 54
-branch_align() -> (); // 55
-drop<IntRange<u8>>([2]) -> (); // 56
-array_new<felt252>() -> ([16]); // 57
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([17]); // 58
-store_temp<felt252>([17]) -> ([17]); // 59
-array_append<felt252>([16], [17]) -> ([18]); // 60
-struct_construct<core::panics::Panic>() -> ([19]); // 61
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([19], [18]) -> ([20]); // 62
-enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 1>([20]) -> ([21]); // 63
-store_temp<RangeCheck>([5]) -> ([5]); // 64
-store_temp<GasBuiltin>([6]) -> ([6]); // 65
-store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([21]) -> ([21]); // 66
-return([5], [6], [21]); // 67
+redeposit_gas([1]) -> ([8]); // 7
+store_temp<RangeCheck>([4]) -> ([9]); // 8
+store_temp<GasBuiltin>([8]) -> ([10]); // 9
+store_temp<IntRange<u8>>([5]) -> ([11]); // 10
+jump() { 17() }; // 11
+branch_align() -> (); // 12
+redeposit_gas([1]) -> ([12]); // 13
+store_temp<RangeCheck>([6]) -> ([9]); // 14
+store_temp<GasBuiltin>([12]) -> ([10]); // 15
+store_temp<IntRange<u8>>([7]) -> ([11]); // 16
+function_call<user@test::foo[12-38]>([9], [10], [11]) -> ([13], [14], [15]); // 17
+enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([15]) { fallthrough([16]) 29([17]) }; // 18
+branch_align() -> (); // 19
+redeposit_gas([14]) -> ([18]); // 20
+struct_deconstruct<Tuple<IntRange<u8>, Unit>>([16]) -> ([19], [20]); // 21
+drop<IntRange<u8>>([19]) -> (); // 22
+struct_construct<Tuple<Unit>>([20]) -> ([21]); // 23
+enum_init<core::panics::PanicResult::<((),)>, 0>([21]) -> ([22]); // 24
+store_temp<RangeCheck>([13]) -> ([13]); // 25
+store_temp<GasBuiltin>([18]) -> ([18]); // 26
+store_temp<core::panics::PanicResult::<((),)>>([22]) -> ([22]); // 27
+return([13], [18], [22]); // 28
+branch_align() -> (); // 29
+redeposit_gas([14]) -> ([23]); // 30
+enum_init<core::panics::PanicResult::<((),)>, 1>([17]) -> ([24]); // 31
+store_temp<RangeCheck>([13]) -> ([13]); // 32
+store_temp<GasBuiltin>([23]) -> ([23]); // 33
+store_temp<core::panics::PanicResult::<((),)>>([24]) -> ([24]); // 34
+return([13], [23], [24]); // 35
+disable_ap_tracking() -> (); // 36
+withdraw_gas([0], [1]) { fallthrough([3], [4]) 62([5], [6]) }; // 37
+branch_align() -> (); // 38
+redeposit_gas([4]) -> ([7]); // 39
+dup<IntRange<u8>>([2]) -> ([2], [8]); // 40
+store_temp<RangeCheck>([3]) -> ([3]); // 41
+store_temp<GasBuiltin>([7]) -> ([7]); // 42
+int_range_pop_front<u8>([8]) { fallthrough() 53([9], [10]) }; // 43
+branch_align() -> (); // 44
+redeposit_gas([7]) -> ([11]); // 45
+struct_construct<Unit>() -> ([12]); // 46
+struct_construct<Tuple<IntRange<u8>, Unit>>([2], [12]) -> ([13]); // 47
+enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 0>([13]) -> ([14]); // 48
+store_temp<RangeCheck>([3]) -> ([3]); // 49
+store_temp<GasBuiltin>([11]) -> ([11]); // 50
+store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([14]) -> ([14]); // 51
+return([3], [11], [14]); // 52
+branch_align() -> (); // 53
+drop<u8>([10]) -> (); // 54
+drop<IntRange<u8>>([2]) -> (); // 55
+redeposit_gas([7]) -> ([15]); // 56
+store_temp<RangeCheck>([3]) -> ([3]); // 57
+store_temp<GasBuiltin>([15]) -> ([15]); // 58
+store_temp<IntRange<u8>>([9]) -> ([9]); // 59
+function_call<user@test::foo[12-38]>([3], [15], [9]) -> ([16], [17], [18]); // 60
+return([16], [17], [18]); // 61
+branch_align() -> (); // 62
+drop<IntRange<u8>>([2]) -> (); // 63
+redeposit_gas([6]) -> ([19]); // 64
+array_new<felt252>() -> ([20]); // 65
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([21]); // 66
+store_temp<felt252>([21]) -> ([21]); // 67
+array_append<felt252>([20], [21]) -> ([22]); // 68
+struct_construct<core::panics::Panic>() -> ([23]); // 69
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([23], [22]) -> ([24]); // 70
+enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 1>([24]) -> ([25]); // 71
+store_temp<RangeCheck>([5]) -> ([5]); // 72
+store_temp<GasBuiltin>([19]) -> ([19]); // 73
+store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([25]) -> ([25]); // 74
+return([5], [19], [25]); // 75
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
-test::foo[12-43]@33([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
+test::foo[12-38]@36([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3540})
-test::foo[12-43]: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 3240})
+test::foo[12-38]: OrderedHashMap({Const: 1270})

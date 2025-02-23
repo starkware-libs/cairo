@@ -61,11 +61,14 @@ fn get_u512_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::integer::u512")),
-        GenericArg::Type(u128_ty.clone()),
-        GenericArg::Type(u128_ty.clone()),
-        GenericArg::Type(u128_ty.clone()),
-        GenericArg::Type(u128_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::integer::u512")),
+            GenericArg::Type(u128_ty.clone()),
+            GenericArg::Type(u128_ty.clone()),
+            GenericArg::Type(u128_ty.clone()),
+            GenericArg::Type(u128_ty),
+        ],
+    )
 }

@@ -16,7 +16,9 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc! {"
+    let test_module = setup_test_module(
+        db,
+        indoc! {"
             use core::Box;
             extern type S<T>;
             extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
@@ -25,7 +27,8 @@ fn test_resolve_path() {
                 bar::<(felt252,Q)>(value);
                 let _c = b;
             }
-        "})
+        "},
+    )
     .unwrap();
     let module_id = test_module.module_id;
 
@@ -60,18 +63,26 @@ fn test_resolve_path_super() {
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
-    set_file_content(db, "src/lib.cairo", indoc! {"
+    set_file_content(
+        db,
+        "src/lib.cairo",
+        indoc! {"
         mod inner1;
         mod inner2;
         struct OuterStruct {}
-    "});
+    "},
+    );
     set_file_content(db, "src/inner1.cairo", "struct InnerStruct1 {}");
-    set_file_content(db, "src/inner2.cairo", indoc! {"
+    set_file_content(
+        db,
+        "src/inner2.cairo",
+        indoc! {"
             struct InnerStruct2 {
                 a: super::inner1::InnerStruct1,
                 b: super::OuterStruct,
             }
-        "});
+        "},
+    );
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
         db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
@@ -97,7 +108,9 @@ fn test_resolve_path_super() {
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc! {"
+    let test_module = setup_test_module(
+        db,
+        indoc! {"
             trait MyTrait {
                 fn foo() -> felt252;
             }
@@ -111,7 +124,8 @@ fn test_resolve_path_trait_impl() {
             fn main() -> felt252 {
                 MyTrait::foo() + 1
             }
-        "})
+        "},
+    )
     .unwrap();
     let module_id = test_module.module_id;
 

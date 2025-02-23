@@ -368,7 +368,7 @@ pub fn lower_expr_while_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_types_info().felt252
+    if ty == ctx.db.core_info().felt252
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
@@ -422,7 +422,6 @@ pub fn lower_loop_function(
     function_id: FunctionWithBodyId,
     loop_signature: Signature,
     loop_expr_id: semantic::ExprId,
-    snapped_params: &OrderedHashMap<MemberPath, semantic::ExprVarMemberPath>,
 ) -> Maybe<FlatLowered> {
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
@@ -431,6 +430,7 @@ pub fn lower_loop_function(
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
+    let snapped_params = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
     let parameters = ctx
         .signature
         .params
@@ -581,9 +581,10 @@ fn lower_expr_block(
                 let end_stmt =
                     &ctx.function_body.arenas.statements[*expr_block.statements.last().unwrap()];
                 // Emit diagnostic for the rest of the statements with unreachable.
-                ctx.diagnostics.report(start_stmt.stable_ptr().untyped(), Unreachable {
-                    last_statement_ptr: end_stmt.into(),
-                });
+                ctx.diagnostics.report(
+                    start_stmt.stable_ptr().untyped(),
+                    Unreachable { last_statement_ptr: end_stmt.into() },
+                );
             }
         }
         return Err(err);
@@ -1056,8 +1057,8 @@ fn add_pending_word(
 ) -> (VarUsage, VarUsage) {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let u32_ty = ctx.db.core_types_info().u32;
-    let felt252_ty = ctx.db.core_types_info().felt252;
+    let u32_ty = ctx.db.core_info().u32;
+    let felt252_ty = ctx.db.core_info().felt252;
 
     let pending_word_usage = generators::Const {
         value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
@@ -1447,49 +1448,68 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-    let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
-
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
-    let lowered = lower_loop_function(
-        encapsulating_ctx,
-        function,
-        loop_signature.clone(),
-        loop_expr_id,
-        &snap_usage,
-    )
-    .map_err(LoweringFlowError::Failed)?;
+    let lowered =
+        lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_expr_id)
+            .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
-    for snapshot_param in snap_usage.values() {
-        // if we have access to the real member we generate a snapshot, otherwise it should be
-        // accessible with `builder.get_snap_ref`
-        if let Some(input) = builder.get_ref(ctx, snapshot_param) {
-            let (original, snapped) = generators::Snapshot {
-                input,
-                location: ctx.get_location(snapshot_param.stable_ptr().untyped()),
-            }
-            .add(ctx, &mut builder.statements);
-            // `update_ref` invalidates snapshots so it must be called before `update_snap_ref`.
-            builder.update_ref(ctx, snapshot_param, original);
-            builder.update_snap_ref(snapshot_param, snapped);
-        }
-    }
-    let call = call_loop_func(ctx, loop_signature, builder, loop_expr_id, stable_ptr.untyped());
+    let call = call_loop_func_ex(
+        ctx,
+        loop_signature,
+        builder,
+        loop_expr_id,
+        stable_ptr.untyped(),
+        |ctx, builder, param| {
+            if let Some(var) = builder.get_snap_ref(ctx, param) {
+                return Some(var);
+            };
+            let input = builder.get_ref(ctx, param)?;
+            let location = ctx.get_location(param.stable_ptr().untyped());
+            let (original, snapped) =
+                generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
+            builder.update_ref(ctx, param, original);
+            Some(VarUsage { var_id: snapped, location })
+        },
+    );
 
     ctx.current_loop_expr_id = old_loop_expr_id;
     call
 }
 
-/// Adds a call to an inner loop-generated function.
+/// Adds a call to an inner loop-generated function from the loop function itself.
 fn call_loop_func(
     ctx: &mut LoweringContext<'_, '_>,
     loop_signature: Signature,
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId,
+) -> LoweringResult<LoweredExpr> {
+    call_loop_func_ex(
+        ctx,
+        loop_signature,
+        builder,
+        loop_expr_id,
+        stable_ptr,
+        |ctx, builder, param| builder.get_snap_ref(ctx, param),
+    )
+}
+
+/// Adds a call to an inner loop-generated function.
+fn call_loop_func_ex(
+    ctx: &mut LoweringContext<'_, '_>,
+    loop_signature: Signature,
+    builder: &mut BlockBuilder,
+    loop_expr_id: ExprId,
+    stable_ptr: SyntaxStablePtrId,
+    handle_snap: impl Fn(
+        &mut LoweringContext<'_, '_>,
+        &mut BlockBuilder,
+        &ExprVarMemberPath,
+    ) -> Option<VarUsage>,
 ) -> LoweringResult<LoweredExpr> {
     let location = ctx.get_location(stable_ptr);
     let loop_stable_ptr = ctx.function_body.arenas.exprs[loop_expr_id].stable_ptr();
@@ -1507,7 +1527,7 @@ fn call_loop_func(
                 .get_ref(ctx, &param)
                 .and_then(|var| (ctx.variables[var.var_id].ty == param.ty()).then_some(var))
                 .or_else(|| {
-                    let var = builder.get_snap_ref(ctx, &param)?;
+                    let var = handle_snap(ctx, builder, &param)?;
                     (ctx.variables[var.var_id].ty == param.ty()).then_some(var)
                 })
                 .ok_or_else(|| {
@@ -1851,9 +1871,8 @@ fn add_closure_call_function(
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
-    let (closure_param_var_id, closure_var) = if trait_id
-        == semantic::corelib::fn_once_trait(semantic_db)
-    {
+    let info = ctx.db.core_info();
+    let (closure_param_var_id, closure_var) = if trait_id == info.fn_once_trt {
         // If the closure is FnOnce, the closure is passed by value.
         let closure_param_var = ctx.new_var(VarRequest { ty: expr.ty, location: expr_location });
         let closure_var = VarUsage { var_id: closure_param_var, location: expr_location };
@@ -1954,9 +1973,9 @@ fn lower_expr_closure(
         expr,
         builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
         if ctx.variables[capture_var_usage.var_id].copyable.is_ok() {
-            semantic::corelib::fn_trait(ctx.db.upcast())
+            ctx.db.core_info().fn_trt
         } else {
-            semantic::corelib::fn_once_trait(ctx.db.upcast())
+            ctx.db.core_info().fn_once_trt
         },
     )
     .map_err(LoweringFlowError::Failed)?;

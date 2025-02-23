@@ -296,3 +296,9 @@ fn test_option_flatten() {
     assert_eq!(Some(Some(6)), x.flatten());
     assert_eq!(Some(6), x.flatten().flatten());
 }
+
+#[test]
+fn test_option_into() {
+    let o: Option<u8> = 67_u8.into();
+    assert_eq!(Some(67), o);
+}

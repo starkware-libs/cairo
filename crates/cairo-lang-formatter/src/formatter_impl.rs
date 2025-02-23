@@ -524,7 +524,7 @@ impl LineBuilder {
             let mut first_break_point_index = 0;
             while first_break_point_index < last_break_point_index {
                 let middle_break_point_index =
-                    (first_break_point_index + last_break_point_index + 1) / 2;
+                    (first_break_point_index + last_break_point_index).div_ceil(2);
                 let middle_break_point = breaking_positions[middle_break_point_index];
                 let middle_break_point_width = self.width_between(0, middle_break_point);
                 if middle_break_point_width <= max_line_width {

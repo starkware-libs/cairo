@@ -8,7 +8,7 @@ mod my_mod
 fn foo() {}
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:11
 mod my_mod
           ^
@@ -24,7 +24,7 @@ get_diagnostics
 mod my_mod }
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:11
 mod my_mod }
           ^
@@ -46,7 +46,7 @@ mod my_mod {
 fn foo() {}
 
 //! > expected_diagnostics
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> dummy_file.cairo:2:12
 fn foo() {}
            ^

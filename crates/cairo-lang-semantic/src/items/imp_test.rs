@@ -11,7 +11,9 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 fn test_impl() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
+    let (test_module, diagnostics) = setup_test_module(
+        db,
+        indoc::indoc! {"
             trait IContract {
                 fn foo(a: felt252);
             }
@@ -20,7 +22,8 @@ fn test_impl() {
                 fn foo(a: felt252) {
                 }
             }
-        "})
+        "},
+    )
     .split();
 
     assert!(diagnostics.is_empty());

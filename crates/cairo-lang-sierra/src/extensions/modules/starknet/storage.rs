@@ -137,10 +137,13 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
                 ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
-            vec![OutputVarInfo::new_builtin(range_check_ty, 0), OutputVarInfo {
-                ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-            }],
+            vec![
+                OutputVarInfo::new_builtin(range_check_ty, 0),
+                OutputVarInfo {
+                    ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

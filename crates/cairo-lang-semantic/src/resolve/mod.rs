@@ -1265,10 +1265,10 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
-                    diagnostics.report(identifier, NoSuchVariant {
-                        enum_id: *enum_id,
-                        variant_name: ident,
-                    })
+                    diagnostics.report(
+                        identifier,
+                        NoSuchVariant { enum_id: *enum_id, variant_name: ident },
+                    )
                 })?;
                 let variant = self.db.variant_semantic(*enum_id, *variant_id)?;
                 Ok(ResolvedGenericItem::Variant(variant))
@@ -1610,10 +1610,13 @@ impl<'db> Resolver<'db> {
                         return Err(diagnostics.report(arg_syntax, PositionalGenericAfterNamed));
                     }
                     let generic_param = generic_params.get(idx).ok_or_else(|| {
-                        diagnostics.report(arg_syntax, TooManyGenericArguments {
-                            expected: generic_params.len(),
-                            actual: generic_args_syntax.len(),
-                        })
+                        diagnostics.report(
+                            arg_syntax,
+                            TooManyGenericArguments {
+                                expected: generic_params.len(),
+                                actual: generic_args_syntax.len(),
+                            },
+                        )
                     })?;
                     assert_eq!(
                         arg_syntax_per_param
@@ -1708,10 +1711,13 @@ impl<'db> Resolver<'db> {
                     .inference()
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                 {
-                    let diag_added = diagnostics.report(generic_arg_syntax, TraitMismatch {
-                        expected_trt: expected_concrete_trait,
-                        actual_trt: impl_def_concrete_trait,
-                    });
+                    let diag_added = diagnostics.report(
+                        generic_arg_syntax,
+                        TraitMismatch {
+                            expected_trt: expected_concrete_trait,
+                            actual_trt: impl_def_concrete_trait,
+                        },
+                    );
                     self.inference().consume_reported_error(err_set, diag_added);
                 } else {
                     for (trait_ty, ty1) in param.type_constraints.iter() {
@@ -1761,27 +1767,27 @@ impl<'db> Resolver<'db> {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(identifier, UnstableFeature {
-                    feature_name: feature.clone(),
-                    note: note.clone(),
-                });
+                diagnostics.report(
+                    identifier,
+                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.feature_config.allow_deprecated
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(identifier, DeprecatedFeature {
-                    feature_name: feature.clone(),
-                    note: note.clone(),
-                });
+                diagnostics.report(
+                    identifier,
+                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             FeatureKind::Internal { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(identifier, InternalFeature {
-                    feature_name: feature.clone(),
-                    note: note.clone(),
-                });
+                diagnostics.report(
+                    identifier,
+                    InternalFeature { feature_name: feature.clone(), note: note.clone() },
+                );
             }
             _ => {}
         }
@@ -1834,7 +1840,7 @@ impl<'db> Resolver<'db> {
 
     // TODO(yuval): on a breaking version change, consider changing warnings to errors.
     /// Warns about the use of a trait in a path inside the same trait or an impl of it, and the use
-    /// of an impl in a path inside the same impl, addditionally, converts a `Self` equivalent
+    /// of an impl in a path inside the same impl, additionally, converts a `Self` equivalent
     /// trait to be resolved as `Self`.
     /// That is, warns about using the actual path equivalent to `Self`, where `Self` can be used.
     fn handle_same_impl_trait(

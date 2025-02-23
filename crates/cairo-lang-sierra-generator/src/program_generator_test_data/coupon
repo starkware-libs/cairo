@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_program_generator
 
-//! > cairo
+//! > cairo_code
 extern fn coupon_buy<T>() -> T nopanic;
 
 fn foo() -> bar::<u8>::Coupon {
@@ -39,7 +39,7 @@ test::bar::<core::integer::u8>@2() -> (felt252);
 //! > test_runner_name
 test_program_generator
 
-//! > cairo
+//! > cairo_code
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c: bar::<u8>::Coupon) {

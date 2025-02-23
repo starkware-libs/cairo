@@ -1,8 +1,10 @@
 use crate::integer::{downcast, upcast};
 use crate::RangeCheck;
 
-#[derive(Copy, Drop)]
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+
+impl BoundedIntCopy<const MIN: felt252, const MAX: felt252> of Copy<BoundedInt<MIN, MAX>>;
+impl BoundedIntDrop<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
 
 impl NumericLiteralBoundedInt<
     const MIN: felt252, const MAX: felt252,
@@ -213,14 +215,14 @@ impl NegFelt2520x80000000000000000000000000000000 =
 impl NegFelt252Minus0x80000000000000000000000000000000 =
     neg_felt252::Impl<-0x80000000000000000000000000000000, 0x80000000000000000000000000000000>;
 
-type MinusOne = BoundedInt<-1, -1>;
+pub type UnitInt<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
 
 impl MulMinus1<
     const MIN: felt252,
     const MAX: felt252,
     impl NegMin: NegFelt252<MIN>,
     impl NegMax: NegFelt252<MAX>,
-> of MulHelper<BoundedInt<MIN, MAX>, MinusOne> {
+> of MulHelper<BoundedInt<MIN, MAX>, UnitInt<-1>> {
     type Result = BoundedInt<NegMax::VALUE, NegMin::VALUE>;
 }
 
@@ -231,20 +233,23 @@ pub trait NegateHelper<T> {
 
     /// Negates the given value.
     fn negate(self: T) -> Self::Result;
-
-    /// Negates the given non-zero value.
-    fn negate_nz(self: NonZero<T>) -> NonZero<Self::Result>;
 }
 
-impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<T> {
+impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, UnitInt<-1>>> of NegateHelper<T> {
     type Result = H::Result;
 
     fn negate(self: T) -> H::Result {
-        bounded_int_mul::<_, MinusOne>(self, -1)
+        bounded_int_mul::<_, UnitInt<-1>>(self, -1)
     }
+}
 
-    fn negate_nz(self: NonZero<T>) -> NonZero<H::Result> {
-        bounded_int_mul::<_, NonZero<MinusOne>>(self, -1)
+impl NonZeroMulMinusOneNegateHelper<
+    T, impl H: MulHelper<T, UnitInt<-1>>,
+> of NegateHelper<NonZero<T>> {
+    type Result = NonZero<H::Result>;
+
+    fn negate(self: NonZero<T>) -> NonZero<H::Result> {
+        bounded_int_mul::<_, NonZero<UnitInt<-1>>>(self, -1)
     }
 }
 

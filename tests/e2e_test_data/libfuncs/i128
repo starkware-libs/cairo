@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: i128) -> felt252 {
     integer::i128_to_felt252(v)
 }
@@ -35,7 +35,7 @@ test::foo@0([0]: i128) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> Option<i128> {
     integer::i128_try_from_felt252(v)
 }
@@ -112,7 +112,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i128, b: i128) -> bool {
     integer::i128_eq(a, b)
 }
@@ -162,7 +162,7 @@ test::foo@0([0]: i128, [1]: i128) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::i128_eq(11_i128, 12_i128)
 }
@@ -221,7 +221,7 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i128, b: i128) -> integer::SignedIntegerResult<i128> {
     integer::i128_overflowing_add_impl(a, b)
 }
@@ -296,7 +296,7 @@ test::foo@0([0]: RangeCheck, [1]: i128, [2]: i128) -> (RangeCheck, core::integer
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i128, b: i128) -> integer::SignedIntegerResult<i128> {
     integer::i128_overflowing_sub_impl(a, b)
 }
@@ -371,7 +371,7 @@ test::foo@0([0]: RangeCheck, [1]: i128, [2]: i128) -> (RangeCheck, core::integer
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use zeroable::IsZeroResult;
 fn foo(a: i128) -> i128 {
     match integer::i128_is_zero(a) {
@@ -420,7 +420,7 @@ test::foo@0([0]: i128) -> (i128);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i128, b: i128) -> Result<u128, u128> {
     integer::i128_diff(a, b)
 }

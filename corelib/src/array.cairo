@@ -73,8 +73,9 @@ use crate::option::OptionTrait;
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
 /// A collection of elements of the same type contiguous in memory.
-#[derive(Drop)]
 pub extern type Array<T>;
+
+impl ArrayDrop<T, +Drop<T>> of Drop<Array<T>>;
 
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -858,7 +859,15 @@ impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
 }
 
 impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
-    fn from_iter<I, +Iterator<I>[Item: T], +Destruct<I>>(iter: I) -> Array<T> {
+    fn from_iter<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +core::metaprogramming::TypeEqual<IntoIter::Iterator::Item, T>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        iter: I,
+    ) -> Array<T> {
         let mut arr = array![];
         for elem in iter {
             arr.append(elem);

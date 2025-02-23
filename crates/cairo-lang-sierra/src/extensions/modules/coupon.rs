@@ -135,9 +135,11 @@ impl NamedLibfunc for CouponRefundLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(vec![coupon_ty], vec![], SierraApChange::Known {
-            new_vars_only: true,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![coupon_ty],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 
     fn specialize(

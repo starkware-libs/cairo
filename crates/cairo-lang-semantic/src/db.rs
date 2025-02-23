@@ -1,15 +1,15 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::db::{DefsGroup, DefsGroupEx};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
-    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
-    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
-    VariantId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId,
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
+    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -22,9 +22,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
-use crate::corelib::CoreTypesInfo;
+use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
+use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
@@ -39,7 +40,7 @@ use crate::items::trt::{
 };
 use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
-use crate::plugin::AnalyzerPlugin;
+use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
@@ -1599,17 +1600,30 @@ pub trait SemanticGroup:
     fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
-    #[salsa::invoke(corelib::core_types_info)]
-    fn core_types_info(&self) -> Arc<CoreTypesInfo>;
+    #[salsa::invoke(corelib::core_info)]
+    fn core_info(&self) -> Arc<CoreInfo>;
 
     // Analyzer plugins.
     // ========
+
     #[salsa::input]
-    fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
+    fn default_analyzer_plugins(&self) -> Arc<[AnalyzerPluginId]>;
+
+    #[salsa::input]
+    fn analyzer_plugin_overrides(&self) -> Arc<OrderedHashMap<CrateId, Arc<[AnalyzerPluginId]>>>;
+
+    #[salsa::interned]
+    fn intern_analyzer_plugin(&self, plugin: AnalyzerPluginLongId) -> AnalyzerPluginId;
+
+    /// Returns [`AnalyzerPluginId`]s of the plugins set for the crate with [`CrateId`].
+    /// Returns
+    /// [`SemanticGroupEx::set_override_crate_analyzer_plugins`] if it has been set,
+    /// or the ([`SemanticGroup::default_analyzer_plugins`]) otherwise.
+    fn crate_analyzer_plugins(&self, crate_id: CrateId) -> Arc<[AnalyzerPluginId]>;
 
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
-    fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
+    fn declared_allows(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
 
     // Helpers for language server.
     // ============================
@@ -1651,6 +1665,11 @@ pub trait SemanticGroup:
         crate_id: CrateId,
         user_module_file_id: ModuleFileId,
     ) -> Arc<[(TraitId, String)]>;
+}
+
+/// Initializes the [`SemanticGroup`] database to a proper state.
+pub fn init_semantic_group(db: &mut dyn SemanticGroup) {
+    db.set_analyzer_plugin_overrides(Arc::new(OrderedHashMap::default()));
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
@@ -1744,7 +1763,10 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin in db.analyzer_plugins().iter() {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
+    {
+        let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
+
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
                 StableLocation::new(diag.stable_ptr),
@@ -1756,9 +1778,18 @@ fn module_semantic_diagnostics(
     Ok(diagnostics.build())
 }
 
-fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
+fn crate_analyzer_plugins(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<[AnalyzerPluginId]> {
+    db.analyzer_plugin_overrides()
+        .get(&crate_id)
+        .cloned()
+        .unwrap_or_else(|| db.default_analyzer_plugins())
+}
+
+fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<OrderedHashSet<String>> {
     Arc::new(OrderedHashSet::from_iter(
-        db.analyzer_plugins().into_iter().flat_map(|plugin| plugin.declared_allows()),
+        db.crate_analyzer_plugins(crate_id)
+            .iter()
+            .flat_map(|plugin| db.lookup_intern_analyzer_plugin(*plugin).declared_allows()),
     ))
 }
 
@@ -1900,3 +1931,83 @@ pub fn get_resolver_data_options(
     .flatten()
     .collect()
 }
+
+pub trait SemanticGroupEx: SemanticGroup {
+    /// Overrides the default analyzer plugins available for [`CrateId`] with `plugins`.
+    ///
+    /// *Note*: Sets the following Salsa input: `SemanticGroup::analyzer_plugin_overrides`.
+    fn set_override_crate_analyzer_plugins(
+        &mut self,
+        crate_id: CrateId,
+        plugins: Arc<[AnalyzerPluginId]>,
+    ) {
+        let mut overrides = self.analyzer_plugin_overrides().as_ref().clone();
+        overrides.insert(crate_id, plugins);
+        self.set_analyzer_plugin_overrides(Arc::new(overrides));
+    }
+}
+
+impl<T: SemanticGroup + ?Sized> SemanticGroupEx for T {}
+
+/// An extension trait for [`SemanticGroup`] to manage plugin setters.
+pub trait PluginSuiteInput: SemanticGroup {
+    /// Interns each plugin from the [`PluginSuite`] into the database.
+    fn intern_plugin_suite(&mut self, suite: PluginSuite) -> InternedPluginSuite {
+        let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+        let macro_plugins = plugins
+            .into_iter()
+            .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
+            .collect::<Arc<[_]>>();
+
+        let inline_macro_plugins = Arc::new(
+            inline_macro_plugins
+                .into_iter()
+                .map(|(name, plugin)| {
+                    (name, self.intern_inline_macro_plugin(InlineMacroExprPluginLongId(plugin)))
+                })
+                .collect::<OrderedHashMap<_, _>>(),
+        );
+
+        let analyzer_plugins = analyzer_plugins
+            .into_iter()
+            .map(|plugin| self.intern_analyzer_plugin(AnalyzerPluginLongId(plugin)))
+            .collect::<Arc<[_]>>();
+
+        InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins }
+    }
+
+    /// Sets macro, inline macro and analyzer plugins specified in the [`PluginSuite`] as default
+    /// for all crates.
+    ///
+    /// *Note*: Sets the following Salsa inputs: [`DefsGroup::default_macro_plugins`],
+    /// [`DefsGroup::default_inline_macro_plugins`], and
+    /// [`SemanticGroup::default_analyzer_plugins`].
+    fn set_default_plugins_from_suite(&mut self, suite: InternedPluginSuite) {
+        let InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+        self.set_default_macro_plugins(macro_plugins);
+        self.set_default_inline_macro_plugins(inline_macro_plugins);
+        self.set_default_analyzer_plugins(analyzer_plugins);
+    }
+
+    /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
+    /// pointed to by the [`CrateId`], overriding the defaults for that crate.
+    ///
+    /// *Note*: Sets the following Salsa inputs: [`DefsGroup::macro_plugin_overrides`],
+    /// [`DefsGroup::inline_macro_plugin_overrides`], and
+    /// [`SemanticGroup::analyzer_plugin_overrides`].
+    fn set_override_crate_plugins_from_suite(
+        &mut self,
+        crate_id: CrateId,
+        suite: InternedPluginSuite,
+    ) {
+        let InternedPluginSuite { macro_plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+        self.set_override_crate_macro_plugins(crate_id, macro_plugins);
+        self.set_override_crate_inline_macro_plugins(crate_id, inline_macro_plugins);
+        self.set_override_crate_analyzer_plugins(crate_id, analyzer_plugins);
+    }
+}
+
+impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}

@@ -79,7 +79,7 @@ pub extern fn get_block_hash_syscall(
 /// * `block_timestamp` returns the hour, rounded down to the nearest hour.
 /// * `block_number` returns the block number, rounded down to the nearest multiple of 100.
 ///
-/// [`Execution information`]: core::starknet::info::ExecutionInfo
+/// [`Execution information`]: starknet::info::ExecutionInfo
 ///
 /// # Returns
 ///
@@ -91,7 +91,7 @@ pub extern fn get_execution_info_syscall() -> SyscallResult<
 
 /// Gets information about the current execution, version 2.
 /// This syscall should not be called directly. Instead, use
-/// `core::starknet::info::get_execution_info`.
+/// `starknet::info::get_execution_info`.
 ///
 /// # Returns
 ///

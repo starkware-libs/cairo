@@ -238,9 +238,12 @@ fn test_snapshot_span_into_iter() {
 
 #[test]
 fn test_array_from_iterator() {
-    let iter = (0..5_u32).into_iter();
-    let v = FromIterator::from_iter(iter);
-    assert_eq!(v, array![0, 1, 2, 3, 4]);
+    assert_eq!(FromIterator::from_iter(0..5_u32), array![0, 1, 2, 3, 4]);
+}
+
+#[test]
+fn test_array_from_collect() {
+    assert_eq!((0..5_u32).into_iter().collect(), array![0, 1, 2, 3, 4]);
 }
 
 #[test]

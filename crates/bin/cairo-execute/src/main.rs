@@ -245,21 +245,17 @@ fn main() -> anyhow::Result<()> {
     };
 
     let mut runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)
-        .with_context(|| "Failed running program.")?;
+        .with_context(|| {
+            if let Some(panic_data) = hint_processor.markers.last() {
+                format_for_panic(panic_data.iter().copied())
+            } else {
+                "Failed running program.".into()
+            }
+        })?;
     if args.run.print_outputs {
         let mut output_buffer = "Program Output:\n".to_string();
         runner.vm.write_output(&mut output_buffer)?;
         print!("{output_buffer}");
-        if let [.., start_marker, end_marker] = &hint_processor.markers[..] {
-            let size = (*end_marker - *start_marker).with_context(|| {
-                format!("Panic data markers mismatch: start={start_marker}, end={end_marker}")
-            })?;
-            let panic_data = runner
-                .vm
-                .get_integer_range(*start_marker, size)
-                .with_context(|| "Failed reading panic data.")?;
-            println!("{}", format_for_panic(panic_data.into_iter().map(|value| *value)));
-        }
     }
 
     if let Some(trace_path) = &args.run.proof_outputs.trace_file {

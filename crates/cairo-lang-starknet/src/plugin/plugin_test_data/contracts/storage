@@ -101,7 +101,9 @@ starknet_derive:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
-        let x = starknet::Store::<u32>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let x = starknet::Store::<u32>::read(__store_derive_address_domain__, __store_derive_base__)?;
         starknet::SyscallResult::Ok(
             OuterType {
                 x,
@@ -109,11 +111,19 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OuterType) -> starknet::SyscallResult<()> {
-        starknet::Store::<u32>::write(address_domain, base, value.x)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OuterType {
+            x,
+        } = value;
+        starknet::Store::<u32>::write(__store_derive_address_domain__, __store_derive_base__, x)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
-        let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let x = starknet::Store::<u32>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
         starknet::SyscallResult::Ok(
             OuterType {
                 x,
@@ -122,7 +132,13 @@ impl StoreOuterType of starknet::Store::<OuterType> {
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OuterType) -> starknet::SyscallResult<()> {
-        starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OuterType {
+            x,
+        } = value;
+        starknet::Store::<u32>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -363,7 +379,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255.try_into().unwrap();
 
 
 pub mod __external {

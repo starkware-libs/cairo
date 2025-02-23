@@ -171,6 +171,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Felt252Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
+        Felt252SquashedDict(_) => {
+            vec![ApChange::Known(0)]
+        }
         FunctionCall(libfunc) | CouponCall(libfunc) => {
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
@@ -335,7 +338,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarknetConcreteLibfunc::ReplaceClass(_)
             | StarknetConcreteLibfunc::SendMessageToL1(_)
             | StarknetConcreteLibfunc::Secp256(_)
-            | StarknetConcreteLibfunc::GetClassHashAt(_) => {
+            | StarknetConcreteLibfunc::GetClassHashAt(_)
+            | StarknetConcreteLibfunc::MetaTxV0(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarknetConcreteLibfunc::Testing(libfunc) => match libfunc {

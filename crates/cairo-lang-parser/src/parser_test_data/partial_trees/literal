@@ -142,12 +142,12 @@ error: Literal is not a valid number.
     let illegal_bin = 0b2;
                       ^^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:3:25
     let illegal_bin = 0b2;
                         ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:4:26
     let illegal_bin = 0b12;
                          ^
@@ -157,12 +157,12 @@ error: Literal is not a valid number.
     let illegal_oct = 0o8;
                       ^^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:6:25
     let illegal_oct = 0o8;
                         ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:7:26
     let illegal_oct = 0o78;
                          ^
@@ -172,12 +172,12 @@ error: Literal is not a valid number.
     let illegal_hex = 0xg;
                       ^^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:9:25
     let illegal_hex = 0xg;
                         ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:10:26
     let illegal_hex = 0xfg;
                          ^
@@ -300,7 +300,7 @@ StatementLet
 ExprPath
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:2:16
     let a = 'a'u16;
                ^

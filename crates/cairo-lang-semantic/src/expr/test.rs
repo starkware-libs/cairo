@@ -229,13 +229,16 @@ fn test_expr_call_failures() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
-    assert_eq!(diagnostics, indoc! { "
-            error: Function not found.
+    assert_eq!(
+        diagnostics,
+        indoc! { "
+            error[E0006]: Function not found.
              --> lib.cairo:2:1
             foo()
             ^^^
 
-        "});
+        "}
+    );
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
