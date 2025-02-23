@@ -7,6 +7,8 @@ extern fn qm31_sub(a: qm31, b: qm31) -> qm31 nopanic;
 extern fn qm31_mul(a: qm31, b: qm31) -> qm31 nopanic;
 extern fn qm31_div(a: qm31, b: NonZero<qm31>) -> qm31 nopanic;
 extern fn qm31_const<const W0: m31, const W1: m31, const W2: m31, const W3: m31>() -> qm31 nopanic;
+extern fn qm31_pack(w0: m31, w1: m31, w2: m31, w3: m31) -> qm31 nopanic;
+extern fn qm31_unpack(a: qm31) -> (m31, m31, m31, m31) implicits(core::RangeCheck) nopanic;
 
 impl qm31Copy of Copy<qm31>;
 impl qm31Drop of Drop<qm31>;
@@ -79,4 +81,20 @@ fn test_qm31_inverse() {
     assert!((one / a) * a == one);
     let a = qm31_const::<0x6849959f, 0x31bf5a51, 0x730c2120, 0x7b0430a5>();
     assert!((one / a) * a == one);
+}
+
+#[test]
+fn test_pack() {
+    assert!(qm31_pack(1, 2, 3, 4) == qm31_const::<1, 2, 3, 4>());
+    assert!(qm31_pack(2, 3, 4, 1) == qm31_const::<2, 3, 4, 1>());
+    assert!(qm31_pack(3, 4, 1, 2) == qm31_const::<3, 4, 1, 2>());
+    assert!(qm31_pack(4, 1, 2, 3) == qm31_const::<4, 1, 2, 3>());
+}
+
+#[test]
+fn test_unpack() {
+    assert_eq!(qm31_unpack(qm31_const::<1, 2, 3, 4>()), (1, 2, 3, 4));
+    assert_eq!(qm31_unpack(qm31_const::<2, 3, 4, 1>()), (2, 3, 4, 1));
+    assert_eq!(qm31_unpack(qm31_const::<3, 4, 1, 2>()), (3, 4, 1, 2));
+    assert_eq!(qm31_unpack(qm31_const::<4, 1, 2, 3>()), (4, 1, 2, 3));
 }
