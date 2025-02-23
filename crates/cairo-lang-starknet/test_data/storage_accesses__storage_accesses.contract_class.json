@@ -2856,7 +2856,7 @@
       ],
       [
         140,
-        "function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write>"
+        "function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::write>"
       ],
       [
         141,
@@ -2900,7 +2900,7 @@
       ],
       [
         151,
-        "function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read>"
+        "function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::read>"
       ],
       [
         152,
@@ -3374,11 +3374,11 @@
       ],
       [
         16,
-        "cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write"
+        "cairo_level_tests::contracts::storage_accesses::UserInfoStore::write"
       ],
       [
         17,
-        "cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read"
+        "cairo_level_tests::contracts::storage_accesses::UserInfoStore::read"
       ],
       [
         18,

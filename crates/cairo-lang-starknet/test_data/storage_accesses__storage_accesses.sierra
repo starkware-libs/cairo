@@ -227,7 +227,7 @@ libfunc function_call<user@cairo_level_tests::contracts::storage_accesses::UserI
 libfunc enum_match<core::option::Option::<cairo_level_tests::contracts::storage_accesses::UserInfo>> = enum_match<core::option::Option::<cairo_level_tests::contracts::storage_accesses::UserInfo>>;
 libfunc drop<cairo_level_tests::contracts::storage_accesses::UserInfo> = drop<cairo_level_tests::contracts::storage_accesses::UserInfo>;
 libfunc store_temp<cairo_level_tests::contracts::storage_accesses::UserInfo> = store_temp<cairo_level_tests::contracts::storage_accesses::UserInfo>;
-libfunc function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write> = function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write>;
+libfunc function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::write> = function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::write>;
 libfunc enum_match<core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>> = enum_match<core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>>;
 libfunc struct_deconstruct<Tuple<core::result::Result::<(), core::array::Array::<core::felt252>>>> = struct_deconstruct<Tuple<core::result::Result::<(), core::array::Array::<core::felt252>>>>;
 libfunc enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>;
@@ -238,7 +238,7 @@ libfunc snapshot_take<core::starknet::storage::StoragePointer0Offset::<cairo_lev
 libfunc drop<core::starknet::storage::StoragePointer0Offset::<cairo_level_tests::contracts::storage_accesses::UserInfo>> = drop<core::starknet::storage::StoragePointer0Offset::<cairo_level_tests::contracts::storage_accesses::UserInfo>>;
 libfunc struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<cairo_level_tests::contracts::storage_accesses::UserInfo>> = struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<cairo_level_tests::contracts::storage_accesses::UserInfo>>;
 libfunc rename<StorageBaseAddress> = rename<StorageBaseAddress>;
-libfunc function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read> = function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read>;
+libfunc function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::read> = function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>> = enum_match<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>>;
 libfunc struct_deconstruct<Tuple<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>>> = struct_deconstruct<Tuple<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>>>;
 libfunc enum_match<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>>;
@@ -1837,7 +1837,7 @@ store_temp<System>([2]) -> ([2]); // 1492
 store_temp<u32>([34]) -> ([34]); // 1493
 store_temp<StorageBaseAddress>([33]) -> ([33]); // 1494
 store_temp<cairo_level_tests::contracts::storage_accesses::UserInfo>([12]) -> ([12]); // 1495
-function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write>([28], [32], [2], [34], [33], [12]) -> ([35], [36], [37], [38]); // 1496
+function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::write>([28], [32], [2], [34], [33], [12]) -> ([35], [36], [37], [38]); // 1496
 enable_ap_tracking() -> (); // 1497
 enum_match<core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>>([38]) { fallthrough([39]) 1524([40]) }; // 1498
 branch_align() -> (); // 1499
@@ -1971,7 +1971,7 @@ store_temp<GasBuiltin>([26]) -> ([26]); // 1626
 store_temp<System>([2]) -> ([2]); // 1627
 store_temp<u32>([31]) -> ([31]); // 1628
 store_temp<StorageBaseAddress>([33]) -> ([33]); // 1629
-function_call<user@cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read>([22], [26], [2], [31], [33]) -> ([34], [35], [36], [37]); // 1630
+function_call<user@cairo_level_tests::contracts::storage_accesses::UserInfoStore::read>([22], [26], [2], [31], [33]) -> ([34], [35], [36], [37]); // 1630
 enable_ap_tracking() -> (); // 1631
 enum_match<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>>([37]) { fallthrough([38]) 1696([39]) }; // 1632
 branch_align() -> (); // 1633
@@ -4282,7 +4282,7 @@ core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage:
 cairo_level_tests::contracts::storage_accesses::storage_accesses::IERC20Impl::increase_allowance@2392([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
 cairo_level_tests::contracts::storage_accesses::storage_accesses::IERC20Impl::decrease_allowance@2662([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
 cairo_level_tests::contracts::storage_accesses::UserInfoSerde::deserialize@2932([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<cairo_level_tests::contracts::storage_accesses::UserInfo>);
-cairo_level_tests::contracts::storage_accesses::StoreUserInfo::write@3086([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress, [5]: cairo_level_tests::contracts::storage_accesses::UserInfo) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>);
-cairo_level_tests::contracts::storage_accesses::StoreUserInfo::read@3271([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>);
+cairo_level_tests::contracts::storage_accesses::UserInfoStore::write@3086([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress, [5]: cairo_level_tests::contracts::storage_accesses::UserInfo) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>);
+cairo_level_tests::contracts::storage_accesses::UserInfoStore::read@3271([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>);
 cairo_level_tests::contracts::storage_accesses::storage_accesses::constructor@3537([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: felt252, [6]: felt252, [7]: u8, [8]: core::integer::u256, [9]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
 cairo_level_tests::contracts::storage_accesses::storage_accesses::StorageImpl::set_transaction_info@3831([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
