@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariant;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Hash` trait.
 pub fn handle_hash(info: &DeriveInfo) -> String {
