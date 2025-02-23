@@ -36,6 +36,7 @@ pub mod non_zero;
 pub mod nullable;
 pub mod pedersen;
 pub mod poseidon;
+pub mod qm31;
 pub mod range;
 pub mod range_check;
 pub mod segment_arena;
