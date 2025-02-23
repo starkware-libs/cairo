@@ -101,14 +101,14 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOuterType of starknet::Store::<OuterType> {
+impl OuterTypeStore<> of starknet::Store::<OuterType> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let x = starknet::Store::<u32>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let x = core::internal::InferDestruct::<u32> { value: starknet::Store::<u32>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OuterType {
-                x,
+                x: x.value,
             }
         )
     }
@@ -118,17 +118,18 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         let OuterType {
             x,
         } = value;
-        starknet::Store::<u32>::write(__store_derive_address_domain__, __store_derive_base__, x)?;
+        let x = core::internal::InferDestruct::<u32> { value: x };
+        starknet::Store::<u32>::write(__store_derive_address_domain__, __store_derive_base__, x.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let x = starknet::Store::<u32>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let x = core::internal::InferDestruct::<u32> { value: starknet::Store::<u32>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OuterType {
-                x,
+                x: x.value,
             }
         )
     }
@@ -140,7 +141,8 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         let OuterType {
             x,
         } = value;
-        starknet::Store::<u32>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x)?;
+        let x = core::internal::InferDestruct::<u32> { value: x };
+        starknet::Store::<u32>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
