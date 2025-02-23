@@ -442,6 +442,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             QM31Concrete::Const(_) => vec![ApChange::Known(0)],
             QM31Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             QM31Concrete::BinaryOperation(_) => vec![ApChange::Known(1)],
+            QM31Concrete::Pack(_) => vec![ApChange::Known(6)],
+            QM31Concrete::Unpack(_) => vec![ApChange::Known(13)],
         },
     }
 }

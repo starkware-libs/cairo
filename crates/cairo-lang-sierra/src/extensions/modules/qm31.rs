@@ -1,17 +1,21 @@
+use num_bigint::BigInt;
+use num_traits::Zero;
 use num_traits::cast::ToPrimitive;
 
+use super::bounded_int::bounded_int_ty;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
+use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for qm31.
@@ -31,6 +35,8 @@ define_libfunc_hierarchy! {
         BinaryOperation(QM31BinaryOperationLibfunc),
         Const(QM31ConstLibfunc),
         IsZero(QM31JumpNotZeroLibfunc),
+        Pack(QM31PackLibfunc),
+        Unpack(QM31UnpackLibfunc),
     }, QM31Concrete
 }
 
@@ -202,4 +208,61 @@ impl SignatureBasedConcreteLibfunc for QM31ConstConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
+}
+
+/// Libfunc for packing 4 `m31`s into a `qm31`.
+#[derive(Default)]
+pub struct QM31PackLibfunc {}
+impl NoGenericArgsGenericLibfunc for QM31PackLibfunc {
+    const STR_ID: &'static str = "qm31_pack";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature::new(m31_ty(context)?); 4],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(QM31Type::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for unpacking a `qm31` into 4 `m31`s.
+#[derive(Default)]
+pub struct QM31UnpackLibfunc {}
+impl NoGenericArgsGenericLibfunc for QM31UnpackLibfunc {
+    const STR_ID: &'static str = "qm31_unpack";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let output_var_info =
+            OutputVarInfo { ty: m31_ty(context)?, ref_info: OutputVarReferenceInfo::SimpleDerefs };
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
+                ParamSignature::new(context.get_concrete_type(QM31Type::id(), &[])?),
+            ],
+            vec![
+                OutputVarInfo::new_builtin(range_check_ty, 0),
+                output_var_info.clone(),
+                output_var_info.clone(),
+                output_var_info.clone(),
+                output_var_info,
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+fn m31_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    bounded_int_ty(context, BigInt::zero(), M31_BOUND.into())
 }
