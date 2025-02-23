@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariant;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Debug` trait.
 pub fn handle_debug(info: &DeriveInfo) -> String {
