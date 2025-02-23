@@ -1,5 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::qm31::{
     QM31BinaryOpConcreteLibfunc, QM31BinaryOperator, QM31Concrete, QM31ConstConcreteLibfunc,
 };
@@ -7,7 +9,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_is_zero;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{CostValidationInfo, add_input_variables};
+use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra qm31 operations.
@@ -21,6 +23,8 @@ pub fn build(
         }
         QM31Concrete::IsZero(_) => build_is_zero(builder),
         QM31Concrete::Const(libfunc) => build_qm31_const(builder, libfunc),
+        QM31Concrete::Pack(_) => build_qm31_pack(builder),
+        QM31Concrete::Unpack(_) => build_qm31_unpack(builder),
     }
 }
 
@@ -51,18 +55,104 @@ pub fn build_qm31_op(
     ))
 }
 
+const WORD_SIZE: usize = 36;
+const WORD_BOUND: u128 = 1 << WORD_SIZE;
+
 fn build_qm31_const(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &QM31ConstConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut value = BigInt::from(libfunc.w3);
-    value <<= 36;
+    value <<= WORD_SIZE;
     value += BigInt::from(libfunc.w2);
-    value <<= 36;
+    value <<= WORD_SIZE;
     value += BigInt::from(libfunc.w1);
-    value <<= 36;
+    value <<= WORD_SIZE;
     value += BigInt::from(libfunc.w0);
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::Immediate(value))].into_iter(),
+    ))
+}
+
+fn build_qm31_pack(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [w0, w1, w2, w3] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref w0;
+        deref w1;
+        deref w2;
+        deref w3;
+    };
+
+    casm_build_extend! {casm_builder,
+        const shift_value = WORD_BOUND;
+        tempvar shifted_w3 = w3 * shift_value;
+        tempvar unshifted_w3_w2 = shifted_w3 + w2;
+        tempvar shifted_w3_w2 = unshifted_w3_w2 * shift_value;
+        tempvar unshifted_w3_w2_w1 = shifted_w3_w2 + w1;
+        tempvar shifted_w3_w2_w1 = unshifted_w3_w2_w1 * shift_value;
+        tempvar w3_w2_w1_w0 = shifted_w3_w2_w1 + w0;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[w3_w2_w1_w0]], None)],
+        CostValidationInfo::default(),
+    ))
+}
+
+fn build_qm31_unpack(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, w3_w2_w1_w0] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(5) range_check;
+        deref w3_w2_w1_w0;
+    };
+
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        const shift_value = WORD_BOUND;
+        tempvar w0;
+        tempvar w3_w2_w1;
+        hint DivMod { lhs: w3_w2_w1_w0, rhs: shift_value } into { quotient: w3_w2_w1, remainder: w0 };
+        tempvar w1;
+        tempvar w3_w2;
+        hint DivMod { lhs: w3_w2_w1, rhs: shift_value } into { quotient: w3_w2, remainder: w1 };
+        tempvar w2;
+        tempvar w3;
+        hint DivMod { lhs: w3_w2, rhs: shift_value } into { quotient: w3, remainder: w2 };
+        tempvar shifted_w3 = w3 * shift_value;
+        assert w3_w2 = shifted_w3 + w2;
+        tempvar shifted_w3_w2 = w3_w2 * shift_value;
+        assert w3_w2_w1 = shifted_w3_w2 + w1;
+        tempvar shifted_w3_w2_w1 = w3_w2_w1 * shift_value;
+        assert w3_w2_w1_w0 = shifted_w3_w2_w1 + w0;
+        assert w0 = *(range_check++);
+        assert w1 = *(range_check++);
+        assert w2 = *(range_check++);
+        assert w3 = *(range_check++);
+        tempvar w0_plus_w1 = w0 + w1;
+        tempvar w2_plus_w3 = w2 + w3;
+        tempvar sum = w0_plus_w1 + w2_plus_w3;
+        const fixer = (u128::MAX - WORD_BOUND);
+        tempvar rc_value = sum + fixer;
+        assert rc_value = *(range_check++);
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[w0], &[w1], &[w2], &[w3]], None)],
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
+            extra_costs: None,
+        },
     ))
 }
