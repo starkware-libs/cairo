@@ -1,4 +1,3 @@
-use core::metaprogramming::TypeEqual;
 use crate::iter::adapters::{
     Chain, Enumerate, Filter, Map, Peekable, Take, Zip, chained_iterator, enumerated_iterator,
     filter_iterator, mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
