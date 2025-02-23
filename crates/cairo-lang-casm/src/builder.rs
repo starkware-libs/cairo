@@ -294,7 +294,7 @@ impl CasmBuilder {
 
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
-    pub fn assert_vars_eq(&mut self, dst: Var, res: Var) {
+    pub fn assert_vars_eq(&mut self, dst: Var, res: Var, qm31: bool) {
         let a = self.as_cell_ref(dst, true);
         let b = self.get_value(res, true);
         let (a, b) = match b {
@@ -316,8 +316,14 @@ impl CasmBuilder {
                 }
             },
         };
-        let instruction =
-            self.next_instruction(InstructionBody::AssertEq(AssertEqInstruction { a, b }), true);
+        let instruction = self.next_instruction(
+            if qm31 {
+                InstructionBody::QM31AssertEq(AssertEqInstruction { a, b })
+            } else {
+                InstructionBody::AssertEq(AssertEqInstruction { a, b })
+            },
+            true,
+        );
         self.statements.push(Statement::Final(instruction));
     }
 
@@ -328,7 +334,7 @@ impl CasmBuilder {
     pub fn buffer_write_and_inc(&mut self, buffer: Var, value: Var) {
         let (cell, offset) = self.buffer_get_and_inc(buffer);
         let location = self.add_var(CellExpression::DoubleDeref(cell, offset));
-        self.assert_vars_eq(value, location);
+        self.assert_vars_eq(value, location, false);
     }
 
     /// Writes `var` as a new tempvar and returns it as a variable, unless its value is already
@@ -349,7 +355,7 @@ impl CasmBuilder {
             } if imm.value.is_one() => a,
             _ => {
                 let temp = self.alloc_var(false);
-                self.assert_vars_eq(temp, var);
+                self.assert_vars_eq(temp, var, false);
                 return temp;
             }
         }))
@@ -752,48 +758,48 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $res:ident; $($tok:tt)*) => {
-        $builder.assert_vars_eq($dst, $res);
+        $builder.assert_vars_eq($dst, $res, false);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
             let __sum = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
-            $builder.assert_vars_eq($dst, __sum);
+            $builder.assert_vars_eq($dst, __sum, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
             let __product = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
-            $builder.assert_vars_eq($dst, __product);
+            $builder.assert_vars_eq($dst, __product, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         {
             let __diff = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
-            $builder.assert_vars_eq($dst, __diff);
+            $builder.assert_vars_eq($dst, __diff, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         {
             let __division = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
-            $builder.assert_vars_eq($dst, __division);
+            $builder.assert_vars_eq($dst, __division, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, $offset);
-            $builder.assert_vars_eq($dst, __deref);
+            $builder.assert_vars_eq($dst, __deref, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, 0);
-            $builder.assert_vars_eq($dst, __deref);
+            $builder.assert_vars_eq($dst, __deref, false);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
