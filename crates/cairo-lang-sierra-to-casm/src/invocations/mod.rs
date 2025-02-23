@@ -56,6 +56,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
+mod qm31;
 mod range;
 mod range_reduction;
 mod squashed_felt252_dict;
@@ -719,6 +720,7 @@ pub fn compile_invocation(
         Circuit(libfunc) => circuit::build(libfunc, builder),
         IntRange(libfunc) => range::build(libfunc, builder),
         Blake(libfunc) => blake::build(libfunc, builder),
+        QM31(libfunc) => qm31::build(libfunc, builder),
     }
 }
 
