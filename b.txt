@@ -1,0 +1,112 @@
+warning: unused import: `TraitItemImpl`
+  --> crates/cairo-lang-lowering/src/cache/mod.rs:50:27
+   |
+50 |     TraitItemFunctionPtr, TraitItemImpl, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr,
+   |                           ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::fs`
+ --> crates/cairo-lang-lowering/src/db.rs:1:5
+  |
+1 | use std::fs;
+  |     ^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> crates/cairo-lang-lowering/src/db.rs:2:5
+  |
+2 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `generate_crate_cache`
+  --> crates/cairo-lang-lowering/src/db.rs:28:20
+   |
+28 | use crate::cache::{generate_crate_cache, load_cached_crate_functions};
+   |                    ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `TopLevelLanguageElementId`
+ --> crates/cairo-lang-lowering/src/db.rs:9:5
+  |
+9 |     TopLevelLanguageElementId,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `cairo-lang-lowering` (lib) generated 5 warnings (run `cargo fix --lib -p cairo-lang-lowering` to apply 4 suggestions)
+    Finished `release` profile [optimized] target(s) in 0.25s
+     Running `target/release/starknet-compile /home/tomer/workspace/starknet-staking --allow-warnings --contract-path 'staking::staking::staking::Staking' bla.txt`
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/iterable_map.cairo:111:29
+            self._next_keys.append().write(key);
+                            ^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/test_utils.cairo:76:9
+    let identity = identitier.identify();
+        ^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/test_utils.cairo:77:9
+    let version = identitier.version();
+        ^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/test_utils.cairo:93:20
+        Result::Ok(error) => {},
+                   ^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/test_utils.cairo:121:9
+    let actual_event = starknet::Event::<T>::deserialize(ref :keys, ref :data).unwrap();
+        ^^^^^^^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/trace/trace.cairo:102:22
+                self.append().write(Checkpoint { key, value });
+                     ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/workspace/starknet-staking/workspace/packages/contracts/src/trace/trace.cairo:106:18
+            self.append().write(Checkpoint { key, value });
+                 ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/openzeppelin_utils-0.20.0/src/structs/checkpoint.cairo:130:22
+                self.append().write(Checkpoint { key, value });
+                     ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/.cache/scarb/registry/src/scarbs.xyz-9djtpev4jug5q/openzeppelin_utils-0.20.0/src/structs/checkpoint.cairo:134:18
+            self.append().write(Checkpoint { key, value });
+                 ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staker_balance_trace/trace.cairo:142:22
+                self.append().write(StakerBalanceCheckpoint { key, value });
+                     ^^^^^^
+
+warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `core::starknet::storage::MutableVecTrait::allocate` instead"
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/staker_balance_trace/trace.cairo:146:18
+            self.append().write(StakerBalanceCheckpoint { key, value });
+                 ^^^^^^
+
+warning: Unused import: `staking::utils::tests::Zero`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/utils.cairo:129:34
+    use core::num::traits::zero::Zero;
+                                 ^^^^
+
+warning: Unused import: `staking::utils::tests::BASE_VALUE`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/utils.cairo:130:17
+    use super::{BASE_VALUE, STRK_IN_FRIS, compute_global_index_diff};
+                ^^^^^^^^^^
+
+warning: Unused import: `staking::utils::tests::STRK_IN_FRIS`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/utils.cairo:130:29
+    use super::{BASE_VALUE, STRK_IN_FRIS, compute_global_index_diff};
+                            ^^^^^^^^^^^^
+
+warning: Unused import: `staking::utils::tests::compute_global_index_diff`
+ --> /home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/src/utils.cairo:130:43
+    use super::{BASE_VALUE, STRK_IN_FRIS, compute_global_index_diff};
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+19.68user 1.44system 0:21.13elapsed 99%CPU (0avgtext+0avgdata 3579176maxresident)k
+0inputs+3960outputs (0major+1012208minor)pagefaults 0swaps

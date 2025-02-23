@@ -413,26 +413,23 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (
-                        *k,
-                        ImplVarTraitItemMappings {
-                            types: mappings
-                                .types
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            constants: mappings
-                                .constants
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            impls: mappings
-                                .impls
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                        },
-                    )
+                    (*k, ImplVarTraitItemMappings {
+                        types: mappings
+                            .types
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        constants: mappings
+                            .constants
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        impls: mappings
+                            .impls
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                    })
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
@@ -630,6 +627,16 @@ impl<'db> Inference<'db> {
 
     /// Same as `solve`, but returns the error stable pointer if an error occurred.
     fn solve_ex(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
+        // if !(self.type_vars.is_empty() && self.const_vars.is_empty() &&
+        // self.impl_vars.is_empty()) {     println!(
+        //         "type_var_len {:?} const_var_len {:?} impl_var_len {:?}",
+        //         self.type_vars.len(),
+        //         self.const_vars.len(),
+        //         self.impl_vars.len()
+        //     );
+        //     panic!();
+        // }
+
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {

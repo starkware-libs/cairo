@@ -36,7 +36,7 @@ use cairo_lang_semantic::items::imp::{
 use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
-    ImplTypeId,
+    ImplTypeId, TypeInfo,
 };
 use cairo_lang_semantic::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitLongId, MatchArmSelector, TypeId,
@@ -57,6 +57,7 @@ use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::Arena;
+use itertools::chain;
 use num_bigint::BigInt;
 use salsa::InternKey;
 use serde::{Deserialize, Serialize};
@@ -83,7 +84,12 @@ use crate::{
 pub fn load_cached_crate_functions(
     db: &dyn LoweringGroup,
     crate_id: CrateId,
-) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
+) -> Option<
+    Arc<(
+        OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>,
+        OrderedHashMap<TypeId, TypeInfo>,
+    )>,
+> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
     let Some(content) = db.blob_content(blob_id) else {
         return Default::default();
@@ -96,18 +102,28 @@ pub fn load_cached_crate_functions(
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
     let mut ctx = CacheLoadingContext::new(db, lookups, semantic_lookups, crate_id);
 
-    Some(
-        lowerings
-            .into_iter()
-            .map(|(function_id, lowering)| {
-                let function_id = function_id.embed(&mut ctx.semantic_ctx);
+    let mut types = OrderedHashMap::default();
+    let functions = lowerings
+        .into_iter()
+        .map(|(function_id, lowering)| {
+            let function_id = function_id.embed(&mut ctx.semantic_ctx);
 
-                let lowering = lowering.embed(&mut ctx);
-                (function_id, lowering)
-            })
-            .collect::<OrderedHashMap<_, _>>()
-            .into(),
-    )
+            let lowering = lowering.embed(&mut ctx);
+            for lowered in chain!(lowering.generated_lowerings.values(), [&lowering.main_lowering])
+            {
+                for (_, var) in lowered.variables.iter() {
+                    types.insert(var.ty, TypeInfo {
+                        droppable: var.droppable.clone(),
+                        copyable: var.copyable.clone(),
+                        destruct_impl: var.destruct_impl.clone(),
+                        panic_destruct_impl: var.panic_destruct_impl.clone(),
+                    });
+                }
+            }
+            (function_id, lowering)
+        })
+        .collect::<OrderedHashMap<_, _>>();
+    Some((functions, types).into())
 }
 
 /// Cache the lowering of a crate.

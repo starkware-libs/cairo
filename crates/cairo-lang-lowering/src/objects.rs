@@ -229,6 +229,7 @@ impl Variable {
         ty: semantic::TypeId,
         location: LocationId,
     ) -> Self {
+        // db.cached_multi_lowerings(ty.)
         let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } =
             match db.type_info(ctx, ty) {
                 Ok(info) => info,

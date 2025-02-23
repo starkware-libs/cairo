@@ -39,7 +39,7 @@ mod test;
 pub fn compile_path(
     path: &Path,
     contract_path: Option<&str>,
-    compiler_config: CompilerConfig<'_>,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
@@ -47,7 +47,8 @@ pub fn compile_path(
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
-
+    compiler_config.diagnostics_reporter =
+        compiler_config.diagnostics_reporter.with_crates(&main_crate_ids);
     compile_contract_in_prepared_db(&db, contract_path, main_crate_ids, compiler_config)
 }
 

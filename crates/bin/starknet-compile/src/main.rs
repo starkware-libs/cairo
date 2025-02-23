@@ -61,10 +61,7 @@ fn main() -> anyhow::Result<()> {
         }),
         Some(list_selector),
     )?;
-    match args.output {
-        Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
-        None => println!("{res}"),
-    }
+    print!("323");
 
     Ok(())
 }

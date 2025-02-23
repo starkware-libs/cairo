@@ -73,7 +73,9 @@ pub fn compile_cairo_project_at_path(
         .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .build()?;
+
     let main_crate_ids = setup_project(&mut db, path)?;
+    println!("Dasdsa {:?}", main_crate_ids.len());
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 

@@ -83,14 +83,19 @@ pub fn update_crate_root(
     root: Directory,
 ) {
     let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_identifier, config);
-    println!("Updating crate root: {:?}", crate_id.name(db.upcast()));
+    println!("Updating cratedasdsad root: {:?}", crate_id.name(db.upcast()));
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration {
             root,
             settings: crate_settings.clone(),
-            cache_file: None,
-            // cache_file: Some(BlobLongId::OnDisk("abc.json".into()).intern(db)),
+            // cache_file: None,
+            cache_file: crate_settings
+                .cfg_set
+                .as_ref()
+                .and_then(|set| set.iter().find(|cfg| cfg.key == "cache_file").cloned())
+                .map(|a| BlobLongId::OnDisk((&a.value.unwrap()).into()).intern(db)),
+            // cache_file: Some(BlobLongId::OnDisk("abc.json".into()).intern(db))
         }),
     );
 }
@@ -106,6 +111,7 @@ pub fn setup_project(
         let config = ProjectConfig::from_directory(path).map_err(ProjectError::LoadProjectError)?;
         let main_crate_ids = get_main_crate_ids_from_project(db, &config);
         update_crate_roots_from_project_config(db, &config);
+        println!("main crate length: {:?}", main_crate_ids.len());
         Ok(main_crate_ids)
     } else {
         Ok(vec![setup_single_file_project(db, path)?])
