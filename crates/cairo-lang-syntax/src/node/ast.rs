@@ -17,12 +17,14 @@ use super::{
     GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal,
     Token, TypedStablePtr, TypedSyntaxNode,
 };
+
 #[path = "ast_ext.rs"]
 mod ast_ext;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Trivia(ElementList<Trivium, 1>);
 impl Deref for Trivia {
     type Target = ElementList<Trivium, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -784,6 +786,7 @@ impl Expr {
 pub struct ExprList(ElementList<Expr, 2>);
 impl Deref for ExprList {
     type Target = ElementList<Expr, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -1494,6 +1497,7 @@ impl From<&ExprFieldInitShorthand> for SyntaxStablePtrId {
 pub struct ArgList(ElementList<Arg, 2>);
 impl Deref for ArgList {
     type Target = ElementList<Arg, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -2149,6 +2153,7 @@ impl From<&PathSegmentWithGenericArgs> for SyntaxStablePtrId {
 pub struct ExprPath(ElementList<PathSegment, 2>);
 impl Deref for ExprPath {
     type Target = ElementList<PathSegment, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -4167,6 +4172,7 @@ impl From<&ExprMatch> for SyntaxStablePtrId {
 pub struct MatchArms(ElementList<MatchArm, 2>);
 impl Deref for MatchArms {
     type Target = ElementList<MatchArm, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -7076,6 +7082,7 @@ impl StructArg {
 pub struct StructArgList(ElementList<StructArg, 2>);
 impl Deref for StructArgList {
     type Target = ElementList<StructArg, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -8111,6 +8118,7 @@ impl From<&PatternStruct> for SyntaxStablePtrId {
 pub struct PatternStructParamList(ElementList<PatternStructParam, 2>);
 impl Deref for PatternStructParamList {
     type Target = ElementList<PatternStructParam, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -8425,6 +8433,7 @@ impl From<&PatternFixedSizeArray> for SyntaxStablePtrId {
 pub struct PatternList(ElementList<Pattern, 2>);
 impl Deref for PatternList {
     type Target = ElementList<Pattern, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -8527,6 +8536,7 @@ impl From<&PatternList> for SyntaxStablePtrId {
 pub struct PatternListOr(ElementList<Pattern, 2>);
 impl Deref for PatternListOr {
     type Target = ElementList<Pattern, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -10004,6 +10014,7 @@ impl Statement {
 pub struct StatementList(ElementList<Statement, 1>);
 impl Deref for StatementList {
     type Target = ElementList<Statement, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -11398,6 +11409,7 @@ impl From<&Param> for SyntaxStablePtrId {
 pub struct ModifierList(ElementList<Modifier, 1>);
 impl Deref for ModifierList {
     type Target = ElementList<Modifier, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -11561,6 +11573,7 @@ impl Modifier {
 pub struct ParamList(ElementList<Param, 2>);
 impl Deref for ParamList {
     type Target = ElementList<Param, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -11777,6 +11790,7 @@ impl From<&ImplicitsClause> for SyntaxStablePtrId {
 pub struct ImplicitsList(ElementList<ExprPath, 2>);
 impl Deref for ImplicitsList {
     type Target = ElementList<ExprPath, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -12674,6 +12688,7 @@ impl From<&Member> for SyntaxStablePtrId {
 pub struct MemberList(ElementList<Member, 2>);
 impl Deref for MemberList {
     type Target = ElementList<Member, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -12889,6 +12904,7 @@ impl From<&Variant> for SyntaxStablePtrId {
 pub struct VariantList(ElementList<Variant, 2>);
 impl Deref for VariantList {
     type Target = ElementList<Variant, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -13336,6 +13352,7 @@ impl ModuleItem {
 pub struct ModuleItemList(ElementList<ModuleItem, 1>);
 impl Deref for ModuleItemList {
     type Target = ElementList<ModuleItem, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -13611,6 +13628,7 @@ impl From<&Attribute> for SyntaxStablePtrId {
 pub struct AttributeList(ElementList<Attribute, 1>);
 impl Deref for AttributeList {
     type Target = ElementList<Attribute, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -15606,6 +15624,7 @@ impl From<&TraitBody> for SyntaxStablePtrId {
 pub struct TraitItemList(ElementList<TraitItem, 1>);
 impl Deref for TraitItemList {
     type Target = ElementList<TraitItem, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -16966,6 +16985,7 @@ impl From<&ImplBody> for SyntaxStablePtrId {
 pub struct ImplItemList(ElementList<ImplItem, 1>);
 impl Deref for ImplItemList {
     type Target = ElementList<ImplItem, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -18672,6 +18692,7 @@ impl From<&UsePathStar> for SyntaxStablePtrId {
 pub struct UsePathList(ElementList<UsePath, 2>);
 impl Deref for UsePathList {
     type Target = ElementList<UsePath, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -19645,6 +19666,7 @@ impl From<&GenericArgs> for SyntaxStablePtrId {
 pub struct GenericArgList(ElementList<GenericArg, 2>);
 impl Deref for GenericArgList {
     type Target = ElementList<GenericArg, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -19966,6 +19988,7 @@ impl From<&AssociatedItemConstraints> for SyntaxStablePtrId {
 pub struct AssociatedItemConstraintList(ElementList<AssociatedItemConstraint, 2>);
 impl Deref for AssociatedItemConstraintList {
     type Target = ElementList<AssociatedItemConstraint, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -20560,6 +20583,7 @@ impl From<&WrappedGenericParamList> for SyntaxStablePtrId {
 pub struct GenericParamList(ElementList<GenericParam, 2>);
 impl Deref for GenericParamList {
     type Target = ElementList<GenericParam, 2>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -21378,6 +21402,7 @@ impl From<&GenericParamNegativeImpl> for SyntaxStablePtrId {
 pub struct TokenList(ElementList<TokenTree, 1>);
 impl Deref for TokenList {
     type Target = ElementList<TokenTree, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -22752,6 +22777,7 @@ impl From<&ItemMacroDeclaration> for SyntaxStablePtrId {
 pub struct MacroRulesList(ElementList<MacroRule, 1>);
 impl Deref for MacroRulesList {
     type Target = ElementList<MacroRule, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -23233,6 +23259,7 @@ impl From<&MacroRuleParamKindMissing> for SyntaxStablePtrId {
 pub enum MacroRuleElement {
     Token(TokenTreeLeaf),
     Param(MacroRuleParam),
+    Subtree(MacroMatcherwrapper),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MacroRuleElementPtr(pub SyntaxStablePtrId);
@@ -23260,6 +23287,11 @@ impl From<MacroRuleParamPtr> for MacroRuleElementPtr {
         Self(value.0)
     }
 }
+impl From<MacroMatcherwrapperPtr> for MacroRuleElementPtr {
+    fn from(value: MacroMatcherwrapperPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenTreeLeafGreen> for MacroRuleElementGreen {
     fn from(value: TokenTreeLeafGreen) -> Self {
         Self(value.0)
@@ -23267,6 +23299,11 @@ impl From<TokenTreeLeafGreen> for MacroRuleElementGreen {
 }
 impl From<MacroRuleParamGreen> for MacroRuleElementGreen {
     fn from(value: MacroRuleParamGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<MacroMatcherwrapperGreen> for MacroRuleElementGreen {
+    fn from(value: MacroMatcherwrapperGreen) -> Self {
         Self(value.0)
     }
 }
@@ -23288,6 +23325,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroRuleParam => {
                 MacroRuleElement::Param(MacroRuleParam::from_syntax_node(db, node))
             }
+            SyntaxKind::MacroMatcherwrapper => {
+                MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MacroRuleElement"
@@ -23303,6 +23343,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroRuleParam => {
                 Some(MacroRuleElement::Param(MacroRuleParam::from_syntax_node(db, node)))
             }
+            SyntaxKind::MacroMatcherwrapper => {
+                Some(MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -23310,6 +23353,7 @@ impl TypedSyntaxNode for MacroRuleElement {
         match self {
             MacroRuleElement::Token(x) => x.as_syntax_node(),
             MacroRuleElement::Param(x) => x.as_syntax_node(),
+            MacroRuleElement::Subtree(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -23324,7 +23368,103 @@ impl From<&MacroRuleElement> for SyntaxStablePtrId {
 impl MacroRuleElement {
     /// Checks if a kind of a variant of [MacroRuleElement].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::TokenTreeLeaf | SyntaxKind::MacroRuleParam)
+        matches!(
+            kind,
+            SyntaxKind::TokenTreeLeaf
+                | SyntaxKind::MacroRuleParam
+                | SyntaxKind::MacroMatcherwrapper
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroMatcherwrapper {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroMatcherwrapper {
+    pub const INDEX_SUBTREE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, subtree: MacroMatcherGreen) -> MacroMatcherwrapperGreen {
+        let children: Vec<GreenId> = vec![subtree.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroMatcherwrapperGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroMatcherwrapper,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroMatcherwrapper {
+    pub fn subtree(&self, db: &dyn SyntaxGroup) -> MacroMatcher {
+        MacroMatcher::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroMatcherwrapperPtr(pub SyntaxStablePtrId);
+impl MacroMatcherwrapperPtr {}
+impl TypedStablePtr for MacroMatcherwrapperPtr {
+    type SyntaxNode = MacroMatcherwrapper;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroMatcherwrapper {
+        MacroMatcherwrapper::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroMatcherwrapperPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroMatcherwrapperPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroMatcherwrapperGreen(pub GreenId);
+impl TypedSyntaxNode for MacroMatcherwrapper {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroMatcherwrapper);
+    type StablePtr = MacroMatcherwrapperPtr;
+    type Green = MacroMatcherwrapperGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroMatcherwrapperGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroMatcherwrapper,
+                details: GreenNodeDetails::Node {
+                    children: vec![MacroMatcher::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroMatcherwrapper,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroMatcherwrapper
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroMatcherwrapper {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroMatcherwrapperPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroMatcherwrapper> for SyntaxStablePtrId {
+    fn from(node: &MacroMatcherwrapper) -> Self {
+        node.stable_ptr().untyped()
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23773,6 +23913,7 @@ impl From<&BracketedMacroMatcher> for SyntaxStablePtrId {
 pub struct MacroRuleElements(ElementList<MacroRuleElement, 1>);
 impl Deref for MacroRuleElements {
     type Target = ElementList<MacroRuleElement, 1>;
+
     fn deref(&self) -> &Self::Target {
         &self.0
     }
