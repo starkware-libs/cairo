@@ -1,7 +1,7 @@
 use core::metaprogramming::TypeEqual;
 use crate::iter::adapters::{
-    Chain, Enumerate, Filter, Map, Peekable, Take, Zip, chained_iterator, enumerated_iterator, filter_iterator,
-    mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
+    Chain, Enumerate, Filter, Map, Peekable, Take, Zip, chained_iterator, enumerated_iterator,
+    filter_iterator, mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
 use crate::metaprogramming::TypeEqual;
@@ -763,7 +763,12 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.next(), Option::Some(6));
     /// assert_eq!(iter.next(), Option::None);
     /// ```
-    fn chain<U, impl IntoIterU: IntoIterator<U>, +TypeEqual<Self::Item, IntoIterU::Iterator::Item>, +Destruct<T>>(
+    fn chain<
+        U,
+        impl IntoIterU: IntoIterator<U>,
+        +TypeEqual<Self::Item, IntoIterU::Iterator::Item>,
+        +Destruct<T>,
+    >(
         self: T, other: U,
     ) -> Chain<T, IntoIterU::IntoIter> {
         chained_iterator(self, other.into_iter())
