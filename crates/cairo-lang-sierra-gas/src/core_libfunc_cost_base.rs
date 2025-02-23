@@ -618,6 +618,10 @@ pub fn core_libfunc_cost(
             QM31Concrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
             // TODO(orizi): Add qm31 token to gas cost.
             QM31Concrete::BinaryOperation(_) => vec![ConstCost::steps(1).into()],
+            QM31Concrete::Pack(_) => vec![ConstCost::steps(6).into()],
+            QM31Concrete::Unpack(_) => {
+                vec![ConstCost { steps: 15, holes: 0, range_checks: 5, range_checks96: 0 }.into()]
+            }
         },
     }
 }
