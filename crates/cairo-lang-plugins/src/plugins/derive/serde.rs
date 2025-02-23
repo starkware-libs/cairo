@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariant;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Serde` trait.
 pub fn handle_serde(info: &DeriveInfo) -> String {

@@ -3,7 +3,7 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariant;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PartialEq` trait.
 pub fn handle_partial_eq(info: &DeriveInfo) -> String {
