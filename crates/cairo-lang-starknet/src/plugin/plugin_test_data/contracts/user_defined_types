@@ -251,14 +251,14 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
+impl WrappedFelt252Store<> of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let value = starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let value = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
-                value,
+                value: value.value,
             }
         )
     }
@@ -268,17 +268,18 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         let WrappedFelt252 {
             value,
         } = value;
-        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, value)?;
+        let value = core::internal::InferDestruct::<felt252> { value: value };
+        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, value.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let value = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let value = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
-                value,
+                value: value.value,
             }
         )
     }
@@ -290,7 +291,8 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         let WrappedFelt252 {
             value,
         } = value;
-        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, value)?;
+        let value = core::internal::InferDestruct::<felt252> { value: value };
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, value.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -377,7 +379,7 @@ lib.cairo:17:33
                                 ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreZeroSize of starknet::Store::<ZeroSize> {
+impl ZeroSizeStore<> of starknet::Store::<ZeroSize> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
@@ -394,6 +396,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         let ZeroSize {
             
         } = value;
+        
         
         starknet::SyscallResult::Ok(())
     }
@@ -416,6 +419,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         let ZeroSize {
             
         } = value;
+        
         
         starknet::SyscallResult::Ok(())
     }
@@ -461,21 +465,21 @@ lib.cairo:20:27
                           ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
+impl SimpleEnumStore<> of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::A(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::B(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
@@ -487,12 +491,12 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
         match value {
             SimpleEnum::A(x) => {
+                starknet::Store::<u8>::write_at_offset(address_domain, base, 1_u8, x)?;
                 starknet::Store::write(address_domain, base, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             SimpleEnum::B(x) => {
+                starknet::Store::<u16>::write_at_offset(address_domain, base, 1_u8, x)?;
                 starknet::Store::write(address_domain, base, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -503,14 +507,14 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
             1 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::A(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::B(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
@@ -523,12 +527,12 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: SimpleEnum) -> starknet::SyscallResult<()> {
         match value {
             SimpleEnum::A(x) => {
+                starknet::Store::<u8>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             SimpleEnum::B(x) => {
+                starknet::Store::<u16>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -576,28 +580,28 @@ lib.cairo:26:27
                           ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
+impl EnumWithDefaultStore<> of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::A(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             0 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::B(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::C(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u32>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
@@ -609,16 +613,16 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
         match value {
             EnumWithDefault::A(x) => {
+                starknet::Store::<u8>::write_at_offset(address_domain, base, 1_u8, x)?;
                 starknet::Store::write(address_domain, base, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             EnumWithDefault::B(x) => {
+                starknet::Store::<u16>::write_at_offset(address_domain, base, 1_u8, x)?;
                 starknet::Store::write(address_domain, base, 0)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             EnumWithDefault::C(x) => {
+                starknet::Store::<u32>::write_at_offset(address_domain, base, 1_u8, x)?;
                 starknet::Store::write(address_domain, base, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -629,21 +633,21 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
             1 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::A(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             0 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::B(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::C(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u32>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
@@ -656,16 +660,16 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: EnumWithDefault) -> starknet::SyscallResult<()> {
         match value {
             EnumWithDefault::A(x) => {
+                starknet::Store::<u8>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             EnumWithDefault::B(x) => {
+                starknet::Store::<u16>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
                 starknet::Store::write_at_offset(address_domain, base, offset, 0)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             EnumWithDefault::C(x) => {
+                starknet::Store::<u32>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -775,11 +779,9 @@ impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252Su
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:39:9-40:14
-          #[default]
- _________^
-|         C: u32,
-|______________^
+ --> lib.cairo:39:9
+        #[default]
+        ^^^^^^^^^^
 
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:20:5-24:5
