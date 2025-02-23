@@ -19,7 +19,15 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{ raise NotImplementedError("blake2s_compress") %}
+%{
+Blake2sCompress {
+    state: memory[fp + -5],
+    byte_count: memory[fp + -4],
+    message: memory[fp + -3],
+    output: memory[ap + 0],
+    finalize: 0
+}
+%}
 ap += 1;
 ret;
 
@@ -63,7 +71,15 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{ raise NotImplementedError("blake2s_compress") %}
+%{
+Blake2sCompress {
+    state: memory[fp + -5],
+    byte_count: memory[fp + -4],
+    message: memory[fp + -3],
+    output: memory[ap + 0],
+    finalize: 1
+}
+%}
 ap += 1;
 ret;
 

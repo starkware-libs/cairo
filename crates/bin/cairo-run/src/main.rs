@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    let mut reporter = DiagnosticsReporter::stderr();
+    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
     if args.allow_warnings {
         reporter = reporter.allow_warnings();
     }

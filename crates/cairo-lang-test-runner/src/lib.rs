@@ -222,9 +222,9 @@ impl TestCompiler {
             }
             b.detect_corelib();
             b.with_cfg(cfg);
-            b.with_plugin_suite(test_plugin_suite());
+            b.with_default_plugin_suite(test_plugin_suite());
             if config.starknet {
-                b.with_plugin_suite(starknet_plugin_suite());
+                b.with_default_plugin_suite(starknet_plugin_suite());
             }
             b.build()?
         };
@@ -242,8 +242,7 @@ impl TestCompiler {
 
     /// Build the tests and collect metadata.
     pub fn build(&self) -> Result<TestCompilation> {
-        let mut diag_reporter =
-            DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids.clone());
+        let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids);
         if self.allow_warnings {
             diag_reporter = diag_reporter.allow_warnings();
         }

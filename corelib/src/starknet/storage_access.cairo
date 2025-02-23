@@ -43,13 +43,17 @@ use starknet::syscalls::{storage_read_syscall, storage_write_syscall};
 
 /// Represents the address of a storage value in a Starknet contract.
 /// The value range of this type is `[0, 2**251)`.
-#[derive(Copy, Drop)]
 pub extern type StorageAddress;
+
+impl StorageAddressCopy of Copy<StorageAddress>;
+impl StorageAddressDrop of Drop<StorageAddress>;
 
 /// Represents a base storage address that can be combined with offsets.
 /// The value range of this type is `[0, 2**251 - 256)`.
-#[derive(Copy, Drop)]
 pub extern type StorageBaseAddress;
+
+impl StorageBaseAddressCopy of Copy<StorageBaseAddress>;
+impl StorageBaseAddressDrop of Drop<StorageBaseAddress>;
 
 /// Returns a `StorageBaseAddress` given a constant `felt252` value.
 ///
