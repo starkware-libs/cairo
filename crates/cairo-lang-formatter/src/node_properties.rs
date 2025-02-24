@@ -811,8 +811,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::StructArgList
             | SyntaxKind::GenericArgList
             | SyntaxKind::GenericParamList
-            | SyntaxKind::ParamList
-            | SyntaxKind::ArgList => BreakLinePointsPositions::List {
+            | SyntaxKind::ParamList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
@@ -821,6 +820,31 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ),
                 breaking_frequency: 2,
             },
+            SyntaxKind::ArgList => {
+                let mut properties = BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                );
+
+                if let Some(parent_kind) = grandparent_kind(db, self) {
+                    match parent_kind {
+                        SyntaxKind::ExprInlineMacro => match config.fixed_array_breaking_behavior {
+                            CollectionsBreakingBehavior::SingleBreakPoint => {
+                                properties.set_single_breakpoint();
+                            }
+                            CollectionsBreakingBehavior::LineByLine => {
+                                properties.set_line_by_line();
+                            }
+                        },
+                        _ => {
+                            properties.set_line_by_line();
+                        }
+                    }
+                }
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+            }
             SyntaxKind::ExprList => {
                 let mut properties = BreakLinePointProperties::new(
                     5,
