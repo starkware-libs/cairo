@@ -2,11 +2,11 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Destruct` trait.
-pub fn handle_destruct(info: &DeriveInfo) -> String {
+pub fn handle_destruct(info: &PluginTypeInfo) -> String {
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();
     let ty = &info.name;

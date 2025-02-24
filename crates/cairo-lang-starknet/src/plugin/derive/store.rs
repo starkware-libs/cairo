@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_plugins::plugins::utils::{DeriveInfo, TypeVariant};
+use cairo_lang_plugins::plugins::utils::{PluginTypeInfo, TypeVariant};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -20,7 +20,7 @@ pub fn handle_store_derive(
     diagnostics: &mut Vec<PluginDiagnostic>,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<RewriteNode> {
-    let info = DeriveInfo::new(db, item_ast)?;
+    let info = PluginTypeInfo::new(db, item_ast)?;
     match &info.type_variant {
         TypeVariant::Struct => {
             // In case of a struct, we need to generate the `Store` trait implementation as well as
@@ -48,7 +48,7 @@ pub fn handle_store_derive(
 }
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
-fn handle_struct_store(info: &DeriveInfo) -> Option<RewriteNode> {
+fn handle_struct_store(info: &PluginTypeInfo) -> Option<RewriteNode> {
     let full_name = &info.full_typename();
     let name = &info.name;
     let mut fields_write_start = Vec::new();
@@ -212,7 +212,7 @@ fn handle_struct_store(info: &DeriveInfo) -> Option<RewriteNode> {
 /// Derive the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
 fn handle_enum(
     db: &dyn SyntaxGroup,
-    info: &DeriveInfo,
+    info: &PluginTypeInfo,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<RewriteNode> {
     let enum_name = &info.name;

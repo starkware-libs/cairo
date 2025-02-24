@@ -2,11 +2,11 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Debug` trait.
-pub fn handle_debug(info: &DeriveInfo) -> String {
+pub fn handle_debug(info: &PluginTypeInfo) -> String {
     const DEBUG_TRAIT: &str = "core::fmt::Debug";
     let header = info.impl_header(DEBUG_TRAIT, &[DEBUG_TRAIT]);
     let full_typename = info.full_typename();

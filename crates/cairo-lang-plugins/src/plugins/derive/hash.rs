@@ -2,11 +2,11 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Hash` trait.
-pub fn handle_hash(info: &DeriveInfo) -> String {
+pub fn handle_hash(info: &PluginTypeInfo) -> String {
     const HASH_TRAIT: &str = "core::hash::Hash";
     const DROP_TRAIT: &str = "core::traits::Drop";
     let full_typename = info.full_typename();
