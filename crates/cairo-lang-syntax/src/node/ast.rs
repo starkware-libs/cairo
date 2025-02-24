@@ -23233,6 +23233,7 @@ impl From<&MacroRuleParamKindMissing> for SyntaxStablePtrId {
 pub enum MacroRuleElement {
     Token(TokenTreeLeaf),
     Param(MacroRuleParam),
+    Subtree(MacroMatcherwrapper),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MacroRuleElementPtr(pub SyntaxStablePtrId);
@@ -23260,6 +23261,11 @@ impl From<MacroRuleParamPtr> for MacroRuleElementPtr {
         Self(value.0)
     }
 }
+impl From<MacroMatcherwrapperPtr> for MacroRuleElementPtr {
+    fn from(value: MacroMatcherwrapperPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenTreeLeafGreen> for MacroRuleElementGreen {
     fn from(value: TokenTreeLeafGreen) -> Self {
         Self(value.0)
@@ -23267,6 +23273,11 @@ impl From<TokenTreeLeafGreen> for MacroRuleElementGreen {
 }
 impl From<MacroRuleParamGreen> for MacroRuleElementGreen {
     fn from(value: MacroRuleParamGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<MacroMatcherwrapperGreen> for MacroRuleElementGreen {
+    fn from(value: MacroMatcherwrapperGreen) -> Self {
         Self(value.0)
     }
 }
@@ -23288,6 +23299,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroRuleParam => {
                 MacroRuleElement::Param(MacroRuleParam::from_syntax_node(db, node))
             }
+            SyntaxKind::MacroMatcherwrapper => {
+                MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MacroRuleElement"
@@ -23303,6 +23317,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroRuleParam => {
                 Some(MacroRuleElement::Param(MacroRuleParam::from_syntax_node(db, node)))
             }
+            SyntaxKind::MacroMatcherwrapper => {
+                Some(MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -23310,6 +23327,7 @@ impl TypedSyntaxNode for MacroRuleElement {
         match self {
             MacroRuleElement::Token(x) => x.as_syntax_node(),
             MacroRuleElement::Param(x) => x.as_syntax_node(),
+            MacroRuleElement::Subtree(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -23324,7 +23342,103 @@ impl From<&MacroRuleElement> for SyntaxStablePtrId {
 impl MacroRuleElement {
     /// Checks if a kind of a variant of [MacroRuleElement].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::TokenTreeLeaf | SyntaxKind::MacroRuleParam)
+        matches!(
+            kind,
+            SyntaxKind::TokenTreeLeaf
+                | SyntaxKind::MacroRuleParam
+                | SyntaxKind::MacroMatcherwrapper
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroMatcherwrapper {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroMatcherwrapper {
+    pub const INDEX_SUBTREE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, subtree: MacroMatcherGreen) -> MacroMatcherwrapperGreen {
+        let children: Vec<GreenId> = vec![subtree.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroMatcherwrapperGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroMatcherwrapper,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroMatcherwrapper {
+    pub fn subtree(&self, db: &dyn SyntaxGroup) -> MacroMatcher {
+        MacroMatcher::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroMatcherwrapperPtr(pub SyntaxStablePtrId);
+impl MacroMatcherwrapperPtr {}
+impl TypedStablePtr for MacroMatcherwrapperPtr {
+    type SyntaxNode = MacroMatcherwrapper;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroMatcherwrapper {
+        MacroMatcherwrapper::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroMatcherwrapperPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroMatcherwrapperPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroMatcherwrapperGreen(pub GreenId);
+impl TypedSyntaxNode for MacroMatcherwrapper {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroMatcherwrapper);
+    type StablePtr = MacroMatcherwrapperPtr;
+    type Green = MacroMatcherwrapperGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroMatcherwrapperGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroMatcherwrapper,
+                details: GreenNodeDetails::Node {
+                    children: vec![MacroMatcher::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroMatcherwrapper,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroMatcherwrapper
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroMatcherwrapper {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroMatcherwrapperPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroMatcherwrapper> for SyntaxStablePtrId {
+    fn from(node: &MacroMatcherwrapper) -> Self {
+        node.stable_ptr().untyped()
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
