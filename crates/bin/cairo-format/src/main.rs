@@ -49,6 +49,9 @@ struct FormatterArgs {
     /// same line (as space permits). Defaults to single line.
     #[arg(long)]
     fixed_array_line_breaking: Option<bool>,
+    /// Controls macro call breaking behavior.
+    #[arg(long)]
+    macro_call_breaking_behavior: Option<bool>,
     /// Enable merging of `use` items.
     #[arg(long)]
     merge_use_items: Option<bool>,
@@ -203,6 +206,7 @@ fn main() -> ExitCode {
         .sort_module_level_items(args.sort_mod_level_items)
         .tuple_breaking_behavior(args.tuple_line_breaking.map(Into::into))
         .fixed_array_breaking_behavior(args.fixed_array_line_breaking.map(Into::into))
+        .macro_call_breaking_behavior(args.macro_call_breaking_behavior.map(Into::into))
         .merge_use_items(args.merge_use_items)
         .allow_duplicate_uses(args.allow_duplicates);
     let fmt = CairoFormatter::new(config);
