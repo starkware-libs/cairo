@@ -124,7 +124,14 @@ pub enum ContextFunction {
 
 /// Context inside loops or closures.
 #[derive(Debug, Clone)]
-enum InnerContext {
+struct InnerContext {
+    return_type: TypeId,
+    kind: InnerContextKind,
+}
+
+/// Context inside loops or closures.
+#[derive(Debug, Clone)]
+enum InnerContextKind {
     /// Context inside a `loop`
     Loop { type_merger: FlowMergeTypeHelper },
     /// Context inside a `while` loop
@@ -132,7 +139,7 @@ enum InnerContext {
     /// Context inside a `for` loop
     For,
     /// Context inside a `closure`
-    Closure { return_type: TypeId },
+    Closure,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -230,17 +237,17 @@ impl<'ctx> ComputationContext<'ctx> {
         }
     }
 
-    /// Returns [Self::signature] if it exists. Otherwise, reports a diagnostic and returns `Err`.
-    fn get_signature(
-        &mut self,
-        stable_ptr: SyntaxStablePtrId,
-        feature_name: UnsupportedOutsideOfFunctionFeatureName,
-    ) -> Maybe<&'ctx Signature> {
-        if let Some(signature) = self.signature {
-            return Ok(signature);
+    /// Returns the return type in the current context if available.
+    fn get_return_type(&mut self) -> Option<TypeId> {
+        if let Some(inner_ctx) = &self.inner_ctx {
+            return Some(inner_ctx.return_type);
         }
 
-        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction(feature_name)))
+        if let Some(signature) = self.signature {
+            return Some(signature.return_type);
+        }
+
+        None
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
@@ -272,9 +279,13 @@ impl<'ctx> ComputationContext<'ctx> {
     }
     /// Returns whether the current context is inside a loop.
     fn is_inside_loop(&self) -> bool {
-        match self.inner_ctx {
-            None | Some(InnerContext::Closure { .. }) => false,
-            Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => true,
+        let Some(inner_ctx) = &self.inner_ctx else {
+            return false;
+        };
+
+        match inner_ctx.kind {
+            InnerContextKind::Closure => false,
+            InnerContextKind::Loop { .. } | InnerContextKind::While | InnerContextKind::For => true,
         }
     }
 }
@@ -1335,7 +1346,9 @@ fn compute_arm_semantic(
             let ast::Expr::Block(arm_expr_syntax) = arm_expr_syntax else {
                 unreachable!("Expected a block expression for a loop arm.");
             };
-            let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContext::While);
+
+            let (id, _) =
+                compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContextKind::While);
             let expr = new_ctx.arenas.exprs[id].clone();
             ExprAndId { expr, id }
         } else {
@@ -1471,14 +1484,17 @@ fn compute_expr_loop_semantic(
     let (body, inner_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        InnerContext::Loop { type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop) },
+        InnerContextKind::Loop {
+            type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop),
+        },
     );
+
+    let InnerContext { kind: InnerContextKind::Loop { type_merger, .. }, .. } = inner_ctx else {
+        unreachable!("Expected loop context");
+    };
     Ok(Expr::Loop(ExprLoop {
         body,
-        ty: match inner_ctx {
-            InnerContext::Loop { type_merger, .. } => type_merger.get_final_type(),
-            _ => unreachable!("Expected loop context"),
-        },
+        ty: type_merger.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -1510,7 +1526,7 @@ fn compute_expr_while_semantic(
         }
         ast::Condition::Expr(expr) => {
             let (body, _inner_ctx) =
-                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContext::While);
+                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContextKind::While);
             (
                 Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
                 body,
@@ -1630,7 +1646,7 @@ fn compute_expr_for_semantic(
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
         let (body, _inner_ctx) =
-            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContext::For);
+            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContextKind::For);
         (body, new_ctx.arenas.patterns.alloc(inner_pattern.pattern))
     });
     Ok(Expr::For(ExprFor {
@@ -1649,12 +1665,15 @@ fn compute_expr_for_semantic(
 fn compute_loop_body_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::ExprBlock,
-    inner_ctx: InnerContext,
+    inner_ctx_kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
+        let inner_ctx =
+            InnerContext { return_type: new_ctx.get_return_type().unwrap(), kind: inner_ctx_kind };
+
         let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
 
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
@@ -1746,8 +1765,10 @@ fn compute_expr_closure_semantic(
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
             }
         };
-        let old_inner_ctx =
-            std::mem::replace(&mut new_ctx.inner_ctx, Some(InnerContext::Closure { return_type }));
+
+        let inner_ctx = InnerContext { return_type, kind: InnerContextKind::Closure };
+
+        let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
         let body = match syntax.expr(syntax_db) {
             ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
             _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
@@ -1860,16 +1881,12 @@ fn compute_expr_error_propagate_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
-    let return_type = match ctx.inner_ctx {
-        Some(InnerContext::Closure { return_type }) => return_type,
-        None | Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => {
-            ctx.get_signature(
-                syntax.into(),
-                UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
-            )?
-            .return_type
-        }
-    };
+    let return_type = ctx.get_return_type().ok_or_else(|| {
+        ctx.diagnostics.report(
+            syntax,
+            UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate),
+        )
+    })?;
 
     let func_err_prop_ty = unwrap_error_propagation_type(ctx.db, return_type)
         .ok_or_else(|| ctx.diagnostics.report(syntax, ReturnTypeNotErrorPropagateType))?;
@@ -3690,16 +3707,16 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
                 }
             };
-            let expected_ty = match ctx.inner_ctx {
-                None => {
-                    ctx.get_signature(
-                        return_syntax.into(),
-                        UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                    )?
-                    .return_type
-                }
-                Some(InnerContext::Closure { return_type }) => return_type,
-                _ => unreachable!("Return statement inside a loop"),
+            let expected_ty = match &ctx.inner_ctx {
+                None => ctx.get_return_type().ok_or_else(|| {
+                    ctx.diagnostics.report(
+                        return_syntax,
+                        UnsupportedOutsideOfFunction(
+                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                        ),
+                    )
+                })?,
+                Some(ctx) => ctx.return_type,
             };
 
             let expected_ty = ctx.reduce_ty(expected_ty);
@@ -3732,25 +3749,34 @@ pub fn compute_statement_semantic(
                 }
             };
             let ty = ctx.reduce_ty(ty);
-            match &mut ctx.inner_ctx {
-                None | Some(InnerContext::Closure { .. }) => {
+
+            let mut break_allowed = false;
+            if let Some(inner_ctx) = &mut ctx.inner_ctx {
+                match &mut inner_ctx.kind {
+                    InnerContextKind::Closure => {}
+                    InnerContextKind::Loop { type_merger, .. } => {
+                        break_allowed = true;
+                        type_merger.try_merge_types(
+                            ctx.db,
+                            ctx.diagnostics,
+                            &mut ctx.resolver.inference(),
+                            ty,
+                            stable_ptr,
+                        );
+                    }
+                    InnerContextKind::While | InnerContextKind::For => {
+                        break_allowed = true;
+                        if expr_option.is_some() {
+                            ctx.diagnostics
+                                .report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
+                        };
+                    }
+                }
+
+                if !break_allowed {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
                 }
-                Some(InnerContext::Loop { type_merger, .. }) => {
-                    type_merger.try_merge_types(
-                        ctx.db,
-                        ctx.diagnostics,
-                        &mut ctx.resolver.inference(),
-                        ty,
-                        stable_ptr,
-                    );
-                }
-                Some(InnerContext::While | InnerContext::For) => {
-                    if expr_option.is_some() {
-                        ctx.diagnostics.report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
-                    };
-                }
-            };
+            }
             semantic::Statement::Break(semantic::StatementBreak {
                 expr_option,
                 stable_ptr: syntax.stable_ptr(),
