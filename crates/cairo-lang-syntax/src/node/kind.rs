@@ -163,6 +163,7 @@ pub enum SyntaxKind {
     MacroRule,
     MacroRuleParam,
     MacroRuleParamKindMissing,
+    MacroMatcherwrapper,
     ParenthesizedMacroMatcher,
     BracedMacroMatcher,
     BracketedMacroMatcher,

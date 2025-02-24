@@ -155,6 +155,9 @@ pub fn is_macro_rule_match(
                     }
                 }
             }
+            ast::MacroRuleElement::Subtree(_) => {
+                todo!("Subtrees are not supported yet.")
+            }
         }
     }
     if input_iter.next().is_some() {
