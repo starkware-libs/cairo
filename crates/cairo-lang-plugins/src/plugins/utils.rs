@@ -51,7 +51,7 @@ pub struct GenericParamsInfo {
 }
 impl GenericParamsInfo {
     /// Extracts the information on generic params.
-    fn new(db: &dyn SyntaxGroup, generic_params: ast::OptionWrappedGenericParamList) -> Self {
+    pub fn new(db: &dyn SyntaxGroup, generic_params: ast::OptionWrappedGenericParamList) -> Self {
         let ast::OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params
         else {
             return Self { param_names: Default::default(), full_params: Default::default() };
