@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 pub const DEFAULT_ATTR: &str = "default";
@@ -13,7 +13,7 @@ pub const DEFAULT_ATTR: &str = "default";
 /// Adds derive result for the `Default` trait.
 pub fn handle_default(
     db: &dyn SyntaxGroup,
-    info: &DeriveInfo,
+    info: &PluginTypeInfo,
     derived: &ast::ExprPath,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<String> {
