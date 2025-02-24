@@ -383,3 +383,48 @@ error: Wrong number of arguments. Expected 3, found: 4
  --> lib.cairo:9:7
     0.bar(1, 2, 3);
       ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > method with impl type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let channel = PoseidonChannel {};
+    let felt = channel.draw_felt();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ChannelTrait {
+    type Channel;
+
+    fn draw_felt(ref self: Self::Channel) -> felt252;
+}
+
+struct PoseidonChannel {}
+
+impl PoseidonChannelImpl of ChannelTrait {
+    type Channel = PoseidonChannel;
+
+    fn draw_felt(ref self: PoseidonChannel) -> felt252 {
+        5
+    }
+}
+
+//! > expected_diagnostics
+error[E0002]: Method `draw_felt` could not be called on type `test::PoseidonChannel`.
+Candidate `test::ChannelTrait::draw_felt` inference failed with: Type mismatch: `test::PoseidonChannel` and `test::ChannelTrait::Channel`.
+ --> lib.cairo:18:24
+    let felt = channel.draw_felt();
+                       ^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:18:9
+    let felt = channel.draw_felt();
+        ^^^^
