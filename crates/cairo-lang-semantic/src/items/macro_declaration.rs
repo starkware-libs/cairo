@@ -171,6 +171,9 @@ fn is_macro_rule_match_ex(
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
+            ast::MacroRuleElement::Subtree(_) => {
+                todo!("Subtrees are not supported yet.")
+            }
         }
     }
     if input_iter.next().is_some() {
