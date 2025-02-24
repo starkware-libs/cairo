@@ -65,25 +65,39 @@ impl MacroPlugin for StorageInterfacesPlugin {
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
+        let mut diagnostics = vec![];
+        let storage_node_attrs = item_ast.query_attr(db, STORAGE_NODE_ATTR);
+        if !matches!(item_ast, ast::ModuleItem::Struct(_)) && !storage_node_attrs.is_empty() {
+            for attr in &storage_node_attrs {
+                diagnostics.push(PluginDiagnostic::error(
+                    attr,
+                    "Can only be applied to structs.".to_string(),
+                ));
+            }
+        }
+        let sub_pointers_attrs = item_ast.query_attr(db, STORAGE_SUB_POINTERS_ATTR);
+        if !matches!(item_ast, ast::ModuleItem::Enum(_)) && !sub_pointers_attrs.is_empty() {
+            for attr in &sub_pointers_attrs {
+                diagnostics.push(PluginDiagnostic::error(
+                    attr,
+                    "Can only be applied to enums.".to_string(),
+                ));
+            }
+        }
         match item_ast {
-            ast::ModuleItem::Struct(struct_ast) => {
-                let mut diagnostics = vec![];
-                let storage_node_attrs = struct_ast.query_attr(db, STORAGE_NODE_ATTR);
-                if storage_node_attrs.is_empty() {
-                    return PluginResult::default();
-                }
-                if storage_node_attrs.len() > 1 {
+            ast::ModuleItem::Struct(struct_ast) if !storage_node_attrs.is_empty() => {
+                for attr in &storage_node_attrs[1..] {
                     diagnostics.push(PluginDiagnostic::error(
-                        struct_ast.as_syntax_node().stable_ptr(),
+                        attr,
                         "Multiple storage node attributes are not allowed.".to_string(),
                     ));
                 }
                 if has_derive(&struct_ast, db, STORE_TRAIT).is_some() {
                     diagnostics.push(PluginDiagnostic::error(
                         struct_ast.as_syntax_node().stable_ptr(),
-                        "Storage node and storage sub pointers attributes cannot be used
-                together."
-                            .to_string(),
+                        format!(
+                            "Storage node attribute cannot be used with derive of `{STORE_TRAIT}`."
+                        ),
                     ));
                 }
                 if !diagnostics.is_empty() {
@@ -104,31 +118,19 @@ impl MacroPlugin for StorageInterfacesPlugin {
                     remove_original_item: false,
                 }
             }
-            ast::ModuleItem::Enum(enum_ast) => {
-                let mut diagnostics = vec![];
-                let queryable_variants_attrs = enum_ast.query_attr(db, STORAGE_SUB_POINTERS_ATTR);
-                if queryable_variants_attrs.is_empty() {
-                    return PluginResult::default();
-                }
-                if queryable_variants_attrs.len() > 1 {
+            ast::ModuleItem::Enum(enum_ast) if !sub_pointers_attrs.is_empty() => {
+                for attr in &sub_pointers_attrs[1..] {
                     diagnostics.push(PluginDiagnostic::error(
-                        enum_ast.as_syntax_node().stable_ptr(),
-                        "Multiple query variants attributes are not allowed.".to_string(),
+                        attr,
+                        "Multiple sub pointers attributes are not allowed.".to_string(),
                     ));
                 }
-                if let OptionArgListParenthesized::ArgListParenthesized(arguments) =
-                    queryable_variants_attrs[0].arguments(db)
+                let arguments = sub_pointers_attrs[0].arguments(db);
+                if !matches!(&arguments, OptionArgListParenthesized::ArgListParenthesized(args)
+                            if extract_single_unnamed_arg(db, args.arguments(db)).is_some())
                 {
-                    if extract_single_unnamed_arg(db, arguments.arguments(db)).is_none() {
-                        diagnostics.push(PluginDiagnostic::error(
-                            enum_ast.as_syntax_node().stable_ptr(),
-                            "Query variants attribute must have exactly one unnamed argument."
-                                .to_string(),
-                        ));
-                    }
-                } else {
                     diagnostics.push(PluginDiagnostic::error(
-                        enum_ast.as_syntax_node().stable_ptr(),
+                        &arguments,
                         "Query variants attribute must have exactly one unnamed argument."
                             .to_string(),
                     ));
@@ -149,17 +151,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                     remove_original_item: false,
                 }
             }
-            _ => {
-                if item_ast.has_attr(db, STORAGE_NODE_ATTR) {
-                    let diagnostics = vec![PluginDiagnostic::error(
-                        item_ast.as_syntax_node().stable_ptr(),
-                        "#[starknet::storage_node] can only be applied to structs.".to_string(),
-                    )];
-                    PluginResult { code: None, diagnostics, remove_original_item: false }
-                } else {
-                    PluginResult::default()
-                }
-            }
+            _ => PluginResult { code: None, diagnostics, remove_original_item: false },
         }
     }
 
