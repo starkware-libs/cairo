@@ -232,6 +232,7 @@ fn main() -> anyhow::Result<()> {
         syscalls_used_resources: Default::default(),
         no_temporary_segments: false,
         markers: Default::default(),
+        panic_traceback: Default::default(),
     };
 
     let cairo_run_config = CairoRunConfig {

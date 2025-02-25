@@ -105,6 +105,8 @@ pub struct CairoHintProcessor<'a> {
     pub no_temporary_segments: bool,
     /// A set of markers created by the run.
     pub markers: Vec<Vec<Felt252>>,
+    /// The traceback set by a panic trace hint call.
+    pub panic_traceback: Vec<(Relocatable, Relocatable)>,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -1345,6 +1347,50 @@ impl CairoHintProcessor<'_> {
             }
             ExternalHint::AddMarker { start, end } => {
                 self.markers.push(read_felts(vm, start, end)?);
+            }
+            ExternalHint::AddTrace { flag } => {
+                let flag = get_val(vm, flag)?;
+                // Setting the panic backtrace if the given flag is panic.
+                if flag == 0x70616e6963u64.into() {
+                    let mut fp = vm.get_fp();
+                    self.panic_traceback = vec![(vm.get_pc(), fp)];
+                    // Fetch the fp and pc traceback entries
+                    loop {
+                        let ptr_at_offset = |offset: usize| {
+                            (fp - offset).ok().and_then(|r| vm.get_relocatable(r).ok())
+                        };
+                        // Get return pc.
+                        let Some(ret_pc) = ptr_at_offset(1) else {
+                            break;
+                        };
+                        println!("ret_pc: {ret_pc}");
+                        // Get fp traceback.
+                        let Some(ret_fp) = ptr_at_offset(2) else {
+                            break;
+                        };
+                        println!("ret_fp: {ret_fp}");
+                        if ret_fp == fp {
+                            break;
+                        }
+                        fp = ret_fp;
+
+                        let call_instruction = |offset: usize| -> Option<Relocatable> {
+                            let ptr = (ret_pc - offset).ok()?;
+                            println!("ptr: {ptr}");
+                            let inst = vm.get_integer(ptr).ok()?;
+                            println!("inst: {inst}");
+                            let inst_short = inst.to_u64()?;
+                            (inst_short & 0x7000_0000_0000_0000 == 0x1000_0000_0000_0000)
+                                .then_some(ptr)
+                        };
+                        if let Some(call_pc) = call_instruction(1).or_else(|| call_instruction(2)) {
+                            self.panic_traceback.push((call_pc, fp));
+                        } else {
+                            break;
+                        }
+                    }
+                    self.panic_traceback.reverse();
+                }
             }
             ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize } => {
                 let state = extract_relocatable(vm, state)?;

@@ -208,6 +208,7 @@ impl SierraCasmRunner {
             syscalls_used_resources: Default::default(),
             no_temporary_segments: true,
             markers: Default::default(),
+            panic_traceback: Default::default(),
         };
         let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
             .run_function(

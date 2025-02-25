@@ -611,6 +611,7 @@ pub fn core_libfunc_cost(
         },
         // TODO(ilya): Add blake token to blake gas cost..
         Blake(_) => vec![ConstCost::steps(1).into()],
+        Trace(_) => vec![ConstCost::steps(1).into()],
     }
 }
 

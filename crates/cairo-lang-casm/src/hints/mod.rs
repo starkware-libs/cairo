@@ -358,9 +358,12 @@ pub enum ExternalHint {
     /// Stores an array marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     AddMarker { start: ResOperand, end: ResOperand },
+    /// Adds a trace call with the given flag to the HintProcessor. Useful for debugging.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
+    AddTrace { flag: ResOperand },
     // TODO(ilya): Remove once the blake2s opecode is supported by the VM.
     /// Compresses a message using the Blake2s algorithm.
-    #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 4))]
     Blake2sCompress {
         state: ResOperand,
         byte_count: ResOperand,
@@ -882,6 +885,9 @@ impl PythonicHint for ExternalHint {
                         finalize: {finalize}
                     }}
                 "}
+            }
+            Self::AddTrace { flag } => {
+                format!("AddTrace {{ flag: {} }}", ResOperandAsIntegerFormatter(flag))
             }
         }
     }
