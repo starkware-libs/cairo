@@ -8,7 +8,8 @@ use cairo_lang_syntax::attribute::structured::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use utils::DeriveInfo;
+
+use super::utils::PluginTypeInfo;
 
 mod clone;
 mod debug;
@@ -18,7 +19,6 @@ mod hash;
 mod panic_destruct;
 mod partial_eq;
 mod serde;
-pub mod utils;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -36,7 +36,7 @@ impl MacroPlugin for DerivePlugin {
         generate_derive_code_for_type(
             db,
             metadata,
-            match DeriveInfo::new(db, &item_ast) {
+            match PluginTypeInfo::new(db, &item_ast) {
                 Some(info) => info,
                 None => {
                     let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
@@ -79,7 +79,7 @@ impl MacroPlugin for DerivePlugin {
 fn generate_derive_code_for_type(
     db: &dyn SyntaxGroup,
     metadata: &MacroPluginMetadata<'_>,
-    info: DeriveInfo,
+    info: PluginTypeInfo,
 ) -> PluginResult {
     let mut diagnostics = vec![];
     let mut builder = PatchBuilder::new(db, &info.attributes);
@@ -143,7 +143,7 @@ fn generate_derive_code_for_type(
     }
 }
 
-fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
+fn get_empty_impl(derived_trait: &str, info: &PluginTypeInfo) -> String {
     let derive_trait = format!("core::traits::{derived_trait}");
     format!("{};\n", info.impl_header(&derive_trait, &[&derive_trait]))
 }

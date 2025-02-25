@@ -2,11 +2,11 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PartialEq` trait.
-pub fn handle_partial_eq(info: &DeriveInfo) -> String {
+pub fn handle_partial_eq(info: &PluginTypeInfo) -> String {
     const PARTIAL_EQ_TRAIT: &str = "core::traits::PartialEq";
     let header = info.impl_header(PARTIAL_EQ_TRAIT, &[PARTIAL_EQ_TRAIT]);
     let full_typename = info.full_typename();

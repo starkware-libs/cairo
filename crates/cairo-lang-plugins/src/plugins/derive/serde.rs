@@ -2,11 +2,11 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
+use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Serde` trait.
-pub fn handle_serde(info: &DeriveInfo) -> String {
+pub fn handle_serde(info: &PluginTypeInfo) -> String {
     const SERDE_TRAIT: &str = "core::serde::Serde";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let ty = &info.name;

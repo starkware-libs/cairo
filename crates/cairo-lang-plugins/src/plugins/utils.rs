@@ -70,15 +70,15 @@ impl GenericParamsInfo {
     }
 }
 
-/// Information for the type being derived.
-pub struct DeriveInfo {
+/// Information for the type being processed by a plugin.
+pub struct PluginTypeInfo {
     pub name: SmolStr,
     pub attributes: ast::AttributeList,
     pub generics: GenericParamsInfo,
     pub members_info: Vec<MemberInfo>,
     pub type_variant: TypeVariant,
 }
-impl DeriveInfo {
+impl PluginTypeInfo {
     /// Extracts the information on the type being derived.
     pub fn new(db: &dyn SyntaxGroup, item_ast: &ast::ModuleItem) -> Option<Self> {
         match item_ast {
