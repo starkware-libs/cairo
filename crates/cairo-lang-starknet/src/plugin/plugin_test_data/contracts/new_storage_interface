@@ -62,6 +62,25 @@ enum QueryableEnum {
     B: u256,
 }
 
+#[starknet::storage_node]
+struct GenericLinkedList<T> {
+    value: T,
+    next: GenericLinkedList<T>,
+}
+
+#[starknet::sub_pointers(GenericQueryableEnumVariants)]
+#[derive(Drop, starknet::Store)]
+enum GenericQueryableEnum<AT, BT> {
+    A: AT,
+    B: BT,
+}
+
+#[derive(starknet::Store)]
+struct GenericPair<T, S, impl TStore: starknet::Store<T>> {
+    t: T,
+    s: S,
+}
+
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
@@ -205,6 +224,25 @@ struct LinkedList {
 enum QueryableEnum {
     A: u128,
     B: u256,
+}
+
+#[starknet::storage_node]
+struct GenericLinkedList<T> {
+    value: T,
+    next: GenericLinkedList<T>,
+}
+
+#[starknet::sub_pointers(GenericQueryableEnumVariants)]
+#[derive(Drop, starknet::Store)]
+enum GenericQueryableEnum<AT, BT> {
+    A: AT,
+    B: BT,
+}
+
+#[derive(starknet::Store)]
+struct GenericPair<T, S, impl TStore: starknet::Store<T>> {
+    t: T,
+    s: S,
 }
 
 #[starknet::contract]
@@ -1894,14 +1932,14 @@ enum QueryableEnumVariants {
     B: starknet::storage::StoragePointer<u256>,
 }
 impl QueryableEnumSubPointersImpl of starknet::storage::SubPointers<QueryableEnum> {
-type SubPointersType = QueryableEnumVariants;
-   fn sub_pointers(self: starknet::storage::StoragePointer<QueryableEnum>) -> QueryableEnumVariants {
+    type SubPointersType = QueryableEnumVariants;
+    fn sub_pointers(self: starknet::storage::StoragePointer<QueryableEnum>) -> QueryableEnumVariants {
         let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
             __storage_pointer_address__: self.__storage_pointer_address__,
             __storage_pointer_offset__: self.__storage_pointer_offset__,
-         };
-         let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
-         match selector {
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
     
         1 => QueryableEnumVariants::A(starknet::storage::StoragePointer {
             __storage_pointer_address__: self.__storage_pointer_address__,
@@ -1921,14 +1959,14 @@ enum QueryableEnumVariantsMut {
     B: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
 }
 impl QueryableEnumSubPointersMutImpl of starknet::storage::SubPointersMut<QueryableEnum> {
-type SubPointersType = QueryableEnumVariantsMut;
-   fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<QueryableEnum>>) -> QueryableEnumVariantsMut {
+    type SubPointersType = QueryableEnumVariantsMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<QueryableEnum>>) -> QueryableEnumVariantsMut {
         let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
             __storage_pointer_address__: self.__storage_pointer_address__,
             __storage_pointer_offset__: self.__storage_pointer_offset__,
-         };
-         let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
-         match selector {
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
     
         1 => QueryableEnumVariantsMut::A(starknet::storage::StoragePointer {
             __storage_pointer_address__: self.__storage_pointer_address__,
@@ -1941,6 +1979,379 @@ type SubPointersType = QueryableEnumVariantsMut;
         0 | _ => panic!("Invalid selector value"),
     }
 }
+}
+
+
+lib.cairo:59:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+storage_node:
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericLinkedListStorageBase<T> {
+    pub value: starknet::storage::StorageBase<T>,
+    pub next: starknet::storage::StorageBase<GenericLinkedList<T>>,
+}
+#[doc(hidden)]
+impl GenericLinkedListStorageImpl<T> of starknet::storage::StorageTrait<GenericLinkedList<T>> {
+    type BaseType = GenericLinkedListStorageBase<T>;
+    fn storage(self: starknet::storage::FlattenedStorage<GenericLinkedList<T>>) -> GenericLinkedListStorageBase<T> {
+        let __value_value__ = starknet::storage::StorageBase {__base_address__: selector!("value")};
+        let __next_value__ = starknet::storage::StorageBase {__base_address__: selector!("next")};
+        GenericLinkedListStorageBase {
+           value: __value_value__,
+           next: __next_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericLinkedListStorageBaseMut<T> {
+    pub value: starknet::storage::StorageBase<starknet::storage::Mutable::<T>>,
+    pub next: starknet::storage::StorageBase<starknet::storage::Mutable::<GenericLinkedList<T>>>,
+}
+#[doc(hidden)]
+impl GenericLinkedListStorageMutImpl<T> of starknet::storage::StorageTraitMut<GenericLinkedList<T>> {
+    type BaseType = GenericLinkedListStorageBaseMut<T>;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<GenericLinkedList<T>>>) -> GenericLinkedListStorageBaseMut<T> {
+        let __value_value__ = starknet::storage::StorageBase {__base_address__: selector!("value")};
+        let __next_value__ = starknet::storage::StorageBase {__base_address__: selector!("next")};
+        GenericLinkedListStorageBaseMut {
+           value: __value_value__,
+           next: __next_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericLinkedListStorageNode<T> {
+    pub value: starknet::storage::PendingStoragePath<T>,
+    pub next: starknet::storage::PendingStoragePath<GenericLinkedList<T>>,
+}
+#[doc(hidden)]
+impl GenericLinkedListStorageNodeImpl<T> of starknet::storage::StorageNode<GenericLinkedList<T>> {
+    type NodeType = GenericLinkedListStorageNode<T>;
+    fn storage_node(self: starknet::storage::StoragePath<GenericLinkedList<T>>) -> GenericLinkedListStorageNode<T> {
+        let __value_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("value")
+                    );
+                            let __next_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("next")
+                    );
+                            GenericLinkedListStorageNode {
+           value: __value_value__,
+           next: __next_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericLinkedListStorageNodeMut<T> {
+    pub value: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<T>>,
+    pub next: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>,
+}
+#[doc(hidden)]
+impl GenericLinkedListStorageNodeMutImpl<T> of starknet::storage::StorageNodeMut<GenericLinkedList<T>> {
+    type NodeType = GenericLinkedListStorageNodeMut<T>;
+    fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>) -> GenericLinkedListStorageNodeMut<T> {
+        let __value_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("value")
+                    );
+                            let __next_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("next")
+                    );
+                            GenericLinkedListStorageNodeMut {
+           value: __value_value__,
+           next: __next_value__,
+        }
+    }
+}
+
+
+lib.cairo:66:10
+#[derive(Drop, starknet::Store)]
+         ^^^^
+impls:
+
+impl GenericQueryableEnumDrop<AT, BT, impl __MEMBER_IMPL_A_Drop: core::traits::Drop<AT>, impl __MEMBER_IMPL_B_Drop: core::traits::Drop<BT>> of core::traits::Drop::<GenericQueryableEnum<AT, BT>>;
+
+
+lib.cairo:66:16
+#[derive(Drop, starknet::Store)]
+               ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl GenericQueryableEnumStore<AT, BT, impl __MEMBER_IMPL_A_Store: starknet::Store<AT>, impl __MEMBER_IMPL_A_Destruct: core::traits::Destruct<AT>, impl __MEMBER_IMPL_B_Store: starknet::Store<BT>, impl __MEMBER_IMPL_B_Destruct: core::traits::Destruct<BT>> of starknet::Store::<GenericQueryableEnum<AT, BT>> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GenericQueryableEnum<AT, BT>> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    GenericQueryableEnum::A(
+                        __MEMBER_IMPL_A_Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
+                )
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    GenericQueryableEnum::B(
+                        __MEMBER_IMPL_B_Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
+                )
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
+        }
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GenericQueryableEnum<AT, BT>) -> starknet::SyscallResult<()> {
+        match value {
+            GenericQueryableEnum::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                __MEMBER_IMPL_A_Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            GenericQueryableEnum::B(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                __MEMBER_IMPL_B_Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GenericQueryableEnum<AT, BT>> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        match idx {
+            1 => {
+                starknet::SyscallResult::Ok(
+                    GenericQueryableEnum::A(
+                        __MEMBER_IMPL_A_Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
+                )
+            },
+            2 => {
+                starknet::SyscallResult::Ok(
+                    GenericQueryableEnum::B(
+                        __MEMBER_IMPL_B_Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
+                )
+            },
+            0 | _ => {
+                starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+            }
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GenericQueryableEnum<AT, BT>) -> starknet::SyscallResult<()> {
+        match value {
+            GenericQueryableEnum::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                __MEMBER_IMPL_A_Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            GenericQueryableEnum::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                __MEMBER_IMPL_B_Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + core::cmp::max(__MEMBER_IMPL_B_Store::size(), __MEMBER_IMPL_A_Store::size())
+    }
+}
+
+
+lib.cairo:65:1-70:1
+  #[starknet::sub_pointers(GenericQueryableEnumVariants)]
+ _^
+| ...
+| }
+|_^
+storage_node:
+
+#[derive(Drop, Copy)]
+enum GenericQueryableEnumVariants<AT, BT> {
+        A: starknet::storage::StoragePointer<AT>,
+    B: starknet::storage::StoragePointer<BT>,
+}
+impl GenericQueryableEnumSubPointersImpl<AT, BT> of starknet::storage::SubPointers<GenericQueryableEnum<AT, BT>> {
+    type SubPointersType = GenericQueryableEnumVariants<AT, BT>;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GenericQueryableEnum<AT, BT>>) -> GenericQueryableEnumVariants<AT, BT> {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
+    
+        1 => GenericQueryableEnumVariants::A(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        2 => GenericQueryableEnumVariants::B(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        0 | _ => panic!("Invalid selector value"),
+    }
+}
+}
+#[derive(Drop, Copy)]
+enum GenericQueryableEnumVariantsMut<AT, BT> {
+        A: starknet::storage::StoragePointer<starknet::storage::Mutable::<AT>>,
+    B: starknet::storage::StoragePointer<starknet::storage::Mutable::<BT>>,
+}
+impl GenericQueryableEnumSubPointersMutImpl<AT, BT> of starknet::storage::SubPointersMut<GenericQueryableEnum<AT, BT>> {
+    type SubPointersType = GenericQueryableEnumVariantsMut<AT, BT>;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GenericQueryableEnum<AT, BT>>>) -> GenericQueryableEnumVariantsMut<AT, BT> {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<felt252>{
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
+    
+        1 => GenericQueryableEnumVariantsMut::A(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        2 => GenericQueryableEnumVariantsMut::B(starknet::storage::StoragePointer {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+        }),
+        0 | _ => panic!("Invalid selector value"),
+    }
+}
+}
+
+
+lib.cairo:72:10
+#[derive(starknet::Store)]
+         ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl GenericPairStore<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Store: starknet::Store<T>, impl __MEMBER_IMPL_t_Destruct: core::traits::Destruct<T>, impl __MEMBER_IMPL_s_Store: starknet::Store<S>, impl __MEMBER_IMPL_s_Destruct: core::traits::Destruct<S>> of starknet::Store::<GenericPair<T, S, TStore>> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GenericPair<T, S, TStore>> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let t = core::internal::DestructWith::<T, __MEMBER_IMPL_t_Destruct> { value: __MEMBER_IMPL_t_Store::read(__store_derive_address_domain__, __store_derive_base__)? };
+        let mut __store_derive_current_offset__ = __MEMBER_IMPL_t_Store::size();
+        let s = core::internal::DestructWith::<S, __MEMBER_IMPL_s_Destruct> { value: __MEMBER_IMPL_s_Store::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
+        starknet::SyscallResult::Ok(
+            GenericPair {
+                t: t.value,
+                s: s.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GenericPair<T, S, TStore>) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let GenericPair {
+            t,
+                s,
+        } = value;
+        let t = core::internal::DestructWith::<T, __MEMBER_IMPL_t_Destruct> { value: t };
+                let s = core::internal::DestructWith::<S, __MEMBER_IMPL_s_Destruct> { value: s };
+        __MEMBER_IMPL_t_Store::write(__store_derive_address_domain__, __store_derive_base__, t.value)?;
+        let mut __store_derive_current_offset__ = __MEMBER_IMPL_t_Store::size();
+        __MEMBER_IMPL_s_Store::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, s.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GenericPair<T, S, TStore>> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let t = core::internal::DestructWith::<T, __MEMBER_IMPL_t_Destruct> { value: __MEMBER_IMPL_t_Store::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        let mut __store_derive_current_offset__ = __store_derive_offset__ + __MEMBER_IMPL_t_Store::size();
+        let s = core::internal::DestructWith::<S, __MEMBER_IMPL_s_Destruct> { value: __MEMBER_IMPL_s_Store::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
+        starknet::SyscallResult::Ok(
+            GenericPair {
+                t: t.value,
+                s: s.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GenericPair<T, S, TStore>) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let GenericPair {
+            t,
+                s,
+        } = value;
+        let t = core::internal::DestructWith::<T, __MEMBER_IMPL_t_Destruct> { value: t };
+                let s = core::internal::DestructWith::<S, __MEMBER_IMPL_s_Destruct> { value: s };
+        __MEMBER_IMPL_t_Store::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, t.value)?;
+        let mut __store_derive_current_offset__ = __store_derive_offset__ + __MEMBER_IMPL_t_Store::size();
+        __MEMBER_IMPL_s_Store::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, s.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        __MEMBER_IMPL_t_Store::size() +
+        __MEMBER_IMPL_s_Store::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericPairSubPointers<T, S, impl TStore: starknet::Store<T>> {
+    pub t: starknet::storage::StoragePointer<T>,
+    pub s: starknet::storage::StoragePointer<S>,
+}
+#[doc(hidden)]
+impl GenericPairSubPointersImpl<T, S, impl TStore: starknet::Store<T>> of starknet::storage::SubPointers<GenericPair<T, S, TStore>> {
+    type SubPointersType = GenericPairSubPointers<T, S, TStore>;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GenericPair<T, S, TStore>>) -> GenericPairSubPointers<T, S, TStore> {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __t_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<T>::size();
+        let __s_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GenericPairSubPointers {
+           t: __t_value__,
+           s: __s_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GenericPairSubPointersMut<T, S, impl TStore: starknet::Store<T>> {
+    pub t: starknet::storage::StoragePointer<starknet::storage::Mutable::<T>>,
+    pub s: starknet::storage::StoragePointer<starknet::storage::Mutable::<S>>,
+}
+#[doc(hidden)]
+impl GenericPairSubPointersMutImpl<T, S, impl TStore: starknet::Store<T>> of starknet::storage::SubPointersMut<GenericPair<T, S, TStore>> {
+    type SubPointersType = GenericPairSubPointersMut<T, S, TStore>;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GenericPair<T, S, TStore>>>) -> GenericPairSubPointersMut<T, S, TStore> {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __t_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<T>::size();
+        let __s_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GenericPairSubPointersMut {
+           t: __t_value__,
+           s: __s_value__,
+        }
+    }
 }
 
 
@@ -2544,6 +2955,84 @@ impl QueryableEnumVariantsMutDrop<> of core::traits::Drop::<QueryableEnumVariant
 impl QueryableEnumVariantsMutCopy<> of core::traits::Copy::<QueryableEnumVariantsMut>;
 
 
+lib.cairo:59:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl GenericLinkedListStorageBaseDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::StorageBase<T>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::StorageBase<GenericLinkedList<T>>>> of core::traits::Drop::<GenericLinkedListStorageBase<T>>;
+impl GenericLinkedListStorageBaseCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::StorageBase<T>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::StorageBase<GenericLinkedList<T>>>> of core::traits::Copy::<GenericLinkedListStorageBase<T>>;
+
+
+lib.cairo:59:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl GenericLinkedListStorageBaseMutDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::StorageBase<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::StorageBase<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Drop::<GenericLinkedListStorageBaseMut<T>>;
+impl GenericLinkedListStorageBaseMutCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::StorageBase<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::StorageBase<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Copy::<GenericLinkedListStorageBaseMut<T>>;
+
+
+lib.cairo:59:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl GenericLinkedListStorageNodeDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<T>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<GenericLinkedList<T>>>> of core::traits::Drop::<GenericLinkedListStorageNode<T>>;
+impl GenericLinkedListStorageNodeCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<T>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<GenericLinkedList<T>>>> of core::traits::Copy::<GenericLinkedListStorageNode<T>>;
+
+
+lib.cairo:59:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl GenericLinkedListStorageNodeMutDrop<T, impl __MEMBER_IMPL_value_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Drop: core::traits::Drop<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Drop::<GenericLinkedListStorageNodeMut<T>>;
+impl GenericLinkedListStorageNodeMutCopy<T, impl __MEMBER_IMPL_value_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_next_Copy: core::traits::Copy<starknet::storage::PendingStoragePath<starknet::storage::Mutable::<GenericLinkedList<T>>>>> of core::traits::Copy::<GenericLinkedListStorageNodeMut<T>>;
+
+
+lib.cairo:65:1-70:1
+  #[starknet::sub_pointers(GenericQueryableEnumVariants)]
+ _^
+| ...
+| }
+|_^
+impls:
+
+impl GenericQueryableEnumVariantsDrop<AT, BT, impl __MEMBER_IMPL_A_Drop: core::traits::Drop<starknet::storage::StoragePointer<AT>>, impl __MEMBER_IMPL_B_Drop: core::traits::Drop<starknet::storage::StoragePointer<BT>>> of core::traits::Drop::<GenericQueryableEnumVariants<AT, BT>>;
+impl GenericQueryableEnumVariantsCopy<AT, BT, impl __MEMBER_IMPL_A_Copy: core::traits::Copy<starknet::storage::StoragePointer<AT>>, impl __MEMBER_IMPL_B_Copy: core::traits::Copy<starknet::storage::StoragePointer<BT>>> of core::traits::Copy::<GenericQueryableEnumVariants<AT, BT>>;
+
+
+lib.cairo:65:1-70:1
+  #[starknet::sub_pointers(GenericQueryableEnumVariants)]
+ _^
+| ...
+| }
+|_^
+impls:
+
+impl GenericQueryableEnumVariantsMutDrop<AT, BT, impl __MEMBER_IMPL_A_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<AT>>>, impl __MEMBER_IMPL_B_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<BT>>>> of core::traits::Drop::<GenericQueryableEnumVariantsMut<AT, BT>>;
+impl GenericQueryableEnumVariantsMutCopy<AT, BT, impl __MEMBER_IMPL_A_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<AT>>>, impl __MEMBER_IMPL_B_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<BT>>>> of core::traits::Copy::<GenericQueryableEnumVariantsMut<AT, BT>>;
+
+
+lib.cairo:72:10
+#[derive(starknet::Store)]
+         ^^^^^^^^^^^^^^^
+impls:
+
+impl GenericPairSubPointersDrop<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Drop: core::traits::Drop<starknet::storage::StoragePointer<T>>, impl __MEMBER_IMPL_s_Drop: core::traits::Drop<starknet::storage::StoragePointer<S>>> of core::traits::Drop::<GenericPairSubPointers<T, S, TStore>>;
+impl GenericPairSubPointersCopy<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Copy: core::traits::Copy<starknet::storage::StoragePointer<T>>, impl __MEMBER_IMPL_s_Copy: core::traits::Copy<starknet::storage::StoragePointer<S>>> of core::traits::Copy::<GenericPairSubPointers<T, S, TStore>>;
+
+
+lib.cairo:72:10
+#[derive(starknet::Store)]
+         ^^^^^^^^^^^^^^^
+impls:
+
+impl GenericPairSubPointersMutDrop<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_s_Drop: core::traits::Drop<starknet::storage::StoragePointer<starknet::storage::Mutable::<S>>>> of core::traits::Drop::<GenericPairSubPointersMut<T, S, TStore>>;
+impl GenericPairSubPointersMutCopy<T, S, impl TStore: starknet::Store<T>, impl __MEMBER_IMPL_t_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<T>>>, impl __MEMBER_IMPL_s_Copy: core::traits::Copy<starknet::storage::StoragePointer<starknet::storage::Mutable::<S>>>> of core::traits::Copy::<GenericPairSubPointersMut<T, S, TStore>>;
+
+
 lib.cairo:1:1
 #[starknet::interface]
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -2616,7 +3105,7 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop:
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 
 
-lib.cairo:59:1
+lib.cairo:78:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
 contract:
@@ -3155,7 +3644,7 @@ pub mod __constructor {
 
 
 
-lib.cairo:59:1
+lib.cairo:78:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
@@ -3163,7 +3652,7 @@ impls:
 impl EventDrop<> of core::traits::Drop::<Event>;
 
 
-lib.cairo:59:1
+lib.cairo:78:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
@@ -3185,7 +3674,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:70:5
+lib.cairo:89:5
     #[storage]
     ^^^^^^^^^^
 impls:
@@ -3194,7 +3683,7 @@ impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:70:5
+lib.cairo:89:5
     #[storage]
     ^^^^^^^^^^
 impls:
@@ -3203,6 +3692,11 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<T>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+ --> lib.cairo:61:12
+    value: T,
+           ^
+
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:52:1-57:1
   #[starknet::sub_pointers(QueryableEnumVariants)]
@@ -3211,12 +3705,20 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 | }
 |_^
 
+warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
+ --> lib.cairo:65:1-70:1
+  #[starknet::sub_pointers(GenericQueryableEnumVariants)]
+ _^
+| ...
+| }
+|_^
+
 warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#[feature("starknet-storage-deprecation")]` attribute. Note: "Use `starknet::storage::MutableVecTrait::push` instead."
- --> lib.cairo:132:22
+ --> lib.cairo:151:22
             self.arr.append().write(value);
                      ^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:75:28
+ --> lib.cairo:94:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^^^^^^^^^
