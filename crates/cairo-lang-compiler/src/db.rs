@@ -87,6 +87,7 @@ pub struct RootDatabaseBuilder {
     default_plugin_suite: PluginSuite,
     detect_corelib: bool,
     auto_withdraw_gas: bool,
+    panic_backtrace: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
     inlining_strategy: InliningStrategy,
@@ -98,6 +99,7 @@ impl RootDatabaseBuilder {
             default_plugin_suite: get_default_plugin_suite(),
             detect_corelib: false,
             auto_withdraw_gas: true,
+            panic_backtrace: false,
             project_config: None,
             cfg_set: None,
             inlining_strategy: InliningStrategy::Default,
@@ -139,6 +141,11 @@ impl RootDatabaseBuilder {
         self
     }
 
+    pub fn with_panic_backtrace(&mut self) -> &mut Self {
+        self.panic_backtrace = true;
+        self
+    }
+
     pub fn build(&mut self) -> Result<RootDatabase> {
         // NOTE: Order of operations matters here!
         //   Errors if something is not OK are very subtle, mostly this results in missing
@@ -160,6 +167,11 @@ impl RootDatabaseBuilder {
         db.set_flag(
             add_withdraw_gas_flag_id,
             Some(Arc::new(Flag::AddWithdrawGas(self.auto_withdraw_gas))),
+        );
+        let panic_backtrace_flag_id = FlagId::new(db.upcast(), "panic_backtrace");
+        db.set_flag(
+            panic_backtrace_flag_id,
+            Some(Arc::new(Flag::PanicBacktrace(self.panic_backtrace))),
         );
 
         if let Some(config) = &self.project_config {

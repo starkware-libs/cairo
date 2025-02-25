@@ -50,6 +50,7 @@ use super::span::SpanType;
 use super::squashed_felt252_dict::{SquashedFelt252DictLibfunc, SquashedFelt252DictType};
 use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
+use super::trace::TraceLibfunc;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -149,5 +150,6 @@ define_libfunc_hierarchy! {
         SnapshotTake(SnapshotTakeLibfunc),
         Bytes31(Bytes31Libfunc),
         BoundedInt(BoundedIntLibfunc),
+        Trace(TraceLibfunc),
     }, CoreConcreteLibfunc
 }
