@@ -6,7 +6,7 @@ use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariant;
+use crate::plugins::utils::TypeVariant;
 
 pub const DEFAULT_ATTR: &str = "default";
 
