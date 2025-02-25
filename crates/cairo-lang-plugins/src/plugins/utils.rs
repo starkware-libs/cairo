@@ -46,7 +46,7 @@ pub enum TypeVariant {
 pub struct GenericParamsInfo {
     /// All the generic param names, at the original order.
     pub param_names: Vec<SmolStr>,
-    /// The full genaric params, including keywords and definitions.
+    /// The full generic params, including keywords and definitions.
     pub full_params: Vec<String>,
 }
 impl GenericParamsInfo {
