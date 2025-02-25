@@ -87,6 +87,19 @@ FunctionId: FunctionId = {
 UserTypeId: UserTypeId = {
     <id:ConcreteLabel> => UserTypeId::from_string(id),
     "[" <id:BigInt> "]" => UserTypeId { id: id.try_into().unwrap(), debug_name: None },
+    "{" <parts:(<UserTypeIdPart>)+> "}"
+     => UserTypeId::from_string(format!("{{{}}}", parts.join(""))),
+}
+
+UserTypeIdPart: String = {
+    <label:BasicLabel> => label.to_string(),
+    <num:BigInt> => num.to_string(),
+    ":" => <>.to_string(),
+    "." => <>.to_string(),
+    "@" => <>.to_string(),
+    "/" => <>.to_string(),
+    "\\" => <>.to_string(),
+    "-" => <>.to_string(),
 }
 
 VarId: VarId = {
