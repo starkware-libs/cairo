@@ -164,7 +164,7 @@ macro_rules! define_language_element_id_basic {
     };
 }
 
-/// Defines and implements LanguageElementId for a subset of other language elements.
+/// Defines and implements LanguageElementId, DebugWithDb, and OptionFrom for a subset of other language elements.
 macro_rules! define_language_element_id_as_enum {
     (
         #[toplevel]
