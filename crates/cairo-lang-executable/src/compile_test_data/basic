@@ -11,12 +11,11 @@ fn main() {}
 // builtins: output
 // header
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 8;
+call rel 7;
 [ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -3] + 0];
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
@@ -60,12 +59,11 @@ fn main(a: felt252, b: felt252) -> felt252 {
 // builtins: output
 // header
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 8;
+call rel 7;
 [ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -3] + 0];
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
@@ -146,12 +144,11 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 // header
 [ap + 0] = [fp + -3], ap++;
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -4] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -4], ap++;
+[ap + 2] = [fp + -4], ap++;
 ap += 2;
-call rel 9;
+call rel 8;
 [ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -4] + 0];
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
@@ -381,13 +378,11 @@ fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 // builtins: output
 // header
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 7;
-[ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -3] + 0];
-[ap + 0] = [ap + -2], ap++;
+call rel 4;
+[ap + 0] = [ap + -1], ap++;
 ret;
 // sierra based code
 [ap + 0] = [fp + -4], ap++;
@@ -418,12 +413,11 @@ fn require_gas() -> felt252 {
 // builtins: output
 // header
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 8;
+call rel 7;
 [ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -3] + 0];
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [ap + 0] = [ap + -2], ap++;
@@ -479,12 +473,11 @@ ap += 2;
 [ap + 0] = [ap + -4] + 3, ap++;
 [ap + 0] = 9223372036854775807, ap++;
 %{ WriteRunParam { dst: [ap + 0], index: 0 } %}
-[ap + 2] = [fp + -4] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+[ap + 2] = [fp + -4], ap++;
+[ap + 2] = [fp + -4], ap++;
 ap += 2;
-call rel 35;
+call rel 34;
 [ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -4] + 0];
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
 [fp + 0] = [ap + -7];
