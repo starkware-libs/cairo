@@ -1,4 +1,24 @@
 #[test]
+fn test_loop_with_early_return() {
+    let loop_func = |mut x: u32| {
+        loop {
+            let y = x + 1;
+            x = y;
+            if y == 10 {
+                break true;
+            }
+
+            if y == 5 {
+                return 5;
+            }
+        }
+        1
+    };
+
+    assert_eq!(loop_func(4), 5);
+}
+
+#[test]
 fn test_nested_loop() {
     let loop_func = |a| {
         loop {

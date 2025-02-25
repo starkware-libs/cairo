@@ -225,13 +225,15 @@ pub fn lower_for_loop(
                 lower_expr_block(ctx, &mut some_subscope, &some_block)?;
                 // Add recursive call.
                 let signature = ctx.signature.clone();
-                call_loop_func(
+                let loop_res = call_loop_func(
                     ctx,
                     signature,
                     &mut some_subscope,
                     loop_expr_id,
                     loop_expr.stable_ptr.untyped(),
-                )
+                )?
+                .as_var_usage(ctx, &mut some_subscope)?;
+                Err(LoweringFlowError::Return(loop_res, for_location))
             })();
             lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
         }
@@ -274,23 +276,28 @@ pub fn lower_while_loop(
     loop_expr: semantic::ExprWhile,
     loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
+    let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let semantic_condition = match &loop_expr.condition {
         semantic::Condition::BoolExpr(semantic_condition) => *semantic_condition,
         semantic::Condition::Let(match_expr, patterns) => {
-            return lower_expr_while_let(
-                ctx,
-                builder,
-                &loop_expr,
-                *match_expr,
-                patterns,
-                MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
-            );
+            return (|| {
+                let ret_var = lower_expr_while_let(
+                    ctx,
+                    builder,
+                    &loop_expr,
+                    *match_expr,
+                    patterns,
+                    MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
+                )?
+                .as_var_usage(ctx, builder)?;
+
+                lower_return(ctx, builder, ret_var, while_location, false)
+            })();
         }
     };
     let condition = lower_expr_to_var_usage(ctx, builder, semantic_condition)?;
     let semantic_db = ctx.db.upcast();
     let unit_ty = corelib::unit_ty(semantic_db);
-    let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
 
     // Main block.
     let mut subscope_main = create_subscope(ctx, builder);
@@ -307,13 +314,15 @@ pub fn lower_while_loop(
         lower_expr_block(ctx, &mut subscope_main, &main_block)?;
         // Add recursive call.
         let signature = ctx.signature.clone();
-        call_loop_func(
+        let loop_res = call_loop_func(
             ctx,
             signature,
             &mut subscope_main,
             loop_expr_id,
             loop_expr.stable_ptr.untyped(),
-        )
+        )?
+        .as_var_usage(ctx, &mut subscope_main)?;
+        Err(LoweringFlowError::Return(loop_res, while_location))
     })();
     let block_main = lowered_expr_to_block_scope_end(ctx, subscope_main, block_expr)
         .map_err(LoweringFlowError::Failed)?;
@@ -468,7 +477,14 @@ pub fn lower_loop_function(
 
             semantic::Expr::While(while_expr) => {
                 let stable_ptr = while_expr.stable_ptr;
-                let block_expr = lower_while_loop(&mut ctx, &mut builder, while_expr, loop_expr_id);
+                let location = ctx.get_location(stable_ptr.untyped());
+                let block_expr = (|| {
+                    let ret_var =
+                        lower_while_loop(&mut ctx, &mut builder, while_expr, loop_expr_id)?
+                            .as_var_usage(&mut ctx, &mut builder)?;
+
+                    lower_return(&mut ctx, &mut builder, ret_var, location, false)
+                })();
                 (block_expr, stable_ptr)
             }
 
@@ -528,6 +544,7 @@ fn wrap_sealed_block_as_function(
                     location,
                 }),
             );
+            Ok(())
         }
         _ => {
             // Convert to a return.
@@ -539,12 +556,9 @@ fn wrap_sealed_block_as_function(
                 }
                 .add(ctx, &mut builder.statements)
             });
-
-            let ret_expr = lower_return(ctx, &mut builder, var_usage, location, false);
-            lowered_expr_to_block_scope_end(ctx, builder, ret_expr)?;
+            builder.ret(ctx, var_usage, location)
         }
     }
-    Ok(())
 }
 
 /// Lowers a semantic block.
