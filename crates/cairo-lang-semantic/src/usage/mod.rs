@@ -372,7 +372,10 @@ impl Usages {
                 }
             }
             Expr::EnumVariantCtor(expr) => self.handle_expr(arenas, expr.value_expr, current),
-            Expr::PropagateError(expr) => self.handle_expr(arenas, expr.inner, current),
+            Expr::PropagateError(expr) => {
+                current.has_early_return = true;
+                self.handle_expr(arenas, expr.inner, current)
+            }
             Expr::Constant(_) => {}
             Expr::Missing(_) => {}
         }
