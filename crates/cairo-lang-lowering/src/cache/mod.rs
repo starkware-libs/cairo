@@ -18,6 +18,8 @@ use cairo_lang_defs::ids::{
     TraitLongId, TraitTypeId, TraitTypeLongId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::CrateSettings;
+use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -47,8 +49,7 @@ use cairo_lang_syntax::node::ast::{
     ExprPtr, FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr,
     ItemExternFunctionPtr, ItemExternTypePtr, ItemImplPtr, ItemModulePtr, ItemStructPtr,
     ItemTraitPtr, MemberPtr, ParamPtr, TerminalIdentifierPtr, TraitItemConstantPtr,
-    TraitItemFunctionPtr, TraitItemImpl, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr,
-    VariantPtr,
+    TraitItemFunctionPtr, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr, VariantPtr,
 };
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
@@ -79,25 +80,53 @@ use crate::{
     StatementStructConstruct, VarRemapping, VarUsage, Variable,
 };
 
+// A caching of all the crate functions.
+#[derive(Serialize, Deserialize)]
+pub struct CachedCrate {
+    settings: Option<CrateSettings>,
+    compiler_version: String,
+    global_flags: OrderedHashMap<SmolStr, Flag>,
+    cached_lookups: CacheLookups,
+    semantic_cached_lookups: SemanticCacheLookups,
+    lowered_functions: Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>,
+}
+
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions(
     db: &dyn LoweringGroup,
     crate_id: CrateId,
 ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
-    let blob_id = db.crate_config(crate_id)?.cache_file?;
-    let Some(content) = db.blob_content(blob_id) else {
-        return Default::default();
-    };
-    let (lookups, semantic_lookups, lowerings): (
-        CacheLookups,
-        SemanticCacheLookups,
-        Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>,
-    ) = bincode::deserialize(&content).unwrap_or_default();
+    let cached_crate = get_cached_crate(db, crate_id)?;
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
-    let mut ctx = CacheLoadingContext::new(db, lookups, semantic_lookups, crate_id);
+
+    let compiler_version: String = env!("CARGO_PKG_VERSION_PATCH").parse().unwrap();
+
+    if compiler_version != cached_crate.compiler_version {
+        panic!("Cached crate was compiled with a different compiler version.");
+    }
+    if db.crate_config(crate_id).map(|config| config.settings) != cached_crate.settings {
+        panic!("Cached crate was compiled with different settings.");
+    }
+    if db
+        .flags()
+        .iter()
+        .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+        .collect::<OrderedHashMap<_, _>>()
+        != cached_crate.global_flags
+    {
+        panic!("Cached crate was compiled with different global flags.");
+    }
+
+    let mut ctx = CacheLoadingContext::new(
+        db,
+        cached_crate.cached_lookups,
+        cached_crate.semantic_cached_lookups,
+        crate_id,
+    );
 
     Some(
-        lowerings
+        cached_crate
+            .lowered_functions
             .into_iter()
             .map(|(function_id, lowering)| {
                 let function_id = function_id.embed(&mut ctx.semantic_ctx);
@@ -108,6 +137,14 @@ pub fn load_cached_crate_functions(
             .collect::<OrderedHashMap<_, _>>()
             .into(),
     )
+}
+
+pub fn get_cached_crate(db: &dyn LoweringGroup, crate_id: CrateId) -> Option<CachedCrate> {
+    let blob_id = db.crate_config(crate_id)?.cache_file?;
+    let Some(content) = db.blob_content(blob_id) else {
+        return Default::default();
+    };
+    Some(bincode::deserialize(&content).unwrap())
 }
 
 /// Cache the lowering of a crate.
@@ -150,13 +187,21 @@ pub fn generate_crate_cache(
         })
         .collect::<Maybe<Vec<_>>>()?;
 
-    let artifact = if let Ok(lowered) =
-        bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, cached))
-    {
-        lowered
-    } else {
-        "".into()
+    let cached_crate = CachedCrate {
+        settings: db.crate_config(crate_id).map(|config| config.settings),
+        compiler_version: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap(),
+        global_flags: db
+            .flags()
+            .iter()
+            .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+            .collect(),
+        cached_lookups: ctx.data.lookups,
+        semantic_cached_lookups: ctx.semantic_ctx.data.lookups,
+        lowered_functions: cached,
     };
+
+    let artifact =
+        if let Ok(lowered) = bincode::serialize(&cached_crate) { lowered } else { "".into() };
     Ok(Arc::from(artifact.as_slice()))
 }
 
