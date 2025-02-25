@@ -46,3 +46,9 @@ impl DestructWithDestruct<T, impl DestructT: Destruct<T>> of Destruct<DestructWi
 pub struct InferDestruct<T> {
     pub value: T,
 }
+
+/// The return type for loops with an early return.
+pub enum LoopResult<N, E> {
+    Normal: N,
+    EarlyReturn: E,
+}
