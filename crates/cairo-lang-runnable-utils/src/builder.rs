@@ -465,9 +465,8 @@ impl EntryCodeHelper {
                 tempvar _input_end;
                 const param_index = 0;
                 hint ExternalHint::WriteRunParam { index: param_index } into { dst: input_start };
-                const user_data_offset = 1;
-                tempvar output_start = output_ptr + user_data_offset;
-                tempvar output_end = output_start;
+                tempvar output_start = output_ptr;
+                tempvar output_end = output_ptr;
             };
             unallocated_count += 2;
         }
@@ -505,13 +504,7 @@ impl EntryCodeHelper {
             }
         }
         if !self.config.testing {
-            let output_ptr_var = self.input_builtin_vars[&BuiltinName::output];
             let (ret_ty, size) = return_types.last().unwrap();
-            casm_build_extend! {self.ctx,
-                const czero = 0;
-                tempvar zero = czero;
-                assert zero = *output_ptr_var;
-            };
             let opt_panic_indicator = match *size {
                 2 => None,
                 3 => Some(self.ctx.add_var(next_unprocessed_deref())),
@@ -525,6 +518,8 @@ impl EntryCodeHelper {
             let ptr_end = self.ctx.add_var(next_unprocessed_deref());
             if let Some(panic_indicator) = opt_panic_indicator {
                 casm_build_extend! {self.ctx,
+                    const czero = 0;
+                    tempvar zero = czero;
                     hint ExternalHint::AddMarker { start: ptr_start, end: ptr_end };
                     assert zero = panic_indicator;
                 };
