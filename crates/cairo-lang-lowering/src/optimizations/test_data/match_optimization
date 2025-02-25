@@ -1580,3 +1580,112 @@ End:
   Goto(blk12, {v61 -> v24, v15 -> v60})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match optimization through inlined panics.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > test_comments
+// TODO(orizi): Enable the optimization for this case as well.
+
+//! > function
+fn foo(cond: bool) {
+    panic_if_cond(cond);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn panic_if_cond(cond: bool) {
+    if cond {
+        panic!("cond!");
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v7: core::felt252) <- 1997209042069643135709344952807065910992472029923670688473712229447419591075
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
+  (v9: core::felt252) <- 0
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v11: core::felt252) <- 427071267873
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
+  (v13: core::felt252) <- 5
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v13)
+  (v15: core::panics::Panic) <- struct_construct()
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v18: ()) <- struct_construct()
+  (v19: ((),)) <- struct_construct(v18)
+  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+//! > after
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v7: core::felt252) <- 1997209042069643135709344952807065910992472029923670688473712229447419591075
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
+  (v9: core::felt252) <- 0
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v11: core::felt252) <- 427071267873
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
+  (v13: core::felt252) <- 5
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v13)
+  (v15: core::panics::Panic) <- struct_construct()
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v18: ()) <- struct_construct()
+  (v19: ((),)) <- struct_construct(v18)
+  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+//! > lowering_diagnostics
