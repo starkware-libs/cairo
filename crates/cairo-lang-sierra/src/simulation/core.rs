@@ -299,6 +299,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Circuit(_) => unimplemented!(),
         CoreConcreteLibfunc::IntRange(_) => unimplemented!(),
         CoreConcreteLibfunc::Blake(_) => unimplemented!(),
+        CoreConcreteLibfunc::Trace(_) => unimplemented!(),
     })
 }
 

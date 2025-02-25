@@ -1,9 +1,13 @@
 use std::collections::VecDeque;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
+use cairo_lang_semantic::helper::ModuleHelper;
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
@@ -11,7 +15,7 @@ use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, Signature};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx, Signature};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo,
@@ -56,6 +60,36 @@ pub fn lower_panics(
         flat_blocks: FlatBlocksBuilder::new(),
         panic_info,
     };
+
+    if matches!(
+        db.get_flag(FlagId::new(db.upcast(), "panic_backtrace")),
+        Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
+    ) {
+        let trace_fn = ModuleHelper::core(db.upcast())
+            .submodule("internal")
+            .function_id(
+                "trace",
+                vec![GenericArgumentId::Constant(
+                    ConstValue::Int(
+                        0x70616e6963u64.into(), // 'panic' as numeric.
+                        db.core_info().felt252,
+                    )
+                    .intern(db),
+                )],
+            )
+            .lowered(db);
+        for block in ctx.block_queue.iter_mut() {
+            if let FlatBlockEnd::Panic(end) = &block.end {
+                block.statements.push(Statement::Call(StatementCall {
+                    function: trace_fn,
+                    inputs: vec![],
+                    with_coupon: false,
+                    outputs: vec![],
+                    location: end.location,
+                }));
+            }
+        }
+    }
 
     // Iterate block queue (old and new blocks).
     while let Some(block) = ctx.block_queue.pop_front() {

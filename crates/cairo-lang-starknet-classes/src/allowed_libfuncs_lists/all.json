@@ -187,6 +187,7 @@
         "struct_deconstruct",
         "struct_snapshot_deconstruct",
         "tuple_from_span",
+        "trace",
         "try_into_circuit_modulus",
         "u128_byte_reverse",
         "u128_const",

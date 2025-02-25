@@ -437,6 +437,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(1)]
             }
         },
+        Trace(_) => vec![ApChange::Known(1)],
     }
 }
 
