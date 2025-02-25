@@ -58,7 +58,7 @@ cairo_lang_test_utils::test_file_test!(
 );
 
 /// Helper function for testing multiple Storage path accesses to the same place.
-pub fn test_storage_path_check(
+pub fn test_plugin_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
@@ -79,10 +79,11 @@ pub fn test_storage_path_check(
 }
 
 cairo_lang_test_utils::test_file_test!(
-  storage_path_check,
+    plugin_diagnostics,
   "src/test_data",
   {
+      storage_node: "storage_node",
       storage_path_check: "storage_path_check",
   },
-  test_storage_path_check
+  test_plugin_diagnostics
 );
