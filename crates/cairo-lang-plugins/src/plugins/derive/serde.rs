@@ -3,39 +3,51 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::DeriveInfo;
-use crate::plugins::derive::TypeVariantInfo;
+use crate::plugins::derive::TypeVariant;
 
 /// Adds derive result for the `Serde` trait.
-pub fn handle_serde(info: &DeriveInfo) -> Option<String> {
-    let header = info.format_impl_header(
-        "core::serde",
-        "Serde",
-        &["core::serde::Serde", "core::traits::Destruct"],
-    );
-    let full_typename = info.full_typename();
+pub fn handle_serde(info: &DeriveInfo) -> String {
+    const SERDE_TRAIT: &str = "core::serde::Serde";
+    const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let ty = &info.name;
+    let full_typename = info.full_typename();
+    let header = match &info.type_variant {
+        TypeVariant::Enum => {
+            let impl_additional_generics =
+                info.impl_generics(&[SERDE_TRAIT], |trt, ty| format!("{trt}<{ty}>")).join(", ");
+            formatdoc! {"
+            impl {ty}Serde<
+                    {impl_additional_generics}
+                > of {SERDE_TRAIT}<{full_typename}>
+            "}
+        }
+        TypeVariant::Struct => info.impl_header(SERDE_TRAIT, &[SERDE_TRAIT, DESTRUCT_TRAIT]),
+    };
     let serialize_body = indent_by(
         8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
+        match &info.type_variant {
+            TypeVariant::Enum => {
                 formatdoc! {"
                 match self {{
                     {}
                 }}",
-                    variants.iter().enumerate().map(|(idx, variant)| {
+                info.members_info.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{ty}::{variant}(x) => {{ core::serde::Serde::serialize(@{idx}, ref output); \
-                        core::serde::Serde::serialize(x, ref output); }},",
+                        "{ty}::{variant}(x) => {{ {SERDE_TRAIT}::<felt252>::serialize(@{idx}, ref output); \
+                        {imp}::serialize(x, ref output); }},",
                         variant=variant.name,
+                        imp=variant.impl_name(SERDE_TRAIT),
                     )
                 }).join("\n    ")}
             }
-            TypeVariantInfo::Struct(members) => members
+            TypeVariant::Struct => info
+                .members_info
                 .iter()
                 .map(|member| {
                     format!(
-                        "core::serde::Serde::serialize(self.{member}, ref output)",
-                        member = member.name
+                        "{imp}::serialize(self.{member}, ref output)",
+                        member = member.name,
+                        imp = member.impl_name(SERDE_TRAIT),
                     )
                 })
                 .join(";\n"),
@@ -43,39 +55,46 @@ pub fn handle_serde(info: &DeriveInfo) -> Option<String> {
     );
     let deserialize_body = indent_by(
         8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
+        match &info.type_variant {
+            TypeVariant::Enum => {
                 formatdoc! {"
-                    let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+                    let idx: felt252 = {SERDE_TRAIT}::<felt252>::deserialize(ref serialized)?;
                     core::option::Option::Some(
                         match idx {{
                             {}
                             _ => {{ return core::option::Option::None; }}
                         }}
                     )",
-                    variants.iter().enumerate().map(|(idx, variant)| {
+                    info.members_info.iter().enumerate().map(|(idx, variant)| {
                         format!(
                             "{idx} => {ty}::{variant}(\
-                                core::serde::Serde::deserialize(ref serialized)?),",
+                                {imp}::deserialize(ref serialized)?),",
                             variant=variant.name,
+                            imp=variant.impl_name(SERDE_TRAIT),
                         )
                     }).join("\n        ")
                 }
             }
-            TypeVariantInfo::Struct(members) => {
+            TypeVariant::Struct => {
                 formatdoc! {"
+                    {}
                     core::option::Option::Some({ty} {{
                         {}
                     }})",
-                    members.iter().map(|member|format!(
-                        "{member}: core::serde::Serde::deserialize(ref serialized)?,",
-                        member=member.name
+                    info.members_info.iter().map(|member|format!(
+                        "let {member} = {destruct_with} {{ value: {imp}::deserialize(ref serialized)? }};",
+                        member=member.name,
+                        destruct_with=member.destruct_with(),
+                        imp=member.impl_name(SERDE_TRAIT),
+                    )).join("\n"),
+                    info.members_info.iter().map(|member|format!(
+                        "{member}: {member}.value,", member=member.name
                     )).join("\n    "),
                 }
             }
         },
     );
-    Some(formatdoc! {"
+    formatdoc! {"
         {header} {{
             fn serialize(self: @{full_typename}, ref output: core::array::Array<felt252>) {{
                 {serialize_body}
@@ -84,5 +103,5 @@ pub fn handle_serde(info: &DeriveInfo) -> Option<String> {
                 {deserialize_body}
             }}
         }}
-    "})
+    "}
 }
