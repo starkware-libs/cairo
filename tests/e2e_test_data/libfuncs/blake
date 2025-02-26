@@ -19,16 +19,7 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{
-Blake2sCompress {
-    state: memory[fp + -5],
-    byte_count: memory[fp + -4],
-    message: memory[fp + -3],
-    output: memory[ap + 0],
-    finalize: 0
-}
-%}
-ap += 1;
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=false] => [ap + 0], ap++;
 ret;
 
 //! > function_costs
@@ -71,16 +62,7 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{
-Blake2sCompress {
-    state: memory[fp + -5],
-    byte_count: memory[fp + -4],
-    message: memory[fp + -3],
-    output: memory[ap + 0],
-    finalize: 1
-}
-%}
-ap += 1;
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=true] => [ap + 0], ap++;
 ret;
 
 //! > function_costs

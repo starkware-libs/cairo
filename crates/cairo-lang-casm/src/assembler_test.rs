@@ -3,7 +3,7 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use super::InstructionRepr;
-use crate::assembler::{ApUpdate, FpUpdate, Op1Addr, Opcode, PcUpdate, Res};
+use crate::assembler::{ApUpdate, FpUpdate, Op1Addr, Opcode, OpcodeExtension, PcUpdate, Res};
 use crate::casm;
 use crate::inline::CasmContext;
 use crate::operand::Register;
@@ -31,6 +31,7 @@ fn test_jump_assemble() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 
@@ -49,6 +50,7 @@ fn test_jump_assemble() {
             ap_update: ApUpdate::Add1,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -70,6 +72,7 @@ fn test_call_assemble() {
             ap_update: ApUpdate::Add2,
             fp_update: FpUpdate::ApPlus2,
             opcode: Opcode::Call,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
     assert_eq!(
@@ -87,6 +90,7 @@ fn test_call_assemble() {
             ap_update: ApUpdate::Add2,
             fp_update: FpUpdate::ApPlus2,
             opcode: Opcode::Call,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -108,6 +112,7 @@ fn test_jnz_assemble() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
     assert_eq!(
@@ -125,6 +130,7 @@ fn test_jnz_assemble() {
             ap_update: ApUpdate::Add1,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -146,6 +152,7 @@ fn test_assert_eq_assemble() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::AssertEq,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 
@@ -164,6 +171,7 @@ fn test_assert_eq_assemble() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::AssertEq,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 
@@ -182,6 +190,7 @@ fn test_assert_eq_assemble() {
             ap_update: ApUpdate::Add1,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::AssertEq,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 
@@ -200,6 +209,7 @@ fn test_assert_eq_assemble() {
             ap_update: ApUpdate::Add1,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::AssertEq,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -221,6 +231,7 @@ fn test_ret_assemble() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Dst,
             opcode: Opcode::Ret,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -242,6 +253,7 @@ fn test_add_ap_assemble() {
             ap_update: ApUpdate::Add,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
@@ -263,6 +275,7 @@ fn test_instruction_with_hint() {
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::Nop,
+            opcode_extension: OpcodeExtension::Stone,
         },
     );
 }
