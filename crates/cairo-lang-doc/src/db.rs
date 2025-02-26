@@ -62,6 +62,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
 fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
     let mut f = HirFormatter::new(db);
     match item_id {
+        // todo: consider moving matching to a separate fn in mod documentable_formatter
         DocumentableItemId::LookupItem(item_id) => match item_id {
             LookupItemId::ModuleItem(item_id) => match item_id {
                 ModuleItemId::Struct(item_id) => item_id.get_signature(&mut f),
