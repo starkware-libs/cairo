@@ -1904,6 +1904,8 @@ fn compute_expr_error_propagate_semantic(
     };
     let func_err_variant = func_err_prop_ty.err_variant();
 
+    // Runs solver to get as much info as possible about the return type.
+    ctx.resolver.inference().solve().ok();
     let inner_expr_ty = ctx.reduce_ty(inner_expr.ty());
     inner_expr_ty.check_not_missing(ctx.db)?;
     let inner_expr_err_prop_ty =
@@ -1911,11 +1913,6 @@ fn compute_expr_error_propagate_semantic(
             ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType(inner_expr_ty))
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
-
-    // Disallow error propagation inside a loop.
-    if ctx.is_inside_loop() {
-        ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
-    }
 
     let conformed_err_variant_ty =
         ctx.resolver.inference().conform_ty(func_err_variant.ty, inner_expr_err_variant.ty);

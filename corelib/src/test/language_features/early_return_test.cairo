@@ -139,3 +139,32 @@ fn test_loop_inside_while() {
     assert_eq!(loop_func(array![1, 1]), 7);
     assert_eq!(loop_func(array![1, 1]), 7);
 }
+
+
+#[test]
+fn test_error_propagation() {
+    let bar = |a: u32| -> Result<(), u32> {
+        if a == 0 {
+            return Ok(());
+        }
+        Err(a)
+    };
+
+    let loop_func1 = |a: u32| -> Result<(), u32> {
+        loop {
+            bar(a)?;
+        }
+        Err(7)
+    };
+
+    let loop_func2 = |a: u32| -> Result<(), u32> {
+        for _ in 1..2_u32 {
+            bar(a)?;
+        }
+        Err(7)
+    };
+
+    assert_eq!(loop_func1(1), Result::Err(1));
+    assert_eq!(loop_func2(0), Result::Err(7));
+    assert_eq!(loop_func2(1), Result::Err(1));
+}
