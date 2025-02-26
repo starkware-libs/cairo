@@ -60,42 +60,41 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
 }
 
 fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
-    let item_id_ = item_id;
     let mut f = HirFormatter::new(db);
     match item_id {
         DocumentableItemId::LookupItem(item_id) => match item_id {
             LookupItemId::ModuleItem(item_id) => match item_id {
-                ModuleItemId::Struct(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::Enum(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::Constant(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::FreeFunction(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::TypeAlias(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::ImplAlias(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::Trait(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::Impl(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::ExternType(item_id) => item_id.get_signature(&mut f, item_id_),
-                ModuleItemId::ExternFunction(item_id) => item_id.get_signature(&mut f, item_id_),
+                ModuleItemId::Struct(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::Enum(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::Constant(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::FreeFunction(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::TypeAlias(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::ImplAlias(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::Trait(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::Impl(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::ExternType(item_id) => item_id.get_signature(&mut f),
+                ModuleItemId::ExternFunction(item_id) => item_id.get_signature(&mut f),
                 _ => panic!("get_item_signature not implemented for item_id: {:?}", item_id),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
-                TraitItemId::Function(item_id) => item_id.get_signature(&mut f, item_id_),
-                TraitItemId::Constant(item_id) => item_id.get_signature(&mut f, item_id_),
-                TraitItemId::Type(item_id) => item_id.get_signature(&mut f, item_id_),
+                TraitItemId::Function(item_id) => item_id.get_signature(&mut f),
+                TraitItemId::Constant(item_id) => item_id.get_signature(&mut f),
+                TraitItemId::Type(item_id) => item_id.get_signature(&mut f),
                 _ => {
                     panic!("get_item_signature not implemented for item_id: {:?}", item_id)
                 }
             },
             LookupItemId::ImplItem(item_id) => match item_id {
-                ImplItemId::Function(item_id) => item_id.get_signature(&mut f, item_id_),
-                ImplItemId::Constant(item_id) => item_id.get_signature(&mut f, item_id_),
-                ImplItemId::Type(item_id) => item_id.get_signature(&mut f, item_id_),
+                ImplItemId::Function(item_id) => item_id.get_signature(&mut f),
+                ImplItemId::Constant(item_id) => item_id.get_signature(&mut f),
+                ImplItemId::Type(item_id) => item_id.get_signature(&mut f),
                 _ => {
                     panic!("get_item_signature not implemented for item_id: {:?}", item_id)
                 }
             },
         },
-        DocumentableItemId::Member(item_id) => item_id.get_signature(&mut f, item_id_),
-        DocumentableItemId::Variant(item_id) => item_id.get_signature(&mut f, item_id_),
+        DocumentableItemId::Member(item_id) => item_id.get_signature(&mut f),
+        DocumentableItemId::Variant(item_id) => item_id.get_signature(&mut f),
         DocumentableItemId::Crate(_) => {
             panic!("get_item_signature not implemented for item_id: {:?}", item_id)
         }

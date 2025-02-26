@@ -1,0 +1,211 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+fn main() {}
+
+fn free_function<T, impl TPartialEq: PartialEq<T>, +Drop<T>, +Copy<T>>(
+    ref self: Array<T>, item: T,
+) -> bool {
+    return true;
+}
+
+#[derive(Copy, Drop, Serde)]
+enum MemberEnum {
+    Simple: felt252,
+    Complex: Span<MemberStruct>,
+}
+
+#[derive(Copy, Drop)]
+struct MemberStruct {
+    name: felt252,
+    ty: MemberEnum,
+}
+
+trait Shape<T> {
+    const SHAPE_CONST: felt252;
+    type ShapePair;
+
+    fn area(self: T) -> u32;
+}
+
+struct Circle {
+    radius: u32,
+}
+
+impl CircleShape of Shape<Circle> {
+    type ShapePair = (Circle, Circle);
+    const SHAPE_CONST: felt252 = 'xyz';
+    fn area(self: Circle) -> u32 {
+        3 * self.radius * self.radius
+    }
+}
+
+
+trait ATrait {}
+
+struct B<T, G, +ATrait> {
+    t: T,
+    g: G,
+}
+
+impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G>>;
+
+pub extern type bytes31;
+
+pub extern type Pedersen;
+
+pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+
+
+//! > Item signature #1
+//! > Item documentation #1
+//! > Item documentation tokens #1
+
+//! > Item signature #2
+fn main()
+//! > Item documentation #2
+//! > Item documentation tokens #2
+
+//! > Item signature #3
+fn free_function<T, TPartialEq, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T) -> bool
+//! > Item documentation #3
+//! > Item documentation tokens #3
+
+//! > Item signature #4
+enum MemberEnum {
+    Simple: felt252,
+    Complex: Span<MemberStruct>,
+}
+//! > Item documentation #4
+//! > Item documentation tokens #4
+
+//! > Item signature #5
+Simple: felt252
+//! > Item documentation #5
+//! > Item documentation tokens #5
+
+//! > Item signature #6
+Complex: Span<MemberStruct>
+//! > Item documentation #6
+//! > Item documentation tokens #6
+
+//! > Item signature #7
+#[derive(Copy, Drop)]
+struct MemberStruct {
+    name: felt252,
+    ty: MemberEnum,
+}
+//! > Item documentation #7
+//! > Item documentation tokens #7
+
+//! > Item signature #8
+name: felt252
+//! > Item documentation #8
+//! > Item documentation tokens #8
+
+//! > Item signature #9
+ty: MemberEnum
+//! > Item documentation #9
+//! > Item documentation tokens #9
+
+//! > Item signature #10
+trait Shape<T>
+//! > Item documentation #10
+//! > Item documentation tokens #10
+
+//! > Item signature #11
+const SHAPE_CONST: felt252;
+//! > Item documentation #11
+//! > Item documentation tokens #11
+
+//! > Item signature #12
+type ShapePair;
+//! > Item documentation #12
+//! > Item documentation tokens #12
+
+//! > Item signature #13
+fn area<T, T>(self: T) -> u32
+//! > Item documentation #13
+//! > Item documentation tokens #13
+
+//! > Item signature #14
+struct Circle {
+    radius: u32,
+}
+//! > Item documentation #14
+//! > Item documentation tokens #14
+
+//! > Item signature #15
+radius: u32
+//! > Item documentation #15
+//! > Item documentation tokens #15
+
+//! > Item signature #16
+impl CircleShape of Shape<Circle>;
+//! > Item documentation #16
+//! > Item documentation tokens #16
+
+//! > Item signature #17
+type ShapePair = (Circle, Circle);
+//! > Item documentation #17
+//! > Item documentation tokens #17
+
+//! > Item signature #18
+const SHAPE_CONST: felt252 = 'xyz';
+//! > Item documentation #18
+//! > Item documentation tokens #18
+
+//! > Item signature #19
+fn area(self: Circle) -> u32
+//! > Item documentation #19
+//! > Item documentation tokens #19
+
+//! > Item signature #20
+trait ATrait
+//! > Item documentation #20
+//! > Item documentation tokens #20
+
+//! > Item signature #21
+struct B<T, G, +ATrait> {
+    t: T,
+    g: G,
+}
+//! > Item documentation #21
+//! > Item documentation tokens #21
+
+//! > Item signature #22
+t: T
+//! > Item documentation #22
+//! > Item documentation tokens #22
+
+//! > Item signature #23
+g: G
+//! > Item documentation #23
+//! > Item documentation tokens #23
+
+//! > Item signature #24
+impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G, +ATrait>>;
+//! > Item documentation #24
+//! > Item documentation tokens #24
+
+//! > Item signature #25
+pub extern type bytes31;
+//! > Item documentation #25
+//! > Item documentation tokens #25
+
+//! > Item signature #26
+pub extern type Pedersen;
+//! > Item documentation #26
+//! > Item documentation tokens #26
+
+//! > Item signature #27
+pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+//! > Item documentation #27
+//! > Item documentation tokens #27
