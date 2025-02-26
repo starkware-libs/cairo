@@ -6,8 +6,8 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
     ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
     LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
-    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
-    TraitId, TraitItemId, TraitTypeId, VariantId,
+    NamedLanguageElementId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitItemId,
+    TraitTypeId, VariantId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::constant::ConstValue;
@@ -59,11 +59,12 @@ pub trait HirDisplay {
     }
 }
 
-// todo: do better
-/// helper struct to reconstruct links from formatted
+/// A helper struct to reconstruct elements full paths mapped on formatted signature string.
 #[derive(Clone, Debug)]
 struct SignatureElement {
+    /// A slice of documentable signature.
     signature: String,
+    /// Maps an item full path on relevant DocumentableItem signature slice.
     full_path: Option<String>,
 }
 
@@ -73,7 +74,7 @@ pub struct HirFormatter<'a> {
     db: &'a dyn DocGroup,
     /// A buffer to intercept writes with.
     buf: String,
-    elements: Vec<SignatureElement>,
+    elements: Vec<SignatureElement>, //todo: test, pub expose
 }
 
 impl fmt::Write for HirFormatter<'_> {
@@ -139,7 +140,7 @@ impl HirDisplay for VariantId {
         if !variant_semantic.ty.is_unit(f.db.upcast()) {
             write_type(Some(format!("{name}: ",)), variant_semantic.ty, None, f)
         } else {
-            write!(f, "{name}")
+            f.write_str(name.as_str())
         }
     }
 }
@@ -147,12 +148,11 @@ impl HirDisplay for VariantId {
 impl HirDisplay for EnumId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let enum_full_signature = get_enum_signature_data(f.db.upcast(), *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "{}enum {} {{",
             get_syntactic_visibility(&enum_full_signature.visibility),
             enum_full_signature.name,
-        )?;
+        ))?;
         let variants = enum_full_signature.variants;
         match variants {
             Some(variants) => {
@@ -160,20 +160,19 @@ impl HirDisplay for EnumId {
                     if !variant_type.is_unit(f.db.upcast()) {
                         write_type(
                             Some(format!("\n{INDENT}{name}: ",)),
-                            variant_type.clone(),
+                            *variant_type,
                             Some(",".to_string()),
                             f,
                         )
                         .unwrap();
                     } else {
-                        write!(f, "\n{INDENT}{name},",).unwrap()
+                        f.write_str(&format!("\n{INDENT}{name},",)).unwrap()
                     }
                 });
-                write!(f, "\n}}",).unwrap()
+                f.write_str("\n}")
             }
-            None => write!(f, "}}",).unwrap(),
+            None => f.write_str("}"),
         }
-        Ok(())
     }
 }
 
@@ -182,12 +181,11 @@ impl HirDisplay for MemberId {
         let member_full_signature = get_member_signature_data(f.db.upcast(), *self);
 
         if member_full_signature.return_type.unwrap().is_unit(f.db.upcast()) {
-            write!(
-                f,
+            f.write_str(&format!(
                 "{}{}",
                 get_syntactic_visibility(&member_full_signature.visibility),
                 member_full_signature.name
-            )
+            ))
         } else {
             write_type(
                 Some(format!(
@@ -210,28 +208,27 @@ impl HirDisplay for StructId {
         if let Some(attributes) = struct_full_signature.attributes {
             write_struct_attributes_syntax(attributes, f)?;
         }
-        write!(
-            f,
+        f.write_str(&format!(
             "{}struct {}",
             get_syntactic_visibility(&struct_full_signature.visibility),
             struct_full_signature.name,
-        )
-        .unwrap();
+        ))?;
 
-        write_generic_params(struct_full_signature.generic_params.unwrap(), f).unwrap();
+        write_generic_params(struct_full_signature.generic_params.unwrap(), f)?;
         f.write_str(" {")?;
+
         if let Some(members) = struct_full_signature.members {
             members.iter().for_each(|(name, member_type, visibility)| {
                 write_type(
                     Some(format!("\n{INDENT}{}{}: ", get_syntactic_visibility(visibility), name,)),
-                    member_type.clone(),
+                    *member_type,
                     Some(",".to_string()),
                     f,
                 )
-                .unwrap();
+                .unwrap()
             });
-            write!(f, "{}}}", if members.is_empty() { "" } else { "\n" }).unwrap()
-        }
+            f.write_str(if members.is_empty() { "}" } else { "\n}" })?;
+        };
         Ok(())
     }
 }
@@ -239,20 +236,18 @@ impl HirDisplay for StructId {
 impl HirDisplay for FreeFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let free_function_full_signature = get_free_function_signature_data(f.db.upcast(), *self);
-        format_function_signature(f, free_function_full_signature, "".to_string())
+        write_function_signature(f, free_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for ConstantId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let constant_full_signature = get_constant_signature_data(f.db.upcast(), *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "{}const {}: ",
             get_syntactic_visibility(&constant_full_signature.visibility),
             constant_full_signature.name,
-        )
-        .unwrap();
+        ))?;
 
         write_type(None, constant_full_signature.return_type.unwrap(), Some(" = ".to_string()), f)?;
 
@@ -287,11 +282,11 @@ impl HirDisplay for ConstantId {
 impl HirDisplay for ImplConstantDefId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let constant_full_signature = get_impl_constant_signature_data(f.db.upcast(), *self);
-        write!(
+        write_type(
+            Some(format!("const {}: ", constant_full_signature.name,)),
+            constant_full_signature.return_type.unwrap(),
+            Some(" = ".to_string()),
             f,
-            "const {}: {} = ",
-            constant_full_signature.name,
-            extract_and_format(&constant_full_signature.return_type.unwrap().format(f.db.upcast())),
         )?;
         write_syntactic_evaluation(f, constant_full_signature.item_id)
     }
@@ -300,43 +295,39 @@ impl HirDisplay for ImplConstantDefId {
 impl HirDisplay for TraitFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let trait_function_full_signature = get_trait_function_signature_data(f.db, *self);
-        format_function_signature(f, trait_function_full_signature, "".to_string())
+        write_function_signature(f, trait_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for ImplFunctionId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let impl_function_full_signature = get_impl_function_signature_data(f.db, *self);
-        format_function_signature(f, impl_function_full_signature, "".to_string())
+        write_function_signature(f, impl_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for TraitId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let trait_full_signature = get_trait_signature_data(f.db.upcast(), *self);
-        let generic_params_formatted =
-            format_generic_params(trait_full_signature.generic_params.unwrap(), f);
-        write!(
-            f,
-            "{}trait {}{}",
+        f.write_str(&format!(
+            "{}trait {}",
             get_syntactic_visibility(&trait_full_signature.visibility),
             trait_full_signature.name,
-            generic_params_formatted
-        )
+        ))?;
+        write_generic_params(trait_full_signature.generic_params.unwrap(), f)
     }
 }
 
 impl HirDisplay for TraitConstantId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let trait_const_full_signature = get_trait_const_signature_data(f.db.upcast(), *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "const {}: {};",
             trait_const_full_signature.name,
             extract_and_format(
                 &trait_const_full_signature.return_type.unwrap().format(f.db.upcast())
             ),
-        )
+        ))
     }
 }
 
@@ -350,15 +341,14 @@ impl HirDisplay for ImplDefId {
             f.db,
             impl_def_full_signature.resolver_generic_params.unwrap(),
         );
-        write!(
-            f,
+        f.write_str(&format!(
             "{}impl {}{} of {}",
             get_syntactic_visibility(&impl_def_full_signature.visibility),
             impl_def_full_signature.name,
             resolver_generic_params,
             trait_id.name(f.db.upcast()),
-        );
-        write_generic_args(impl_def_full_signature.generic_args.unwrap(), f).unwrap();
+        ))?;
+        write_generic_args(impl_def_full_signature.generic_args.unwrap(), f)?;
         f.write_str(";")
     }
 }
@@ -366,12 +356,11 @@ impl HirDisplay for ImplDefId {
 impl HirDisplay for ImplAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let impl_alias_full_signature = get_impl_alias_signature_data(f.db.upcast(), *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "{}impl {} = ",
             get_syntactic_visibility(&impl_alias_full_signature.visibility),
             self.name(f.db.upcast()),
-        )?;
+        ))?;
         write_syntactic_evaluation(f, impl_alias_full_signature.item_id)
     }
 }
@@ -379,58 +368,51 @@ impl HirDisplay for ImplAliasId {
 impl HirDisplay for ModuleTypeAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "{}impl {} = ",
             get_syntactic_visibility(&module_type_alias_full_signature.visibility),
             self.name(f.db.upcast()),
-        )?;
+        ))?;
         write_syntactic_evaluation(f, module_type_alias_full_signature.item_id)
     }
 }
 
 impl HirDisplay for TraitTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
-        let trait_type_full_sigature = get_trait_type_full_signature(f.db, *self);
-
-        write!(f, "type {};", trait_type_full_sigature.name,)
+        let trait_type_full_signature = get_trait_type_full_signature(f.db, *self);
+        f.write_str(&format!("type {};", trait_type_full_signature.name,))
     }
 }
 
 impl HirDisplay for ImplTypeDefId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "type {} = {};",
             impl_type_def_full_signature.name,
             extract_and_format(
                 &impl_type_def_full_signature.return_type.unwrap().format(f.db.upcast())
             ),
-        )
+        ))
     }
 }
 
 impl HirDisplay for ExternTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let extern_type_full_signature = get_extern_type_full_signature(f.db, *self);
-        write!(
-            f,
+        f.write_str(&format!(
             "{}extern type {}",
             get_syntactic_visibility(&extern_type_full_signature.visibility),
             self.name(f.db.upcast()),
-        )?;
+        ))?;
         let generic_params = extern_type_full_signature.generic_params.unwrap();
         if !generic_params.is_empty() {
-            let mut count = generic_params.len();
             f.write_str("<")?;
             generic_params.iter().for_each(|param| {
-                if count == 1 {
-                    write!(f, "{}", param.id().name(f.db.upcast()).unwrap(),).unwrap()
-                } else {
-                    write!(f, "{}, ", param.id().name(f.db.upcast()).unwrap(),).unwrap()
-                }
-                count -= 1;
+                f.write_str(
+                    param.id().name(f.db.upcast()).unwrap_or(SmolStr::from(MISSING)).as_str(),
+                )
+                .unwrap()
             });
             f.write_str(">")?;
         }
@@ -445,20 +427,18 @@ impl HirDisplay for ExternFunctionId {
             .extern_function_signature(*self)
             .unwrap();
 
-        let signature_str =
-            format_function_signature(f, extern_function_full_signature, "extern ".to_string());
+        write_function_signature(f, extern_function_full_signature, "extern ".to_string())?;
 
         if !signature.implicits.is_empty() {
             f.write_str(" implicits(")?;
 
             let mut count = signature.implicits.len();
             signature.implicits.iter().for_each(|type_id| {
-                write!(
-                    f,
+                f.write_str(&format!(
                     "{}{}",
                     extract_and_format(&type_id.format(f.db.upcast())),
                     if count == 1 { ")".to_string() } else { ", ".to_string() }
-                )
+                ))
                 .unwrap();
                 count -= 1;
             })
@@ -556,7 +536,7 @@ fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>
     }
 }
 
-fn format_function_signature(
+fn write_function_signature(
     f: &mut HirFormatter,
     documentable_signature: DocumentableItemSignatureData,
     syntactic_kind: String,
@@ -565,19 +545,18 @@ fn format_function_signature(
         Some(params) => format_resolver_generic_params(f.db, params),
         None => "".to_string(),
     };
-    write!(
-        f.buf,
+
+    f.write_str(&format!(
         "{}{}fn {}{}",
         get_syntactic_visibility(&documentable_signature.visibility),
         syntactic_kind,
         documentable_signature.name,
         resolver_generic_params,
-    )
-    .unwrap();
+    ))?;
     if let Some(generic_args) = documentable_signature.generic_args {
-        write_generic_args(generic_args, f).unwrap();
+        write_generic_args(generic_args, f)?;
     }
-    f.write_str("(").unwrap();
+    f.write_str("(")?;
     if let Some(params) = documentable_signature.params {
         let mut count = params.len();
         let mut postfix = String::from(", ");
@@ -586,20 +565,32 @@ fn format_function_signature(
                 postfix = "".to_string();
             }
             let syntax_node = param.id.stable_location(f.db.upcast()).syntax_node(f.db.upcast());
-            let type_definition = get_type_clause(syntax_node, f.db).unwrap();
             let modifier = get_relevant_modifier(&param.mutability);
             let modifier_postfix = if modifier.is_empty() { "" } else { " " };
-            write!(f.buf, "{modifier}{modifier_postfix}{}{type_definition}{postfix}", param.name,)
+            if param.ty.is_fully_concrete(f.db.upcast()) {
+                write_type(
+                    Some(format!("{modifier}{modifier_postfix}{}: ", param.name)),
+                    param.ty,
+                    Some(postfix.to_string()),
+                    f,
+                )
                 .unwrap();
+            } else {
+                let type_definition = get_type_clause(syntax_node, f.db).unwrap();
+                f.write_str(&format!(
+                    "{modifier}{modifier_postfix}{}{type_definition}{postfix}",
+                    param.name,
+                ))
+                .unwrap();
+            }
             count -= 1;
         });
     }
-    write!(f.buf, ")",).unwrap();
+    f.write_str(")")?;
 
     if let Some(return_type) = documentable_signature.return_type {
         if !return_type.is_unit(f.db.upcast()) {
-            write!(f.buf, " -> {}", extract_and_format(&return_type.format(f.db.upcast())))
-                .unwrap();
+            write_type(Some(" -> ".to_string()), return_type, None, f)?;
         }
     }
     Ok(())
@@ -615,37 +606,13 @@ fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String>
     Some(String::from(MISSING))
 }
 
-fn format_generic_params(generic_params: Vec<GenericParam>, f: &mut HirFormatter) -> String {
-    if !generic_params.is_empty() {
-        let generics_formatted = generic_params
-            .iter()
-            .map(|param| match param {
-                GenericParam::Type(param_type) => param_type.id.format(f.db.upcast()).to_string(),
-                GenericParam::Const(param_const) => {
-                    format!(
-                        "const{}: {}",
-                        param_const.id.format(f.db.upcast()),
-                        extract_and_format(&param_const.ty.format(f.db.upcast()))
-                    )
-                }
-                GenericParam::Impl(param_impl) => param_impl.id.format(f.db.upcast()).to_string(),
-                GenericParam::NegImpl(_) => String::from(MISSING),
-            })
-            .collect::<Vec<String>>()
-            .join(", ");
-        format!("<{}>", generics_formatted,)
-    } else {
-        String::new()
-    }
-}
-
 fn write_generic_params(
     generic_params: Vec<GenericParam>,
     f: &mut HirFormatter,
 ) -> Result<(), fmt::Error> {
     if !generic_params.is_empty() {
         let mut count = generic_params.len();
-        f.write_str("<");
+        f.write_str("<")?;
         generic_params.iter().for_each(|param| {
             match param {
                 GenericParam::Type(param_type) => write_item_with_path(
@@ -714,9 +681,9 @@ fn write_struct_attributes_syntax(
         for child in children.iter() {
             let to_text = child.clone().get_text_without_all_comment_trivia(f.db.upcast());
             let cleaned_text = to_text.replace("\n", "");
-            write!(f.buf, "{}", cleaned_text).unwrap();
+            f.write_str(&cleaned_text).unwrap();
         }
-        write!(f.buf, "\n",).unwrap();
+        f.write_str("\n").unwrap();
     });
     Ok(())
 }
@@ -874,7 +841,7 @@ fn get_member_signature_data(
     let member = semantic_members.get(&name).unwrap();
 
     DocumentableItemSignatureData {
-        item_id: DocumentableItemId::from(Member(item_id)),
+        item_id: Member(item_id),
         name,
         visibility: member.visibility,
         generic_args: None,
