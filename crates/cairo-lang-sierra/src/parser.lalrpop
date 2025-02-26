@@ -3,7 +3,7 @@
 
 use crate::ids::*;
 use crate::program::*;
-use crate::pre_statement::{StatementId, PreStatement, finalize_prestatements};
+use crate::labeled_statement::{StatementId, PreStatement, finalize_prestatements};
 use num_bigint::BigInt;
 
 grammar;

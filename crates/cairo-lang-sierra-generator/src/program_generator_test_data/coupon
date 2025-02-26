@@ -23,14 +23,16 @@ libfunc coupon_buy<Coupon<user@test::bar::<core::integer::u8>>> = coupon_buy<Cou
 libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([0]); // 0
-return([0]); // 1
-const_as_immediate<Const<felt252, 10>>() -> ([0]); // 2
-store_temp<felt252>([0]) -> ([0]); // 3
-return([0]); // 4
+F0:
+coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([0]);
+return([0]);
+F1:
+const_as_immediate<Const<felt252, 10>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
 
-test::foo@0() -> (Coupon<user@test::bar::<core::integer::u8>>);
-test::bar::<core::integer::u8>@2() -> (felt252);
+test::foo@F0() -> (Coupon<user@test::bar::<core::integer::u8>>);
+test::bar::<core::integer::u8>@F1() -> (felt252);
 
 //! > ==========================================================================
 
@@ -60,11 +62,13 @@ libfunc coupon_refund<Coupon<user@test::bar::<core::integer::u8>>> = coupon_refu
 libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>([0]) -> (); // 0
-return(); // 1
-const_as_immediate<Const<felt252, 10>>() -> ([0]); // 2
-store_temp<felt252>([0]) -> ([0]); // 3
-return([0]); // 4
+F0:
+coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>([0]) -> ();
+return();
+F1:
+const_as_immediate<Const<felt252, 10>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
 
-test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> ();
-test::bar::<core::integer::u8>@2() -> (felt252);
+test::foo@F0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> ();
+test::bar::<core::integer::u8>@F1() -> (felt252);

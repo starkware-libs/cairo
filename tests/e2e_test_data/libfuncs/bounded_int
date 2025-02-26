@@ -29,11 +29,12 @@ type BoundedInt<-256, 254> = BoundedInt<-256, 254> [storable: true, drop: true, 
 libfunc bounded_int_add<i8, i8> = bounded_int_add<i8, i8>;
 libfunc store_temp<BoundedInt<-256, 254>> = store_temp<BoundedInt<-256, 254>>;
 
-bounded_int_add<i8, i8>([0], [1]) -> ([2]); // 0
-store_temp<BoundedInt<-256, 254>>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bounded_int_add<i8, i8>([0], [1]) -> ([2]);
+store_temp<BoundedInt<-256, 254>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-256, 254>);
+test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-256, 254>);
 
 //! > ==========================================================================
 
@@ -68,11 +69,12 @@ type BoundedInt<-255, 255> = BoundedInt<-255, 255> [storable: true, drop: true, 
 libfunc bounded_int_sub<i8, i8> = bounded_int_sub<i8, i8>;
 libfunc store_temp<BoundedInt<-255, 255>> = store_temp<BoundedInt<-255, 255>>;
 
-bounded_int_sub<i8, i8>([0], [1]) -> ([2]); // 0
-store_temp<BoundedInt<-255, 255>>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bounded_int_sub<i8, i8>([0], [1]) -> ([2]);
+store_temp<BoundedInt<-255, 255>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-255, 255>);
+test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-255, 255>);
 
 //! > ==========================================================================
 
@@ -107,11 +109,12 @@ type BoundedInt<-16256, 16384> = BoundedInt<-16256, 16384> [storable: true, drop
 libfunc bounded_int_mul<i8, i8> = bounded_int_mul<i8, i8>;
 libfunc store_temp<BoundedInt<-16256, 16384>> = store_temp<BoundedInt<-16256, 16384>>;
 
-bounded_int_mul<i8, i8>([0], [1]) -> ([2]); // 0
-store_temp<BoundedInt<-16256, 16384>>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bounded_int_mul<i8, i8>([0], [1]) -> ([2]);
+store_temp<BoundedInt<-16256, 16384>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
+test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
 
 //! > ==========================================================================
 
@@ -148,11 +151,12 @@ type NonZero<BoundedInt<-16256, 16384>> = NonZero<BoundedInt<-16256, 16384>> [st
 libfunc bounded_int_mul<NonZero<i8>, NonZero<i8>> = bounded_int_mul<NonZero<i8>, NonZero<i8>>;
 libfunc store_temp<NonZero<BoundedInt<-16256, 16384>>> = store_temp<NonZero<BoundedInt<-16256, 16384>>>;
 
-bounded_int_mul<NonZero<i8>, NonZero<i8>>([0], [1]) -> ([2]); // 0
-store_temp<NonZero<BoundedInt<-16256, 16384>>>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bounded_int_mul<NonZero<i8>, NonZero<i8>>([0], [1]) -> ([2]);
+store_temp<NonZero<BoundedInt<-16256, 16384>>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 16384>>);
+test::foo@F0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 16384>>);
 
 //! > ==========================================================================
 
@@ -189,12 +193,13 @@ libfunc const_as_immediate<Const<i8, 50>> = const_as_immediate<Const<i8, 50>>;
 libfunc bounded_int_add<i8, i8> = bounded_int_add<i8, i8>;
 libfunc store_temp<BoundedInt<-256, 254>> = store_temp<BoundedInt<-256, 254>>;
 
-const_as_immediate<Const<i8, 50>>() -> ([1]); // 0
-bounded_int_add<i8, i8>([0], [1]) -> ([2]); // 1
-store_temp<BoundedInt<-256, 254>>([2]) -> ([2]); // 2
-return([2]); // 3
+F0:
+const_as_immediate<Const<i8, 50>>() -> ([1]);
+bounded_int_add<i8, i8>([0], [1]) -> ([2]);
+store_temp<BoundedInt<-256, 254>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: i8) -> (BoundedInt<-256, 254>);
+test::foo@F0([0]: i8) -> (BoundedInt<-256, 254>);
 
 //! > ==========================================================================
 
@@ -246,13 +251,14 @@ libfunc struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>> = struct_c
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>> = store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>;
 
-bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>([0], [1], [2]) -> ([3], [4], [5]); // 0
-struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([4], [5]) -> ([6]); // 1
-store_temp<RangeCheck>([3]) -> ([3]); // 2
-store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]); // 3
-return([3], [6]); // 4
+F0:
+bounded_int_div_rem<BoundedInt<128, 255>, BoundedInt<3, 8>>([0], [1], [2]) -> ([3], [4], [5]);
+struct_construct<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([4], [5]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>>([6]) -> ([6]);
+return([3], [6]);
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<3, 8>>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
+test::foo@F0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt<3, 8>>) -> (RangeCheck, Tuple<BoundedInt<16, 85>, BoundedInt<0, 7>>);
 
 //! > ==========================================================================
 
@@ -313,13 +319,14 @@ libfunc struct_construct<Tuple<BoundedInt<0, 34028236692093846346337460743176821
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>> = store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>;
 
-bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>>([0], [1], [2]) -> ([3], [4], [5]); // 0
-struct_construct<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([4], [5]) -> ([6]); // 1
-store_temp<RangeCheck>([3]) -> ([3]); // 2
-store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([6]) -> ([6]); // 3
-return([3], [6]); // 4
+F0:
+bounded_int_div_rem<u128, BoundedInt<1, 340282366920938463463374607431768211455>>([0], [1], [2]) -> ([3], [4], [5]);
+struct_construct<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([4], [5]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>>([6]) -> ([6]);
+return([3], [6]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920938463463374607431768211455>>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920938463463374607431768211455>>) -> (RangeCheck, Tuple<BoundedInt<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211454>>);
 
 //! > ==========================================================================
 
@@ -376,13 +383,14 @@ libfunc struct_construct<Tuple<BoundedInt<0, 15>, BoundedInt<0, 2126764793255865
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>> = store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>;
 
-bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>([0], [1], [2]) -> ([3], [4], [5]); // 0
-struct_construct<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([4], [5]) -> ([6]); // 1
-store_temp<RangeCheck>([3]) -> ([3]); // 2
-store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([6]) -> ([6]); // 3
-return([3], [6]); // 4
+F0:
+bounded_int_div_rem<u128, BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>([0], [1], [2]) -> ([3], [4], [5]);
+struct_construct<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([4], [5]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>>([6]) -> ([6]);
+return([3], [6]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<21267647932558653966460912964485513216, 21267647932558653966460912964485513216>>) -> (RangeCheck, Tuple<BoundedInt<0, 15>, BoundedInt<0, 21267647932558653966460912964485513215>>);
 
 //! > ==========================================================================
 
@@ -437,19 +445,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>> = store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>>;
 libfunc enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 1> = enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 1>;
 
-bounded_int_constrain<u8, 128>([0], [1]) { fallthrough([2], [3]) 6([4], [5]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 0>([3]) -> ([6]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>>([6]) -> ([6]); // 4
-return([2], [6]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 1>([5]) -> ([7]); // 7
-store_temp<RangeCheck>([4]) -> ([4]); // 8
-store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>>([7]) -> ([7]); // 9
-return([4], [7]); // 10
+F0:
+bounded_int_constrain<u8, 128>([0], [1]) { fallthrough([2], [3]) F0_B0([4], [5]) };
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 0>([3]) -> ([6]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>>([6]) -> ([6]);
+return([2], [6]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>, 1>([5]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>);
+test::foo@F0([0]: RangeCheck, [1]: u8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 127>, test::BoundedInt::<128, 255>>);
 
 //! > ==========================================================================
 
@@ -504,19 +514,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>> = store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>>;
 libfunc enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 1> = enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 1>;
 
-bounded_int_constrain<i8, 0>([0], [1]) { fallthrough([2], [3]) 6([4], [5]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 0>([3]) -> ([6]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>>([6]) -> ([6]); // 4
-return([2], [6]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 1>([5]) -> ([7]); // 7
-store_temp<RangeCheck>([4]) -> ([4]); // 8
-store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>>([7]) -> ([7]); // 9
-return([4], [7]); // 10
+F0:
+bounded_int_constrain<i8, 0>([0], [1]) { fallthrough([2], [3]) F0_B0([4], [5]) };
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 0>([3]) -> ([6]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>>([6]) -> ([6]);
+return([2], [6]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>, 1>([5]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>);
+test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::result::Result::<test::BoundedInt::<-128, -1>, test::BoundedInt::<0, 127>>);
 
 //! > ==========================================================================
 
@@ -575,19 +587,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>> = store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>>;
 libfunc enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 1> = enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 1>;
 
-bounded_int_constrain<BoundedInt<0, 680564733841876926926749214863536422911>, 340282366920938463463374607431768211456>([0], [1]) { fallthrough([2], [3]) 6([4], [5]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 0>([3]) -> ([6]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>>([6]) -> ([6]); // 4
-return([2], [6]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 1>([5]) -> ([7]); // 7
-store_temp<RangeCheck>([4]) -> ([4]); // 8
-store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>>([7]) -> ([7]); // 9
-return([4], [7]); // 10
+F0:
+bounded_int_constrain<BoundedInt<0, 680564733841876926926749214863536422911>, 340282366920938463463374607431768211456>([0], [1]) { fallthrough([2], [3]) F0_B0([4], [5]) };
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 0>([3]) -> ([6]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>>([6]) -> ([6]);
+return([2], [6]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>, 1>([5]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>);
+test::foo@F0([0]: RangeCheck, [1]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (RangeCheck, core::result::Result::<test::BoundedInt::<0, 340282366920938463463374607431768211455>, test::BoundedInt::<340282366920938463463374607431768211456, 680564733841876926926749214863536422911>>);
 
 //! > ==========================================================================
 
@@ -645,19 +659,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>> = store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>;
 libfunc enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1> = enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1>;
 
-bounded_int_constrain<NonZero<u8>, 128>([0], [1]) { fallthrough([2], [3]) 6([4], [5]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 0>([3]) -> ([6]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([6]) -> ([6]); // 4
-return([2], [6]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1>([5]) -> ([7]); // 7
-store_temp<RangeCheck>([4]) -> ([4]); // 8
-store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([7]) -> ([7]); // 9
-return([4], [7]); // 10
+F0:
+bounded_int_constrain<NonZero<u8>, 128>([0], [1]) { fallthrough([2], [3]) F0_B0([4], [5]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 0>([3]) -> ([6]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([6]) -> ([6]);
+return([2], [6]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>, 1>([5]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: NonZero<u8>) -> (RangeCheck, core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>);
+test::foo@F0([0]: RangeCheck, [1]: NonZero<u8>) -> (RangeCheck, core::result::Result::<core::zeroable::NonZero::<test::BoundedInt::<0, 127>>, core::zeroable::NonZero::<test::BoundedInt::<128, 255>>>);
 
 //! > ==========================================================================
 
@@ -699,18 +715,20 @@ libfunc enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0> = enum_i
 libfunc store_temp<core::zeroable::IsZeroResult::<core::integer::i8>> = store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>;
 libfunc enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1> = enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1>;
 
-bounded_int_is_zero<i8>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0>([2]) -> ([3]); // 3
-store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1>([1]) -> ([4]); // 7
-store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_is_zero<i8>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 0>([2]) -> ([3]);
+store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::zeroable::IsZeroResult::<core::integer::i8>, 1>([1]) -> ([4]);
+store_temp<core::zeroable::IsZeroResult::<core::integer::i8>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: i8) -> (core::zeroable::IsZeroResult::<core::integer::i8>);
+test::foo@F0([0]: i8) -> (core::zeroable::IsZeroResult::<core::integer::i8>);
 
 //! > ==========================================================================
 
@@ -755,18 +773,20 @@ libfunc enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733
 libfunc store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>> = store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>;
 libfunc enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1> = enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1>;
 
-bounded_int_is_zero<BoundedInt<0, 680564733841876926926749214863536422911>>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 0>([2]) -> ([3]); // 3
-store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1>([1]) -> ([4]); // 7
-store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_is_zero<BoundedInt<0, 680564733841876926926749214863536422911>>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 0>([2]) -> ([3]);
+store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>, 1>([1]) -> ([4]);
+store_temp<core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>);
+test::foo@F0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (core::zeroable::IsZeroResult::<test::BoundedInt::<0, 680564733841876926926749214863536422911>>);
 
 //! > ==========================================================================
 
@@ -799,11 +819,12 @@ type NonZero<BoundedInt<1, 680564733841876926926749214863536422911>> = NonZero<B
 libfunc bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>> = bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>;
 libfunc store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>> = store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>;
 
-bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>([0]) -> ([1]); // 0
-store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+bounded_int_wrap_non_zero<BoundedInt<1, 680564733841876926926749214863536422911>>([0]) -> ([1]);
+store_temp<NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>);
+test::foo@F0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (NonZero<BoundedInt<1, 680564733841876926926749214863536422911>>);
 
 //! > ==========================================================================
 
@@ -836,11 +857,12 @@ type NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>> = NonZero
 libfunc bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>> = bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>;
 libfunc store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>> = store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>;
 
-bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>([0]) -> ([1]); // 0
-store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+bounded_int_wrap_non_zero<BoundedInt<-680564733841876926926749214863536422911, -1>>([0]) -> ([1]);
+store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);
+test::foo@F0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);
 
 //! > ==========================================================================
 
@@ -880,18 +902,20 @@ libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0> = 
 libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>;
 libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1>;
 
-bounded_int_trim_min<u8>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0>([2]) -> ([3]); // 3
-store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1>([1]) -> ([4]); // 7
-store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_trim_min<u8>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<1, 255>>);
+test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<1, 255>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
@@ -934,18 +958,20 @@ libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0> 
 libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>;
 libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1>;
 
-bounded_int_trim_max<BoundedInt<-255, 0>>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0>([2]) -> ([3]); // 3
-store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1>([1]) -> ([4]); // 7
-store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_trim_max<BoundedInt<-255, 0>>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: BoundedInt<-255, 0>) -> (core::internal::OptionRev::<test::BoundedInt::<-255, -1>>);
+test::foo@F0([0]: BoundedInt<-255, 0>) -> (core::internal::OptionRev::<test::BoundedInt::<-255, -1>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
@@ -989,18 +1015,20 @@ libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0>
 libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>;
 libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1>;
 
-bounded_int_trim_min<i8>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0>([2]) -> ([3]); // 3
-store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1>([1]) -> ([4]); // 7
-store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_trim_min<i8>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: i8) -> (core::internal::OptionRev::<test::BoundedInt::<-127, 127>>);
+test::foo@F0([0]: i8) -> (core::internal::OptionRev::<test::BoundedInt::<-127, 127>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 400})
@@ -1044,18 +1072,20 @@ libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0> = 
 libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>;
 libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1>;
 
-bounded_int_trim_max<u8>([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0>([2]) -> ([3]); // 3
-store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1>([1]) -> ([4]); // 7
-store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+bounded_int_trim_max<u8>([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>>);
+test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 400})
