@@ -150,7 +150,7 @@ Content(" ")
 Content("Default impl of abc TraitTest function inner comment.")
 
 //! > Item signature #5
-impl TraitTestImpl of TraitTest
+impl TraitTestImpl of TraitTest;
 
 //! > Item documentation #5
 Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.

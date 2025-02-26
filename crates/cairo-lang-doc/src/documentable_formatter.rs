@@ -1,873 +1,472 @@
-use std::fmt;
-use std::fmt::Write;
-
+use crate::db::DocGroup;
+use crate::documentable_item::DocumentableItemId;
+use crate::documentable_item::DocumentableItemId::Member;
+use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId,
-    ImplConstantDefId, ImplDefId, ImplFunctionId, ImplTypeDefId, LanguageElementId, LookupItemId,
-    MemberId, ModuleTypeAliasId, NamedLanguageElementId, StructId, TopLevelLanguageElementId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitTypeId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
+    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
+    LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitItemId, TraitTypeId, VariantId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::generics::GenericArgumentId;
 use cairo_lang_semantic::items::modifiers::get_relevant_modifier;
 use cairo_lang_semantic::items::visibility::Visibility;
-use cairo_lang_semantic::{Expr, GenericParam, Signature};
+use cairo_lang_semantic::types::TypeId;
+use cairo_lang_semantic::{Expr, GenericParam, Parameter};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use cairo_lang_utils::{LookupIntern, Upcast};
+use itertools::Itertools;
 use smol_str::SmolStr;
+use std::fmt;
+use std::fmt::Write;
+use std::option::Option;
 
-use crate::db::DocGroup;
-use crate::documentable_item::DocumentableItemId;
-
+/// Used for indenting children items of complex data type signature e.g. struct members.
 const INDENT: &str = "    ";
+/// Returned when item's signature could not be determined.
 const MISSING: &str = "<missing>";
 
-pub trait HirDisplay {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error>;
+pub struct DocumentableItemSignatureData {
+    item_id: DocumentableItemId,
+    name: SmolStr,
+    visibility: Visibility,
+    generic_args: Option<Vec<GenericArgumentId>>,
+    generic_params: Option<Vec<GenericParam>>,
+    variants: Option<Vec<(SmolStr, TypeId)>>,
+    members: Option<Vec<(SmolStr, TypeId, Visibility)>>,
+    return_type: Option<TypeId>,
+    attributes: Option<Vec<Attribute>>,
+    params: Option<Vec<Parameter>>,
+    resolver_generic_params: Option<Vec<GenericParamId>>,
+    return_value_expr: Option<Expr>,
+}
 
-    fn write_module_item_visibility(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        if let DocumentableItemId::LookupItem(LookupItemId::ModuleItem(module_item_id)) = item_id {
-            let parent_module = module_item_id.parent_module(f.db.upcast());
-            let item_name = module_item_id.name(f.db.upcast());
-            let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                .module_item_info_by_name(parent_module, item_name.clone())
-                .unwrap()
-                .unwrap();
-            let visibility = match module_item_info.visibility {
-                Visibility::Public => "pub ",
-                Visibility::PublicInCrate => "pub(crate) ",
-                Visibility::Private => "",
-            };
-            write!(f, "{}", visibility)
-        } else {
-            panic!("Expected a ModuleItem, found a different type");
-        }
+pub trait HirDisplay {
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error>;
+
+    fn get_signature(&self, f: &mut HirFormatter) -> String {
+        self.hir_fmt(f).unwrap();
+        f.buf.clone()
     }
 
-    fn get_signature(&self, f: &mut HirFormatter<'_>, item_id: DocumentableItemId) -> String {
-        self.hir_fmt(f, item_id).unwrap();
-        f.buf.clone()
+    fn get_signature_elements(&self, f: &mut HirFormatter) -> Vec<SignatureElement> {
+        f.elements.clone()
     }
 }
 
+// todo: do better
+/// helper struct to reconstruct links from formatted
+#[derive(Clone, Debug)]
+struct SignatureElement {
+    signature: String,
+    full_path: Option<String>,
+}
+
+/// High-Level Intermediate Representation semantic data Formatter used for item's signature creation.
 pub struct HirFormatter<'a> {
-    /// The database handle
-    pub db: &'a dyn DocGroup,
-    /// A buffer to intercept writes with
+    /// The database handle.
+    db: &'a dyn DocGroup,
+    /// A buffer to intercept writes with.
     buf: String,
+    elements: Vec<SignatureElement>,
 }
 
 impl fmt::Write for HirFormatter<'_> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.buf.push_str(s);
+        self.elements.push(SignatureElement { signature: s.to_string(), full_path: None });
         Ok(())
     }
 }
 
+fn write_type(
+    prefix: Option<String>,
+    element_type: TypeId,
+    postfix: Option<String>,
+    f: &mut HirFormatter,
+) -> fmt::Result {
+    if element_type.is_fully_concrete(f.db.upcast()) {
+        write_item_with_path(prefix, element_type.format(f.db.upcast()), postfix, f)
+    } else {
+        f.write_str(&format!(
+            "{}{}{}",
+            prefix.unwrap_or("".to_string()),
+            extract_and_format(&element_type.format(f.db.upcast())),
+            postfix.unwrap_or("".to_string()),
+        ))
+    }
+}
+
+fn write_item_with_path(
+    prefix: Option<String>,
+    full_path: String,
+    postfix: Option<String>,
+    f: &mut HirFormatter,
+) -> fmt::Result {
+    let type_signature = extract_and_format(&full_path);
+
+    if let Some(prefix) = prefix {
+        f.write_str(&prefix)?;
+        f.elements.push(SignatureElement { signature: prefix, full_path: None });
+    }
+    f.write_str(&type_signature)?;
+    f.elements.push(SignatureElement { signature: type_signature, full_path: Some(full_path) });
+
+    if let Some(postfix) = postfix {
+        f.write_str(&postfix)?;
+        f.elements.push(SignatureElement { signature: postfix, full_path: None });
+    };
+    Ok(())
+}
+
 impl<'a> HirFormatter<'a> {
     pub fn new(db: &'a dyn DocGroup) -> Self {
-        Self { db: db.upcast(), buf: String::new() }
+        Self { db, buf: String::new(), elements: Vec::new() }
     }
 }
 
 impl HirDisplay for VariantId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let name = item_id.name(f.db.upcast());
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let name = self.name(f.db.upcast());
         let variant_semantic = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .variant_semantic(self.enum_id(f.db.upcast()), *self)
             .unwrap();
-        let variant_type = variant_semantic.ty.format(f.db.upcast());
         if !variant_semantic.ty.is_unit(f.db.upcast()) {
-            let variant_type = extract_and_format(&variant_type);
-            let variant_signature =
-                format!("{name}{} {variant_type}", syntax_kind_to_text(SyntaxKind::TerminalColon),);
-            write!(
-                f,
-                "{}{INDENT}{variant_signature}",
-                syntax_kind_to_text(SyntaxKind::TokenNewline),
-            )
+            write_type(Some(format!("{name}: ",)), variant_semantic.ty, None, f)
         } else {
-            write!(f, " {}{}", INDENT, name)
+            write!(f, "{name}")
         }
     }
 }
 
 impl HirDisplay for EnumId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
-        let item_name = item_id.name(f.db.upcast());
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let enum_full_signature = get_enum_signature_data(f.db.upcast(), *self);
         write!(
             f,
-            "{} {item_name} {}",
-            syntax_kind_to_text(SyntaxKind::TerminalEnum),
-            syntax_kind_to_text(SyntaxKind::TerminalLBrace)
+            "{}enum {} {{",
+            get_syntactic_visibility(&enum_full_signature.visibility),
+            enum_full_signature.name,
         )?;
-        let variants =
-            <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db).enum_variants(*self).unwrap();
-        variants.iter().for_each(|(name, variant_id)| {
-            let variant_semantic = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                .variant_semantic(*self, *variant_id)
-                .unwrap();
-            let variant_type = variant_semantic.ty.format(f.db.upcast());
-            if !variant_semantic.ty.is_unit(f.db.upcast()) {
-                let variant_type = extract_and_format(&variant_type);
-                let variant_signature = format!(
-                    "{name}{} {variant_type}",
-                    syntax_kind_to_text(SyntaxKind::TerminalColon),
-                );
-                write!(
-                    f,
-                    "{}{INDENT}{variant_signature}{}",
-                    syntax_kind_to_text(SyntaxKind::TokenNewline),
-                    syntax_kind_to_text(SyntaxKind::TerminalComma),
-                )
-                .unwrap();
-            } else {
-                write!(
-                    f,
-                    "{}{INDENT}{name}{}",
-                    syntax_kind_to_text(SyntaxKind::TokenNewline),
-                    syntax_kind_to_text(SyntaxKind::TerminalComma),
-                )
-                .unwrap();
+        let variants = enum_full_signature.variants;
+        match variants {
+            Some(variants) => {
+                variants.iter().for_each(|(name, variant_type)| {
+                    if !variant_type.is_unit(f.db.upcast()) {
+                        write_type(
+                            Some(format!("\n{INDENT}{name}: ",)),
+                            variant_type.clone(),
+                            Some(",".to_string()),
+                            f,
+                        )
+                        .unwrap();
+                    } else {
+                        write!(f, "\n{INDENT}{name},",).unwrap()
+                    }
+                });
+                write!(f, "\n}}",).unwrap()
             }
-        });
-        write!(
-            f,
-            "{}{}",
-            syntax_kind_to_text(SyntaxKind::TokenNewline),
-            syntax_kind_to_text(SyntaxKind::TerminalRBrace)
-        )?;
+            None => write!(f, "}}",).unwrap(),
+        }
         Ok(())
     }
 }
 
 impl HirDisplay for MemberId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let name = item_id.name(f.db.upcast());
-        let struct_id = self.struct_id(f.db.upcast());
-        let semantic_members = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .struct_members(struct_id)
-            .unwrap();
-        let member = semantic_members.get(&name).unwrap();
-        if member.ty.is_unit(f.db.upcast()) {
-            write!(f, "{}{}", get_syntactic_visibility(&member.visibility), name)
-        } else {
-            let member_type = extract_and_format(&member.ty.format(f.db.upcast()));
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let member_full_signature = get_member_signature_data(f.db.upcast(), *self);
+
+        if member_full_signature.return_type.unwrap().is_unit(f.db.upcast()) {
             write!(
                 f,
-                "{}{}{} {}",
-                get_syntactic_visibility(&member.visibility),
-                name,
-                syntax_kind_to_text(SyntaxKind::TerminalColon),
-                member_type
+                "{}{}",
+                get_syntactic_visibility(&member_full_signature.visibility),
+                member_full_signature.name
+            )
+        } else {
+            write_type(
+                Some(format!(
+                    "{}{}: ",
+                    get_syntactic_visibility(&member_full_signature.visibility),
+                    member_full_signature.name,
+                )),
+                member_full_signature.return_type.unwrap(),
+                None,
+                f,
             )
         }
     }
 }
 
 impl HirDisplay for StructId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let struct_attributes = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .struct_attributes(*self)
-            .unwrap();
-        HirFormatter::write_struct_attributes_syntax(struct_attributes, f)?;
-        self.write_module_item_visibility(f, item_id)?;
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .struct_generic_params(*self)
-            .unwrap();
-        let generics_formatted = HirFormatter::format_generic_params(generic_params, f);
-        write!(
-            f,
-            "{} {}{} {}",
-            syntax_kind_to_text(SyntaxKind::TerminalStruct),
-            item_id.name(f.db.upcast()),
-            generics_formatted,
-            syntax_kind_to_text(SyntaxKind::TerminalLBrace),
-        )?;
-        let semantic_members = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .struct_members(*self)
-            .unwrap();
-        semantic_members.iter().for_each(|(_, m)| {
-            let member = format!(
-                "{}{}{} {}",
-                get_syntactic_visibility(&m.visibility),
-                m.id.name(f.db.upcast()),
-                syntax_kind_to_text(SyntaxKind::TerminalColon),
-                extract_and_format(&m.ty.format(f.db.upcast())),
-            );
-            write!(f, "{}{INDENT}{member},", syntax_kind_to_text(SyntaxKind::TokenNewline),)
-                .unwrap();
-        });
-        write!(
-            f,
-            "{}{}",
-            if semantic_members.len() > 0 {
-                syntax_kind_to_text(SyntaxKind::TokenNewline)
-            } else {
-                "".to_string()
-            },
-            syntax_kind_to_text(SyntaxKind::TerminalRBrace)
-        )?;
-        Ok(())
-    }
-}
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let struct_full_signature = get_struct_signature_data(f.db.upcast(), *self);
 
-trait FunctionSignatureWriter {
-    fn write_function_signature(
-        &self,
-        f: &mut HirFormatter<'_>,
-        signature: Signature,
-        item_id: DocumentableItemId,
-        syntactic_kind: String,
-        generic_args_formatted: String,
-    ) -> Result<(), fmt::Error> {
-        write!(
-            f,
-            "{} {}{}{}",
-            syntactic_kind,
-            item_id.name(f.db.upcast()),
-            generic_args_formatted,
-            syntax_kind_to_text(SyntaxKind::TerminalLParen)
-        )?;
-
-        let mut count = signature.params.len();
-        let mut postfix = format!("{} ", syntax_kind_to_text(SyntaxKind::TerminalComma),);
-        signature.params.iter().for_each(|param| {
-            if count == 1 {
-                postfix = "".to_string();
-            }
-            let syntax_node = param.id.stable_location(f.db.upcast()).syntax_node(f.db.upcast());
-            let type_definition = Self::get_type_clause(syntax_node, f).unwrap();
-            let modifier = get_relevant_modifier(&param.mutability);
-            let modifier_postfix = if modifier.len() == 0 { "" } else { " " };
-            write!(
-                f,
-                "{}{}{}{}{}",
-                modifier, modifier_postfix, param.name, type_definition, postfix
-            )
-            .unwrap();
-            count -= 1;
-        });
-
-        let return_postfix = {
-            if signature.return_type.is_unit(f.db.upcast()) {
-                ""
-            } else {
-                &format!(
-                    " {} {}",
-                    syntax_kind_to_text(SyntaxKind::TerminalArrow),
-                    extract_and_format(&signature.return_type.format(f.db.upcast()))
-                )
-            }
-        };
-        write!(f, "{}{}", syntax_kind_to_text(SyntaxKind::TerminalRParen), return_postfix)?;
-        Ok(())
-    }
-
-    fn get_type_clause(syntax_node: SyntaxNode, f: &mut HirFormatter<'_>) -> Option<String> {
-        let children = f.db.get_children(syntax_node);
-        for child in children.iter() {
-            if child.kind(f.db.upcast()) == SyntaxKind::TypeClause {
-                return Some(child.clone().get_text_without_all_comment_trivia(f.db.upcast()));
-            }
+        if let Some(attributes) = struct_full_signature.attributes {
+            write_struct_attributes_syntax(attributes, f)?;
         }
-        Some(String::from(MISSING))
+        write!(
+            f,
+            "{}struct {}",
+            get_syntactic_visibility(&struct_full_signature.visibility),
+            struct_full_signature.name,
+        )
+        .unwrap();
+
+        write_generic_params(struct_full_signature.generic_params.unwrap(), f).unwrap();
+        f.write_str(" {")?;
+        if let Some(members) = struct_full_signature.members {
+            members.iter().for_each(|(name, member_type, visibility)| {
+                write_type(
+                    Some(format!("\n{INDENT}{}{}: ", get_syntactic_visibility(visibility), name,)),
+                    member_type.clone(),
+                    Some(",".to_string()),
+                    f,
+                )
+                .unwrap();
+            });
+            write!(f, "{}}}", if members.is_empty() { "" } else { "\n" }).unwrap()
+        }
+        Ok(())
     }
 }
-
-impl FunctionSignatureWriter for FreeFunctionId {}
 
 impl HirDisplay for FreeFunctionId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .free_function_generic_params(*self)
-            .unwrap();
-        let generics_formatted = HirFormatter::format_generic_params(generic_params, f);
-
-        let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .free_function_signature(*self)
-            .unwrap();
-        Self::write_function_signature(
-            self,
-            f,
-            signature,
-            item_id,
-            syntax_kind_to_text(SyntaxKind::TerminalFunction),
-            generics_formatted,
-        )
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let free_function_full_signature = get_free_function_signature_data(f.db.upcast(), *self);
+        format_function_signature(f, free_function_full_signature, "".to_string())
     }
 }
-
-trait SyntacticWriter {
-    fn write_syntactic_evaluation(
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let syntax_node =
-            item_id.stable_location(f.db.upcast()).unwrap().syntax_node(f.db.upcast());
-
-        if matches!(
-            &syntax_node.green_node(f.db.upcast()).details,
-            green::GreenNodeDetails::Node { .. }
-        ) {
-            let mut is_after_evaluation_value = false;
-            for child in f.db.get_children(syntax_node.clone()).iter() {
-                let kind = child.kind(f.db.upcast());
-                if !matches!(kind, SyntaxKind::Trivia) {
-                    if matches!(kind, SyntaxKind::TerminalSemicolon) {
-                        write!(f.buf, "{}", syntax_kind_to_text(SyntaxKind::TerminalSemicolon))?;
-                        return Ok(());
-                    }
-                    if is_after_evaluation_value {
-                        f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
-                            child,
-                            f.db.upcast(),
-                        ))?;
-                    };
-                    if matches!(kind, SyntaxKind::TerminalEq) {
-                        is_after_evaluation_value = true;
-                    }
-                }
-            }
-        };
-
-        Ok(())
-    }
-}
-
-impl SyntacticWriter for ConstantId {}
 
 impl HirDisplay for ConstantId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let constant_full_signature = get_constant_signature_data(f.db.upcast(), *self);
         write!(
             f,
-            "{} {}{} {} {} ",
-            syntax_kind_to_text(SyntaxKind::TerminalConst),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalColon),
-            extract_and_format(
-                &<dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                    .constant_const_type(*self)
-                    .unwrap()
-                    .format(f.db.upcast())
-            ),
-            syntax_kind_to_text(SyntaxKind::TerminalEq),
-        )?;
-        let constant = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .constant_semantic_data(*self)
-            .unwrap();
-        let constant_value = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .lookup_intern_const_value(
-                <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                    .constant_const_value(*self)
-                    .unwrap(),
-            );
-        let expression = &constant.arenas.exprs[constant.value];
+            "{}const {}: ",
+            get_syntactic_visibility(&constant_full_signature.visibility),
+            constant_full_signature.name,
+        )
+        .unwrap();
 
-        match expression {
+        write_type(None, constant_full_signature.return_type.unwrap(), Some(" = ".to_string()), f)?;
+
+        let return_value_expression = match constant_full_signature.return_value_expr.unwrap() {
             Expr::Literal(v) => {
-                write!(f, "{}{}", v.value, syntax_kind_to_text(SyntaxKind::TerminalSemicolon))?;
+                format!("{};", v.value,)
             }
             Expr::FunctionCall(_) => {
+                let constant_value = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
+                    .lookup_intern_const_value(
+                        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
+                            .constant_const_value(*self)
+                            .unwrap(),
+                    );
+
                 if let ConstValue::Int(value, _) = constant_value {
-                    Self::write_syntactic_evaluation(f, item_id)?;
-                    write!(
-                        f.buf,
-                        " {} {} {}",
-                        syntax_kind_to_text(SyntaxKind::TokenSingleLineInnerComment),
-                        syntax_kind_to_text(SyntaxKind::TokenEq),
+                    format!(
+                        "{} // = {}",
+                        get_syntactic_evaluation(f.db, constant_full_signature.item_id),
                         value
-                    )?;
+                    )
+                } else {
+                    get_syntactic_evaluation(f.db, constant_full_signature.item_id)
                 }
             }
-            _ => {
-                Self::write_syntactic_evaluation(f, item_id)?;
-            }
+            _ => get_syntactic_evaluation(f.db, constant_full_signature.item_id),
         };
-        Ok(())
+        f.write_str(&return_value_expression)
     }
 }
-
-impl SyntacticWriter for ImplConstantDefId {}
 
 impl HirDisplay for ImplConstantDefId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let def_value_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .impl_constant_def_value(*self)
-            .unwrap();
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let constant_full_signature = get_impl_constant_signature_data(f.db.upcast(), *self);
         write!(
             f,
-            "{} {}{} {} {} ",
-            syntax_kind_to_text(SyntaxKind::TerminalConst),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalColon),
-            extract_and_format(&def_value_id.ty(f.db.upcast()).unwrap().format(f.db.upcast())),
-            syntax_kind_to_text(SyntaxKind::TerminalEq),
+            "const {}: {} = ",
+            constant_full_signature.name,
+            extract_and_format(&constant_full_signature.return_type.unwrap().format(f.db.upcast())),
         )?;
-
-        Self::write_syntactic_evaluation(f, item_id)?;
-        Ok(())
+        write_syntactic_evaluation(f, constant_full_signature.item_id)
     }
 }
-
-impl FunctionSignatureWriter for TraitFunctionId {}
 
 impl HirDisplay for TraitFunctionId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .trait_function_signature(*self)
-            .unwrap();
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .trait_function_generic_params(*self)
-            .unwrap();
-        let generic_params_formatted = HirFormatter::format_generic_params(generic_params, f);
-        Self::write_function_signature(
-            self,
-            f,
-            signature,
-            item_id,
-            syntax_kind_to_text(SyntaxKind::TerminalFunction),
-            generic_params_formatted,
-        )
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let trait_function_full_signature = get_trait_function_signature_data(f.db, *self);
+        format_function_signature(f, trait_function_full_signature, "".to_string())
     }
 }
 
-impl FunctionSignatureWriter for ImplFunctionId {}
-
 impl HirDisplay for ImplFunctionId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .impl_function_signature(*self)
-            .unwrap();
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .impl_function_generic_params(*self)
-            .unwrap();
-        let generic_params_formatted = HirFormatter::format_generic_params(generic_params, f);
-        Self::write_function_signature(
-            self,
-            f,
-            signature,
-            item_id,
-            syntax_kind_to_text(SyntaxKind::TerminalFunction),
-            generic_params_formatted,
-        )
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let impl_function_full_signature = get_impl_function_signature_data(f.db, *self);
+        format_function_signature(f, impl_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for TraitId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let trait_full_signature = get_trait_signature_data(f.db.upcast(), *self);
+        let generic_params_formatted =
+            format_generic_params(trait_full_signature.generic_params.unwrap(), f);
         write!(
             f,
-            "{} {}",
-            syntax_kind_to_text(SyntaxKind::TerminalTrait),
-            item_id.name(f.db.upcast())
-        )?;
-
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .trait_generic_params(*self)
-            .unwrap();
-        let generic_params_formatted = HirFormatter::format_generic_params(generic_params, f);
-        write!(f, "{}", generic_params_formatted)?;
-        Ok(())
+            "{}trait {}{}",
+            get_syntactic_visibility(&trait_full_signature.visibility),
+            trait_full_signature.name,
+            generic_params_formatted
+        )
     }
 }
 
 impl HirDisplay for TraitConstantId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let trait_const_full_signature = get_trait_const_signature_data(f.db.upcast(), *self);
         write!(
             f,
-            "{} {}{} {}{}",
-            syntax_kind_to_text(SyntaxKind::TerminalConst),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalColon),
+            "const {}: {};",
+            trait_const_full_signature.name,
             extract_and_format(
-                &<dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                    .trait_constant_type(*self)
-                    .unwrap()
-                    .format(f.db.upcast())
+                &trait_const_full_signature.return_type.unwrap().format(f.db.upcast())
             ),
-            syntax_kind_to_text(SyntaxKind::TerminalSemicolon),
-        )?;
-        Ok(())
+        )
     }
 }
 
 impl HirDisplay for ImplDefId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
-
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let impl_def_full_signature = get_impl_def_signature_data(f.db.upcast(), *self);
         let trait_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .impl_def_trait(*self)
             .unwrap();
-        let concrete_trait_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .impl_def_concrete_trait(*self)
-            .unwrap();
-        let intern = concrete_trait_id
-            .lookup_intern(<dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db));
-        let path = HirFormatter::format_intern_path(
-            intern
-                .trait_id
-                .parent_module(f.db.upcast())
-                .owning_crate(f.db.upcast())
-                .name(f.db.upcast()),
-            trait_id.name(f.db.upcast()),
-            trait_id.full_path(f.db.upcast()),
+        let resolver_generic_params = format_resolver_generic_params(
+            f.db,
+            impl_def_full_signature.resolver_generic_params.unwrap(),
         );
         write!(
             f,
-            "{} {} {} {}",
-            syntax_kind_to_text(SyntaxKind::TerminalImpl),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalOf),
-            path
-        )?;
-
-        let formated_generic_args =
-            HirFormatter::format_generic_args(intern.generic_args.clone(), f);
-        write!(f, "{}", formated_generic_args)?;
-        Ok(())
+            "{}impl {}{} of {}",
+            get_syntactic_visibility(&impl_def_full_signature.visibility),
+            impl_def_full_signature.name,
+            resolver_generic_params,
+            trait_id.name(f.db.upcast()),
+        );
+        write_generic_args(impl_def_full_signature.generic_args.unwrap(), f).unwrap();
+        f.write_str(";")
     }
 }
-
-impl SyntacticWriter for ImplAliasId {}
 
 impl HirDisplay for ImplAliasId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let impl_alias_full_signature = get_impl_alias_signature_data(f.db.upcast(), *self);
         write!(
             f,
-            "{} {} {} ",
-            syntax_kind_to_text(SyntaxKind::TerminalImpl),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalEq),
+            "{}impl {} = ",
+            get_syntactic_visibility(&impl_alias_full_signature.visibility),
+            self.name(f.db.upcast()),
         )?;
-        Self::write_syntactic_evaluation(f, item_id)?;
-        Ok(())
+        write_syntactic_evaluation(f, impl_alias_full_signature.item_id)
     }
 }
 
-impl SyntacticWriter for ModuleTypeAliasId {}
-
 impl HirDisplay for ModuleTypeAliasId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self);
         write!(
             f,
-            "{} {} {} ",
-            syntax_kind_to_text(SyntaxKind::TerminalImpl),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalEq),
+            "{}impl {} = ",
+            get_syntactic_visibility(&module_type_alias_full_signature.visibility),
+            self.name(f.db.upcast()),
         )?;
-        Self::write_syntactic_evaluation(f, item_id)?;
-        Ok(())
+        write_syntactic_evaluation(f, module_type_alias_full_signature.item_id)
     }
 }
 
 impl HirDisplay for TraitTypeId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        write!(
-            f,
-            "{} {}{}",
-            syntax_kind_to_text(SyntaxKind::TerminalType),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalSemicolon),
-        )?;
-        Ok(())
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let trait_type_full_sigature = get_trait_type_full_signature(f.db, *self);
+
+        write!(f, "type {};", trait_type_full_sigature.name,)
     }
 }
 
 impl HirDisplay for ImplTypeDefId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        let resolved_type = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .impl_type_def_resolved_type(*self)
-            .unwrap();
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self);
         write!(
             f,
-            "{} {} {} {};",
-            syntax_kind_to_text(SyntaxKind::TerminalType),
-            item_id.name(f.db.upcast()),
-            syntax_kind_to_text(SyntaxKind::TerminalEq),
-            extract_and_format(&resolved_type.format(f.db.upcast())),
-        )?;
-        Ok(())
+            "type {} = {};",
+            impl_type_def_full_signature.name,
+            extract_and_format(
+                &impl_type_def_full_signature.return_type.unwrap().format(f.db.upcast())
+            ),
+        )
     }
 }
 
 impl HirDisplay for ExternTypeId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
-
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let extern_type_full_signature = get_extern_type_full_signature(f.db, *self);
         write!(
             f,
-            "{} {} {}",
-            syntax_kind_to_text(SyntaxKind::TerminalExtern),
-            syntax_kind_to_text(SyntaxKind::TerminalType),
-            item_id.name(f.db.upcast()),
+            "{}extern type {}",
+            get_syntactic_visibility(&extern_type_full_signature.visibility),
+            self.name(f.db.upcast()),
         )?;
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .extern_type_declaration_generic_params(*self)
-            .unwrap();
+        let generic_params = extern_type_full_signature.generic_params.unwrap();
         if !generic_params.is_empty() {
             let mut count = generic_params.len();
-            f.write_str(&syntax_kind_to_text(SyntaxKind::TerminalLT))?;
+            f.write_str("<")?;
             generic_params.iter().for_each(|param| {
                 if count == 1 {
-                    write!(
-                        f,
-                        "{}{}",
-                        param.id().name(f.db.upcast()).unwrap(),
-                        syntax_kind_to_text(SyntaxKind::TerminalGT),
-                    )
-                    .unwrap();
+                    write!(f, "{}", param.id().name(f.db.upcast()).unwrap(),).unwrap()
                 } else {
-                    write!(
-                        f,
-                        "{}{} ",
-                        param.id().name(f.db.upcast()).unwrap(),
-                        syntax_kind_to_text(SyntaxKind::TerminalColon),
-                    )
-                    .unwrap();
-                    count -= 1;
+                    write!(f, "{}, ", param.id().name(f.db.upcast()).unwrap(),).unwrap()
                 }
-            })
-        };
-        Ok(())
+                count -= 1;
+            });
+            f.write_str(">")?;
+        }
+        f.write_str(";")
     }
 }
 
-impl FunctionSignatureWriter for ExternFunctionId {}
-
 impl HirDisplay for ExternFunctionId {
-    fn hir_fmt(
-        &self,
-        f: &mut HirFormatter<'_>,
-        item_id: DocumentableItemId,
-    ) -> Result<(), fmt::Error> {
-        self.write_module_item_visibility(f, item_id)?;
+    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+        let extern_function_full_signature = get_extern_function_full_signature(f.db, *self);
         let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .extern_function_signature(*self)
             .unwrap();
-        let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-            .extern_function_declaration_generic_params(*self)
-            .unwrap();
-        let generics_formatted = HirFormatter::format_generic_params(generic_params, f);
-        Self::write_function_signature(
-            self,
-            f,
-            signature.clone(),
-            item_id,
-            format!(
-                "{} {}",
-                syntax_kind_to_text(SyntaxKind::TerminalExtern),
-                syntax_kind_to_text(SyntaxKind::TerminalFunction),
-            ),
-            generics_formatted,
-        )?;
+
+        let signature_str =
+            format_function_signature(f, extern_function_full_signature, "extern ".to_string());
+
         if !signature.implicits.is_empty() {
-            write!(f, " implicits{}", syntax_kind_to_text(SyntaxKind::TerminalLParen))?;
+            f.write_str(" implicits(")?;
 
             let mut count = signature.implicits.len();
             signature.implicits.iter().for_each(|type_id| {
                 write!(
                     f,
                     "{}{}",
-                    type_id.format(f.db.upcast()),
-                    if count == 1 {
-                        syntax_kind_to_text(SyntaxKind::TerminalLParen)
-                    } else {
-                        format!("{} ", syntax_kind_to_text(SyntaxKind::TerminalComma),)
-                    }
+                    extract_and_format(&type_id.format(f.db.upcast())),
+                    if count == 1 { ")".to_string() } else { ", ".to_string() }
                 )
                 .unwrap();
                 count -= 1;
             })
         }
         if !signature.panicable {
-            write!(f, " {}", syntax_kind_to_text(SyntaxKind::TerminalNoPanic),)?;
+            f.write_str(" nopanic")?;
         };
-        write!(f, "{}", syntax_kind_to_text(SyntaxKind::TerminalSemicolon),)?;
-        Ok(())
-    }
-}
-
-impl<'a> HirFormatter<'a> {
-    fn format_intern_path(
-        intern_name: SmolStr,
-        trait_name: SmolStr,
-        trait_full_path: String,
-    ) -> String {
-        if format!(
-            "{}{}{}",
-            intern_name,
-            syntax_kind_to_text(SyntaxKind::TerminalColonColon),
-            trait_name
-        ) == trait_full_path
-        {
-            String::from(trait_name)
-        } else {
-            trait_full_path
-        }
-    }
-
-    fn format_generic_params(
-        generic_params: Vec<GenericParam>,
-        f: &mut HirFormatter<'_>,
-    ) -> String {
-        if !generic_params.is_empty() {
-            let generics_formatted = generic_params
-                .iter()
-                .map(|param| match param {
-                    GenericParam::Type(param_type) => {
-                        param_type.id.format(f.db.upcast()).to_string()
-                    }
-                    GenericParam::Const(param_const) => {
-                        format!(
-                            "{} {} {}{}",
-                            syntax_kind_to_text(SyntaxKind::TerminalConst),
-                            syntax_kind_to_text(SyntaxKind::TerminalColon),
-                            param_const.id.format(f.db.upcast()),
-                            extract_and_format(&param_const.ty.format(f.db.upcast()))
-                        )
-                    }
-                    GenericParam::Impl(param_impl) => {
-                        format!("{}", param_impl.id.format(f.db.upcast()),)
-                    }
-                    GenericParam::NegImpl(_) => String::from(MISSING),
-                })
-                .collect::<Vec<String>>()
-                .join(&format!("{} ", syntax_kind_to_text(SyntaxKind::TerminalComma),));
-            format!(
-                "{}{}{}",
-                syntax_kind_to_text(SyntaxKind::TerminalLT),
-                generics_formatted,
-                syntax_kind_to_text(SyntaxKind::TerminalGT)
-            )
-        } else {
-            String::new()
-        }
-    }
-
-    fn format_generic_args(
-        generic_args: Vec<GenericArgumentId>,
-        f: &mut HirFormatter<'_>,
-    ) -> String {
-        let mut buf = String::new();
-        let mut count = generic_args.len();
-
-        generic_args.iter().for_each(|arg| {
-            let gt = extract_and_format(&arg.format(f.db.upcast()));
-            write!(
-                buf,
-                "{}{}{}",
-                if count == generic_args.len() { "<" } else { "" },
-                gt,
-                if count == 1 { ">;" } else { ";" }
-            )
-            .unwrap();
-            count -= 1;
-        });
-        buf
-    }
-
-    fn write_struct_attributes_syntax(
-        attributes: Vec<Attribute>,
-        f: &mut HirFormatter<'_>,
-    ) -> Result<(), fmt::Error> {
-        attributes.iter().for_each(|a| {
-            let syntax_node = a.stable_ptr.lookup(f.db.upcast()).as_syntax_node();
-            let children =
-                <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db).get_children(syntax_node);
-            for child in children.iter() {
-                let to_text = child.clone().get_text_without_all_comment_trivia(f.db.upcast());
-                let cleaned_text = to_text.replace("\n", "").replace(" ", "");
-                write!(f.buf, "{}", cleaned_text).unwrap();
-            }
-            write!(f.buf, "{}", syntax_kind_to_text(SyntaxKind::TokenNewline)).unwrap();
-        });
-        Ok(())
+        f.write_str(";")
     }
 }
 
@@ -877,39 +476,6 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
         Visibility::PublicInCrate => "pub(crate) ",
         Visibility::Private => "",
     }
-}
-
-fn syntax_kind_to_text(kind: SyntaxKind) -> String {
-    let s = match kind {
-        SyntaxKind::TerminalExtern => "extern",
-        SyntaxKind::TerminalType => "type",
-        SyntaxKind::TerminalFunction => "fn",
-        SyntaxKind::TerminalTrait => "trait",
-        SyntaxKind::TerminalImpl => "impl",
-        SyntaxKind::TerminalOf => "of",
-        SyntaxKind::TerminalNoPanic => "nopanic",
-        SyntaxKind::TerminalStruct => "struct",
-        SyntaxKind::TerminalEnum => "enum",
-        SyntaxKind::TerminalConst => "const",
-        SyntaxKind::TerminalColon => ":",
-        SyntaxKind::TerminalColonColon => "::",
-        SyntaxKind::TerminalComma => ",",
-        SyntaxKind::TerminalEq => "=",
-        SyntaxKind::TerminalLT => "<",
-        SyntaxKind::TerminalGT => ">",
-        SyntaxKind::TerminalSemicolon => ";",
-        SyntaxKind::TerminalLBrace => "{",
-        SyntaxKind::TerminalRBrace => "}",
-        SyntaxKind::TerminalLBrack => "[",
-        SyntaxKind::TerminalRBrack => "]",
-        SyntaxKind::TerminalLParen => "(",
-        SyntaxKind::TerminalRParen => ")",
-        SyntaxKind::TerminalArrow => "->",
-        SyntaxKind::TokenNewline => "\n",
-        SyntaxKind::TokenSingleLineInnerComment => "//",
-        _ => "",
-    };
-    s.to_string()
 }
 
 pub fn extract_and_format(input: &str) -> String {
@@ -927,7 +493,7 @@ pub fn extract_and_format(input: &str) -> String {
                         .collect::<Vec<_>>();
                     if generic_parts.len() >= 2 {
                         let l = generic_parts.len();
-                        parts.push(&generic_parts[l - 2]);
+                        parts.push(generic_parts[l - 2]);
                         format!("{}<{}>", parts.join("::"), generic_parts[l - 1])
                     } else {
                         last.to_owned()
@@ -980,4 +546,767 @@ pub fn extract_and_format(input: &str) -> String {
     }
 
     result
+}
+
+fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>) -> String {
+    if !params.is_empty() {
+        format!("<{}>", params.iter().map(|param| { param.format(db.upcast()) }).join(", "))
+    } else {
+        "".to_string()
+    }
+}
+
+fn format_function_signature(
+    f: &mut HirFormatter,
+    documentable_signature: DocumentableItemSignatureData,
+    syntactic_kind: String,
+) -> Result<(), fmt::Error> {
+    let resolver_generic_params = match documentable_signature.resolver_generic_params {
+        Some(params) => format_resolver_generic_params(f.db, params),
+        None => "".to_string(),
+    };
+    write!(
+        f.buf,
+        "{}{}fn {}{}",
+        get_syntactic_visibility(&documentable_signature.visibility),
+        syntactic_kind,
+        documentable_signature.name,
+        resolver_generic_params,
+    )
+    .unwrap();
+    if let Some(generic_args) = documentable_signature.generic_args {
+        write_generic_args(generic_args, f).unwrap();
+    }
+    f.write_str("(").unwrap();
+    if let Some(params) = documentable_signature.params {
+        let mut count = params.len();
+        let mut postfix = String::from(", ");
+        params.iter().for_each(|param| {
+            if count == 1 {
+                postfix = "".to_string();
+            }
+            let syntax_node = param.id.stable_location(f.db.upcast()).syntax_node(f.db.upcast());
+            let type_definition = get_type_clause(syntax_node, f.db).unwrap();
+            let modifier = get_relevant_modifier(&param.mutability);
+            let modifier_postfix = if modifier.is_empty() { "" } else { " " };
+            write!(f.buf, "{modifier}{modifier_postfix}{}{type_definition}{postfix}", param.name,)
+                .unwrap();
+            count -= 1;
+        });
+    }
+    write!(f.buf, ")",).unwrap();
+
+    if let Some(return_type) = documentable_signature.return_type {
+        if !return_type.is_unit(f.db.upcast()) {
+            write!(f.buf, " -> {}", extract_and_format(&return_type.format(f.db.upcast())))
+                .unwrap();
+        }
+    }
+    Ok(())
+}
+
+fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String> {
+    let children = db.get_children(syntax_node);
+    for child in children.iter() {
+        if child.kind(db.upcast()) == SyntaxKind::TypeClause {
+            return Some(child.clone().get_text_without_all_comment_trivia(db.upcast()));
+        }
+    }
+    Some(String::from(MISSING))
+}
+
+fn format_generic_params(generic_params: Vec<GenericParam>, f: &mut HirFormatter) -> String {
+    if !generic_params.is_empty() {
+        let generics_formatted = generic_params
+            .iter()
+            .map(|param| match param {
+                GenericParam::Type(param_type) => param_type.id.format(f.db.upcast()).to_string(),
+                GenericParam::Const(param_const) => {
+                    format!(
+                        "const{}: {}",
+                        param_const.id.format(f.db.upcast()),
+                        extract_and_format(&param_const.ty.format(f.db.upcast()))
+                    )
+                }
+                GenericParam::Impl(param_impl) => param_impl.id.format(f.db.upcast()).to_string(),
+                GenericParam::NegImpl(_) => String::from(MISSING),
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("<{}>", generics_formatted,)
+    } else {
+        String::new()
+    }
+}
+
+fn write_generic_params(
+    generic_params: Vec<GenericParam>,
+    f: &mut HirFormatter,
+) -> Result<(), fmt::Error> {
+    if !generic_params.is_empty() {
+        let mut count = generic_params.len();
+        f.write_str("<");
+        generic_params.iter().for_each(|param| {
+            match param {
+                GenericParam::Type(param_type) => write_item_with_path(
+                    None,
+                    param_type.id.format(f.db.upcast()),
+                    if count == 1 { None } else { Some(String::from(", ")) },
+                    f,
+                )
+                .unwrap(),
+                GenericParam::Const(param_const) => {
+                    write_item_with_path(
+                        Some(format!("const{}", param_const.id.format(f.db.upcast()))),
+                        param_const.ty.format(f.db.upcast()),
+                        if count == 1 { None } else { Some(String::from(", ")) },
+                        f,
+                    )
+                    .unwrap();
+                }
+                GenericParam::Impl(param_impl) => {
+                    param_impl.id.format(f.db.upcast()).to_string();
+                    write_item_with_path(
+                        None,
+                        param_impl.id.format(f.db.upcast()),
+                        if count == 1 { None } else { Some(String::from(", ")) },
+                        f,
+                    )
+                    .unwrap();
+                }
+                GenericParam::NegImpl(_) => f.write_str(MISSING).unwrap(),
+            };
+            count -= 1;
+        });
+
+        f.write_str(">")
+    } else {
+        Ok(())
+    }
+}
+
+fn write_generic_args(
+    generic_args: Vec<GenericArgumentId>,
+    f: &mut HirFormatter,
+) -> Result<(), fmt::Error> {
+    let mut count = generic_args.len();
+    generic_args.iter().for_each(|arg| {
+        write_item_with_path(
+            if count == generic_args.len() { Some("<".to_string()) } else { None },
+            arg.format(f.db.upcast()),
+            Some(if count == 1 { ">".to_string() } else { ", ".to_string() }),
+            f,
+        )
+        .unwrap();
+        count -= 1;
+    });
+    Ok(())
+}
+
+fn write_struct_attributes_syntax(
+    attributes: Vec<Attribute>,
+    f: &mut HirFormatter,
+) -> Result<(), fmt::Error> {
+    attributes.iter().for_each(|a| {
+        let syntax_node = a.stable_ptr.lookup(f.db.upcast()).as_syntax_node();
+        let children =
+            <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db).get_children(syntax_node);
+        for child in children.iter() {
+            let to_text = child.clone().get_text_without_all_comment_trivia(f.db.upcast());
+            let cleaned_text = to_text.replace("\n", "");
+            write!(f.buf, "{}", cleaned_text).unwrap();
+        }
+        write!(f.buf, "\n",).unwrap();
+    });
+    Ok(())
+}
+
+fn write_syntactic_evaluation(
+    f: &mut HirFormatter,
+    item_id: DocumentableItemId,
+) -> Result<(), fmt::Error> {
+    let syntax_node = item_id.stable_location(f.db.upcast()).unwrap().syntax_node(f.db.upcast());
+
+    if matches!(
+        &syntax_node.green_node(f.db.upcast()).details,
+        green::GreenNodeDetails::Node { .. }
+    ) {
+        let mut is_after_evaluation_value = false;
+        for child in f.db.get_children(syntax_node.clone()).iter() {
+            let kind = child.kind(f.db.upcast());
+            if !matches!(kind, SyntaxKind::Trivia) {
+                if matches!(kind, SyntaxKind::TerminalSemicolon) {
+                    f.buf.write_str(";")?;
+                    return Ok(());
+                }
+                if is_after_evaluation_value {
+                    f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
+                        child,
+                        f.db.upcast(),
+                    ))?;
+                };
+                if matches!(kind, SyntaxKind::TerminalEq) {
+                    is_after_evaluation_value = true;
+                }
+            }
+        }
+    };
+
+    Ok(())
+}
+
+fn get_syntactic_evaluation(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
+    let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
+    let mut buf: String = String::new();
+    if matches!(&syntax_node.green_node(db.upcast()).details, green::GreenNodeDetails::Node { .. })
+    {
+        let mut is_after_evaluation_value = false;
+        for child in db.get_children(syntax_node.clone()).iter() {
+            let kind = child.kind(db.upcast());
+            if !matches!(kind, SyntaxKind::Trivia) {
+                if matches!(kind, SyntaxKind::TerminalSemicolon) {
+                    write!(buf, ":",).unwrap();
+                }
+                if is_after_evaluation_value {
+                    buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
+                        child,
+                        db.upcast(),
+                    ))
+                    .unwrap();
+                };
+                if matches!(kind, SyntaxKind::TerminalEq) {
+                    is_after_evaluation_value = true;
+                }
+            }
+        }
+    };
+
+    buf
+}
+
+fn get_enum_signature_data(db: &dyn DocGroup, item_id: EnumId) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::Enum(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let mut variants: Vec<(SmolStr, TypeId)> = Vec::new();
+    <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .enum_variants(item_id)
+        .unwrap()
+        .iter()
+        .for_each(|(name, variant_id)| {
+            let variant_semantic = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+                .variant_semantic(item_id, *variant_id)
+                .unwrap();
+            variants.push((name.clone(), variant_semantic.ty))
+        });
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: Some(variants),
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_struct_signature_data(
+    db: &dyn DocGroup,
+    item_id: StructId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::Struct(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let struct_attributes =
+        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).struct_attributes(item_id).unwrap();
+
+    let members = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .struct_members(item_id)
+        .unwrap()
+        .iter()
+        .map(|(name, member)| (name.clone(), member.ty, member.visibility))
+        .collect();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: Some(
+            <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+                .struct_generic_params(item_id)
+                .unwrap(),
+        ),
+        variants: None,
+        members: Some(members),
+        return_type: None,
+        attributes: Some(struct_attributes),
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_member_signature_data(
+    db: &dyn DocGroup,
+    item_id: MemberId,
+) -> DocumentableItemSignatureData {
+    let name = item_id.name(db.upcast());
+    let struct_id = item_id.struct_id(db.upcast());
+    let semantic_members =
+        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).struct_members(struct_id).unwrap();
+    let member = semantic_members.get(&name).unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(Member(item_id)),
+        name,
+        visibility: member.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: Some(member.ty),
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_free_function_signature_data(
+    db: &dyn DocGroup,
+    item_id: FreeFunctionId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::FreeFunction(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .free_function_generic_params(item_id)
+        .unwrap();
+
+    let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .free_function_signature(item_id)
+        .unwrap();
+
+    let resolver_data = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .free_function_declaration_resolver_data(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: Some(signature.return_type),
+        attributes: None,
+        params: Some(signature.params),
+        resolver_generic_params: Some(resolver_data.generic_params.clone()),
+        return_value_expr: None,
+    }
+}
+
+fn get_trait_function_signature_data(
+    db: &dyn DocGroup,
+    item_id: TraitFunctionId,
+) -> DocumentableItemSignatureData {
+    let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .trait_function_signature(item_id)
+        .unwrap();
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .trait_function_generic_params(item_id)
+        .unwrap();
+
+    let resolver_data = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .trait_function_resolver_data(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::TraitItem(Function(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Private,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: Some(signature.return_type),
+        attributes: None,
+        params: Some(signature.params),
+        resolver_generic_params: Some(resolver_data.generic_params.clone()),
+        return_value_expr: None,
+    }
+}
+
+fn get_impl_function_signature_data(
+    db: &dyn DocGroup,
+    item_id: ImplFunctionId,
+) -> DocumentableItemSignatureData {
+    let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_function_signature(item_id)
+        .unwrap();
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_function_generic_params(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Function(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Private,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: Some(signature.return_type),
+        attributes: None,
+        params: Some(signature.params),
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_constant_signature_data(
+    db: &dyn DocGroup,
+    item_id: ConstantId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::Constant(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let constant = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .constant_semantic_data(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Constant(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: Some(constant.ty()),
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: Some(constant.arenas.exprs[constant.value].clone()),
+    }
+}
+
+fn get_impl_constant_signature_data(
+    db: &dyn DocGroup,
+    item_id: ImplConstantDefId,
+) -> DocumentableItemSignatureData {
+    let def_value_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_constant_def_value(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Constant(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Private,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: Some(def_value_id.ty(db.upcast()).unwrap()),
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_trait_signature_data(db: &dyn DocGroup, item_id: TraitId) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::Trait(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .trait_generic_params(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_trait_const_signature_data(
+    db: &dyn DocGroup,
+    item_id: TraitConstantId,
+) -> DocumentableItemSignatureData {
+    let attributes =
+        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).trait_constant_attributes(item_id);
+    let return_type =
+        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).trait_constant_type(item_id);
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Constant(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Private,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: Some(return_type.unwrap()),
+        attributes: Some(attributes.unwrap()),
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_impl_def_signature_data(
+    db: &dyn DocGroup,
+    item_id: ImplDefId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::Impl(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let resolver_data = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_def_resolver_data(item_id)
+        .unwrap();
+    let concrete_trait_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_def_concrete_trait(item_id)
+        .unwrap();
+    let intern =
+        concrete_trait_id.lookup_intern(<dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db));
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: Some(intern.generic_args),
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: Some(resolver_data.generic_params.clone()),
+        return_value_expr: None,
+    }
+}
+
+fn get_impl_alias_signature_data(
+    db: &dyn DocGroup,
+    item_id: ImplAliasId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::ImplAlias(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_module_type_alias_full_signature(
+    db: &dyn DocGroup,
+    item_id: ModuleTypeAliasId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::TypeAlias(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_trait_type_full_signature(
+    db: &dyn DocGroup,
+    item_id: TraitTypeId,
+) -> DocumentableItemSignatureData {
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Type(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Public,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_impl_type_def_full_signature(
+    db: &dyn DocGroup,
+    item_id: ImplTypeDefId,
+) -> DocumentableItemSignatureData {
+    let resolved_type = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .impl_type_def_resolved_type(item_id)
+        .unwrap();
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Type(item_id))),
+        name: item_id.name(db.upcast()),
+        visibility: Visibility::Public,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: Some(resolved_type),
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_extern_type_full_signature(
+    db: &dyn DocGroup,
+    item_id: ExternTypeId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::ExternType(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .extern_type_declaration_generic_params(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternType(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
+}
+
+fn get_extern_function_full_signature(
+    db: &dyn DocGroup,
+    item_id: ExternFunctionId,
+) -> DocumentableItemSignatureData {
+    let module_item_id = ModuleItemId::ExternFunction(item_id);
+    let parent_module = module_item_id.parent_module(db.upcast());
+    let item_name = module_item_id.name(db.upcast());
+    let module_item_info = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .module_item_info_by_name(parent_module, item_name.clone())
+        .unwrap()
+        .unwrap();
+
+    let generic_params = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .extern_function_declaration_generic_params(item_id)
+        .unwrap();
+
+    let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+        .extern_function_signature(item_id)
+        .unwrap();
+
+    DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
+            item_id,
+        ))),
+        name: item_id.name(db.upcast()),
+        visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: Some(signature.return_type),
+        attributes: None,
+        params: Some(signature.params),
+        resolver_generic_params: None,
+        return_value_expr: None,
+    }
 }
