@@ -2,8 +2,8 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::program::{
-    BranchInfo, BranchTarget, Function, GenBranchInfo, GenBranchTarget, GenFunction, GenInvocation,
-    GenStatement, Invocation, Statement, StatementIdx,
+    Function, GenBranchInfo, GenBranchTarget, GenFunction, GenInvocation, GenStatement, Statement,
+    StatementIdx,
 };
 
 /// A statement that is not yet fully resolved.
@@ -19,6 +19,34 @@ pub enum PreStatement {
 pub enum StatementId {
     Label(String),
     Idx(StatementIdx),
+}
+
+/// Replaces the internal statement id type within a statement `map_stmt_id`.
+pub fn replace_statement_id<StatementIdIn, StatementIdOut>(
+    statement: GenStatement<StatementIdIn>,
+    mut map_stmt_id: impl FnMut(StatementIdIn) -> StatementIdOut,
+) -> GenStatement<StatementIdOut> {
+    match statement {
+        GenStatement::Invocation(GenInvocation { libfunc_id, args, branches }) => {
+            GenStatement::Invocation(GenInvocation {
+                libfunc_id,
+                args,
+                branches: branches
+                    .into_iter()
+                    .map(|GenBranchInfo { results, target }| GenBranchInfo {
+                        results,
+                        target: match target {
+                            GenBranchTarget::Fallthrough => GenBranchTarget::Fallthrough,
+                            GenBranchTarget::Statement(statement_id) => {
+                                GenBranchTarget::Statement(map_stmt_id(statement_id))
+                            }
+                        },
+                    })
+                    .collect(),
+            })
+        }
+        GenStatement::Return(vars) => GenStatement::Return(vars),
+    }
 }
 
 /// Finalize the pre-statements by resolving the labels, and generating the final statements and
@@ -51,27 +79,7 @@ pub fn finalize_prestatements(
             .filter_map(|pre_statement| {
                 try_extract_matches!(pre_statement, PreStatement::Statement)
             })
-            .map(|statement| match statement {
-                GenStatement::Invocation(GenInvocation { libfunc_id, args, branches }) => {
-                    Statement::Invocation(Invocation {
-                        libfunc_id,
-                        args,
-                        branches: branches
-                            .into_iter()
-                            .map(|GenBranchInfo { results, target }| BranchInfo {
-                                results,
-                                target: match target {
-                                    GenBranchTarget::Fallthrough => BranchTarget::Fallthrough,
-                                    GenBranchTarget::Statement(statement_id) => {
-                                        BranchTarget::Statement(map_stmt_id(statement_id))
-                                    }
-                                },
-                            })
-                            .collect(),
-                    })
-                }
-                GenStatement::Return(vars) => Statement::Return(vars),
-            })
+            .map(|statement| replace_statement_id(statement, map_stmt_id))
             .collect(),
         funcs
             .into_iter()
