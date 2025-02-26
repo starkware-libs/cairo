@@ -24,11 +24,12 @@ type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false
 libfunc ec_point_zero = ec_point_zero;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
 
-ec_point_zero() -> ([0]); // 0
-store_temp<EcPoint>([0]) -> ([0]); // 1
-return([0]); // 2
+F0:
+ec_point_zero() -> ([0]);
+store_temp<EcPoint>([0]) -> ([0]);
+return([0]);
 
-test::foo@0() -> (EcPoint);
+test::foo@F0() -> (EcPoint);
 
 //! > ==========================================================================
 
@@ -78,18 +79,20 @@ libfunc store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::Ec
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1> = enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>;
 
-ec_point_try_new_nz([0], [1]) { fallthrough([2]) 5() }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([2]) -> ([3]); // 2
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([3]) -> ([3]); // 3
-return([3]); // 4
-branch_align() -> (); // 5
-struct_construct<Unit>() -> ([4]); // 6
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([4]) -> ([5]); // 7
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([5]) -> ([5]); // 8
-return([5]); // 9
+F0:
+ec_point_try_new_nz([0], [1]) { fallthrough([2]) F0_0() };
+branch_align() -> ();
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([2]) -> ([3]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([3]) -> ([3]);
+return([3]);
+F0_0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([4]);
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([4]) -> ([5]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([5]) -> ([5]);
+return([5]);
 
-test::foo@0([0]: felt252, [1]: felt252) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
+test::foo@F0([0]: felt252, [1]: felt252) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
 
 //! > ==========================================================================
 
@@ -172,20 +175,22 @@ libfunc store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::Ec
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1> = enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>;
 
-ec_point_from_x_nz([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+ec_point_from_x_nz([0], [1]) { fallthrough([2], [3]) F0_0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([5]) -> ([5]);
+return([2], [5]);
+F0_0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
+test::foo@F0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
 
 //! > ==========================================================================
 
@@ -219,12 +224,13 @@ libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
 libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
 
-ec_point_unwrap([0]) -> ([1], [2]); // 0
-struct_construct<Tuple<felt252, felt252>>([1], [2]) -> ([3]); // 1
-store_temp<Tuple<felt252, felt252>>([3]) -> ([3]); // 2
-return([3]); // 3
+F0:
+ec_point_unwrap([0]) -> ([1], [2]);
+struct_construct<Tuple<felt252, felt252>>([1], [2]) -> ([3]);
+store_temp<Tuple<felt252, felt252>>([3]) -> ([3]);
+return([3]);
 
-test::foo@0([0]: NonZero<EcPoint>) -> (Tuple<felt252, felt252>);
+test::foo@F0([0]: NonZero<EcPoint>) -> (Tuple<felt252, felt252>);
 
 //! > ==========================================================================
 
@@ -270,18 +276,20 @@ libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc drop<felt252> = drop<felt252>;
 
-ec_point_is_zero([0]) { fallthrough() 5([1]) }; // 0
-branch_align() -> (); // 1
-const_as_immediate<Const<felt252, 1>>() -> ([2]); // 2
-store_temp<felt252>([2]) -> ([2]); // 3
-return([2]); // 4
-branch_align() -> (); // 5
-ec_point_unwrap([1]) -> ([3], [4]); // 6
-drop<felt252>([4]) -> (); // 7
-store_temp<felt252>([3]) -> ([3]); // 8
-return([3]); // 9
+F0:
+ec_point_is_zero([0]) { fallthrough() F0_0([1]) };
+branch_align() -> ();
+const_as_immediate<Const<felt252, 1>>() -> ([2]);
+store_temp<felt252>([2]) -> ([2]);
+return([2]);
+F0_0:
+branch_align() -> ();
+ec_point_unwrap([1]) -> ([3], [4]);
+drop<felt252>([4]) -> ();
+store_temp<felt252>([3]) -> ([3]);
+return([3]);
 
-test::foo@0([0]: EcPoint) -> (felt252);
+test::foo@F0([0]: EcPoint) -> (felt252);
 
 //! > ==========================================================================
 
@@ -311,11 +319,12 @@ type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false
 libfunc ec_neg = ec_neg;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
 
-ec_neg([0]) -> ([1]); // 0
-store_temp<EcPoint>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+ec_neg([0]) -> ([1]);
+store_temp<EcPoint>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: EcPoint) -> (EcPoint);
+test::foo@F0([0]: EcPoint) -> (EcPoint);
 
 //! > ==========================================================================
 
@@ -360,10 +369,11 @@ type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false
 
 libfunc ec_state_init = ec_state_init;
 
-ec_state_init() -> ([0]); // 0
-return([0]); // 1
+F0:
+ec_state_init() -> ([0]);
+return([0]);
 
-test::foo@0() -> (EcState);
+test::foo@F0() -> (EcState);
 
 //! > ==========================================================================
 
@@ -408,11 +418,12 @@ type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true,
 libfunc ec_state_add = ec_state_add;
 libfunc store_temp<EcState> = store_temp<EcState>;
 
-ec_state_add([0], [1]) -> ([2]); // 0
-store_temp<EcState>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+ec_state_add([0], [1]) -> ([2]);
+store_temp<EcState>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState);
+test::foo@F0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState);
 
 //! > ==========================================================================
 
@@ -470,18 +481,20 @@ libfunc store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::Ec
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1> = enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>;
 
-ec_state_try_finalize_nz([0]) { fallthrough([1]) 5() }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([1]) -> ([2]); // 2
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([2]) -> ([2]); // 3
-return([2]); // 4
-branch_align() -> (); // 5
-struct_construct<Unit>() -> ([3]); // 6
-enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([3]) -> ([4]); // 7
-store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+ec_state_try_finalize_nz([0]) { fallthrough([1]) F0_0() };
+branch_align() -> ();
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 0>([1]) -> ([2]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([2]) -> ([2]);
+return([2]);
+F0_0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([3]);
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, 1>([3]) -> ([4]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: EcState) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
+test::foo@F0([0]: EcState) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
 
 //! > ==========================================================================
 
@@ -524,9 +537,10 @@ libfunc ec_state_add_mul = ec_state_add_mul;
 libfunc store_temp<EcOp> = store_temp<EcOp>;
 libfunc store_temp<EcState> = store_temp<EcState>;
 
-ec_state_add_mul([0], [1], [2], [3]) -> ([4], [5]); // 0
-store_temp<EcOp>([4]) -> ([4]); // 1
-store_temp<EcState>([5]) -> ([5]); // 2
-return([4], [5]); // 3
+F0:
+ec_state_add_mul([0], [1], [2], [3]) -> ([4], [5]);
+store_temp<EcOp>([4]) -> ([4]);
+store_temp<EcState>([5]) -> ([5]);
+return([4], [5]);
 
-test::foo@0([0]: EcOp, [1]: EcState, [2]: felt252, [3]: NonZero<EcPoint>) -> (EcOp, EcState);
+test::foo@F0([0]: EcOp, [1]: EcState, [2]: felt252, [3]: NonZero<EcPoint>) -> (EcOp, EcState);

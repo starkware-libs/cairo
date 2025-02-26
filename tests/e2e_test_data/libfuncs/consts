@@ -35,14 +35,16 @@ libfunc const_as_immediate<Const<felt252, 100>> = const_as_immediate<Const<felt2
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>, 0>;
 
-const_as_immediate<Const<felt252, 100>>() -> ([0]); // 0
-store_temp<felt252>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<felt252, 100>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<felt252, 100>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (felt252);
-test::foo@3() -> (Box<felt252>);
+test::bar@F0() -> (felt252);
+test::foo@F1() -> (Box<felt252>);
 
 //! > ==========================================================================
 
@@ -83,14 +85,16 @@ libfunc const_as_immediate<Const<u8, 100>> = const_as_immediate<Const<u8, 100>>;
 libfunc store_temp<u8> = store_temp<u8>;
 libfunc const_as_box<Const<u8, 100>, 0> = const_as_box<Const<u8, 100>, 0>;
 
-const_as_immediate<Const<u8, 100>>() -> ([0]); // 0
-store_temp<u8>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<u8, 100>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<u8, 100>>() -> ([0]);
+store_temp<u8>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<u8, 100>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (u8);
-test::foo@3() -> (Box<u8>);
+test::bar@F0() -> (u8);
+test::foo@F1() -> (Box<u8>);
 
 //! > ==========================================================================
 
@@ -131,14 +135,16 @@ libfunc const_as_immediate<Const<i16, -1000>> = const_as_immediate<Const<i16, -1
 libfunc store_temp<i16> = store_temp<i16>;
 libfunc const_as_box<Const<i16, -1000>, 0> = const_as_box<Const<i16, -1000>, 0>;
 
-const_as_immediate<Const<i16, -1000>>() -> ([0]); // 0
-store_temp<i16>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<i16, -1000>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<i16, -1000>>() -> ([0]);
+store_temp<i16>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<i16, -1000>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (i16);
-test::foo@3() -> (Box<i16>);
+test::bar@F0() -> (i16);
+test::foo@F1() -> (Box<i16>);
 
 //! > ==========================================================================
 
@@ -199,21 +205,25 @@ libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u12
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 libfunc const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0> = const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>;
 
-const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 0
-store_temp<core::integer::u256>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]); // 3
-store_temp<core::integer::u256>([0]) -> ([0]); // 4
-return([0]); // 5
-const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 6
-return([0]); // 7
-const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]); // 8
-return([0]); // 9
+F0:
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]);
+store_temp<core::integer::u256>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_immediate<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>() -> ([0]);
+store_temp<core::integer::u256>([0]) -> ([0]);
+return([0]);
+F2:
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]);
+return([0]);
+F3:
+const_as_box<Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>, 0>() -> ([0]);
+return([0]);
 
-test::bar1@0() -> (core::integer::u256);
-test::bar2@3() -> (core::integer::u256);
-test::foo1@6() -> (Box<core::integer::u256>);
-test::foo2@8() -> (Box<core::integer::u256>);
+test::bar1@F0() -> (core::integer::u256);
+test::bar2@F1() -> (core::integer::u256);
+test::foo1@F2() -> (Box<core::integer::u256>);
+test::foo2@F3() -> (Box<core::integer::u256>);
 
 //! > ==========================================================================
 
@@ -255,15 +265,17 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc const_as_box<Const<core::bool, 0, Const<Unit>>, 0> = const_as_box<Const<core::bool, 0, Const<Unit>>, 0>;
 
-struct_construct<Unit>() -> ([0]); // 0
-enum_init<core::bool, 0>([0]) -> ([1]); // 1
-store_temp<core::bool>([1]) -> ([1]); // 2
-return([1]); // 3
-const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]); // 4
-return([0]); // 5
+F0:
+struct_construct<Unit>() -> ([0]);
+enum_init<core::bool, 0>([0]) -> ([1]);
+store_temp<core::bool>([1]) -> ([1]);
+return([1]);
+F1:
+const_as_box<Const<core::bool, 0, Const<Unit>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (core::bool);
-test::foo@4() -> (Box<core::bool>);
+test::bar@F0() -> (core::bool);
+test::foo@F1() -> (Box<core::bool>);
 
 //! > ==========================================================================
 
@@ -321,14 +333,16 @@ libfunc const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u25
 libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
 libfunc const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0> = const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>;
 
-const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>() -> ([0]); // 0
-store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>>() -> ([0]);
+store_temp<test::ThreeOptions>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<test::ThreeOptions, 1, Const<core::integer::u256, Const<u128, 16>, Const<u128, 32>>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (test::ThreeOptions);
-test::foo@3() -> (Box<test::ThreeOptions>);
+test::bar@F0() -> (test::ThreeOptions);
+test::foo@F1() -> (Box<test::ThreeOptions>);
 
 //! > ==========================================================================
 
@@ -384,14 +398,16 @@ libfunc const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>> =
 libfunc store_temp<test::ThreeOptions> = store_temp<test::ThreeOptions>;
 libfunc const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0> = const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>;
 
-const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]); // 0
-store_temp<test::ThreeOptions>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<test::ThreeOptions, 0, Const<felt252, 1337>>>() -> ([0]);
+store_temp<test::ThreeOptions>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<test::ThreeOptions, 0, Const<felt252, 1337>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (test::ThreeOptions);
-test::foo@3() -> (Box<test::ThreeOptions>);
+test::bar@F0() -> (test::ThreeOptions);
+test::foo@F1() -> (Box<test::ThreeOptions>);
 
 //! > ==========================================================================
 
@@ -472,14 +488,16 @@ libfunc const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOption
 libfunc store_temp<test::ThreeOptionsPair> = store_temp<test::ThreeOptionsPair>;
 libfunc const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0> = const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>;
 
-const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]); // 0
-store_temp<test::ThreeOptionsPair>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>>() -> ([0]);
+store_temp<test::ThreeOptionsPair>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<test::ThreeOptionsPair, Const<test::ThreeOptions, 0, Const<felt252, 1337>>, Const<test::ThreeOptions, 2, Const<Unit>>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (test::ThreeOptionsPair);
-test::foo@3() -> (Box<test::ThreeOptionsPair>);
+test::bar@F0() -> (test::ThreeOptionsPair);
+test::foo@F1() -> (Box<test::ThreeOptionsPair>);
 
 //! > ==========================================================================
 
@@ -519,13 +537,14 @@ libfunc const_as_box<Const<felt252, 100>, 0> = const_as_box<Const<felt252, 100>,
 libfunc struct_construct<Tuple<Box<felt252>, BuiltinCosts>> = struct_construct<Tuple<Box<felt252>, BuiltinCosts>>;
 libfunc store_temp<Tuple<Box<felt252>, BuiltinCosts>> = store_temp<Tuple<Box<felt252>, BuiltinCosts>>;
 
-get_builtin_costs() -> ([0]); // 0
-const_as_box<Const<felt252, 100>, 0>() -> ([1]); // 1
-struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([1], [0]) -> ([2]); // 2
-store_temp<Tuple<Box<felt252>, BuiltinCosts>>([2]) -> ([2]); // 3
-return([2]); // 4
+F0:
+get_builtin_costs() -> ([0]);
+const_as_box<Const<felt252, 100>, 0>() -> ([1]);
+struct_construct<Tuple<Box<felt252>, BuiltinCosts>>([1], [0]) -> ([2]);
+store_temp<Tuple<Box<felt252>, BuiltinCosts>>([2]) -> ([2]);
+return([2]);
 
-test::foo@0() -> (Tuple<Box<felt252>, BuiltinCosts>);
+test::foo@F0() -> (Tuple<Box<felt252>, BuiltinCosts>);
 
 //! > ==========================================================================
 
@@ -598,17 +617,18 @@ libfunc const_as_box<Const<felt252, 300>, 1> = const_as_box<Const<felt252, 300>,
 libfunc struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
 libfunc store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
 
-const_as_box<Const<felt252, 100>, 0>() -> ([0]); // 0
-const_as_box<Const<felt252, 200>, 1>() -> ([1]); // 1
-const_as_box<Const<felt252, 300>, 2>() -> ([2]); // 2
-const_as_box<Const<felt252, 300>, 2>() -> ([3]); // 3
-const_as_box<Const<felt252, 400>, 0>() -> ([4]); // 4
-const_as_box<Const<felt252, 300>, 1>() -> ([5]); // 5
-struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([0], [1], [2], [3], [4], [5]) -> ([6]); // 6
-store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([6]) -> ([6]); // 7
-return([6]); // 8
+F0:
+const_as_box<Const<felt252, 100>, 0>() -> ([0]);
+const_as_box<Const<felt252, 200>, 1>() -> ([1]);
+const_as_box<Const<felt252, 300>, 2>() -> ([2]);
+const_as_box<Const<felt252, 300>, 2>() -> ([3]);
+const_as_box<Const<felt252, 400>, 0>() -> ([4]);
+const_as_box<Const<felt252, 300>, 1>() -> ([5]);
+struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([0], [1], [2], [3], [4], [5]) -> ([6]);
+store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([6]) -> ([6]);
+return([6]);
 
-test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
+test::foo@F0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
 
 //! > ==========================================================================
 
@@ -650,12 +670,13 @@ libfunc const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt
 libfunc span_from_tuple<Tuple<felt252, felt252, felt252, felt252>> = span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 
-const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>() -> ([0]); // 0
-span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>([0]) -> ([1]); // 1
-store_temp<Snapshot<Array<felt252>>>([1]) -> ([1]); // 2
-return([1]); // 3
+F0:
+const_as_box<Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, 0>() -> ([0]);
+span_from_tuple<Tuple<felt252, felt252, felt252, felt252>>([0]) -> ([1]);
+store_temp<Snapshot<Array<felt252>>>([1]) -> ([1]);
+return([1]);
 
-test::foo@0() -> (Snapshot<Array<felt252>>);
+test::foo@F0() -> (Snapshot<Array<felt252>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 500})
@@ -719,12 +740,13 @@ libfunc const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tupl
 libfunc span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>> = span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>;
 libfunc store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>> = store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>;
 
-const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>() -> ([0]); // 0
-span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([0]) -> ([1]); // 1
-store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>([1]) -> ([1]); // 2
-return([1]); // 3
+F0:
+const_as_box<Const<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 200>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 300>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>>, Const<Tuple<felt252, felt252, felt252, felt252>, Const<felt252, 400>, Const<felt252, 100>, Const<felt252, 200>, Const<felt252, 300>>>, 0>() -> ([0]);
+span_from_tuple<Tuple<Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>, Tuple<felt252, felt252, felt252, felt252>>>([0]) -> ([1]);
+store_temp<Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>>([1]) -> ([1]);
+return([1]);
 
-test::foo@0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
+test::foo@F0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 500})
@@ -766,14 +788,16 @@ libfunc const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>> = const
 libfunc store_temp<NonZero<felt252>> = store_temp<NonZero<felt252>>;
 libfunc const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0> = const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>;
 
-const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>() -> ([0]); // 0
-store_temp<NonZero<felt252>>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<NonZero<felt252>, Const<felt252, 100>>>() -> ([0]);
+store_temp<NonZero<felt252>>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<NonZero<felt252>, Const<felt252, 100>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (NonZero<felt252>);
-test::foo@3() -> (Box<NonZero<felt252>>);
+test::bar@F0() -> (NonZero<felt252>);
+test::foo@F1() -> (Box<NonZero<felt252>>);
 
 //! > function_costs
 test::bar: OrderedHashMap({Const: 100})
@@ -816,14 +840,16 @@ libfunc const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>> = const_as_immedi
 libfunc store_temp<NonZero<u8>> = store_temp<NonZero<u8>>;
 libfunc const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0> = const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>;
 
-const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>() -> ([0]); // 0
-store_temp<NonZero<u8>>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<NonZero<u8>, Const<u8, 100>>>() -> ([0]);
+store_temp<NonZero<u8>>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<NonZero<u8>, Const<u8, 100>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (NonZero<u8>);
-test::foo@3() -> (Box<NonZero<u8>>);
+test::bar@F0() -> (NonZero<u8>);
+test::foo@F1() -> (Box<NonZero<u8>>);
 
 //! > function_costs
 test::bar: OrderedHashMap({Const: 100})
@@ -871,14 +897,16 @@ libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integ
 libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
 libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>;
 
-const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>() -> ([0]); // 0
-store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>>() -> ([0]);
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 0>, Const<u128, 32>>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (NonZero<core::integer::u256>);
-test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+test::bar@F0() -> (NonZero<core::integer::u256>);
+test::foo@F1() -> (Box<NonZero<core::integer::u256>>);
 
 //! > function_costs
 test::bar: OrderedHashMap({Const: 200})
@@ -926,14 +954,16 @@ libfunc const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integ
 libfunc store_temp<NonZero<core::integer::u256>> = store_temp<NonZero<core::integer::u256>>;
 libfunc const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>;
 
-const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>() -> ([0]); // 0
-store_temp<NonZero<core::integer::u256>>([0]) -> ([0]); // 1
-return([0]); // 2
-const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 3
-return([0]); // 4
+F0:
+const_as_immediate<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>>() -> ([0]);
+store_temp<NonZero<core::integer::u256>>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_box<Const<NonZero<core::integer::u256>, Const<core::integer::u256, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]);
+return([0]);
 
-test::bar@0() -> (NonZero<core::integer::u256>);
-test::foo@3() -> (Box<NonZero<core::integer::u256>>);
+test::bar@F0() -> (NonZero<core::integer::u256>);
+test::foo@F1() -> (Box<NonZero<core::integer::u256>>);
 
 //! > function_costs
 test::bar: OrderedHashMap({Const: 200})
@@ -998,10 +1028,11 @@ type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, 
 
 libfunc const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0> = const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>;
 
-const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]); // 0
-return([0]); // 1
+F0:
+const_as_box<Const<NonZero<core::integer::u512>, Const<core::integer::u512, Const<u128, 0>, Const<u128, 0>, Const<u128, 16>, Const<u128, 0>>>, 0>() -> ([0]);
+return([0]);
 
-test::foo@0() -> (Box<NonZero<core::integer::u512>>);
+test::foo@F0() -> (Box<NonZero<core::integer::u512>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})

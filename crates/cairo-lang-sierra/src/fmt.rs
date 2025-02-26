@@ -1,13 +1,17 @@
+use std::collections::hash_map::Entry;
 use std::fmt;
 
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::write_comma_separated;
+use itertools::Itertools;
 
 use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
+use crate::labeled_statement::replace_statement_id;
 use crate::program::{
-    ConcreteLibfuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
+    ConcreteLibfuncLongId, ConcreteTypeLongId, GenBranchInfo, GenBranchTarget, GenFunction,
     GenInvocation, GenStatement, GenericArg, LibfuncDeclaration, Param, Program, StatementIdx,
     TypeDeclaration,
 };
@@ -22,11 +26,57 @@ impl fmt::Display for Program {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        for (i, statement) in self.statements.iter().enumerate() {
-            writeln!(f, "{statement}; // {i}")?;
+        // The labels of function entry points.
+        let mut funcs_labels = UnorderedHashMap::<usize, String>::default();
+        let funcs = self
+            .funcs
+            .iter()
+            .enumerate()
+            .map(|(i, f)| {
+                let entry_point = format!("F{i}");
+                funcs_labels.insert(f.entry_point.0, entry_point.clone());
+                GenFunction {
+                    id: f.id.clone(),
+                    signature: f.signature.clone(),
+                    params: f.params.clone(),
+                    entry_point,
+                }
+            })
+            .collect_vec();
+        // All labels including inner function labels.
+        let mut labels = funcs_labels.clone();
+        // Starting as `NONE` for support of invalid Sierra code.
+        let mut function_label = "NONE".to_string();
+        // Assuming function code is contiguous - this is the index for same function labels.
+        let mut inner_idx = 0;
+        let statements = self
+            .statements
+            .iter()
+            .enumerate()
+            .map(|(stmt_idx, s)| {
+                if let Some(label) = funcs_labels.get(&stmt_idx) {
+                    function_label = label.clone();
+                    inner_idx = 0;
+                }
+                replace_statement_id(s.clone(), |idx| match labels.entry(idx.0) {
+                    Entry::Occupied(e) => e.get().clone(),
+                    Entry::Vacant(e) => {
+                        let new_label = format!("{function_label}_{inner_idx}");
+                        inner_idx += 1;
+                        e.insert(new_label.clone());
+                        new_label
+                    }
+                })
+            })
+            .collect_vec();
+        for (i, statement) in statements.into_iter().enumerate() {
+            if let Some(label) = labels.get(&i) {
+                writeln!(f, "{label}:")?;
+            }
+            writeln!(f, "{statement};")?;
         }
         writeln!(f)?;
-        for func in &self.funcs {
+        for func in funcs {
             writeln!(f, "{func};")?;
         }
         Ok(())
@@ -68,9 +118,9 @@ impl fmt::Display for ConcreteLibfuncLongId {
     }
 }
 
-impl fmt::Display for Function {
+impl<StatementId: fmt::Display> fmt::Display for GenFunction<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}(", self.id, self.entry_point.0)?;
+        write!(f, "{}@{}(", self.id, self.entry_point)?;
         write_comma_separated(f, &self.params)?;
         write!(f, ") -> (")?;
         write_comma_separated(f, &self.signature.ret_types)?;

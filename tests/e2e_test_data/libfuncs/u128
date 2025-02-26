@@ -42,19 +42,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u128, core::integer::u128>> = store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
 
-u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]); // 2
-store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([7]); // 4
-return([3], [7]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([8]); // 7
-store_temp<RangeCheck>([5]) -> ([5]); // 8
-store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]) -> ([8]); // 9
-return([5], [8]); // 10
+F0:
+u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) F0_0([5], [6]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([7]);
+return([3], [7]);
+F0_0:
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([8]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]) -> ([8]);
+return([5], [8]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
 
 //! > ==========================================================================
 
@@ -102,19 +104,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u128, core::integer::u128>> = store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
 
-u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]); // 2
-store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([7]); // 4
-return([3], [7]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([8]); // 7
-store_temp<RangeCheck>([5]) -> ([5]); // 8
-store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]) -> ([8]); // 9
-return([5], [8]); // 10
+F0:
+u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) F0_0([5], [6]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([7]);
+return([3], [7]);
+F0_0:
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([8]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]) -> ([8]);
+return([5], [8]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
 
 //! > ==========================================================================
 
@@ -178,14 +182,15 @@ libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<u128, u128>> = store_temp<Tuple<u128, u128>>;
 
-u128_guarantee_mul([1], [2]) -> ([3], [4], [5]); // 0
-u128_mul_guarantee_verify([0], [5]) -> ([6]); // 1
-struct_construct<Tuple<u128, u128>>([3], [4]) -> ([7]); // 2
-store_temp<RangeCheck>([6]) -> ([6]); // 3
-store_temp<Tuple<u128, u128>>([7]) -> ([7]); // 4
-return([6], [7]); // 5
+F0:
+u128_guarantee_mul([1], [2]) -> ([3], [4], [5]);
+u128_mul_guarantee_verify([0], [5]) -> ([6]);
+struct_construct<Tuple<u128, u128>>([3], [4]) -> ([7]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<Tuple<u128, u128>>([7]) -> ([7]);
+return([6], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
 
 //! > ==========================================================================
 
@@ -233,13 +238,14 @@ libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<u128, u128>> = store_temp<Tuple<u128, u128>>;
 
-u128_safe_divmod([0], [1], [2]) -> ([3], [4], [5]); // 0
-struct_construct<Tuple<u128, u128>>([4], [5]) -> ([6]); // 1
-store_temp<RangeCheck>([3]) -> ([3]); // 2
-store_temp<Tuple<u128, u128>>([6]) -> ([6]); // 3
-return([3], [6]); // 4
+F0:
+u128_safe_divmod([0], [1], [2]) -> ([3], [4], [5]);
+struct_construct<Tuple<u128, u128>>([4], [5]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<Tuple<u128, u128>>([6]) -> ([6]);
+return([3], [6]);
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tuple<u128, u128>);
+test::foo@F0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tuple<u128, u128>);
 
 //! > ==========================================================================
 
@@ -300,20 +306,22 @@ libfunc store_temp<core::integer::U128sFromFelt252Result> = store_temp<core::int
 libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
 libfunc enum_init<core::integer::U128sFromFelt252Result, 1> = enum_init<core::integer::U128sFromFelt252Result, 1>;
 
-u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4], [5], [6]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::integer::U128sFromFelt252Result, 0>([3]) -> ([7]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::integer::U128sFromFelt252Result>([7]) -> ([7]); // 4
-return([2], [7]); // 5
-branch_align() -> (); // 6
-struct_construct<Tuple<u128, u128>>([5], [6]) -> ([8]); // 7
-enum_init<core::integer::U128sFromFelt252Result, 1>([8]) -> ([9]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::integer::U128sFromFelt252Result>([9]) -> ([9]); // 10
-return([4], [9]); // 11
+F0:
+u128s_from_felt252([0], [1]) { fallthrough([2], [3]) F0_0([4], [5], [6]) };
+branch_align() -> ();
+enum_init<core::integer::U128sFromFelt252Result, 0>([3]) -> ([7]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::integer::U128sFromFelt252Result>([7]) -> ([7]);
+return([2], [7]);
+F0_0:
+branch_align() -> ();
+struct_construct<Tuple<u128, u128>>([5], [6]) -> ([8]);
+enum_init<core::integer::U128sFromFelt252Result, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::integer::U128sFromFelt252Result>([9]) -> ([9]);
+return([4], [9]);
 
-test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sFromFelt252Result);
+test::foo@F0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sFromFelt252Result);
 
 //! > ==========================================================================
 
@@ -351,19 +359,21 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-u128_eq([0], [1]) { fallthrough() 6() }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::bool, 0>([2]) -> ([3]); // 3
-store_temp<core::bool>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([4]); // 7
-enum_init<core::bool, 1>([4]) -> ([5]); // 8
-store_temp<core::bool>([5]) -> ([5]); // 9
-return([5]); // 10
+F0:
+u128_eq([0], [1]) { fallthrough() F0_0() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([3]);
+return([3]);
+F0_0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([4]);
+enum_init<core::bool, 1>([4]) -> ([5]);
+store_temp<core::bool>([5]) -> ([5]);
+return([5]);
 
-test::foo@0([0]: u128, [1]: u128) -> (core::bool);
+test::foo@F0([0]: u128, [1]: u128) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -407,22 +417,24 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-const_as_immediate<Const<u128, 11>>() -> ([0]); // 0
-const_as_immediate<Const<u128, 12>>() -> ([1]); // 1
-store_temp<u128>([0]) -> ([0]); // 2
-u128_eq([0], [1]) { fallthrough() 9() }; // 3
-branch_align() -> (); // 4
-struct_construct<Unit>() -> ([2]); // 5
-enum_init<core::bool, 0>([2]) -> ([3]); // 6
-store_temp<core::bool>([3]) -> ([3]); // 7
-return([3]); // 8
-branch_align() -> (); // 9
-struct_construct<Unit>() -> ([4]); // 10
-enum_init<core::bool, 1>([4]) -> ([5]); // 11
-store_temp<core::bool>([5]) -> ([5]); // 12
-return([5]); // 13
+F0:
+const_as_immediate<Const<u128, 11>>() -> ([0]);
+const_as_immediate<Const<u128, 12>>() -> ([1]);
+store_temp<u128>([0]) -> ([0]);
+u128_eq([0], [1]) { fallthrough() F0_0() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([3]);
+return([3]);
+F0_0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([4]);
+enum_init<core::bool, 1>([4]) -> ([5]);
+store_temp<core::bool>([5]) -> ([5]);
+return([5]);
 
-test::foo@0() -> (core::bool);
+test::foo@F0() -> (core::bool);
 
 //! > ==========================================================================
 
@@ -467,12 +479,13 @@ libfunc u128_sqrt = u128_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<u64> = store_temp<u64>;
 
-u128_sqrt([0], [1]) -> ([2], [3]); // 0
-store_temp<RangeCheck>([2]) -> ([2]); // 1
-store_temp<u64>([3]) -> ([3]); // 2
-return([2], [3]); // 3
+F0:
+u128_sqrt([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<u64>([3]) -> ([3]);
+return([2], [3]);
 
-test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
+test::foo@F0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
 
 //! > ==========================================================================
 
@@ -528,9 +541,10 @@ libfunc u128_byte_reverse = u128_byte_reverse;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<u128> = store_temp<u128>;
 
-u128_byte_reverse([0], [1]) -> ([2], [3]); // 0
-store_temp<Bitwise>([2]) -> ([2]); // 1
-store_temp<u128>([3]) -> ([3]); // 2
-return([2], [3]); // 3
+F0:
+u128_byte_reverse([0], [1]) -> ([2], [3]);
+store_temp<Bitwise>([2]) -> ([2]);
+store_temp<u128>([3]) -> ([3]);
+return([2], [3]);
 
-test::foo@0([0]: Bitwise, [1]: u128) -> (Bitwise, u128);
+test::foo@F0([0]: Bitwise, [1]: u128) -> (Bitwise, u128);
