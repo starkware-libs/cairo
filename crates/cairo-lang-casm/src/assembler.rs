@@ -62,6 +62,7 @@ pub enum OpcodeExtension {
     Stone,
     Blake2s,
     Blake2sFinalize,
+    QM31,
 }
 
 /// The low level representation of a cairo instruction.
@@ -137,6 +138,24 @@ impl Instruction {
                     fp_update: FpUpdate::Regular,
                     opcode: Opcode::AssertEq,
                     opcode_extension: OpcodeExtension::Stone,
+                }
+            }
+            InstructionBody::QM31AssertEq(insn) => {
+                let res = insn.b.to_res_description();
+                InstructionRepr {
+                    off0: insn.a.offset,
+                    off1: res.off1,
+                    off2: res.off2,
+                    imm: res.imm,
+                    dst_register: insn.a.register,
+                    op0_register: res.op0_register,
+                    op1_addr: res.op1_addr,
+                    res: res.res,
+                    pc_update: PcUpdate::Regular,
+                    ap_update: if self.inc_ap { ApUpdate::Add1 } else { ApUpdate::Regular },
+                    fp_update: FpUpdate::Regular,
+                    opcode: Opcode::AssertEq,
+                    opcode_extension: OpcodeExtension::QM31,
                 }
             }
             InstructionBody::Call(insn) => {
