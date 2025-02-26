@@ -115,18 +115,13 @@ Statements:
   (v6: core::felt252) <- core::Felt252Add::add(v1, v2)
   (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: ()) <- test::foo[118-164](v4, v6, v2)
 End:
-  Goto(blk3, {v9 -> v13, v8 -> v14, v7 -> v12})
+  Return(v8, v9, v7)
 
 blk2:
 Statements:
   (v11: ()) <- struct_construct()
 End:
   Return(v4, v1, v11)
-
-blk3:
-Statements:
-End:
-  Return(v14, v13, v12)
 
 
 Final lowering:
