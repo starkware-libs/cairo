@@ -16,6 +16,8 @@ fn format_test() {
                 type [123] = TypeId<[12],  4>;
                 type [4]= Enum<ut@core::option ::Option:: <core::felt252>, [3],[2]>;
                 type Complex = Struct<ut@Complex:: <core::felt252, @core::felt252>,[8],[9]>;
+                type ClosureName = Struct<ut@{closure@/path/examples/fib.cairo:3:15: 3:23}>;
+
                 libfunc CalleeId = LibfuncId ;
                 // Additional comment.
                 libfunc OtherCalleeId = LibfuncId <arg, 4>;
@@ -45,6 +47,7 @@ fn format_test() {
             type [123] = TypeId<[12], 4>;
             type [4] = Enum<ut@core::option::Option::<core::felt252>, [3], [2]>;
             type Complex = Struct<ut@Complex::<core::felt252, @core::felt252>, [8], [9]>;
+            type ClosureName = Struct<ut@{closure@/path/examples/fib.cairo:3:15:3:23}>;
 
             libfunc CalleeId = LibfuncId;
             libfunc OtherCalleeId = LibfuncId<arg, 4>;
