@@ -165,9 +165,8 @@ End:
 
 blk18:
 Statements:
-  (v55: ()) <- struct_construct()
 End:
-  Return(v55)
+  Return()
 
 //! > after
 Parameters: v0: core::felt252
@@ -288,9 +287,8 @@ End:
 
 blk18:
 Statements:
-  (v55: ()) <- struct_construct()
 End:
-  Return(v55)
+  Return()
 
 blk19:
 Statements:
