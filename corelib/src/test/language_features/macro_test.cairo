@@ -18,6 +18,10 @@ macro count_idents {
     ($x:ident | $y:ident | $z:ident) => {
         3
     };
+
+    (abc {$x:ident, (abc $y:ident) }) => {
+        2
+    };
 }
 
 #[test]
@@ -27,6 +31,7 @@ fn test_macro_count_idents() {
     assert_eq!(count_idents!(x, y, z), 3);
     assert_eq!(count_idents!(x y z), 3);
     assert_eq!(count_idents!(x | y | z), 3);
+    assert_eq!(count_idents!(abc {x, (abc y) }), 2);
 }
 
 macro add_one {
