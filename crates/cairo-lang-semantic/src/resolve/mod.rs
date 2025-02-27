@@ -801,8 +801,11 @@ impl<'db> Resolver<'db> {
         
         // Handle the 'self' keyword in import paths - resolves to the containing module
         if ident == SELF_KW {
-            if let ResolvedConcreteItem::Module(module_id) = containing_item {
-                return Ok(ResolvedConcreteItem::Module(*module_id));
+            match containing_item {
+                ResolvedConcreteItem::Module(module_id) => {
+                    return Ok(ResolvedConcreteItem::Module(*module_id));
+                }
+                _ => return Err(diagnostics.report(identifier, SelfKeywordOnlyInModules)),
             }
         }
 

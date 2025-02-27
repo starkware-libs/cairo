@@ -1515,3 +1515,257 @@ EnumVariantCtor(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test self keyword in module imports
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+mod X {
+    pub const Y: u8 = 2;
+}
+
+//! > function_body
+
+//! > expr_code
+{ 
+    use X::{ self, Y };
+    X::Y;
+    Y
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: Constant(
+                        ExprConstant {
+                            const_value_id: 2,
+                            ty: core::integer::u8,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Missing(
+                ExprMissing {
+                    ty: <missing>,
+                },
+            ),
+        ),
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:14
+    use X::{ self, Y };
+             ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:5
+    Y
+    ^
+
+//! > ==========================================================================
+
+//! > Test self keyword with nested modules
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+mod X {
+    pub mod Y {
+        pub const Z: u8 = 3;
+    }
+}
+
+//! > function_body
+
+//! > expr_code
+{ 
+    use X::Y::{ self, Z };
+    Y::Z;
+    Z
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Missing(
+                ExprMissing {
+                    ty: <missing>,
+                },
+            ),
+        ),
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:17
+    use X::Y::{ self, Z };
+                ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:9:5
+    Y::Z;
+    ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:10:5
+    Z
+    ^
+
+//! > ==========================================================================
+
+//! > Test enum with self keyword
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+mod X {
+    pub enum R {
+        A: u8,
+        B: u16,
+    }
+}
+
+//! > function_body
+
+//! > expr_code
+{ 
+    use X::{ self, R };
+    X::R::A(1);
+    R::B(2)
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::A,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Missing(
+                ExprMissing {
+                    ty: <missing>,
+                },
+            ),
+        ),
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:9:14
+    use X::{ self, R };
+             ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:11:5
+    R::B(2)
+    ^
+
+//! > ==========================================================================
+
+//! > Test self keyword in invalid trait context
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+trait T {
+    fn f();
+}
+
+//! > function_body
+
+//! > expr_code
+{ use T::{ self }; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Invalid path.
+ --> lib.cairo:5:12
+{ use T::{ self }; }
+           ^^^^
+
+//! > ==========================================================================
+
+//! > Test self keyword in invalid enum variant context
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+enum E {
+    A: u8,
+    B: u16,
+}
+
+//! > function_body
+
+//! > expr_code
+{ use E::A::{ self }; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Invalid path.
+ --> lib.cairo:6:15
+{ use E::A::{ self }; }
+              ^^^^
