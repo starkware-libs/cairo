@@ -55,20 +55,24 @@ fn format_test() {
             libfunc CallFunction = Call<user@Function>;
             libfunc LibDependent = LibDependent<lib@[124]>;
 
-            callee() -> (); // 0
-            callee(arg1) -> (res1); // 1
-            callee(arg1, arg2) -> (res1, res2); // 2
-            callee() { 5() }; // 3
-            callee(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) }; // 4
-            [12345]([12]) { 2([37]) fallthrough() }; // 5
-            return(); // 6
-            return(r); // 7
-            return(r1, r2); // 8
-            return([1], [45], [0]); // 9
+            callee() -> ();
+            callee(arg1) -> (res1);
+            NONE_B0:
+            callee(arg1, arg2) -> (res1, res2);
+            F2:
+            callee() { F0() };
+            callee(arg1, arg2) { fallthrough() F0_B0(res1) F0(res1, res2) };
+            F0:
+            [12345]([12]) { NONE_B0([37]) fallthrough() };
+            return();
+            F0_B0:
+            return(r);
+            return(r1, r2);
+            return([1], [45], [0]);
 
-            Name@5() -> ();
-            Other@3([5]: T1) -> (T2);
-            [343]@3([5]: [6343]) -> ([341]);
+            Name@F0() -> ();
+            Other@F2([5]: T1) -> (T2);
+            [343]@F2([5]: [6343]) -> ([341]);
         "}
         .to_string())
     );
@@ -138,16 +142,19 @@ fn labeled_program_display_test() {
         Ok(indoc! {"
 
 
-            callee() -> (); // 0
-            callee(arg1) -> (res1); // 1
-            callee(arg1, arg2) -> (res1, res2); // 2
-            callee() { 5() }; // 3
-            callee(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) }; // 4
-            [12345]([12]) { 2([37]) fallthrough() }; // 5
-            return(); // 6
-            return(r); // 7
-            return(r1, r2); // 8
-            return([1], [45], [0]); // 9
+            callee() -> ();
+            callee(arg1) -> (res1);
+            NONE_B0:
+            callee(arg1, arg2) -> (res1, res2);
+            callee() { NONE_B1() };
+            callee(arg1, arg2) { fallthrough() NONE_B2(res1) NONE_B1(res1, res2) };
+            NONE_B1:
+            [12345]([12]) { NONE_B0([37]) fallthrough() };
+            return();
+            NONE_B2:
+            return(r);
+            return(r1, r2);
+            return([1], [45], [0]);
 
         "}
         .to_string())
