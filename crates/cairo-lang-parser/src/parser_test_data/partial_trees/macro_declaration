@@ -111,7 +111,8 @@ macro macro_name {
     │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
     │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │   │   ├── colon (kind: TokenColon): ':'
-    │       │       │   │   │   └── kind (kind: TokenIdentifier): 'ident'
+    │       │       │   │   │   └── kind (kind: ParamIdent)
+    │       │       │   │   │       └── ident (kind: TokenIdentifier): 'ident'
     │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
     │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'x'
     │       │       │   │   ├── child #2 (kind: TokenTreeLeaf)

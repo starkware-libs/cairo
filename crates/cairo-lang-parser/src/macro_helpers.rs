@@ -1,8 +1,9 @@
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::{
-    AttributeListGreen, ExprInlineMacro, ExprPathGreen, ItemInlineMacro, LegacyExprInlineMacro,
-    LegacyItemInlineMacro, TerminalIdentifierGreen, TerminalNotGreen, TerminalSemicolonGreen,
-    TokenTreeNode, WrappedArgListGreen,
+    self, AttributeListGreen, ExprInlineMacro, ExprPathGreen, ItemInlineMacro,
+    LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalIdentifierGreen, TerminalNotGreen,
+    TerminalSemicolonGreen, TokenTree, TokenTreeNode, WrappedArgListGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -35,6 +36,32 @@ pub fn token_tree_as_wrapped_arg_list(
         return None;
     }
     Some(wrapped_arg_list_green)
+}
+
+/// Takes a token tree syntax node, which is assumed to be parsable as an expression,
+/// tries to parse it as such, and returns the result.
+pub fn as_expr_macro_token_tree(
+    mut token_tree: impl Iterator<Item = TokenTree>,
+    file_id: FileId,
+    db: &dyn SyntaxGroup,
+) -> Option<ast::Expr> {
+    let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
+    let token = token_tree.next()?;
+    let node_text = token.as_syntax_node().get_text(db);
+    let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
+    let expr_green = parser.parse_expr();
+    if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
+        parser.add_diagnostic(
+            ParserDiagnosticKind::SkippedElement { element_name: "end of macro".into() },
+            span,
+        );
+    };
+    let expr = ast::Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, expr_green.0));
+    let diagnostics = diagnostics.build();
+    if !diagnostics.get_all().is_empty() {
+        return None;
+    }
+    Some(expr)
 }
 
 /// Trait for converting inline macros with token tree syntax as the argument to legacy inline which
