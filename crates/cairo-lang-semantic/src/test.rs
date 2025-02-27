@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
 
@@ -39,6 +40,29 @@ fn test_resolve() {
         ModuleItemId::FreeFunction(_) => {}
         _ => panic!("Expected a free function"),
     };
+}
+
+#[test]
+fn test_resolve_data_full() {
+    let db_val = SemanticDatabaseForTesting::default();
+    let (test_module, _diagnostics) = setup_test_module(
+        &db_val,
+        indoc! {"
+            const C: u32 = 42;
+            fn foo() { let _ = C; }
+        "},
+    )
+    .split();
+
+    let module_id = test_module.module_id;
+    let db = &db_val;
+    let foo = extract_matches!(
+        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        ModuleItemId::FreeFunction
+    );
+    let resolver_data = db.free_function_body_resolver_data(foo).unwrap();
+    assert_eq!(resolver_data.resolved_items.generic.len(), 1);
+    assert_eq!(resolver_data.resolved_items.concrete.len(), 1);
 }
 
 #[derive(Debug, Default)]
