@@ -382,6 +382,76 @@ pub trait Iterator<T> {
         }
     }
 
+    /// Tests if any element of the iterator matches a predicate.
+    ///
+    /// `any()` takes a closure that returns `true` or `false`. It applies this closure to each
+    /// element of the iterator, and if any of them return `true`, then so does `any()`. If they all
+    /// return `false`, it returns `false`.
+    ///
+    /// `any()` is short-circuiting; in other words, it will stop processing as soon as it finds a
+    /// `true`, given that no matter what else happens, the result will also be `true`.
+    ///
+    /// An empty iterator returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// assert!(array![1, 2, 3].into_iter().any(|x| x == 2));
+    ///
+    /// assert!(!array![1, 2, 3].into_iter().any(|x| x > 5));
+    /// ```
+    fn any<
+        P,
+        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        ref self: T, predicate: P,
+    ) -> bool {
+        match Self::next(ref self) {
+            None => false,
+            Some(x) => predicate(x) || Self::any(ref self, predicate),
+        }
+    }
+
+    /// Tests if every element of the iterator matches a predicate.
+    ///
+    /// `all()` takes a closure that returns `true` or `false`. It applies this closure to each
+    /// element of the iterator, and if all of them return `true`, then so does `all()`. If any
+    /// of them return `false`, it returns `false`.
+    ///
+    /// `all()` is short-circuiting; in other words, it will stop processing as soon as it finds a
+    /// `false`, given that no matter what else happens, the result will also be `false`.
+    ///
+    /// An empty iterator returns `true`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// assert!(array![1, 2, 3].into_iter().all(|x| x > 0));
+    ///
+    /// assert!(!array![1, 2, 3].into_iter().all(|x| x > 2));
+    /// ```
+    fn all<
+        P,
+        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        ref self: T, predicate: P,
+    ) -> bool {
+        match Self::next(ref self) {
+            None => true,
+            Some(x) => predicate(x) && Self::all(ref self, predicate),
+        }
+    }
+
     /// Searches for an element of an iterator that satisfies a predicate.
     ///
     /// `find()` takes a closure that returns `true` or `false`. It applies
