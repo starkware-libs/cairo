@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, chain, intersperse};
 
-use crate::documentable_formatter::{HirDisplay, HirFormatter};
+use crate::documentable_formatter::SignatureElement;
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
@@ -39,6 +39,12 @@ pub trait DocGroup:
 
     /// Gets the signature of an item (i.e., item without its body).
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
+
+    /// Gets the signature of an item and along with SignatureElement Vector to enable mapping signature slices on full paths of respective items
+    fn get_item_signature_with_elements(
+        &self,
+        item_id: DocumentableItemId,
+    ) -> (String, Vec<SignatureElement>);
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
@@ -60,46 +66,14 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
 }
 
 fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
-    let mut f = HirFormatter::new(db);
-    match item_id {
-        // todo: consider moving matching to a separate fn in mod documentable_formatter
-        DocumentableItemId::LookupItem(item_id) => match item_id {
-            LookupItemId::ModuleItem(item_id) => match item_id {
-                ModuleItemId::Struct(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::Enum(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::Constant(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::FreeFunction(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::TypeAlias(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::ImplAlias(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::Trait(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::Impl(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::ExternType(item_id) => item_id.get_signature(&mut f),
-                ModuleItemId::ExternFunction(item_id) => item_id.get_signature(&mut f),
-                _ => panic!("get_item_signature not implemented for item_id: {:?}", item_id),
-            },
-            LookupItemId::TraitItem(item_id) => match item_id {
-                TraitItemId::Function(item_id) => item_id.get_signature(&mut f),
-                TraitItemId::Constant(item_id) => item_id.get_signature(&mut f),
-                TraitItemId::Type(item_id) => item_id.get_signature(&mut f),
-                _ => {
-                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-                }
-            },
-            LookupItemId::ImplItem(item_id) => match item_id {
-                ImplItemId::Function(item_id) => item_id.get_signature(&mut f),
-                ImplItemId::Constant(item_id) => item_id.get_signature(&mut f),
-                ImplItemId::Type(item_id) => item_id.get_signature(&mut f),
-                _ => {
-                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-                }
-            },
-        },
-        DocumentableItemId::Member(item_id) => item_id.get_signature(&mut f),
-        DocumentableItemId::Variant(item_id) => item_id.get_signature(&mut f),
-        DocumentableItemId::Crate(_) => {
-            panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-        }
-    }
+    crate::documentable_formatter::get_item_signature(db, item_id)
+}
+
+fn get_item_signature_with_elements(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> (String, Vec<SignatureElement>) {
+    crate::documentable_formatter::get_item_signature_with_elements(db, item_id)
 }
 
 fn get_item_documentation_as_tokens(
