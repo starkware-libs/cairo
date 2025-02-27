@@ -1,3 +1,4 @@
+pub mod block_dedup;
 pub mod branch_inversion;
 pub mod cancel_ops;
 pub mod config;
