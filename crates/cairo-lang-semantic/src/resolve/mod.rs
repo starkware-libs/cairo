@@ -70,6 +70,7 @@ mod item;
 // Remove when these are added as actual keywords.
 pub const SELF_TYPE_KW: &str = "Self";
 pub const SUPER_KW: &str = "super";
+pub const SELF_KW: &str = "self";
 pub const CRATE_KW: &str = "crate";
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
@@ -796,6 +797,13 @@ impl<'db> Resolver<'db> {
 
         if identifier.text(syntax_db) == SELF_TYPE_KW {
             return Err(diagnostics.report(identifier, SelfMustBeFirst));
+        }
+        
+        // Handle the 'self' keyword in import paths - resolves to the containing module
+        if ident == SELF_KW {
+            if let ResolvedConcreteItem::Module(module_id) = containing_item {
+                return Ok(ResolvedConcreteItem::Module(*module_id));
+            }
         }
 
         match containing_item {
