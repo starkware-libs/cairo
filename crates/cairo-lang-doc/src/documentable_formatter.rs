@@ -31,6 +31,58 @@ const INDENT: &str = "    ";
 /// Returned when item's signature could not be determined.
 const MISSING: &str = "<missing>";
 
+pub fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
+    let (signature, _) = get_item_signature_with_elements(db, item_id);
+    signature
+}
+
+pub fn get_item_signature_with_elements(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> (String, Vec<SignatureElement>) {
+    let mut f = HirFormatter::new(db);
+    match item_id {
+        DocumentableItemId::LookupItem(item_id) => match item_id {
+            LookupItemId::ModuleItem(item_id) => match item_id {
+                ModuleItemId::Struct(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::Enum(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::FreeFunction(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::TypeAlias(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::ImplAlias(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::Trait(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::Impl(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::ExternType(item_id) => item_id.get_signature_with_elements(&mut f),
+                ModuleItemId::ExternFunction(item_id) => {
+                    item_id.get_signature_with_elements(&mut f)
+                }
+                _ => panic!("get_item_signature not implemented for item_id: {:?}", item_id),
+            },
+            LookupItemId::TraitItem(item_id) => match item_id {
+                TraitItemId::Function(item_id) => item_id.get_signature_with_elements(&mut f),
+                TraitItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
+                TraitItemId::Type(item_id) => item_id.get_signature_with_elements(&mut f),
+                _ => {
+                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
+                }
+            },
+            LookupItemId::ImplItem(item_id) => match item_id {
+                ImplItemId::Function(item_id) => item_id.get_signature_with_elements(&mut f),
+                ImplItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
+                ImplItemId::Type(item_id) => item_id.get_signature_with_elements(&mut f),
+                _ => {
+                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
+                }
+            },
+        },
+        DocumentableItemId::Member(item_id) => item_id.get_signature_with_elements(&mut f),
+        DocumentableItemId::Variant(item_id) => item_id.get_signature_with_elements(&mut f),
+        DocumentableItemId::Crate(_) => {
+            panic!("get_item_signature not implemented for item_id: {:?}", item_id)
+        }
+    }
+}
+
 pub struct DocumentableItemSignatureData {
     item_id: DocumentableItemId,
     name: SmolStr,
@@ -54,18 +106,18 @@ pub trait HirDisplay {
         f.buf.clone()
     }
 
-    fn get_signature_elements(&self, f: &mut HirFormatter) -> Vec<SignatureElement> {
-        f.elements.clone()
+    fn get_signature_with_elements(&self, f: &mut HirFormatter) -> (String, Vec<SignatureElement>) {
+        (self.get_signature(f), f.elements.clone())
     }
 }
 
 /// A helper struct to reconstruct elements full paths mapped on formatted signature string.
-#[derive(Clone, Debug)]
-struct SignatureElement {
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignatureElement {
     /// A slice of documentable signature.
-    signature: String,
+    pub signature: String,
     /// Maps an item full path on relevant DocumentableItem signature slice.
-    full_path: Option<String>,
+    pub full_path: Option<String>,
 }
 
 /// High-Level Intermediate Representation semantic data Formatter used for item's signature creation.
@@ -112,14 +164,14 @@ fn write_item_with_path(
     let type_signature = extract_and_format(&full_path);
 
     if let Some(prefix) = prefix {
-        f.write_str(&prefix)?;
+        f.buf.push_str(&prefix);
         f.elements.push(SignatureElement { signature: prefix, full_path: None });
     }
-    f.write_str(&type_signature)?;
+    f.buf.push_str(&type_signature);
     f.elements.push(SignatureElement { signature: type_signature, full_path: Some(full_path) });
 
     if let Some(postfix) = postfix {
-        f.write_str(&postfix)?;
+        f.buf.push_str(&postfix);
         f.elements.push(SignatureElement { signature: postfix, full_path: None });
     };
     Ok(())
