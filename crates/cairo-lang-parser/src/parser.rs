@@ -800,12 +800,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
     fn parse_macro_rule_param_kind(&mut self) -> MacroRuleParamKindGreen {
-        if self.peek().kind == SyntaxKind::TerminalIdentifier && self.peek().text == "ident" {
-            self.parse_token::<TerminalIdentifier>().into()
-        } else {
-            self.create_and_report_missing::<MacroRuleParamKind>(
+        match (self.peek().kind, self.peek().text.as_str()) {
+            (SyntaxKind::TerminalIdentifier, "ident") => {
+                ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+            }
+            (SyntaxKind::TerminalIdentifier, "expr") => {
+                ParamExpr::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+            }
+            _ => self.create_and_report_missing::<MacroRuleParamKind>(
                 ParserDiagnosticKind::MissingMacroRuleParamKind,
-            )
+            ),
         }
     }
 
@@ -1322,7 +1326,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if an expression can't be parsed.
-    fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
+    pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
         self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
