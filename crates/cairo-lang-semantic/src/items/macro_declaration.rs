@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::ExprPlaceholder;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -35,12 +36,14 @@ pub struct MacroRuleData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PlaceholderKind {
     Identifier,
+    Expr,
 }
 
 impl From<ast::MacroRuleParamKind> for PlaceholderKind {
     fn from(kind: ast::MacroRuleParamKind) -> Self {
         match kind {
             ast::MacroRuleParamKind::Identifier(_) => PlaceholderKind::Identifier,
+            ast::MacroRuleParamKind::Expr(_) => PlaceholderKind::Expr,
             ast::MacroRuleParamKind::Missing(_) => unreachable!(
                 "Missing macro rule param kind, should have been handled by the parser."
             ),
@@ -154,6 +157,12 @@ fn is_macro_rule_match_ex(
                         ast::TokenTree::Subtree(_) => return None,
                         ast::TokenTree::Missing(_) => unreachable!(),
                     },
+                    PlaceholderKind::Expr => {
+                        let expr_node = as_expr_macro_token_tree(input.clone(), db.upcast())?;
+                        let expr_text =
+                            expr_node.as_syntax_node().get_text_without_trivia(db.upcast());
+                        captures.insert(placeholder_name, expr_text.to_string());
+                    }
                 }
             }
             ast::MacroRuleElement::Subtree(matcher_subtree) => {
