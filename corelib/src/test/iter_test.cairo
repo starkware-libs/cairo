@@ -182,6 +182,34 @@ fn test_iter_accum_product() {
 }
 
 #[test]
+fn test_iter_any() {
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(iter.any(|x| x == 2));
+    assert_eq!(iter.next(), Some(3));
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(!iter.any(|x| x == 5));
+    assert_eq!(iter.next(), None);
+
+    let mut iter = array![].into_iter();
+    assert!(!iter.any(|x| x == 1));
+}
+
+#[test]
+fn test_iter_all() {
+    let mut iter = array![1, 1, 1].into_iter();
+    assert!(iter.all(|x| x == 1));
+    assert_eq!(iter.next(), None);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(!iter.all(|x| x == 1));
+    assert_eq!(iter.next(), Some(3));
+
+    let mut iter = array![].into_iter();
+    assert!(iter.all(|x| x == 1));
+}
+
+#[test]
 fn test_iter_find() {
     let mut iter = array![1, 2, 3].into_iter();
     assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
