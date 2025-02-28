@@ -1,3 +1,4 @@
+use std::any::{self, Any};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId, ModuleId};
@@ -9,7 +10,7 @@ use crate::ids::AnalyzerPluginId;
 
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
 /// modules.
-pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
+pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Runs the plugin on a module.
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
     /// Allows this plugin supplies.
@@ -19,6 +20,12 @@ pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
     /// `#[allow(some_pattern)]` you will need to declare it here.
     fn declared_allows(&self) -> Vec<String> {
         Vec::new()
+    }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
     }
 }
 
