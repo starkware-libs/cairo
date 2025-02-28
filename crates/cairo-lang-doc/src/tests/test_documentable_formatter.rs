@@ -36,11 +36,8 @@ fn documentation_test_runner(
     }
 
     let db = &db_val;
-
     let mut result_doc_builder = ResultSignatureBuilder::new(db);
-
     result_doc_builder.document_module(ModuleId::CrateRoot(crate_id));
-
     TestRunnerResult::success(result_doc_builder.get_output())
 }
 
