@@ -30,6 +30,22 @@ struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     b: U,
 }
 
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct TwoMemberSameTypeGenericStruct<T> {
+    a: T,
+    b: T,
+}
+
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct GenericStructNotDependent<T> {
+    a: u32,
+}
+
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct GenericStructIndirectlyDependent<T> {
+    a: Deref::<T>::Target,
+}
+
 #[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
@@ -64,317 +80,510 @@ struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     b: U,
 }
 
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct TwoMemberSameTypeGenericStruct<T> {
+    a: T,
+    b: T,
+}
+
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct GenericStructNotDependent<T> {
+    a: u32,
+}
+
+#[derive(Drop, Debug, Clone, PartialEq, Serde, Hash)]
+struct GenericStructIndirectlyDependent<T> {
+    a: Deref::<T>::Target,
+}
+
 #[derive(Clone, Debug, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     #[default]
     Second: B,
 }
-impl ACopy of core::traits::Copy::<A>;
-impl ADebug of core::fmt::Debug::<A> {
+impl ACopy<> of core::traits::Copy::<A>;
+impl ADebug<> of core::fmt::Debug::<A> {
     fn fmt(self: @A, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         write!(f, "A {{")?;
         write!(f, " }}")
     }
 }
-impl ADefault of core::traits::Default::<A> {
+impl ADefault<> of core::traits::Default::<A> {
     fn default() -> A {
+        
         A {
             
         }
     }
 }
-impl ADrop of core::traits::Drop::<A>;
+impl ADrop<> of core::traits::Drop::<A>;
 impl AHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<A, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: A) -> __State {
+        let __hash_derive_state = state;
         
-        state
+        __hash_derive_state
     }
 }
-impl BCopy of core::traits::Copy::<B>;
-impl BDebug of core::fmt::Debug::<B> {
+impl BCopy<> of core::traits::Copy::<B>;
+impl BDebug<> of core::fmt::Debug::<B> {
     fn fmt(self: @B, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         write!(f, "B {{")?;
         write!(f, " }}")
     }
 }
-impl BDefault of core::traits::Default::<B> {
+impl BDefault<> of core::traits::Default::<B> {
     fn default() -> B {
+        
         B {
             
         }
     }
 }
-impl BDrop of core::traits::Drop::<B>;
+impl BDrop<> of core::traits::Drop::<B>;
 impl BHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<B, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: B) -> __State {
+        let __hash_derive_state = state;
         
-        state
+        __hash_derive_state
     }
 }
-impl TwoMemberStructClone of core::clone::Clone::<TwoMemberStruct> {
+impl TwoMemberStructClone<> of core::clone::Clone::<TwoMemberStruct> {
     fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
+        let a = core::internal::InferDestruct::<A> { value: core::clone::Clone::<A>::clone(self.a) };
+        let b = core::internal::InferDestruct::<B> { value: core::clone::Clone::<B>::clone(self.b) };
         TwoMemberStruct {
-            a: core::clone::Clone::clone(self.a),
-            b: core::clone::Clone::clone(self.b),
+            a: a.value,
+            b: b.value,
         }
     }
 }
-impl TwoMemberStructDebug of core::fmt::Debug::<TwoMemberStruct> {
+impl TwoMemberStructDebug<> of core::fmt::Debug::<TwoMemberStruct> {
     fn fmt(self: @TwoMemberStruct, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         write!(f, "TwoMemberStruct {{")?;
         write!(f, " a: ")?;
-        core::fmt::Debug::fmt(self.a, ref f)?;
+        core::fmt::Debug::<A>::fmt(self.a, ref f)?;
         write!(f, ",")?;
         write!(f, " b: ")?;
-        core::fmt::Debug::fmt(self.b, ref f)?;
+        core::fmt::Debug::<B>::fmt(self.b, ref f)?;
         write!(f, " }}")
     }
 }
-impl TwoMemberStructDefault of core::traits::Default::<TwoMemberStruct> {
+impl TwoMemberStructDefault<> of core::traits::Default::<TwoMemberStruct> {
     fn default() -> TwoMemberStruct {
+        let a = core::internal::InferDestruct::<A> { value: core::traits::Default::<A>::default() };
+        let b = core::internal::InferDestruct::<B> { value: core::traits::Default::<B>::default() };
         TwoMemberStruct {
-            a: core::traits::Default::default(),
-            b: core::traits::Default::default(),
+            a: a.value,
+            b: b.value,
         }
     }
 }
-impl TwoMemberStructDestruct of core::traits::Destruct::<TwoMemberStruct> {
+impl TwoMemberStructDestruct<> of core::traits::Destruct::<TwoMemberStruct> {
     fn destruct(self: TwoMemberStruct) nopanic {
         let TwoMemberStruct { a, b } = self;
-        core::traits::Destruct::destruct(a);
-        core::traits::Destruct::destruct(b);
+        core::traits::Destruct::<A>::destruct(a);
+        core::traits::Destruct::<B>::destruct(b);
     }
 }
 impl TwoMemberStructHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<TwoMemberStruct, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberStruct) -> __State {
-        let state = core::hash::Hash::update_state(state, value.a);
-        let state = core::hash::Hash::update_state(state, value.b);
-        state
+        let __hash_derive_state = state;
+        let a = core::internal::InferDrop::<A> { value: value.a };
+        let b = core::internal::InferDrop::<B> { value: value.b };
+        let __hash_derive_state = core::hash::Hash::<A>::update_state(__hash_derive_state, a.value);
+        let __hash_derive_state = core::hash::Hash::<B>::update_state(__hash_derive_state, b.value);
+        __hash_derive_state
     }
 }
-impl TwoMemberStructPanicDestruct of core::traits::PanicDestruct::<TwoMemberStruct> {
+impl TwoMemberStructPanicDestruct<> of core::traits::PanicDestruct::<TwoMemberStruct> {
     fn panic_destruct(self: TwoMemberStruct, ref panic: Panic) nopanic {
         let TwoMemberStruct { a, b } = self;
-        core::traits::PanicDestruct::panic_destruct(a, ref panic);
-        core::traits::PanicDestruct::panic_destruct(b, ref panic);
+        core::traits::PanicDestruct::<A>::panic_destruct(a, ref panic);
+        core::traits::PanicDestruct::<B>::panic_destruct(b, ref panic);
     }
 }
-impl TwoMemberStructPartialEq of core::traits::PartialEq::<TwoMemberStruct> {
+impl TwoMemberStructPartialEq<> of core::traits::PartialEq::<TwoMemberStruct> {
     fn eq(lhs: @TwoMemberStruct, rhs: @TwoMemberStruct) -> bool {
-        lhs.a == rhs.a && lhs.b == rhs.b
+        core::traits::PartialEq::<A>::eq(lhs.a, rhs.a) && core::traits::PartialEq::<B>::eq(lhs.b, rhs.b)
     }
 }
-impl TwoMemberStructSerde of core::serde::Serde::<TwoMemberStruct> {
+impl TwoMemberStructSerde<> of core::serde::Serde::<TwoMemberStruct> {
     fn serialize(self: @TwoMemberStruct, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.a, ref output);
-        core::serde::Serde::serialize(self.b, ref output)
+        core::serde::Serde::<A>::serialize(self.a, ref output);
+        core::serde::Serde::<B>::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberStruct> {
+        let a = core::internal::InferDestruct::<A> { value: core::serde::Serde::<A>::deserialize(ref serialized)? };
+        let b = core::internal::InferDestruct::<B> { value: core::serde::Serde::<B>::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberStruct {
-            a: core::serde::Serde::deserialize(ref serialized)?,
-            b: core::serde::Serde::deserialize(ref serialized)?,
+            a: a.value,
+            b: b.value,
         })
     }
 }
-impl GenericStructCopy<T, +core::traits::Copy<T>> of core::traits::Copy::<GenericStruct<T>>;
-impl GenericStructDebug<T, +core::fmt::Debug<T>> of core::fmt::Debug::<GenericStruct<T>> {
+impl GenericStructCopy<T, impl __MEMBER_IMPL_a_Copy: core::traits::Copy<T>> of core::traits::Copy::<GenericStruct<T>>;
+impl GenericStructDebug<T, impl __MEMBER_IMPL_a_Debug: core::fmt::Debug<T>> of core::fmt::Debug::<GenericStruct<T>> {
     fn fmt(self: @GenericStruct<T>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         write!(f, "GenericStruct {{")?;
         write!(f, " a: ")?;
-        core::fmt::Debug::fmt(self.a, ref f)?;
+        __MEMBER_IMPL_a_Debug::fmt(self.a, ref f)?;
         write!(f, " }}")
     }
 }
-impl GenericStructDestruct<T, +core::traits::Destruct<T>> of core::traits::Destruct::<GenericStruct<T>> {
+impl GenericStructDestruct<T, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>> of core::traits::Destruct::<GenericStruct<T>> {
     fn destruct(self: GenericStruct<T>) nopanic {
         let GenericStruct { a } = self;
-        core::traits::Destruct::destruct(a);
+        __MEMBER_IMPL_a_Destruct::destruct(a);
     }
 }
-impl GenericStructPanicDestruct<T, +core::traits::PanicDestruct<T>> of core::traits::PanicDestruct::<GenericStruct<T>> {
+impl GenericStructPanicDestruct<T, impl __MEMBER_IMPL_a_PanicDestruct: core::traits::PanicDestruct<T>> of core::traits::PanicDestruct::<GenericStruct<T>> {
     fn panic_destruct(self: GenericStruct<T>, ref panic: Panic) nopanic {
         let GenericStruct { a } = self;
-        core::traits::PanicDestruct::panic_destruct(a, ref panic);
+        __MEMBER_IMPL_a_PanicDestruct::panic_destruct(a, ref panic);
     }
 }
-impl GenericStructDefault<T, +core::traits::Default<T>, +core::traits::Destruct<T>> of core::traits::Default::<GenericStruct<T>> {
+impl GenericStructDefault<T, impl __MEMBER_IMPL_a_Default: core::traits::Default<T>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>> of core::traits::Default::<GenericStruct<T>> {
     fn default() -> GenericStruct<T> {
+        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Default::default() };
         GenericStruct {
-            a: core::traits::Default::default(),
+            a: a.value,
         }
     }
 }
 impl GenericStructHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>,
-    T, +core::hash::Hash<T, __State, __SHashState>, +Drop<T>
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_a_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<T>
 > of core::hash::Hash<GenericStruct<T>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
-        let state = core::hash::Hash::update_state(state, value.a);
-        state
+        let __hash_derive_state = state;
+        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        __hash_derive_state
     }
 }
-impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::Drop<T>, +core::traits::Drop<U>> of core::traits::Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
-impl TwoMemberGenericStructDebug<T, U, impl USomeTrait: SomeTrait<U, T>, +core::fmt::Debug<T>, +core::fmt::Debug<U>> of core::fmt::Debug::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_b_Drop: core::traits::Drop<U>> of core::traits::Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
+impl TwoMemberGenericStructDebug<T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_Debug: core::fmt::Debug<T>, impl __MEMBER_IMPL_b_Debug: core::fmt::Debug<U>> of core::fmt::Debug::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn fmt(self: @TwoMemberGenericStruct<T, U, USomeTrait>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         write!(f, "TwoMemberGenericStruct {{")?;
         write!(f, " a: ")?;
-        core::fmt::Debug::fmt(self.a, ref f)?;
+        __MEMBER_IMPL_a_Debug::fmt(self.a, ref f)?;
         write!(f, ",")?;
         write!(f, " b: ")?;
-        core::fmt::Debug::fmt(self.b, ref f)?;
+        __MEMBER_IMPL_b_Debug::fmt(self.b, ref f)?;
         write!(f, " }}")
     }
 }
-impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, +core::clone::Clone<T>, +Destruct<T>, +core::clone::Clone<U>, +Destruct<U>> of core::clone::Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_Clone: core::clone::Clone<T>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>, impl __MEMBER_IMPL_b_Clone: core::clone::Clone<U>, impl __MEMBER_IMPL_b_Destruct: core::traits::Destruct<U>> of core::clone::Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn clone(self: @TwoMemberGenericStruct<T, U, USomeTrait>) -> TwoMemberGenericStruct<T, U, USomeTrait> {
+        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Clone::clone(self.a) };
+        let b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Clone::clone(self.b) };
         TwoMemberGenericStruct {
-            a: core::clone::Clone::clone(self.a),
-            b: core::clone::Clone::clone(self.b),
+            a: a.value,
+            b: b.value,
         }
     }
 }
-impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::PartialEq<T>, +core::traits::PartialEq<U>> of core::traits::PartialEq::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_PartialEq: core::traits::PartialEq<T>, impl __MEMBER_IMPL_b_PartialEq: core::traits::PartialEq<U>> of core::traits::PartialEq::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn eq(lhs: @TwoMemberGenericStruct<T, U, USomeTrait>, rhs: @TwoMemberGenericStruct<T, U, USomeTrait>) -> bool {
-        lhs.a == rhs.a && lhs.b == rhs.b
+        __MEMBER_IMPL_a_PartialEq::eq(lhs.a, rhs.a) && __MEMBER_IMPL_b_PartialEq::eq(lhs.b, rhs.b)
     }
 }
-impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, +core::serde::Serde<T>, +core::traits::Destruct<T>, +core::serde::Serde<U>, +core::traits::Destruct<U>> of core::serde::Serde::<TwoMemberGenericStruct<T, U, USomeTrait>> {
+impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_Serde: core::serde::Serde<T>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>, impl __MEMBER_IMPL_b_Serde: core::serde::Serde<U>, impl __MEMBER_IMPL_b_Destruct: core::traits::Destruct<U>> of core::serde::Serde::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn serialize(self: @TwoMemberGenericStruct<T, U, USomeTrait>, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.a, ref output);
-        core::serde::Serde::serialize(self.b, ref output)
+        __MEMBER_IMPL_a_Serde::serialize(self.a, ref output);
+        __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberGenericStruct<T, U, USomeTrait>> {
+        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberGenericStruct {
-            a: core::serde::Serde::deserialize(ref serialized)?,
-            b: core::serde::Serde::deserialize(ref serialized)?,
+            a: a.value,
+            b: b.value,
         })
     }
 }
 impl TwoMemberGenericStructHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>,
-    T, U, impl USomeTrait: SomeTrait<U, T>, +core::hash::Hash<T, __State, __SHashState>, +Drop<T>, +core::hash::Hash<U, __State, __SHashState>, +Drop<U>
+    +core::traits::Drop<__State>,
+    T, U, impl USomeTrait: SomeTrait<U, T>, impl __MEMBER_IMPL_a_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_b_Hash: core::hash::Hash<U, __State, __SHashState>, impl __MEMBER_IMPL_b_Drop: core::traits::Drop<U>
 > of core::hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
-        let state = core::hash::Hash::update_state(state, value.a);
-        let state = core::hash::Hash::update_state(state, value.b);
-        state
+        let __hash_derive_state = state;
+        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let b = core::internal::DropWith::<U, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        __hash_derive_state
     }
 }
-impl TwoVariantEnumClone of core::clone::Clone::<TwoVariantEnum> {
-    fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
-        match self {
-            TwoVariantEnum::First(x) => TwoVariantEnum::First(core::clone::Clone::clone(x)),
-            TwoVariantEnum::Second(x) => TwoVariantEnum::Second(core::clone::Clone::clone(x)),
+impl TwoMemberSameTypeGenericStructDrop<T, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_b_Drop: core::traits::Drop<T>> of core::traits::Drop::<TwoMemberSameTypeGenericStruct<T>>;
+impl TwoMemberSameTypeGenericStructDebug<T, impl __MEMBER_IMPL_a_Debug: core::fmt::Debug<T>, impl __MEMBER_IMPL_b_Debug: core::fmt::Debug<T>> of core::fmt::Debug::<TwoMemberSameTypeGenericStruct<T>> {
+    fn fmt(self: @TwoMemberSameTypeGenericStruct<T>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "TwoMemberSameTypeGenericStruct {{")?;
+        write!(f, " a: ")?;
+        __MEMBER_IMPL_a_Debug::fmt(self.a, ref f)?;
+        write!(f, ",")?;
+        write!(f, " b: ")?;
+        __MEMBER_IMPL_b_Debug::fmt(self.b, ref f)?;
+        write!(f, " }}")
+    }
+}
+impl TwoMemberSameTypeGenericStructClone<T, impl __MEMBER_IMPL_a_Clone: core::clone::Clone<T>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>, impl __MEMBER_IMPL_b_Clone: core::clone::Clone<T>, impl __MEMBER_IMPL_b_Destruct: core::traits::Destruct<T>> of core::clone::Clone::<TwoMemberSameTypeGenericStruct<T>> {
+    fn clone(self: @TwoMemberSameTypeGenericStruct<T>) -> TwoMemberSameTypeGenericStruct<T> {
+        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Clone::clone(self.a) };
+        let b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Clone::clone(self.b) };
+        TwoMemberSameTypeGenericStruct {
+            a: a.value,
+            b: b.value,
         }
     }
 }
-impl TwoVariantEnumDebug of core::fmt::Debug::<TwoVariantEnum> {
+impl TwoMemberSameTypeGenericStructPartialEq<T, impl __MEMBER_IMPL_a_PartialEq: core::traits::PartialEq<T>, impl __MEMBER_IMPL_b_PartialEq: core::traits::PartialEq<T>> of core::traits::PartialEq::<TwoMemberSameTypeGenericStruct<T>> {
+    fn eq(lhs: @TwoMemberSameTypeGenericStruct<T>, rhs: @TwoMemberSameTypeGenericStruct<T>) -> bool {
+        __MEMBER_IMPL_a_PartialEq::eq(lhs.a, rhs.a) && __MEMBER_IMPL_b_PartialEq::eq(lhs.b, rhs.b)
+    }
+}
+impl TwoMemberSameTypeGenericStructSerde<T, impl __MEMBER_IMPL_a_Serde: core::serde::Serde<T>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<T>, impl __MEMBER_IMPL_b_Serde: core::serde::Serde<T>, impl __MEMBER_IMPL_b_Destruct: core::traits::Destruct<T>> of core::serde::Serde::<TwoMemberSameTypeGenericStruct<T>> {
+    fn serialize(self: @TwoMemberSameTypeGenericStruct<T>, ref output: core::array::Array<felt252>) {
+        __MEMBER_IMPL_a_Serde::serialize(self.a, ref output);
+        __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberSameTypeGenericStruct<T>> {
+        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
+        core::option::Option::Some(TwoMemberSameTypeGenericStruct {
+            a: a.value,
+            b: b.value,
+        })
+    }
+}
+impl TwoMemberSameTypeGenericStructHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_a_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_b_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_b_Drop: core::traits::Drop<T>
+> of core::hash::Hash<TwoMemberSameTypeGenericStruct<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: TwoMemberSameTypeGenericStruct<T>) -> __State {
+        let __hash_derive_state = state;
+        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let b = core::internal::DropWith::<T, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        __hash_derive_state
+    }
+}
+impl GenericStructNotDependentDrop<T> of core::traits::Drop::<GenericStructNotDependent<T>>;
+impl GenericStructNotDependentDebug<T> of core::fmt::Debug::<GenericStructNotDependent<T>> {
+    fn fmt(self: @GenericStructNotDependent<T>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "GenericStructNotDependent {{")?;
+        write!(f, " a: ")?;
+        core::fmt::Debug::<u32>::fmt(self.a, ref f)?;
+        write!(f, " }}")
+    }
+}
+impl GenericStructNotDependentClone<T> of core::clone::Clone::<GenericStructNotDependent<T>> {
+    fn clone(self: @GenericStructNotDependent<T>) -> GenericStructNotDependent<T> {
+        let a = core::internal::InferDestruct::<u32> { value: core::clone::Clone::<u32>::clone(self.a) };
+        GenericStructNotDependent {
+            a: a.value,
+        }
+    }
+}
+impl GenericStructNotDependentPartialEq<T> of core::traits::PartialEq::<GenericStructNotDependent<T>> {
+    fn eq(lhs: @GenericStructNotDependent<T>, rhs: @GenericStructNotDependent<T>) -> bool {
+        core::traits::PartialEq::<u32>::eq(lhs.a, rhs.a)
+    }
+}
+impl GenericStructNotDependentSerde<T> of core::serde::Serde::<GenericStructNotDependent<T>> {
+    fn serialize(self: @GenericStructNotDependent<T>, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<u32>::serialize(self.a, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructNotDependent<T>> {
+        let a = core::internal::InferDestruct::<u32> { value: core::serde::Serde::<u32>::deserialize(ref serialized)? };
+        core::option::Option::Some(GenericStructNotDependent {
+            a: a.value,
+        })
+    }
+}
+impl GenericStructNotDependentHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T
+> of core::hash::Hash<GenericStructNotDependent<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericStructNotDependent<T>) -> __State {
+        let __hash_derive_state = state;
+        let a = core::internal::InferDrop::<u32> { value: value.a };
+        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, a.value);
+        __hash_derive_state
+    }
+}
+impl GenericStructIndirectlyDependentDrop<T, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<Deref::<T>::Target>> of core::traits::Drop::<GenericStructIndirectlyDependent<T>>;
+impl GenericStructIndirectlyDependentDebug<T, impl __MEMBER_IMPL_a_Debug: core::fmt::Debug<Deref::<T>::Target>> of core::fmt::Debug::<GenericStructIndirectlyDependent<T>> {
+    fn fmt(self: @GenericStructIndirectlyDependent<T>, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "GenericStructIndirectlyDependent {{")?;
+        write!(f, " a: ")?;
+        __MEMBER_IMPL_a_Debug::fmt(self.a, ref f)?;
+        write!(f, " }}")
+    }
+}
+impl GenericStructIndirectlyDependentClone<T, impl __MEMBER_IMPL_a_Clone: core::clone::Clone<Deref::<T>::Target>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<Deref::<T>::Target>> of core::clone::Clone::<GenericStructIndirectlyDependent<T>> {
+    fn clone(self: @GenericStructIndirectlyDependent<T>) -> GenericStructIndirectlyDependent<T> {
+        let a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Clone::clone(self.a) };
+        GenericStructIndirectlyDependent {
+            a: a.value,
+        }
+    }
+}
+impl GenericStructIndirectlyDependentPartialEq<T, impl __MEMBER_IMPL_a_PartialEq: core::traits::PartialEq<Deref::<T>::Target>> of core::traits::PartialEq::<GenericStructIndirectlyDependent<T>> {
+    fn eq(lhs: @GenericStructIndirectlyDependent<T>, rhs: @GenericStructIndirectlyDependent<T>) -> bool {
+        __MEMBER_IMPL_a_PartialEq::eq(lhs.a, rhs.a)
+    }
+}
+impl GenericStructIndirectlyDependentSerde<T, impl __MEMBER_IMPL_a_Serde: core::serde::Serde<Deref::<T>::Target>, impl __MEMBER_IMPL_a_Destruct: core::traits::Destruct<Deref::<T>::Target>> of core::serde::Serde::<GenericStructIndirectlyDependent<T>> {
+    fn serialize(self: @GenericStructIndirectlyDependent<T>, ref output: core::array::Array<felt252>) {
+        __MEMBER_IMPL_a_Serde::serialize(self.a, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructIndirectlyDependent<T>> {
+        let a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        core::option::Option::Some(GenericStructIndirectlyDependent {
+            a: a.value,
+        })
+    }
+}
+impl GenericStructIndirectlyDependentHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_a_Hash: core::hash::Hash<Deref::<T>::Target, __State, __SHashState>, impl __MEMBER_IMPL_a_Drop: core::traits::Drop<Deref::<T>::Target>
+> of core::hash::Hash<GenericStructIndirectlyDependent<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericStructIndirectlyDependent<T>) -> __State {
+        let __hash_derive_state = state;
+        let a = core::internal::DropWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        __hash_derive_state
+    }
+}
+impl TwoVariantEnumClone<> of core::clone::Clone::<TwoVariantEnum> {
+    fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
+        match self {
+            TwoVariantEnum::First(x) => TwoVariantEnum::First(core::clone::Clone::<A>::clone(x)),
+    TwoVariantEnum::Second(x) => TwoVariantEnum::Second(core::clone::Clone::<B>::clone(x)),
+        }
+    }
+}
+impl TwoVariantEnumDebug<> of core::fmt::Debug::<TwoVariantEnum> {
     fn fmt(self: @TwoVariantEnum, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
         match self {
             TwoVariantEnum::First(x) => {
                 write!(f, "TwoVariantEnum::First(")?;
-                core::fmt::Debug::fmt(x, ref f)?;
+                core::fmt::Debug::<A>::fmt(x, ref f)?;
                 write!(f, ")")
             },
 
             TwoVariantEnum::Second(x) => {
                 write!(f, "TwoVariantEnum::Second(")?;
-                core::fmt::Debug::fmt(x, ref f)?;
+                core::fmt::Debug::<B>::fmt(x, ref f)?;
                 write!(f, ")")
             },
 
         }
     }
 }
-impl TwoVariantEnumDefault of core::traits::Default::<TwoVariantEnum> {
+impl TwoVariantEnumDefault<> of core::traits::Default::<TwoVariantEnum> {
     fn default() -> TwoVariantEnum {
-        TwoVariantEnum::Second(core::traits::Default::default())
+        TwoVariantEnum::Second(core::traits::Default::<B>::default())
     }
 }
-impl TwoVariantEnumDestruct of core::traits::Destruct::<TwoVariantEnum> {
+impl TwoVariantEnumDestruct<> of core::traits::Destruct::<TwoVariantEnum> {
     fn destruct(self: TwoVariantEnum) nopanic {
         match self {
-            TwoVariantEnum::First(x) => core::traits::Destruct::destruct(x),
-            TwoVariantEnum::Second(x) => core::traits::Destruct::destruct(x),
+            TwoVariantEnum::First(x) => core::traits::Destruct::<A>::destruct(x),
+            TwoVariantEnum::Second(x) => core::traits::Destruct::<B>::destruct(x),
         }
     }
 }
 impl TwoVariantEnumHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<TwoVariantEnum, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
-                let state = core::hash::Hash::update_state(state, 0);
-                core::hash::Hash::update_state(state, x)
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                core::hash::Hash::<A>::update_state(state, x)
             },
             TwoVariantEnum::Second(x) => {
-                let state = core::hash::Hash::update_state(state, 1);
-                core::hash::Hash::update_state(state, x)
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                core::hash::Hash::<B>::update_state(state, x)
             },
         }
     }
 }
-impl TwoVariantEnumPanicDestruct of core::traits::PanicDestruct::<TwoVariantEnum> {
+impl TwoVariantEnumPanicDestruct<> of core::traits::PanicDestruct::<TwoVariantEnum> {
     fn panic_destruct(self: TwoVariantEnum, ref panic: Panic) nopanic {
         match self {
-            TwoVariantEnum::First(x) => core::traits::PanicDestruct::panic_destruct(x, ref panic),
-            TwoVariantEnum::Second(x) => core::traits::PanicDestruct::panic_destruct(x, ref panic),
+            TwoVariantEnum::First(x) => core::traits::PanicDestruct::<A>::panic_destruct(x, ref panic),
+            TwoVariantEnum::Second(x) => core::traits::PanicDestruct::<B>::panic_destruct(x, ref panic),
         }
     }
 }
-impl TwoVariantEnumPartialEq of core::traits::PartialEq::<TwoVariantEnum> {
+impl TwoVariantEnumPartialEq<> of core::traits::PartialEq::<TwoVariantEnum> {
     fn eq(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         match lhs {
             TwoVariantEnum::First(x) => match rhs {
-                TwoVariantEnum::First(y) => x == y,
+                TwoVariantEnum::First(y) => core::traits::PartialEq::<A>::eq(x, y),
                 TwoVariantEnum::Second(_y) => false,
             },
             TwoVariantEnum::Second(x) => match rhs {
                 TwoVariantEnum::First(_y) => false,
-                TwoVariantEnum::Second(y) => x == y,
+                TwoVariantEnum::Second(y) => core::traits::PartialEq::<B>::eq(x, y),
             },
         }
     }
 }
-impl TwoVariantEnumSerde of core::serde::Serde::<TwoVariantEnum> {
+impl TwoVariantEnumSerde<
+        
+    > of core::serde::Serde<TwoVariantEnum>
+ {
     fn serialize(self: @TwoVariantEnum, ref output: core::array::Array<felt252>) {
         match self {
-            TwoVariantEnum::First(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            TwoVariantEnum::Second(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::First(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<A>::serialize(x, ref output); },
+            TwoVariantEnum::Second(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<B>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoVariantEnum> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => TwoVariantEnum::First(core::serde::Serde::deserialize(ref serialized)?),
-                1 => TwoVariantEnum::Second(core::serde::Serde::deserialize(ref serialized)?),
+                0 => TwoVariantEnum::First(core::serde::Serde::<A>::deserialize(ref serialized)?),
+                1 => TwoVariantEnum::Second(core::serde::Serde::<B>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -455,9 +664,9 @@ enum TooManyDefaultValues {
     #[default]
     Second,
 }
-impl TooManyDefaultValuesDefault of core::traits::Default::<TooManyDefaultValues> {
+impl TooManyDefaultValuesDefault<> of core::traits::Default::<TooManyDefaultValues> {
     fn default() -> TooManyDefaultValues {
-        TooManyDefaultValues::First(core::traits::Default::default())
+        TooManyDefaultValues::First(core::traits::Default::<()>::default())
     }
 }
 

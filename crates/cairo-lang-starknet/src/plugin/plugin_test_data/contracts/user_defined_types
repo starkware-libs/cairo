@@ -230,16 +230,18 @@ lib.cairo:13:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
+impl WrappedFelt252Drop<> of core::traits::Drop::<WrappedFelt252>;
 impl WrappedFelt252Hash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<WrappedFelt252, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: WrappedFelt252) -> __State {
-        let state = core::hash::Hash::update_state(state, value.value);
-        state
+        let __hash_derive_state = state;
+        let value = core::internal::InferDrop::<felt252> { value: value.value };
+        let __hash_derive_state = core::hash::Hash::<felt252>::update_state(__hash_derive_state, value.value);
+        __hash_derive_state
     }
 }
 
@@ -249,14 +251,14 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
+impl WrappedFelt252Store<> of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let value = starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let value = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
-                value,
+                value: value.value,
             }
         )
     }
@@ -266,17 +268,18 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         let WrappedFelt252 {
             value,
         } = value;
-        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, value)?;
+        let value = core::internal::InferDestruct::<felt252> { value: value };
+        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, value.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let value = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let value = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             WrappedFelt252 {
-                value,
+                value: value.value,
             }
         )
     }
@@ -288,7 +291,8 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
         let WrappedFelt252 {
             value,
         } = value;
-        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, value)?;
+        let value = core::internal::InferDestruct::<felt252> { value: value };
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, value.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -344,23 +348,25 @@ lib.cairo:17:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
+impl ZeroSizeDrop<> of core::traits::Drop::<ZeroSize>;
 impl ZeroSizeHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<ZeroSize, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: ZeroSize) -> __State {
+        let __hash_derive_state = state;
         
-        state
+        __hash_derive_state
     }
 }
-impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
+impl ZeroSizeSerde<> of core::serde::Serde::<ZeroSize> {
     fn serialize(self: @ZeroSize, ref output: core::array::Array<felt252>) {
         
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ZeroSize> {
+        
         core::option::Option::Some(ZeroSize {
             
         })
@@ -373,7 +379,7 @@ lib.cairo:17:33
                                 ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreZeroSize of starknet::Store::<ZeroSize> {
+impl ZeroSizeStore<> of starknet::Store::<ZeroSize> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
@@ -390,6 +396,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         let ZeroSize {
             
         } = value;
+        
         
         starknet::SyscallResult::Ok(())
     }
@@ -413,6 +420,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
             
         } = value;
         
+        
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -428,20 +436,23 @@ lib.cairo:20:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
-impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
+impl SimpleEnumDrop<> of core::traits::Drop::<SimpleEnum>;
+impl SimpleEnumSerde<
+        
+    > of core::serde::Serde<SimpleEnum>
+ {
     fn serialize(self: @SimpleEnum, ref output: core::array::Array<felt252>) {
         match self {
-            SimpleEnum::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            SimpleEnum::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
+            SimpleEnum::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            SimpleEnum::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<SimpleEnum> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => SimpleEnum::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => SimpleEnum::B(core::serde::Serde::deserialize(ref serialized)?),
+                0 => SimpleEnum::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => SimpleEnum::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -454,21 +465,21 @@ lib.cairo:20:27
                           ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
+impl SimpleEnumStore<> of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::A(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::B(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
@@ -481,11 +492,11 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
         match value {
             SimpleEnum::A(x) => {
                 starknet::Store::write(address_domain, base, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                starknet::Store::<u8>::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             SimpleEnum::B(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                starknet::Store::<u16>::write_at_offset(address_domain, base, 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -496,14 +507,14 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
             1 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::A(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     SimpleEnum::B(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
@@ -517,11 +528,11 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
         match value {
             SimpleEnum::A(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                starknet::Store::<u8>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             SimpleEnum::B(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                starknet::Store::<u16>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -538,22 +549,25 @@ lib.cairo:26:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
-impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
+impl EnumWithDefaultDrop<> of core::traits::Drop::<EnumWithDefault>;
+impl EnumWithDefaultSerde<
+        
+    > of core::serde::Serde<EnumWithDefault>
+ {
     fn serialize(self: @EnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            EnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
-            EnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            EnumWithDefault::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
+            EnumWithDefault::C(x) => { core::serde::Serde::<felt252>::serialize(@2, ref output); core::serde::Serde::<u32>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<EnumWithDefault> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => EnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => EnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
-                2 => EnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                0 => EnumWithDefault::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => EnumWithDefault::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
+                2 => EnumWithDefault::C(core::serde::Serde::<u32>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -566,28 +580,28 @@ lib.cairo:26:27
                           ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
+impl EnumWithDefaultStore<> of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
         let idx = starknet::Store::<felt252>::read(address_domain, base)?;
         match idx {
             1 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::A(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             0 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::B(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::C(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        starknet::Store::<u32>::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             },
@@ -600,15 +614,15 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
         match value {
             EnumWithDefault::A(x) => {
                 starknet::Store::write(address_domain, base, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                starknet::Store::<u8>::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             EnumWithDefault::B(x) => {
                 starknet::Store::write(address_domain, base, 0)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                starknet::Store::<u16>::write_at_offset(address_domain, base, 1_u8, x)?;
             },
             EnumWithDefault::C(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                starknet::Store::<u32>::write_at_offset(address_domain, base, 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -619,21 +633,21 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
             1 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::A(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u8>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             0 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::B(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u16>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
             2 => {
                 starknet::SyscallResult::Ok(
                     EnumWithDefault::C(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        starknet::Store::<u32>::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             },
@@ -647,15 +661,15 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
         match value {
             EnumWithDefault::A(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                starknet::Store::<u8>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             EnumWithDefault::B(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 0)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                starknet::Store::<u16>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
             EnumWithDefault::C(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                starknet::Store::<u32>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }
         };
         starknet::SyscallResult::Ok(())
@@ -672,22 +686,25 @@ lib.cairo:34:5
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
-impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
+impl BadEnumWithDefaultDrop<> of core::traits::Drop::<BadEnumWithDefault>;
+impl BadEnumWithDefaultSerde<
+        
+    > of core::serde::Serde<BadEnumWithDefault>
+ {
     fn serialize(self: @BadEnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
-            BadEnumWithDefault::A(x) => { core::serde::Serde::serialize(@0, ref output); core::serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::B(x) => { core::serde::Serde::serialize(@1, ref output); core::serde::Serde::serialize(x, ref output); },
-            BadEnumWithDefault::C(x) => { core::serde::Serde::serialize(@2, ref output); core::serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
+            BadEnumWithDefault::B(x) => { core::serde::Serde::<felt252>::serialize(@1, ref output); core::serde::Serde::<u16>::serialize(x, ref output); },
+            BadEnumWithDefault::C(x) => { core::serde::Serde::<felt252>::serialize(@2, ref output); core::serde::Serde::<u32>::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<BadEnumWithDefault> {
-        let idx: felt252 = core::serde::Serde::deserialize(ref serialized)?;
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
         core::option::Option::Some(
             match idx {
-                0 => BadEnumWithDefault::A(core::serde::Serde::deserialize(ref serialized)?),
-                1 => BadEnumWithDefault::B(core::serde::Serde::deserialize(ref serialized)?),
-                2 => BadEnumWithDefault::C(core::serde::Serde::deserialize(ref serialized)?),
+                0 => BadEnumWithDefault::A(core::serde::Serde::<u8>::deserialize(ref serialized)?),
+                1 => BadEnumWithDefault::B(core::serde::Serde::<u16>::deserialize(ref serialized)?),
+                2 => BadEnumWithDefault::C(core::serde::Serde::<u32>::deserialize(ref serialized)?),
                 _ => { return core::option::Option::None; }
             }
         )
@@ -700,7 +717,7 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:1:1
@@ -730,8 +747,8 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:6:5
@@ -739,8 +756,8 @@ lib.cairo:6:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 
 lib.cairo:13:26
@@ -748,8 +765,8 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
-impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersDrop<> of core::traits::Drop::<WrappedFelt252SubPointers>;
+impl WrappedFelt252SubPointersCopy<> of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
 lib.cairo:13:26
@@ -757,16 +774,14 @@ lib.cairo:13:26
                          ^^^^^^^^^^^^^^^
 impls:
 
-impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;
-impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubPointersMut>;
+impl WrappedFelt252SubPointersMutDrop<> of core::traits::Drop::<WrappedFelt252SubPointersMut>;
+impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252SubPointersMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:39:9-40:14
-          #[default]
- _________^
-|         C: u32,
-|______________^
+ --> lib.cairo:39:9
+        #[default]
+        ^^^^^^^^^^
 
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:20:5-24:5

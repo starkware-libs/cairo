@@ -3,7 +3,7 @@
 
 use crate::ids::*;
 use crate::program::*;
-use crate::pre_statement::{StatementId, PreStatement, finalize_prestatements};
+use crate::labeled_statement::{StatementId, PreStatement, finalize_prestatements};
 use num_bigint::BigInt;
 
 grammar;
@@ -13,7 +13,10 @@ pub Program: Program = {
     <libfunc_declarations:LibfuncDeclaration*>
     <statements:PreStatement*>
     <funcs:Function*>
-    => Program{type_declarations, libfunc_declarations, statements: finalize_prestatements(statements), funcs},
+    => {
+        let (statements, funcs) = finalize_prestatements(statements, funcs);
+        Program { type_declarations, libfunc_declarations, statements, funcs }
+    },
 }
 
 TypeDeclaration: TypeDeclaration = {
@@ -57,10 +60,10 @@ pub ConcreteLibfuncLongId: ConcreteLibfuncLongId = {
     <generic_id:GenericLibfuncId> => ConcreteLibfuncLongId{generic_id, generic_args: vec![]},
 }
 
-Function: Function = {
-    <id:FunctionId> "@" <entry:StatementIdx>
+Function: GenFunction<StatementId> = {
+    <id:FunctionId> "@" <entry:StatementId>
     "(" <params: Params> ")" "->" "(" <ret_types: ConcreteTypeIds> ")" ";"
-    => Function::new(id, params, ret_types, entry),
+    => GenFunction::new(id, params, ret_types, entry),
 }
 
 Param: Param = {
@@ -87,6 +90,19 @@ FunctionId: FunctionId = {
 UserTypeId: UserTypeId = {
     <id:ConcreteLabel> => UserTypeId::from_string(id),
     "[" <id:BigInt> "]" => UserTypeId { id: id.try_into().unwrap(), debug_name: None },
+    "{" <parts:(<UserTypeIdPart>)+> "}"
+     => UserTypeId::from_string(format!("{{{}}}", parts.join(""))),
+}
+
+UserTypeIdPart: String = {
+    <label:BasicLabel> => label.to_string(),
+    <num:BigInt> => num.to_string(),
+    ":" => <>.to_string(),
+    "." => <>.to_string(),
+    "@" => <>.to_string(),
+    "/" => <>.to_string(),
+    "\\" => <>.to_string(),
+    "-" => <>.to_string(),
 }
 
 VarId: VarId = {
@@ -108,8 +124,9 @@ ConcreteTypeId: ConcreteTypeId = {
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
 
-StatementIdx: StatementIdx = {
-     <id:UnsignedInt> => StatementIdx(id as usize),
+StatementId: StatementId = {
+     <id:UnsignedInt> => StatementId::Idx(StatementIdx(id as usize)),
+     <label:BasicLabel> => StatementId::Label(label),
 }
 
 GenericArg: GenericArg = {
@@ -162,8 +179,7 @@ BranchInfo: GenBranchInfo<StatementId> = {
 
 BranchTarget: GenBranchTarget<StatementId> = {
      "fallthrough" => GenBranchTarget::Fallthrough,
-     <id:StatementIdx> => GenBranchTarget::Statement(StatementId::Idx(id)),
-     <label:BasicLabel> => GenBranchTarget::Statement(StatementId::Label(label)),
+     <id:StatementId> => GenBranchTarget::Statement(id),
 }
 
 BasicLabel: String = {

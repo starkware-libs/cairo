@@ -1,61 +1,92 @@
 use indent::indent_by;
 use indoc::formatdoc;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 
-use super::DeriveInfo;
-use crate::plugins::derive::TypeVariantInfo;
+use super::PluginTypeInfo;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Hash` trait.
-pub fn handle_hash(info: &DeriveInfo) -> Option<String> {
+pub fn handle_hash(info: &PluginTypeInfo) -> String {
+    const HASH_TRAIT: &str = "core::hash::Hash";
+    const DROP_TRAIT: &str = "core::traits::Drop";
     let full_typename = info.full_typename();
     let ty = &info.name;
-    let body = indent_by(
-        8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    match value {{
-                        {}
-                    }}",
-                    indent_by(4,
-                    variants.iter().enumerate().map(|(idx, variant)| formatdoc!{"
+    match &info.type_variant {
+        TypeVariant::Enum => {
+            let impl_additional_generics = info
+                .impl_generics(&[HASH_TRAIT], |trt, ty| {
+                    format!("{trt}<{ty}, __State, __SHashState>")
+                })
+                .join(", ");
+            let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
+            formatdoc! {"
+                impl {ty}Hash<
+                    __State,
+                    impl __SHashState: core::hash::HashStateTrait<__State>,
+                    +{DROP_TRAIT}<__State>{extra_comma}{impl_additional_generics}
+                > of {HASH_TRAIT}<{full_typename}, __State, __SHashState> {{
+                    #[inline(always)]
+                    fn update_state(state: __State, value: {full_typename}) -> __State {{
+                        match value {{
+                            {}
+                        }}
+                    }}
+                }}
+                ",
+                indent_by(12,
+                info.members_info.iter().enumerate().map(|(idx, variant)| formatdoc!{"
                             {ty}::{variant}(x) => {{
-                                let state = core::hash::Hash::update_state(state, {idx});
-                                core::hash::Hash::update_state(state, x)
+                                let state = {HASH_TRAIT}::update_state(state, {idx}_felt252);
+                                {imp}::update_state(state, x)
                             }},",
-                            variant=variant.name,
-                        }
-                    ).join("\n"))
-                }
+                        variant=variant.name,
+                        imp = variant.impl_name(HASH_TRAIT),
+                    }
+                ).join("\n"))
             }
-            TypeVariantInfo::Struct(members) => format!(
-                "{}\nstate",
-                members
-                    .iter()
-                    .map(|member| {
+        }
+        TypeVariant::Struct => {
+            let impl_additional_generics =
+                chain!(info.impl_generics(&[HASH_TRAIT, DROP_TRAIT], |trt, ty| {
+                    if trt == HASH_TRAIT {
+                        format!("{HASH_TRAIT}<{ty}, __State, __SHashState>")
+                    } else {
+                        format!("{trt}<{ty}>")
+                    }
+                }))
+                .join(", ");
+            let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
+            formatdoc! {"
+                impl {ty}Hash<
+                    __State,
+                    impl __SHashState: core::hash::HashStateTrait<__State>,
+                    +{DROP_TRAIT}<__State>{extra_comma}{impl_additional_generics}
+                > of {HASH_TRAIT}<{full_typename}, __State, __SHashState> {{
+                    #[inline(always)]
+                    fn update_state(state: __State, value: {full_typename}) -> __State {{
+                        let __hash_derive_state = state;
+                        {}
+                        __hash_derive_state
+                    }}
+                }}
+                ",
+                chain!(
+                    info.members_info.iter().map(|member| {
                         format!(
-                            "let state = core::hash::Hash::update_state(state, value.{});",
-                            member.name
+                            "let {member} = {drop_with} {{ value: value.{member} }};",
+                            member = member.name,
+                            drop_with = member.drop_with(),
+                        )
+                    }),
+                    info.members_info.iter().map(|member| {
+                        format!(
+                            "let __hash_derive_state = {imp}::update_state(__hash_derive_state, {}.value);",
+                            member.name,
+                            imp = member.impl_name(HASH_TRAIT),
                         )
                     })
-                    .join("\n")
-            ),
-        },
-    );
-    let impl_additional_generics = info.generics.format_generics_with_trait_params_only(|t| {
-        vec![format!("+core::hash::Hash<{t}, __State, __SHashState>"), format!("+Drop<{t}>")]
-    });
-    let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
-    Some(formatdoc! {"
-        impl {ty}Hash<
-            __State,
-            impl __SHashState: core::hash::HashStateTrait<__State>,
-            +Drop<__State>{extra_comma}{impl_additional_generics}
-        > of core::hash::Hash<{full_typename}, __State, __SHashState> {{
-            #[inline(always)]
-            fn update_state(state: __State, value: {full_typename}) -> __State {{
-                {body}
-            }}
-        }}
-    "})
+                ).join("\n        ")
+            }
+        }
+    }
 }

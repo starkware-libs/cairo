@@ -17,3 +17,38 @@ pub enum OptionRev<T> {
     None,
     Some: T,
 }
+
+/// Wrapper type to ensure that a type `T` is dropped using a specific `Drop` impl.
+pub struct DropWith<T, impl DropT: Drop<T>> {
+    pub value: T,
+}
+impl DropWithDrop<T, impl DropT: Drop<T>> of Drop<DropWith<T, DropT>>;
+
+/// Helper to have the same interface as `DropWith` while inferring the `Drop` implementation.
+#[derive(Drop)]
+pub struct InferDrop<T> {
+    pub value: T,
+}
+
+/// Wrapper type to ensure that a type `T` is destructed using a specific `Destruct` impl.
+pub struct DestructWith<T, impl DestructT: Destruct<T>> {
+    pub value: T,
+}
+impl DestructWithDestruct<T, impl DestructT: Destruct<T>> of Destruct<DestructWith<T, DestructT>> {
+    fn destruct(self: DestructWith<T, DestructT>) nopanic {
+        DestructT::destruct(self.value)
+    }
+}
+
+/// Helper to have the same interface as `DestructWith` while inferring the `Destruct`
+/// implementation.
+#[derive(Destruct)]
+pub struct InferDestruct<T> {
+    pub value: T,
+}
+
+/// The return type for loops with an early return.
+pub enum LoopResult<N, E> {
+    Normal: N,
+    EarlyReturn: E,
+}

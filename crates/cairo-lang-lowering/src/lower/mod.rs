@@ -4,7 +4,10 @@ use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_semantic::corelib::{ErrorPropagationType, unwrap_error_propagation_type};
+use cairo_lang_semantic::corelib::{
+    ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
+    unwrap_error_propagation_type,
+};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
@@ -50,7 +53,7 @@ use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
     GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature, parameter_as_member_path,
 };
-use crate::lower::context::{LoweringResult, VarRequest};
+use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
 use crate::lower::lower_match::{
     MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
@@ -119,7 +122,8 @@ pub fn lower_function(
     block_expr_id: semantic::ExprId,
 ) -> Maybe<FlatLowered> {
     log::trace!("Lowering a free function.");
-    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature)?;
+    let return_type = signature.return_type;
+    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?;
 
     // Fetch body block expr.
     let semantic_block =
@@ -221,13 +225,15 @@ pub fn lower_for_loop(
                 lower_expr_block(ctx, &mut some_subscope, &some_block)?;
                 // Add recursive call.
                 let signature = ctx.signature.clone();
-                call_loop_func(
+                let loop_res = call_loop_func(
                     ctx,
                     signature,
                     &mut some_subscope,
                     loop_expr_id,
                     loop_expr.stable_ptr.untyped(),
-                )
+                )?
+                .as_var_usage(ctx, &mut some_subscope)?;
+                Err(LoweringFlowError::Return(loop_res, for_location))
             })();
             lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
         }
@@ -241,13 +247,7 @@ pub fn lower_for_loop(
         location: ctx.get_location(some_block.stable_ptr.untyped()),
     });
     let none_subscope_block_id = none_subscope.block_id;
-    let sealed_none = lower_early_return(
-        ctx,
-        none_subscope,
-        LoweredExpr::Tuple { exprs: vec![], location: for_location },
-        for_location,
-    )
-    .map_err(LoweringFlowError::Failed)?;
+    let sealed_none = return_a_unit(ctx, none_subscope, for_location, false)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: some_variant.concrete_enum_id,
@@ -276,23 +276,28 @@ pub fn lower_while_loop(
     loop_expr: semantic::ExprWhile,
     loop_expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
+    let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let semantic_condition = match &loop_expr.condition {
         semantic::Condition::BoolExpr(semantic_condition) => *semantic_condition,
         semantic::Condition::Let(match_expr, patterns) => {
-            return lower_expr_while_let(
-                ctx,
-                builder,
-                &loop_expr,
-                *match_expr,
-                patterns,
-                MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
-            );
+            return (|| {
+                let ret_var = lower_expr_while_let(
+                    ctx,
+                    builder,
+                    &loop_expr,
+                    *match_expr,
+                    patterns,
+                    MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
+                )?
+                .as_var_usage(ctx, builder)?;
+
+                lower_return(ctx, builder, ret_var, while_location, false)
+            })();
         }
     };
     let condition = lower_expr_to_var_usage(ctx, builder, semantic_condition)?;
     let semantic_db = ctx.db.upcast();
     let unit_ty = corelib::unit_ty(semantic_db);
-    let while_location = ctx.get_location(loop_expr.stable_ptr.untyped());
 
     // Main block.
     let mut subscope_main = create_subscope(ctx, builder);
@@ -309,13 +314,15 @@ pub fn lower_while_loop(
         lower_expr_block(ctx, &mut subscope_main, &main_block)?;
         // Add recursive call.
         let signature = ctx.signature.clone();
-        call_loop_func(
+        let loop_res = call_loop_func(
             ctx,
             signature,
             &mut subscope_main,
             loop_expr_id,
             loop_expr.stable_ptr.untyped(),
-        )
+        )?
+        .as_var_usage(ctx, &mut subscope_main)?;
+        Err(LoweringFlowError::Return(loop_res, while_location))
     })();
     let block_main = lowered_expr_to_block_scope_end(ctx, subscope_main, block_expr)
         .map_err(LoweringFlowError::Failed)?;
@@ -324,13 +331,7 @@ pub fn lower_while_loop(
     let subscope_else = create_subscope(ctx, builder);
     let block_else_id = subscope_else.block_id;
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: while_location });
-    let block_else = lower_early_return(
-        ctx,
-        subscope_else,
-        LoweredExpr::Tuple { exprs: vec![], location: while_location },
-        while_location,
-    )
-    .map_err(LoweringFlowError::Failed)?;
+    let block_else = return_a_unit(ctx, subscope_else, while_location, false)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
@@ -421,10 +422,13 @@ pub fn lower_loop_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
     loop_signature: Signature,
-    loop_expr_id: semantic::ExprId,
+    loop_ctx: LoopContext,
+    return_type: semantic::TypeId,
 ) -> Maybe<FlatLowered> {
-    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone())?;
-    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
+    let loop_expr_id = loop_ctx.loop_expr_id;
+    let mut ctx =
+        LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone(), return_type)?;
+    let old_loop_ctx = std::mem::replace(&mut ctx.current_loop_ctx, Some(loop_ctx));
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -473,7 +477,14 @@ pub fn lower_loop_function(
 
             semantic::Expr::While(while_expr) => {
                 let stable_ptr = while_expr.stable_ptr;
-                let block_expr = lower_while_loop(&mut ctx, &mut builder, while_expr, loop_expr_id);
+                let location = ctx.get_location(stable_ptr.untyped());
+                let block_expr = (|| {
+                    let ret_var =
+                        lower_while_loop(&mut ctx, &mut builder, while_expr, loop_expr_id)?
+                            .as_var_usage(&mut ctx, &mut builder)?;
+
+                    lower_return(&mut ctx, &mut builder, ret_var, location, false)
+                })();
                 (block_expr, stable_ptr)
             }
 
@@ -491,7 +502,7 @@ pub fn lower_loop_function(
 
         Ok(root_block_id)
     })();
-    ctx.current_loop_expr_id = old_loop_expr_id;
+    ctx.current_loop_ctx = old_loop_ctx;
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
@@ -625,18 +636,41 @@ pub fn lowered_expr_to_block_scope_end(
     })
 }
 
-/// Converts [`LoweringResult<LoweredExpr>`] into `BlockScopeEnd`.
-pub fn lower_early_return(
+/// Generates the lowering for a return `ret_expr`
+/// in the case where we are inside a loop `is_early_return` indicates if this is a normal return
+/// or an early return.
+pub fn lower_return(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    mut ret_var: VarUsage,
+    location: LocationId,
+    is_early_return: bool,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    if let Some(LoopContext {
+        early_return_info: Some(LoopEarlyReturnInfo { normal_return_variant, early_return_variant }),
+        ..
+    }) = &ctx.current_loop_ctx
+    {
+        let variant = if is_early_return { early_return_variant } else { normal_return_variant };
+
+        ret_var = generators::EnumConstruct { input: ret_var, variant: variant.clone(), location }
+            .add(ctx, &mut builder.statements);
+    }
+
+    Err(LoweringFlowError::Return(ret_var, location))
+}
+
+/// Generates lowering to return a unit.
+pub fn return_a_unit(
     ctx: &mut LoweringContext<'_, '_>,
     mut builder: BlockBuilder,
-    ret_expr: LoweredExpr,
     location: LocationId,
-) -> Maybe<SealedBlockBuilder> {
-    let lowered_expr = (|| {
-        let ret_var_usage = ret_expr.as_var_usage(ctx, &mut builder)?;
-        Err(LoweringFlowError::Return(ret_var_usage, location))
-    })();
-    lowered_expr_to_block_scope_end(ctx, builder, lowered_expr)
+    is_early_return: bool,
+) -> Result<SealedBlockBuilder, LoweringFlowError> {
+    let ret_var = LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, &mut builder)?;
+
+    let ret_expr = lower_return(ctx, &mut builder, ret_var, location, is_early_return);
+    lowered_expr_to_block_scope_end(ctx, builder, ret_expr).map_err(LoweringFlowError::Failed)
 }
 
 /// Lowers a semantic statement.
@@ -667,7 +701,7 @@ pub fn lower_statement(
                 ctx,
                 ctx.signature.clone(),
                 builder,
-                ctx.current_loop_expr_id.unwrap(),
+                ctx.current_loop_ctx.as_ref().unwrap().loop_expr_id,
                 stable_ptr.untyped(),
             )?;
             let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
@@ -676,14 +710,21 @@ pub fn lower_statement(
         semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
         | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
             log::trace!("Lowering a return | break statement.");
+            let location = ctx.get_location(stable_ptr.untyped());
             let ret_var = match expr_option {
                 None => {
-                    let location = ctx.get_location(stable_ptr.untyped());
                     LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
                 }
                 Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
             };
-            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
+
+            lower_return(
+                ctx,
+                builder,
+                ret_var,
+                location,
+                matches!(stmt, semantic::Statement::Return(_)),
+            )?;
         }
         semantic::Statement::Item(_) => {}
     }
@@ -1407,7 +1448,49 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
+    let semantic_db = ctx.db.upcast();
+
     let usage = &ctx.usages.usages[&loop_expr_id];
+    let has_normal_return = return_type != never_ty(semantic_db);
+
+    let (loop_return_ty, early_return_info) = if !has_normal_return {
+        // If the loop does not have a normal return, `LoopResult` is not used
+        // but we need to override the return type of the loop to match the function.
+        (ctx.return_type, None)
+    } else if !usage.has_early_return {
+        (return_type, None)
+    } else {
+        let generic_args =
+            vec![GenericArgumentId::Type(return_type), GenericArgumentId::Type(ctx.return_type)];
+
+        let internal_module = core_submodule(semantic_db, "internal");
+        let ret_ty = try_get_ty_by_name(
+            semantic_db,
+            internal_module,
+            "LoopResult".into(),
+            generic_args.clone(),
+        )
+        .unwrap();
+        (
+            ret_ty,
+            Some(LoopEarlyReturnInfo {
+                normal_return_variant: get_enum_concrete_variant(
+                    semantic_db,
+                    internal_module,
+                    "LoopResult",
+                    generic_args.clone(),
+                    "Normal",
+                ),
+                early_return_variant: get_enum_concrete_variant(
+                    semantic_db,
+                    internal_module,
+                    "LoopResult",
+                    generic_args,
+                    "EarlyReturn",
+                ),
+            }),
+        )
+    };
 
     // Determine signature.
     let params = usage
@@ -1432,13 +1515,14 @@ fn lower_expr_loop(
         .collect_vec();
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
+    let loop_location = ctx.get_location(stable_ptr.untyped());
     let loop_signature = Signature {
         params,
         extra_rets,
-        return_type,
+        return_type: loop_return_ty,
         implicits: vec![],
         panicable: ctx.signature.panicable,
-        location: ctx.get_location(stable_ptr.untyped()),
+        location: loop_location,
     };
 
     // Get the function id.
@@ -1450,14 +1534,19 @@ fn lower_expr_loop(
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
-    let lowered =
-        lower_loop_function(encapsulating_ctx, function, loop_signature.clone(), loop_expr_id)
-            .map_err(LoweringFlowError::Failed)?;
+    let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
+    let lowered = lower_loop_function(
+        encapsulating_ctx,
+        function,
+        loop_signature.clone(),
+        loop_ctx,
+        ctx.return_type,
+    )
+    .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
-    let call = call_loop_func_ex(
+    let call_loop_expr = call_loop_func_ex(
         ctx,
         loop_signature,
         builder,
@@ -1474,10 +1563,72 @@ fn lower_expr_loop(
             builder.update_ref(ctx, param, original);
             Some(VarUsage { var_id: snapped, location })
         },
-    );
+    )?;
 
-    ctx.current_loop_expr_id = old_loop_expr_id;
-    call
+    let Some(LoopEarlyReturnInfo { normal_return_variant, early_return_variant }) =
+        early_return_info
+    else {
+        if !has_normal_return {
+            let ret_var_usage = call_loop_expr.as_var_usage(ctx, builder)?;
+            return Err(LoweringFlowError::Return(ret_var_usage, loop_location));
+        }
+
+        return Ok(call_loop_expr);
+    };
+
+    let loop_res = call_loop_expr.as_var_usage(ctx, builder)?;
+
+    let normal_return_subscope = create_subscope(ctx, builder);
+    let normal_return_subscope_block_id = normal_return_subscope.block_id;
+    let normal_return_var_id = ctx.new_var(VarRequest { ty: return_type, location: loop_location });
+    let sealed_normal_return = lowered_expr_to_block_scope_end(
+        ctx,
+        normal_return_subscope,
+        Ok(LoweredExpr::AtVariable(VarUsage {
+            var_id: normal_return_var_id,
+            location: loop_location,
+        })),
+    )
+    .map_err(LoweringFlowError::Failed)?;
+
+    let mut early_return_subscope = create_subscope(ctx, builder);
+    let early_return_var_id =
+        ctx.new_var(VarRequest { ty: ctx.signature.return_type, location: loop_location });
+    let early_return_subscope_block_id = early_return_subscope.block_id;
+    let ret_expr = lower_return(
+        ctx,
+        &mut early_return_subscope,
+        VarUsage { var_id: early_return_var_id, location: loop_location },
+        loop_location,
+        true,
+    );
+    let sealed_early_return = lowered_expr_to_block_scope_end(ctx, early_return_subscope, ret_expr)
+        .map_err(LoweringFlowError::Failed)?;
+
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: normal_return_variant.concrete_enum_id,
+        input: loop_res,
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(normal_return_variant),
+                block_id: normal_return_subscope_block_id,
+                var_ids: vec![normal_return_var_id],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(early_return_variant),
+                block_id: early_return_subscope_block_id,
+                var_ids: vec![early_return_var_id],
+            },
+        ],
+        location: loop_location,
+    });
+
+    builder.merge_and_end_with_match(
+        ctx,
+        match_info,
+        vec![sealed_normal_return, sealed_early_return],
+        loop_location,
+    )
 }
 
 /// Adds a call to an inner loop-generated function from the loop function itself.
@@ -1761,8 +1912,9 @@ fn add_capture_destruct_impl(
     let location_id = LocationId::from_stable_location(ctx.db, location);
 
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let return_type = signature.return_type;
     let lowered_impl_res = get_destruct_lowering(
-        LoweringContext::new(encapsulating_ctx, function_id, signature)?,
+        LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?,
         location_id,
         closure_info,
     );
@@ -1866,7 +2018,9 @@ fn add_closure_call_function(
         semantic_db.concrete_function_signature(function)?,
     );
 
-    let mut ctx = LoweringContext::new(encapsulated_ctx, function_with_body_id, signature)?;
+    let return_type = signature.return_type;
+    let mut ctx =
+        LoweringContext::new(encapsulated_ctx, function_with_body_id, signature, return_type)?;
 
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
@@ -2025,8 +2179,9 @@ fn lower_expr_error_propagate(
         location,
     }
     .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
-    let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
+    let ret_expr = lower_return(ctx, &mut subscope_err, err_res, location, true);
+    let sealed_block_err = lowered_expr_to_block_scope_end(ctx, subscope_err, ret_expr)
+        .map_err(LoweringFlowError::Failed)?;
 
     // Merge blocks.
     let match_info = MatchInfo::Enum(MatchEnumInfo {
@@ -2091,8 +2246,10 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
-    let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
+
+    let ret_expr = lower_return(ctx, &mut subscope_err, err_res, location, true);
+    let sealed_block_err = lowered_expr_to_block_scope_end(ctx, subscope_err, ret_expr)
+        .map_err(LoweringFlowError::Failed)?;
 
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {

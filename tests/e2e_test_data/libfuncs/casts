@@ -22,11 +22,12 @@ type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc upcast<u16, u64> = upcast<u16, u64>;
 libfunc store_temp<u64> = store_temp<u64>;
 
-upcast<u16, u64>([0]) -> ([1]); // 0
-store_temp<u64>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+upcast<u16, u64>([0]) -> ([1]);
+store_temp<u64>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: u16) -> (u64);
+test::foo@F0([0]: u16) -> (u64);
 
 //! > ==========================================================================
 
@@ -53,11 +54,12 @@ type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc upcast<u64, u64> = upcast<u64, u64>;
 libfunc store_temp<u64> = store_temp<u64>;
 
-upcast<u64, u64>([0]) -> ([1]); // 0
-store_temp<u64>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+upcast<u64, u64>([0]) -> ([1]);
+store_temp<u64>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: u64) -> (u64);
+test::foo@F0([0]: u64) -> (u64);
 
 //! > ==========================================================================
 
@@ -106,20 +108,22 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
 
-downcast<u64, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<u64, u16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+test::foo@F0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
 //! > ==========================================================================
 
@@ -167,20 +171,22 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
 
-downcast<u64, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<u64, u64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+test::foo@F0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
 //! > ==========================================================================
 
@@ -221,20 +227,22 @@ libfunc store_temp<core::option::Option::<core::integer::i64>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i64>, 1> = enum_init<core::option::Option::<core::integer::i64>, 1>;
 
-downcast<i64, i64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::i64>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::i64>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::i64>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::i64>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i64, i64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i64>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::i64>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::i64>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i64>);
+test::foo@F0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i64>);
 
 //! > ==========================================================================
 
@@ -276,20 +284,22 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
 
-downcast<u32, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<u32, u64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+test::foo@F0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
 //! > ==========================================================================
 
@@ -345,20 +355,22 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
 
-downcast<i64, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i64, u16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+test::foo@F0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
 //! > ==========================================================================
 
@@ -407,20 +419,22 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
 
-downcast<u64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<u64, i16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
+test::foo@F0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
 
 //! > ==========================================================================
 
@@ -476,20 +490,22 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
 
-downcast<i64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i64, i16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
+test::foo@F0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
 
 //! > ==========================================================================
 
@@ -538,20 +554,22 @@ libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
 
-downcast<i16, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i16, u64>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u64>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u64>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+test::foo@F0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u64>);
 
 //! > ==========================================================================
 
@@ -600,20 +618,22 @@ libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
 
-downcast<i16, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i16, u16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::u16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::u16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+test::foo@F0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
 //! > ==========================================================================
 
@@ -662,20 +682,22 @@ libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
 
-downcast<u16, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<u16, i16>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::i16>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<core::integer::i16>);
+test::foo@F0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<core::integer::i16>);
 
 //! > ==========================================================================
 
@@ -733,20 +755,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<-3, 5>>> = store_te
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 1>;
 
-downcast<i8, BoundedInt<-3, 5>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<-3, 5>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<-3, 5>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i8, BoundedInt<-3, 5>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<-3, 5>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<-3, 5>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<-3, 5>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-3, 5>>);
+test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-3, 5>>);
 
 //! > ==========================================================================
 
@@ -804,20 +828,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<0, 5>>> = store_tem
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 1>;
 
-downcast<i8, BoundedInt<0, 5>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<0, 5>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<0, 5>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i8, BoundedInt<0, 5>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<0, 5>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<0, 5>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<0, 5>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 5>>);
+test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<0, 5>>);
 
 //! > ==========================================================================
 
@@ -875,20 +901,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<-5, 0>>> = store_te
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 1>;
 
-downcast<i8, BoundedInt<-5, 0>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<-5, 0>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<-5, 0>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i8, BoundedInt<-5, 0>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<-5, 0>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<-5, 0>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<-5, 0>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-5, 0>>);
+test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-5, 0>>);
 
 //! > ==========================================================================
 
@@ -945,20 +973,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<-5, -1>>> = store_t
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 1>;
 
-downcast<i8, BoundedInt<-5, -1>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<-5, -1>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<-5, -1>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<i8, BoundedInt<-5, -1>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<-5, -1>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<-5, -1>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<-5, -1>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-5, -1>>);
+test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<test::BoundedInt::<-5, -1>>);
 
 //! > ==========================================================================
 
@@ -1013,20 +1043,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<120, 180>>> = store
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 1>;
 
-downcast<BoundedInt<100, 200>, BoundedInt<120, 180>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<120, 180>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<120, 180>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<BoundedInt<100, 200>, BoundedInt<120, 180>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<120, 180>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<120, 180>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<120, 180>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<100, 200>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<120, 180>>);
+test::foo@F0([0]: RangeCheck, [1]: BoundedInt<100, 200>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<120, 180>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 940})
@@ -1086,20 +1118,22 @@ libfunc store_temp<core::option::Option::<test::BoundedInt::<3402823669209384634
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 1> = enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 1>;
 
-downcast<BoundedInt<340282366920938463463374607431768211556, 340282366920938463463374607431768211656>, BoundedInt<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+downcast<BoundedInt<340282366920938463463374607431768211556, 340282366920938463463374607431768211656>, BoundedInt<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: BoundedInt<340282366920938463463374607431768211556, 340282366920938463463374607431768211656>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>);
+test::foo@F0([0]: RangeCheck, [1]: BoundedInt<340282366920938463463374607431768211556, 340282366920938463463374607431768211656>) -> (RangeCheck, core::option::Option::<test::BoundedInt::<340282366920938463463374607431768211576, 340282366920938463463374607431768211636>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 940})

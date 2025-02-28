@@ -199,3 +199,31 @@ fn test_iter_adapter_filter() {
     assert_eq!(iter.next(), Option::Some(2));
     assert_eq!(iter.next(), Option::None);
 }
+
+#[test]
+fn test_iterator_chain_different_types() {
+    let mut iter = array![7, 8, 9].into_iter().chain((0..5_u8));
+
+    assert_eq!(iter.next(), Option::Some(7));
+    assert_eq!(iter.next(), Option::Some(8));
+    assert_eq!(iter.next(), Option::Some(9));
+    assert_eq!(iter.next(), Option::Some(0));
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+    assert_eq!(iter.next(), Option::Some(4));
+    assert_eq!(iter.next(), Option::None);
+}
+
+#[test]
+fn test_iterator_chain_same_types() {
+    let mut iter = array![1, 2, 3].into_iter().chain(array![4, 5, 6]);
+
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+    assert_eq!(iter.next(), Option::Some(4));
+    assert_eq!(iter.next(), Option::Some(5));
+    assert_eq!(iter.next(), Option::Some(6));
+    assert_eq!(iter.next(), Option::None);
+}

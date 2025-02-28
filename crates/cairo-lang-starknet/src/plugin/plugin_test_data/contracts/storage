@@ -80,16 +80,18 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OuterTypeDrop of core::traits::Drop::<OuterType>;
+impl OuterTypeDrop<> of core::traits::Drop::<OuterType>;
 impl OuterTypeHash<
     __State,
     impl __SHashState: core::hash::HashStateTrait<__State>,
-    +Drop<__State>
+    +core::traits::Drop<__State>
 > of core::hash::Hash<OuterType, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: OuterType) -> __State {
-        let state = core::hash::Hash::update_state(state, value.x);
-        state
+        let __hash_derive_state = state;
+        let x = core::internal::InferDrop::<u32> { value: value.x };
+        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, x.value);
+        __hash_derive_state
     }
 }
 
@@ -99,14 +101,14 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOuterType of starknet::Store::<OuterType> {
+impl OuterTypeStore<> of starknet::Store::<OuterType> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let x = starknet::Store::<u32>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let x = core::internal::InferDestruct::<u32> { value: starknet::Store::<u32>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OuterType {
-                x,
+                x: x.value,
             }
         )
     }
@@ -116,17 +118,18 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         let OuterType {
             x,
         } = value;
-        starknet::Store::<u32>::write(__store_derive_address_domain__, __store_derive_base__, x)?;
+        let x = core::internal::InferDestruct::<u32> { value: x };
+        starknet::Store::<u32>::write(__store_derive_address_domain__, __store_derive_base__, x.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let x = starknet::Store::<u32>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let x = core::internal::InferDestruct::<u32> { value: starknet::Store::<u32>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OuterType {
-                x,
+                x: x.value,
             }
         )
     }
@@ -138,7 +141,8 @@ impl StoreOuterType of starknet::Store::<OuterType> {
         let OuterType {
             x,
         } = value;
-        starknet::Store::<u32>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x)?;
+        let x = core::internal::InferDestruct::<u32> { value: x };
+        starknet::Store::<u32>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, x.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -194,8 +198,8 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
-impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
-impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
+impl OuterTypeSubPointersDrop<> of core::traits::Drop::<OuterTypeSubPointers>;
+impl OuterTypeSubPointersCopy<> of core::traits::Copy::<OuterTypeSubPointers>;
 
 
 lib.cairo:1:16
@@ -203,8 +207,8 @@ lib.cairo:1:16
                ^^^^^^^^^^^^^^^
 impls:
 
-impl OuterTypeSubPointersMutDrop of core::traits::Drop::<OuterTypeSubPointersMut>;
-impl OuterTypeSubPointersMutCopy of core::traits::Copy::<OuterTypeSubPointersMut>;
+impl OuterTypeSubPointersMutDrop<> of core::traits::Drop::<OuterTypeSubPointersMut>;
+impl OuterTypeSubPointersMutCopy<> of core::traits::Copy::<OuterTypeSubPointersMut>;
 
 
 lib.cairo:7:1
@@ -414,7 +418,7 @@ lib.cairo:7:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:7:1
@@ -444,8 +448,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:9:5
@@ -453,8 +457,8 @@ lib.cairo:9:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."

@@ -541,7 +541,7 @@ pub mod __constructor {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         );
     }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -556,10 +556,10 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
@@ -1229,41 +1229,45 @@ self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256,
     }
 
 }
-impl UserInfoSerde of core::serde::Serde::<UserInfo> {
+impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
     fn serialize(self: @UserInfo, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.name, ref output);
-        core::serde::Serde::serialize(self.symbol, ref output);
-        core::serde::Serde::serialize(self.decimals, ref output);
-        core::serde::Serde::serialize(self.total_supply, ref output)
+        core::serde::Serde::<felt252>::serialize(self.name, ref output);
+        core::serde::Serde::<felt252>::serialize(self.symbol, ref output);
+        core::serde::Serde::<u8>::serialize(self.decimals, ref output);
+        core::serde::Serde::<u256>::serialize(self.total_supply, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<UserInfo> {
+        let name = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let symbol = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let decimals = core::internal::InferDestruct::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
+        let total_supply = core::internal::InferDestruct::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
         core::option::Option::Some(UserInfo {
-            name: core::serde::Serde::deserialize(ref serialized)?,
-            symbol: core::serde::Serde::deserialize(ref serialized)?,
-            decimals: core::serde::Serde::deserialize(ref serialized)?,
-            total_supply: core::serde::Serde::deserialize(ref serialized)?,
+            name: name.value,
+            symbol: symbol.value,
+            decimals: decimals.value,
+            total_supply: total_supply.value,
         })
     }
 }
-impl UserInfoDrop of core::traits::Drop::<UserInfo>;
-impl UserInfoCopy of core::traits::Copy::<UserInfo>;
-impl StoreUserInfo of starknet::Store::<UserInfo> {
+impl UserInfoDrop<> of core::traits::Drop::<UserInfo>;
+impl UserInfoCopy<> of core::traits::Copy::<UserInfo>;
+impl UserInfoStore<> of starknet::Store::<UserInfo> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<UserInfo> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let name = starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let name = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read(__store_derive_address_domain__, __store_derive_base__)? };
         let mut __store_derive_current_offset__ = starknet::Store::<felt252>::size();
-        let symbol = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let symbol = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         __store_derive_current_offset__ += starknet::Store::<felt252>::size();
-        let decimals = starknet::Store::<u8>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let decimals = core::internal::InferDestruct::<u8> { value: starknet::Store::<u8>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         __store_derive_current_offset__ += starknet::Store::<u8>::size();
-        let total_supply = starknet::Store::<u256>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let total_supply = core::internal::InferDestruct::<u256> { value: starknet::Store::<u256>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         starknet::SyscallResult::Ok(
             UserInfo {
-                name,
-                symbol,
-                decimals,
-                total_supply,
+                name: name.value,
+                symbol: symbol.value,
+                decimals: decimals.value,
+                total_supply: total_supply.value,
             }
         )
     }
@@ -1276,32 +1280,36 @@ impl StoreUserInfo of starknet::Store::<UserInfo> {
                 decimals,
                 total_supply,
         } = value;
-        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, name)?;
+        let name = core::internal::InferDestruct::<felt252> { value: name };
+                let symbol = core::internal::InferDestruct::<felt252> { value: symbol };
+                let decimals = core::internal::InferDestruct::<u8> { value: decimals };
+                let total_supply = core::internal::InferDestruct::<u256> { value: total_supply };
+        starknet::Store::<felt252>::write(__store_derive_address_domain__, __store_derive_base__, name.value)?;
         let mut __store_derive_current_offset__ = starknet::Store::<felt252>::size();
-        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, symbol)?;
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, symbol.value)?;
         __store_derive_current_offset__ += starknet::Store::<felt252>::size();
-        starknet::Store::<u8>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, decimals)?;
+        starknet::Store::<u8>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, decimals.value)?;
         __store_derive_current_offset__ += starknet::Store::<u8>::size();
-        starknet::Store::<u256>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, total_supply)?;
+        starknet::Store::<u256>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, total_supply.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<UserInfo> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let name = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let name = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         let mut __store_derive_current_offset__ = __store_derive_offset__ + starknet::Store::<felt252>::size();
-        let symbol = starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let symbol = core::internal::InferDestruct::<felt252> { value: starknet::Store::<felt252>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         __store_derive_current_offset__ += starknet::Store::<felt252>::size();
-        let decimals = starknet::Store::<u8>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let decimals = core::internal::InferDestruct::<u8> { value: starknet::Store::<u8>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         __store_derive_current_offset__ += starknet::Store::<u8>::size();
-        let total_supply = starknet::Store::<u256>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)?;
+        let total_supply = core::internal::InferDestruct::<u256> { value: starknet::Store::<u256>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__)? };
         starknet::SyscallResult::Ok(
             UserInfo {
-                name,
-                symbol,
-                decimals,
-                total_supply,
+                name: name.value,
+                symbol: symbol.value,
+                decimals: decimals.value,
+                total_supply: total_supply.value,
             }
         )
     }
@@ -1316,13 +1324,17 @@ impl StoreUserInfo of starknet::Store::<UserInfo> {
                 decimals,
                 total_supply,
         } = value;
-        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, name)?;
+        let name = core::internal::InferDestruct::<felt252> { value: name };
+                let symbol = core::internal::InferDestruct::<felt252> { value: symbol };
+                let decimals = core::internal::InferDestruct::<u8> { value: decimals };
+                let total_supply = core::internal::InferDestruct::<u256> { value: total_supply };
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, name.value)?;
         let mut __store_derive_current_offset__ = __store_derive_offset__ + starknet::Store::<felt252>::size();
-        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, symbol)?;
+        starknet::Store::<felt252>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, symbol.value)?;
         __store_derive_current_offset__ += starknet::Store::<felt252>::size();
-        starknet::Store::<u8>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, decimals)?;
+        starknet::Store::<u8>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, decimals.value)?;
         __store_derive_current_offset__ += starknet::Store::<u8>::size();
-        starknet::Store::<u256>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, total_supply)?;
+        starknet::Store::<u256>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_current_offset__, total_supply.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1500,26 +1512,27 @@ impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<Tran
         }
     }
 }
-impl IERC20DispatcherCopy of core::traits::Copy::<IERC20Dispatcher>;
-impl IERC20DispatcherDrop of core::traits::Drop::<IERC20Dispatcher>;
-impl IERC20DispatcherSerde of core::serde::Serde::<IERC20Dispatcher> {
+impl IERC20DispatcherCopy<> of core::traits::Copy::<IERC20Dispatcher>;
+impl IERC20DispatcherDrop<> of core::traits::Drop::<IERC20Dispatcher>;
+impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
     fn serialize(self: @IERC20Dispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20Dispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20Dispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
+impl IERC20DispatcherStore<> of starknet::Store::<IERC20Dispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20Dispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IERC20Dispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1529,17 +1542,18 @@ impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
         let IERC20Dispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20Dispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IERC20Dispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1551,7 +1565,8 @@ impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
         let IERC20Dispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1600,26 +1615,27 @@ impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IER
         }
     }
 }
-impl IERC20LibraryDispatcherCopy of core::traits::Copy::<IERC20LibraryDispatcher>;
-impl IERC20LibraryDispatcherDrop of core::traits::Drop::<IERC20LibraryDispatcher>;
-impl IERC20LibraryDispatcherSerde of core::serde::Serde::<IERC20LibraryDispatcher> {
+impl IERC20LibraryDispatcherCopy<> of core::traits::Copy::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherDrop<> of core::traits::Drop::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatcher> {
     fn serialize(self: @IERC20LibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20LibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20LibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> {
+impl IERC20LibraryDispatcherStore<> of starknet::Store::<IERC20LibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20LibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IERC20LibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1629,17 +1645,18 @@ impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> 
         let IERC20LibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20LibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IERC20LibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1651,7 +1668,8 @@ impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> 
         let IERC20LibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1700,26 +1718,27 @@ impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
-impl IERC20SafeLibraryDispatcherCopy of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
-impl IERC20SafeLibraryDispatcherDrop of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
-impl IERC20SafeLibraryDispatcherSerde of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
+impl IERC20SafeLibraryDispatcherCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
     fn serialize(self: @IERC20SafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDispatcher> {
+impl IERC20SafeLibraryDispatcherStore<> of starknet::Store::<IERC20SafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20SafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IERC20SafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1729,17 +1748,18 @@ impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDisp
         let IERC20SafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20SafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IERC20SafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1751,7 +1771,8 @@ impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDisp
         let IERC20SafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1800,26 +1821,27 @@ impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
         }
     }
 }
-impl IERC20SafeDispatcherCopy of core::traits::Copy::<IERC20SafeDispatcher>;
-impl IERC20SafeDispatcherDrop of core::traits::Drop::<IERC20SafeDispatcher>;
-impl IERC20SafeDispatcherSerde of core::serde::Serde::<IERC20SafeDispatcher> {
+impl IERC20SafeDispatcherCopy<> of core::traits::Copy::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherDrop<> of core::traits::Drop::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
     fn serialize(self: @IERC20SafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
+impl IERC20SafeDispatcherStore<> of starknet::Store::<IERC20SafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20SafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IERC20SafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1829,17 +1851,18 @@ impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
         let IERC20SafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20SafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IERC20SafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1851,7 +1874,8 @@ impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
         let IERC20SafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1900,34 +1924,34 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
         }
     }
 }
-impl UserInfoSubPointersDrop of core::traits::Drop::<UserInfoSubPointers>;
-impl UserInfoSubPointersCopy of core::traits::Copy::<UserInfoSubPointers>;
-impl UserInfoSubPointersMutDrop of core::traits::Drop::<UserInfoSubPointersMut>;
-impl UserInfoSubPointersMutCopy of core::traits::Copy::<UserInfoSubPointersMut>;
-impl TransactionInfoStorageBaseDrop of core::traits::Drop::<TransactionInfoStorageBase>;
-impl TransactionInfoStorageBaseCopy of core::traits::Copy::<TransactionInfoStorageBase>;
-impl TransactionInfoStorageBaseMutDrop of core::traits::Drop::<TransactionInfoStorageBaseMut>;
-impl TransactionInfoStorageBaseMutCopy of core::traits::Copy::<TransactionInfoStorageBaseMut>;
-impl TransactionInfoStorageNodeDrop of core::traits::Drop::<TransactionInfoStorageNode>;
-impl TransactionInfoStorageNodeCopy of core::traits::Copy::<TransactionInfoStorageNode>;
-impl TransactionInfoStorageNodeMutDrop of core::traits::Drop::<TransactionInfoStorageNodeMut>;
-impl TransactionInfoStorageNodeMutCopy of core::traits::Copy::<TransactionInfoStorageNodeMut>;
-impl IERC20DispatcherSubPointersDrop of core::traits::Drop::<IERC20DispatcherSubPointers>;
-impl IERC20DispatcherSubPointersCopy of core::traits::Copy::<IERC20DispatcherSubPointers>;
-impl IERC20DispatcherSubPointersMutDrop of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
-impl IERC20DispatcherSubPointersMutCopy of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
-impl IERC20LibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
-impl IERC20LibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
-impl IERC20LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
-impl IERC20LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
-impl IERC20SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
-impl IERC20SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
-impl IERC20SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
-impl IERC20SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
-impl IERC20SafeDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
-impl IERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
-impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
-impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
+impl UserInfoSubPointersDrop<> of core::traits::Drop::<UserInfoSubPointers>;
+impl UserInfoSubPointersCopy<> of core::traits::Copy::<UserInfoSubPointers>;
+impl UserInfoSubPointersMutDrop<> of core::traits::Drop::<UserInfoSubPointersMut>;
+impl UserInfoSubPointersMutCopy<> of core::traits::Copy::<UserInfoSubPointersMut>;
+impl TransactionInfoStorageBaseDrop<> of core::traits::Drop::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseCopy<> of core::traits::Copy::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseMutDrop<> of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageBaseMutCopy<> of core::traits::Copy::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageNodeDrop<> of core::traits::Drop::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeCopy<> of core::traits::Copy::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeMutDrop<> of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+impl TransactionInfoStorageNodeMutCopy<> of core::traits::Copy::<TransactionInfoStorageNodeMut>;
+impl IERC20DispatcherSubPointersDrop<> of core::traits::Drop::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersCopy<> of core::traits::Copy::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+impl IERC20DispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
     use starknet::storage::{
@@ -2428,7 +2452,7 @@ pub mod __constructor {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         );
     }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -2443,9 +2467,9 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
