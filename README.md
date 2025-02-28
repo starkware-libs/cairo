@@ -27,8 +27,6 @@
   - [Prerequisites](#prerequisites)
   - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Compiling Starknet Contracts](#compiling-starknet-contracts)
-  - [Development](#development)
-    - [Install the language server](#install-the-language-server)
 - [Roadmap](#roadmap)
 - [Support](#support)
 - [Project assistance](#project-assistance)
