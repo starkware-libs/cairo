@@ -370,6 +370,12 @@ impl MacroPlugin for MacroPluginLongId {
     fn phantom_type_attributes(&self) -> Vec<String> {
         self.0.phantom_type_attributes()
     }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `MacroPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
 }
 
 // `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,
@@ -412,6 +418,12 @@ impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
 
     fn documentation(&self) -> Option<String> {
         self.0.documentation()
+    }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `InlineMacroExprPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
     }
 }
 

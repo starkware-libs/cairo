@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{self, Any};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -97,7 +97,7 @@ pub struct MacroPluginMetadata<'a> {
 
 // TODO(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
-pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
+pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
@@ -139,6 +139,12 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     fn phantom_type_attributes(&self) -> Vec<String> {
         Vec::new()
     }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
+    }
 }
 
 /// Result of plugin code generation.
@@ -149,7 +155,7 @@ pub struct InlinePluginResult {
     pub diagnostics: Vec<PluginDiagnostic>,
 }
 
-pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
+pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
@@ -163,6 +169,12 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
     /// Allows for the plugin to provide documentation for an inline macro.
     fn documentation(&self) -> Option<String> {
         None
+    }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
     }
 }
 
