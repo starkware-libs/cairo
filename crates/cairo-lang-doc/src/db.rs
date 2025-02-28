@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, chain, intersperse};
 
-use crate::documentable_formatter::SignatureElement;
+use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
@@ -38,13 +38,16 @@ pub trait DocGroup:
     ) -> Option<Vec<DocumentationCommentToken>>;
 
     /// Gets the signature of an item (i.e., item without its body).
+    #[salsa::invoke(crate::documentable_formatter::get_item_signature)]
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 
-    /// Gets the signature of an item and along with SignatureElement Vector to enable mapping signature slices on full paths of respective items
-    fn get_item_signature_with_elements(
+    /// Gets the signature of an item and a LocationLink Vector to enable mapping
+    /// signature slices on documentable items
+    #[salsa::invoke(crate::documentable_formatter::get_item_signature_with_links)]
+    fn get_item_signature_with_links(
         &self,
         item_id: DocumentableItemId,
-    ) -> (String, Vec<SignatureElement>);
+    ) -> (String, Vec<LocationLink>);
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
@@ -63,17 +66,6 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
             }
         }
     }
-}
-
-fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
-    crate::documentable_formatter::get_item_signature(db, item_id)
-}
-
-fn get_item_signature_with_elements(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
-) -> (String, Vec<SignatureElement>) {
-    crate::documentable_formatter::get_item_signature_with_elements(db, item_id)
 }
 
 fn get_item_documentation_as_tokens(

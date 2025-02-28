@@ -1,30 +1,34 @@
-use crate::db::DocGroup;
-use crate::documentable_item::DocumentableItemId;
-use crate::documentable_item::DocumentableItemId::Member;
+use std::fmt;
+use std::fmt::{Write, format};
+use std::option::Option;
+
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
-    LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
-    NamedLanguageElementId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitItemId,
-    TraitTypeId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericImplItemId,
+    GenericItemId, GenericModuleItemId, GenericParamId, GenericTraitItemId, ImplAliasId,
+    ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId, LanguageElementId,
+    LookupItemId, MemberId, ModuleId, ModuleItemId, ModuleTypeAliasId, NamedLanguageElementId,
+    StructId, TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::generics::GenericArgumentId;
 use cairo_lang_semantic::items::modifiers::get_relevant_modifier;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::types::TypeId;
-use cairo_lang_semantic::{Expr, GenericParam, Parameter};
+use cairo_lang_semantic::{ConcreteTypeId, Expr, GenericParam, Parameter, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::Itertools;
 use smol_str::SmolStr;
-use std::fmt;
-use std::fmt::Write;
-use std::option::Option;
+
+use crate::db::DocGroup;
+use crate::documentable_item::DocumentableItemId;
+use crate::documentable_item::DocumentableItemId::Member;
 
 /// Used for indenting children items of complex data type signature e.g. struct members.
 const INDENT: &str = "    ";
@@ -32,51 +36,48 @@ const INDENT: &str = "    ";
 const MISSING: &str = "<missing>";
 
 pub fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
-    let (signature, _) = get_item_signature_with_elements(db, item_id);
-    signature
+    get_item_signature_with_links(db, item_id).0
 }
 
-pub fn get_item_signature_with_elements(
+pub fn get_item_signature_with_links(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
-) -> (String, Vec<SignatureElement>) {
+) -> (String, Vec<LocationLink>) {
     let mut f = HirFormatter::new(db);
     match item_id {
         DocumentableItemId::LookupItem(item_id) => match item_id {
             LookupItemId::ModuleItem(item_id) => match item_id {
-                ModuleItemId::Struct(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::Enum(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::FreeFunction(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::TypeAlias(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::ImplAlias(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::Trait(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::Impl(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::ExternType(item_id) => item_id.get_signature_with_elements(&mut f),
-                ModuleItemId::ExternFunction(item_id) => {
-                    item_id.get_signature_with_elements(&mut f)
-                }
+                ModuleItemId::Struct(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::Enum(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::FreeFunction(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::TypeAlias(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::ImplAlias(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::Trait(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::Impl(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::ExternType(item_id) => item_id.get_signature_with_links(&mut f),
+                ModuleItemId::ExternFunction(item_id) => item_id.get_signature_with_links(&mut f),
                 _ => panic!("get_item_signature not implemented for item_id: {:?}", item_id),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
-                TraitItemId::Function(item_id) => item_id.get_signature_with_elements(&mut f),
-                TraitItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
-                TraitItemId::Type(item_id) => item_id.get_signature_with_elements(&mut f),
+                TraitItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
+                TraitItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
+                TraitItemId::Type(item_id) => item_id.get_signature_with_links(&mut f),
                 _ => {
                     panic!("get_item_signature not implemented for item_id: {:?}", item_id)
                 }
             },
             LookupItemId::ImplItem(item_id) => match item_id {
-                ImplItemId::Function(item_id) => item_id.get_signature_with_elements(&mut f),
-                ImplItemId::Constant(item_id) => item_id.get_signature_with_elements(&mut f),
-                ImplItemId::Type(item_id) => item_id.get_signature_with_elements(&mut f),
+                ImplItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
+                ImplItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
+                ImplItemId::Type(item_id) => item_id.get_signature_with_links(&mut f),
                 _ => {
                     panic!("get_item_signature not implemented for item_id: {:?}", item_id)
                 }
             },
         },
-        DocumentableItemId::Member(item_id) => item_id.get_signature_with_elements(&mut f),
-        DocumentableItemId::Variant(item_id) => item_id.get_signature_with_elements(&mut f),
+        DocumentableItemId::Member(item_id) => item_id.get_signature_with_links(&mut f),
+        DocumentableItemId::Variant(item_id) => item_id.get_signature_with_links(&mut f),
         DocumentableItemId::Crate(_) => {
             panic!("get_item_signature not implemented for item_id: {:?}", item_id)
         }
@@ -106,80 +107,75 @@ pub trait HirDisplay {
         f.buf.clone()
     }
 
-    fn get_signature_with_elements(&self, f: &mut HirFormatter) -> (String, Vec<SignatureElement>) {
-        (self.get_signature(f), f.elements.clone())
+    fn get_signature_with_links(&self, f: &mut HirFormatter) -> (String, Vec<LocationLink>) {
+        (self.get_signature(f), f.location_links.clone())
     }
 }
 
-/// A helper struct to reconstruct elements full paths mapped on formatted signature string.
+/// A helper struct to map parts of item signature on respective documentable items
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SignatureElement {
-    /// A slice of documentable signature.
-    pub signature: String,
-    /// Maps an item full path on relevant DocumentableItem signature slice.
-    pub full_path: Option<String>,
+pub struct LocationLink {
+    pub start: usize,
+    pub end: usize,
+    pub item_ids: Vec<Option<DocumentableItemId>>,
 }
 
-/// High-Level Intermediate Representation semantic data Formatter used for item's signature creation.
+/// Documentable items signature formatter.
 pub struct HirFormatter<'a> {
     /// The database handle.
     db: &'a dyn DocGroup,
     /// A buffer to intercept writes with.
     buf: String,
-    elements: Vec<SignatureElement>, //todo: test, pub expose
+    /// Linkable signature items.
+    location_links: Vec<LocationLink>,
 }
 
 impl fmt::Write for HirFormatter<'_> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.buf.push_str(s);
-        self.elements.push(SignatureElement { signature: s.to_string(), full_path: None });
         Ok(())
     }
 }
 
-fn write_type(
-    prefix: Option<String>,
-    element_type: TypeId,
-    postfix: Option<String>,
-    f: &mut HirFormatter,
-) -> fmt::Result {
-    if element_type.is_fully_concrete(f.db.upcast()) {
-        write_item_with_path(prefix, element_type.format(f.db.upcast()), postfix, f)
-    } else {
-        f.write_str(&format!(
-            "{}{}{}",
-            prefix.unwrap_or("".to_string()),
-            extract_and_format(&element_type.format(f.db.upcast())),
-            postfix.unwrap_or("".to_string()),
-        ))
-    }
-}
-
-fn write_item_with_path(
-    prefix: Option<String>,
-    full_path: String,
-    postfix: Option<String>,
-    f: &mut HirFormatter,
-) -> fmt::Result {
-    let type_signature = extract_and_format(&full_path);
-
-    if let Some(prefix) = prefix {
-        f.buf.push_str(&prefix);
-        f.elements.push(SignatureElement { signature: prefix, full_path: None });
-    }
-    f.buf.push_str(&type_signature);
-    f.elements.push(SignatureElement { signature: type_signature, full_path: Some(full_path) });
-
-    if let Some(postfix) = postfix {
-        f.buf.push_str(&postfix);
-        f.elements.push(SignatureElement { signature: postfix, full_path: None });
-    };
-    Ok(())
-}
-
 impl<'a> HirFormatter<'a> {
     pub fn new(db: &'a dyn DocGroup) -> Self {
-        Self { db, buf: String::new(), elements: Vec::new() }
+        Self { db, buf: String::new(), location_links: Vec::new() }
+    }
+
+    fn add_location_link(
+        &mut self,
+        start: usize,
+        end: usize,
+        item_ids: Vec<Option<DocumentableItemId>>,
+    ) {
+        self.location_links.push(LocationLink { start, end, item_ids })
+    }
+
+    fn write_type(
+        &mut self,
+        prefix: Option<&str>,
+        element_type: TypeId,
+        postfix: Option<&str>,
+    ) -> fmt::Result {
+        let documentable_ids = resolve_type(self.db, element_type);
+        self.write_str(&prefix.unwrap_or_default())?;
+        let start_offset = self.buf.len();
+        self.write_str(&extract_and_format(&element_type.format(self.db.upcast())))?;
+        let end_offset = self.buf.len();
+        self.add_location_link(start_offset, end_offset, documentable_ids);
+        self.write_str(&postfix.unwrap_or_default())
+    }
+
+    fn write_link(
+        &mut self,
+        name: String,
+        documentable_ids: Vec<Option<DocumentableItemId>>,
+    ) -> fmt::Result {
+        let start_offset = self.buf.len();
+        self.write_str(&extract_and_format(&name))?;
+        let end_offset = self.buf.len();
+        self.add_location_link(start_offset, end_offset, documentable_ids);
+        Ok(())
     }
 }
 
@@ -190,7 +186,7 @@ impl HirDisplay for VariantId {
             .variant_semantic(self.enum_id(f.db.upcast()), *self)
             .unwrap();
         if !variant_semantic.ty.is_unit(f.db.upcast()) {
-            write_type(Some(format!("{name}: ",)), variant_semantic.ty, None, f)
+            f.write_type(Some(&format!("{name}: ")), variant_semantic.ty, None)
         } else {
             f.write_str(name.as_str())
         }
@@ -210,11 +206,10 @@ impl HirDisplay for EnumId {
             Some(variants) => {
                 variants.iter().for_each(|(name, variant_type)| {
                     if !variant_type.is_unit(f.db.upcast()) {
-                        write_type(
-                            Some(format!("\n{INDENT}{name}: ",)),
+                        f.write_type(
+                            Some(&format!("\n{INDENT}{name}: ",)),
                             *variant_type,
-                            Some(",".to_string()),
-                            f,
+                            Some(","),
                         )
                         .unwrap();
                     } else {
@@ -239,15 +234,14 @@ impl HirDisplay for MemberId {
                 member_full_signature.name
             ))
         } else {
-            write_type(
-                Some(format!(
+            f.write_type(
+                Some(&format!(
                     "{}{}: ",
                     get_syntactic_visibility(&member_full_signature.visibility),
                     member_full_signature.name,
                 )),
                 member_full_signature.return_type.unwrap(),
                 None,
-                f,
             )
         }
     }
@@ -271,11 +265,10 @@ impl HirDisplay for StructId {
 
         if let Some(members) = struct_full_signature.members {
             members.iter().for_each(|(name, member_type, visibility)| {
-                write_type(
-                    Some(format!("\n{INDENT}{}{}: ", get_syntactic_visibility(visibility), name,)),
+                f.write_type(
+                    Some(&format!("\n{INDENT}{}{}: ", get_syntactic_visibility(visibility), name,)),
                     *member_type,
-                    Some(",".to_string()),
-                    f,
+                    Some(","),
                 )
                 .unwrap()
             });
@@ -301,7 +294,7 @@ impl HirDisplay for ConstantId {
             constant_full_signature.name,
         ))?;
 
-        write_type(None, constant_full_signature.return_type.unwrap(), Some(" = ".to_string()), f)?;
+        f.write_type(None, constant_full_signature.return_type.unwrap(), Some(" = "))?;
 
         let return_value_expression = match constant_full_signature.return_value_expr.unwrap() {
             Expr::Literal(v) => {
@@ -334,11 +327,10 @@ impl HirDisplay for ConstantId {
 impl HirDisplay for ImplConstantDefId {
     fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
         let constant_full_signature = get_impl_constant_signature_data(f.db.upcast(), *self);
-        write_type(
-            Some(format!("const {}: ", constant_full_signature.name,)),
+        f.write_type(
+            Some(&format!("const {}: ", constant_full_signature.name,)),
             constant_full_signature.return_type.unwrap(),
-            Some(" = ".to_string()),
-            f,
+            Some(" = "),
         )?;
         write_syntactic_evaluation(f, constant_full_signature.item_id)
     }
@@ -620,11 +612,10 @@ fn write_function_signature(
             let modifier = get_relevant_modifier(&param.mutability);
             let modifier_postfix = if modifier.is_empty() { "" } else { " " };
             if param.ty.is_fully_concrete(f.db.upcast()) {
-                write_type(
-                    Some(format!("{modifier}{modifier_postfix}{}: ", param.name)),
+                f.write_type(
+                    Some(&format!("{modifier}{modifier_postfix}{}: ", param.name)),
                     param.ty,
-                    Some(postfix.to_string()),
-                    f,
+                    Some(&postfix),
                 )
                 .unwrap();
             } else {
@@ -642,7 +633,7 @@ fn write_function_signature(
 
     if let Some(return_type) = documentable_signature.return_type {
         if !return_type.is_unit(f.db.upcast()) {
-            write_type(Some(" -> ".to_string()), return_type, None, f)?;
+            f.write_type(Some(" -> "), return_type, None)?;
         }
     }
     Ok(())
@@ -666,32 +657,24 @@ fn write_generic_params(
         let mut count = generic_params.len();
         f.write_str("<")?;
         generic_params.iter().for_each(|param| {
+            let generic_item = param.id().generic_item(f.db.upcast());
+            let docuemntable_id = resolve_generic_item(generic_item, f.db.upcast());
             match param {
-                GenericParam::Type(param_type) => write_item_with_path(
-                    None,
-                    param_type.id.format(f.db.upcast()),
-                    if count == 1 { None } else { Some(String::from(", ")) },
-                    f,
-                )
-                .unwrap(),
+                GenericParam::Type(param_type) => {
+                    let name = extract_and_format(&param_type.id.format(f.db.upcast()));
+                    f.write_link(name, vec![Some(docuemntable_id)]).unwrap();
+                    f.write_str(if count == 1 { "" } else { ", " }).unwrap()
+                }
                 GenericParam::Const(param_const) => {
-                    write_item_with_path(
-                        Some(format!("const{}", param_const.id.format(f.db.upcast()))),
-                        param_const.ty.format(f.db.upcast()),
-                        if count == 1 { None } else { Some(String::from(", ")) },
-                        f,
-                    )
-                    .unwrap();
+                    let name = extract_and_format(&param_const.id.format(f.db.upcast()));
+                    f.write_str("const").unwrap();
+                    f.write_link(name, vec![Some(docuemntable_id)]).unwrap();
+                    f.write_str(if count == 1 { "" } else { ", " }).unwrap()
                 }
                 GenericParam::Impl(param_impl) => {
-                    param_impl.id.format(f.db.upcast()).to_string();
-                    write_item_with_path(
-                        None,
-                        param_impl.id.format(f.db.upcast()),
-                        if count == 1 { None } else { Some(String::from(", ")) },
-                        f,
-                    )
-                    .unwrap();
+                    let name = extract_and_format(&param_impl.id.format(f.db.upcast()));
+                    f.write_link(name, vec![Some(docuemntable_id)]).unwrap();
+                    f.write_str(if count == 1 { "" } else { ", " }).unwrap()
                 }
                 GenericParam::NegImpl(_) => f.write_str(MISSING).unwrap(),
             };
@@ -709,14 +692,13 @@ fn write_generic_args(
     f: &mut HirFormatter,
 ) -> Result<(), fmt::Error> {
     let mut count = generic_args.len();
+    if !generic_args.is_empty() {
+        f.write_str("<")?;
+    }
     generic_args.iter().for_each(|arg| {
-        write_item_with_path(
-            if count == generic_args.len() { Some("<".to_string()) } else { None },
-            arg.format(f.db.upcast()),
-            Some(if count == 1 { ">".to_string() } else { ", ".to_string() }),
-            f,
-        )
-        .unwrap();
+        let documentable_id = resolve_generic_arg(*arg, f.db);
+        f.write_link(extract_and_format(&arg.format(f.db.upcast())), documentable_id).unwrap();
+        f.write_str(if count == 1 { ">" } else { ", " }).unwrap();
         count -= 1;
     });
     Ok(())
@@ -801,6 +783,235 @@ fn get_syntactic_evaluation(db: &dyn DocGroup, item_id: DocumentableItemId) -> S
     };
 
     buf
+}
+
+fn resolve_generic_item(generic_item_id: GenericItemId, db: &dyn DocGroup) -> DocumentableItemId {
+    match generic_item_id {
+        GenericItemId::ModuleItem(module_item_id) => resolve_generic_module_item(module_item_id),
+        GenericItemId::TraitItem(generic_trait_item_id) => match generic_trait_item_id {
+            GenericTraitItemId::Type(trait_type_id) => DocumentableItemId::from(
+                LookupItemId::ModuleItem(ModuleItemId::Trait(trait_type_id.trait_id(db.upcast()))),
+            ),
+        },
+        GenericItemId::ImplItem(generic_impl_item_id) => match generic_impl_item_id {
+            GenericImplItemId::Type(impl_type_def_id) => {
+                DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(
+                    impl_type_def_id.impl_def_id(db.upcast()),
+                )))
+            }
+        },
+    }
+}
+
+fn resolve_generic_module_item(generic_module_item_id: GenericModuleItemId) -> DocumentableItemId {
+    match generic_module_item_id {
+        GenericModuleItemId::FreeFunc(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(id)))
+        }
+        GenericModuleItemId::ExternFunc(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternFunction(id)))
+        }
+        GenericModuleItemId::TraitFunc(id) => {
+            DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Function(id)))
+        }
+        GenericModuleItemId::ImplFunc(id) => {
+            DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Function(id)))
+        }
+        GenericModuleItemId::Trait(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(id)))
+        }
+        GenericModuleItemId::Impl(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(id)))
+        }
+        GenericModuleItemId::Struct(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(id)))
+        }
+        GenericModuleItemId::Enum(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(id)))
+        }
+        GenericModuleItemId::ExternType(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternType(id)))
+        }
+        GenericModuleItemId::TypeAlias(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id)))
+        }
+        GenericModuleItemId::ImplAlias(id) => {
+            DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id)))
+        }
+    }
+}
+
+fn resolve_generic_arg(
+    generic_arg_id: GenericArgumentId,
+    db: &dyn DocGroup,
+) -> Vec<Option<DocumentableItemId>> {
+    match generic_arg_id {
+        GenericArgumentId::Type(type_id) => resolve_type(db, type_id),
+        GenericArgumentId::Constant(constant_value_id) => match constant_value_id.ty(db.upcast()) {
+            Ok(type_id) => resolve_type(db, type_id),
+            Err(_) => {
+                vec![None]
+            }
+        },
+        GenericArgumentId::Impl(impl_id) => {
+            let trait_id = impl_id.concrete_trait(db.upcast()).unwrap().trait_id(db.upcast());
+            vec![Some(DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(
+                trait_id,
+            ))))]
+        }
+        GenericArgumentId::NegImpl => {
+            vec![None]
+        }
+    }
+}
+
+fn resolve_type(db: &dyn DocGroup, type_id: TypeId) -> Vec<Option<DocumentableItemId>> {
+    let mut result = Vec::new();
+    let intern = type_id.lookup_intern(db);
+    match intern {
+        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+            ConcreteTypeId::Struct(struct_id) => result.push(Some(DocumentableItemId::from(
+                LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id.struct_id(db.upcast()))),
+            ))),
+            ConcreteTypeId::Enum(enum_id) => result.push(Some(DocumentableItemId::from(
+                LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id.enum_id(db.upcast()))),
+            ))),
+            ConcreteTypeId::Extern(extern_id) => {
+                result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                    ModuleItemId::ExternType(extern_id.extern_type_id(db.upcast())),
+                ))))
+            }
+        },
+        TypeLongId::Tuple(vec_type) => {
+            for t in vec_type {
+                result.extend(resolve_type(db, t));
+            }
+        }
+        TypeLongId::Snapshot(type_id) => {
+            result.extend(resolve_type(db, type_id));
+        }
+        TypeLongId::GenericParameter(generic_param_id) => {
+            let item = generic_param_id.generic_item(db.upcast());
+            result.push(Some(resolve_generic_item(item, db)))
+        }
+        TypeLongId::Var(type_var) => match type_var.inference_id {
+            InferenceId::LookupItemDeclaration(lookup_item_id)
+            | InferenceId::LookupItemGenerics(lookup_item_id)
+            | InferenceId::LookupItemDefinition(lookup_item_id) => {
+                result.push(Some(DocumentableItemId::from(lookup_item_id)))
+            }
+            InferenceId::ImplDefTrait(impl_def_id) => result.push(Some(DocumentableItemId::from(
+                LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)),
+            ))),
+            InferenceId::ImplAliasImplDef(impl_alias_id) => {
+                result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                    ModuleItemId::ImplAlias(impl_alias_id),
+                ))))
+            }
+            InferenceId::GenericParam(generic_param_id) => {
+                let item = generic_param_id.generic_item(db.upcast());
+                result.push(Some(resolve_generic_item(item, db)))
+            }
+            InferenceId::GenericImplParamTrait(generic_param_id) => {
+                let item = generic_param_id.generic_item(db.upcast());
+                result.push(Some(resolve_generic_item(item, db)))
+            }
+            InferenceId::GlobalUseStar(global_use_id) => {
+                match <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+                    .priv_global_use_imported_module(global_use_id)
+                {
+                    Ok(module_id) => {
+                        match module_id {
+                            ModuleId::CrateRoot(crate_id) => {
+                                result.push(Some(DocumentableItemId::from(crate_id)))
+                            }
+                            ModuleId::Submodule(submodule_id) => {
+                                result.push(Some(DocumentableItemId::from(
+                                    LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
+                                )))
+                            }
+                        };
+                    }
+                    Err(_) => {
+                        result.push(None);
+                    }
+                }
+            }
+            InferenceId::Canonical => result.push(None),
+            InferenceId::NoContext => result.push(None),
+        },
+        TypeLongId::Coupon(function_id) => {
+            let concrete_function = function_id.get_concrete(db.upcast());
+            match concrete_function.generic_function {
+                GenericFunctionId::Free(function_id) => {
+                    result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                        ModuleItemId::FreeFunction(function_id),
+                    ))))
+                }
+                GenericFunctionId::Extern(function_id) => {
+                    result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                        ModuleItemId::ExternFunction(function_id),
+                    ))))
+                }
+                GenericFunctionId::Impl(function_id) => {
+                    result.push(Some(DocumentableItemId::from(LookupItemId::TraitItem(Function(
+                        function_id.function,
+                    )))))
+                }
+            }
+            for arg in concrete_function.generic_args {
+                match arg {
+                    GenericArgumentId::Type(type_id) => {
+                        result.extend(resolve_type(db, type_id));
+                    }
+                    GenericArgumentId::Constant(constant_value_id) => {
+                        match constant_value_id.ty(db.upcast()) {
+                            Ok(type_id) => {
+                                result.extend(resolve_type(db, type_id));
+                            }
+                            Err(_) => {
+                                result.push(None);
+                            }
+                        }
+                    }
+                    GenericArgumentId::Impl(impl_id) => {
+                        let trait_id =
+                            impl_id.concrete_trait(db.upcast()).unwrap().trait_id(db.upcast());
+                        result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                            ModuleItemId::Trait(trait_id),
+                        ))))
+                    }
+                    GenericArgumentId::NegImpl => {}
+                }
+            }
+        }
+        TypeLongId::FixedSizeArray { type_id: _, size: _ } => {
+            result.extend(resolve_type(db, type_id));
+        }
+        TypeLongId::ImplType(impl_type_id) => {
+            match impl_type_id.impl_id().concrete_trait(db.upcast()) {
+                Ok(concrete_trait_id) => {
+                    result.push(Some(DocumentableItemId::from(LookupItemId::ModuleItem(
+                        ModuleItemId::Trait(concrete_trait_id.trait_id(db.upcast())),
+                    ))))
+                }
+                Err(_) => {
+                    result.push(None);
+                }
+            }
+        }
+        TypeLongId::Closure(closure_type_id) => {
+            result.extend(resolve_type(db, closure_type_id.ret_ty));
+
+            for param in closure_type_id.param_tys.iter() {
+                result.extend(resolve_type(db, *param));
+            }
+        }
+        TypeLongId::Missing(_) => {
+            result.push(None);
+        }
+    }
+    result
 }
 
 fn get_enum_signature_data(db: &dyn DocGroup, item_id: EnumId) -> DocumentableItemSignatureData {
