@@ -119,7 +119,7 @@ fn should_inline_lowered(
 
 /// A rewriter that inlines functions annotated with #[inline(always)].
 pub struct FunctionInlinerRewriter<'db> {
-    /// The LoweringContext were we are building the new blocks.
+    /// The LoweringContext where we are building the new blocks.
     variables: VariableAllocator<'db>,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockRewriteQueue,
