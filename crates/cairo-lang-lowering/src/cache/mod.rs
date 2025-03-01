@@ -422,23 +422,23 @@ impl DefsFunctionWithBodyIdCached {
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> defs::ids::FunctionWithBodyId {
         match self {
             DefsFunctionWithBodyIdCached::Free(id) => {
-                let (moddule_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.embed(ctx);
                 defs::ids::FunctionWithBodyId::Free(
-                    FreeFunctionLongId(moddule_file_id, FunctionWithBodyPtr(function_stable_ptr))
+                    FreeFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(ctx.db),
                 )
             }
             DefsFunctionWithBodyIdCached::Impl(id) => {
-                let (moddule_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.embed(ctx);
                 defs::ids::FunctionWithBodyId::Impl(
-                    ImplFunctionLongId(moddule_file_id, FunctionWithBodyPtr(function_stable_ptr))
+                    ImplFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(ctx.db),
                 )
             }
             DefsFunctionWithBodyIdCached::Trait(id) => {
-                let (moddule_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.embed(ctx);
                 defs::ids::FunctionWithBodyId::Trait(
-                    TraitFunctionLongId(moddule_file_id, TraitItemFunctionPtr(function_stable_ptr))
+                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(function_stable_ptr))
                         .intern(ctx.db),
                 )
             }
@@ -638,9 +638,9 @@ impl ExprVarMemberPathCached {
                 ty,
             } => {
                 let parent = Box::new(parent.embed(ctx));
-                let (moddule_file_id, member_stable_ptr) = member_id.embed(ctx);
+                let (module_file_id, member_stable_ptr) = member_id.embed(ctx);
                 let member_id =
-                    MemberLongId(moddule_file_id, MemberPtr(member_stable_ptr)).intern(ctx.db);
+                    MemberLongId(module_file_id, MemberPtr(member_stable_ptr)).intern(ctx.db);
                 semantic::ExprVarMemberPath::Member {
                     parent,
                     member_id,
