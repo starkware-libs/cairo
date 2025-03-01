@@ -11,7 +11,7 @@ use itertools::chain;
 use crate::VariableId;
 use crate::db::LoweringGroup;
 
-//  Information about members captured by the closure and their types.
+// Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
 pub struct ClosureInfo {
     // TODO(TomerStarkware): unite copiable members and snapshots into a single map.
