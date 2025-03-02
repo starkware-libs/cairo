@@ -48,7 +48,7 @@ struct ExtractedEnumDetails {
     n_snapshots: usize,
 }
 
-/// MatchArm wrapper that allow for optional expression clause.
+/// MatchArm wrapper that allows for optional expression clause.
 /// Used in the case of if-let with missing else clause.
 pub struct MatchArmWrapper {
     pub patterns: Vec<PatternId>,
