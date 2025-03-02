@@ -67,3 +67,15 @@ mod test_assert_eq {
         assert_eq!(x, y);
     }
 }
+
+macro add_one_expr {
+    ($x:expr) => {
+        $x + 1
+    };
+}
+
+#[test]
+fn test_macro_add_one_expr() {
+    assert_eq!(add_one_expr!(1), 2);
+    assert_eq!(add_one_expr!((1 + 2)), 4);
+}

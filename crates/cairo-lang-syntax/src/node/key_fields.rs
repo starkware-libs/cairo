@@ -437,6 +437,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRuleParam => {
             vec![]
         }
+        SyntaxKind::ParamIdent => {
+            vec![]
+        }
+        SyntaxKind::ParamExpr => {
+            vec![]
+        }
         SyntaxKind::MacroRuleParamKindMissing => {
             vec![]
         }
