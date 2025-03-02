@@ -1,5 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -8,7 +9,9 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_vm::types::program;
 use itertools::Itertools;
+use serde_json::json;
 
 use crate::compile;
 use crate::plugin::executable_plugin_suite;
@@ -64,6 +67,22 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 #[derive(Default)]
 struct CompileExecutableTestRunner {}
 
+fn format_hints(hint: &Hint) -> String {
+    let data = json!({
+        "accessible_scopes": [],
+        "code": hint,
+        "flow_tracking_data": {
+            "ap_tracking": {
+                "group": 0,
+                "offset": 1
+            },
+            "reference_ids": {}
+        }
+    });
+
+    format!("{}", data)
+}
+
 impl TestFileRunner for CompileExecutableTestRunner {
     fn run(
         &mut self,
@@ -82,9 +101,10 @@ impl TestFileRunner for CompileExecutableTestRunner {
         ) {
             Err(e) => e.to_string(),
             Ok(r) => {
-                let (bytecode, _hints) =
+                let mut s = format!("{}\n\n", r.program);
+                let (bytecode, hints) =
                     r.program.assemble_m31(&r.wrapper.header, &r.wrapper.footer);
-                let mut s = String::new();
+               
                 for x in &bytecode.iter().chunks(4) {
                     s += "[";
                     let mut first = true;
@@ -97,6 +117,17 @@ impl TestFileRunner for CompileExecutableTestRunner {
                     }
                     s += "],\n";
                 }
+
+                for (pc, hints_at_pc) in &hints {
+                    s.push_str(&format!("\"{:x}\": [\n", pc >> 2));
+
+                    for h in hints_at_pc {
+                        s.push_str(&format_hints(h));
+                    }
+
+                    s.push_str("\n],");
+                }
+
                 s
             }
         };
