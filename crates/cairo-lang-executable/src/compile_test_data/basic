@@ -7,7 +7,7 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 #[executable_raw]
 fn main(mut _input: Span<felt252>, ref output: Array<felt252>) {
     let values = array![0x110, 0x120, 0x130, 0x140, 0x150, 0x160].span();
-    let params = Params { state: [0x1, 0x1], memory: [0x1, 0x1], random_coeff: 0x1 };
+    let params = OpcodeParams { state: [0x1, 0x1], memory: [0x1, 0x1], random_coeff: 0x1 };
     let mut sum = 0;
     ret_eval_at_point(ref sum, values, params);
     output.append(sum);
@@ -17,12 +17,24 @@ fn is_bit(x: felt252) -> felt252 {
     x * x - x
 }
 
+fn is_trit(x: felt252) -> felt252 {
+    let x_sq = x * x;
+    x_sq * x - 3 * x_sq + 2 * x
+}
+
 #[derive(Drop)]
-struct Params {
+struct OpcodeParams {
     state: [felt252; 2],
     memory: [felt252; 2],
     random_coeff: felt252,
 }
+
+#[derive(Drop)]
+struct RCParams {
+    rc: [felt252; 2],
+    random_coeff: felt252,
+}
+
 
 fn combine(lookup_elements: [felt252; 2], mut values: Span<felt252>) -> felt252 {
     let [z, alpha] = lookup_elements;
@@ -35,7 +47,53 @@ fn combine(lookup_elements: [felt252; 2], mut values: Span<felt252>) -> felt252 
     res
 }
 
-fn ret_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: Params) {
+fn addap_jmp_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: OpcodeParams) {
+    let OPCODE_BASE = 0x345;
+    let pc = *values.pop_front().unwrap();
+    let ap = *values.pop_front().unwrap();
+    let fp = *values.pop_front().unwrap();
+    let opcode_type = *values.pop_front().unwrap();
+
+    // constraint 0 - opcode is trit.
+    let x = is_trit(opcode_type);
+    sum = sum * params.random_coeff + x;
+
+    let _rel0 = combine(params.state, array![pc, ap, fp].span());
+    let _rel1 = combine(params.memory, array![pc, OPCODE_BASE + opcode_type].span());
+
+    let imm = *values.pop_front().unwrap();
+    let new_pc_val = *values.pop_front().unwrap();
+    let new_ap_val = *values.pop_front().unwrap();
+
+    match opcode_type {
+        0 => {
+            sum = sum * params.random_coeff + new_pc_val - pc - 1;
+            sum = sum * params.random_coeff + new_ap_val - ap - imm;
+        },
+        1 => {
+            sum = sum * params.random_coeff + new_pc_val - imm;
+            sum = sum * params.random_coeff + new_ap_val - ap;
+        },
+        2 => {
+            sum = sum * params.random_coeff + new_pc_val - pc - imm;
+            sum = sum * params.random_coeff + new_ap_val - ap;
+        },
+        _ => { panic!() },
+    }
+    // let rel2 = combine(params.state, array![fp - 1, fp_minus_1_val].span());
+}
+
+
+fn rc_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: RCParams) {
+    let rc_value = 0x12; // Replace with preprocessed_value
+    let mult = *values.pop_front().unwrap();
+    let rel0 = combine(params.rc, array![rc_value].span());
+    let x = felt252_div(mult, rel0.try_into().unwrap());
+    sum = sum * params.random_coeff - x;
+}
+
+
+fn ret_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: OpcodeParams) {
     const RET_INST: felt252 = 0x1234;
     // Trace values
     let mult = *values.pop_front().unwrap();
@@ -48,7 +106,7 @@ fn ret_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: Params
     // Constraint 0 - mult is bit.
     sum = sum * params.random_coeff + is_bit(mult);
 
-    let rel0 = combine(params.state, array![pc, fp, ap].span());
+    let rel0 = combine(params.state, array![pc, ap, fp].span());
     let rel1 = combine(params.memory, array![pc, RET_INST].span());
     let x = felt252_div(rel0 + mult * rel1, (rel0 * rel1).try_into().unwrap());
     sum = sum * params.random_coeff + x;
@@ -59,8 +117,8 @@ fn ret_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: Params
     sum = sum * params.random_coeff + x;
 
     // Yield last state.
-    let rel5 = combine(params.state, array![fp_minus_1_val, ap, fp_minus_2_val].span());
-    let x = felt252_div(mult, rel5.try_into().unwrap());
+    let rel4 = combine(params.state, array![fp_minus_1_val, ap, fp_minus_2_val].span());
+    let x = felt252_div(mult, rel4.try_into().unwrap());
     sum = sum * params.random_coeff - x;
 }
 
@@ -143,8 +201,8 @@ fn ret_eval_at_point(ref sum: felt252, mut values: Span<felt252>, params: Params
 ["0x91", "0x65", "0x0", "0x0"],
 ["0xa", "0x1", "0x0", "0x0"],
 ["0x43", "0xb", "0x7ffffffe", "0x0"],
-["0x43", "0xa", "0x7ffffffe", "0x1"],
-["0x43", "0x8", "0x7ffffffe", "0x2"],
+["0x43", "0x8", "0x7ffffffe", "0x1"],
+["0x43", "0xa", "0x7ffffffe", "0x2"],
 ["0x1e", "0x0", "0x7ffffffe", "0x0"],
 ["0x1a", "0x0", "0x3", "0x7ffffffd"],
 ["0x20", "0x0", "0x7ffffff8", "0x0"],
