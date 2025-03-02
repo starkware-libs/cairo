@@ -1515,3 +1515,154 @@ EnumVariantCtor(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test self keyword in module paths
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod x {
+    pub mod y {
+        pub const Z: u8 = 2;
+    }
+}
+use x::y::self;
+
+//! > function_body
+
+//! > expr_code
+y::Z
+
+//! > expected_semantics
+Missing(
+    ExprMissing {
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:11
+use x::y::self;
+          ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:1
+y::Z
+^
+
+//! > ==========================================================================
+
+//! > Test self keyword with nested modules
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub mod c {
+            pub const VALUE: u8 = 42;
+        }
+    }
+}
+use a::b::c::self;
+
+//! > function_body
+
+//! > expr_code
+c::VALUE
+
+//! > expected_semantics
+Missing(
+    ExprMissing {
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:14
+use a::b::c::self;
+             ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:10:1
+c::VALUE
+^
+
+//! > ==========================================================================
+
+//! > Test self keyword with enum
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod data {
+    pub enum Color {
+        Red: (),
+        Green: (),
+        Blue: (),
+    }
+}
+use data::Color::self;
+
+//! > function_body
+
+//! > expr_code
+Color::Red(())
+
+//! > expected_semantics
+Missing(
+    ExprMissing {
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error: Enum "test::data::Color" has no variant "self"
+ --> lib.cairo:8:18
+use data::Color::self;
+                 ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:10:1
+Color::Red(())
+^^^^^
+
+//! > ==========================================================================
+
+//! > Test self keyword in invalid trait context
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+trait MyTrait {
+    fn example();
+}
+use MyTrait::self;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Invalid path.
+ --> lib.cairo:4:14
+use MyTrait::self;
+             ^^^^
