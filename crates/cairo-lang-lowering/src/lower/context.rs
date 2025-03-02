@@ -148,7 +148,7 @@ pub struct LoweringContext<'a, 'db> {
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId,
     /// Id for the current concrete function to be used when generating recursive calls.
-    /// This it the generic function specialized with its own generic parameters.
+    /// This is the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current loop context.
     pub current_loop_ctx: Option<LoopContext>,
