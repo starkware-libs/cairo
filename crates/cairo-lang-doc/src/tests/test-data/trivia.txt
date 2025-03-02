@@ -96,8 +96,8 @@ second field
 Content("second field")
 
 //! > Item signature #6
-#[derive(Clone)]
-#[derive(Drop)]
+#[derive(Clone)] 
+#[derive(Drop)] 
 struct Pair2<T, U> {
     pub first: T,
     second: U,
@@ -156,7 +156,7 @@ Second variant
 Content("Second variant")
 
 //! > Item signature #12
-pub extern type S<T>
+pub extern type S<T>;
 
 //! > Item documentation #12
 extern type comment
