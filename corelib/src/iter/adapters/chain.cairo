@@ -3,18 +3,16 @@
 /// This `struct` is created by [`Iterator::chain`]. See the
 /// documentation for more.
 #[derive(Drop)]
-pub struct Chain<A, B> {
-    // These are "fused" with `Option` so we don't need separate state to track which part is
-    // already exhausted.
-    //
-    // The "first" iterator is actually set to `Option::None` when exhausted.
-    a: Option<A>,
-    b: B,
+pub enum Chain<A, B> {
+    /// First iterator processing is not done yet.
+    Both: (A, B),
+    /// First iterator processing is done, processing the second iterator.
+    Second: B,
 }
 
 #[inline]
 pub fn chained_iterator<A, B>(a: A, b: B) -> Chain<A, B> {
-    Chain { a: Option::Some(a), b }
+    Chain::Both((a, b))
 }
 
 impl ChainIterator<
@@ -29,17 +27,20 @@ impl ChainIterator<
     type Item = IterA::Item;
 
     fn next(ref self: Chain<A, B>) -> Option<Self::Item> {
-        // First iterate over first container values.
-        if let Option::Some(mut first) = self.a {
-            if let Option::Some(value) = first.next() {
-                self.a = Option::Some(first);
-                return Option::Some(value);
-            }
-        }
-
-        // Then iterate over second container values.
-        let next_val = self.b.next();
-        self.a = Option::None;
+        let mut b = match self {
+            Chain::Second(b) => b,
+            Chain::Both((
+                mut a, b,
+            )) => {
+                if let Some(value) = a.next() {
+                    self = Chain::Both((a, b));
+                    return Option::Some(value);
+                }
+                b
+            },
+        };
+        let next_val = b.next();
+        self = Chain::Second(b);
         next_val
     }
 }
