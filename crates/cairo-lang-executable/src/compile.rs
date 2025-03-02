@@ -68,7 +68,7 @@ pub fn compile_executable(
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
-        .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
+        .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled"), Cfg::kv("m31", "enabled")]))
         .detect_corelib()
         .with_default_plugin_suite(executable_plugin_suite())
         .build()?;

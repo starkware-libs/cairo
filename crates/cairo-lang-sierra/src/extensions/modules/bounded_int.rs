@@ -336,16 +336,14 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
         let high_range = Range::half_open(boundary.clone(), range.upper);
         require(low_range.is_small_range() && high_range.is_small_range())
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let branch_signature = |rng: Range| {
             let inner_res_ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
             let res_ty = if is_nz { nonzero_ty(context, &inner_res_ty)? } else { inner_res_ty };
             Ok(BranchSignature {
                 vars: vec![
-                    OutputVarInfo::new_builtin(range_check_type.clone(), 0),
                     OutputVarInfo {
                         ty: res_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                     },
                 ],
                 ap_change: SierraApChange::Known { new_vars_only: false },
@@ -353,7 +351,6 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
         };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
             ],
             branch_signatures: vec![branch_signature(low_range)?, branch_signature(high_range)?],

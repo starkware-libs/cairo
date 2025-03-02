@@ -262,7 +262,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// assert!(result.unwrap() == 123);
     /// ```
     const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
-        self.expect('Result::unwrap failed.')
+        self.expect('urp')
     }
 
     /// Returns the contained `Ok` value or a provided default.

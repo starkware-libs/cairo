@@ -605,7 +605,7 @@ impl ConstFoldingLibfuncInfo {
         let upcast = integer_module.extern_function_id("upcast");
         let downcast = integer_module.extern_function_id("downcast");
         let array_module = core.submodule("array");
-        let array_get = array_module.extern_function_id("array_get");
+        let array_get = array_module.extern_function_id("array_get_v2");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =

@@ -93,7 +93,7 @@ impl Range {
     }
     /// Returns true if this range is smaller than the RangeCheck range.
     pub fn is_small_range(&self) -> bool {
-        self.size() <= BigInt::one().shl(128)
+        self.size() <= BigInt::one().shl(28)
     }
     /// Returns true if this range can contain all possible values of a CASM cell.
     pub fn is_full_felt252_range(&self) -> bool {

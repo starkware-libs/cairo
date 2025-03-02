@@ -183,17 +183,15 @@ fn build_constrain(
     builder: CompiledInvocationBuilder<'_>,
     boundary: &BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, value] = builder.try_get_single_cells()?;
+    let [value] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::new(builder.m31);
     add_input_variables! {casm_builder,
-        buffer(1) range_check;
         deref value;
     };
     casm_build_extend! {casm_builder,
-        let orig_range_check = range_check;
-        const under_fixer = (BigInt::one().shl(128) - boundary) as BigInt;
-        const rc_bound_imm = BigInt::one().shl(128) as BigInt;
+        const under_fixer = (BigInt::one().shl(28) - boundary) as BigInt;
+        const rc_bound_imm = BigInt::one().shl(28) as BigInt;
         const minus_boundary = -boundary;
         tempvar is_under;
         let canonical_value = value + minus_boundary;
@@ -201,28 +199,21 @@ fn build_constrain(
         jump Under if is_under != 0;
     // Over:
         maybe_tempvar shifted_value = canonical_value;
-        assert shifted_value = *(range_check++);
+        assert shifted_value in [0, 0xfffffff];
         jump Over;
     Under:
-        // value < boundary  <=>  value + (2**128 - boundary) < 2**128.
+        // value < boundary  <=>  value + (2**28 - boundary) < 2**28.
         maybe_tempvar shifted_value = value + under_fixer;
-        assert shifted_value = *(range_check++);
+        assert shifted_value in [0, 0xfffffff];
     };
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Over", &[&[range_check], &[value]], Some(target_statement_id)),
+            ("Fallthrough", &[&[value]], None),
+            ("Over", &[&[value]], Some(target_statement_id)),
         ],
-        CostValidationInfo {
-            builtin_infos: vec![BuiltinInfo {
-                cost_token_ty: CostTokenType::RangeCheck,
-                start: orig_range_check,
-                end: range_check,
-            }],
-            extra_costs: None,
-        },
+        CostValidationInfo::default(),
     ))
 }
 

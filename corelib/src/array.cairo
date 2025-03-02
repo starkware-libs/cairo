@@ -77,25 +77,58 @@ pub extern type Array<T>;
 
 impl ArrayDrop<T, +Drop<T>> of Drop<Array<T>>;
 
+#[cfg(m31: "enabled")]
+pub type usize = crate::internal::bounded_int::u28;
+
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
 extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
+
+#[cfg(not(m31: "enabled"))]
 extern fn array_snapshot_multi_pop_front<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
     ref arr: @Array<Info::Element>,
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
+#[cfg(not(m31: "enabled"))]
 extern fn array_snapshot_multi_pop_back<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
     ref arr: @Array<Info::Element>,
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
-#[panic_with('Index out of bounds', array_at)]
+#[cfg(not(m31: "enabled"))]
 extern fn array_get<T>(
     arr: @Array<T>, index: usize,
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+#[cfg(not(m31: "enabled"))]
 extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize,
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
+
+#[cfg(m31: "enabled")]
+extern fn array_snapshot_multi_pop_front_v2<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
+    ref arr: @Array<Info::Element>,
+) -> Option<@Box<PoppedT>> nopanic;
+#[cfg(m31: "enabled")]
+extern fn array_snapshot_multi_pop_back_v2<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
+    ref arr: @Array<Info::Element>,
+) -> Option<@Box<PoppedT>> nopanic;
+#[cfg(m31: "enabled")]
+extern fn array_get_v2<T>(
+    arr: @Array<T>, index: usize,
+) -> Option<Box<@T>> nopanic;
+#[cfg(m31: "enabled")]
+extern fn array_slice_v2<T>(
+    arr: @Array<T>, start: usize, length: usize,
+) -> Option<@Array<T>> nopanic;
+#[cfg(m31: "enabled")]
+use array_snapshot_multi_pop_front_v2 as array_snapshot_multi_pop_front;
+#[cfg(m31: "enabled")]
+use array_snapshot_multi_pop_back_v2 as array_snapshot_multi_pop_back;
+#[cfg(m31: "enabled")]
+use array_get_v2 as array_get;
+#[cfg(m31: "enabled")]
+use array_slice_v2 as array_slice;
+
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 /// Basic trait for the `Array` type.
@@ -226,7 +259,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// assert!(arr.at(1) == @4);
     /// ```
     fn at(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        array_get(self, index).unwrap().unbox()
     }
 
     /// Returns the length of the array as a `usize` value.
@@ -297,7 +330,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// assert!(element == @1);
     /// ```
     fn index(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        array_get(self, index).unwrap().unbox()
     }
 }
 
@@ -568,7 +601,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// ```
     #[inline]
     fn at(self: Span<T>, index: usize) -> @T {
-        array_at(self.snapshot, index).unbox()
+        array_get(self.snapshot, index).unwrap().unbox()
     }
 
     /// Returns a span containing values from the 'start' index, with
@@ -632,7 +665,7 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// ```
     #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
-        array_at(*self.snapshot, index).unbox()
+        array_get(*self.snapshot, index).unwrap().unbox()
     }
 }
 

@@ -113,7 +113,7 @@ impl I128Constrain0 =
 
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>>(
     value: T,
-) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
+) -> Result<H::LowT, H::HighT> nopanic;
 
 /// A helper trait for trimming a `BoundedInt` instance min value.
 pub trait TrimMinHelper<T> {
@@ -258,3 +258,46 @@ pub use {
     bounded_int_is_zero as is_zero, bounded_int_mul as mul, bounded_int_sub as sub,
     bounded_int_trim_max as trim_max, bounded_int_trim_min as trim_min,
 };
+
+pub type u28 = BoundedInt<0, 0xfffffff>;
+type u28_sum = BoundedInt<0, 0x1ffffffe>;
+type u28_diff = BoundedInt<-0xfffffff, 0xfffffff>;
+
+impl u28AddHelper of AddHelper<u28, u28> {
+    type Result = u28_sum;
+}
+impl u28SubHelper of SubHelper<u28, u28> {
+    type Result = u28_diff;
+}
+impl u28_diffConstrain0 = constrain0::Impl<u28_diff, -0xfffffff, 0xfffffff>;
+
+impl u28_sumConstrainMax of ConstrainHelper<u28_sum, 0x10000000> {
+    type LowT = u28;
+    type HighT = BoundedInt<0x10000000, 0x1ffffffe>;
+}
+
+impl u28PartialOrd of core::traits::PartialOrd<u28> {
+    fn lt(lhs: u28, rhs: u28) -> bool {
+        let diff = sub(lhs, rhs);
+        constrain::<_, 0>(diff).is_ok()
+    }
+}
+
+impl u28Add of core::traits::Add<u28> {
+    fn add(lhs: u28, rhs: u28) -> u28 {
+        let diff = add(lhs, rhs);
+        constrain::<_, 0x10000000>(diff).unwrap()
+    }
+}
+
+impl u28Sub of core::traits::Sub<u28> {
+    fn sub(lhs: u28, rhs: u28) -> u28 {
+        let diff = sub(lhs, rhs);
+        if let Err(x) = constrain::<_, 0>(diff) {
+            upcast(x)
+        } else {
+            crate::panic_with_felt252('sub')
+        }
+    }
+}
+

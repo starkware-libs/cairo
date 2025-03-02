@@ -1,3 +1,7 @@
+use num_bigint::BigInt;
+use num_traits::Zero;
+
+use super::bounded_int::bounded_int_ty;
 use super::boxing::box_ty;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
@@ -18,8 +22,6 @@ use crate::extensions::{
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
-
-type ArrayIndexType = super::int::unsigned::Uint32Type;
 
 /// Type representing an array.
 #[derive(Default)]
@@ -198,7 +200,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
         Ok(LibfuncSignature::new_non_branch(
             vec![snapshot_ty(context, arr_ty)?],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
+                ty: array_index_ty(context)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: false },
@@ -339,7 +341,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let index_type = array_index_ty(context)?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(snapshot_ty(context, arr_type)?),
@@ -381,7 +383,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetV2LibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
-        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let index_type = array_index_ty(context)?;
         let param_signatures = vec![
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
@@ -420,7 +422,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
         let arr_snapshot_type =
             snapshot_ty(context, context.get_wrapped_concrete_type(ArrayType::id(), ty)?)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let index_type = array_index_ty(context)?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(arr_snapshot_type.clone()),
@@ -468,7 +470,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceV2LibfuncWrapped {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let arr_snapshot_type =
             snapshot_ty(context, context.get_wrapped_concrete_type(ArrayType::id(), ty)?)?;
-        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let index_type = array_index_ty(context)?;
         let param_signatures = vec![
             ParamSignature::new(arr_snapshot_type.clone()),
             // Start
@@ -856,4 +858,10 @@ impl SignatureBasedConcreteLibfunc for ConcreteMultiPopLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
     }
+}
+
+fn array_index_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    bounded_int_ty(context, BigInt::zero(), BigInt::from(0xfffffffu32))
 }

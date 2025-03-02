@@ -550,18 +550,18 @@ fn build_array_get_v2(
         // Index out of bounds. Compute offset - length.
         tempvar offset_length_diff = index - array_length;
         // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
-        assert offset_length_diff in [0, 0x3fffffff];
+        assert offset_length_diff in [0, 0xfffffff];
         jump FailureHandle;
 
         InRange:
-        // Assert offset < length, or that length - (offset + 1) is in u30.
+        // Assert offset < length, or that length - (offset + 1) is in u28.
         // Compute offset + 1.
         const one = 1;
         tempvar index_plus_1 = index + one;
         // Compute length - (offset + 1).
         tempvar offset_length_diff = array_length - index_plus_1;
         // Assert length - (offset + 1) is in u32.
-        assert offset_length_diff in [0, 0x3fffffff];
+        assert offset_length_diff in [0, 0xfffffff];
         // Compute the offset of the element (in cells).
         maybe_tempvar element_offset_in_cells = index * element_size;
          // The start address of target cells.
@@ -601,31 +601,31 @@ fn build_array_slice_v2(
         maybe_tempvar array_length = array_length_in_cells / element_size;
         tempvar slice_end = slice_start + slice_length;
         // Check that offset is in range.
-        // Note that the offset may be as large as `(2^30 - 1) * 2`.
+        // Note that the offset may be as large as `(2^28 - 1) * 2`.
         tempvar is_in_range;
         hint TestLessThanOrEqual {lhs: slice_end, rhs: array_length} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
         // Index out of bounds. Assert that end_offset > length or that end_offset - 1 >= length or that (end_offset - 1 - length) in [0, 2^128).
         // Compute length + 1.
         const one = 1;
-        tempvar is_u30;
+        tempvar is_u28;
         tempvar rc;
-        const u30_max = 0x3fffffff;
-        hint TestLessThanOrEqual {lhs: slice_end, rhs: u30_max} into {dst: is_u30};
-        jump GoodRangeEnd if is_u30 != 0;
+        const u28_max = 0xfffffff;
+        hint TestLessThanOrEqual {lhs: slice_end, rhs: u28_max} into {dst: is_u28};
+        jump GoodRangeEnd if is_u28 != 0;
         // Checking the range end is bad.
-        assert rc = slice_end - u30_max;
+        assert rc = slice_end - u28_max;
         // Matching ap change for failure branches.
         tempvar _unused;
         ap += 1;
-        assert rc in [0, 0x3fffffff];
+        assert rc in [0, 0xfffffff];
         jump FailureHandle;
         GoodRangeEnd:
         tempvar length_plus_1 = array_length + one;
         // Compute the diff.
         assert rc = slice_end - length_plus_1;
         // Range check the diff.
-        assert rc in [0, 0x3fffffff];
+        assert rc in [0, 0xfffffff];
         jump FailureHandle;
 
         InRange:
@@ -633,7 +633,7 @@ fn build_array_slice_v2(
         // Compute length - end_offset.
         tempvar offset_length_diff = array_length - slice_end;
         // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
-        assert offset_length_diff in [0, 0x3fffffff];
+        assert offset_length_diff in [0, 0xfffffff];
         // Compute the offset of the element (in cells).
         maybe_tempvar slice_start_in_cells = slice_start * element_size;
         let slice_start_cell = arr_start + slice_start_in_cells;
@@ -673,7 +673,7 @@ fn build_multi_pop_front_v2(
         // Calculating the new start, as it is required for calculating the range checked value.
         tempvar new_start = arr_start + popped_size;
         assert rc = arr_end - new_start;
-        assert rc in [0, 0x3fffffff];
+        assert rc in [0, 0xfffffff];
     };
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
@@ -741,7 +741,7 @@ fn extend_multi_pop_failure_checks_v2(
         // `arr_size < popped_size`.
         tempvar minus_size = arr_start - arr_end;
         tempvar rc = minus_size + popped_size_minus_1;
-        assert rc in [0, 0x3fffffff];
+        assert rc in [0, 0xfffffff];
         jump Failure;
         HasEnoughElements:
     };

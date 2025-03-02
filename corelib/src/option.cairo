@@ -656,7 +656,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
 
     #[inline(always)]
     const fn unwrap(self: Option<T>) -> T {
-        self.expect('Option::unwrap failed.')
+        self.expect('urp')
     }
 
     #[inline]
