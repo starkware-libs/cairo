@@ -34,7 +34,7 @@ impl Instruction {
                 };
                 [v0, v1, v2, 0]
             }
-            InstructionBody::AssertEq(insn) => {
+            InstructionBody::AssertEq(insn) | InstructionBody::QM31AssertEq(insn) => {
                 let (kind, v2, v3) = insn.b.m31_info();
                 let v0 = match (insn.a.register, kind, self.inc_ap) {
                     (AP, ResOperandKind::AddApAp, false) => 17,
@@ -164,7 +164,6 @@ impl Instruction {
                 };
                 [v0, inst.lower, inst.upper, i16_to_m31(inst.cell.offset)]
             }
-            InstructionBody::QM31AssertEq(_) => panic!("QM31AssertEq is unsupported"),
             InstructionBody::Blake2sCompress(_) => panic!("Blake2sCompress is unsupported"),
         }
     }
