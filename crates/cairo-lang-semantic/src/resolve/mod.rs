@@ -432,9 +432,10 @@ impl<'db> Resolver<'db> {
         let mut specialized_item = self.specialize_generic_module_item(
             diagnostics,
             identifier,
-            inner_generic_item,
+            inner_generic_item.clone(),
             generic_args_syntax.clone(),
         )?;
+        self.data.resolved_items.generic.insert(identifier.stable_ptr(), inner_generic_item);
         self.handle_same_impl_trait(
             diagnostics,
             &mut specialized_item,
