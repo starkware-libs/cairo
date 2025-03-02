@@ -707,7 +707,7 @@ fn build_multi_pop_back_v2(
         // Calculating the new end, as it is required for calculating the range checked value.
         tempvar new_end = arr_end - popped_size;
         assert rc = new_end - arr_start;
-        assert rc in [0, 0x3fffffff];
+        assert rc in [0, 0xfffffff];
     };
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
