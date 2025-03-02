@@ -157,6 +157,13 @@ impl Instruction {
                 [v0, v1, i16_to_m31(insn.condition.offset), 0]
             }
             InstructionBody::Ret(_) => [171, 0, 0, 0],
+            InstructionBody::RangeCheck(inst) => {
+                let v0 = match inst.cell.register {
+                    AP => 172,
+                    FP => 173,
+                };
+                [v0, inst.lower, inst.upper, i16_to_m31(inst.cell.offset)]
+            }
             InstructionBody::QM31AssertEq(_) => panic!("QM31AssertEq is unsupported"),
             InstructionBody::Blake2sCompress(_) => panic!("Blake2sCompress is unsupported"),
         }

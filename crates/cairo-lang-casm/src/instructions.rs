@@ -20,6 +20,7 @@ pub enum InstructionBody {
     Jump(JumpInstruction),
     Ret(RetInstruction),
     Blake2sCompress(Blake2sCompressInstruction),
+    RangeCheck(RangeCheckInstruction),
 }
 impl InstructionBody {
     pub fn op_size(&self) -> usize {
@@ -32,6 +33,7 @@ impl InstructionBody {
             InstructionBody::Jnz(insn) => insn.op_size(),
             InstructionBody::Ret(insn) => insn.op_size(),
             InstructionBody::Blake2sCompress(insn) => insn.op_size(),
+            InstructionBody::RangeCheck(insn) => insn.op_size(),
         }
     }
 }
@@ -46,6 +48,7 @@ impl Display for InstructionBody {
             InstructionBody::Jump(insn) => write!(f, "{insn}",),
             InstructionBody::Ret(insn) => write!(f, "{insn}",),
             InstructionBody::Blake2sCompress(insn) => write!(f, "{insn}",),
+            InstructionBody::RangeCheck(insn) => write!(f, "{insn}",),
         }
     }
 }
@@ -224,5 +227,23 @@ impl Display for Blake2sCompressInstruction {
             "blake2s[state={}, message={}, byte_count={}, finalize={}] => [ap + 0]",
             self.state, self.message, self.byte_count, self.finalize
         )
+    }
+}
+
+/// Represents a blake2s instruction, "blake2s".
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct RangeCheckInstruction {
+    pub cell: CellRef,
+    pub lower: u32,
+    pub upper: u32,
+}
+impl RangeCheckInstruction {
+    pub fn op_size(&self) -> usize {
+        1
+    }
+}
+impl Display for RangeCheckInstruction {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "assert {} in [{}, {}]", self.cell, self.lower, self.upper)
     }
 }

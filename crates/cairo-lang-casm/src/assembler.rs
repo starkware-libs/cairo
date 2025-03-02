@@ -253,6 +253,9 @@ impl Instruction {
                     },
                 }
             }
+            InstructionBody::RangeCheck(_) => {
+                unreachable!("RangeCheck instructions are not supported in felt252 assembler.")
+            }
         }
     }
 }
