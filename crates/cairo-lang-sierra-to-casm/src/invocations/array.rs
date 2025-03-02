@@ -38,6 +38,14 @@ pub fn build(
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::SnapshotMultiPopFrontV2(libfunc) => {
+            build_multi_pop_front_v2(libfunc, builder)
+        }
+        ArrayConcreteLibfunc::SnapshotMultiPopBackV2(libfunc) => {
+            build_multi_pop_back_v2(libfunc, builder)
+        }
+        ArrayConcreteLibfunc::GetV2(libfunc) => build_array_get_v2(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::SliceV2(libfunc) => build_array_slice_v2(&libfunc.ty, builder),
     }
 }
 
@@ -506,6 +514,234 @@ fn extend_multi_pop_failure_checks(
         tempvar minus_size = arr_start - arr_end;
         tempvar rc = minus_size + popped_size_minus_1;
         assert rc = *(range_check++);
+        jump Failure;
+        HasEnoughElements:
+    };
+}
+
+/// Handles a Sierra statement for fetching an array element at a specific index.
+fn build_array_get_v2(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_arr, expr_index] = builder.try_get_refs()?;
+    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let index = expr_index.try_unpack_single()?;
+
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::new(builder.m31);
+    add_input_variables! {casm_builder,
+        deref_or_immediate index;
+        deref arr_start;
+        deref arr_end;
+    };
+    casm_build_extend! {casm_builder,
+        const element_size = element_size;
+        // Compute the length of the array (in cells).
+        tempvar array_length_in_cells = arr_end - arr_start;
+        // Compute the length of the array (in cells).
+        maybe_tempvar array_length = array_length_in_cells / element_size;
+        // Check that offset is in range.
+        // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1)`.
+        tempvar is_in_range;
+        hint TestLessThan {lhs: index, rhs: array_length} into {dst: is_in_range};
+        jump InRange if is_in_range != 0;
+        // Index out of bounds. Compute offset - length.
+        tempvar offset_length_diff = index - array_length;
+        // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
+        assert offset_length_diff in [0, 0x3fffffff];
+        jump FailureHandle;
+
+        InRange:
+        // Assert offset < length, or that length - (offset + 1) is in u30.
+        // Compute offset + 1.
+        const one = 1;
+        tempvar index_plus_1 = index + one;
+        // Compute length - (offset + 1).
+        tempvar offset_length_diff = array_length - index_plus_1;
+        // Assert length - (offset + 1) is in u32.
+        assert offset_length_diff in [0, 0x3fffffff];
+        // Compute the offset of the element (in cells).
+        maybe_tempvar element_offset_in_cells = index * element_size;
+         // The start address of target cells.
+        let target_cell = arr_start + element_offset_in_cells;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[target_cell]], None), ("FailureHandle", &[], Some(failure_handle))],
+        CostValidationInfo::default(),
+    ))
+}
+
+/// Handles a Sierra statement for returning a snapshot of a slice of an array.
+fn build_array_slice_v2(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_arr, expr_slice_start, expr_slice_length] = builder.try_get_refs()?;
+    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let slice_start = expr_slice_start.try_unpack_single()?;
+    let slice_length = expr_slice_length.try_unpack_single()?;
+
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::new(builder.m31);
+    add_input_variables! {casm_builder,
+        deref slice_start;
+        deref_or_immediate slice_length;
+        deref arr_start;
+        deref arr_end;
+    };
+    casm_build_extend! {casm_builder,
+        const element_size = element_size;
+        // Compute the length of the array (in cells).
+        tempvar array_length_in_cells = arr_end - arr_start;
+        maybe_tempvar array_length = array_length_in_cells / element_size;
+        tempvar slice_end = slice_start + slice_length;
+        // Check that offset is in range.
+        // Note that the offset may be as large as `(2^30 - 1) * 2`.
+        tempvar is_in_range;
+        hint TestLessThanOrEqual {lhs: slice_end, rhs: array_length} into {dst: is_in_range};
+        jump InRange if is_in_range != 0;
+        // Index out of bounds. Assert that end_offset > length or that end_offset - 1 >= length or that (end_offset - 1 - length) in [0, 2^128).
+        // Compute length + 1.
+        const one = 1;
+        tempvar is_u30;
+        tempvar rc;
+        const u30_max = 0x3fffffff;
+        hint TestLessThanOrEqual {lhs: slice_end, rhs: u30_max} into {dst: is_u30};
+        jump GoodRangeEnd if is_u30 != 0;
+        // Checking the range end is bad.
+        assert rc = slice_end - u30_max;
+        // Matching ap change for failure branches.
+        tempvar _unused;
+        ap += 1;
+        assert rc in [0, 0x3fffffff];
+        jump FailureHandle;
+        GoodRangeEnd:
+        tempvar length_plus_1 = array_length + one;
+        // Compute the diff.
+        assert rc = slice_end - length_plus_1;
+        // Range check the diff.
+        assert rc in [0, 0x3fffffff];
+        jump FailureHandle;
+
+        InRange:
+        // Assert end_offset <= length, or that length - end_offset is in [0, 2^128).
+        // Compute length - end_offset.
+        tempvar offset_length_diff = array_length - slice_end;
+        // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
+        assert offset_length_diff in [0, 0x3fffffff];
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_start_in_cells = slice_start * element_size;
+        let slice_start_cell = arr_start + slice_start_in_cells;
+        // Compute the offset of the element (in cells).
+        maybe_tempvar slice_end_in_cells = slice_end * element_size;
+        let slice_end_cell = arr_start + slice_end_in_cells;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[slice_start_cell, slice_end_cell]], None),
+            ("FailureHandle", &[], Some(failure_handle)),
+        ],
+        CostValidationInfo::default(),
+    ))
+}
+
+/// Handles a Sierra statement for popping elements from the beginning of an array.
+fn build_multi_pop_front_v2(
+    libfunc: &ConcreteMultiPopLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
+
+    let mut casm_builder = CasmBuilder::new(builder.m31);
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    extend_multi_pop_failure_checks_v2(&mut casm_builder, arr_start, arr_end, popped_size);
+    casm_build_extend! {casm_builder,
+        // Success case.
+        const popped_size = popped_size;
+        tempvar rc;
+        // Calculating the new start, as it is required for calculating the range checked value.
+        tempvar new_start = arr_start + popped_size;
+        assert rc = arr_end - new_start;
+        assert rc in [0, 0x3fffffff];
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[new_start, arr_end], &[arr_start]], None),
+            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        CostValidationInfo::default(),
+    ))
+}
+
+/// Handles a Sierra statement for popping elements from the end of an array.
+fn build_multi_pop_back_v2(
+    libfunc: &ConcreteMultiPopLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
+
+    let mut casm_builder = CasmBuilder::new(builder.m31);
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    extend_multi_pop_failure_checks_v2(&mut casm_builder, arr_start, arr_end, popped_size);
+    casm_build_extend! {casm_builder,
+        // Success case.
+        const popped_size = popped_size;
+        tempvar rc;
+        // Calculating the new end, as it is required for calculating the range checked value.
+        tempvar new_end = arr_end - popped_size;
+        assert rc = new_end - arr_start;
+        assert rc in [0, 0x3fffffff];
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[arr_start, new_end], &[new_end]], None),
+            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        CostValidationInfo::default(),
+    ))
+}
+
+/// Extends the casm builder with the common part of the multi-pop front and multi-pop back.
+fn extend_multi_pop_failure_checks_v2(
+    casm_builder: &mut CasmBuilder,
+    arr_start: Var,
+    arr_end: Var,
+    popped_size: i16,
+) {
+    casm_build_extend! {casm_builder,
+        const popped_size_minus_1 = popped_size - 1;
+        const popped_size = popped_size;
+        let arr_start_popped = arr_start + popped_size;
+        tempvar has_enough_elements;
+        hint TestLessThanOrEqualAddress {
+            lhs: arr_start_popped, rhs: arr_end
+        } into { dst: has_enough_elements };
+        jump HasEnoughElements if has_enough_elements != 0;
+        // Check that `arr_start - arr_end + popped_size - 1 >= 0`.
+        // This implies `popped_size - 1 >= arr_end - arr_start = arr_size` ==>
+        // `arr_size < popped_size`.
+        tempvar minus_size = arr_start - arr_end;
+        tempvar rc = minus_size + popped_size_minus_1;
+        assert rc in [0, 0x3fffffff];
         jump Failure;
         HasEnoughElements:
     };

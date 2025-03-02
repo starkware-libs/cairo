@@ -58,11 +58,15 @@ define_libfunc_hierarchy! {
         PopFrontConsume(ArrayPopFrontConsumeLibfunc),
         Get(ArrayGetLibfunc),
         Slice(ArraySliceLibfunc),
+        GetV2(ArrayGetV2Libfunc),
+        SliceV2(ArraySliceV2Libfunc),
         Len(ArrayLenLibfunc),
         SnapshotPopFront(ArraySnapshotPopFrontLibfunc),
         SnapshotPopBack(ArraySnapshotPopBackLibfunc),
         SnapshotMultiPopFront(ArraySnapshotMultiPopFrontLibfunc),
         SnapshotMultiPopBack(ArraySnapshotMultiPopBackLibfunc),
+        SnapshotMultiPopFrontV2(ArraySnapshotMultiPopFrontV2Libfunc),
+        SnapshotMultiPopBackV2(ArraySnapshotMultiPopBackV2Libfunc),
     }, ArrayConcreteLibfunc
 }
 
@@ -365,6 +369,43 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
 }
 pub type ArrayGetLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayGetLibfuncWrapped>;
 
+/// Libfunc for fetching a value from a specific array index.
+#[derive(Default)]
+pub struct ArrayGetV2LibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayGetV2LibfuncWrapped {
+    const STR_ID: &'static str = "array_get_v2";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let param_signatures = vec![
+            ParamSignature::new(snapshot_ty(context, arr_type)?),
+            ParamSignature::new(index_type),
+        ];
+        let branch_signatures = vec![
+            // First (success) branch returns rc, array and element; failure branch does not return
+            // an element.
+            BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: box_ty(context, snapshot_ty(context, ty)?)?,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                }],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+            BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+        ];
+        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+pub type ArrayGetV2Libfunc = WrapSignatureAndTypeGenericLibfunc<ArrayGetV2LibfuncWrapped>;
+
 /// Libfunc for getting a slice of an array snapshot.
 #[derive(Default)]
 pub struct ArraySliceLibfuncWrapped {}
@@ -413,6 +454,50 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
     }
 }
 pub type ArraySliceLibfunc = WrapSignatureAndTypeGenericLibfunc<ArraySliceLibfuncWrapped>;
+
+/// Libfunc for getting a slice of an array snapshot.
+#[derive(Default)]
+pub struct ArraySliceV2LibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArraySliceV2LibfuncWrapped {
+    const STR_ID: &'static str = "array_slice_v2";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_snapshot_type =
+            snapshot_ty(context, context.get_wrapped_concrete_type(ArrayType::id(), ty)?)?;
+        let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let param_signatures = vec![
+            ParamSignature::new(arr_snapshot_type.clone()),
+            // Start
+            ParamSignature::new(index_type.clone()),
+            // Length
+            ParamSignature::new(index_type),
+        ];
+        let branch_signatures = vec![
+            // Success.
+            BranchSignature {
+                vars: vec![
+                    // Array slice snapshot.
+                    OutputVarInfo {
+                        ty: arr_snapshot_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+            // Failure - returns only the range check buffer.
+            BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known { new_vars_only: false },
+            },
+        ];
+        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
+    }
+}
+pub type ArraySliceV2Libfunc = WrapSignatureAndTypeGenericLibfunc<ArraySliceV2LibfuncWrapped>;
 
 /// Libfunc for popping the first value from the beginning of an array snapshot.
 #[derive(Default)]
@@ -622,6 +707,126 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let popped_ty = args_as_single_type(args)?;
+        Ok(ConcreteMultiPopLibfunc {
+            popped_ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
+/// Libfunc for popping multiple first values from the beginning of an array snapshot.
+#[derive(Default)]
+pub struct ArraySnapshotMultiPopFrontV2Libfunc {}
+impl NamedLibfunc for ArraySnapshotMultiPopFrontV2Libfunc {
+    const STR_ID: &'static str = "array_snapshot_multi_pop_front_v2";
+
+    type Concrete = ConcreteMultiPopLibfunc;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_snapshot_ty.clone())],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        OutputVarInfo {
+                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: arr_snapshot_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let popped_ty = args_as_single_type(args)?;
+        Ok(ConcreteMultiPopLibfunc {
+            popped_ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
+    }
+}
+
+/// Libfunc for popping the last value from the end of an array snapshot.
+#[derive(Default)]
+pub struct ArraySnapshotMultiPopBackV2Libfunc {}
+impl NamedLibfunc for ArraySnapshotMultiPopBackV2Libfunc {
+    const STR_ID: &'static str = "array_snapshot_multi_pop_back_v2";
+
+    type Concrete = ConcreteMultiPopLibfunc;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let popped_ty = args_as_single_type(args)?;
+        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_snapshot_ty.clone())],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        OutputVarInfo {
+                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: arr_snapshot_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

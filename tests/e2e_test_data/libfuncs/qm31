@@ -21,10 +21,11 @@ type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc qm31_add = qm31_add;
 
-qm31_add([0], [1]) -> ([2]); // 0
-return([2]); // 1
+F0:
+qm31_add([0], [1]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: qm31, [1]: qm31) -> (qm31);
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 
 //! > ==========================================================================
 
@@ -51,10 +52,11 @@ type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc qm31_sub = qm31_sub;
 
-qm31_sub([0], [1]) -> ([2]); // 0
-return([2]); // 1
+F0:
+qm31_sub([0], [1]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: qm31, [1]: qm31) -> (qm31);
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 
 //! > ==========================================================================
 
@@ -81,10 +83,11 @@ type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc qm31_mul = qm31_mul;
 
-qm31_mul([0], [1]) -> ([2]); // 0
-return([2]); // 1
+F0:
+qm31_mul([0], [1]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: qm31, [1]: qm31) -> (qm31);
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 
 //! > ==========================================================================
 
@@ -113,10 +116,11 @@ type NonZero<qm31> = NonZero<qm31> [storable: true, drop: true, dup: true, zero_
 
 libfunc qm31_div = qm31_div;
 
-qm31_div([0], [1]) -> ([2]); // 0
-return([2]); // 1
+F0:
+qm31_div([0], [1]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: qm31, [1]: NonZero<qm31>) -> (qm31);
+test::foo@F0([0]: qm31, [1]: NonZero<qm31>) -> (qm31);
 
 //! > ==========================================================================
 
@@ -141,11 +145,12 @@ type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc qm31_const<1, 2, 3, 4> = qm31_const<1, 2, 3, 4>;
 libfunc store_temp<qm31> = store_temp<qm31>;
 
-qm31_const<1, 2, 3, 4>() -> ([0]); // 0
-store_temp<qm31>([0]) -> ([0]); // 1
-return([0]); // 2
+F0:
+qm31_const<1, 2, 3, 4>() -> ([0]);
+store_temp<qm31>([0]) -> ([0]);
+return([0]);
 
-test::foo@0() -> (qm31);
+test::foo@F0() -> (qm31);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 100})
@@ -187,18 +192,20 @@ libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm
 libfunc store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>> = store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>;
 libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>;
 
-qm31_is_zero([0]) { fallthrough() 6([1]) }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>([2]) -> ([3]); // 3
-store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>([1]) -> ([4]); // 7
-store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([4]) -> ([4]); // 8
-return([4]); // 9
+F0:
+qm31_is_zero([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>);
+test::foo@F0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
@@ -233,11 +240,12 @@ type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc qm31_pack = qm31_pack;
 libfunc store_temp<qm31> = store_temp<qm31>;
 
-qm31_pack([0], [1], [2], [3]) -> ([4]); // 0
-store_temp<qm31>([4]) -> ([4]); // 1
-return([4]); // 2
+F0:
+qm31_pack([0], [1], [2], [3]) -> ([4]);
+store_temp<qm31>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>, [2]: BoundedInt<0, 2147483646>, [3]: BoundedInt<0, 2147483646>) -> (qm31);
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>, [2]: BoundedInt<0, 2147483646>, [3]: BoundedInt<0, 2147483646>) -> (qm31);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 700})
@@ -293,13 +301,14 @@ libfunc struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 21474836
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>> = store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>;
 
-qm31_unpack([0], [1]) -> ([2], [3], [4], [5], [6]); // 0
-struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([3], [4], [5], [6]) -> ([7]); // 1
-store_temp<RangeCheck>([2]) -> ([2]); // 2
-store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([7]) -> ([7]); // 3
-return([2], [7]); // 4
+F0:
+qm31_unpack([0], [1]) -> ([2], [3], [4], [5], [6]);
+struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([3], [4], [5], [6]) -> ([7]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([7]) -> ([7]);
+return([2], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: qm31) -> (RangeCheck, Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>);
+test::foo@F0([0]: RangeCheck, [1]: qm31) -> (RangeCheck, Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 2350})

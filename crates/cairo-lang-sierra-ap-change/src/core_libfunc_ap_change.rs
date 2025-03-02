@@ -96,6 +96,20 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     .map(ApChange::Known)
                     .to_vec()
             }
+            ArrayConcreteLibfunc::SnapshotMultiPopFrontV2(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBackV2(_) => {
+                vec![ApChange::Known(3), ApChange::Known(3)]
+            }
+            ArrayConcreteLibfunc::GetV2(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [4, 3] } else { [6, 4] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
+            ArrayConcreteLibfunc::SliceV2(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [4, 6] } else { [7, 7] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
             ArrayConcreteLibfunc::Len(libfunc) => {
                 vec![ApChange::Known(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
             }

@@ -315,6 +315,24 @@ pub fn core_libfunc_cost(
                     ]
                 }
             }
+            ArrayConcreteLibfunc::SnapshotMultiPopFrontV2(_)
+            | ArrayConcreteLibfunc::SnapshotMultiPopBackV2(_) => {
+                vec![ConstCost::steps(4).into(), ConstCost::steps(5).into()]
+            }
+            ArrayConcreteLibfunc::GetV2(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![ConstCost::steps(5).into(), ConstCost::steps(5).into()]
+                } else {
+                    vec![ConstCost::steps(7).into(), ConstCost::steps(6).into()]
+                }
+            }
+            ArrayConcreteLibfunc::SliceV2(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![ConstCost::steps(5).into(), ConstCost::steps(8).into()]
+                } else {
+                    vec![ConstCost::steps(8).into(), ConstCost::steps(9).into()]
+                }
+            }
             ArrayConcreteLibfunc::Len(libfunc) => {
                 vec![
                     ConstCost::steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })

@@ -19,7 +19,8 @@ use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, Blake2sCompressInstruction, CallInstruction,
-    Instruction, InstructionBody, JnzInstruction, JumpInstruction, RetInstruction,
+    Instruction, InstructionBody, JnzInstruction, JumpInstruction, RangeCheckInstruction,
+    RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 
@@ -421,6 +422,16 @@ impl CasmBuilder {
     }
 
     /// Increases AP by `size`.
+    pub fn range_check_value(&mut self, value: Var, lower: u32, upper: u32) {
+        let cell = self.as_cell_ref(value, false);
+        let instruction = self.next_instruction(
+            InstructionBody::RangeCheck(RangeCheckInstruction { cell, lower, upper }),
+            false,
+        );
+        self.statements.push(Statement::Final(instruction));
+    }
+
+    /// Increases AP by `size`.
     pub fn add_ap(&mut self, size: usize) {
         let instruction = self.next_instruction(
             InstructionBody::AddAp(AddApInstruction { operand: BigInt::from(size).into() }),
@@ -758,6 +769,10 @@ macro_rules! casm_build_extend {
     };
     ($builder:expr, ap += $value:expr; $($tok:tt)*) => {
         $builder.add_ap($value);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:expr, assert $value:ident in [$lower:expr , $upper:expr]; $($tok:tt)*) => {
+        $builder.range_check_value($value, $lower, $upper);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, const $imm:ident = $value:expr; $($tok:tt)*) => {
