@@ -23,6 +23,111 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 //! > expected_diagnostics
 
 //! > result
+[ap + 0] = 1, ap++;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = 1, ap++;
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = 20, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] + 2, ap++;
+call rel 2;
+ret;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+[ap + -1] = [ap + 0] + [fp + -5], ap++;
+%{ memory[ap + 0] = 268435456 <= (memory[ap + -1] + 0) % PRIME %}
+jmp rel 3 if [ap + 0] != 0, ap++;
+assert [ap + -2] in [0, 268435455];
+jmp rel 6;
+[ap + 0] = [ap + -2] + 268435456, ap++;
+assert [ap + -1] in [0, 268435455];
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 4;
+ap += 1;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 68 if [ap + -2] != 0;
+[ap + -6] = [ap + 0] + 1, ap++;
+%{ memory[ap + 0] = 268435456 <= (memory[ap + -1] + 0) % PRIME %}
+jmp rel 3 if [ap + 0] != 0, ap++;
+assert [ap + -2] in [0, 268435455];
+jmp rel 10;
+[ap + 0] = [ap + -2] + 268435456, ap++;
+assert [ap + -1] in [0, 268435455];
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 7566690, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+%{ memory[ap + 0] = memory[ap + -3] < memory[ap + -1] %}
+jmp rel 4 if [ap + 0] != 0, ap++;
+[ap + -4] = [ap + 0] + [ap + -2], ap++;
+assert [ap + -1] in [0, 268435455];
+jmp rel 43;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + -3] = [ap + 0] + [ap + -1], ap++;
+assert [ap + -1] in [0, 268435455];
+[ap + 0] = [fp + -4] + [ap + -6], ap++;
+[ap + -13] = [ap + 0] + 2, ap++;
+[ap + 0] = [[ap + -2] + 0], ap++;
+%{ memory[ap + 0] = 268435456 <= (memory[ap + -2] + 0) % PRIME %}
+jmp rel 3 if [ap + 0] != 0, ap++;
+assert [ap + -3] in [0, 268435455];
+jmp rel 10;
+[ap + 0] = [ap + -3] + 268435456, ap++;
+assert [ap + -1] in [0, 268435455];
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 7566690, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+%{ memory[ap + 0] = memory[ap + -4] < memory[ap + -1] %}
+jmp rel 4 if [ap + 0] != 0, ap++;
+[ap + -5] = [ap + 0] + [ap + -2], ap++;
+assert [ap + -1] in [0, 268435455];
+jmp rel 13;
+[ap + 0] = [ap + -5] + 1, ap++;
+[ap + -3] = [ap + 0] + [ap + -1], ap++;
+assert [ap + -1] in [0, 268435455];
+[ap + 0] = [fp + -4] + [ap + -7], ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -8] + [ap + -1], ap++;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+call rel -65;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 7697008, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 7697008, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+
 ["0x20", "0x2", "0x7ffffffc", "0x0"],
 ["0x20", "0x2", "0x7ffffffc", "0x0"],
 ["0xa", "0x2", "0x0", "0x0"],
@@ -43,10 +148,10 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 ["0x38", "0x7ffffffc", "0x7ffffffb", "0x0"],
 ["0x16", "0x7ffffffe", "0x7ffffffa", "0x0"],
 ["0xa8", "0x3", "0x0", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffd"],
 ["0x91", "0x6", "0x0", "0x0"],
 ["0x1a", "0x0", "0x10000000", "0x7ffffffd"],
-["0xac", "0x0", "0xfffffff", "0x1"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0x26", "0x0", "0x0", "0x0"],
 ["0x1e", "0x0", "0x7ffffffb", "0x0"],
 ["0x91", "0x4", "0x0", "0x0"],
@@ -56,10 +161,10 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 ["0xa7", "0x44", "0x7ffffffd", "0x0"],
 ["0x1a", "0x7ffffff9", "0x1", "0x0"],
 ["0xa8", "0x3", "0x0", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffd"],
 ["0x91", "0xa", "0x0", "0x0"],
 ["0x1a", "0x0", "0x10000000", "0x7ffffffd"],
-["0xac", "0x0", "0xfffffff", "0x1"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0xa", "0x1", "0x0", "0x0"],
 ["0x26", "0x0", "0x737562", "0x0"],
 ["0x21", "0x7ffffffe", "0x7ffffffd", "0x0"],
@@ -70,19 +175,19 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 ["0x38", "0x7ffffffc", "0x7ffffffb", "0x0"],
 ["0xa8", "0x4", "0x0", "0x0"],
 ["0x12", "0x7ffffffb", "0x7ffffffd", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x2"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0x91", "0x2b", "0x0", "0x0"],
 ["0x1a", "0x0", "0x1", "0x7ffffffb"],
 ["0x12", "0x7ffffffc", "0x7ffffffe", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x3"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0x14", "0x0", "0x7ffffff9", "0x7ffffffb"],
 ["0x1a", "0x7ffffff2", "0x2", "0x0"],
 ["0x22", "0x0", "0x7ffffffd", "0x0"],
 ["0xa8", "0x3", "0x0", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x7ffffffd"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffc"],
 ["0x91", "0xa", "0x0", "0x0"],
 ["0x1a", "0x0", "0x10000000", "0x7ffffffc"],
-["0xac", "0x0", "0xfffffff", "0x1"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0xa", "0x1", "0x0", "0x0"],
 ["0x26", "0x0", "0x737562", "0x0"],
 ["0x21", "0x7ffffffe", "0x7ffffffd", "0x0"],
@@ -93,11 +198,11 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 ["0x38", "0x7ffffffc", "0x7ffffffb", "0x0"],
 ["0xa8", "0x4", "0x0", "0x0"],
 ["0x12", "0x7ffffffa", "0x7ffffffd", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x2"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0x91", "0xd", "0x0", "0x0"],
 ["0x1a", "0x0", "0x1", "0x7ffffffa"],
 ["0x12", "0x7ffffffc", "0x7ffffffe", "0x0"],
-["0xac", "0x0", "0xfffffff", "0x3"],
+["0xac", "0x0", "0xfffffff", "0x7ffffffe"],
 ["0x14", "0x0", "0x7ffffff8", "0x7ffffffb"],
 ["0x22", "0x0", "0x7ffffffe", "0x0"],
 ["0x12", "0x0", "0x7ffffffe", "0x7ffffff7"],
@@ -126,3 +231,26 @@ fn fib_inner(n: core::array::usize, ref arr: Array<felt252>) {
 ["0x20", "0x0", "0x7ffffffc", "0x0"],
 ["0xab", "0x0", "0x0", "0x0"],
 ["0xab", "0x0", "0x0", "0x0"],
+"0": [
+{"accessible_scopes":[],"code":{"WriteRunParam":{"dst":{"offset":0,"register":"AP"},"index":{"Immediate":"0x0"}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"5": [
+{"accessible_scopes":[],"code":{"AddMarker":{"end":{"Deref":{"offset":-2,"register":"AP"}},"start":{"Deref":{"offset":-3,"register":"AP"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"13": [
+{"accessible_scopes":[],"code":{"TestLessThanOrEqual":{"dst":{"offset":0,"register":"AP"},"lhs":{"Immediate":"0x10000000"},"rhs":{"BinOp":{"a":{"offset":-1,"register":"AP"},"b":{"Immediate":"0x0"},"op":"Add"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"20": [
+{"accessible_scopes":[],"code":{"TestLessThanOrEqual":{"dst":{"offset":0,"register":"AP"},"lhs":{"Immediate":"0x10000000"},"rhs":{"BinOp":{"a":{"offset":-1,"register":"AP"},"b":{"Immediate":"0x0"},"op":"Add"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"25": [
+{"accessible_scopes":[],"code":{"AllocSegment":{"dst":{"offset":0,"register":"AP"}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"2d": [
+{"accessible_scopes":[],"code":{"TestLessThan":{"dst":{"offset":0,"register":"AP"},"lhs":{"Deref":{"offset":-3,"register":"AP"}},"rhs":{"Deref":{"offset":-1,"register":"AP"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"37": [
+{"accessible_scopes":[],"code":{"TestLessThanOrEqual":{"dst":{"offset":0,"register":"AP"},"lhs":{"Immediate":"0x10000000"},"rhs":{"BinOp":{"a":{"offset":-2,"register":"AP"},"b":{"Immediate":"0x0"},"op":"Add"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"3c": [
+{"accessible_scopes":[],"code":{"AllocSegment":{"dst":{"offset":0,"register":"AP"}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"44": [
+{"accessible_scopes":[],"code":{"TestLessThan":{"dst":{"offset":0,"register":"AP"},"lhs":{"Deref":{"offset":-4,"register":"AP"}},"rhs":{"Deref":{"offset":-1,"register":"AP"}}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"54": [
+{"accessible_scopes":[],"code":{"AllocSegment":{"dst":{"offset":0,"register":"AP"}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],"5b": [
+{"accessible_scopes":[],"code":{"AllocSegment":{"dst":{"offset":0,"register":"AP"}}},"flow_tracking_data":{"ap_tracking":{"group":0,"offset":1},"reference_ids":{}}}
+],

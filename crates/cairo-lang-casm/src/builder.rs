@@ -423,7 +423,7 @@ impl CasmBuilder {
 
     /// Increases AP by `size`.
     pub fn range_check_value(&mut self, value: Var, lower: u32, upper: u32) {
-        let cell = self.as_cell_ref(value, false);
+        let cell = self.as_cell_ref(value, true);
         let instruction = self.next_instruction(
             InstructionBody::RangeCheck(RangeCheckInstruction { cell, lower, upper }),
             false,

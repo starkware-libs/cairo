@@ -605,6 +605,7 @@ dependencies = [
  "indoc",
  "itertools 0.14.0",
  "serde",
+ "serde_json",
  "test-case",
  "test-log",
 ]
