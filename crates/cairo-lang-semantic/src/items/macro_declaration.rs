@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, 
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::ast::{ExprPath, MacroRepetitionOperatorWrapper};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -124,17 +124,25 @@ fn is_macro_rule_match_ex(
     for matcher_element in matcher_elements.elements(db.upcast()) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
-                let input_token = input_iter.next()?;
-                match input_token {
-                    ast::TokenTree::Token(token_tree_leaf) => {
-                        if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast())
-                            != token_tree_leaf.as_syntax_node().get_text_without_trivia(db.upcast())
-                        {
-                            return None;
+                if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast()) == "?" {
+                    continue;
+                }
+                if let Some(input_token) = input_iter.next() {
+                    match input_token {
+                        ast::TokenTree::Token(token_tree_leaf) => {
+                            if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast())
+                                != token_tree_leaf
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(db.upcast())
+                            {
+                                return None;
+                            }
                         }
+                        ast::TokenTree::Subtree(_) => return None,
+                        ast::TokenTree::Missing(_) => unreachable!(),
                     }
-                    ast::TokenTree::Subtree(_) => return None,
-                    ast::TokenTree::Missing(_) => unreachable!(),
+                } else {
+                    return None;
                 }
             }
             ast::MacroRuleElement::Param(param) => {
@@ -207,8 +215,32 @@ fn is_macro_rule_match_ex(
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
+            ast::MacroRuleElement::Repetition(repetition) => {
+                let rep_op = repetition.operator(db.upcast());
+                if rep_op.as_syntax_node().get_text_without_trivia(db.upcast()) == "?" {
+                    if let Some(next_input_token) = input_iter.next() {
+                        let mut temp_captures = OrderedHashMap::default();
+                        if is_macro_rule_match_ex(
+                            db,
+                            repetition.subtree(db.upcast()),
+                            match next_input_token {
+                                ast::TokenTree::Subtree(subtree) => subtree,
+                                _ => return None,
+                            },
+                            &mut temp_captures,
+                        )
+                        .is_some()
+                        {
+                            input_iter.next();
+                            captures.extend(temp_captures);
+                        }
+                    }
+                    continue;
+                }
+            }
         }
     }
+
     if input_iter.next().is_some() {
         return None;
     }
@@ -236,6 +268,25 @@ fn expand_macro_rule_ex(
     captures: &OrderedHashMap<String, String>,
     res_buffer: &mut String,
 ) {
+    if node.kind(db) == SyntaxKind::MacroRepetitionWrapper {
+        let repetition = ast::MacroRuleElement::from_syntax_node(db, node.clone());
+        match repetition {
+            ast::MacroRuleElement::Repetition(rep) => {
+                let rep_op = rep.operator(db);
+                let subtree = rep.subtree(db);
+                let capture_name = subtree.as_syntax_node().get_text_without_trivia(db);
+
+                let MacroRepetitionOperatorWrapper::QuestionMark(_) = rep_op;
+                if captures.contains_key(&capture_name) {
+                    expand_macro_rule_ex(db, subtree.as_syntax_node(), captures, res_buffer);
+                }
+            }
+            _ => {
+                return;
+            }
+        }
+    }
+
     if node.kind(db) == SyntaxKind::ExprPath {
         let path_node = ExprPath::from_syntax_node(db, node.clone());
 

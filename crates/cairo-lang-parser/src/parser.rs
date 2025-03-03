@@ -701,7 +701,7 @@ impl<'a> Parser<'a> {
             | SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLBrack => {
                 let subtree = self.parse_macro_elements();
-                Ok(MacroMatcherwrapper::new_green(self.db, subtree).into())
+                Ok(MacroMatcherWrapper::new_green(self.db, subtree).into())
             }
             _ => {
                 let token = self.parse_token_tree_leaf();
