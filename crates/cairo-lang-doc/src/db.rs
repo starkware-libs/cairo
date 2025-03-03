@@ -41,8 +41,8 @@ pub trait DocGroup:
     #[salsa::invoke(crate::documentable_formatter::get_item_signature)]
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 
-    /// Gets the signature of an item and a LocationLink Vector to enable mapping
-    /// signature slices on documentable items
+    /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
+    /// signature slices on documentable items.
     #[salsa::invoke(crate::documentable_formatter::get_item_signature_with_links)]
     fn get_item_signature_with_links(
         &self,
