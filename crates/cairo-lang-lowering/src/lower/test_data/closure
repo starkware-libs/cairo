@@ -106,7 +106,7 @@ foo
 //! > module_code
 struct PanicDestructable {}
 
-impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
+impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
     // Disable inlining to see the panic_destruct call in the lowering output.
     #[inline(never)]
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
@@ -153,7 +153,7 @@ Statements:
   (v8: core::felt252) <- 5
   (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
   (v10: core::panics::Panic) <- struct_construct()
-  (v11: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v0, v10)
+  (v11: core::panics::Panic) <- test::MyPanicDestruct::panic_destruct(v0, v10)
   (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v9)
   (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
 End:
@@ -178,7 +178,7 @@ Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
-  (v3: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v2, v1)
+  (v3: core::panics::Panic) <- test::MyPanicDestruct::panic_destruct(v2, v1)
 End:
   Return(v3)
 
