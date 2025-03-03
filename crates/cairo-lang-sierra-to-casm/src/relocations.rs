@@ -113,7 +113,7 @@ impl Relocation {
 pub struct RelocationEntry {
     /// The index of the casm instruction that needs to be relocated.
     pub instruction_idx: CodeOffset,
-    /// The relocation the needs to be applied.
+    /// The relocation that needs to be applied.
     pub relocation: Relocation,
 }
 

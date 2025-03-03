@@ -125,7 +125,7 @@ pub struct FixInfo {
 pub enum ValueInfo {
     /// The value is available through the given var usage.
     Var(VarUsage),
-    /// The can be replaced with other values of the same type.
+    /// The value can be replaced with other values of the same type.
     Interchangeable(semantic::TypeId),
     /// The value is the result of a StructConstruct statement.
     StructConstruct {
