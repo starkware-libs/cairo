@@ -124,17 +124,25 @@ fn is_macro_rule_match_ex(
     for matcher_element in matcher_elements.elements(db.upcast()) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
-                let input_token = input_iter.next()?;
-                match input_token {
-                    ast::TokenTree::Token(token_tree_leaf) => {
-                        if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast())
-                            != token_tree_leaf.as_syntax_node().get_text_without_trivia(db.upcast())
-                        {
-                            return None;
+                if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast()) == "?" {
+                    continue;
+                }
+                if let Some(input_token) = input_iter.next() {
+                    match input_token {
+                        ast::TokenTree::Token(token_tree_leaf) => {
+                            if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast())
+                                != token_tree_leaf
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(db.upcast())
+                            {
+                                return None;
+                            }
                         }
+                        ast::TokenTree::Subtree(_) => return None,
+                        ast::TokenTree::Missing(_) => unreachable!(),
                     }
-                    ast::TokenTree::Subtree(_) => return None,
-                    ast::TokenTree::Missing(_) => unreachable!(),
+                } else {
+                    return None;
                 }
             }
             ast::MacroRuleElement::Param(param) => {
@@ -207,8 +215,32 @@ fn is_macro_rule_match_ex(
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
+            ast::MacroRuleElement::Repetition(repetition) => {
+                let rep_op = repetition.operator(db.upcast());
+                if rep_op.as_syntax_node().get_text_without_trivia(db.upcast()) == "?" {
+                    if let Some(next_input_token) = input_iter.next() {
+                        let mut temp_captures = OrderedHashMap::default();
+                        if is_macro_rule_match_ex(
+                            db,
+                            repetition.subtree(db.upcast()),
+                            match next_input_token {
+                                ast::TokenTree::Subtree(subtree) => subtree,
+                                _ => return None,
+                            },
+                            &mut temp_captures,
+                        )
+                        .is_some()
+                        {
+                            input_iter.next();
+                            captures.extend(temp_captures);
+                        }
+                    }
+                    continue;
+                }
+            }
         }
     }
+
     if input_iter.next().is_some() {
         return None;
     }
