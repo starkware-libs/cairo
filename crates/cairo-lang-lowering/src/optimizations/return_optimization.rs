@@ -75,7 +75,7 @@ impl ReturnOptimizerContext<'_> {
     }
 
     /// Helper function for `merge_match`.
-    /// Returns `Option<ReturnInfo>` rather then `AnalyzerInfo` to simplify early return.
+    /// Returns `Option<ReturnInfo>` rather than `AnalyzerInfo` to simplify early return.
     fn try_merge_match(
         &mut self,
         match_info: &MatchInfo,
