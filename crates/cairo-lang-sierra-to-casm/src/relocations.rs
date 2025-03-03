@@ -119,7 +119,7 @@ pub struct RelocationEntry {
 
 /// Applies 'relocations' to 'instructions'.
 ///
-/// This is currently O(instruction.len()) rather then O(relocations.len()),
+/// This is currently O(instruction.len()) rather than O(relocations.len()),
 /// But another pass is required anyhow to generate the bytecode and the relocations
 /// can be applied during that pass.
 pub fn relocate_instructions(
