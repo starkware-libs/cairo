@@ -38,8 +38,9 @@ libfunc drop<Array<felt252>> = drop<Array<felt252>>;
 libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
 libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
-libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
+libfunc jump = jump;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
+libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
 libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
@@ -92,24 +93,23 @@ return([18], [22], [2], [28]);
 F0_B1:
 branch_align() -> ();
 redeposit_gas([21]) -> ([29]);
-function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([30]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([30]) -> ([31]);
-store_temp<RangeCheck>([20]) -> ([20]);
-store_temp<GasBuiltin>([29]) -> ([29]);
-store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([31]) -> ([31]);
-return([20], [29], [2], [31]);
+store_temp<RangeCheck>([20]) -> ([30]);
+store_temp<GasBuiltin>([29]) -> ([31]);
+jump() { F0_B3() };
 F0_B2:
 branch_align() -> ();
 drop<core::array::Span::<core::felt252>>([3]) -> ();
 redeposit_gas([7]) -> ([32]);
+store_temp<RangeCheck>([6]) -> ([30]);
+store_temp<GasBuiltin>([32]) -> ([31]);
+F0_B3:
 function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([33]);
 enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([33]) -> ([34]);
-store_temp<RangeCheck>([6]) -> ([6]);
-store_temp<GasBuiltin>([32]) -> ([32]);
+store_temp<RangeCheck>([30]) -> ([30]);
+store_temp<GasBuiltin>([31]) -> ([31]);
 store_temp<System>([2]) -> ([2]);
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([34]) -> ([34]);
-return([6], [32], [2], [34]);
+return([30], [31], [2], [34]);
 F1:
 array_new<felt252>() -> ([0]);
 const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([1]);
