@@ -965,15 +965,19 @@ End:
 
 blk3:
 Statements:
-  (v3: core::felt252) <- 1
 End:
-  Goto(blk1, {v3 -> v1})
+  Goto(blk5, {})
 
 blk4:
 Statements:
-  (v4: core::felt252) <- 1
 End:
-  Goto(blk1, {v4 -> v1})
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v3: core::felt252) <- 1
+End:
+  Goto(blk1, {v3 -> v1})
 
 //! > lowering_diagnostics
 
