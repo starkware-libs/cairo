@@ -16,8 +16,7 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, Statement, StatementCall};
 ///
 /// The algorithm is as follows:
 /// Check if the function will have the `GasBuiltin` implicit after the lower_implicits stage.
-/// If so, add a `redeposit_gas` call at the beginning of every branch in the code.
-/// Otherwise, do nothing.
+/// If so, add a `redeposit_gas` call after every branch in the code.
 ///
 /// Note that for implementation simplicity this stage must be applied before `LowerImplicits`
 /// stage.
@@ -55,7 +54,7 @@ pub fn gas_redeposit(
     .lowered(db);
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
-    let mut redeposit_commands = vec![];
+    let mut redeposit_blocks = vec![None; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
         if visited[block_id.0] {
             continue;
@@ -69,16 +68,27 @@ pub fn gas_redeposit(
             FlatBlockEnd::Match { info } => {
                 let location = info.location().with_auto_generation_note(db, "withdraw_gas");
                 for arm in info.arms() {
+                    redeposit_blocks[arm.block_id.0] = Some(location);
                     stack.push(arm.block_id);
-                    redeposit_commands.push((arm.block_id, location));
                 }
             }
             &FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::NotSet => unreachable!("Block end not set"),
         }
     }
-    for (block_id, location) in redeposit_commands {
-        let block = &mut lowered.blocks[block_id];
+
+    for (block_idx, block) in lowered.blocks.iter_mut().enumerate() {
+        let Some(location) = redeposit_blocks[block_idx] else {
+            continue;
+        };
+
+        if let FlatBlockEnd::Goto(target_block, _) = block.end {
+            if redeposit_blocks[target_block.0].is_none() {
+                redeposit_blocks[target_block.0] = Some(location);
+            }
+            continue;
+        }
+
         block.statements.insert(
             0,
             Statement::Call(StatementCall {

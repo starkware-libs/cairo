@@ -171,20 +171,19 @@ End:
 
 blk1:
 Statements:
-  () <- core::gas::redeposit_gas()
   (v8: core::felt252) <- test::heavy_op1()
 End:
   Goto(blk3, {v8 -> v11})
 
 blk2:
 Statements:
-  () <- core::gas::redeposit_gas()
   (v10: core::felt252) <- test::heavy_op2()
 End:
   Goto(blk3, {v10 -> v11})
 
 blk3:
 Statements:
+  () <- core::gas::redeposit_gas()
 End:
   Return(v11)
 
