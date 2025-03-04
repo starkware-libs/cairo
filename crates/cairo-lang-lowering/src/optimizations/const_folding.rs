@@ -232,6 +232,17 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
+        if stmt.function == self.panic_with_felt252 {
+            let val = self.as_const(stmt.inputs[0].var_id)?;
+            stmt.inputs.clear();
+            stmt.function = ModuleHelper::core(self.db.upcast())
+                .function_id(
+                    "panic_with_const_felt252",
+                    vec![GenericArgumentId::Constant(val.clone().intern(self.db))],
+                )
+                .lowered(self.db);
+            return None;
+        }
         let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
@@ -591,6 +602,8 @@ pub struct ConstFoldingLibfuncInfo {
     storage_access_module: ModuleId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: ExternFunctionId,
+    /// The `core::panic_with_felt252` function.
+    panic_with_felt252: FunctionId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
@@ -698,6 +711,7 @@ impl ConstFoldingLibfuncInfo {
             array_get,
             storage_access_module: storage_access_module.id,
             storage_base_address_from_felt252,
+            panic_with_felt252: core.function_id("panic_with_felt252", vec![]).lowered(db),
             type_value_ranges,
         }
     }

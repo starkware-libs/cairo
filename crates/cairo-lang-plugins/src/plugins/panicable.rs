@@ -114,14 +114,8 @@ fn generate_panicable_code(
             r#"
                 -> $inner_ty$ {{
                     match $function_name$({args}) {{
-                        {success_variant} (v) => {{
-                            v
-                        }},
-                        {failure_variant} (_v) => {{
-                            let mut data = core::array::ArrayTrait::<felt252>::new();
-                            core::array::ArrayTrait::<felt252>::append(ref data, $err_value$);
-                            panic(data)
-                        }},
+                        {success_variant}(v) => v,
+                        {failure_variant}(_) => core::panic_with_const_felt252::<$err_value$>(),
                     }}
                 }}
             "#

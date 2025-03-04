@@ -8,7 +8,7 @@
     "0x100000000000000000000000000000000",
     "0x400280007ff67fff",
     "0x10780017fff7fff",
-    "0x6a",
+    "0x66",
     "0x4825800180007ffa",
     "0x0",
     "0x400280007ff67fff",
@@ -20,11 +20,9 @@
     "0x20680017fff7fff",
     "0x4",
     "0x10780017fff7fff",
-    "0x12",
-    "0x480680017fff8000",
-    "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
+    "0x10",
     "0x1104800180018000",
-    "0x6b",
+    "0x67",
     "0x48127ff77fff8000",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
@@ -38,9 +36,9 @@
     "0x48127ff77fff8000",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x197",
+    "0x1b3",
     "0x482480017fff8000",
-    "0x196",
+    "0x1b2",
     "0x48127ffb7fff8000",
     "0x480080007ffe8000",
     "0x480080047fff8000",
@@ -66,7 +64,7 @@
     "0x480a7ff97fff8000",
     "0x480a7ff77fff8000",
     "0x1104800180018000",
-    "0x48",
+    "0x46",
     "0x482480017faa8000",
     "0x1",
     "0x48127fb87fff8000",
@@ -97,10 +95,8 @@
     "0x48127ff57fff8000",
     "0x48127ff57fff8000",
     "0x208b7fff7fff7ffe",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
     "0x1104800180018000",
-    "0x1f",
+    "0x11f",
     "0x482480017fe98000",
     "0x1",
     "0x480a7ff77fff8000",
@@ -113,10 +109,8 @@
     "0x48127ff77fff8000",
     "0x48127ff77fff8000",
     "0x208b7fff7fff7ffe",
-    "0x480680017fff8000",
-    "0x4f7574206f6620676173",
     "0x1104800180018000",
-    "0xf",
+    "0x111",
     "0x482680017ff68000",
     "0x1",
     "0x480a7ff77fff8000",
@@ -132,9 +126,11 @@
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x1",
-    "0x400180007fff7ffd",
-    "0x48127fff7fff8000",
-    "0x482480017ffe8000",
+    "0x480680017fff8000",
+    "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
+    "0x400080007ffe7fff",
+    "0x48127ffe7fff8000",
+    "0x482480017ffd8000",
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
@@ -154,13 +150,13 @@
     "0x20680017fff7ffb",
     "0x4",
     "0x10780017fff7fff",
-    "0xe1",
+    "0xdd",
     "0x402480017fff7ffb",
     "0x1",
     "0x20680017fff7fff",
     "0x4",
     "0x10780017fff7fff",
-    "0xdb",
+    "0xd7",
     "0x482680017ffd8000",
     "0x4",
     "0x482680017ffd8000",
@@ -183,13 +179,11 @@
     "0x4",
     "0x48307fff80007ff9",
     "0x20680017fff7fff",
-    "0x10",
+    "0xe",
     "0x40780017fff7fff",
     "0x27",
-    "0x480680017fff8000",
-    "0x416c6c20696e707574732068617665206265656e2066696c6c6564",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffc7",
+    "0xd1",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x48127fce7fff8000",
@@ -216,9 +210,9 @@
     "0x20680017fff7fff",
     "0x97",
     "0x1104800180018000",
-    "0xb1",
+    "0xd1",
     "0x482480017fff8000",
-    "0xb0",
+    "0xd0",
     "0x480680017fff8000",
     "0xe",
     "0x482480017ffe8000",
@@ -366,10 +360,8 @@
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x21",
-    "0x480680017fff8000",
-    "0x4e6f7420616c6c20696e707574732068617665206265656e2066696c6c6564",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff13",
+    "0x28",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x48127fce7fff8000",
@@ -380,10 +372,8 @@
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x30",
-    "0x480680017fff8000",
-    "0x4f7074696f6e3a3a756e77726170206661696c65642e",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff05",
+    "0x25",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
@@ -391,6 +381,42 @@
     "0x1",
     "0x48127ffa7fff8000",
     "0x48127ffa7fff8000",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x480680017fff8000",
+    "0x4f7574206f6620676173",
+    "0x400080007ffe7fff",
+    "0x48127ffe7fff8000",
+    "0x482480017ffd8000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x480680017fff8000",
+    "0x416c6c20696e707574732068617665206265656e2066696c6c6564",
+    "0x400080007ffe7fff",
+    "0x48127ffe7fff8000",
+    "0x482480017ffd8000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x480680017fff8000",
+    "0x4e6f7420616c6c20696e707574732068617665206265656e2066696c6c6564",
+    "0x400080007ffe7fff",
+    "0x48127ffe7fff8000",
+    "0x482480017ffd8000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x480680017fff8000",
+    "0x4f7074696f6e3a3a756e77726170206661696c65642e",
+    "0x400080007ffe7fff",
+    "0x48127ffe7fff8000",
+    "0x482480017ffd8000",
+    "0x1",
     "0x208b7fff7fff7ffe",
     "0x208b7fff7fff7ffe",
     "0xc",
@@ -446,9 +472,13 @@
     "0x0"
   ],
   "bytecode_segment_lengths": [
-    128,
-    7,
-    255,
+    122,
+    9,
+    249,
+    9,
+    9,
+    9,
+    9,
     52
   ],
   "hints": [
@@ -475,7 +505,7 @@
       ]
     ],
     [
-      50,
+      48,
       [
         {
           "TestLessThanOrEqual": {
@@ -500,7 +530,7 @@
       ]
     ],
     [
-      70,
+      68,
       [
         {
           "AllocSegment": {
@@ -513,7 +543,7 @@
       ]
     ],
     [
-      128,
+      122,
       [
         {
           "AllocSegment": {
@@ -526,7 +556,7 @@
       ]
     ],
     [
-      246,
+      240,
       [
         {
           "EvalCircuit": {
@@ -559,7 +589,7 @@
       ]
     ],
     [
-      281,
+      275,
       [
         {
           "AllocSegment": {
@@ -572,7 +602,59 @@
       ]
     ],
     [
-      338,
+      332,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      380,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      389,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      398,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      407,
       [
         {
           "AllocSegment": {
@@ -593,37 +675,61 @@
       ]
     ],
     [
-      50,
+      48,
       [
         "memory[ap + 0] = memory[ap + -1] <= memory[ap + -8]"
       ]
     ],
     [
-      70,
+      68,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      128,
+      122,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      246,
+      240,
       [
         "\nfrom starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner\n\nModBuiltinRunner.fill_memory(\n        memory=memory,\n        add_mod=(memory[fp + -5], builtin_runners[\"add_mod_builtin\"], memory[ap + -6]),\n        mul_mod=(memory[fp + -4], builtin_runners[\"mul_mod_builtin\"], memory[ap + -4]),\n)\n"
       ]
     ],
     [
-      281,
+      275,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      338,
+      332,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      380,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      389,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      398,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      407,
       [
         "memory[ap + 0] = segments.add()"
       ]
