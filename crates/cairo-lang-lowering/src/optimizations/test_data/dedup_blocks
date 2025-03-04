@@ -1,0 +1,172 @@
+//! > Test dedup of duplicated panic block.
+
+//! > test_runner_name
+test_dedup_blocks
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    a.pop_front().unwrap();
+    a.pop_front().unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn get_option() -> Option<u16> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v1, v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
+  (v5: core::option::Option::<core::integer::u32>) <- Option::Some(v4)
+End:
+  Goto(blk3, {v1 -> v6, v5 -> v7})
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u32>) <- Option::None(v8)
+End:
+  Goto(blk3, {v3 -> v6, v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v10) => blk4,
+    Option::None(v11) => blk7,
+  })
+
+blk4:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v6) {
+    Option::Some(v13, v14) => blk5,
+    Option::None(v15) => blk6,
+  })
+
+blk5:
+Statements:
+  (v16: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v14)
+  (v18: ()) <- struct_construct()
+  (v19: ((),)) <- struct_construct(v18)
+  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk6:
+Statements:
+  (v22: core::felt252) <- 29721761890975875353235833581453094220424382983267374
+  (v23: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v22)
+  (v24: core::panics::Panic, v25: core::array::Array::<core::felt252>) <- struct_destructure(v23)
+  (v26: core::panics::Panic) <- struct_construct()
+  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v26, v25)
+  (v28: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v27)
+End:
+  Return(v28)
+
+blk7:
+Statements:
+  (v29: core::felt252) <- 29721761890975875353235833581453094220424382983267374
+  (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v29)
+  (v31: core::panics::Panic, v32: core::array::Array::<core::felt252>) <- struct_destructure(v30)
+  (v33: core::panics::Panic) <- struct_construct()
+  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v33, v32)
+  (v35: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v34)
+End:
+  Return(v35)
+
+//! > after
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v0) {
+    Option::Some(v1, v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
+  (v5: core::option::Option::<core::integer::u32>) <- Option::Some(v4)
+End:
+  Goto(blk3, {v1 -> v6, v5 -> v7})
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u32>) <- Option::None(v8)
+End:
+  Goto(blk3, {v3 -> v6, v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v10) => blk4,
+    Option::None(v11) => blk8,
+  })
+
+blk4:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v6) {
+    Option::Some(v13, v14) => blk5,
+    Option::None(v15) => blk9,
+  })
+
+blk5:
+Statements:
+  (v16: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v14)
+  (v18: ()) <- struct_construct()
+  (v19: ((),)) <- struct_construct(v18)
+  (v20: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk6:
+Statements:
+  (v22: core::felt252) <- 29721761890975875353235833581453094220424382983267374
+  (v23: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v22)
+  (v24: core::panics::Panic, v25: core::array::Array::<core::felt252>) <- struct_destructure(v23)
+  (v26: core::panics::Panic) <- struct_construct()
+  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v26, v25)
+  (v28: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v27)
+End:
+  Return(v28)
+
+blk7:
+Statements:
+  (v29: core::felt252) <- 29721761890975875353235833581453094220424382983267374
+  (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v29)
+  (v31: core::panics::Panic, v32: core::array::Array::<core::felt252>) <- struct_destructure(v30)
+  (v33: core::panics::Panic) <- struct_construct()
+  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v33, v32)
+  (v35: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v34)
+End:
+  Return(v35)
+
+blk8:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk6, {})
