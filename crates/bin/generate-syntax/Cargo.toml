@@ -8,7 +8,7 @@ license-file.workspace = true
 [dependencies]
 log.workspace = true
 
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.10.1", features = [
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.11.0", features = [
     "env_logger",
 ] }
-cairo-lang-syntax-codegen = { path = "../../cairo-lang-syntax-codegen", version = "~2.10.1" }
+cairo-lang-syntax-codegen = { path = "../../cairo-lang-syntax-codegen", version = "~2.11.0" }
