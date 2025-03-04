@@ -93,28 +93,27 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([22], [26], [2], [32]);
 F0_B1:
 branch_align() -> ();
-redeposit_gas([25]) -> ([33]);
-store_temp<RangeCheck>([24]) -> ([34]);
-store_temp<GasBuiltin>([33]) -> ([35]);
+store_temp<RangeCheck>([24]) -> ([33]);
+store_temp<GasBuiltin>([25]) -> ([34]);
 jump() { F0_B3() };
 F0_B2:
 branch_align() -> ();
 drop<core::array::Span::<core::felt252>>([3]) -> ();
-redeposit_gas([7]) -> ([36]);
-store_temp<RangeCheck>([6]) -> ([34]);
-store_temp<GasBuiltin>([36]) -> ([35]);
+store_temp<RangeCheck>([6]) -> ([33]);
+store_temp<GasBuiltin>([7]) -> ([34]);
 F0_B3:
-array_new<felt252>() -> ([37]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([38]);
-store_temp<felt252>([38]) -> ([38]);
-array_append<felt252>([37], [38]) -> ([39]);
-struct_construct<core::panics::Panic>() -> ([40]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([41]) -> ([42]);
-store_temp<RangeCheck>([34]) -> ([34]);
+redeposit_gas([34]) -> ([35]);
+array_new<felt252>() -> ([36]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([37]);
+store_temp<felt252>([37]) -> ([37]);
+array_append<felt252>([36], [37]) -> ([38]);
+struct_construct<core::panics::Panic>() -> ([39]);
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([39], [38]) -> ([40]);
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([40]) -> ([41]);
+store_temp<RangeCheck>([33]) -> ([33]);
 store_temp<GasBuiltin>([35]) -> ([35]);
 store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([42]);
-return([34], [35], [2], [42]);
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([41]) -> ([41]);
+return([33], [35], [2], [41]);
 
 cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);

@@ -180,58 +180,57 @@ End:
 
 blk2:
 Statements:
-  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
 End:
-  Goto(blk4, {v12 -> v13})
+  Goto(blk4, {})
 
 blk3:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
 End:
-  Goto(blk4, {v14 -> v13})
+  Goto(blk4, {})
 
 blk4:
 Statements:
-  (v15: core::felt252) <- 3
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v13, v15)
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v13: core::felt252) <- 3
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v12, v13)
 End:
-  Match(match_enum(v18) {
-    PanicResult::Ok(v19) => blk5,
-    PanicResult::Err(v20) => blk6,
+  Match(match_enum(v16) {
+    PanicResult::Ok(v17) => blk5,
+    PanicResult::Err(v18) => blk6,
   })
 
 blk5:
 Statements:
-  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v22: core::felt252) <- struct_destructure(v19)
-  (v23: core::felt252) <- 5
-  (v24: core::felt252) <- 0
-  (v25: core::felt252) <- core::felt252_add(v2, v24)
-  (v26: core::felt252) <- core::felt252_mul(v23, v25)
-  (v27: core::felt252) <- core::felt252_add(v22, v26)
-  (v28: (core::felt252,)) <- struct_construct(v27)
-  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v28)
+  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
+  (v20: core::felt252) <- struct_destructure(v17)
+  (v21: core::felt252) <- 5
+  (v22: core::felt252) <- 0
+  (v23: core::felt252) <- core::felt252_add(v2, v22)
+  (v24: core::felt252) <- core::felt252_mul(v21, v23)
+  (v25: core::felt252) <- core::felt252_add(v20, v24)
+  (v26: (core::felt252,)) <- struct_construct(v25)
+  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
 End:
-  Return(v16, v21, v29)
+  Return(v14, v19, v27)
 
 blk6:
 Statements:
-  (v30: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v20)
+  (v28: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
+  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v18)
 End:
-  Return(v16, v30, v31)
+  Return(v14, v28, v29)
 
 blk7:
 Statements:
-  (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v33: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v34: core::felt252) <- 375233589013918064796019
-  (v35: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v33, v34)
-  (v36: core::panics::Panic) <- struct_construct()
-  (v37: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v36, v35)
-  (v38: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v37)
+  (v30: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+  (v31: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v32: core::felt252) <- 375233589013918064796019
+  (v33: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v31, v32)
+  (v34: core::panics::Panic) <- struct_construct()
+  (v35: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v34, v33)
+  (v36: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v35)
 End:
-  Return(v5, v32, v38)
+  Return(v5, v30, v36)
 
 //! > ==========================================================================
 
