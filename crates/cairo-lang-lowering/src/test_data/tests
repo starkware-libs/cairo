@@ -225,12 +225,9 @@ blk7:
 Statements:
   (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
   (v33: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v34: core::panics::Panic, v35: core::array::Array::<core::felt252>) <- struct_destructure(v33)
-  (v36: core::panics::Panic) <- struct_construct()
-  (v37: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v36, v35)
-  (v38: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v37)
+  (v34: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v33)
 End:
-  Return(v5, v32, v38)
+  Return(v5, v32, v34)
 
 //! > ==========================================================================
 

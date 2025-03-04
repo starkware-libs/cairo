@@ -7,10 +7,10 @@
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_semantic::corelib::{core_module, get_ty_by_name, unit_ty};
+use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{TypeId, TypeLongId};
 
@@ -44,6 +44,8 @@ pub struct DestructAdder<'a> {
     lowered: &'a FlatLowered,
     destructions: Vec<DestructionEntry>,
     panic_ty: TypeId,
+    /// The actual return type of a never function after adding panics.
+    never_fn_actual_return_ty: TypeId,
     is_panic_destruct_fn: bool,
 }
 
@@ -77,7 +79,7 @@ impl DestructAdder<'_> {
     ) {
         if let [panic_var] = introductions[..] {
             let var = &self.lowered.variables[panic_var];
-            if var.ty == self.panic_ty {
+            if [self.panic_ty, self.never_fn_actual_return_ty].contains(&var.ty) {
                 info.aux = PanicState::EndsWithPanic(vec![PanicLocation::PanicVar {
                     statement_location: (block_id, statement_index),
                 }]);
@@ -288,11 +290,15 @@ pub fn add_destructs(
         return;
     };
 
+    let panic_ty = panic_ty(db.upcast());
+    let felt_arr_ty = core_array_felt252_ty(db.upcast());
+    let never_fn_actual_return_ty = TypeLongId::Tuple(vec![panic_ty, felt_arr_ty]).intern(db);
     let checker = DestructAdder {
         db,
         lowered,
         destructions: vec![],
-        panic_ty: panic_ty(db.upcast()),
+        panic_ty,
+        never_fn_actual_return_ty,
         is_panic_destruct_fn,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
@@ -323,8 +329,7 @@ pub fn add_destructs(
 
     let location = variables.get_location(stable_ptr);
 
-    let DestructAdder { db: _, lowered: _, destructions, panic_ty, is_panic_destruct_fn: _ } =
-        analysis.analyzer;
+    let destructions = analysis.analyzer.destructions;
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
@@ -466,11 +471,50 @@ pub fn add_destructs(
 
                 let idx = match block.statements.get_mut(statement_idx) {
                     Some(stmt) => {
-                        let panic_var =
-                            &mut extract_matches!(stmt, Statement::StructConstruct).output;
-                        *stmts.last_mut().unwrap().outputs.get_mut(0).unwrap() = *panic_var;
-                        *panic_var = first_panic_var;
-
+                        match stmt {
+                            Statement::StructConstruct(stmt) => {
+                                let panic_var = &mut stmt.output;
+                                *stmts.last_mut().unwrap().outputs.get_mut(0).unwrap() = *panic_var;
+                                *panic_var = first_panic_var;
+                            }
+                            Statement::Call(stmt) => {
+                                let tuple_var = &mut stmt.outputs[0];
+                                let new_tuple_var = variables.new_var(VarRequest {
+                                    ty: never_fn_actual_return_ty,
+                                    location,
+                                });
+                                let orig_tuple_var = *tuple_var;
+                                *tuple_var = new_tuple_var;
+                                let new_panic_var =
+                                    variables.new_var(VarRequest { ty: panic_ty, location });
+                                let new_arr_var =
+                                    variables.new_var(VarRequest { ty: felt_arr_ty, location });
+                                *stmts.last_mut().unwrap().outputs.get_mut(0).unwrap() =
+                                    new_panic_var;
+                                let idx = statement_idx + 1;
+                                block.statements.splice(
+                                    idx..idx,
+                                    chain!(
+                                        [Statement::StructDestructure(
+                                            StatementStructDestructure {
+                                                input: VarUsage { var_id: new_tuple_var, location },
+                                                outputs: vec![first_panic_var, new_arr_var],
+                                            }
+                                        )],
+                                        stmts.into_iter().map(Statement::Call),
+                                        [Statement::StructConstruct(StatementStructConstruct {
+                                            inputs: [new_panic_var, new_arr_var]
+                                                .into_iter()
+                                                .map(|var_id| VarUsage { var_id, location })
+                                                .collect(),
+                                            output: orig_tuple_var,
+                                        })]
+                                    ),
+                                );
+                                stmts = vec![];
+                            }
+                            _ => unreachable!("Expected a struct construct or a call statement."),
+                        }
                         statement_idx + 1
                     }
                     None => {

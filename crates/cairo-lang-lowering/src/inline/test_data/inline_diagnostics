@@ -48,20 +48,16 @@ End:
 blk2:
 Statements:
   (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v11: core::panics::Panic, v12: core::array::Array::<core::felt252>) <- struct_destructure(v10)
-  () <- struct_destructure(v11)
-  (v13: core::panics::Panic) <- struct_construct()
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v12)
-  (v15: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v14)
+  (v11: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v10)
 End:
-  Return(v15)
+  Return(v11)
 
 blk3:
 Statements:
-  (v16: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
-  (v17: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v16)
+  (v12: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
+  (v13: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v12)
 End:
-  Return(v17)
+  Return(v13)
 
 blk4:
 Statements:
@@ -71,9 +67,9 @@ End:
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters: v0: core::felt252, v1: core::felt252
@@ -97,20 +93,16 @@ End:
 blk2:
 Statements:
   (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v11: core::panics::Panic, v12: core::array::Array::<core::felt252>) <- struct_destructure(v10)
-  () <- struct_destructure(v11)
-  (v13: core::panics::Panic) <- struct_construct()
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v12)
-  (v15: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v14)
+  (v11: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v10)
 End:
-  Return(v15)
+  Return(v11)
 
 blk3:
 Statements:
-  (v16: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
-  (v17: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v16)
+  (v12: (core::felt252, core::felt252)) <- struct_construct(v3, v1)
+  (v13: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v12)
 End:
-  Return(v17)
+  Return(v13)
 
 blk4:
 Statements:
@@ -120,9 +112,9 @@ End:
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v9)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > ==========================================================================
 

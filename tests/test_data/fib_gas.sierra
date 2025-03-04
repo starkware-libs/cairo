@@ -1,8 +1,8 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -30,14 +30,12 @@ libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::fib::fib> = function_call<user@examples::fib::fib>;
 libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
-libfunc struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>> = struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>;
-libfunc drop<core::panics::Panic> = drop<core::panics::Panic>;
-libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
-libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
 
 F0:
@@ -81,15 +79,11 @@ drop<felt252>([2]) -> ();
 drop<felt252>([3]) -> ();
 redeposit_gas([8]) -> ([23]);
 function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([24]);
-struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([24]) -> ([25], [26]);
-drop<core::panics::Panic>([25]) -> ();
-struct_construct<core::panics::Panic>() -> ([27]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([27], [26]) -> ([28]);
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([28]) -> ([29]);
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([24]) -> ([25]);
 store_temp<RangeCheck>([7]) -> ([7]);
 store_temp<GasBuiltin>([23]) -> ([23]);
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([29]) -> ([29]);
-return([7], [23], [29]);
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([25]) -> ([25]);
+return([7], [23], [25]);
 F1:
 array_new<felt252>() -> ([0]);
 const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);

@@ -199,40 +199,37 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
-  (v12: (core::integer::u8,)) <- struct_construct(v10)
-  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+  (v6: core::integer::u8, v7: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v8: (core::integer::u8,)) <- struct_construct(v6)
+  (v9: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v8)
 End:
-  Goto(blk3, {v13 -> v9})
+  Goto(blk3, {v9 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v14) => blk4,
-    PanicResult::Err(v15) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 blk5:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 //! > after
 Parameters:
@@ -247,41 +244,38 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v11: core::integer::u8) <- 0
-  (v10: core::integer::u8) <- 2
-  (v12: (core::integer::u8,)) <- struct_construct(v10)
-  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+  (v7: core::integer::u8) <- 0
+  (v6: core::integer::u8) <- 2
+  (v8: (core::integer::u8,)) <- struct_construct(v6)
+  (v9: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v8)
 End:
-  Goto(blk3, {v13 -> v9})
+  Goto(blk3, {v9 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v14) => blk4,
-    PanicResult::Err(v15) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 blk5:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 //! > lowering_diagnostics
 
@@ -318,40 +312,37 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
-  (v12: (core::integer::u8,)) <- struct_construct(v10)
-  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+  (v6: core::integer::u8, v7: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v8: (core::integer::u8,)) <- struct_construct(v6)
+  (v9: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v8)
 End:
-  Goto(blk3, {v13 -> v9})
+  Goto(blk3, {v9 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v14) => blk4,
-    PanicResult::Err(v15) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 blk5:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -364,40 +355,37 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u8, v11: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
-  (v12: (core::integer::u8,)) <- struct_construct(v10)
-  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v12)
+  (v6: core::integer::u8, v7: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v2)
+  (v8: (core::integer::u8,)) <- struct_construct(v6)
+  (v9: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v8)
 End:
-  Goto(blk3, {v13 -> v9})
+  Goto(blk3, {v9 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v14) => blk4,
-    PanicResult::Err(v15) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v10) => blk4,
+    PanicResult::Err(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 blk5:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 //! > lowering_diagnostics
 
@@ -434,41 +422,38 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
-  () <- core::integer::u128_mul_guarantee_verify(v12)
-  (v13: (core::integer::u256,)) <- struct_construct(v10)
-  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+  (v6: core::integer::u256, v7: core::integer::u256, v8: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v8)
+  (v9: (core::integer::u256,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v9})
+  Goto(blk3, {v10 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > after
 Parameters: v0: core::integer::u256
@@ -482,41 +467,38 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
-  () <- core::integer::u128_mul_guarantee_verify(v12)
-  (v13: (core::integer::u256,)) <- struct_construct(v10)
-  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+  (v6: core::integer::u256, v7: core::integer::u256, v8: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v8)
+  (v9: (core::integer::u256,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v9})
+  Goto(blk3, {v10 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > lowering_diagnostics
 
@@ -553,41 +535,38 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
-  () <- core::integer::u128_mul_guarantee_verify(v12)
-  (v13: (core::integer::u256,)) <- struct_construct(v10)
-  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+  (v6: core::integer::u256, v7: core::integer::u256, v8: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v8)
+  (v9: (core::integer::u256,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v9})
+  Goto(blk3, {v10 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > after
 Parameters: v0: core::integer::u256
@@ -600,41 +579,38 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk3, {v8 -> v9})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::integer::u256, v11: core::integer::u256, v12: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
-  () <- core::integer::u128_mul_guarantee_verify(v12)
-  (v13: (core::integer::u256,)) <- struct_construct(v10)
-  (v14: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v13)
+  (v6: core::integer::u256, v7: core::integer::u256, v8: core::integer::U128MulGuarantee) <- core::integer::u256_safe_divmod(v0, v2)
+  () <- core::integer::u128_mul_guarantee_verify(v8)
+  (v9: (core::integer::u256,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v9})
+  Goto(blk3, {v10 -> v5})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u256,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > lowering_diagnostics
 
@@ -672,40 +648,37 @@ End:
 blk1:
 Statements:
   (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v5: core::panics::Panic, v6: core::array::Array::<core::felt252>) <- struct_destructure(v4)
-  (v7: core::panics::Panic) <- struct_construct()
-  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v6)
-  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
+  (v5: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v4)
 End:
-  Goto(blk3, {v9 -> v10})
+  Goto(blk3, {v5 -> v6})
 
 blk2:
 Statements:
-  (v11: core::integer::u128, v12: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
-  (v13: (core::integer::u128,)) <- struct_construct(v11)
-  (v14: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v13)
+  (v7: core::integer::u128, v8: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
+  (v9: (core::integer::u128,)) <- struct_construct(v7)
+  (v10: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v10})
+  Goto(blk3, {v10 -> v6})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > after
 Parameters: v0: core::integer::u128
@@ -720,40 +693,37 @@ End:
 blk1:
 Statements:
   (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v5: core::panics::Panic, v6: core::array::Array::<core::felt252>) <- struct_destructure(v4)
-  (v7: core::panics::Panic) <- struct_construct()
-  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v6)
-  (v9: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
+  (v5: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v4)
 End:
-  Goto(blk3, {v9 -> v10})
+  Goto(blk3, {v5 -> v6})
 
 blk2:
 Statements:
-  (v11: core::integer::u128, v12: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
-  (v13: (core::integer::u128,)) <- struct_construct(v11)
-  (v14: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v13)
+  (v7: core::integer::u128, v8: core::integer::u128) <- core::integer::u128_safe_divmod(v0, v3)
+  (v9: (core::integer::u128,)) <- struct_construct(v7)
+  (v10: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v9)
 End:
-  Goto(blk3, {v14 -> v10})
+  Goto(blk3, {v10 -> v6})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v15) => blk4,
-    PanicResult::Err(v16) => blk5,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v11) => blk4,
+    PanicResult::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v19: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
+  (v15: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v19)
+  Return(v15)
 
 blk5:
 Statements:
-  (v20: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
+  (v16: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v12)
 End:
-  Return(v20)
+  Return(v16)
 
 //! > lowering_diagnostics
 
@@ -818,73 +788,67 @@ End:
 blk5:
 Statements:
   (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::Panic, v14: core::array::Array::<core::felt252>) <- struct_destructure(v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
-  (v17: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v16)
+  (v13: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v12)
 End:
-  Goto(blk6, {v17 -> v11})
+  Goto(blk6, {v13 -> v11})
 
 blk6:
 Statements:
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v18) => blk7,
-    PanicResult::Err(v19) => blk13,
+    PanicResult::Ok(v14) => blk7,
+    PanicResult::Err(v15) => blk13,
   })
 
 blk7:
 Statements:
-  (v20: core::integer::u64) <- struct_destructure(v18)
+  (v16: core::integer::u64) <- struct_destructure(v14)
 End:
-  Match(match core::integer::u64_is_zero(v20) {
+  Match(match core::integer::u64_is_zero(v16) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v21) => blk9,
+    IsZeroResult::NonZero(v17) => blk9,
   })
 
 blk8:
 Statements:
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v23: core::panics::Panic, v24: core::array::Array::<core::felt252>) <- struct_destructure(v22)
-  (v25: core::panics::Panic) <- struct_construct()
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v24)
-  (v27: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v26)
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
+  (v19: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v18)
 End:
-  Goto(blk10, {v27 -> v28})
+  Goto(blk10, {v19 -> v20})
 
 blk9:
 Statements:
-  (v29: core::integer::u64, v30: core::integer::u64) <- core::integer::u64_safe_divmod(v0, v21)
-  (v31: (core::integer::u64,)) <- struct_construct(v29)
-  (v32: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v31)
+  (v21: core::integer::u64, v22: core::integer::u64) <- core::integer::u64_safe_divmod(v0, v17)
+  (v23: (core::integer::u64,)) <- struct_construct(v21)
+  (v24: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v23)
 End:
-  Goto(blk10, {v32 -> v28})
+  Goto(blk10, {v24 -> v20})
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v28) {
-    PanicResult::Ok(v33) => blk11,
-    PanicResult::Err(v34) => blk12,
+  Match(match_enum(v20) {
+    PanicResult::Ok(v25) => blk11,
+    PanicResult::Err(v26) => blk12,
   })
 
 blk11:
 Statements:
-  (v37: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v33)
+  (v29: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v25)
 End:
-  Return(v37)
+  Return(v29)
 
 blk12:
 Statements:
-  (v38: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v34)
+  (v30: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v26)
 End:
-  Return(v38)
+  Return(v30)
 
 blk13:
 Statements:
-  (v39: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v19)
+  (v31: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v15)
 End:
-  Return(v39)
+  Return(v31)
 
 //! > after
 Parameters: v0: core::integer::u64
@@ -926,73 +890,67 @@ End:
 blk5:
 Statements:
   (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::Panic, v14: core::array::Array::<core::felt252>) <- struct_destructure(v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
-  (v17: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v16)
+  (v13: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v12)
 End:
-  Goto(blk6, {v17 -> v11})
+  Goto(blk6, {v13 -> v11})
 
 blk6:
 Statements:
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v18) => blk7,
-    PanicResult::Err(v19) => blk13,
+    PanicResult::Ok(v14) => blk7,
+    PanicResult::Err(v15) => blk13,
   })
 
 blk7:
 Statements:
-  (v20: core::integer::u64) <- struct_destructure(v18)
+  (v16: core::integer::u64) <- struct_destructure(v14)
 End:
-  Match(match core::integer::u64_is_zero(v20) {
+  Match(match core::integer::u64_is_zero(v16) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v21) => blk9,
+    IsZeroResult::NonZero(v17) => blk9,
   })
 
 blk8:
 Statements:
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v23: core::panics::Panic, v24: core::array::Array::<core::felt252>) <- struct_destructure(v22)
-  (v25: core::panics::Panic) <- struct_construct()
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v24)
-  (v27: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v26)
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
+  (v19: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v18)
 End:
-  Goto(blk10, {v27 -> v28})
+  Goto(blk10, {v19 -> v20})
 
 blk9:
 Statements:
-  (v29: core::integer::u64, v30: core::integer::u64) <- core::integer::u64_safe_divmod(v0, v21)
-  (v31: (core::integer::u64,)) <- struct_construct(v29)
-  (v32: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v31)
+  (v21: core::integer::u64, v22: core::integer::u64) <- core::integer::u64_safe_divmod(v0, v17)
+  (v23: (core::integer::u64,)) <- struct_construct(v21)
+  (v24: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v23)
 End:
-  Goto(blk10, {v32 -> v28})
+  Goto(blk10, {v24 -> v20})
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v28) {
-    PanicResult::Ok(v33) => blk11,
-    PanicResult::Err(v34) => blk12,
+  Match(match_enum(v20) {
+    PanicResult::Ok(v25) => blk11,
+    PanicResult::Err(v26) => blk12,
   })
 
 blk11:
 Statements:
-  (v37: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v33)
+  (v29: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v25)
 End:
-  Return(v37)
+  Return(v29)
 
 blk12:
 Statements:
-  (v38: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v34)
+  (v30: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v26)
 End:
-  Return(v38)
+  Return(v30)
 
 blk13:
 Statements:
-  (v39: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v19)
+  (v31: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v15)
 End:
-  Return(v39)
+  Return(v31)
 
 //! > lowering_diagnostics
 
@@ -1057,73 +1015,67 @@ End:
 blk5:
 Statements:
   (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::Panic, v14: core::array::Array::<core::felt252>) <- struct_destructure(v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v16)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v12)
 End:
-  Goto(blk6, {v17 -> v11})
+  Goto(blk6, {v13 -> v11})
 
 blk6:
 Statements:
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v18) => blk7,
-    PanicResult::Err(v19) => blk13,
+    PanicResult::Ok(v14) => blk7,
+    PanicResult::Err(v15) => blk13,
   })
 
 blk7:
 Statements:
-  (v20: core::integer::u8) <- struct_destructure(v18)
+  (v16: core::integer::u8) <- struct_destructure(v14)
 End:
-  Match(match core::integer::u8_is_zero(v20) {
+  Match(match core::integer::u8_is_zero(v16) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v21) => blk9,
+    IsZeroResult::NonZero(v17) => blk9,
   })
 
 blk8:
 Statements:
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v23: core::panics::Panic, v24: core::array::Array::<core::felt252>) <- struct_destructure(v22)
-  (v25: core::panics::Panic) <- struct_construct()
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v24)
-  (v27: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v26)
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v18)
 End:
-  Goto(blk10, {v27 -> v28})
+  Goto(blk10, {v19 -> v20})
 
 blk9:
 Statements:
-  (v29: core::integer::u8, v30: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v21)
-  (v31: (core::integer::u8,)) <- struct_construct(v29)
-  (v32: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v31)
+  (v21: core::integer::u8, v22: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v17)
+  (v23: (core::integer::u8,)) <- struct_construct(v21)
+  (v24: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v23)
 End:
-  Goto(blk10, {v32 -> v28})
+  Goto(blk10, {v24 -> v20})
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v28) {
-    PanicResult::Ok(v33) => blk11,
-    PanicResult::Err(v34) => blk12,
+  Match(match_enum(v20) {
+    PanicResult::Ok(v25) => blk11,
+    PanicResult::Err(v26) => blk12,
   })
 
 blk11:
 Statements:
-  (v37: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v33)
+  (v29: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v25)
 End:
-  Return(v37)
+  Return(v29)
 
 blk12:
 Statements:
-  (v38: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v34)
+  (v30: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v26)
 End:
-  Return(v38)
+  Return(v30)
 
 blk13:
 Statements:
-  (v39: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v19)
+  (v31: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
 End:
-  Return(v39)
+  Return(v31)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -1164,73 +1116,67 @@ End:
 blk5:
 Statements:
   (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::Panic, v14: core::array::Array::<core::felt252>) <- struct_destructure(v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v16)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v12)
 End:
-  Goto(blk6, {v17 -> v11})
+  Goto(blk6, {v13 -> v11})
 
 blk6:
 Statements:
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v18) => blk7,
-    PanicResult::Err(v19) => blk13,
+    PanicResult::Ok(v14) => blk7,
+    PanicResult::Err(v15) => blk13,
   })
 
 blk7:
 Statements:
-  (v20: core::integer::u8) <- struct_destructure(v18)
+  (v16: core::integer::u8) <- struct_destructure(v14)
 End:
-  Match(match core::integer::u8_is_zero(v20) {
+  Match(match core::integer::u8_is_zero(v16) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v21) => blk9,
+    IsZeroResult::NonZero(v17) => blk9,
   })
 
 blk8:
 Statements:
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v23: core::panics::Panic, v24: core::array::Array::<core::felt252>) <- struct_destructure(v22)
-  (v25: core::panics::Panic) <- struct_construct()
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v25, v24)
-  (v27: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v26)
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
+  (v19: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v18)
 End:
-  Goto(blk10, {v27 -> v28})
+  Goto(blk10, {v19 -> v20})
 
 blk9:
 Statements:
-  (v29: core::integer::u8, v30: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v21)
-  (v31: (core::integer::u8,)) <- struct_construct(v29)
-  (v32: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v31)
+  (v21: core::integer::u8, v22: core::integer::u8) <- core::integer::u8_safe_divmod(v0, v17)
+  (v23: (core::integer::u8,)) <- struct_construct(v21)
+  (v24: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v23)
 End:
-  Goto(blk10, {v32 -> v28})
+  Goto(blk10, {v24 -> v20})
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v28) {
-    PanicResult::Ok(v33) => blk11,
-    PanicResult::Err(v34) => blk12,
+  Match(match_enum(v20) {
+    PanicResult::Ok(v25) => blk11,
+    PanicResult::Err(v26) => blk12,
   })
 
 blk11:
 Statements:
-  (v37: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v33)
+  (v29: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v25)
 End:
-  Return(v37)
+  Return(v29)
 
 blk12:
 Statements:
-  (v38: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v34)
+  (v30: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v26)
 End:
-  Return(v38)
+  Return(v30)
 
 blk13:
 Statements:
-  (v39: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v19)
+  (v31: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v15)
 End:
-  Return(v39)
+  Return(v31)
 
 //! > lowering_diagnostics
 
@@ -1362,32 +1308,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters:
@@ -1409,32 +1352,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -1479,32 +1419,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters:
@@ -1526,32 +1463,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -1596,32 +1530,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters:
@@ -1643,32 +1574,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -1713,32 +1641,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters:
@@ -1760,32 +1685,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -1831,32 +1753,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642107937639184217240406363762551>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters:
@@ -1879,32 +1798,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642107937639184217240406363762551>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -1950,42 +1866,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2007,42 +1917,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -2088,42 +1992,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2145,42 +2043,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -2226,42 +2118,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2283,42 +2169,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861642726607774050179732954277506935>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334541900811616953421972584034167>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -2364,42 +2244,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2421,42 +2295,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -2502,42 +2370,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2559,42 +2421,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -2640,42 +2496,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > after
 Parameters:
@@ -2697,42 +2547,36 @@ End:
 blk2:
 Statements:
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<139861644157973526622261446548040478583>()
-  (v9: core::panics::Panic, v10: core::array::Array::<core::felt252>) <- struct_destructure(v8)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v10)
-  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v9: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk4, {v13 -> v7})
+  Goto(blk4, {v9 -> v7})
 
 blk3:
 Statements:
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
-  (v15: core::panics::Panic, v16: core::array::Array::<core::felt252>) <- struct_destructure(v14)
-  (v17: core::panics::Panic) <- struct_construct()
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)
-  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v18)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<546334547492084087938116166309670775>()
+  (v11: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk4, {v19 -> v7})
+  Goto(blk4, {v11 -> v7})
 
 blk4:
 Statements:
 End:
   Match(match_enum(v7) {
-    PanicResult::Ok(v20) => blk5,
-    PanicResult::Err(v21) => blk6,
+    PanicResult::Ok(v12) => blk5,
+    PanicResult::Err(v13) => blk6,
   })
 
 blk5:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v20)
+  (v16: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v24)
+  Return(v16)
 
 blk6:
 Statements:
-  (v25: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v21)
+  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v13)
 End:
-  Return(v25)
+  Return(v17)
 
 //! > lowering_diagnostics
 
@@ -3029,56 +2873,53 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk5, {v8 -> v9})
+  Goto(blk5, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
+  (v6: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk3,
-    PanicResult::Err(v12) => blk4,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk3,
+    PanicResult::Err(v8) => blk4,
   })
 
 blk3:
 Statements:
-  (v13: (core::integer::i8, core::integer::i8)) <- struct_destructure(v11)
-  (v14: core::integer::i8, v15: core::integer::i8) <- struct_destructure(v13)
-  (v16: (core::integer::i8,)) <- struct_construct(v14)
-  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v16)
+  (v9: (core::integer::i8, core::integer::i8)) <- struct_destructure(v7)
+  (v10: core::integer::i8, v11: core::integer::i8) <- struct_destructure(v9)
+  (v12: (core::integer::i8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Goto(blk5, {v17 -> v9})
+  Goto(blk5, {v13 -> v5})
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v14: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk5, {v18 -> v9})
+  Goto(blk5, {v14 -> v5})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v19) => blk6,
-    PanicResult::Err(v20) => blk7,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v15) => blk6,
+    PanicResult::Err(v16) => blk7,
   })
 
 blk6:
 Statements:
-  (v23: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v19)
+  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v15)
 End:
-  Return(v23)
+  Return(v19)
 
 blk7:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v20)
+  (v20: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v16)
 End:
-  Return(v24)
+  Return(v20)
 
 //! > after
 Parameters: v0: core::integer::i8
@@ -3091,56 +2932,53 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk5, {v8 -> v9})
+  Goto(blk5, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
+  (v6: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk3,
-    PanicResult::Err(v12) => blk4,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk3,
+    PanicResult::Err(v8) => blk4,
   })
 
 blk3:
 Statements:
-  (v13: (core::integer::i8, core::integer::i8)) <- struct_destructure(v11)
-  (v14: core::integer::i8, v15: core::integer::i8) <- struct_destructure(v13)
-  (v16: (core::integer::i8,)) <- struct_construct(v14)
-  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v16)
+  (v9: (core::integer::i8, core::integer::i8)) <- struct_destructure(v7)
+  (v10: core::integer::i8, v11: core::integer::i8) <- struct_destructure(v9)
+  (v12: (core::integer::i8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Goto(blk5, {v17 -> v9})
+  Goto(blk5, {v13 -> v5})
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v14: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk5, {v18 -> v9})
+  Goto(blk5, {v14 -> v5})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v19) => blk6,
-    PanicResult::Err(v20) => blk7,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v15) => blk6,
+    PanicResult::Err(v16) => blk7,
   })
 
 blk6:
 Statements:
-  (v23: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v19)
+  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v15)
 End:
-  Return(v23)
+  Return(v19)
 
 blk7:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v20)
+  (v20: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v16)
 End:
-  Return(v24)
+  Return(v20)
 
 //! > lowering_diagnostics
 
@@ -3178,56 +3016,53 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk5, {v8 -> v9})
+  Goto(blk5, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
+  (v6: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk3,
-    PanicResult::Err(v12) => blk4,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk3,
+    PanicResult::Err(v8) => blk4,
   })
 
 blk3:
 Statements:
-  (v13: (core::integer::i8, core::integer::i8)) <- struct_destructure(v11)
-  (v14: core::integer::i8, v15: core::integer::i8) <- struct_destructure(v13)
-  (v16: (core::integer::i8,)) <- struct_construct(v14)
-  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v16)
+  (v9: (core::integer::i8, core::integer::i8)) <- struct_destructure(v7)
+  (v10: core::integer::i8, v11: core::integer::i8) <- struct_destructure(v9)
+  (v12: (core::integer::i8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Goto(blk5, {v17 -> v9})
+  Goto(blk5, {v13 -> v5})
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v14: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk5, {v18 -> v9})
+  Goto(blk5, {v14 -> v5})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v19) => blk6,
-    PanicResult::Err(v20) => blk7,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v15) => blk6,
+    PanicResult::Err(v16) => blk7,
   })
 
 blk6:
 Statements:
-  (v23: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v19)
+  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v15)
 End:
-  Return(v23)
+  Return(v19)
 
 blk7:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v20)
+  (v20: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v16)
 End:
-  Return(v24)
+  Return(v20)
 
 //! > after
 Parameters:
@@ -3242,56 +3077,53 @@ End:
 blk1:
 Statements:
   (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<5420154128225384396790819266608>()
-  (v4: core::panics::Panic, v5: core::array::Array::<core::felt252>) <- struct_destructure(v3)
-  (v6: core::panics::Panic) <- struct_construct()
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v6, v5)
-  (v8: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v7)
+  (v4: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk5, {v8 -> v9})
+  Goto(blk5, {v4 -> v5})
 
 blk2:
 Statements:
-  (v10: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
+  (v6: core::panics::PanicResult::<((core::integer::i8, core::integer::i8),)>) <- core::integer::signed_div_rem::DivRemImpl::<core::integer::i8, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 126>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 127>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::integer::signed_div_rem::impls::DivRem::<core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<1, 128>, core::internal::bounded_int::BoundedInt::<0, 128>, core::internal::bounded_int::BoundedInt::<0, 127>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::internal::bounded_int::MulMinus1::<0, 128, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<128, -128>>, core::internal::bounded_int::MulMinus1::<0, 126, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<126, -126>>, core::internal::bounded_int::MulMinus1::<0, 127, core::internal::bounded_int::neg_felt252::Impl::<0, 0>, core::internal::bounded_int::neg_felt252::Impl::<127, -127>>, core::integer::i8Drop, core::internal::bounded_int::BoundedIntDrop::<1, 128>, core::internal::bounded_int::BoundedIntDrop::<-128, -1>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 127>, core::internal::bounded_int::BoundedIntDrop::<0, 126>, core::internal::bounded_int::BoundedIntDrop::<0, 127>>::div_rem(v0, v2)
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk3,
-    PanicResult::Err(v12) => blk4,
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk3,
+    PanicResult::Err(v8) => blk4,
   })
 
 blk3:
 Statements:
-  (v13: (core::integer::i8, core::integer::i8)) <- struct_destructure(v11)
-  (v14: core::integer::i8, v15: core::integer::i8) <- struct_destructure(v13)
-  (v16: (core::integer::i8,)) <- struct_construct(v14)
-  (v17: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v16)
+  (v9: (core::integer::i8, core::integer::i8)) <- struct_destructure(v7)
+  (v10: core::integer::i8, v11: core::integer::i8) <- struct_destructure(v9)
+  (v12: (core::integer::i8,)) <- struct_construct(v10)
+  (v13: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v12)
 End:
-  Goto(blk5, {v17 -> v9})
+  Goto(blk5, {v13 -> v5})
 
 blk4:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v12)
+  (v14: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v8)
 End:
-  Goto(blk5, {v18 -> v9})
+  Goto(blk5, {v14 -> v5})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v9) {
-    PanicResult::Ok(v19) => blk6,
-    PanicResult::Err(v20) => blk7,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v15) => blk6,
+    PanicResult::Err(v16) => blk7,
   })
 
 blk6:
 Statements:
-  (v23: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v19)
+  (v19: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v15)
 End:
-  Return(v23)
+  Return(v19)
 
 blk7:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v20)
+  (v20: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Err(v16)
 End:
-  Return(v24)
+  Return(v20)
 
 //! > lowering_diagnostics
 
@@ -3887,32 +3719,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642107937639184217240406363762551>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -3934,32 +3763,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642107937639184217240406363762551>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -4003,32 +3829,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -4048,32 +3871,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -4117,32 +3937,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -4162,32 +3979,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642104203229548495787928534675319>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
@@ -4231,32 +4045,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > after
 Parameters: v0: core::integer::u8
@@ -4276,32 +4087,29 @@ End:
 blk2:
 Statements:
   (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<608642109794502019480482122260311927>()
-  (v8: core::panics::Panic, v9: core::array::Array::<core::felt252>) <- struct_destructure(v7)
-  (v10: core::panics::Panic) <- struct_construct()
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v10, v9)
-  (v12: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v11)
+  (v8: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v7)
 End:
-  Goto(blk3, {v12 -> v6})
+  Goto(blk3, {v8 -> v6})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v6) {
-    PanicResult::Ok(v13) => blk4,
-    PanicResult::Err(v14) => blk5,
+    PanicResult::Ok(v9) => blk4,
+    PanicResult::Err(v10) => blk5,
   })
 
 blk4:
 Statements:
-  (v17: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v13)
+  (v13: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v17)
+  Return(v13)
 
 blk5:
 Statements:
-  (v18: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v14)
+  (v14: core::panics::PanicResult::<(core::integer::u8,)>) <- PanicResult::Err(v10)
 End:
-  Return(v18)
+  Return(v14)
 
 //! > lowering_diagnostics
 
