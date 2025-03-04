@@ -47,7 +47,7 @@ main
 Weight by sierra statement:
   statement 10: 4 (store_temp<test::MyEnum>([10]) -> ([10]))
   statement 11: 4 (store_temp<test::MyEnum>([5]) -> ([5]))
-  statement 31: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 77([26], [27]) })
+  statement 31: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 78([26], [27]) })
   statement 55: 4 (u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) 65([44], [45]) })
   statement 63: 3 (store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49]))
   statement 12: 2 (enum_match<test::MyEnum>([10]) { fallthrough([11]) 16([12]) 20([13]) 26([14]) })

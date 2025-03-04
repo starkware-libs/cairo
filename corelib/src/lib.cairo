@@ -345,7 +345,7 @@ pub enum never {}
 ///
 /// panic_with_felt252('error message');
 /// ```
-#[inline]
+#[inline(never)]
 pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }

@@ -8,48 +8,46 @@
     "0x100000000000000000000000000000000",
     "0x400280007ff67fff",
     "0x10780017fff7fff",
-    "0x6e",
+    "0x6a",
     "0x4825800180007ffa",
     "0x0",
     "0x400280007ff67fff",
     "0x482680017ff68000",
     "0x1",
     "0x482480017ffe8000",
-    "0x1874",
+    "0x16e4",
     "0x48297ffc80007ffd",
     "0x20680017fff7fff",
     "0x4",
     "0x10780017fff7fff",
-    "0x14",
-    "0x40780017fff7fff",
-    "0x1",
+    "0x12",
     "0x480680017fff8000",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
-    "0x400080007ffe7fff",
-    "0x48127ffb7fff8000",
+    "0x1104800180018000",
+    "0x6b",
+    "0x48127ff77fff8000",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
-    "0x482480017ff88000",
+    "0x482480017ff48000",
     "0x6ea",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ff77fff8000",
-    "0x482480017ff68000",
-    "0x1",
+    "0x48127ff77fff8000",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x19a",
+    "0x197",
     "0x482480017fff8000",
-    "0x199",
+    "0x196",
     "0x48127ffb7fff8000",
     "0x480080007ffe8000",
     "0x480080047fff8000",
     "0x484480017fff8000",
     "0xe",
     "0x482480017fff8000",
-    "0x4634",
+    "0x44a4",
     "0x480080057ffc8000",
     "0x484480017fff8000",
     "0x3",
@@ -68,7 +66,7 @@
     "0x480a7ff97fff8000",
     "0x480a7ff77fff8000",
     "0x1104800180018000",
-    "0x45",
+    "0x48",
     "0x482480017faa8000",
     "0x1",
     "0x48127fb87fff8000",
@@ -99,41 +97,44 @@
     "0x48127ff57fff8000",
     "0x48127ff57fff8000",
     "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
     "0x480680017fff8000",
     "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
-    "0x482480017fed8000",
+    "0x1104800180018000",
+    "0x1f",
+    "0x482480017fe98000",
     "0x1",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
-    "0x48127fef7fff8000",
+    "0x48127feb7fff8000",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ff77fff8000",
-    "0x482480017ff68000",
-    "0x1",
+    "0x48127ff77fff8000",
     "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
     "0x480680017fff8000",
     "0x4f7574206f6620676173",
-    "0x400080007ffe7fff",
+    "0x1104800180018000",
+    "0xf",
     "0x482680017ff68000",
     "0x1",
     "0x480a7ff77fff8000",
     "0x480a7ff87fff8000",
     "0x480a7ff97fff8000",
     "0x482680017ffa8000",
-    "0x208a",
+    "0x1efa",
     "0x480a7ffb7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ff77fff8000",
-    "0x482480017ff68000",
+    "0x48127ff77fff8000",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x1",
+    "0x400180007fff7ffd",
+    "0x48127fff7fff8000",
+    "0x482480017ffe8000",
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
@@ -153,13 +154,13 @@
     "0x20680017fff7ffb",
     "0x4",
     "0x10780017fff7fff",
-    "0xe5",
+    "0xe1",
     "0x402480017fff7ffb",
     "0x1",
     "0x20680017fff7fff",
     "0x4",
     "0x10780017fff7fff",
-    "0xdf",
+    "0xdb",
     "0x482680017ffd8000",
     "0x4",
     "0x482680017ffd8000",
@@ -182,22 +183,20 @@
     "0x4",
     "0x48307fff80007ff9",
     "0x20680017fff7fff",
-    "0x12",
+    "0x10",
     "0x40780017fff7fff",
-    "0x2b",
-    "0x40780017fff7fff",
-    "0x1",
+    "0x27",
     "0x480680017fff8000",
     "0x416c6c20696e707574732068617665206265656e2066696c6c6564",
-    "0x400080007ffe7fff",
+    "0x1104800180018000",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffc7",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x48127fce7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
+    "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
     "0x6",
@@ -217,9 +216,9 @@
     "0x20680017fff7fff",
     "0x97",
     "0x1104800180018000",
-    "0xb5",
+    "0xb1",
     "0x482480017fff8000",
-    "0xb4",
+    "0xb0",
     "0x480680017fff8000",
     "0xe",
     "0x482480017ffe8000",
@@ -366,36 +365,32 @@
     "0x4",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
-    "0x25",
-    "0x40780017fff7fff",
-    "0x1",
+    "0x21",
     "0x480680017fff8000",
     "0x4e6f7420616c6c20696e707574732068617665206265656e2066696c6c6564",
-    "0x400080007ffe7fff",
+    "0x1104800180018000",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff13",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x48127fce7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
+    "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
-    "0x34",
-    "0x40780017fff7fff",
-    "0x1",
+    "0x30",
     "0x480680017fff8000",
     "0x4f7074696f6e3a3a756e77726170206661696c65642e",
-    "0x400080007ffe7fff",
+    "0x1104800180018000",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff05",
     "0x480a7ffb7fff8000",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x480680017fff8000",
     "0x1",
     "0x48127ffa7fff8000",
-    "0x482480017ff98000",
-    "0x1",
+    "0x48127ffa7fff8000",
     "0x208b7fff7fff7ffe",
     "0x208b7fff7fff7ffe",
     "0xc",
@@ -451,8 +446,9 @@
     "0x0"
   ],
   "bytecode_segment_lengths": [
-    134,
-    261,
+    128,
+    7,
+    255,
     52
   ],
   "hints": [
@@ -479,20 +475,7 @@
       ]
     ],
     [
-      19,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      52,
+      50,
       [
         {
           "TestLessThanOrEqual": {
@@ -517,7 +500,7 @@
       ]
     ],
     [
-      72,
+      70,
       [
         {
           "AllocSegment": {
@@ -530,7 +513,7 @@
       ]
     ],
     [
-      97,
+      128,
       [
         {
           "AllocSegment": {
@@ -543,33 +526,7 @@
       ]
     ],
     [
-      115,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      183,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      247,
+      246,
       [
         {
           "EvalCircuit": {
@@ -602,7 +559,7 @@
       ]
     ],
     [
-      282,
+      281,
       [
         {
           "AllocSegment": {
@@ -615,33 +572,7 @@
       ]
     ],
     [
-      339,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      365,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
-      ]
-    ],
-    [
-      381,
+      338,
       [
         {
           "AllocSegment": {
@@ -662,67 +593,37 @@
       ]
     ],
     [
-      19,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      52,
+      50,
       [
         "memory[ap + 0] = memory[ap + -1] <= memory[ap + -8]"
       ]
     ],
     [
-      72,
+      70,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      97,
+      128,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      115,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      183,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      247,
+      246,
       [
         "\nfrom starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner\n\nModBuiltinRunner.fill_memory(\n        memory=memory,\n        add_mod=(memory[fp + -5], builtin_runners[\"add_mod_builtin\"], memory[ap + -6]),\n        mul_mod=(memory[fp + -4], builtin_runners[\"mul_mod_builtin\"], memory[ap + -4]),\n)\n"
       ]
     ],
     [
-      282,
+      281,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      339,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      365,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      381,
+      338,
       [
         "memory[ap + 0] = segments.add()"
       ]
