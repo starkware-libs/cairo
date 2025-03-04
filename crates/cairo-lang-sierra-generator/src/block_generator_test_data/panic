@@ -53,25 +53,13 @@ End:
 
 blk2:
 Statements:
-  (v5: core::panics::PanicResult::<(core::never,)>) <- test::no_inline_panic()
+  (v5: (core::panics::Panic, core::array::Array::<core::felt252>)) <- test::no_inline_panic()
+  (v6: core::panics::Panic, v7: core::array::Array::<core::felt252>) <- struct_destructure(v5)
+  (v8: core::panics::Panic) <- struct_construct()
+  (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v8, v7)
+  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v9)
 End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk3,
-    PanicResult::Err(v7) => blk4,
-  })
-
-blk3:
-Statements:
-  (v8: core::never) <- struct_destructure(v6)
-End:
-  Match(match_enum(v8) {
-  })
-
-blk4:
-Statements:
-  (v9: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
-End:
-  Return(v9)
+  Return(v10)
 
 //! > sierra_code
 enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
@@ -85,15 +73,11 @@ branch_align() -> ()
 drop<Unit>([2]) -> ()
 PushValues() -> ()
 function_call<user@test::no_inline_panic>() -> ([5])
-enum_match<core::panics::PanicResult::<(core::never,)>>([5]) { fallthrough([6]) label_test::foo::2([7]) }
-branch_align() -> ()
-struct_deconstruct<Tuple<core::never>>([6]) -> ([8])
-enum_match<core::never>([8]) { }
-label_test::foo::4:
-label_test::foo::2:
-branch_align() -> ()
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([7]) -> ([9])
-PushValues([9]: core::panics::PanicResult::<(core::felt252,)>) -> ([9])
-return([9])
-label_test::foo::3:
+struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([5]) -> ([6], [7])
+drop<core::panics::Panic>([6]) -> ()
+struct_construct<core::panics::Panic>() -> ([8])
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([8], [7]) -> ([9])
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([9]) -> ([10])
+PushValues([10]: core::panics::PanicResult::<(core::felt252,)>) -> ([10])
+return([10])
 label_test::foo::1:
