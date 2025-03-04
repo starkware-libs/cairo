@@ -172,7 +172,7 @@ fn get_function_signature(
     let mut ret_types = implicits;
     if may_panic {
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
-        ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
+        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
     } else {
         ret_types.extend(extra_rets);
         // Functions that return the unit type don't have a return type in the signature.
