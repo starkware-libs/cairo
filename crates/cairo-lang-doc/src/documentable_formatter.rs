@@ -523,6 +523,7 @@ impl HirDisplay for ExternFunctionId {
     }
 }
 
+/// Formats the text of the [`Visibility`] to a relevant string slice.
 pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     match semantic_visibility {
         Visibility::Public => "pub ",
@@ -602,6 +603,8 @@ pub fn extract_and_format(input: &str) -> String {
     result
 }
 
+/// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
+/// signature documentation.
 fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>) -> String {
     if !params.is_empty() {
         format!("<{}>", params.iter().map(|param| { param.format(db.upcast()) }).join(", "))
@@ -610,6 +613,10 @@ fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>
     }
 }
 
+/// A utility function used for formatting documentable functions data. Use with
+/// [`DocumentableItemSignatureData`] argument created for [`FreeFunctionId`], [`TraitFunctionId`],
+/// [`ImplFunctionId`] or [`ExternFunctionId`]. As those are the items for which a
+/// [`cairo_lang_semantic::items::functions::Signature`] can be retrieved.
 fn write_function_signature(
     f: &mut HirFormatter,
     documentable_signature: DocumentableItemSignatureData,
@@ -669,6 +676,7 @@ fn write_function_signature(
     Ok(())
 }
 
+/// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
 fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String> {
     let children = db.get_children(syntax_node);
     for child in children.iter() {
@@ -679,6 +687,7 @@ fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String>
     Some(String::from(MISSING))
 }
 
+/// Formats and writes [`GenericParam`]s data into [`HirFormatter`]'s buff.
 fn write_generic_params(
     generic_params: Vec<GenericParam>,
     f: &mut HirFormatter,
@@ -717,6 +726,7 @@ fn write_generic_params(
     }
 }
 
+/// Formats syntax of generic arguments and writes it into [`HirFormatter`].
 fn write_generic_args(
     generic_args: Vec<GenericArgumentId>,
     f: &mut HirFormatter,
@@ -734,6 +744,7 @@ fn write_generic_args(
     Ok(())
 }
 
+/// Formats syntax of struct attributes and writes it into [`HirFormatter`].
 fn write_struct_attributes_syntax(
     attributes: Vec<Attribute>,
     f: &mut HirFormatter,
