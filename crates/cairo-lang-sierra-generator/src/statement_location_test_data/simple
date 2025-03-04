@@ -1662,14 +1662,10 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([50])
+store_temp<RangeCheck>([44]) -> ([50])
 Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::integer::U8Add::add
 Inlined at:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
@@ -1679,33 +1675,42 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-enum_init<core::panics::PanicResult::<((),)>, 1>([50]) -> ([51])
+jump() { label_test::main::19() }
 Originating location:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<RangeCheck>([44]) -> ([44])
-Originating location:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<core::panics::PanicResult::<((),)>>([51]) -> ([51])
-Originating location:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-return([44], [51])
-Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 label_test::main::18:
 Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 label_test::main::13:
 Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
@@ -1761,7 +1766,33 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([52])
+store_temp<RangeCheck>([26]) -> ([50])
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^^^^^^
+In function: lib.cairo::main
+label_test::main::19:
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
+            ^^^^^^
+In function: lib.cairo::main
+function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([51])
 Originating location:
             Err(_) => crate::panic_with_felt252(err),
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1775,37 +1806,37 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-enum_init<core::panics::PanicResult::<((),)>, 1>([52]) -> ([53])
+enum_init<core::panics::PanicResult::<((),)>, 1>([51]) -> ([52])
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<RangeCheck>([26]) -> ([26])
+store_temp<RangeCheck>([50]) -> ([50])
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<core::panics::PanicResult::<((),)>>([53]) -> ([53])
+store_temp<core::panics::PanicResult::<((),)>>([52]) -> ([52])
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-return([26], [53])
+return([50], [52])
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 label_test::main::9:
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 label_test::main::4:
 Originating location:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 
