@@ -12,7 +12,7 @@ Examples:
 
 [source,rust]
 ----
-cmp::max(5, 1)
+cmp::max(a: 5, b: 1)
 get_info()
 increment(ref a.b)
 ----
@@ -32,7 +32,7 @@ regular parameters.
 === Expression arguments
 
 Any expression can be passed to a regular parameter. The type of the expression should match the
-type of the parameter. Example: `cmp::max(5, 1)`.
+type of the parameter. Example: `cmp::max(a: 5, b: 1)`.
 
 === Reference arguments
 
