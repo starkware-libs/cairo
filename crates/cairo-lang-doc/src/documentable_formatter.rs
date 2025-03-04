@@ -1,5 +1,5 @@
 use std::fmt;
-use std::fmt::{Write, format};
+use std::fmt::Write;
 use std::option::Option;
 
 use cairo_lang_defs::ids::TraitItemId::Function;
@@ -105,17 +105,17 @@ pub struct DocumentableItemSignatureData {
 
 pub trait HirDisplay {
     /// Formats signature.
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error>;
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error>;
 
     /// Gets the signature of an item (i.e., item without its body).
-    fn get_signature(&self, f: &mut HirFormatter) -> String {
+    fn get_signature(&self, f: &mut HirFormatter<'_>) -> String {
         self.hir_fmt(f).unwrap();
         f.buf.clone()
     }
 
     /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
     /// signature slices on documentable items.
-    fn get_signature_with_links(&self, f: &mut HirFormatter) -> (String, Vec<LocationLink>) {
+    fn get_signature_with_links(&self, f: &mut HirFormatter<'_>) -> (String, Vec<LocationLink>) {
         (self.get_signature(f), f.location_links.clone())
     }
 }
@@ -216,7 +216,7 @@ impl<'a> HirFormatter<'a> {
 }
 
 impl HirDisplay for VariantId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let name = self.name(f.db.upcast());
         let variant_semantic = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .variant_semantic(self.enum_id(f.db.upcast()), *self)
@@ -230,7 +230,7 @@ impl HirDisplay for VariantId {
 }
 
 impl HirDisplay for EnumId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let enum_full_signature = get_enum_signature_data(f.db.upcast(), *self);
         f.write_str(&format!(
             "{}enum {} {{",
@@ -260,7 +260,7 @@ impl HirDisplay for EnumId {
 }
 
 impl HirDisplay for MemberId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let member_full_signature = get_member_signature_data(f.db.upcast(), *self);
 
         if member_full_signature.return_type.unwrap().is_unit(f.db.upcast()) {
@@ -284,7 +284,7 @@ impl HirDisplay for MemberId {
 }
 
 impl HirDisplay for StructId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let struct_full_signature = get_struct_signature_data(f.db.upcast(), *self);
 
         if let Some(attributes) = struct_full_signature.attributes {
@@ -315,14 +315,14 @@ impl HirDisplay for StructId {
 }
 
 impl HirDisplay for FreeFunctionId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let free_function_full_signature = get_free_function_signature_data(f.db.upcast(), *self);
         write_function_signature(f, free_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for ConstantId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let constant_full_signature = get_constant_signature_data(f.db.upcast(), *self);
         f.write_str(&format!(
             "{}const {}: ",
@@ -354,7 +354,7 @@ impl HirDisplay for ConstantId {
 }
 
 impl HirDisplay for ImplConstantDefId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let constant_full_signature = get_impl_constant_signature_data(f.db.upcast(), *self);
         f.write_type(
             Some(&format!("const {}: ", constant_full_signature.name,)),
@@ -366,21 +366,21 @@ impl HirDisplay for ImplConstantDefId {
 }
 
 impl HirDisplay for TraitFunctionId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let trait_function_full_signature = get_trait_function_signature_data(f.db, *self);
         write_function_signature(f, trait_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for ImplFunctionId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let impl_function_full_signature = get_impl_function_signature_data(f.db, *self);
         write_function_signature(f, impl_function_full_signature, "".to_string())
     }
 }
 
 impl HirDisplay for TraitId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let trait_full_signature = get_trait_signature_data(f.db.upcast(), *self);
         f.write_str(&format!(
             "{}trait {}",
@@ -392,7 +392,7 @@ impl HirDisplay for TraitId {
 }
 
 impl HirDisplay for TraitConstantId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let trait_const_full_signature = get_trait_const_signature_data(f.db.upcast(), *self);
         f.write_str(&format!(
             "const {}: {};",
@@ -405,7 +405,7 @@ impl HirDisplay for TraitConstantId {
 }
 
 impl HirDisplay for ImplDefId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let impl_def_full_signature = get_impl_def_signature_data(f.db.upcast(), *self);
         let trait_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .impl_def_trait(*self)
@@ -427,7 +427,7 @@ impl HirDisplay for ImplDefId {
 }
 
 impl HirDisplay for ImplAliasId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let impl_alias_full_signature = get_impl_alias_signature_data(f.db.upcast(), *self);
         f.write_str(&format!(
             "{}impl {} = ",
@@ -439,7 +439,7 @@ impl HirDisplay for ImplAliasId {
 }
 
 impl HirDisplay for ModuleTypeAliasId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self);
         f.write_str(&format!(
             "{}impl {} = ",
@@ -451,14 +451,14 @@ impl HirDisplay for ModuleTypeAliasId {
 }
 
 impl HirDisplay for TraitTypeId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let trait_type_full_signature = get_trait_type_full_signature(f.db, *self);
         f.write_str(&format!("type {};", trait_type_full_signature.name,))
     }
 }
 
 impl HirDisplay for ImplTypeDefId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self);
         f.write_str(&format!(
             "type {} = {};",
@@ -471,7 +471,7 @@ impl HirDisplay for ImplTypeDefId {
 }
 
 impl HirDisplay for ExternTypeId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let extern_type_full_signature = get_extern_type_full_signature(f.db, *self);
         f.write_str(&format!(
             "{}extern type {}",
@@ -494,7 +494,7 @@ impl HirDisplay for ExternTypeId {
 }
 
 impl HirDisplay for ExternFunctionId {
-    fn hir_fmt(&self, f: &mut HirFormatter) -> Result<(), fmt::Error> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let extern_function_full_signature = get_extern_function_full_signature(f.db, *self);
         let signature = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
             .extern_function_signature(*self)
@@ -618,7 +618,7 @@ fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>
 /// [`ImplFunctionId`] or [`ExternFunctionId`]. As those are the items for which a
 /// [`cairo_lang_semantic::items::functions::Signature`] can be retrieved.
 fn write_function_signature(
-    f: &mut HirFormatter,
+    f: &mut HirFormatter<'_>,
     documentable_signature: DocumentableItemSignatureData,
     syntactic_kind: String,
 ) -> Result<(), fmt::Error> {
@@ -690,7 +690,7 @@ fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String>
 /// Formats and writes [`GenericParam`]s data into [`HirFormatter`]'s buff.
 fn write_generic_params(
     generic_params: Vec<GenericParam>,
-    f: &mut HirFormatter,
+    f: &mut HirFormatter<'_>,
 ) -> Result<(), fmt::Error> {
     if !generic_params.is_empty() {
         let mut count = generic_params.len();
@@ -729,7 +729,7 @@ fn write_generic_params(
 /// Formats syntax of generic arguments and writes it into [`HirFormatter`].
 fn write_generic_args(
     generic_args: Vec<GenericArgumentId>,
-    f: &mut HirFormatter,
+    f: &mut HirFormatter<'_>,
 ) -> Result<(), fmt::Error> {
     let mut count = generic_args.len();
     if !generic_args.is_empty() {
@@ -747,7 +747,7 @@ fn write_generic_args(
 /// Formats syntax of struct attributes and writes it into [`HirFormatter`].
 fn write_struct_attributes_syntax(
     attributes: Vec<Attribute>,
-    f: &mut HirFormatter,
+    f: &mut HirFormatter<'_>,
 ) -> Result<(), fmt::Error> {
     attributes.iter().for_each(|a| {
         let syntax_node = a.stable_ptr.lookup(f.db.upcast()).as_syntax_node();
@@ -765,7 +765,7 @@ fn write_struct_attributes_syntax(
 
 /// Formats syntax of documentable item and writes it into [`HirFormatter`].
 fn write_syntactic_evaluation(
-    f: &mut HirFormatter,
+    f: &mut HirFormatter<'_>,
     item_id: DocumentableItemId,
 ) -> Result<(), fmt::Error> {
     let syntax_node = item_id.stable_location(f.db.upcast()).unwrap().syntax_node(f.db.upcast());
