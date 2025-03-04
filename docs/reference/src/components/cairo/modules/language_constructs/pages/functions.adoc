@@ -65,7 +65,7 @@ value passed to the function. It behaves similarly to a mutable variable, but mu
 it also affects its value in the caller function. For example:
 [source,rust]
 ----
-    fn foo(mut x: u32, ref mut y: u32) {
+    fn foo(mut x: u32, ref y: u32) {
         x *= 3;
         y = x + 1;
     }
