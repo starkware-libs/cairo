@@ -51,6 +51,10 @@ struct Args {
 
     #[clap(flatten)]
     run: RunArgs,
+
+    /// Prints the bytecode size.
+    #[arg(long, default_value_t = false)]
+    print_bytecode_size: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -168,6 +172,10 @@ fn main() -> anyhow::Result<()> {
                 ExecutableConfig { allow_syscalls: args.build.allow_syscalls },
             )?)
         }
+    };
+
+    if args.print_bytecode_size {
+        println!("Bytecode size (felt252 count): {}", executable.program.bytecode.len());
     };
     if args.build_only {
         let path = args.output_path.with_context(|| "No output path provided.")?;
