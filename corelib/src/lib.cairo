@@ -350,6 +350,20 @@ pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }
 
+/// Panics with the given const argument `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// use core::panic_with_const_felt252;
+///
+/// panic_with_const_felt252::<'error message'>();
+/// ```
+#[inline(never)]
+pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
+    panic(array![ERR_CODE])
+}
+
 /// Panics if `cond` is false with the given `felt252` as error message.
 ///
 /// # Examples
