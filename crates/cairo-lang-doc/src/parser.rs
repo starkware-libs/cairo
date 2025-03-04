@@ -31,7 +31,7 @@ pub struct CommentLinkToken {
     pub label: String,
     /// A link part that's inside "()" brackets, right after the label.
     pub path: Option<String>,
-    /// Item resolved based on the path provided by user. If resolver cannot resolve the item, we
+    /// Item resolved based on the path provided by the user. If resolver cannot resolve the item, we
     /// leave it as None.
     pub resolved_item: Option<DocumentableItemId>,
 }
