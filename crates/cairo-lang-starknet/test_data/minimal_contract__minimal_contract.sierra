@@ -41,8 +41,9 @@ libfunc drop<Array<felt252>> = drop<Array<felt252>>;
 libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
 libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
-libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
+libfunc jump = jump;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 
 F0:
 revoke_ap_tracking() -> ();
@@ -93,33 +94,27 @@ return([22], [26], [2], [32]);
 F0_B1:
 branch_align() -> ();
 redeposit_gas([25]) -> ([33]);
-array_new<felt252>() -> ([34]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([35]);
-store_temp<felt252>([35]) -> ([35]);
-array_append<felt252>([34], [35]) -> ([36]);
-struct_construct<core::panics::Panic>() -> ([37]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([37], [36]) -> ([38]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([38]) -> ([39]);
-store_temp<RangeCheck>([24]) -> ([24]);
-store_temp<GasBuiltin>([33]) -> ([33]);
-store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([39]) -> ([39]);
-return([24], [33], [2], [39]);
+store_temp<RangeCheck>([24]) -> ([34]);
+store_temp<GasBuiltin>([33]) -> ([35]);
+jump() { F0_B3() };
 F0_B2:
 branch_align() -> ();
 drop<core::array::Span::<core::felt252>>([3]) -> ();
-redeposit_gas([7]) -> ([40]);
-array_new<felt252>() -> ([41]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([42]);
-store_temp<felt252>([42]) -> ([42]);
-array_append<felt252>([41], [42]) -> ([43]);
-struct_construct<core::panics::Panic>() -> ([44]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([44], [43]) -> ([45]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([45]) -> ([46]);
-store_temp<RangeCheck>([6]) -> ([6]);
-store_temp<GasBuiltin>([40]) -> ([40]);
+redeposit_gas([7]) -> ([36]);
+store_temp<RangeCheck>([6]) -> ([34]);
+store_temp<GasBuiltin>([36]) -> ([35]);
+F0_B3:
+array_new<felt252>() -> ([37]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([38]);
+store_temp<felt252>([38]) -> ([38]);
+array_append<felt252>([37], [38]) -> ([39]);
+struct_construct<core::panics::Panic>() -> ([40]);
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41]);
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([41]) -> ([42]);
+store_temp<RangeCheck>([34]) -> ([34]);
+store_temp<GasBuiltin>([35]) -> ([35]);
 store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([46]) -> ([46]);
-return([6], [40], [2], [46]);
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([42]);
+return([34], [35], [2], [42]);
 
 cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
