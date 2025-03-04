@@ -4,14 +4,12 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
-use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, chain, intersperse};
 
+use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
@@ -39,7 +37,16 @@ pub trait DocGroup:
     ) -> Option<Vec<DocumentationCommentToken>>;
 
     /// Gets the signature of an item (i.e., item without its body).
+    #[salsa::invoke(crate::documentable_formatter::get_item_signature)]
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
+
+    /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
+    /// signature slices on documentable items.
+    #[salsa::invoke(crate::documentable_formatter::get_item_signature_with_links)]
+    fn get_item_signature_with_links(
+        &self,
+        item_id: DocumentableItemId,
+    ) -> (String, Vec<LocationLink>);
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
@@ -58,142 +65,6 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
             }
         }
     }
-}
-
-fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
-    if let DocumentableItemId::Crate(crate_id) = item_id {
-        return format!("crate {}", crate_id.name(db.upcast()));
-    }
-
-    let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
-    let definition = match syntax_node.green_node(db.upcast()).kind {
-        SyntaxKind::ItemConstant | SyntaxKind::ItemTypeAlias | SyntaxKind::ItemImplAlias => {
-            syntax_node.clone().get_text_without_all_comment_trivia(db.upcast())
-        }
-        SyntaxKind::FunctionWithBody
-        | SyntaxKind::ItemExternFunction
-        | SyntaxKind::TraitItemFunction => {
-            let children = db.get_children(syntax_node);
-            children[1..]
-                .iter()
-                .map_while(|node| {
-                    let kind = node.kind(db.upcast());
-                    (kind != SyntaxKind::ExprBlock
-                        && kind != SyntaxKind::ImplBody
-                        && kind != SyntaxKind::TraitBody)
-                        .then_some(
-                            if kind == SyntaxKind::VisibilityPub
-                                || kind == SyntaxKind::TerminalExtern
-                            {
-                                node.clone()
-                                    .get_text_without_all_comment_trivia(db.upcast())
-                                    .trim()
-                                    .to_owned()
-                                    + " "
-                            } else {
-                                node.clone()
-                                    .get_text_without_all_comment_trivia(db.upcast())
-                                    .lines()
-                                    .map(|line| line.trim())
-                                    .collect::<Vec<&str>>()
-                                    .join("")
-                            },
-                        )
-                })
-                .collect::<Vec<String>>()
-                .join("")
-        }
-        SyntaxKind::ItemEnum | SyntaxKind::ItemStruct => {
-            let children = db.get_children(syntax_node);
-
-            let item_content_children_without_trivia = db
-                .get_children(children[6].clone())
-                .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                .join("");
-
-            let [attributes, visibility, keyword, name, generic_types, left_brace, _, right_brace] =
-                &children
-                    .iter()
-                    .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                    .collect::<Vec<_>>()[..]
-            else {
-                return "".to_owned();
-            };
-
-            format!(
-                "{}\n{} {} {}{} {}\n {}{}",
-                attributes,
-                visibility,
-                keyword,
-                name,
-                generic_types,
-                left_brace,
-                item_content_children_without_trivia,
-                right_brace
-            )
-        }
-        SyntaxKind::ItemExternType => {
-            let [attributes, visibility, extern_keyword, keyword, name, generic_types, _] = &db
-                .get_children(syntax_node)
-                .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                .collect::<Vec<_>>()[..]
-            else {
-                return "".to_owned();
-            };
-            format!(
-                "{}\n{} {} {} {}{}",
-                attributes, visibility, extern_keyword, keyword, name, generic_types
-            )
-        }
-        SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
-            let children = db.get_children(syntax_node);
-            children[1..]
-                .iter()
-                .enumerate()
-                .map_while(|(index, node)| {
-                    let kind = node.kind(db.upcast());
-                    if kind != SyntaxKind::ImplBody && kind != SyntaxKind::TraitBody {
-                        let text = node
-                            .clone()
-                            .get_text_without_all_comment_trivia(db.upcast())
-                            .lines()
-                            .map(|line| line.trim())
-                            .collect::<Vec<&str>>()
-                            .join("");
-
-                        Some(if index == 0 || kind == SyntaxKind::WrappedGenericParamList {
-                            text
-                        } else {
-                            " ".to_owned() + &text
-                        })
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("")
-        }
-        SyntaxKind::TraitItemConstant | SyntaxKind::TraitItemType => {
-            let children = db.get_children(syntax_node.clone());
-            let get_text =
-                |node: &SyntaxNode| node.clone().get_text_without_all_comment_trivia(db.upcast());
-            format!("{} {}", get_text(&children[1]), children[2..].iter().map(get_text).join(""))
-        }
-        SyntaxKind::Member => {
-            let children_text = db
-                .get_children(syntax_node)
-                .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                .collect::<Vec<String>>();
-            // Returning straight away as we don't want to format it.
-            return children_text[1..].join("").trim().into();
-        }
-        SyntaxKind::Variant => syntax_node.get_text_without_all_comment_trivia(db.upcast()),
-        _ => "".to_owned(),
-    };
-    fmt(definition)
 }
 
 fn get_item_documentation_as_tokens(
@@ -261,19 +132,6 @@ fn get_item_documentation_content(
     let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
 
     (outer_comments, inner_comments, module_level_comments)
-}
-
-/// Run Cairo formatter over code with extra post-processing that is specific to signatures.
-fn fmt(code: String) -> String {
-    let code = cairo_lang_formatter::format_string(&SimpleParserDatabase::default(), code);
-
-    code
-        // Trim any whitespace that formatter tends to leave.
-        .trim_end()
-        // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
-        // and that formatter tends to put in separate line.
-        .trim_end_matches("\n;")
-      .to_owned()
 }
 
 /// Gets the crate level documentation.
