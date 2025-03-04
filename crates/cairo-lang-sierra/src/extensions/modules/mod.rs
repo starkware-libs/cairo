@@ -44,6 +44,7 @@ pub mod span;
 pub mod squashed_felt252_dict;
 pub mod starknet;
 pub mod structure;
+pub mod trace;
 pub mod try_from_felt252;
 pub mod unconditional_jump;
 pub mod uninitialized;
