@@ -4,7 +4,6 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
-use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
@@ -133,19 +132,6 @@ fn get_item_documentation_content(
     let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
 
     (outer_comments, inner_comments, module_level_comments)
-}
-
-/// Run Cairo formatter over code with extra post-processing that is specific to signatures.
-fn fmt(code: String) -> String {
-    let code = cairo_lang_formatter::format_string(&SimpleParserDatabase::default(), code);
-
-    code
-        // Trim any whitespace that formatter tends to leave.
-        .trim_end()
-        // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
-        // and that formatter tends to put in separate line.
-        .trim_end_matches("\n;")
-      .to_owned()
 }
 
 /// Gets the crate level documentation.
