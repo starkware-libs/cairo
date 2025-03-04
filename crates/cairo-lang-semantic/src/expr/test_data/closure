@@ -644,7 +644,7 @@ error: Capture of mutable variables in a closure is not supported
 
 //! > ==========================================================================
 
-//! > Not generating generating destruct impl when drop impl exists.
+//! > Not generating destruct impl when drop impl exists.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
