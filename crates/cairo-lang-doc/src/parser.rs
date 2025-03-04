@@ -1,4 +1,4 @@
-use std::{fmt, iter};
+use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -235,7 +235,7 @@ impl<'a> DocumentationCommentParser<'a> {
 
         // Get the stack (bottom-up) of submodule names in the file containing the node, in the main
         // module, that lead to the node.
-        iter::successors(node.parent(), SyntaxNode::parent)
+        node.ancestors()
             .filter_map(|node| ItemModule::cast(syntax_db, node))
             .map(|item_module| {
                 item_module
