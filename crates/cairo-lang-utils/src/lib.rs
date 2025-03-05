@@ -11,6 +11,7 @@ use core::fmt;
 
 /// Re-exporting the [`smol_str`] crate so that downstream projects can always use the same
 /// instance the compiler does.
+#[cfg(feature = "std")]
 pub use ::smol_str;
 
 pub mod bigint;
