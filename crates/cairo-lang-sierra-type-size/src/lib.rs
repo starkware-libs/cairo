@@ -49,7 +49,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Felt252DictEntry(_)
             | CoreTypeConcrete::SegmentArena(_)
             | CoreTypeConcrete::Bytes31(_)
-            | CoreTypeConcrete::BoundedInt(_) => Some(1),
+            | CoreTypeConcrete::BoundedInt(_)
+            | CoreTypeConcrete::QM31(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)

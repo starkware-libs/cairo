@@ -300,6 +300,7 @@ pub fn simulate<
         CoreConcreteLibfunc::IntRange(_) => unimplemented!(),
         CoreConcreteLibfunc::Blake(_) => unimplemented!(),
         CoreConcreteLibfunc::Trace(_) => unimplemented!(),
+        CoreConcreteLibfunc::QM31(_) => unimplemented!(),
     })
 }
 
