@@ -6,11 +6,13 @@ use std::collections::HashMap;
 
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
+use cairo_lang_utils::ordered_hash_map::{self, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
-use itertools::Itertools;
+use itertools::{Itertools, zip_eq};
 
 use crate::ids::FunctionId;
+use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, StatementConst,
     StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
@@ -31,12 +33,7 @@ struct CanonicBlock {
 
 /// A canonic representation of a variable in a canonic block.
 #[derive(Hash, PartialEq, Eq)]
-enum CanonicVar {
-    /// A variable that was defined outside of the block.
-    Global(usize),
-    /// A variable that was defined inside the block.
-    Local(usize),
-}
+struct CanonicVar(usize);
 
 /// A canonic representation of a statement in a canonic block.
 #[derive(Hash, PartialEq, Eq)]
@@ -79,24 +76,37 @@ struct CanonicBlockBuilder<'a> {
     variable: &'a Arena<Variable>,
     vars: UnorderedHashMap<VariableId, usize>,
     types: Vec<TypeId>,
+    inputs: Vec<VarUsage>,
 }
 
 impl CanonicBlockBuilder<'_> {
     fn new(variable: &Arena<Variable>) -> CanonicBlockBuilder<'_> {
-        CanonicBlockBuilder { variable, vars: Default::default(), types: vec![] }
+        CanonicBlockBuilder {
+            variable,
+            vars: Default::default(),
+            types: vec![],
+            inputs: Default::default(),
+        }
     }
 
     /// Converts an input var to a CanonicVar.
     fn handle_input(&mut self, var_usage: &VarUsage) -> CanonicVar {
-        match self.vars.get(&var_usage.var_id) {
-            Some(local_idx) => CanonicVar::Local(*local_idx),
-            None => CanonicVar::Global(var_usage.var_id.index()),
-        }
+        let v = var_usage.var_id;
+
+        CanonicVar(match self.vars.entry(v) {
+            std::collections::hash_map::Entry::Occupied(e) => *e.get(),
+            std::collections::hash_map::Entry::Vacant(e) => {
+                self.types.push(self.variable[v].ty);
+                let new_id = *e.insert(self.types.len() - 1);
+                self.inputs.push(*var_usage);
+                new_id
+            }
+        })
     }
 
     /// Converts an output var to a CanonicVar.
     fn handle_output(&mut self, v: &VariableId) -> CanonicVar {
-        CanonicVar::Local(match self.vars.entry(*v) {
+        CanonicVar(match self.vars.entry(*v) {
             std::collections::hash_map::Entry::Occupied(e) => *e.get(),
             std::collections::hash_map::Entry::Vacant(e) => {
                 self.types.push(self.variable[*v].ty);
@@ -158,8 +168,12 @@ impl CanonicBlockBuilder<'_> {
 
 impl CanonicBlock {
     /// Tries to create a canonic block from a flat block.
+    /// Return the canonic representation of the block and the external inputs used in the block.
     /// Blocks that do not end in return do not have a canonic representation.
-    fn try_from_block(variable: &Arena<Variable>, block: &FlatBlock) -> Option<CanonicBlock> {
+    fn try_from_block(
+        variable: &Arena<Variable>,
+        block: &FlatBlock,
+    ) -> Option<(CanonicBlock, Vec<VarUsage>)> {
         let FlatBlockEnd::Return(returned_vars, _) = &block.end else {
             return None;
         };
@@ -179,8 +193,61 @@ impl CanonicBlock {
 
         let returns = returned_vars.iter().map(|input| builder.handle_input(input)).collect();
 
-        Some(CanonicBlock { stmts, types: builder.types, returns })
+        Some((CanonicBlock { stmts, types: builder.types, returns }, builder.inputs))
     }
+}
+
+struct VarRenamer<'a> {
+    variables: &'a mut Arena<Variable>,
+    pub renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+}
+
+impl Rebuilder for VarRenamer<'_> {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
+        match self.renamed_vars.entry(var) {
+            std::collections::hash_map::Entry::Occupied(e) => *e.get(),
+            std::collections::hash_map::Entry::Vacant(e) => {
+                *e.insert(self.variables.alloc(self.variables[var].clone()))
+            }
+        }
+    }
+
+    fn map_block_id(&mut self, block: BlockId) -> BlockId {
+        block
+    }
+}
+
+#[derive(Default)]
+struct DedupContext {
+    /// Maps a CanonicBlock to a reference block that matches it.
+    canonic_blocks: OrderedHashMap<CanonicBlock, BlockId>,
+
+    /// Maps a block to the inputs that are needed for it to be shared,
+    block_id_to_inputs: HashMap<BlockId, Vec<VarUsage>>,
+}
+
+fn rebuild_block_and_inputs(
+    variables: &mut Arena<Variable>,
+    block: &FlatBlock,
+    inputs: &[VarUsage],
+) -> (FlatBlock, Vec<VarUsage>) {
+    let new_inputs: Vec<VarUsage> = inputs
+        .iter()
+        .map(|var_usage| VarUsage {
+            var_id: variables.alloc(variables[var_usage.var_id].clone()),
+            location: var_usage.location,
+        })
+        .collect();
+
+    let mut renamer = VarRenamer {
+        variables,
+        renamed_vars: UnorderedHashMap::from_iter(zip_eq(
+            inputs.iter().map(|var_usage| var_usage.var_id),
+            new_inputs.iter().map(|var_usage| var_usage.var_id),
+        )),
+    };
+
+    (renamer.rebuild_block(block), new_inputs)
 }
 
 /// Deduplicates blocks by redirecting goto's and match arms to one of the duplicates.
@@ -190,54 +257,98 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
         return;
     }
 
-    let mut blocks: HashMap<CanonicBlock, BlockId> = Default::default();
-    let mut duplicates: HashMap<BlockId, BlockId> = Default::default();
-
-    for (block_id, block) in lowered.blocks.iter() {
-        let Some(canonical_block) = CanonicBlock::try_from_block(&lowered.variables, block) else {
-            continue;
-        };
-
-        let opt_mark_dup = match blocks.entry(canonical_block) {
-            std::collections::hash_map::Entry::Occupied(e) => {
-                duplicates.insert(block_id, *e.get());
-                Some(*e.get())
-            }
-            std::collections::hash_map::Entry::Vacant(e) => {
-                e.insert(block_id);
-                None
-            }
-        };
-
-        if let Some(dup_block) = opt_mark_dup {
-            duplicates.entry(dup_block).or_insert_with(|| dup_block);
-        }
-    }
+    let mut ctx = DedupContext::default();
+    // Maps duplicated blocks to the new shared block and the inputs that need to be remapped for
+    // the block.
+    let mut duplicates: UnorderedHashMap<BlockId, (BlockId, Vec<VarUsage>)> = Default::default();
 
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
 
-    // Note that the loop below can't be merged with the loop above as a block might be marked as
-    // dup after we already visiting an arm that goes to it.
+    for (block_id, block) in lowered.blocks.iter() {
+        let Some((canonical_block, inputs)) =
+            CanonicBlock::try_from_block(&lowered.variables, block)
+        else {
+            continue;
+        };
+
+        match ctx.canonic_blocks.entry(canonical_block) {
+            ordered_hash_map::Entry::Occupied(e) => {
+                let block_and_inputs = duplicates
+                    .entry(*e.get())
+                    .or_insert_with(|| {
+                        let (block, new_inputs) =
+                            rebuild_block_and_inputs(&mut lowered.variables, block, &inputs);
+                        new_blocks.push(block);
+                        let new_block_id = next_block_id;
+                        next_block_id = next_block_id.next_block_id();
+
+                        (new_block_id, new_inputs)
+                    })
+                    .clone();
+
+                duplicates.insert(block_id, block_and_inputs);
+            }
+            ordered_hash_map::Entry::Vacant(e) => {
+                e.insert(block_id);
+            }
+        };
+
+        ctx.block_id_to_inputs.insert(block_id, inputs);
+    }
+
+    let mut new_goto_block = |block_id, inputs: &Vec<VarUsage>, target_inputs: &Vec<VarUsage>| {
+        new_blocks.push(FlatBlock {
+            statements: vec![],
+            end: FlatBlockEnd::Goto(
+                block_id,
+                VarRemapping {
+                    remapping: OrderedHashMap::from_iter(zip_eq(
+                        target_inputs.iter().map(|var_usage| var_usage.var_id),
+                        inputs.iter().cloned(),
+                    )),
+                },
+            ),
+        });
+
+        let new_block_id = next_block_id;
+        next_block_id = next_block_id.next_block_id();
+        new_block_id
+    };
+
+    // Note that the loop below cant be merged with the loop above as a block might be marked as dup
+    // after we already visiting an arm that goes to it.
     for block in lowered.blocks.iter_mut() {
         match &mut block.end {
-            FlatBlockEnd::Goto(target_block, remappings) if remappings.is_empty() => {
-                if let Some(block_id) = duplicates.get(target_block) {
-                    *target_block = *block_id;
+            FlatBlockEnd::Goto(target_block, remappings) => {
+                let Some((block_id, target_inputs)) = duplicates.get(target_block) else {
+                    continue;
+                };
+
+                let inputs = ctx.block_id_to_inputs.get(target_block).unwrap();
+                let mut inputs_remapping = VarRemapping {
+                    remapping: OrderedHashMap::from_iter(zip_eq(
+                        target_inputs.iter().map(|var_usage| var_usage.var_id),
+                        inputs.iter().cloned(),
+                    )),
+                };
+                for (_, src) in inputs_remapping.iter_mut() {
+                    if let Some(src_before_remapping) = remappings.get(&src.var_id) {
+                        *src = *src_before_remapping;
+                    }
                 }
+
+                *target_block = *block_id;
+                *remappings = inputs_remapping;
             }
             FlatBlockEnd::Match { info } => {
                 for arm in info.arms_mut() {
-                    let Some(block_id) = duplicates.get(&arm.block_id) else {
+                    let Some((block_id, target_inputs)) = duplicates.get(&arm.block_id) else {
                         continue;
                     };
-                    new_blocks.push(FlatBlock {
-                        statements: vec![],
-                        end: FlatBlockEnd::Goto(*block_id, VarRemapping::default()),
-                    });
 
-                    arm.block_id = next_block_id;
-                    next_block_id = next_block_id.next_block_id();
+                    let inputs = ctx.block_id_to_inputs.get(&arm.block_id).unwrap();
+                    arm.block_id = new_goto_block(*block_id, inputs, target_inputs);
                 }
             }
             _ => {}
