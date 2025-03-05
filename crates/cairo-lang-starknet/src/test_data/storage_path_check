@@ -348,7 +348,7 @@ struct IgnoreInvalidStorageMemberTypes {
 
 #[starknet::storage_node]
 #[allow(starknet::colliding_storage_paths)]
-struct IgnoreColldingPaths {
+struct IgnoreCollidingPaths {
     pub a: InvalidStorageStruct,
     #[rename("a")]
     pub b: felt252,
