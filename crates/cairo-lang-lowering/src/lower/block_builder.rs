@@ -319,14 +319,14 @@ impl BlockBuilder {
             if ctx.variables[var_usage.var_id].copyable.is_ok()
                 && !usage.changes.contains_key(member)
             {
-                self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+                self.semantics.copyable_captured.insert(member.clone(), var_usage.var_id);
             } else {
                 self.semantics.captured.insert(member.clone(), var_usage.var_id);
             }
         }
 
         for member in usage.snap_usage.keys() {
-            self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+            self.semantics.copyable_captured.insert(member.clone(), var_usage.var_id);
         }
 
         self.semantics.closures.insert(var_usage.var_id, closure_info);
