@@ -328,7 +328,7 @@ End:
 blk3:
 Statements:
 End:
-  Goto(blk6, {})
+  Return()
 
 blk4:
 Statements:
@@ -337,20 +337,15 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v7) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero(v8) => blk7,
+    IsZeroResult::NonZero(v8) => blk6,
   })
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-End:
   Return()
 
-blk7:
+blk6:
 Statements:
 End:
   Return()
