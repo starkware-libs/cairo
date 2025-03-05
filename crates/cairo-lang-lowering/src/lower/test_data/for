@@ -214,9 +214,8 @@ End:
 blk10:
 Statements:
   (v46: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
-  (v47: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v48: core::felt252) <- 375233589013918064796019
-  (v49: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v47, v48)
+  (v47: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v48: core::panics::Panic, v49: core::array::Array::<core::felt252>) <- struct_destructure(v47)
   (v50: core::panics::Panic) <- struct_construct()
   (v51: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v50, v49)
   (v52: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v51)
