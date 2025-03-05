@@ -252,7 +252,7 @@ impl HirDisplay for EnumId {
                         f.write_str(&format!("\n{INDENT}{name},",)).unwrap()
                     }
                 });
-                f.write_str("\n}")
+                f.write_str(if variants.is_empty() { "}" } else { "\n}" })
             }
             None => f.write_str("}"),
         }
@@ -442,7 +442,7 @@ impl HirDisplay for ModuleTypeAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), fmt::Error> {
         let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self);
         f.write_str(&format!(
-            "{}impl {} = ",
+            "{}type {} = ",
             get_syntactic_visibility(&module_type_alias_full_signature.visibility),
             self.name(f.db.upcast()),
         ))?;
