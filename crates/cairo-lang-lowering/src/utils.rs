@@ -12,8 +12,14 @@ use crate::{
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum InliningStrategy {
     /// Do not override inlining strategy.
+    ///
+    /// Note: equivalent to `InlineSmallFunctions(DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD)`.
     #[default]
     Default,
+    /// Should inline small functions up to the given weight.
+    ///
+    /// Note: the weight exact definition is subject to change.
+    InlineSmallFunctions(usize),
     /// Inline only in the case of an `inline(always)` annotation.
     Avoid,
 }
