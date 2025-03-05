@@ -4,10 +4,10 @@
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-extern fn qm31_add(a: qm31, b: qm31) -> qm31 nopanic;
+use core::qm31::qm31;
+
 fn foo(a: qm31, b: qm31) -> qm31 {
-    qm31_add(a, b)
+    a + b
 }
 
 //! > casm
@@ -36,10 +36,10 @@ test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-extern fn qm31_sub(a: qm31, b: qm31) -> qm31 nopanic;
+use core::qm31::qm31;
+
 fn foo(a: qm31, b: qm31) -> qm31 {
-    qm31_sub(a, b)
+    a - b
 }
 
 //! > casm
@@ -68,10 +68,10 @@ test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-extern fn qm31_mul(a: qm31, b: qm31) -> qm31 nopanic;
+use core::qm31::qm31;
+
 fn foo(a: qm31, b: qm31) -> qm31 {
-    qm31_mul(a, b)
+    a * b
 }
 
 //! > casm
@@ -100,7 +100,8 @@ test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
+use core::qm31::qm31;
+
 extern fn qm31_div(a: qm31, b: NonZero<qm31>) -> qm31 nopanic;
 fn foo(a: qm31, b: NonZero<qm31>) -> qm31 {
     qm31_div(a, b)
@@ -133,10 +134,7 @@ test::foo@F0([0]: qm31, [1]: NonZero<qm31>) -> (qm31);
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-extern fn qm31_const<
-    const W0: felt252, const W1: felt252, const W2: felt252, const W3: felt252,
->() -> qm31 nopanic;
+use core::qm31::{qm31, qm31_const};
 fn foo() -> qm31 {
     qm31_const::<1, 2, 3, 4>()
 }
@@ -170,7 +168,8 @@ SmallE2ETestRunner
 
 //! > cairo_code
 use core::internal::OptionRev;
-extern type qm31;
+use core::qm31::qm31;
+
 extern fn qm31_is_zero(a: qm31) -> OptionRev<NonZero<qm31>> nopanic;
 fn foo(a: qm31) -> OptionRev<NonZero<qm31>> {
     qm31_is_zero(a)
@@ -189,29 +188,29 @@ ret;
 type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type NonZero<qm31> = NonZero<qm31> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>> = Enum<ut@core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, Unit, NonZero<qm31>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>> = Enum<ut@core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, Unit, NonZero<qm31>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc qm31_is_zero = qm31_is_zero;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 0> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 0>;
-libfunc store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>> = store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>>;
-libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 1> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 1>;
+libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>> = store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>;
+libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>;
 
 F0:
 qm31_is_zero([0]) { fallthrough() F0_B0([1]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
-enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 0>([2]) -> ([3]);
-store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>>([3]) -> ([3]);
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([3]) -> ([3]);
 return([3]);
 F0_B0:
 branch_align() -> ();
-enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>, 1>([1]) -> ([4]);
-store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>>([4]) -> ([4]);
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([4]) -> ([4]);
 return([4]);
 
-test::foo@F0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<test::qm31>>);
+test::foo@F0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 300})
@@ -224,11 +223,10 @@ test::foo: OrderedHashMap({Const: 300})
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-type m31 = core::internal::bounded_int::BoundedInt<0, 0x7ffffffe>;
-extern fn qm31_pack(w0: m31, w1: m31, w2: m31, w3: m31) -> qm31 nopanic;
+use core::qm31::{QM31Trait, m31, qm31};
+
 fn foo(w0: m31, w1: m31, w2: m31, w3: m31) -> qm31 {
-    qm31_pack(w0, w1, w2, w3)
+    QM31Trait::new(w0, w1, w2, w3)
 }
 
 //! > casm
@@ -266,11 +264,10 @@ test::foo: OrderedHashMap({Const: 700})
 SmallE2ETestRunner
 
 //! > cairo_code
-extern type qm31;
-type m31 = core::internal::bounded_int::BoundedInt<0, 0x7ffffffe>;
-extern fn qm31_unpack(a: qm31) -> (m31, m31, m31, m31) implicits(RangeCheck) nopanic;
-fn foo(a: qm31) -> (m31, m31, m31, m31) {
-    qm31_unpack(a)
+use core::qm31::{QM31Trait, m31, qm31};
+
+fn foo(a: qm31) -> [m31; 4] {
+    a.unpack()
 }
 
 //! > casm

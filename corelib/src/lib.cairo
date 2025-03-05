@@ -384,6 +384,8 @@ pub mod keccak;
 
 pub mod pedersen;
 
+pub mod qm31;
+
 pub mod serde;
 
 pub mod sha256;
