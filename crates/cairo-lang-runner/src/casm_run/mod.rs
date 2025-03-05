@@ -2378,9 +2378,20 @@ pub fn build_cairo_runner(
         None,
     )
     .map_err(CairoRunError::from)?;
-    CairoRunner::new(&program, LayoutName::all_cairo, false, true)
-        .map_err(CairoRunError::from)
-        .map_err(Box::new)
+    let dynamic_layout_params = None;
+    let proof_mode = false;
+    let trace_enabled = true;
+    let disable_trace_padding = true;
+    CairoRunner::new(
+        &program,
+        LayoutName::all_cairo,
+        dynamic_layout_params,
+        proof_mode,
+        trace_enabled,
+        disable_trace_padding,
+    )
+    .map_err(CairoRunError::from)
+    .map_err(Box::new)
 }
 
 /// The result of [run_function].
