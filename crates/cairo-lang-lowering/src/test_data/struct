@@ -139,10 +139,11 @@ Statements:
   (v1: core::felt252) <- 1
   (v2: core::felt252) <- 2
   (v3: (), v4: core::felt252, v5: (core::felt252, core::felt252)) <- struct_destructure(v0)
-  (v6: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
-  (v7: test::MyStruct) <- struct_construct(v3, v4, v6)
+  (v6: ()) <- struct_construct()
+  (v7: (core::felt252, core::felt252)) <- struct_construct(v1, v2)
+  (v8: test::MyStruct) <- struct_construct(v6, v4, v7)
 End:
-  Return(v7)
+  Return(v8)
 
 //! > ==========================================================================
 

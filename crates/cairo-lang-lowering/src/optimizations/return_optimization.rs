@@ -137,11 +137,18 @@ impl ReturnOptimizerContext<'_> {
     /// Given a VarUsage, returns the ValueInfo that corresponds to it.
     fn get_var_info(&self, var_usage: &VarUsage) -> ValueInfo {
         let var_ty = &self.lowered.variables[var_usage.var_id].ty;
-        if self.is_droppable(var_usage.var_id) && self.db.single_value_type(*var_ty).unwrap() {
-            ValueInfo::Interchangeable(*var_ty)
-        } else {
-            ValueInfo::Var(*var_usage)
+
+        if self.is_droppable(var_usage.var_id) {
+            if var_ty.is_unit(self.db.upcast()) {
+                return ValueInfo::StructConstruct { ty: *var_ty, var_infos: vec![] };
+            }
+
+            if self.db.single_value_type(*var_ty).unwrap() {
+                return ValueInfo::Interchangeable(*var_ty);
+            }
         }
+
+        ValueInfo::Var(*var_usage)
     }
 
     /// Returns true if the variable is droppable

@@ -875,32 +875,35 @@ End:
 
 blk6:
 Statements:
-  (v11: (core::integer::u128,)) <- struct_construct(v0)
-  (v12: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v11)
 End:
-  Goto(blk4, {v12 -> v3})
+  Goto(blk9, {v0 -> v11})
 
 blk7:
 Statements:
 End:
   Match(match core::integer::u128_overflowing_add(v1, v0) {
-    Result::Ok(v13) => blk8,
-    Result::Err(v14) => blk9,
+    Result::Ok(v12) => blk8,
+    Result::Err(v13) => blk10,
   })
 
 blk8:
 Statements:
-  (v15: (core::integer::u128,)) <- struct_construct(v13)
-  (v16: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
 End:
-  Goto(blk4, {v16 -> v3})
+  Goto(blk9, {v12 -> v11})
 
 blk9:
 Statements:
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<39878429859757942499084499860145094553463>()
-  (v18: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v17)
+  (v14: (core::integer::u128,)) <- struct_construct(v11)
+  (v15: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v14)
 End:
-  Goto(blk4, {v18 -> v3})
+  Goto(blk4, {v15 -> v3})
+
+blk10:
+Statements:
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<39878429859757942499084499860145094553463>()
+  (v17: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v16)
+End:
+  Goto(blk4, {v17 -> v3})
 
 //! > lowering_diagnostics
 

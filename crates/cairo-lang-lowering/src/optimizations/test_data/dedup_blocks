@@ -111,7 +111,7 @@ Statements:
 End:
   Match(match_enum(v7) {
     Option::Some(v10) => blk4,
-    Option::None(v11) => blk8,
+    Option::None(v11) => blk9,
   })
 
 blk4:
@@ -119,7 +119,7 @@ Statements:
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v6) {
     Option::Some(v13, v14) => blk5,
-    Option::None(v15) => blk9,
+    Option::None(v15) => blk10,
   })
 
 blk5:
@@ -147,10 +147,17 @@ End:
 
 blk8:
 Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v27: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v26)
 End:
-  Goto(blk6, {})
+  Return(v27)
 
 blk9:
 Statements:
 End:
-  Goto(blk6, {})
+  Goto(blk8, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk8, {})
