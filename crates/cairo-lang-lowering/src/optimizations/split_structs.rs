@@ -71,7 +71,9 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
                                 vars: stmt.inputs.iter().map(|input| input.var_id).collect_vec(),
                             },
                         )
-                        .is_none()
+                        .is_none(),
+                    "{} appers twice",
+                    stmt.output.index()
                 );
             }
         }

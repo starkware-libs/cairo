@@ -60,9 +60,18 @@ impl OptimizationPhase {
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
-            OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
+            OptimizationPhase::ReorganizeBlocks => {
+                // let lowered_formatter = LoweredFormatter::new(db.upcast(), &lowered.variables);
+                // println!("{:?}", lowered.debug(&lowered_formatter));
+                reorganize_blocks(lowered)
+            }
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
-            OptimizationPhase::SplitStructs => split_structs(lowered),
+            OptimizationPhase::SplitStructs => {
+                // let lowered_formatter = LoweredFormatter::new(db.upcast(),
+                // &lowered_function.variables); println!("{:?}",
+                // lowered_function.debug(&lowered_formatter));
+                split_structs(lowered)
+            }
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered)
