@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::qm31::{
 };
 use num_bigint::BigInt;
 
-use super::misc::build_is_zero;
+use super::misc::{build_identity, build_is_zero};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
@@ -25,6 +25,7 @@ pub fn build(
         QM31Concrete::Const(libfunc) => build_qm31_const(builder, libfunc),
         QM31Concrete::Pack(_) => build_qm31_pack(builder),
         QM31Concrete::Unpack(_) => build_qm31_unpack(builder),
+        QM31Concrete::FromM31(_) => build_identity(builder),
     }
 }
 

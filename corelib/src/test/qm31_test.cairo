@@ -1,4 +1,4 @@
-use core::qm31::{QM31Trait, qm31_const};
+use core::qm31::{QM31Trait, m31, qm31, qm31_const};
 
 #[test]
 fn test_qm31_add_and_sub() {
@@ -47,4 +47,12 @@ fn test_unpack() {
     assert_eq!(qm31_const::<2, 3, 4, 1>().unpack(), [2, 3, 4, 1]);
     assert_eq!(qm31_const::<3, 4, 1, 2>().unpack(), [3, 4, 1, 2]);
     assert_eq!(qm31_const::<4, 1, 2, 3>().unpack(), [4, 1, 2, 3]);
+}
+
+#[test]
+fn test_m31_into_qm31() {
+    assert_eq!(Into::<m31, qm31>::into(1).unpack(), [1, 0, 0, 0]);
+    assert_eq!(Into::<m31, qm31>::into(2).unpack(), [2, 0, 0, 0]);
+    assert_eq!(Into::<m31, qm31>::into(3).unpack(), [3, 0, 0, 0]);
+    assert_eq!(Into::<m31, qm31>::into(4).unpack(), [4, 0, 0, 0]);
 }

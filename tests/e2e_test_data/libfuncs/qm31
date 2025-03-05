@@ -318,3 +318,38 @@ test::foo@F0([0]: RangeCheck, [1]: qm31) -> (RangeCheck, Tuple<BoundedInt<0, 214
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 2350})
+
+//! > ==========================================================================
+
+//! > qm31_from_m31
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::{m31, qm31};
+
+fn foo(a: m31) -> qm31 {
+    a.into()
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_from_m31 = qm31_from_m31;
+libfunc store_temp<qm31> = store_temp<qm31>;
+
+F0:
+qm31_from_m31([0]) -> ([1]);
+store_temp<qm31>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>) -> (qm31);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})

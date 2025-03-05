@@ -6,6 +6,7 @@ use super::bounded_int::bounded_int_ty;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -37,6 +38,7 @@ define_libfunc_hierarchy! {
         IsZero(QM31JumpNotZeroLibfunc),
         Pack(QM31PackLibfunc),
         Unpack(QM31UnpackLibfunc),
+        FromM31(QM31FromM31Libfunc),
     }, QM31Concrete
 }
 
@@ -257,6 +259,23 @@ impl NoGenericArgsGenericLibfunc for QM31UnpackLibfunc {
                 output_var_info,
             ],
             SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for casting from an m31 to qm31.
+#[derive(Default)]
+pub struct QM31FromM31Libfunc {}
+impl NoGenericArgsGenericLibfunc for QM31FromM31Libfunc {
+    const STR_ID: &'static str = "qm31_from_m31";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(reinterpret_cast_signature(
+            m31_ty(context)?,
+            context.get_concrete_type(QM31Type::id(), &[])?,
         ))
     }
 }
