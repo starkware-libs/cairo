@@ -1,4 +1,4 @@
-/// Macro that produces an inline function that gets a token kind and returns true iff it is in one
+/// Macro that produces an inline function that gets a token kind and returns true if it is in one
 /// of the supplied groups.
 macro_rules! is_of_kind {
     ($($element:ident),*) => {
