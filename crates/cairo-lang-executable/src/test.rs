@@ -1,5 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -8,6 +9,8 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::formatdoc;
+use serde_json::json;
 
 use crate::compile;
 use crate::plugin::executable_plugin_suite;
@@ -81,21 +84,38 @@ impl TestFileRunner for CompileExecutableTestRunner {
         ) {
             Err(e) => e.to_string(),
             Ok(r) => {
-                let (bytecode, _hints) =
+                let mut s = formatdoc! {r#"
+                    casm:
+                    {}
+                    "data": [
+                "#, r.program};
+                let (bytecode, hints) =
                     r.program.assemble_m31(&r.wrapper.header, &r.wrapper.footer);
-                let mut s = format!("\"data\": [\n");
                 let mut first = true;
                 for [w0, w1, w2, w3] in &bytecode {
                     if !first {
                         s += ",\n";
-                    } else {
-                        first = false;
                     }
-                    s.push_str(&format!(
-                        "    [\"{w0:#x}\", \"{w1:#x}\", \"{w2:#x}\", \"{w3:#x}\"]"
-                    ));
+                    first = false;
+                    s.push_str(&format!(r#"    ["{w0:#x}", "{w1:#x}", "{w2:#x}", "{w3:#x}"]"#));
                 }
-                s += "\n]";
+
+                s.push_str("\n],\n\n\"hints\": {\n");
+                let mut first = true;
+                for (pc, hints_at_pc) in &hints {
+                    if !first {
+                        s += ",\n";
+                    }
+                    first = false;
+                    s.push_str(&format!("\"{:x}\": [", pc >> 2));
+
+                    for h in hints_at_pc {
+                        s.push_str(&format_hint(h));
+                    }
+
+                    s.push_str("]");
+                }
+                s.push_str("\n},\n");
                 s
             }
         };
@@ -108,6 +128,21 @@ impl TestFileRunner for CompileExecutableTestRunner {
             error,
         }
     }
+}
+
+fn format_hint(hint: &Hint) -> String {
+    json!({
+        "accessible_scopes": [],
+        "code": hint,
+        "flow_tracking_data": {
+            "ap_tracking": {
+                "group": 0,
+                "offset": 1
+            },
+            "reference_ids": {}
+        }
+    })
+    .to_string()
 }
 
 cairo_lang_test_utils::test_file_test_with_runner!(
