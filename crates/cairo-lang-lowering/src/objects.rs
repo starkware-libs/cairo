@@ -487,6 +487,13 @@ impl MatchInfo {
             MatchInfo::Value(s) => &s.arms,
         }
     }
+    pub fn arms_mut(&mut self) -> &mut [MatchArm] {
+        match self {
+            MatchInfo::Enum(s) => &mut s.arms,
+            MatchInfo::Extern(s) => &mut s.arms,
+            MatchInfo::Value(s) => &mut s.arms,
+        }
+    }
     pub fn location(&self) -> &LocationId {
         match self {
             MatchInfo::Enum(s) => &s.location,
