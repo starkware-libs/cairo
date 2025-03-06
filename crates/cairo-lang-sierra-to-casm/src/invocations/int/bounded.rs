@@ -209,10 +209,7 @@ fn build_constrain(
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [
-            ("Fallthrough", &[&[value]], None),
-            ("Over", &[&[value]], Some(target_statement_id)),
-        ],
+        [("Fallthrough", &[&[value]], None), ("Over", &[&[value]], Some(target_statement_id))],
         CostValidationInfo::default(),
     ))
 }

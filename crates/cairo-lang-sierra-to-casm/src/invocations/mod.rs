@@ -25,9 +25,9 @@ use num_bigint::BigInt;
 use thiserror::Error;
 
 use crate::circuit::CircuitsInfo;
-use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::environment::frame_state::{FrameState, FrameStateError};
+use crate::environment::gas_wallet::GasWallet;
 use crate::metadata::Metadata;
 use crate::references::{
     OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
@@ -556,7 +556,9 @@ impl CompiledInvocationBuilder<'_> {
             final_costs.iter().zip(extra_costs).map(|(final_cost, extra)| {
                 (final_cost.cost() + extra + pre_instructions.cost.cost()) as i64
             });
-        if !matches!(self.environment.gas_wallet, GasWallet::Disabled) && !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
+        if !matches!(self.environment.gas_wallet, GasWallet::Disabled)
+            && !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone())
+        {
             panic!(
                 "Wrong costs for {}. Expected: {:?}, actual: {:?}, Costs from casm_builder: {:?}.",
                 self.invocation,

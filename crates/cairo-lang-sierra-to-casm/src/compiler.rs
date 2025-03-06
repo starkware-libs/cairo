@@ -191,20 +191,20 @@ impl CairoProgram {
         &'a self,
         header: impl IntoIterator<Item = &'a Instruction>,
         footer: &[Instruction],
-    ) -> (Vec<u32>, Vec<(usize, Vec<Hint>)>) {
+    ) -> (Vec<[u32; 4]>, Vec<(usize, Vec<Hint>)>) {
         let mut bytecode = vec![];
         let mut hints = vec![];
         for instruction in chain!(header, &self.instructions) {
             if !instruction.hints.is_empty() {
                 hints.push((bytecode.len(), instruction.hints.clone()))
             }
-            bytecode.extend(instruction.encode31());
+            bytecode.push(instruction.encode31());
         }
         let ret_opcode =
             Instruction::new(InstructionBody::Ret(RetInstruction {}), false).encode31();
         for segment in self.consts_info.segments.values() {
-            bytecode.extend(ret_opcode.clone());
-            bytecode.extend(segment.values.iter().map(|v| v.to_i32().unwrap() as u32));
+            bytecode.push(ret_opcode.clone());
+            bytecode.extend(segment.values.iter().map(|v| [v.to_i32().unwrap() as u32, 0, 0, 0]));
         }
         for instruction in footer {
             assert!(
@@ -212,7 +212,7 @@ impl CairoProgram {
                 "All footer instructions must have no hints since these cannot be added to the \
                  hints dict."
             );
-            bytecode.extend(instruction.encode31())
+            bytecode.push(instruction.encode31())
         }
         (bytecode, hints)
     }

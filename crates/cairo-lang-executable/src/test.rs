@@ -8,7 +8,6 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::Itertools;
 
 use crate::compile;
 use crate::plugin::executable_plugin_suite;
@@ -84,19 +83,19 @@ impl TestFileRunner for CompileExecutableTestRunner {
             Ok(r) => {
                 let (bytecode, _hints) =
                     r.program.assemble_m31(&r.wrapper.header, &r.wrapper.footer);
-                let mut s = String::new();
-                for x in &bytecode.iter().chunks(4) {
-                    s += "[";
-                    let mut first = true;
-                    for y in x {
-                        if !first {
-                            s += ", ";
-                        }
+                let mut s = format!("\"data\": [\n");
+                let mut first = true;
+                for [w0, w1, w2, w3] in &bytecode {
+                    if !first {
+                        s += ",\n";
+                    } else {
                         first = false;
-                        s.push_str(&format!("\"{:#x}\"", y));
                     }
-                    s += "],\n";
+                    s.push_str(&format!(
+                        "    [\"{w0:#x}\", \"{w1:#x}\", \"{w2:#x}\", \"{w3:#x}\"]"
+                    ));
                 }
+                s += "\n]";
                 s
             }
         };

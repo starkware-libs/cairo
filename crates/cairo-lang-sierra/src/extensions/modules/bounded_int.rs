@@ -340,19 +340,15 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             let inner_res_ty = bounded_int_ty(context, rng.lower, rng.upper - 1)?;
             let res_ty = if is_nz { nonzero_ty(context, &inner_res_ty)? } else { inner_res_ty };
             Ok(BranchSignature {
-                vars: vec![
-                    OutputVarInfo {
-                        ty: res_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                    },
-                ],
+                vars: vec![OutputVarInfo {
+                    ty: res_ty,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                }],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             })
         };
         Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature::new(ty.clone()),
-            ],
+            param_signatures: vec![ParamSignature::new(ty.clone())],
             branch_signatures: vec![branch_signature(low_range)?, branch_signature(high_range)?],
             fallthrough: Some(0),
         })
