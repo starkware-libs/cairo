@@ -42,6 +42,7 @@ pub fn compile_path(
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
+        .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;
