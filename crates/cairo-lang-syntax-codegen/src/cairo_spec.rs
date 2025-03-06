@@ -69,7 +69,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_separated_list("ArgList", "Arg", "TerminalComma")
     .add_struct(StructBuilder::new("ExprMissing"))
-    .add_enum(EnumBuilder::new("PathSegment").missing("Simple").node("WithGenericArgs"))
+    .add_enum(EnumBuilder::new("PathSegment").node("Simple").node("WithGenericArgs"))
     .add_struct(StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier"))
     .add_option("TerminalColonColon")
     .add_struct(StructBuilder::new("PathSegmentWithGenericArgs")
