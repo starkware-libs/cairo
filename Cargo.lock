@@ -1127,6 +1127,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "smol_str",
  "test-case",
  "test-log",
  "time",
