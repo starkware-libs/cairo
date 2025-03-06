@@ -54,12 +54,9 @@ End:
 blk2:
 Statements:
   (v5: (core::panics::Panic, core::array::Array::<core::felt252>)) <- test::no_inline_panic()
-  (v6: core::panics::Panic, v7: core::array::Array::<core::felt252>) <- struct_destructure(v5)
-  (v8: core::panics::Panic) <- struct_construct()
-  (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v8, v7)
-  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v9)
+  (v6: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
 End:
-  Return(v10)
+  Return(v6)
 
 //! > sierra_code
 enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
@@ -73,11 +70,7 @@ branch_align() -> ()
 drop<Unit>([2]) -> ()
 PushValues() -> ()
 function_call<user@test::no_inline_panic>() -> ([5])
-struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([5]) -> ([6], [7])
-drop<core::panics::Panic>([6]) -> ()
-struct_construct<core::panics::Panic>() -> ([8])
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([8], [7]) -> ([9])
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([9]) -> ([10])
-PushValues([10]: core::panics::PanicResult::<(core::felt252,)>) -> ([10])
-return([10])
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([5]) -> ([6])
+PushValues([6]: core::panics::PanicResult::<(core::felt252,)>) -> ([6])
+return([6])
 label_test::foo::1:

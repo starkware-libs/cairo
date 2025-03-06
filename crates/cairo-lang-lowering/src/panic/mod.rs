@@ -6,8 +6,8 @@ use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty, never_ty};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{self as semantic, GenericArgumentId, TypeLongId};
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_semantic::{self as semantic, GenericArgumentId};
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
@@ -255,42 +255,6 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 with_coupon: call.with_coupon,
                 outputs: vec![panic_result_var],
                 location,
-            }));
-
-            // Deconstructing and reconstructing panic, so that the later stage `Destruct` addition
-            // would have a `Panic` struct available.
-
-            let TypeLongId::Tuple(p_ty_d_ty) =
-                callee_info.actual_return_ty.lookup_intern(self.db())
-            else {
-                unreachable!();
-            };
-            let [p_ty, d_ty] = &p_ty_d_ty[..] else {
-                unreachable!();
-            };
-            let panic_var = self.new_var(VarRequest { ty: *p_ty, location });
-            let err_data_var = self.new_var(VarRequest { ty: *d_ty, location });
-            self.statements.push(Statement::StructDestructure(StatementStructDestructure {
-                input: VarUsage { var_id: panic_result_var, location },
-                outputs: vec![panic_var, err_data_var],
-            }));
-            self.statements.push(Statement::StructDestructure(StatementStructDestructure {
-                input: VarUsage { var_id: panic_var, location },
-                outputs: vec![],
-            }));
-            let panic_var = self.new_var(VarRequest { ty: *p_ty, location });
-            self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                inputs: vec![],
-                output: panic_var,
-            }));
-            let panic_result_var =
-                self.new_var(VarRequest { ty: callee_info.actual_return_ty, location });
-            self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                inputs: vec![
-                    VarUsage { var_id: panic_var, location },
-                    VarUsage { var_id: err_data_var, location },
-                ],
-                output: panic_result_var,
             }));
             return Ok((
                 FlatBlockEnd::Panic(VarUsage { var_id: panic_result_var, location }),

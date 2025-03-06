@@ -67,15 +67,19 @@ pub fn priv_should_inline(
     let config = db.function_declaration_inline_config(
         function_id.function_with_body_id(db).base_semantic_function(db),
     )?;
-
-    Ok(match db.optimization_config().inlining_strategy {
-        InliningStrategy::Default => match config {
-            InlineConfiguration::Never(_) => false,
-            InlineConfiguration::Should(_) => true,
-            InlineConfiguration::Always(_) => true,
-            InlineConfiguration::None => should_inline_lowered(db, function_id)?,
-        },
-        InliningStrategy::Avoid => matches!(config, InlineConfiguration::Always(_)),
+    Ok(match (db.optimization_config().inlining_strategy, config) {
+        (_, InlineConfiguration::Always(_)) => true,
+        (InliningStrategy::Avoid, _) | (_, InlineConfiguration::Never(_)) => false,
+        (_, InlineConfiguration::Should(_)) => true,
+        (InliningStrategy::Default, InlineConfiguration::None) => {
+            /// The default threshold for inlining small functions. Decided according to sample
+            /// contracts profiling.
+            const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 24;
+            should_inline_lowered(db, function_id, DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD)?
+        }
+        (InliningStrategy::InlineSmallFunctions(threshold), InlineConfiguration::None) => {
+            should_inline_lowered(db, function_id, threshold)?
+        }
     })
 }
 
@@ -83,6 +87,7 @@ pub fn priv_should_inline(
 fn should_inline_lowered(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
+    inline_small_functions_threshold: usize,
 ) -> Maybe<bool> {
     let lowered = db.inlined_function_with_body_lowered(function_id)?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
@@ -90,7 +95,7 @@ fn should_inline_lowered(
 
     let weight_of_blocks = ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered);
 
-    if weight_of_blocks < inline_small_functions_threshold(db).into_or_panic() {
+    if weight_of_blocks < inline_small_functions_threshold.into_or_panic() {
         return Ok(true);
     }
 
@@ -99,7 +104,7 @@ fn should_inline_lowered(
     // Functions which contains only a call or a literal are always inlined.
     let num_of_statements: usize =
         lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
-    if num_of_statements < inline_small_functions_threshold(db) {
+    if num_of_statements < inline_small_functions_threshold {
         return Ok(true);
     }
 
@@ -368,10 +373,4 @@ pub fn apply_inlining(
         *flat_lowered = new_flat_lowered;
     }
     Ok(())
-}
-
-/// Returns the threshold, in number of lowering statements, below which a function is marked as
-/// `should_inline`.
-fn inline_small_functions_threshold(db: &dyn LoweringGroup) -> usize {
-    db.optimization_config().inline_small_functions_threshold
 }

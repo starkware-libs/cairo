@@ -42,6 +42,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::qm31::QM31Concrete;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -609,9 +610,19 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
-        // TODO(ilya): Add blake token to blake gas cost..
+        // TODO(ilya): Add blake token to blake gas cost.
         Blake(_) => vec![ConstCost::steps(1).into()],
         Trace(_) => vec![ConstCost::steps(1).into()],
+        QM31(libfunc) => match libfunc {
+            QM31Concrete::Const(_) => vec![ConstCost::default().into()],
+            QM31Concrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
+            // TODO(orizi): Add qm31 token to gas cost.
+            QM31Concrete::BinaryOperation(_) => vec![ConstCost::steps(1).into()],
+            QM31Concrete::Pack(_) => vec![ConstCost::steps(6).into()],
+            QM31Concrete::Unpack(_) => {
+                vec![ConstCost { steps: 15, holes: 0, range_checks: 5, range_checks96: 0 }.into()]
+            }
+        },
     }
 }
 

@@ -65,14 +65,10 @@ End:
 
 blk5:
 Statements:
-  (v11: core::felt252) <- 29721761890975875353235833581453094220424382983267374
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_felt252(v11)
-  (v13: core::panics::Panic, v14: core::array::Array::<core::felt252>) <- struct_destructure(v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
-  (v17: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v16)
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v12: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v11)
 End:
-  Return(v10, v17)
+  Return(v10, v12)
 
 //! > lowering
 Main:

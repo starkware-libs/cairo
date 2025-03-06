@@ -22,6 +22,7 @@ mod num_test;
 mod option_test;
 mod plugins_test;
 mod print_test;
+mod qm31_test;
 mod range_test;
 mod result_test;
 mod secp256k1_test;

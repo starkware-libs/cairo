@@ -1667,16 +1667,14 @@ fn compute_expr_for_semantic(
 fn compute_loop_body_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::ExprBlock,
-    inner_ctx_kind: InnerContextKind,
+    kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
-        let inner_ctx =
-            InnerContext { return_type: new_ctx.get_return_type().unwrap(), kind: inner_ctx_kind };
-
-        let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
+        let return_type = new_ctx.get_return_type().unwrap();
+        let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
@@ -1768,9 +1766,9 @@ fn compute_expr_closure_semantic(
             }
         };
 
-        let inner_ctx = InnerContext { return_type, kind: InnerContextKind::Closure };
-
-        let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
+        let old_inner_ctx = new_ctx
+            .inner_ctx
+            .replace(InnerContext { return_type, kind: InnerContextKind::Closure });
         let body = match syntax.expr(syntax_db) {
             ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
             _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
@@ -3425,16 +3423,16 @@ fn expr_function_call(
     for (NamedArg(arg, _name, mutability), param) in
         named_args.into_iter().zip(signature.params.iter())
     {
-        let arg_typ = arg.ty();
-        let param_typ = param.ty;
+        let arg_ty = arg.ty();
+        let param_ty = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        if !arg_typ.is_missing(ctx.db) {
+        if !arg_ty.is_missing(ctx.db) {
             let inference = &mut ctx.resolver.inference();
             let _ = inference.conform_ty_for_diag(
-                arg_typ,
-                param_typ,
+                arg_ty,
+                param_ty,
                 ctx.diagnostics,
                 || arg.stable_ptr().untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
@@ -3493,11 +3491,11 @@ fn maybe_pop_coupon_argument(
         if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
-            let arg_typ = arg.ty();
-            if !arg_typ.is_missing(ctx.db) {
+            let arg_ty = arg.ty();
+            if !arg_ty.is_missing(ctx.db) {
                 let inference = &mut ctx.resolver.inference();
                 let _ = inference.conform_ty_for_diag(
-                    arg_typ,
+                    arg_ty,
                     expected_ty,
                     ctx.diagnostics,
                     || arg.stable_ptr().untyped(),

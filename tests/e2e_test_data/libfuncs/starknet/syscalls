@@ -1054,20 +1054,13 @@ SmallE2ETestRunner
 //! > cairo_code
 use starknet::{ContractAddress, SyscallResult};
 
-pub extern fn meta_tx_v0_syscall(
-    address: ContractAddress,
-    entry_point_selector: felt252,
-    calldata: Span<felt252>,
-    signature: Span<felt252>,
-) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;
-
 fn foo(
     address: starknet::contract_address::ContractAddress,
     entry_point_selector: felt252,
     calldata: Span<felt252>,
     signature: Span<felt252>,
 ) -> starknet::SyscallResult<Span<felt252>> {
-    meta_tx_v0_syscall(:address, :entry_point_selector, :calldata, :signature)
+    starknet::syscalls::meta_tx_v0_syscall(:address, :entry_point_selector, :calldata, :signature)
 }
 
 //! > casm

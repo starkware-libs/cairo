@@ -35,6 +35,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::qm31::QM31Concrete;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
@@ -438,6 +439,13 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
         },
         Trace(_) => vec![ApChange::Known(0)],
+        QM31(libfunc) => match libfunc {
+            QM31Concrete::Const(_) => vec![ApChange::Known(0)],
+            QM31Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            QM31Concrete::BinaryOperation(_) => vec![ApChange::Known(1)],
+            QM31Concrete::Pack(_) => vec![ApChange::Known(6)],
+            QM31Concrete::Unpack(_) => vec![ApChange::Known(13)],
+        },
     }
 }
 

@@ -49,7 +49,7 @@ pub fn compute_mutability(
 }
 
 /// Gets the text of the modifier that causes a variable to have the given mutability status.
-pub fn get_relevant_modifier(mutability: &Mutability) -> SmolStr {
+fn get_relevant_modifier(mutability: &Mutability) -> SmolStr {
     match mutability {
         Mutability::Immutable => "",
         Mutability::Mutable => "mut",

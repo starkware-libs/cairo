@@ -21,8 +21,7 @@ cairo_lang_test_utils::test_file_test!(
     basic: "basic.txt",
     submodule: "submodule.txt",
     trivia: "trivia.txt",
-    comment_markers: "comment_markers.txt",
-    signature: "signature.txt",
+    comment_markers: "comment_markers.txt"
   },
   documentation_test_runner
 );

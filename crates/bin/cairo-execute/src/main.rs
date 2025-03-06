@@ -11,6 +11,7 @@ use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
+use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::MaybeRelocatable;
@@ -93,7 +94,6 @@ struct RunArgs {
     layout: LayoutName,
     /// Required when using with dynamic layout.
     /// Ignored otherwise.
-    // TODO(orizi): Actually use this input when updating to the new VM version.
     #[clap(long, required_if_eq("layout", "dynamic"))]
     cairo_layout_params_file: Option<PathBuf>,
     /// If set, the program will be run in standalone mode.
@@ -242,11 +242,16 @@ fn main() -> anyhow::Result<()> {
         markers: Default::default(),
         panic_traceback: Default::default(),
     };
+    let dynamic_layout_params = match args.run.cairo_layout_params_file {
+        Some(file) => Some(CairoLayoutParams::from_file(&file)?),
+        None => None,
+    };
 
     let cairo_run_config = CairoRunConfig {
         trace_enabled: args.run.proof_outputs.trace_file.is_some(),
         relocate_mem: args.run.proof_outputs.memory_file.is_some(),
         layout: args.run.layout,
+        dynamic_layout_params,
         proof_mode: args.run.standalone,
         secure_run: args.run.secure_run,
         allow_missing_builtins: args.run.allow_missing_builtins,
@@ -306,7 +311,7 @@ fn main() -> anyhow::Result<()> {
         runner
             .get_cairo_pie()
             .with_context(|| "Failed getting cairo pie")?
-            .write_zip_file(&file_name)?
+            .write_zip_file(&file_name, true)?
     }
 
     Ok(())
