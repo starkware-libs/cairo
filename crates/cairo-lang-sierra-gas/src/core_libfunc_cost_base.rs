@@ -622,6 +622,7 @@ pub fn core_libfunc_cost(
             QM31Concrete::Unpack(_) => {
                 vec![ConstCost { steps: 15, holes: 0, range_checks: 5, range_checks96: 0 }.into()]
             }
+            QM31Concrete::FromM31(_) => vec![ConstCost::default().into()],
         },
     }
 }

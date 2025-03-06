@@ -38,6 +38,7 @@ extern fn qm31_mul(a: qm31, b: qm31) -> qm31 nopanic;
 extern fn qm31_div(a: qm31, b: NonZero<qm31>) -> qm31 nopanic;
 extern fn qm31_pack(w0: m31, w1: m31, w2: m31, w3: m31) -> qm31 nopanic;
 extern fn qm31_unpack(a: qm31) -> (m31, m31, m31, m31) implicits(crate::RangeCheck) nopanic;
+extern fn qm31_from_m31(a: m31) -> qm31 nopanic;
 
 impl qm31Copy of Copy<qm31>;
 impl qm31Drop of Drop<qm31>;
@@ -92,5 +93,11 @@ impl QM31Zero of crate::num::traits::Zero<qm31> {
     #[inline]
     fn is_non_zero(self: @qm31) -> bool {
         !self.is_zero()
+    }
+}
+
+impl M31IntoQM31 of Into<m31, qm31> {
+    fn into(self: m31) -> qm31 {
+        qm31_from_m31(self)
     }
 }

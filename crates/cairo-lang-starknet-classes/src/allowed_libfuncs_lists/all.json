@@ -155,6 +155,7 @@
         "qm31_add",
         "qm31_const",
         "qm31_div",
+        "qm31_from_m31",
         "qm31_is_zero",
         "qm31_mul",
         "qm31_pack",
