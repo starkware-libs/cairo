@@ -48,7 +48,7 @@ pub struct Parser<'a> {
 }
 
 /// The possible results of a try_parse_* function failing to parse.
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum TryParseFailure {
     /// The parsing failed, and no token was consumed, the current token is the token which caused
     /// the failure and thus should be skipped by the caller.
@@ -663,17 +663,17 @@ impl<'a> Parser<'a> {
     fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen> {
         let macro_matcher = match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_macro_rule_elements::<TerminalLParen, TerminalRParen, _, _>(
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLParen, TerminalRParen, _, _>(
                     ParenthesizedMacroMatcher::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_macro_rule_elements::<TerminalLBrace, TerminalRBrace, _, _>(
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrace, TerminalRBrace, _, _>(
                     BracedMacroMatcher::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_macro_rule_elements::<TerminalLBrack, TerminalRBrack, _, _>(
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrack, TerminalRBrack, _, _>(
                     BracketedMacroMatcher::new_green,
                 )
                 .into(),
@@ -683,34 +683,6 @@ impl<'a> Parser<'a> {
         let macro_body = self.parse_block_with_placeholders();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         Ok(MacroRule::new_green(self.db, macro_matcher, arrow, macro_body, semicolon))
-    }
-
-    /// Assumes the current token is LTerminal.
-    /// Expected pattern: `[LTerminal](<MacroRuleElement>)*[RTerminal]`
-    /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
-    /// the parsed list and returns the result.
-    fn expect_wrapped_macro_rule_elements<
-        LTerminal: syntax::node::Terminal,
-        RTerminal: syntax::node::Terminal,
-        ListGreen,
-        NewGreen: Fn(
-            &dyn SyntaxGroup,
-            LTerminal::Green,
-            MacroRuleElementsGreen,
-            RTerminal::Green,
-        ) -> ListGreen,
-    >(
-        &mut self,
-        new_green: NewGreen,
-    ) -> ListGreen {
-        let l_term = self.take::<LTerminal>();
-        let exprs: Vec<MacroRuleElementGreen> = self.parse_list(
-            Self::try_parse_macro_rule_element,
-            is_of_kind!(rparen, rbrace, rbrack),
-            "macro rule element",
-        );
-        let r_term = self.parse_token::<RTerminal>();
-        new_green(self.db, l_term, MacroRuleElements::new_green(self.db, exprs), r_term)
     }
 
     /// Returns a GreenId of a node with a MacroRuleElement kind or TryParseFailure if a macro rule
@@ -725,13 +697,72 @@ impl<'a> Parser<'a> {
                 let kind = self.parse_macro_rule_param_kind();
                 Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind).into())
             }
-            // TODO(Gil): Handle these cases using a tree structure similar to the one used for
-            // token trees.
-            SyntaxKind::TerminalRParen
-            | SyntaxKind::TerminalRBrace
-            | SyntaxKind::TerminalRBrack => Err(TryParseFailure::SkipToken),
+            SyntaxKind::TerminalLParen
+            | SyntaxKind::TerminalLBrace
+            | SyntaxKind::TerminalLBrack => {
+                let subtree = self.parse_macro_elements();
+                Ok(MacroMatcherwrapper::new_green(self.db, subtree).into())
+            }
             _ => Ok(self.parse_token_tree_leaf().into()),
         }
+    }
+
+    fn parse_macro_elements(&mut self) -> MacroMatcherGreen {
+        match self.peek().kind {
+            SyntaxKind::TerminalLParen => self
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLParen, TerminalRParen, _, _>(
+                    ParenthesizedMacroMatcher::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrace => self
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrace, TerminalRBrace, _, _>(
+                    BracedMacroMatcher::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrack => self
+                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrack, TerminalRBrack, _, _>(
+                    BracketedMacroMatcher::new_green,
+                )
+                .into(),
+            _ => unreachable!("parse_macro_elements called on non-delimiter token"),
+        }
+    }
+
+    fn expect_wrapped_macro_matcher_wrapper<
+        LTerminal: syntax::node::Terminal,
+        RTerminal: syntax::node::Terminal,
+        ListGreen,
+        NewGreen: Fn(
+            &dyn SyntaxGroup,
+            LTerminal::Green,
+            MacroRuleElementsGreen,
+            RTerminal::Green,
+        ) -> ListGreen,
+    >(
+        &mut self,
+        new_green: NewGreen,
+    ) -> ListGreen {
+        let l_term = self.take::<LTerminal>();
+        let mut elements: Vec<MacroRuleElementGreen> = vec![];
+        while !matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalEndOfFile
+        ) {
+            let element = self.try_parse_macro_rule_element();
+            match element {
+                Ok(element) => elements.push(element),
+                Err(TryParseFailure::SkipToken) => {
+                    let _ = self.skip_until(is_of_kind!(rparen, rbrace, rbrack));
+                    break;
+                }
+                Err(TryParseFailure::DoNothing) => break,
+            }
+        }
+        let r_term = self.parse_token::<RTerminal>();
+        new_green(self.db, l_term, MacroRuleElements::new_green(self.db, elements), r_term)
     }
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
@@ -1709,7 +1740,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
-            _ => unreachable!("Lexer syntax kinds should be a terminal."),
+            _ => unreachable!("Unexpected token kind: {:?}", self.peek().kind),
         }
     }
     /// Returns a GreenId of a node with an ArgListParenthesized|ArgListBracketed|ArgListBraced kind

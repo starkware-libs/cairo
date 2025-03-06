@@ -440,6 +440,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRuleParamKindMissing => {
             vec![]
         }
+        SyntaxKind::MacroMatcherwrapper => {
+            vec![]
+        }
         SyntaxKind::ParenthesizedMacroMatcher => {
             vec![]
         }
