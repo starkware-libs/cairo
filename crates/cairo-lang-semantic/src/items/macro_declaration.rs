@@ -65,6 +65,8 @@ pub fn priv_macro_declaration_data(
     ));
     let resolver = Resolver::new(db, module_file_id, inference_id);
 
+    // TODO(Dean): Verify uniqueness of param names.
+    // TODO(Dean): Verify consistency bracket terminals.
     let rules = macro_declaration_syntax
         .rules(syntax_db)
         .elements(syntax_db)
@@ -86,29 +88,36 @@ pub fn is_macro_rule_match(
     input: &ast::TokenTreeNode,
 ) -> Option<OrderedHashMap<String, String>> {
     let mut captures = OrderedHashMap::default();
-    let matcher_elements = match &rule.pattern {
-        ast::MacroMatcher::Parenthesized(inner) => {
-            inner.elements(db.upcast()).elements(db.upcast())
-        }
-        ast::MacroMatcher::Braced(inner) => inner.elements(db.upcast()).elements(db.upcast()),
-        ast::MacroMatcher::Bracketed(inner) => inner.elements(db.upcast()).elements(db.upcast()),
+    is_macro_rule_match_ex(db, rule.pattern.clone(), input, &mut captures)?;
+    Some(captures)
+}
+
+/// Helper function for [expand_macro_rule].
+/// Traverses the macro expansion and replaces the placeholders with the provided values,
+/// while collecting the result in `res_buffer`.
+fn is_macro_rule_match_ex(
+    db: &dyn SemanticGroup,
+    pattern: ast::MacroMatcher,
+    input: &ast::TokenTreeNode,
+    captures: &mut OrderedHashMap<String, String>,
+) -> Option<()> {
+    let matcher_elements = match pattern {
+        ast::MacroMatcher::Parenthesized(inner) => inner.elements(db.upcast()),
+        ast::MacroMatcher::Braced(inner) => inner.elements(db.upcast()),
+        ast::MacroMatcher::Bracketed(inner) => inner.elements(db.upcast()),
     };
     let input_elements = {
         let db = db.upcast();
         match input.subtree(db) {
-            ast::WrappedTokenTree::Parenthesized(parenthesized_token_tree) => {
-                parenthesized_token_tree.tokens(db)
-            }
-            ast::WrappedTokenTree::Braced(braced_token_tree) => braced_token_tree.tokens(db),
-            ast::WrappedTokenTree::Bracketed(bracketed_token_tree) => {
-                bracketed_token_tree.tokens(db)
-            }
+            ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
+            ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
+            ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
             ast::WrappedTokenTree::Missing(_) => unreachable!(),
         }
     }
     .elements(db.upcast());
     let mut input_iter = input_elements.iter();
-    for matcher_element in matcher_elements {
+    for matcher_element in matcher_elements.elements(db.upcast()) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
                 let input_token = input_iter.next()?;
@@ -120,9 +129,7 @@ pub fn is_macro_rule_match(
                             return None;
                         }
                     }
-                    ast::TokenTree::Subtree(_) => {
-                        todo!("Subtrees are not supported yet.")
-                    }
+                    ast::TokenTree::Subtree(_) => return None,
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
@@ -130,40 +137,46 @@ pub fn is_macro_rule_match(
                 let placeholder_kind: PlaceholderKind = param.kind(db.upcast()).into();
                 let placeholder_name =
                     param.name(db.upcast()).as_syntax_node().get_text_without_trivia(db.upcast());
+                let token_tree_leaf = input_iter.next()?;
                 match placeholder_kind {
-                    PlaceholderKind::Identifier => {
-                        let token_tree_leaf = input_iter.next()?;
-                        match token_tree_leaf {
-                            ast::TokenTree::Token(token_tree_leaf) => {
-                                match token_tree_leaf.leaf(db.upcast()) {
-                                    ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                        captures.insert(
-                                            placeholder_name,
-                                            terminal_identifier.text(db.upcast()).to_string(),
-                                        );
-                                    }
-                                    _ => {
-                                        return None;
-                                    }
+                    PlaceholderKind::Identifier => match token_tree_leaf {
+                        ast::TokenTree::Token(token_tree_leaf) => {
+                            match token_tree_leaf.leaf(db.upcast()) {
+                                ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
+                                    captures.insert(
+                                        placeholder_name,
+                                        terminal_identifier.text(db.upcast()).to_string(),
+                                    );
                                 }
+                                _ => return None,
                             }
-                            ast::TokenTree::Subtree(_) => {
-                                todo!("Subtrees are not supported yet.")
-                            }
-                            ast::TokenTree::Missing(_) => unreachable!(),
                         }
-                    }
+                        ast::TokenTree::Subtree(_) => return None,
+                        ast::TokenTree::Missing(_) => unreachable!(),
+                    },
                 }
             }
-            ast::MacroRuleElement::Subtree(_) => {
-                todo!("Subtrees are not supported yet.")
+            ast::MacroRuleElement::Subtree(matcher_subtree) => {
+                let input_token = input_iter.next()?;
+                match input_token {
+                    ast::TokenTree::Subtree(input_subtree) => {
+                        is_macro_rule_match_ex(
+                            db,
+                            matcher_subtree.subtree(db.upcast()),
+                            input_subtree,
+                            captures,
+                        )?;
+                    }
+                    ast::TokenTree::Token(_) => return None,
+                    ast::TokenTree::Missing(_) => unreachable!(),
+                }
             }
         }
     }
     if input_iter.next().is_some() {
         return None;
     }
-    Some(captures)
+    Some(())
 }
 
 /// Traverse the macro expansion and replace the placeholders with the provided values, creates a
