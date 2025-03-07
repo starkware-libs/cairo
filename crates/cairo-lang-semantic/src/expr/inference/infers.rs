@@ -16,13 +16,13 @@ use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
     ConcreteTraitTypeId,
 };
+use crate::resolve::SELF_KW;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::ImplTypeId;
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, FunctionId,
     FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
 };
-use crate::resolve::SELF_KW;
 
 /// Functions for embedding generic semantic objects in an existing [Inference] object, by
 /// introducing new variables.

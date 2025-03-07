@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
+use cairo_lang_semantic::resolve::SELF_KW;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -9,7 +10,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
-use cairo_lang_semantic::resolve::SELF_KW;
+
 use super::StarknetModuleKind;
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use crate::plugin::consts::{

@@ -10,6 +10,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
+use cairo_lang_semantic::resolve::SELF_KW;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId, get_impl_at_context};
 use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
@@ -28,7 +29,7 @@ use cairo_lang_utils::{Intern, LookupIntern, require, try_extract_matches};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
-use cairo_lang_semantic::resolve::SELF_KW;
+
 use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
