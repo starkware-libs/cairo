@@ -703,7 +703,10 @@ impl<'a> Parser<'a> {
                 let subtree = self.parse_macro_elements();
                 Ok(MacroMatcherwrapper::new_green(self.db, subtree).into())
             }
-            _ => Ok(self.parse_token_tree_leaf().into()),
+            _ => {
+                let token = self.parse_token_tree_leaf();
+                Ok(token.into())
+            }
         }
     }
 
@@ -767,12 +770,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
     fn parse_macro_rule_param_kind(&mut self) -> MacroRuleParamKindGreen {
-        if self.peek().kind == SyntaxKind::TerminalIdentifier && self.peek().text == "ident" {
-            self.parse_token::<TerminalIdentifier>().into()
-        } else {
-            self.create_and_report_missing::<MacroRuleParamKind>(
+        match (self.peek().kind, self.peek().text.as_str()) {
+            (SyntaxKind::TerminalIdentifier, "ident") => {
+                ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+            }
+            (SyntaxKind::TerminalIdentifier, "expr") => {
+                ParamExpr::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
+            }
+            _ => self.create_and_report_missing::<MacroRuleParamKind>(
                 ParserDiagnosticKind::MissingMacroRuleParamKind,
-            )
+            ),
         }
     }
 
@@ -1289,7 +1296,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if an expression can't be parsed.
-    fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
+    pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen> {
         self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
@@ -3192,7 +3199,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Peeks at the next terminal from the Lexer without taking it.
-    fn peek(&self) -> &LexerTerminal {
+    pub fn peek(&self) -> &LexerTerminal {
         &self.next_terminal
     }
 
@@ -3390,7 +3397,7 @@ impl<'a> Parser<'a> {
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
     /// to this token as leading trivia.
-    fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
+    pub fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
