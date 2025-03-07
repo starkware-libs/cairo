@@ -55,6 +55,7 @@ use crate::items::trt::{
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
+use crate::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
@@ -67,10 +68,6 @@ mod test;
 
 mod item;
 
-// Remove when these are added as actual keywords.
-pub const SELF_TYPE_KW: &str = "Self";
-pub const SUPER_KW: &str = "super";
-pub const CRATE_KW: &str = "crate";
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
 

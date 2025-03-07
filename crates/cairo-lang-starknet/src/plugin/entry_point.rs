@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause, OptionWrappedGenericParamList,
@@ -235,7 +236,7 @@ fn generate_entry_point_wrapper(
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
-    if first_param.name(db).text(db) != "self" {
+    if first_param.name(db).text(db) != SELF_PARAM_KW {
         return Err(vec![PluginDiagnostic::error(
             first_param.stable_ptr().untyped(),
             "The first parameter of an entry point must be `self`.".into(),

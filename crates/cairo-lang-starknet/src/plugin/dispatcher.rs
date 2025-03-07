@@ -1,5 +1,6 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
 };
@@ -103,7 +104,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ));
                     continue;
                 };
-                if self_param.name(db).text(db) != "self" {
+                if self_param.name(db).text(db) != SELF_PARAM_KW {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr().untyped(),
                         "The first parameter must be named `self`.".to_string(),

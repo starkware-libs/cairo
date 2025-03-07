@@ -16,6 +16,7 @@ use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
     ConcreteTraitTypeId,
 };
+use crate::keyword::SELF_PARAM_KW;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::ImplTypeId;
 use crate::{
@@ -301,7 +302,7 @@ impl InferenceEmbeddings for Inference<'_> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
-        require(first_param.name == "self")?;
+        require(first_param.name == SELF_PARAM_KW)?;
 
         let trait_generic_params = self.db.trait_generic_params(trait_id).ok()?;
         let trait_generic_args =
