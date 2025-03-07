@@ -166,7 +166,6 @@ pub struct RangeInclusiveIterator<T> {
 }
 
 /// Handles the range inclusive operator (`..=`).
-#[generate_trait]
 pub trait RangeInclusiveOp<T> {
     /// Handles the `..=` operator. Returns the value of the expression `start..=end`.
     fn range_inclusive(start: T, end: T) -> RangeInclusive<T>;
