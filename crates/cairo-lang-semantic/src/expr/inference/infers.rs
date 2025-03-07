@@ -22,6 +22,7 @@ use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, FunctionId,
     FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
 };
+use crate::resolve::SELF_KW;
 
 /// Functions for embedding generic semantic objects in an existing [Inference] object, by
 /// introducing new variables.
@@ -301,7 +302,7 @@ impl InferenceEmbeddings for Inference<'_> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
-        require(first_param.name == "self")?;
+        require(first_param.name == SELF_KW)?;
 
         let trait_generic_params = self.db.trait_generic_params(trait_id).ok()?;
         let trait_generic_args =

@@ -28,7 +28,7 @@ use cairo_lang_utils::{Intern, LookupIntern, require, try_extract_matches};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
-
+use cairo_lang_semantic::resolve::SELF_KW;
 use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
@@ -477,7 +477,7 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
+        require(first_param.name == SELF_KW).ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
         let expected_storage_ty = is_ref
             .then_some(storage_type)

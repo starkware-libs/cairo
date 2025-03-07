@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use indoc::{formatdoc, indoc};
 use itertools::Itertools;
-
+use cairo_lang_semantic::resolve::SELF_KW;
 use super::consts::{
     CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
     IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
@@ -235,7 +235,7 @@ fn generate_entry_point_wrapper(
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
-    if first_param.name(db).text(db) != "self" {
+    if first_param.name(db).text(db) != SELF_KW {
         return Err(vec![PluginDiagnostic::error(
             first_param.stable_ptr().untyped(),
             "The first parameter of an entry point must be `self`.".into(),

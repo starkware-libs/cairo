@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
-
+use cairo_lang_semantic::resolve::SELF_KW;
 use super::StarknetModuleKind;
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use crate::plugin::consts::{
@@ -421,7 +421,7 @@ fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
 ) -> Option<(String, String, String)> {
-    require(param.name(db).text(db) == "self")?;
+    require(param.name(db).text(db) == SELF_KW)?;
     if param.is_ref_param(db) {
         return if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
             .ty(db)

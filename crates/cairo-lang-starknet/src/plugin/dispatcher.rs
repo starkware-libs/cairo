@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
-
+use cairo_lang_semantic::resolve::SELF_KW;
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
@@ -103,7 +103,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ));
                     continue;
                 };
-                if self_param.name(db).text(db) != "self" {
+                if self_param.name(db).text(db) != SELF_KW {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr().untyped(),
                         "The first parameter must be named `self`.".to_string(),
