@@ -24,7 +24,18 @@ impl MacroPlugin for GenerateTraitPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
-            _ => PluginResult::default(),
+            module_item => {
+                let mut diagnostics = vec![];
+
+                if let Some(attr) = module_item.find_attr(db, GENERATE_TRAIT_ATTR) {
+                    diagnostics.push(PluginDiagnostic::warning(
+                        attr.as_syntax_node().stable_ptr(),
+                        "`generate_trait` may only be applied to `impl`s".to_string(),
+                    ));
+                }
+
+                PluginResult { diagnostics, ..PluginResult::default() }
+            }
         }
     }
 
