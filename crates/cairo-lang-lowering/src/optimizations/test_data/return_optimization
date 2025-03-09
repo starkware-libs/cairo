@@ -766,9 +766,9 @@ End:
 blk3:
 Statements:
   (v3: core::felt252) <- struct_destructure(v1)
-  (v4: test::FeltWrap) <- struct_construct(v3)
+  (v5: test::FeltWrap) <- struct_construct(v3)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > ==========================================================================
 
