@@ -30,24 +30,18 @@ use crate::{
 pub fn lower_panics(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &FlatLowered,
-) -> Maybe<FlatLowered> {
+    lowered: &mut FlatLowered,
+) -> Maybe<()> {
+    // Skip this phase for non panicable functions.
+    if !db.function_with_body_may_panic(function_id)? {
+        return Ok(());
+    }
+
     let variables = VariableAllocator::new(
         db,
         function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
-
-    // Skip this phase for non panicable functions.
-    if !db.function_with_body_may_panic(function_id)? {
-        return Ok(FlatLowered {
-            diagnostics: Default::default(),
-            variables: variables.variables,
-            blocks: lowered.blocks.clone(),
-            parameters: lowered.parameters.clone(),
-            signature: lowered.signature.clone(),
-        });
-    }
 
     let signature = function_id.signature(db)?;
     // All types should be fully concrete at this point.
@@ -95,13 +89,10 @@ pub fn lower_panics(
         ctx = handle_block(ctx, block)?;
     }
 
-    Ok(FlatLowered {
-        diagnostics: Default::default(),
-        variables: ctx.variables.variables,
-        blocks: ctx.flat_blocks.build().unwrap(),
-        parameters: lowered.parameters.clone(),
-        signature: lowered.signature.clone(),
-    })
+    lowered.variables = ctx.variables.variables;
+    lowered.blocks = ctx.flat_blocks.build().unwrap();
+
+    Ok(())
 }
 
 /// Handles the lowering of panics in a single block.
