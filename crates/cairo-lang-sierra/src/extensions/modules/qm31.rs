@@ -61,37 +61,59 @@ pub enum QM31BinaryOperator {
     Div,
 }
 
+/// M31 value type.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum M31ValueType {
+    /// A single M31 value.
+    Single,
+    /// A full QM31 type.
+    Quad,
+}
+
 /// Libfunc for qm31 binary operations.
 pub struct QM31BinaryOperationLibfunc {
     pub operator: QM31BinaryOperator,
+    pub value_type: M31ValueType,
 }
 impl QM31BinaryOperationLibfunc {
-    fn new(operator: QM31BinaryOperator) -> Self {
-        Self { operator }
+    fn new(operator: QM31BinaryOperator, value_type: M31ValueType) -> Self {
+        Self { operator, value_type }
     }
-    const ADD: &'static str = "qm31_add";
-    const SUB: &'static str = "qm31_sub";
-    const MUL: &'static str = "qm31_mul";
-    const DIV: &'static str = "qm31_div";
+    const QM31_ADD: &'static str = "qm31_add";
+    const QM31_SUB: &'static str = "qm31_sub";
+    const QM31_MUL: &'static str = "qm31_mul";
+    const QM31_DIV: &'static str = "qm31_div";
+    const M31_ADD: &'static str = "m31_add";
+    const M31_SUB: &'static str = "m31_sub";
+    const M31_MUL: &'static str = "m31_mul";
+    const M31_DIV: &'static str = "m31_div";
 }
 impl GenericLibfunc for QM31BinaryOperationLibfunc {
     type Concrete = QM31BinaryOpConcreteLibfunc;
 
     fn supported_ids() -> Vec<GenericLibfuncId> {
         vec![
-            GenericLibfuncId::from(Self::ADD),
-            GenericLibfuncId::from(Self::SUB),
-            GenericLibfuncId::from(Self::MUL),
-            GenericLibfuncId::from(Self::DIV),
+            GenericLibfuncId::from(Self::QM31_ADD),
+            GenericLibfuncId::from(Self::QM31_SUB),
+            GenericLibfuncId::from(Self::QM31_MUL),
+            GenericLibfuncId::from(Self::QM31_DIV),
+            GenericLibfuncId::from(Self::M31_ADD),
+            GenericLibfuncId::from(Self::M31_SUB),
+            GenericLibfuncId::from(Self::M31_MUL),
+            GenericLibfuncId::from(Self::M31_DIV),
         ]
     }
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
         match id.0.as_str() {
-            Self::ADD => Some(Self::new(QM31BinaryOperator::Add)),
-            Self::SUB => Some(Self::new(QM31BinaryOperator::Sub)),
-            Self::MUL => Some(Self::new(QM31BinaryOperator::Mul)),
-            Self::DIV => Some(Self::new(QM31BinaryOperator::Div)),
+            Self::QM31_ADD => Some(Self::new(QM31BinaryOperator::Add, M31ValueType::Quad)),
+            Self::QM31_SUB => Some(Self::new(QM31BinaryOperator::Sub, M31ValueType::Quad)),
+            Self::QM31_MUL => Some(Self::new(QM31BinaryOperator::Mul, M31ValueType::Quad)),
+            Self::QM31_DIV => Some(Self::new(QM31BinaryOperator::Div, M31ValueType::Quad)),
+            Self::M31_ADD => Some(Self::new(QM31BinaryOperator::Add, M31ValueType::Single)),
+            Self::M31_SUB => Some(Self::new(QM31BinaryOperator::Sub, M31ValueType::Single)),
+            Self::M31_MUL => Some(Self::new(QM31BinaryOperator::Mul, M31ValueType::Single)),
+            Self::M31_DIV => Some(Self::new(QM31BinaryOperator::Div, M31ValueType::Single)),
             _ => None,
         }
     }
@@ -101,7 +123,10 @@ impl GenericLibfunc for QM31BinaryOperationLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(QM31Type::id(), &[])?;
+        let ty = match self.value_type {
+            M31ValueType::Quad => context.get_concrete_type(QM31Type::id(), &[]),
+            M31ValueType::Single => m31_ty(context),
+        }?;
         let second_param_type = if matches!(self.operator, QM31BinaryOperator::Div) {
             nonzero_ty(context, &ty)?
         } else {
