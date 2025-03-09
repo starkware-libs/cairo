@@ -70,9 +70,8 @@ pub extern fn get_block_hash_syscall(
     block_number: u64,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
-/// Gets information about the currently executing block and transactions in the block. For a
-/// complete description of this information, see [`Execution information`].
-///
+/// Gets information about the currently executing block and the transactions within it.
+/// For a complete description of this information, see [`Execution information`].
 /// When an account’s `__validate__`, `__validate_deploy__`, or `__validate_declare__` function
 /// calls `get_execution_info`, the return values for `block_timestamp` and `block_number` are
 /// modified as follows:
