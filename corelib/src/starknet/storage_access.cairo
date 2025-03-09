@@ -299,7 +299,7 @@ pub trait Store<T> {
 /// }
 /// ```
 ///
-/// By implementing `StorePacking` for `Sizes`, the `Sizes` will be stored in it's packed form,
+/// By implementing `StorePacking` for `Sizes`, the `Sizes` will be stored in its packed form,
 /// using a single storage slot instead of 3. When retrieved, it will automatically be unpacked back
 /// into the original type.
 pub trait StorePacking<T, PackedT> {
