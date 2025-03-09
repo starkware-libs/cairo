@@ -56,3 +56,12 @@ fn test_m31_into_qm31() {
     assert_eq!(Into::<m31, qm31>::into(3).unpack(), [3, 0, 0, 0]);
     assert_eq!(Into::<m31, qm31>::into(4).unpack(), [4, 0, 0, 0]);
 }
+use core::qm31::m31_ops;
+
+#[test]
+fn test_m31_ops() {
+    assert_eq!(m31_ops::add(0x544b2fba, 0x4b18de99), 0x1f640e54);
+    assert_eq!(m31_ops::sub(0x4b18de99, 0x544b2fba), 0x76cdaede);
+    assert_eq!(m31_ops::mul(0x544b2fba, 0x4b18de99), 0x3d3740d1);
+    assert_eq!(m31_ops::div(0x544b2fba, 0x4b18de99), 0x4b887296);
+}
