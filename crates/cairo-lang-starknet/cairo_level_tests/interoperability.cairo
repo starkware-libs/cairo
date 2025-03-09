@@ -78,7 +78,7 @@ fn test_flow_safe_dispatcher() {
     assert_eq!(library.foo(300), Ok(0));
 }
 
-// If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
+// If the test is failing due to gas usage changes, update the gas limit by taking `test_flow` test
 // gas usage and add about 110000.
 #[test]
 #[available_gas(826400)]
