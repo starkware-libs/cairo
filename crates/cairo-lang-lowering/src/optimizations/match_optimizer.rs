@@ -340,7 +340,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
 
             if candidate.future_merge || candidate.additional_remappings.is_some() {
                 // TODO(ilya): Support multiple remappings with future merges.
-
                 // Revoke the candidate.
                 info.candidate = None;
             } else {

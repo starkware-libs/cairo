@@ -978,14 +978,14 @@ store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([
 return([37], [1], [38], [3], [41]);
 F5:
 revoke_ap_tracking() -> ();
-withdraw_gas([0], [1]) { fallthrough([4], [5]) F5_B11([6], [7]) };
+withdraw_gas([0], [1]) { fallthrough([4], [5]) F5_B10([6], [7]) };
 branch_align() -> ();
 redeposit_gas([5]) -> ([8]);
 struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([9]);
 enable_ap_tracking() -> ();
 store_temp<RangeCheck>([4]) -> ([4]);
 store_temp<GasBuiltin>([8]) -> ([8]);
-array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) F5_B9([12]) };
+array_snapshot_pop_front<felt252>([9]) { fallthrough([10], [11]) F5_B8([12]) };
 branch_align() -> ();
 redeposit_gas([8]) -> ([13]);
 unbox<felt252>([11]) -> ([14]);
@@ -1094,7 +1094,7 @@ drop<felt252>([34]) -> ();
 redeposit_gas([46]) -> ([77]);
 store_temp<RangeCheck>([45]) -> ([78]);
 store_temp<GasBuiltin>([77]) -> ([79]);
-jump() { F5_B12() };
+jump() { F5_B11() };
 F5_B2:
 branch_align() -> ();
 drop<Snapshot<Array<felt252>>>([32]) -> ();
@@ -1125,44 +1125,42 @@ redeposit_gas([18]) -> ([84]);
 store_temp<GasBuiltin>([84]) -> ([83]);
 F5_B6:
 rename<GasBuiltin>([83]) -> ([85]);
-jump() { F5_B8() };
+jump() { F5_B9() };
 F5_B7:
 branch_align() -> ();
 drop<Snapshot<Array<felt252>>>([17]) -> ();
 drop<felt252>([14]) -> ();
 redeposit_gas([13]) -> ([86]);
 store_temp<GasBuiltin>([86]) -> ([85]);
+jump() { F5_B9() };
 F5_B8:
-rename<GasBuiltin>([85]) -> ([87]);
-jump() { F5_B10() };
-F5_B9:
 branch_align() -> ();
 drop<Snapshot<Array<felt252>>>([12]) -> ();
-redeposit_gas([8]) -> ([88]);
-store_temp<GasBuiltin>([88]) -> ([87]);
-F5_B10:
+redeposit_gas([8]) -> ([87]);
+store_temp<GasBuiltin>([87]) -> ([85]);
+F5_B9:
 disable_ap_tracking() -> ();
-function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([89]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([89]) -> ([90]);
+function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([88]);
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([88]) -> ([89]);
 store_temp<RangeCheck>([4]) -> ([4]);
-store_temp<GasBuiltin>([87]) -> ([87]);
+store_temp<GasBuiltin>([85]) -> ([85]);
 store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([90]) -> ([90]);
-return([4], [87], [2], [90]);
-F5_B11:
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([89]) -> ([89]);
+return([4], [85], [2], [89]);
+F5_B10:
 branch_align() -> ();
 drop<core::array::Span::<core::felt252>>([3]) -> ();
-redeposit_gas([7]) -> ([91]);
+redeposit_gas([7]) -> ([90]);
 store_temp<RangeCheck>([6]) -> ([78]);
-store_temp<GasBuiltin>([91]) -> ([79]);
-F5_B12:
-function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([92]);
-enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([92]) -> ([93]);
+store_temp<GasBuiltin>([90]) -> ([79]);
+F5_B11:
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([91]);
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([91]) -> ([92]);
 store_temp<RangeCheck>([78]) -> ([78]);
 store_temp<GasBuiltin>([79]) -> ([79]);
 store_temp<System>([2]) -> ([2]);
-store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([93]) -> ([93]);
-return([78], [79], [2], [93]);
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([92]) -> ([92]);
+return([78], [79], [2], [92]);
 F6:
 revoke_ap_tracking() -> ();
 withdraw_gas([0], [1]) { fallthrough([4], [5]) F6_B2([6], [7]) };
