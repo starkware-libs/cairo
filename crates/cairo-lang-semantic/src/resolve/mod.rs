@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId, VariantId,
+    ModuleFileId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
+    VariantId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
@@ -1166,6 +1167,9 @@ impl<'db> Resolver<'db> {
                 )?)
             }
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
+            ResolvedGenericItem::TraitItem(id) => {
+                panic!("`{}` is not a module item.", id.full_path(self.db.upcast()))
+            }
         })
     }
 
