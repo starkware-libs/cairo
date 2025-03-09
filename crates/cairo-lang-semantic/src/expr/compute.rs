@@ -3850,7 +3850,8 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Variant(_)
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::Variable(_) => {
+                            | ResolvedGenericItem::Variable(_)
+                            | ResolvedGenericItem::TraitItem(_) => {
                                 return Err(ctx
                                     .diagnostics
                                     .report(stable_ptr, UnsupportedUseItemInStatement));

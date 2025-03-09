@@ -324,6 +324,9 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
                     )))
                 }
             }
+            ResolvedGenericItem::TraitItem(id) => {
+                Some(DocumentableItemId::LookupItem(LookupItemId::TraitItem(id)))
+            }
             ResolvedGenericItem::Variable(_) => None,
         }
     }
