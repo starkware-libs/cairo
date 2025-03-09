@@ -115,7 +115,7 @@ impl fmt::Display for PhasesDisplay<'_> {
             add_withdraw_gas(db, function_id, lowered).unwrap()
         });
         apply_stage("after_lower_panics", &|lowered| {
-            *lowered = lower_panics(db, function_id, lowered).unwrap();
+            lower_panics(db, function_id, lowered).unwrap();
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));

@@ -467,7 +467,7 @@ fn concrete_function_with_body_postpanic_lowered(
     let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
-    lowered = lower_panics(db, function, &lowered)?;
+    lower_panics(db, function, &mut lowered)?;
     add_destructs(db, function, &mut lowered);
     scrub_units(db, &mut lowered);
 
