@@ -71,7 +71,7 @@ jobs:
       - name: Install nextest
         uses: taiki-e/install-action@nextest
       # Validates that the number of commands in the matrix is equal to the number of crates in the
-      # workspace + 2 (for the crates which have multiple commands)
+      # workspace + 1 (for the crates which have multiple commands)
       - run: |
           CRATES_COUNT=$(find {crates/*,tests}/Cargo.toml | wc -l)
           COMMANDS_COUNT=${{ strategy.job-total }}
