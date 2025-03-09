@@ -21,7 +21,7 @@ trait MyTrait<A, B> {
 ```
 This item introduces an "interface", with function signatures and associated types that need to be
 defined by the implementations.
-Note that there is no `Self` or a type this trait is `for`. It is stand alone.
+Note that there is no `Self` or a type this trait is `for`. It is standalone.
 
 ### Impl top level item
 ```
