@@ -390,7 +390,7 @@ pub fn generic_params_type_constraints(
 ) -> Vec<(TypeId, TypeId)> {
     let mut constraints = vec![];
     for param in &generic_params {
-        let GenericParam::Impl(imp) = db.generic_param_semantic(*param).unwrap() else {
+        let Ok(GenericParam::Impl(imp)) = db.generic_param_semantic(*param) else {
             continue;
         };
         let Ok(concrete_trait_id) = imp.concrete_trait else {
@@ -596,13 +596,13 @@ fn impl_generic_param_semantic(
             for constraint in
                 constraints.associated_item_constraints(db.upcast()).elements(db.upcast())
             {
-                let Some(trait_type_id) = db
-                    .trait_type_by_name(
-                        concrete_trait_id.trait_id(db),
-                        constraint.item(db.upcast()).text(db.upcast()),
-                    )
-                    .unwrap()
-                else {
+                let Ok(trait_type_id_opt) = db.trait_type_by_name(
+                    concrete_trait_id.trait_id(db),
+                    constraint.item(db.upcast()).text(db.upcast()),
+                ) else {
+                    continue;
+                };
+                let Some(trait_type_id) = trait_type_id_opt else {
                     diagnostics.report(
                         constraint.stable_ptr(),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
