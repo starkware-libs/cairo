@@ -105,6 +105,18 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     crate_id
 }
 
+pub fn setup_test_module_without_syntax_diagnostics<T: DefsGroup + AsFilesGroupMut + ?Sized>(
+    db: &mut T,
+    content: &str,
+) -> CrateId {
+    let crate_id = CrateId::plain(db, "test");
+    let directory = Directory::Real("src".into());
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
+    let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
+    db.as_files_group_mut().override_file_content(file, Some(content.into()));
+    crate_id
+}
+
 pub fn set_file_content(db: &mut TestDatabase, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
     db.as_files_group_mut().override_file_content(file_id, Some(content.into()));

@@ -21,7 +21,8 @@ cairo_lang_test_utils::test_file_test!(
     basic: "basic.txt",
     submodule: "submodule.txt",
     trivia: "trivia.txt",
-    comment_markers: "comment_markers.txt"
+    comment_markers: "comment_markers.txt",
+    signature: "signature.txt",
   },
   documentation_test_runner
 );
@@ -85,7 +86,7 @@ impl<'a> ResultDocBuilder<'a> {
             }
         };
 
-        self.insert_doc_to_test_output(module_doc, "".to_owned(), doc_tokens);
+        self.insert_doc_to_test_output(module_doc, Some("".to_owned()), doc_tokens);
 
         let submodule_items = self.db.module_items(module_id).unwrap();
 
@@ -260,11 +261,13 @@ impl<'a> ResultDocBuilder<'a> {
     fn insert_doc_to_test_output(
         &mut self,
         documentation: Option<String>,
-        signature: String,
+        signature: Option<String>,
         documentation_as_tokens: Option<Vec<DocumentationCommentToken>>,
     ) {
-        self.output
-            .insert("Item signature #".to_string() + &self.item_counter.to_string(), signature);
+        if let Some(signature) = signature {
+            self.output
+                .insert("Item signature #".to_string() + &self.item_counter.to_string(), signature);
+        }
         self.output.insert(
             "Item documentation #".to_string() + &self.item_counter.to_string(),
             documentation.unwrap_or_default(),
