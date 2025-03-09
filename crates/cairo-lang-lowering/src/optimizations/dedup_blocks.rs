@@ -217,8 +217,8 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
 
-    // Note that the loop below cant be merged with the loop above as a block might be marked as dup
-    // after we already visiting an arm that goes to it.
+    // Note that the loop below can't be merged with the loop above as a block might be marked as
+    // dup after we already visiting an arm that goes to it.
     for block in lowered.blocks.iter_mut() {
         match &mut block.end {
             FlatBlockEnd::Goto(target_block, remappings) if remappings.is_empty() => {

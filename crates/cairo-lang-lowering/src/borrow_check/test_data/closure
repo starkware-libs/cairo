@@ -282,7 +282,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test using captured snapshoted variable after closure.
+//! > Test using captured snapshotted variable after closure.
 
 //! > test_runner_name
 test_borrow_check
