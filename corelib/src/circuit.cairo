@@ -674,7 +674,7 @@ impl CircuitOutputsImpl<
     }
 }
 
-/// A type that contain that is used to guarantee that the circuit evaluation has failed.
+/// A type that is used to guarantee that the circuit evaluation has failed.
 ///
 /// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
 /// destruct this type. This way, one can trust that the guarantee holds although it has not yet
