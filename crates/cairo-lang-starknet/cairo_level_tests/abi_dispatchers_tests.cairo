@@ -61,7 +61,7 @@ fn test_library_dispatcher_serialization() {
 }
 
 
-// Calls `withdraw_gas` then return the available gas.
+// Calls `withdraw_gas` and then returns the available gas.
 // This is useful in test as the `withdraw_gas` allows the gas wallet to be ~0 at the call site.
 // Note that this function must be `inline(always)`.
 #[inline(always)]
