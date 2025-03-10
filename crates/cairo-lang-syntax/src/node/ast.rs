@@ -2155,8 +2155,12 @@ pub struct PathSegmentMissing {
     children: Arc<[SyntaxNode]>,
 }
 impl PathSegmentMissing {
-    pub fn new_green(db: &dyn SyntaxGroup) -> PathSegmentMissingGreen {
-        let children: Vec<GreenId> = vec![];
+    pub const INDEX_IDENT: usize = 0;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        ident: TerminalIdentifierGreen,
+    ) -> PathSegmentMissingGreen {
+        let children: Vec<GreenId> = vec![ident.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         PathSegmentMissingGreen(
             Arc::new(GreenNode {
@@ -2167,7 +2171,11 @@ impl PathSegmentMissing {
         )
     }
 }
-impl PathSegmentMissing {}
+impl PathSegmentMissing {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentMissingPtr(pub SyntaxStablePtrId);
 impl PathSegmentMissingPtr {}
@@ -2195,7 +2203,10 @@ impl TypedSyntaxNode for PathSegmentMissing {
         PathSegmentMissingGreen(
             Arc::new(GreenNode {
                 kind: SyntaxKind::PathSegmentMissing,
-                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+                details: GreenNodeDetails::Node {
+                    children: vec![TerminalIdentifier::missing(db).0],
+                    width: TextWidth::default(),
+                },
             })
             .intern(db),
         )

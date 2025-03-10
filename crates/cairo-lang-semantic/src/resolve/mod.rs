@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
     VariantId,
 };
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -566,7 +566,9 @@ impl<'db> Resolver<'db> {
                 }
             }
             syntax::node::ast::PathSegment::Missing(_) => {
-                panic!("Encountered missing path segment while resolving a path.")
+                // A diagnostic for the missing segment should have been reported from the syntax
+                // phase.
+                return Err(skip_diagnostic());
             }
         })
     }
@@ -732,7 +734,9 @@ impl<'db> Resolver<'db> {
                 }
             }
             syntax::node::ast::PathSegment::Missing(_) => {
-                panic!("Encountered missing path segment while resolving a path.")
+                // A diagnostic for the missing segment should have been reported from the syntax
+                // phase.
+                return Err(skip_diagnostic());
             }
         })
     }

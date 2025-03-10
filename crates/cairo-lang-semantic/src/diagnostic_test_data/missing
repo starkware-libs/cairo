@@ -65,3 +65,31 @@ error[E0006]: Type not found.
  --> lib.cairo:2:8
     a: UnknownType,
        ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test missing path segment
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+    let _x = a::;
+}
+
+//! > module_code
+mod a {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a path segment.
+ --> lib.cairo:4:17
+    let _x = a::;
+                ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:4:17
+    let _x = a::;
+                ^

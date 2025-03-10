@@ -81,7 +81,9 @@ pub fn get_spec() -> Vec<Node> {
         .node("separator", "OptionTerminalColonColon")
         .node("generic_args", "GenericArgs")
     )
-    .add_struct(StructBuilder::new("PathSegmentMissing"))
+    // When a segment is missing, we parse a missing token, to point to from other
+    // parts of the code. This simplifies the handling of paths.
+    .add_struct(StructBuilder::new("PathSegmentMissing").node("ident","TerminalIdentifier"))
     .add_separated_list("ExprPath", "PathSegment", "TerminalColonColon")
     .add_struct(StructBuilder::new("ExprParenthesized")
         .node("lparen", "TerminalLParen")
