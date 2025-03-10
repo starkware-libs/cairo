@@ -309,7 +309,7 @@ impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     /// ```
     /// let arr: Array<u8> = array![1, 2, 3];
     /// let mut output: Array<felt252> = array![];
-    /// span.serialize(ref output);
+    /// arr.serialize(ref output);
     /// assert!(output == array![3, 1, 2, 3])
     /// ```
     fn serialize(self: @Array<T>, ref output: Array<felt252>) {
