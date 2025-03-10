@@ -1396,6 +1396,7 @@ impl CairoHintProcessor<'_> {
                     self.panic_traceback.reverse();
                 }
             }
+            ExternalHint::UnsafePanic => return Err(HintError::CustomHint(Box::from("Panic"))),
         }
         Ok(())
     }
