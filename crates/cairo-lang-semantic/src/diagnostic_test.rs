@@ -27,6 +27,7 @@ cairo_lang_test_utils::test_file_test!(
     diagnostics,
     "src/diagnostic_test_data",
     {
+        allow: "allow",
         allow_attr: "allow_attr",
         deref: "deref",
         tests: "tests",

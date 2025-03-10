@@ -10,7 +10,7 @@ use cairo_lang_semantic::types::get_impl_at_context;
 use cairo_lang_semantic::{
     ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId,
 };
-use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
+use cairo_lang_syntax::attribute::consts::{ALLOW_ATTR, STARKNET_INTERFACE_ATTR};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -130,7 +130,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
         if let Ok(module_enums) = db.module_enums(module_id) {
             for (id, item) in module_enums.iter() {
                 if has_derive(item, syntax_db, STORE_TRAIT).is_some()
-                    && !item.has_attr_with_arg(syntax_db, "allow", ALLOW_NO_DEFAULT_VARIANT_ATTR)
+                    && !item.has_attr_with_arg(syntax_db, ALLOW_ATTR, ALLOW_NO_DEFAULT_VARIANT_ATTR)
                 {
                     add_derive_store_enum_diags(db, *id, &mut diagnostics);
                 }
@@ -160,9 +160,9 @@ fn analyze_storage_struct(
         return;
     };
     let allow_invalid_members =
-        struct_id.has_attr_with_arg(db, "allow", ALLOW_INVALID_STORAGE_MEMBERS_ATTR) == Ok(true);
+        struct_id.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_INVALID_STORAGE_MEMBERS_ATTR) == Ok(true);
     let allow_collisions =
-        struct_id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
+        struct_id.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
 
     let lookup_context = ImplLookupContext::new(
         struct_id.module_file_id(db.upcast()).0,
@@ -178,8 +178,11 @@ fn analyze_storage_struct(
         let member_type = member.ty.lookup_intern(db);
         let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
 
-        let member_allows_invalid =
-            member_ast.has_attr_with_arg(db.upcast(), "allow", ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
+        let member_allows_invalid = member_ast.has_attr_with_arg(
+            db.upcast(),
+            ALLOW_ATTR,
+            ALLOW_INVALID_STORAGE_MEMBERS_ATTR,
+        );
 
         if !(allow_invalid_members || member_allows_invalid) {
             let inference_result =
@@ -203,7 +206,7 @@ fn analyze_storage_struct(
 
         // Check for storage path collisions.
         if allow_collisions
-            || member_ast.has_attr_with_arg(db.upcast(), "allow", ALLOW_COLLIDING_PATHS_ATTR)
+            || member_ast.has_attr_with_arg(db.upcast(), ALLOW_ATTR, ALLOW_COLLIDING_PATHS_ATTR)
         {
             continue;
         }
