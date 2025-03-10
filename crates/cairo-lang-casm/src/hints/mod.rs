@@ -361,6 +361,9 @@ pub enum ExternalHint {
     /// Adds a trace call with the given flag to the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
     AddTrace { flag: ResOperand },
+    /// unsafe_panic encounterd, used to stop execution at that point.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 4))]
+    UnsafePanic,
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -864,6 +867,8 @@ impl PythonicHint for ExternalHint {
             Self::AddTrace { flag } => {
                 format!("AddTrace {{ flag: {} }}", ResOperandAsIntegerFormatter(flag))
             }
+
+            Self::UnsafePanic {} => "raise Exception(\"Panic\")".to_string(),
         }
     }
 }
