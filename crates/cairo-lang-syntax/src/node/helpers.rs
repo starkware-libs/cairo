@@ -98,9 +98,7 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
-            ast::PathSegment::Missing(_) => {
-                panic!("PathSegment::Missing should not be used to get an identifier.")
-            }
+            ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
     fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::GenericArg>> {
