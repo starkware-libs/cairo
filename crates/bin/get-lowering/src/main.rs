@@ -238,6 +238,7 @@ fn main() -> anyhow::Result<()> {
     if args.no_gas {
         db_builder
             .skip_auto_withdraw_gas()
+            .with_unsafe_panic()
             .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]));
     }
 
