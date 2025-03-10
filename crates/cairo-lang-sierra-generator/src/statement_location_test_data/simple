@@ -123,12 +123,17 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-store_temp<u8>([2]) -> ([5])
+store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
         MyEnum::A(a) => a,
                         ^
 In function: lib.cairo::foo
-jump() { label_test::foo::4() }
+store_temp<u8>([2]) -> ([2])
+Originating location:
+        MyEnum::A(a) => a,
+                        ^
+In function: lib.cairo::foo
+return([0], [2])
 Originating location:
         MyEnum::A(a) => a,
                         ^
@@ -149,52 +154,20 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-store_temp<u8>([3]) -> ([5])
-Originating location:
-        MyEnum::B(b) => b,
-                        ^
-In function: lib.cairo::foo
-label_test::foo::4:
-Originating location:
-        MyEnum::B(b) => b,
-                        ^
-In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([5]) -> ([6])
-Originating location:
-        MyEnum::B(b) => b,
-                        ^
-In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
-Originating location:
-  fn foo(my_enum: MyEnum) -> u8 {
- _______________________________^
-| ...
-| }
-|_^
-In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
-  fn foo(my_enum: MyEnum) -> u8 {
- _______________________________^
-| ...
-| }
-|_^
+        MyEnum::B(b) => b,
+                        ^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
+store_temp<u8>([3]) -> ([3])
 Originating location:
-  fn foo(my_enum: MyEnum) -> u8 {
- _______________________________^
-| ...
-| }
-|_^
+        MyEnum::B(b) => b,
+                        ^
 In function: lib.cairo::foo
-return([0], [7])
+return([0], [3])
 Originating location:
-  fn foo(my_enum: MyEnum) -> u8 {
- _______________________________^
-| ...
-| }
-|_^
+        MyEnum::B(b) => b,
+                        ^
 In function: lib.cairo::foo
 label_test::foo::2:
 Originating location:
@@ -212,12 +185,12 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
+struct_deconstruct<Tuple<u8, u8>>([4]) -> ([5], [6])
 Originating location:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                   ^^^^^^^^
 In function: lib.cairo::foo
-dup<u8>([9]) -> ([9], [10])
+dup<u8>([6]) -> ([6], [7])
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -229,7 +202,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-dup<u8>([8]) -> ([8], [11])
+dup<u8>([5]) -> ([5], [8])
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -241,7 +214,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
+u8_overflowing_sub([0], [7], [8]) { fallthrough([9], [10]) label_test::foo::4([11], [12]) }
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -265,7 +238,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-drop<u8>([13]) -> ()
+drop<u8>([10]) -> ()
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -277,7 +250,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-u8_wide_mul([8], [9]) -> ([16])
+u8_wide_mul([5], [6]) -> ([13])
 Originating location:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
         ^^^^^^^^^^^^^^^^^^^^^
@@ -286,7 +259,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<u16>([16]) -> ([16])
+store_temp<u16>([13]) -> ([13])
 Originating location:
         downcast(self)
         ^^^^^^^^^^^^^^
@@ -299,110 +272,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-downcast<u16, u8>([12], [16]) { fallthrough([17], [18]) label_test::foo::7([19]) }
-Originating location:
-        downcast(self)
-        ^^^^^^^^^^^^^^
-In function: core::integer::DowncastableIntTryInto::try_into
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-branch_align() -> ()
-Originating location:
-        downcast(self)
-        ^^^^^^^^^^^^^^
-In function: core::integer::DowncastableIntTryInto::try_into
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([18]) -> ([20])
-Originating location:
-        downcast(self)
-        ^^^^^^^^^^^^^^
-In function: core::integer::DowncastableIntTryInto::try_into
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
-Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<RangeCheck>([17]) -> ([17])
-Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
-Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-return([17], [21])
-Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::7:
+downcast<u16, u8>([9], [13]) { fallthrough([14], [15]) label_test::foo::6([16]) }
 Originating location:
         downcast(self)
         ^^^^^^^^^^^^^^
@@ -428,7 +298,72 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-function_call<user@core::panic_with_const_felt252::<608642107937639184217240406363762551>>() -> ([22])
+store_temp<RangeCheck>([14]) -> ([14])
+Originating location:
+            Some(x) => x,
+                       ^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+store_temp<u8>([15]) -> ([15])
+Originating location:
+            Some(x) => x,
+                       ^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+return([14], [15])
+Originating location:
+            Some(x) => x,
+                       ^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+label_test::foo::6:
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+branch_align() -> ()
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+function_call<user@core::panic_with_const_felt252::<608642107937639184217240406363762551>>() -> ([17])
 Originating location:
             None => crate::panic_with_felt252(err),
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -441,46 +376,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([22]) -> ([23])
-Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<RangeCheck>([19]) -> ([19])
-Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([23]) -> ([23])
-Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-return([19], [23])
+enum_match<core::never>([17]) { }
 Originating location:
             None => crate::panic_with_felt252(err),
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -494,19 +390,8 @@ Inlined at:
             ^^^^^^^
 In function: lib.cairo::foo
 label_test::foo::8:
-Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::5:
+label_test::foo::7:
+label_test::foo::4:
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -530,7 +415,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-drop<u8>([15]) -> ()
+drop<u8>([12]) -> ()
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -542,7 +427,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-u8_overflowing_add([14], [8], [9]) { fallthrough([24], [25]) label_test::foo::9([26], [27]) }
+u8_overflowing_add([11], [5], [6]) { fallthrough([18], [19]) label_test::foo::9([20], [21]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -560,22 +445,10 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([25]) -> ([28])
+store_temp<RangeCheck>([18]) -> ([18])
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([28]) -> ([29])
-Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
+            Ok(x) => x,
+                     ^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -585,13 +458,10 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<RangeCheck>([24]) -> ([24])
+store_temp<u8>([19]) -> ([19])
 Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
+            Ok(x) => x,
+                     ^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -601,29 +471,10 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([29]) -> ([29])
+return([18], [19])
 Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-return([24], [29])
-Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
+            Ok(x) => x,
+                     ^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -651,16 +502,7 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-drop<u8>([27]) -> ()
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([30])
+function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([22])
 Originating location:
             Err(_) => crate::panic_with_felt252(err),
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -673,7 +515,7 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([30]) -> ([31])
+enum_match<core::never>([22]) { }
 Originating location:
             Err(_) => crate::panic_with_felt252(err),
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -686,84 +528,10 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<RangeCheck>([26]) -> ([26])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([31]) -> ([31])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-return([26], [31])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
+label_test::foo::11:
 label_test::foo::10:
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::6:
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
+label_test::foo::5:
 label_test::foo::3:
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
 
 //! > ==========================================================================
 
@@ -917,17 +685,21 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
+store_temp<RangeCheck>([0]) -> ([15])
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
 jump() { label_test::main::5() }
 Originating location:
-      match a {
- _____^
+  fn main() {
+ _^
 | ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
+| }
+|_^
 In function: lib.cairo::main
 label_test::main::1:
 Originating location:
@@ -965,18 +737,6 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::5:
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
-In function: lib.cairo::main
 store_temp<RangeCheck>([0]) -> ([15])
 Originating location:
   fn main() {
@@ -985,7 +745,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::main
-jump() { label_test::main::6() }
+jump() { label_test::main::5() }
 Originating location:
   fn main() {
  _^
@@ -1059,7 +819,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::7() }
+jump() { label_test::main::6() }
 Originating location:
       match a {
  _____^
@@ -1137,7 +897,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::7:
+label_test::main::6:
 Originating location:
       match a {
  _____^
@@ -1149,7 +909,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) label_test::main::8([26], [27]) }
+u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) label_test::main::7([26], [27]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1214,7 +974,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::6:
+label_test::main::5:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1227,7 +987,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-enum_match<test::MyEnum>([5]) { fallthrough([29]) label_test::main::10([30]) label_test::main::11([31]) label_test::main::12([32]) }
+enum_match<test::MyEnum>([5]) { fallthrough([29]) label_test::main::9([30]) label_test::main::10([31]) label_test::main::11([32]) }
 Originating location:
       match a {
  _____^
@@ -1263,19 +1023,23 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::14() }
+store_temp<RangeCheck>([15]) -> ([15])
 Originating location:
-      match a {
- _____^
+  fn main() {
+ _^
 | ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
+| }
+|_^
 In function: lib.cairo::main
-label_test::main::10:
+return([15])
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+label_test::main::9:
 Originating location:
       match a {
  _____^
@@ -1311,7 +1075,23 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::14:
+store_temp<RangeCheck>([15]) -> ([15])
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+return([15])
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+label_test::main::10:
 Originating location:
       match a {
  _____^
@@ -1323,21 +1103,71 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<RangeCheck>([15]) -> ([33])
+branch_align() -> ()
 Originating location:
-  fn main() {
- _^
+      match a {
+ _____^
 | ...
-| }
-|_^
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::15() }
+struct_deconstruct<Tuple<u8, u8, u8>>([31]) -> ([33], [34], [35])
 Originating location:
-  fn main() {
- _^
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^^^^^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+drop<u8>([34]) -> ()
+Originating location:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                  ^^^^^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+store_temp<u8>([33]) -> ([36])
+Originating location:
+      match a {
+ _____^
 | ...
-| }
-|_^
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+store_temp<u8>([35]) -> ([37])
+Originating location:
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+jump() { label_test::main::13() }
+Originating location:
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
 In function: lib.cairo::main
 label_test::main::11:
 Originating location:
@@ -1363,85 +1193,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-struct_deconstruct<Tuple<u8, u8, u8>>([31]) -> ([34], [35], [36])
-Originating location:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                  ^^^^^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-drop<u8>([35]) -> ()
-Originating location:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                  ^^^^^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<u8>([34]) -> ([37])
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<u8>([36]) -> ([38])
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-jump() { label_test::main::16() }
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-label_test::main::12:
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-branch_align() -> ()
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-struct_deconstruct<test::P>([32]) -> ([39], [40], [41])
+struct_deconstruct<test::P>([32]) -> ([38], [39], [40])
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^^^^^^^^^^^^^^^^^^^
@@ -1450,7 +1202,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-drop<u8>([40]) -> ()
+drop<u8>([39]) -> ()
 Originating location:
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
                                          ^^^^^^^^^^^^^^^^^^^
@@ -1459,7 +1211,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<u8>([39]) -> ([37])
+store_temp<u8>([38]) -> ([36])
 Originating location:
       match a {
  _____^
@@ -1471,231 +1223,13 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<u8>([41]) -> ([38])
+store_temp<u8>([40]) -> ([37])
 Originating location:
       match a {
  _____^
 | ...
 |     }
 |_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-label_test::main::16:
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) label_test::main::17([44], [45]) }
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-branch_align() -> ()
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-u8_to_felt252([43]) -> ([46])
-Originating location:
-        u8_to_felt252(self)
-        ^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8IntoFelt252::into
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                 ^^^^^^^^^^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-drop<felt252>([46]) -> ()
-Originating location:
-        u8_to_felt252(self)
-        ^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8IntoFelt252::into
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                 ^^^^^^^^^^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<RangeCheck>([42]) -> ([33])
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-label_test::main::15:
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-struct_construct<Unit>() -> ([47])
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-struct_construct<Tuple<Unit>>([47]) -> ([48])
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-enum_init<core::panics::PanicResult::<((),)>, 0>([48]) -> ([49])
-Originating location:
-  fn main() {
- ___________^
-| ...
-| }
-|_^
-In function: lib.cairo::main
-store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49])
-Originating location:
-  fn main() {
- ___________^
-| ...
-| }
-|_^
-In function: lib.cairo::main
-return([33], [49])
-Originating location:
-  fn main() {
- ___________^
-| ...
-| }
-|_^
-In function: lib.cairo::main
-label_test::main::17:
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-branch_align() -> ()
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-drop<u8>([45]) -> ()
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-store_temp<RangeCheck>([44]) -> ([50])
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-jump() { label_test::main::19() }
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
-label_test::main::18:
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1703,18 +1237,17 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::13:
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
-                                                                  ^^^^^
+      match a {
+ _____^
+| ...
+|     }
+|_____^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::8:
+u8_overflowing_add([15], [36], [37]) { fallthrough([41], [42]) label_test::main::14([43], [44]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1724,7 +1257,7 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 branch_align() -> ()
@@ -1737,10 +1270,36 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-drop<u8>([27]) -> ()
+u8_to_felt252([42]) -> ([45])
+Originating location:
+        u8_to_felt252(self)
+        ^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8IntoFelt252::into
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                 ^^^^^^^^^^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+drop<felt252>([45]) -> ()
+Originating location:
+        u8_to_felt252(self)
+        ^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8IntoFelt252::into
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                 ^^^^^^^^^^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
+            ^^^^^^
+In function: lib.cairo::main
+store_temp<RangeCheck>([41]) -> ([41])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1750,10 +1309,10 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-drop<test::MyEnum>([5]) -> ()
+return([41])
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1763,10 +1322,10 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<RangeCheck>([26]) -> ([50])
+label_test::main::14:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1776,10 +1335,10 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::19:
+branch_align() -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1789,10 +1348,10 @@ Inlined at:
                                                                   ^^^^^
 In function: lib.cairo::foo
 Inlined at:
-    let _ = foo(c);
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([51])
+function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([46])
 Originating location:
             Err(_) => crate::panic_with_felt252(err),
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1809,36 +1368,89 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-enum_init<core::panics::PanicResult::<((),)>, 1>([51]) -> ([52])
+enum_match<core::never>([46]) { }
 Originating location:
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<RangeCheck>([50]) -> ([50])
+label_test::main::16:
+label_test::main::15:
+label_test::main::12:
+label_test::main::7:
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<core::panics::PanicResult::<((),)>>([52]) -> ([52])
+branch_align() -> ()
 Originating location:
-    let _ = foo(d);
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-return([50], [52])
+function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([47])
 Originating location:
-    let _ = foo(d);
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::9:
+enum_match<core::never>([47]) { }
 Originating location:
-    let _ = foo(d);
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+                                                                  ^^^^^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
+label_test::main::17:
+label_test::main::8:
 label_test::main::4:
-Originating location:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
 
 //! > ==========================================================================
 
@@ -2038,7 +1650,7 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-drop<Uninitialized<core::byte_array::ByteArray>>([4]) -> ()
+drop<Uninitialized<RangeCheck>>([2]) -> ()
 Originating location:
           match *lhs - *rhs {
  _________^
@@ -2050,7 +1662,7 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-drop<Uninitialized<RangeCheck>>([2]) -> ()
+drop<Uninitialized<core::byte_array::ByteArray>>([4]) -> ()
 Originating location:
           match *lhs - *rhs {
  _________^
@@ -2208,27 +1820,12 @@ Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-function_call<user@core::byte_array::ByteArrayImpl::append_word>([0], [18], [16], [17]) -> ([5], [19])
+function_call<user@core::byte_array::ByteArrayImpl::append_word>([0], [18], [16], [17]) -> ([5], [7])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_local<RangeCheck>([6], [5]) -> ([5])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_match<core::panics::PanicResult::<(core::byte_array::ByteArray, ())>>([19]) { fallthrough([20]) label_test::foo::3([21]) }
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-array_new<felt252>() -> ([22])
+array_new<felt252>() -> ([19])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2241,7 +1838,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([23])
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([20])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2254,7 +1851,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([23]) -> ([23])
+store_temp<felt252>([20]) -> ([20])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2267,7 +1864,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([22], [23]) -> ([24])
+array_append<felt252>([19], [20]) -> ([21])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2280,32 +1877,22 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_deconstruct<Tuple<core::byte_array::ByteArray, Unit>>([20]) -> ([7], [25])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Unit>([25]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
 store_local<core::byte_array::ByteArray>([8], [7]) -> ([7])
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-snapshot_take<core::byte_array::ByteArray>([7]) -> ([26], [27])
+snapshot_take<core::byte_array::ByteArray>([7]) -> ([22], [23])
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<core::byte_array::ByteArray>([26]) -> ()
+drop<core::byte_array::ByteArray>([22]) -> ()
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<core::byte_array::ByteArray>>([27]) -> ([27], [28])
+dup<Snapshot<core::byte_array::ByteArray>>([23]) -> ([23], [24])
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -2318,7 +1905,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([28]) -> ([29], [30], [31])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([24]) -> ([25], [26], [27])
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -2331,7 +1918,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<felt252>([30]) -> ()
+drop<felt252>([26]) -> ()
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -2344,7 +1931,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<u32>([31]) -> ()
+drop<u32>([27]) -> ()
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -2357,7 +1944,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<Array<bytes31>>>([29]) -> ([29], [32])
+dup<Snapshot<Array<bytes31>>>([25]) -> ([25], [28])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -2378,7 +1965,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_len<bytes31>([32]) -> ([33])
+array_len<bytes31>([28]) -> ([29])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -2399,7 +1986,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([33]) -> ([34])
+u32_to_felt252([29]) -> ([30])
 Originating location:
         u32_to_felt252(self)
         ^^^^^^^^^^^^^^^^^^^^
@@ -2424,7 +2011,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([34]) -> ([34])
+store_temp<felt252>([30]) -> ([30])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2449,7 +2036,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([24], [34]) -> ([35])
+array_append<felt252>([21], [30]) -> ([31])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2474,7 +2061,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<core::array::Span::<core::bytes_31::bytes31>>([29]) -> ([36])
+struct_construct<core::array::Span::<core::bytes_31::bytes31>>([25]) -> ([32])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2499,7 +2086,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<core::array::Span::<core::bytes_31::bytes31>>([36]) -> ([36])
+store_temp<core::array::Span::<core::bytes_31::bytes31>>([32]) -> ([32])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2516,7 +2103,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([35]) -> ([35])
+store_temp<Array<felt252>>([31]) -> ([31])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2533,7 +2120,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([36], [35]) -> ([37])
+store_local<RangeCheck>([6], [5]) -> ([5])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2550,7 +2137,24 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<core::byte_array::ByteArray>>([27]) -> ([27], [38])
+function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([32], [31]) -> ([33])
+Originating location:
+        serialize_array_helper(self.span(), ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+dup<Snapshot<core::byte_array::ByteArray>>([23]) -> ([23], [34])
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -2563,7 +2167,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([38]) -> ([39], [40], [41])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([34]) -> ([35], [36], [37])
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -2576,7 +2180,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Snapshot<Array<bytes31>>>([39]) -> ()
+drop<Snapshot<Array<bytes31>>>([35]) -> ()
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -2589,7 +2193,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<u32>([41]) -> ()
+drop<u32>([37]) -> ()
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -2602,7 +2206,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<felt252>([40]) -> ([42])
+rename<felt252>([36]) -> ([38])
 Originating location:
         output.append(*self);
                        ^^^^
@@ -2619,7 +2223,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([37], [42]) -> ([43])
+array_append<felt252>([33], [38]) -> ([39])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2640,7 +2244,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([27]) -> ([44], [45], [46])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([23]) -> ([40], [41], [42])
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -2653,7 +2257,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Snapshot<Array<bytes31>>>([44]) -> ()
+drop<Snapshot<Array<bytes31>>>([40]) -> ()
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -2666,7 +2270,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<felt252>([45]) -> ()
+drop<felt252>([41]) -> ()
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -2679,7 +2283,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<u32>([46]) -> ([47])
+rename<u32>([42]) -> ([43])
 Originating location:
             output.append((*self).into());
                             ^^^^
@@ -2696,7 +2300,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([47]) -> ([48])
+u32_to_felt252([43]) -> ([44])
 Originating location:
         u32_to_felt252(self)
         ^^^^^^^^^^^^^^^^^^^^
@@ -2717,7 +2321,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([43], [48]) -> ([49])
+array_append<felt252>([39], [44]) -> ([45])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2738,7 +2342,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([49]) -> ([49])
+store_temp<Array<felt252>>([45]) -> ([45])
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -2747,7 +2351,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-print([49]) -> ()
+print([45]) -> ()
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -2756,52 +2360,12 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<RangeCheck>([5]) -> ([50])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-jump() { label_test::foo::5() }
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::3:
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Uninitialized<core::byte_array::ByteArray>>([8]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([21]) -> ([51])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
 store_temp<RangeCheck>([5]) -> ([5])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<core::panics::PanicResult::<((),)>>([51]) -> ([51])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-return([5], [51])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::4:
+return([5])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2842,18 +2406,6 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-drop<Uninitialized<core::byte_array::ByteArray>>([8]) -> ()
-Originating location:
-          match *lhs - *rhs {
- _________^
-| ...
-|         }
-|_________^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
 drop<Uninitialized<RangeCheck>>([6]) -> ()
 Originating location:
           match *lhs - *rhs {
@@ -2866,7 +2418,19 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-array_new<bytes31>() -> ([52])
+drop<Uninitialized<core::byte_array::ByteArray>>([8]) -> ()
+Originating location:
+          match *lhs - *rhs {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::Felt252PartialEq::eq
+Inlined at:
+    if x == y { // highlighted
+       ^^^^^^
+In function: lib.cairo::foo
+array_new<bytes31>() -> ([46])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2887,7 +2451,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 0>>() -> ([53])
+const_as_immediate<Const<felt252, 0>>() -> ([47])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2908,7 +2472,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<u32, 0>>() -> ([54])
+const_as_immediate<Const<u32, 0>>() -> ([48])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2929,7 +2493,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 33812324336826634>>() -> ([55])
+const_as_immediate<Const<felt252, 33812324336826634>>() -> ([49])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2950,7 +2514,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<u32, 7>>() -> ([56])
+const_as_immediate<Const<u32, 7>>() -> ([50])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2971,7 +2535,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<core::byte_array::ByteArray>([52], [53], [54]) -> ([57])
+struct_construct<core::byte_array::ByteArray>([46], [47], [48]) -> ([51])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -2997,42 +2561,27 @@ Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<core::byte_array::ByteArray>([57]) -> ([57])
+store_temp<core::byte_array::ByteArray>([51]) -> ([51])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<felt252>([55]) -> ([55])
+store_temp<felt252>([49]) -> ([49])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<u32>([56]) -> ([56])
+store_temp<u32>([50]) -> ([50])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-function_call<user@core::byte_array::ByteArrayImpl::append_word>([0], [57], [55], [56]) -> ([1], [58])
+function_call<user@core::byte_array::ByteArrayImpl::append_word>([0], [51], [49], [50]) -> ([1], [3])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_local<RangeCheck>([2], [1]) -> ([1])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_match<core::panics::PanicResult::<(core::byte_array::ByteArray, ())>>([58]) { fallthrough([59]) label_test::foo::6([60]) }
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-array_new<felt252>() -> ([61])
+array_new<felt252>() -> ([52])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -3045,7 +2594,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([62])
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([53])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -3058,7 +2607,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([62]) -> ([62])
+store_temp<felt252>([53]) -> ([53])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3071,7 +2620,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([61], [62]) -> ([63])
+array_append<felt252>([52], [53]) -> ([54])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3084,32 +2633,22 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_deconstruct<Tuple<core::byte_array::ByteArray, Unit>>([59]) -> ([3], [64])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Unit>([64]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
 store_local<core::byte_array::ByteArray>([4], [3]) -> ([3])
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-snapshot_take<core::byte_array::ByteArray>([3]) -> ([65], [66])
+snapshot_take<core::byte_array::ByteArray>([3]) -> ([55], [56])
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<core::byte_array::ByteArray>([65]) -> ()
+drop<core::byte_array::ByteArray>([55]) -> ()
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<core::byte_array::ByteArray>>([66]) -> ([66], [67])
+dup<Snapshot<core::byte_array::ByteArray>>([56]) -> ([56], [57])
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -3122,7 +2661,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([67]) -> ([68], [69], [70])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([57]) -> ([58], [59], [60])
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -3135,7 +2674,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<felt252>([69]) -> ()
+drop<felt252>([59]) -> ()
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -3148,7 +2687,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<u32>([70]) -> ()
+drop<u32>([60]) -> ()
 Originating location:
         core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
                                                         ^^^^
@@ -3161,7 +2700,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<Array<bytes31>>>([68]) -> ([68], [71])
+dup<Snapshot<Array<bytes31>>>([58]) -> ([58], [61])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -3182,7 +2721,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_len<bytes31>([71]) -> ([72])
+array_len<bytes31>([61]) -> ([62])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -3203,7 +2742,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([72]) -> ([73])
+u32_to_felt252([62]) -> ([63])
 Originating location:
         u32_to_felt252(self)
         ^^^^^^^^^^^^^^^^^^^^
@@ -3228,7 +2767,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([73]) -> ([73])
+store_temp<felt252>([63]) -> ([63])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3253,7 +2792,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([63], [73]) -> ([74])
+array_append<felt252>([54], [63]) -> ([64])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3278,7 +2817,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<core::array::Span::<core::bytes_31::bytes31>>([68]) -> ([75])
+struct_construct<core::array::Span::<core::bytes_31::bytes31>>([58]) -> ([65])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3303,7 +2842,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<core::array::Span::<core::bytes_31::bytes31>>([75]) -> ([75])
+store_temp<core::array::Span::<core::bytes_31::bytes31>>([65]) -> ([65])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3320,7 +2859,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([74]) -> ([74])
+store_temp<Array<felt252>>([64]) -> ([64])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3337,7 +2876,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([75], [74]) -> ([76])
+store_local<RangeCheck>([2], [1]) -> ([1])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3354,7 +2893,24 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<core::byte_array::ByteArray>>([66]) -> ([66], [77])
+function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([65], [64]) -> ([66])
+Originating location:
+        serialize_array_helper(self.span(), ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+dup<Snapshot<core::byte_array::ByteArray>>([56]) -> ([56], [67])
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -3367,7 +2923,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([77]) -> ([78], [79], [80])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([67]) -> ([68], [69], [70])
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -3380,7 +2936,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Snapshot<Array<bytes31>>>([78]) -> ()
+drop<Snapshot<Array<bytes31>>>([68]) -> ()
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -3393,7 +2949,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<u32>([80]) -> ()
+drop<u32>([70]) -> ()
 Originating location:
         core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
                                                  ^^^^
@@ -3406,7 +2962,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<felt252>([79]) -> ([81])
+rename<felt252>([69]) -> ([71])
 Originating location:
         output.append(*self);
                        ^^^^
@@ -3423,7 +2979,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([76], [81]) -> ([82])
+array_append<felt252>([66], [71]) -> ([72])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3444,7 +3000,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([66]) -> ([83], [84], [85])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([56]) -> ([73], [74], [75])
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -3457,7 +3013,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Snapshot<Array<bytes31>>>([83]) -> ()
+drop<Snapshot<Array<bytes31>>>([73]) -> ()
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -3470,7 +3026,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<felt252>([84]) -> ()
+drop<felt252>([74]) -> ()
 Originating location:
         core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
                                                ^^^^
@@ -3483,7 +3039,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<u32>([85]) -> ([86])
+rename<u32>([75]) -> ([76])
 Originating location:
             output.append((*self).into());
                             ^^^^
@@ -3500,7 +3056,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([86]) -> ([87])
+u32_to_felt252([76]) -> ([77])
 Originating location:
         u32_to_felt252(self)
         ^^^^^^^^^^^^^^^^^^^^
@@ -3521,7 +3077,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([82], [87]) -> ([88])
+array_append<felt252>([72], [77]) -> ([78])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3542,7 +3098,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([88]) -> ([88])
+store_temp<Array<felt252>>([78]) -> ([78])
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -3551,7 +3107,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-print([88]) -> ()
+print([78]) -> ()
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -3560,86 +3116,12 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<RangeCheck>([1]) -> ([50])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::5:
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-struct_construct<Unit>() -> ([89])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-struct_construct<Tuple<Unit>>([89]) -> ([90])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_init<core::panics::PanicResult::<((),)>, 0>([90]) -> ([91])
-Originating location:
-  fn foo() {
- __________^
-| ...
-| }
-|_^
-In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<((),)>>([91]) -> ([91])
-Originating location:
-  fn foo() {
- __________^
-| ...
-| }
-|_^
-In function: lib.cairo::foo
-return([50], [91])
-Originating location:
-  fn foo() {
- __________^
-| ...
-| }
-|_^
-In function: lib.cairo::foo
-label_test::foo::6:
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Uninitialized<core::byte_array::ByteArray>>([4]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([60]) -> ([92])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
 store_temp<RangeCheck>([1]) -> ([1])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<core::panics::PanicResult::<((),)>>([92]) -> ([92])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-return([1], [92])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::7:
+return([1])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -4545,7 +4027,7 @@ In function: assert_macro::assert_macro
 store_temp<core::bool>([30]) -> ([31])
 Originating location:
             return false;
-            ^^^^^^^^^^^^^
+                   ^^^^^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -4561,7 +4043,7 @@ In function: assert_macro::assert_macro
 jump() { label_test::some_array_checks::6() }
 Originating location:
             return false;
-            ^^^^^^^^^^^^^
+                   ^^^^^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -4688,7 +4170,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-function_call<user@core::array::SpanPartialEq::eq[194-446]>([18], [19]) -> ([32])
+function_call<user@core::array::SpanPartialEq::eq[194-446]>([18], [19]) -> ([32], [33], [34])
 Originating location:
           loop {
  _________^
@@ -4707,7 +4189,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool)>>([32]) { fallthrough([33]) label_test::some_array_checks::7([34]) }
+drop<core::array::Span::<core::felt252>>([32]) -> ()
 Originating location:
           loop {
  _________^
@@ -4726,7 +4208,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-branch_align() -> ()
+drop<core::array::Span::<core::felt252>>([33]) -> ()
 Originating location:
           loop {
  _________^
@@ -4745,70 +4227,13 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool>>([33]) -> ([35], [36], [37])
+rename<core::bool>([34]) -> ([31])
 Originating location:
           loop {
  _________^
 | ...
 |         }
 |_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::array::Span::<core::felt252>>([35]) -> ()
-Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::array::Span::<core::felt252>>([36]) -> ()
-Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::bool>([37]) -> ([31])
-Originating location:
-      fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
- _________________________________________________^
-| ...
-|     }
-|_____^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -4823,11 +4248,11 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 label_test::some_array_checks::6:
 Originating location:
-      fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
- _________________________________________________^
+          loop {
+ _________^
 | ...
-|     }
-|_____^
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -4840,7 +4265,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-bool_not_impl([31]) -> ([38])
+bool_not_impl([31]) -> ([35])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4852,7 +4277,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<core::bool>([38]) -> ([38])
+store_temp<core::bool>([35]) -> ([35])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4861,7 +4286,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-dup<core::bool>([38]) -> ([38], [39])
+dup<core::bool>([35]) -> ([35], [36])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4870,7 +4295,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-bool_not_impl([39]) -> ([40])
+bool_not_impl([36]) -> ([37])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4879,7 +4304,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<core::bool>([40]) -> ()
+drop<core::bool>([37]) -> ()
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4888,7 +4313,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_match<core::bool>([38]) { fallthrough([41]) label_test::some_array_checks::9([42]) }
+enum_match<core::bool>([35]) { fallthrough([38]) label_test::some_array_checks::7([39]) }
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4904,15 +4329,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-drop<Unit>([41]) -> ()
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-array_new<bytes31>() -> ([43])
+array_new<bytes31>() -> ([40])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -4933,7 +4350,7 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([44])
+const_as_immediate<Const<felt252, 0>>() -> ([41])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -4954,7 +4371,7 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<u32, 0>>() -> ([45])
+const_as_immediate<Const<u32, 0>>() -> ([42])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -4975,7 +4392,7 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_construct<core::byte_array::ByteArray>([43], [44], [45]) -> ([46])
+struct_construct<core::byte_array::ByteArray>([40], [41], [42]) -> ([43])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -4996,178 +4413,80 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-snapshot_take<core::byte_array::ByteArray>([46]) -> ([47], [48])
+snapshot_take<core::byte_array::ByteArray>([43]) -> ([44], [45])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<core::byte_array::ByteArray>([47]) -> ()
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<Snapshot<core::byte_array::ByteArray>>([48]) -> ([48])
+store_temp<Snapshot<core::byte_array::ByteArray>>([45]) -> ([45])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-function_call<user@core::panics::panic_with_byte_array>([48]) -> ([49])
+function_call<user@core::panics::panic_with_byte_array>([45]) -> ([46])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([49]) -> ([50])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([50]) -> ([50])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-return([50])
+enum_match<core::never>([46]) { }
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::9:
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-branch_align() -> ()
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-drop<Unit>([42]) -> ()
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([51])
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-struct_construct<Tuple<Unit>>([51]) -> ([52])
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 0>([52]) -> ([53])
-Originating location:
-  fn some_array_checks() {
- ________________________^
-|     assert!(array![1, 2] != array![2, 1], "");
-| }
-|_^
-In function: lib.cairo::some_array_checks
-store_temp<core::panics::PanicResult::<((),)>>([53]) -> ([53])
-Originating location:
-  fn some_array_checks() {
- ________________________^
-|     assert!(array![1, 2] != array![2, 1], "");
-| }
-|_^
-In function: lib.cairo::some_array_checks
-return([53])
-Originating location:
-  fn some_array_checks() {
- ________________________^
-|     assert!(array![1, 2] != array![2, 1], "");
-| }
-|_^
-In function: lib.cairo::some_array_checks
-label_test::some_array_checks::10:
-Originating location:
-  fn some_array_checks() {
- ________________________^
-|     assert!(array![1, 2] != array![2, 1], "");
-| }
-|_^
-In function: lib.cairo::some_array_checks
 label_test::some_array_checks::7:
 Originating location:
-          loop {
- _________^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
 | ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| }
+|_^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-          loop {
- _________^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
 | ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| }
+|_^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([34]) -> ([54])
+drop<Unit>([39]) -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
 In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([54]) -> ([54])
+return()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-return([54])
-Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::8:
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::5:
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::2:
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
 In function: assert_macro::assert_macro

@@ -219,27 +219,21 @@ branch_align() -> ()
 drop<Array<u32>>([5]) -> ()
 unbox<u32>([6]) -> ([8])
 drop<u32>([8]) -> ()
-struct_construct<Unit>() -> ([9])
-struct_construct<Tuple<Unit>>([9]) -> ([10])
-enum_init<core::panics::PanicResult::<((),)>, 0>([10]) -> ([11])
-PushValues([11]: core::panics::PanicResult::<((),)>) -> ([11])
-return([11])
+PushValues() -> ()
+return()
 label_test::foo::2:
 branch_align() -> ()
-drop<Array<u32>>([7]) -> ()
 PushValues() -> ()
-jump() { label_test::foo::4() }
+function_call<user@core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>>() -> ([9])
+enum_match<core::never>([9]) { }
+label_test::foo::4:
 label_test::foo::3:
 label_test::foo::0:
 branch_align() -> ()
-drop<Array<u32>>([3]) -> ()
 PushValues() -> ()
-label_test::foo::4:
-PushValues() -> ()
-function_call<user@core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>>() -> ([12])
-enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13])
-PushValues([13]: core::panics::PanicResult::<((),)>) -> ([13])
-return([13])
+function_call<user@core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>>() -> ([10])
+enum_match<core::never>([10]) { }
+label_test::foo::5:
 label_test::foo::1:
 
 //! > lowering_flat
@@ -264,25 +258,19 @@ End:
 blk2:
 Statements:
   (v8: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v6)
-  (v9: ()) <- struct_construct()
-  (v10: ((),)) <- struct_construct(v9)
-  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
 End:
-  Return(v11)
+  Return()
 
 blk3:
 Statements:
+  (v9: core::never) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
 End:
-  Goto(blk5, {})
+  Match(match_enum(v9) {
+  })
 
 blk4:
 Statements:
+  (v10: core::never) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
 End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
-End:
-  Return(v13)
+  Match(match_enum(v10) {
+  })

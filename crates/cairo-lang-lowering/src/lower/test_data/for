@@ -69,28 +69,9 @@ Statements:
   (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v10)
   (v16: core::array::Span::<core::felt252>) <- struct_construct(v15)
   (v17: core::array::SpanIter::<core::felt252>) <- struct_construct(v16)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v0, v1, v17, v11, v13)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::array::SpanIter::<core::felt252>, v21: core::felt252) <- test::foo[118-164](v0, v1, v17, v11, v13)
 End:
-  Match(match_enum(v20) {
-    PanicResult::Ok(v21) => blk1,
-    PanicResult::Err(v22) => blk2,
-  })
-
-blk1:
-Statements:
-  (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v19)
-  (v24: core::array::SpanIter::<core::felt252>, v25: core::felt252, v26: ()) <- struct_destructure(v21)
-  (v27: (core::felt252,)) <- struct_construct(v25)
-  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)
-End:
-  Return(v18, v23, v28)
-
-blk2:
-Statements:
-  (v29: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v19)
-  (v30: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
-End:
-  Return(v18, v29, v30)
+  Return(v18, v19, v21)
 
 
 Generated loop lowering for source location:
@@ -198,26 +179,23 @@ blk8:
 Statements:
   (v37: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
   (v38: core::felt252) <- core::felt252_add(v3, v4)
-  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v37, v34, v38, v4)
+  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::array::SpanIter::<core::felt252>, v42: core::felt252) <- test::foo[118-164](v5, v37, v34, v38, v4)
 End:
-  Return(v39, v40, v41)
+  Return(v39, v40, v41, v42)
 
 blk9:
 Statements:
-  (v42: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
-  (v43: ()) <- struct_construct()
-  (v44: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v34, v3, v43)
-  (v45: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v44)
+  (v43: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
 End:
-  Return(v5, v42, v45)
+  Return(v5, v43, v34, v3)
 
 blk10:
 Statements:
-  (v46: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
-  (v47: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v48: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v47)
+  (v44: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
+  (v45: core::never) <- core::panic_with_const_felt252::<375233589013918064796019>()
 End:
-  Return(v7, v46, v48)
+  Match(match_enum(v45) {
+  })
 
 //! > ==========================================================================
 
@@ -281,25 +259,6 @@ Statements:
   (v3: core::integer::u32) <- 0
   (v4: core::integer::u32) <- 5
   (v5: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v3, v4)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, ())>) <- test::MyImpl::foo[23-108](v0, v1, v5, v2)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::ops::range::RangeIterator::<core::integer::u32>) <- test::MyImpl::foo[23-108](v0, v1, v5, v2)
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk1,
-    PanicResult::Err(v10) => blk2,
-  })
-
-blk1:
-Statements:
-  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v12: core::ops::range::RangeIterator::<core::integer::u32>, v13: ()) <- struct_destructure(v9)
-  (v14: ((),)) <- struct_construct(v13)
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v14)
-End:
-  Return(v6, v11, v15)
-
-blk2:
-Statements:
-  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
-End:
-  Return(v6, v16, v17)
+  Return(v6, v7)

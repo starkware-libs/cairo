@@ -163,7 +163,7 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v0, v1) {
     Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk7,
+    Option::None(v5, v6) => blk5,
   })
 
 blk1:
@@ -193,41 +193,22 @@ End:
 blk4:
 Statements:
   (v15: core::felt252) <- 3
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v13, v15)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::felt252) <- test::foo(v3, v13, v15)
+  (v19: core::felt252) <- 5
+  (v20: core::felt252) <- 0
+  (v21: core::felt252) <- core::felt252_add(v2, v20)
+  (v22: core::felt252) <- core::felt252_mul(v19, v21)
+  (v23: core::felt252) <- core::felt252_add(v18, v22)
 End:
-  Match(match_enum(v18) {
-    PanicResult::Ok(v19) => blk5,
-    PanicResult::Err(v20) => blk6,
-  })
+  Return(v16, v17, v23)
 
 blk5:
 Statements:
-  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v22: core::felt252) <- struct_destructure(v19)
-  (v23: core::felt252) <- 5
-  (v24: core::felt252) <- 0
-  (v25: core::felt252) <- core::felt252_add(v2, v24)
-  (v26: core::felt252) <- core::felt252_mul(v23, v25)
-  (v27: core::felt252) <- core::felt252_add(v22, v26)
-  (v28: (core::felt252,)) <- struct_construct(v27)
-  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v28)
+  (v24: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+  (v25: core::never) <- core::panic_with_const_felt252::<375233589013918064796019>()
 End:
-  Return(v16, v21, v29)
-
-blk6:
-Statements:
-  (v30: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v20)
-End:
-  Return(v16, v30, v31)
-
-blk7:
-Statements:
-  (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v33: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v34: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v33)
-End:
-  Return(v5, v32, v34)
+  Match(match_enum(v25) {
+  })
 
 //! > ==========================================================================
 

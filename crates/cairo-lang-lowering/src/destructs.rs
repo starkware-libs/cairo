@@ -47,6 +47,7 @@ pub struct DestructAdder<'a> {
     /// The actual return type of a never function after adding panics.
     never_fn_actual_return_ty: TypeId,
     is_panic_destruct_fn: bool,
+    unsafe_panic: bool,
 }
 
 /// A destructor call that needs to be added.
@@ -158,7 +159,9 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
             }
         }
 
-        panic!("Borrow checker should have caught this.")
+        if !self.unsafe_panic {
+            panic!("Borrow checker should have caught this.")
+        }
     }
 }
 
@@ -300,6 +303,7 @@ pub fn add_destructs(
         panic_ty,
         never_fn_actual_return_ty,
         is_panic_destruct_fn,
+        unsafe_panic: true,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();

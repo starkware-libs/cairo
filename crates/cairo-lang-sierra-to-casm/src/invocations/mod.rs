@@ -63,7 +63,7 @@ mod squashed_felt252_dict;
 mod starknet;
 mod structure;
 mod trace;
-
+mod unsafe_panic;
 #[cfg(test)]
 mod test_utils;
 
@@ -669,23 +669,23 @@ pub fn compile_invocation(
         Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
         Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
         Sint8(libfunc) => {
-            int::signed::build_sint::<_, { i8::MIN as i128 }, { i8::MAX as i128 }>(libfunc, builder)
-        }
+                        int::signed::build_sint::<_, { i8::MIN as i128 }, { i8::MAX as i128 }>(libfunc, builder)
+            }
         Sint16(libfunc) => {
-            int::signed::build_sint::<_, { i16::MIN as i128 }, { i16::MAX as i128 }>(
-                libfunc, builder,
-            )
-        }
+                int::signed::build_sint::<_, { i16::MIN as i128 }, { i16::MAX as i128 }>(
+                    libfunc, builder,
+                )
+            }
         Sint32(libfunc) => {
-            int::signed::build_sint::<_, { i32::MIN as i128 }, { i32::MAX as i128 }>(
-                libfunc, builder,
-            )
-        }
+                int::signed::build_sint::<_, { i32::MIN as i128 }, { i32::MAX as i128 }>(
+                    libfunc, builder,
+                )
+            }
         Sint64(libfunc) => {
-            int::signed::build_sint::<_, { i64::MIN as i128 }, { i64::MAX as i128 }>(
-                libfunc, builder,
-            )
-        }
+                int::signed::build_sint::<_, { i64::MIN as i128 }, { i64::MAX as i128 }>(
+                    libfunc, builder,
+                )
+            }
         Sint128(libfunc) => int::signed128::build(libfunc, builder),
         Gas(libfunc) => gas::build(libfunc, builder),
         BranchAlign(_) => misc::build_branch_align(builder),
@@ -711,18 +711,19 @@ pub fn compile_invocation(
         Bytes31(libfunc) => bytes31::build(libfunc, builder),
         Const(libfunc) => const_type::build(libfunc, builder),
         Coupon(libfunc) => match libfunc {
-            CouponConcreteLibfunc::Buy(_) => Ok(builder
-                .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
-            CouponConcreteLibfunc::Refund(_) => {
-                Ok(builder.build_only_reference_changes([].into_iter()))
-            }
-        },
+                CouponConcreteLibfunc::Buy(_) => Ok(builder
+                    .build_only_reference_changes([ReferenceExpression::zero_sized()].into_iter())),
+                CouponConcreteLibfunc::Refund(_) => {
+                    Ok(builder.build_only_reference_changes([].into_iter()))
+                }
+            },
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
         Circuit(libfunc) => circuit::build(libfunc, builder),
         IntRange(libfunc) => range::build(libfunc, builder),
         Blake(libfunc) => blake::build(libfunc, builder),
         Trace(libfunc) => trace::build(libfunc, builder),
         QM31(libfunc) => qm31::build(libfunc, builder),
+        UnSafePanic(_) => unsafe_panic::build(builder),
     }
 }
 

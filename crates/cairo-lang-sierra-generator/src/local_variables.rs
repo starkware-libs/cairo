@@ -2,7 +2,9 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_semantic::items::constant::ConstValue;
@@ -311,6 +313,21 @@ impl<'a> FindLocalsContext<'a> {
             "Unexpected branches in '{}'.",
             DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
         );
+        
+        if  output_vars.len() !=  libfunc_signature.branch_signatures[0].vars.len()  {
+            let lowered_formatter = LoweredFormatter::new(self.db.upcast(), &self.lowered_function.variables);
+            println!("{:?}", self.lowered_function.debug(&lowered_formatter))
+        }
+        
+
+        assert_eq!(
+            output_vars.len(),
+            libfunc_signature.branch_signatures[0].vars.len() ,
+            "Unexpected branches in '{}'.",
+            DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
+        );
+
+    
         self.analyze_branch(
             &libfunc_signature.param_signatures,
             &libfunc_signature.branch_signatures[0],

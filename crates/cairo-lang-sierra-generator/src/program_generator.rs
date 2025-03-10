@@ -8,7 +8,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
@@ -202,16 +202,16 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
             }
             for i in start..end {
                 writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
-                if let Some(loc) =
-                    &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
-                {
-                    let loc = get_location_marks(
-                        db.upcast(),
-                        &loc.first().unwrap().diagnostic_location(db.upcast()),
-                        true,
-                    );
-                    println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
-                }
+                // if let Some(loc) =
+                //     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
+                // {
+                //     let loc = get_location_marks(
+                //         db.upcast(),
+                //         &loc.first().unwrap().diagnostic_location(db.upcast()),
+                //         true,
+                //     );
+                //     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
+                // }
             }
         }
         writeln!(f)?;

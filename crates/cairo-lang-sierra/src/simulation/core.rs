@@ -59,129 +59,129 @@ pub fn simulate<
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     Ok(match libfunc {
         CoreConcreteLibfunc::Drop(_) => {
-            let [_] = take_inputs(inputs)?;
-            (vec![], 0)
-        }
+                        let [_] = take_inputs(inputs)?;
+                        (vec![], 0)
+            }
         CoreConcreteLibfunc::Dup(_) => {
-            let [value] = take_inputs(inputs)?;
-            (vec![value.clone(), value], 0)
-        }
+                let [value] = take_inputs(inputs)?;
+                (vec![value.clone(), value], 0)
+            }
         CoreConcreteLibfunc::Ec(libfunc) => {
-            match libfunc {
-                EcConcreteLibfunc::TryNew(_) => {
-                    take_inputs!(let [CoreValue::Felt252(x), CoreValue::Felt252(y)] = inputs);
-                    const BETA: Felt252 = Felt252::from_hex_unchecked(
-                        "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
-                    );
-                    // If the point is on the curve use the fallthrough branch and return the
-                    // point.
-                    if y * y == x * x * x + x + BETA {
-                        (vec![CoreValue::EcPoint(x, y)], 0)
-                    } else {
-                        (vec![], 1)
+                match libfunc {
+                    EcConcreteLibfunc::TryNew(_) => {
+                        take_inputs!(let [CoreValue::Felt252(x), CoreValue::Felt252(y)] = inputs);
+                        const BETA: Felt252 = Felt252::from_hex_unchecked(
+                            "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
+                        );
+                        // If the point is on the curve use the fallthrough branch and return the
+                        // point.
+                        if y * y == x * x * x + x + BETA {
+                            (vec![CoreValue::EcPoint(x, y)], 0)
+                        } else {
+                            (vec![], 1)
+                        }
                     }
+                    EcConcreteLibfunc::UnwrapPoint(_) => {
+                        take_inputs!(let [CoreValue::EcPoint(x, y)] = inputs);
+                        (vec![CoreValue::Felt252(x), CoreValue::Felt252(y)], 0)
+                    }
+                    _ => unimplemented!(),
                 }
-                EcConcreteLibfunc::UnwrapPoint(_) => {
-                    take_inputs!(let [CoreValue::EcPoint(x, y)] = inputs);
-                    (vec![CoreValue::Felt252(x), CoreValue::Felt252(y)], 0)
-                }
-                _ => unimplemented!(),
             }
-        }
         CoreConcreteLibfunc::FunctionCall(SignatureAndFunctionConcreteLibfunc {
-            function, ..
-        })
-        | CoreConcreteLibfunc::CouponCall(SignatureAndFunctionConcreteLibfunc {
-            function, ..
-        }) => (simulate_function(&function.id, inputs)?, 0),
+                function, ..
+            })
+            | CoreConcreteLibfunc::CouponCall(SignatureAndFunctionConcreteLibfunc {
+                function, ..
+            }) => (simulate_function(&function.id, inputs)?, 0),
         CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)) => {
-            let count = get_statement_gas_info()
-                .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
-            take_inputs!(let [CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter)] = inputs);
-            if gas_counter >= count {
-                // Have enough gas - return reduced counter and jump to success branch.
-                (vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter - count)], 0)
-            } else {
-                // Don't have enough gas - return the same counter and jump to failure branch.
-                (vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter)], 1)
+                let count = get_statement_gas_info()
+                    .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
+                take_inputs!(let [CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter)] = inputs);
+                if gas_counter >= count {
+                    // Have enough gas - return reduced counter and jump to success branch.
+                    (vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter - count)], 0)
+                } else {
+                    // Don't have enough gas - return the same counter and jump to failure branch.
+                    (vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter)], 1)
+                }
             }
-        }
         CoreConcreteLibfunc::Gas(GasConcreteLibfunc::RedepositGas(_)) => {
-            let count = get_statement_gas_info()
-                .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
-            take_inputs!(let [CoreValue::GasBuiltin(gas_counter)] = inputs);
-            (vec![CoreValue::GasBuiltin(gas_counter + count)], 0)
-        }
+                let count = get_statement_gas_info()
+                    .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
+                take_inputs!(let [CoreValue::GasBuiltin(gas_counter)] = inputs);
+                (vec![CoreValue::GasBuiltin(gas_counter + count)], 0)
+            }
         CoreConcreteLibfunc::Gas(GasConcreteLibfunc::GetAvailableGas(_)) => {
-            take_inputs!(let [CoreValue::GasBuiltin(gas_counter)] = inputs);
-            (vec![CoreValue::GasBuiltin(gas_counter), CoreValue::Uint128(gas_counter as u128)], 0)
-        }
+                take_inputs!(let [CoreValue::GasBuiltin(gas_counter)] = inputs);
+                (vec![CoreValue::GasBuiltin(gas_counter), CoreValue::Uint128(gas_counter as u128)], 0)
+            }
         CoreConcreteLibfunc::Gas(
-            GasConcreteLibfunc::BuiltinWithdrawGas(_)
-            | GasConcreteLibfunc::GetBuiltinCosts(_)
-            | GasConcreteLibfunc::GetUnspentGas(_),
-        ) => {
-            unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
-        }
+                GasConcreteLibfunc::BuiltinWithdrawGas(_)
+                | GasConcreteLibfunc::GetBuiltinCosts(_)
+                | GasConcreteLibfunc::GetUnspentGas(_),
+            ) => {
+                unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
+            }
         CoreConcreteLibfunc::BranchAlign(_) => {
-            let [] = take_inputs(inputs)?;
-            get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
-            (vec![], 0)
-        }
+                let [] = take_inputs(inputs)?;
+                get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
+                (vec![], 0)
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::New(_)) => {
-            let [] = take_inputs(inputs)?;
-            (vec![CoreValue::Array(vec![])], 0)
-        }
+                let [] = take_inputs(inputs)?;
+                (vec![CoreValue::Array(vec![])], 0)
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::SpanFromTuple(_)) => {
-            take_inputs!(let [CoreValue::Struct(members)] = inputs);
-            (vec![CoreValue::Array(members)], 0)
-        }
+                take_inputs!(let [CoreValue::Struct(members)] = inputs);
+                (vec![CoreValue::Array(members)], 0)
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::TupleFromSpan(_)) => todo!(),
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Append(_)) => {
-            take_inputs!(let [CoreValue::Array(mut arr), element] = inputs);
-            arr.push(element);
-            (vec![CoreValue::Array(arr)], 0)
-        }
+                take_inputs!(let [CoreValue::Array(mut arr), element] = inputs);
+                arr.push(element);
+                (vec![CoreValue::Array(arr)], 0)
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFront(_)) => {
-            take_inputs!(let [CoreValue::Array(mut arr)] = inputs);
-            if arr.is_empty() {
-                (vec![CoreValue::Array(arr)], 1)
-            } else {
-                let front = arr.remove(0);
-                (vec![CoreValue::Array(arr), front], 0)
-            }
-        }
-        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFrontConsume(_)) => {
-            take_inputs!(let [CoreValue::Array(mut arr)] = inputs);
-            if arr.is_empty() { (vec![CoreValue::Array(arr)], 1) } else { (vec![arr.remove(0)], 0) }
-        }
-        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Get(_)) => {
-            take_inputs!(
-                let [CoreValue::RangeCheck, CoreValue::Array(arr), CoreValue::Uint32(idx)] = inputs
-            );
-            match arr.get(idx as usize).cloned() {
-                Some(element) => (vec![CoreValue::RangeCheck, element], 0),
-                None => (vec![CoreValue::RangeCheck], 1),
-            }
-        }
-        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Slice(_)) => {
-            take_inputs!(let [
-                CoreValue::RangeCheck,
-                CoreValue::Array(arr),
-                CoreValue::Uint32(start),
-                CoreValue::Uint32(length),
-            ] = inputs);
-            match arr.get(start as usize..(start + length) as usize) {
-                Some(elements) => {
-                    (vec![CoreValue::RangeCheck, CoreValue::Array(elements.to_vec())], 0)
+                take_inputs!(let [CoreValue::Array(mut arr)] = inputs);
+                if arr.is_empty() {
+                    (vec![CoreValue::Array(arr)], 1)
+                } else {
+                    let front = arr.remove(0);
+                    (vec![CoreValue::Array(arr), front], 0)
                 }
-                None => (vec![CoreValue::RangeCheck], 1),
             }
-        }
+        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFrontConsume(_)) => {
+                take_inputs!(let [CoreValue::Array(mut arr)] = inputs);
+                if arr.is_empty() { (vec![CoreValue::Array(arr)], 1) } else { (vec![arr.remove(0)], 0) }
+            }
+        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Get(_)) => {
+                take_inputs!(
+                    let [CoreValue::RangeCheck, CoreValue::Array(arr), CoreValue::Uint32(idx)] = inputs
+                );
+                match arr.get(idx as usize).cloned() {
+                    Some(element) => (vec![CoreValue::RangeCheck, element], 0),
+                    None => (vec![CoreValue::RangeCheck], 1),
+                }
+            }
+        CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Slice(_)) => {
+                take_inputs!(let [
+                    CoreValue::RangeCheck,
+                    CoreValue::Array(arr),
+                    CoreValue::Uint32(start),
+                    CoreValue::Uint32(length),
+                ] = inputs);
+                match arr.get(start as usize..(start + length) as usize) {
+                    Some(elements) => {
+                        (vec![CoreValue::RangeCheck, CoreValue::Array(elements.to_vec())], 0)
+                    }
+                    None => (vec![CoreValue::RangeCheck], 1),
+                }
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Len(_)) => {
-            take_inputs!(let [CoreValue::Array(arr)] = inputs);
-            (vec![CoreValue::Uint32(arr.len() as u32)], 0)
-        }
+                take_inputs!(let [CoreValue::Array(arr)] = inputs);
+                (vec![CoreValue::Uint32(arr.len() as u32)], 0)
+            }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::SnapshotMultiPopFront(_)) => todo!(),
@@ -192,102 +192,102 @@ pub fn simulate<
         CoreConcreteLibfunc::Uint64(libfunc) => simulate_u64_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::Uint128(libfunc) => simulate_u128_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::Sint8(_)
-        | CoreConcreteLibfunc::Sint16(_)
-        | CoreConcreteLibfunc::Sint32(_)
-        | CoreConcreteLibfunc::Sint64(_)
-        | CoreConcreteLibfunc::Sint128(_) => {
-            unimplemented!("Simulation of signed integer libfuncs is not implemented yet.")
-        }
+            | CoreConcreteLibfunc::Sint16(_)
+            | CoreConcreteLibfunc::Sint32(_)
+            | CoreConcreteLibfunc::Sint64(_)
+            | CoreConcreteLibfunc::Sint128(_) => {
+                unimplemented!("Simulation of signed integer libfuncs is not implemented yet.")
+            }
         CoreConcreteLibfunc::Bool(libfunc) => simulate_bool_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::Felt252(libfunc) => simulate_felt252_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::UnwrapNonZero(_) => (inputs, 0),
         CoreConcreteLibfunc::Mem(
-            MemConcreteLibfunc::Rename(_) | MemConcreteLibfunc::StoreTemp(_),
-        )
-        | CoreConcreteLibfunc::Box(_) => {
-            let [value] = take_inputs(inputs)?;
-            (vec![value], 0)
-        }
+                MemConcreteLibfunc::Rename(_) | MemConcreteLibfunc::StoreTemp(_),
+            )
+            | CoreConcreteLibfunc::Box(_) => {
+                let [value] = take_inputs(inputs)?;
+                (vec![value], 0)
+            }
         CoreConcreteLibfunc::Mem(MemConcreteLibfunc::FinalizeLocals(_))
-        | CoreConcreteLibfunc::UnconditionalJump(_)
-        | CoreConcreteLibfunc::ApTracking(_) => {
-            let [] = take_inputs(inputs)?;
-            (vec![], 0)
-        }
+            | CoreConcreteLibfunc::UnconditionalJump(_)
+            | CoreConcreteLibfunc::ApTracking(_) => {
+                let [] = take_inputs(inputs)?;
+                (vec![], 0)
+            }
         CoreConcreteLibfunc::Mem(MemConcreteLibfunc::StoreLocal(_)) => {
-            take_inputs!(let [CoreValue::Uninitialized, value] = inputs);
-            (vec![value], 0)
-        }
+                take_inputs!(let [CoreValue::Uninitialized, value] = inputs);
+                (vec![value], 0)
+            }
         CoreConcreteLibfunc::Mem(MemConcreteLibfunc::AllocLocal(_)) => {
-            let [] = take_inputs(inputs)?;
-            (vec![CoreValue::Uninitialized], 0)
-        }
+                let [] = take_inputs(inputs)?;
+                (vec![CoreValue::Uninitialized], 0)
+            }
         CoreConcreteLibfunc::Enum(EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc {
-            index,
-            ..
-        })) => {
-            let [value] = take_inputs(inputs)?;
-            // We don't verify here that the input type matches the signature.
-            (vec![CoreValue::Enum { value: Box::new(value), index: *index }], 0)
-        }
+                index,
+                ..
+            })) => {
+                let [value] = take_inputs(inputs)?;
+                // We don't verify here that the input type matches the signature.
+                (vec![CoreValue::Enum { value: Box::new(value), index: *index }], 0)
+            }
         CoreConcreteLibfunc::Enum(
-            EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_),
-        ) => {
-            take_inputs!(let [CoreValue::Enum { value, index }] = inputs);
-            (vec![*value], index)
-        }
+                EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_),
+            ) => {
+                take_inputs!(let [CoreValue::Enum { value, index }] = inputs);
+                (vec![*value], index)
+            }
         CoreConcreteLibfunc::Enum(EnumConcreteLibfunc::FromBoundedInt(_)) => todo!(),
         CoreConcreteLibfunc::Struct(StructConcreteLibfunc::Construct(_)) => {
-            (vec![CoreValue::Struct(inputs)], 0)
-        }
+                (vec![CoreValue::Struct(inputs)], 0)
+            }
         CoreConcreteLibfunc::Struct(
-            StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
-        ) => {
-            take_inputs!(let [CoreValue::Struct(members)] = inputs);
-            (members, 0)
-        }
+                StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
+            ) => {
+                take_inputs!(let [CoreValue::Struct(members)] = inputs);
+                (members, 0)
+            }
         CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
-            let [] = take_inputs(inputs)?;
-            (vec![CoreValue::Dict(HashMap::new())], 0)
-        }
+                let [] = take_inputs(inputs)?;
+                (vec![CoreValue::Dict(HashMap::new())], 0)
+            }
         CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
-            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Dict(dict)] = inputs);
-            // Returning the same dict since it is exactly the same as the squashed one.
-            (vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0)
-        }
+                take_inputs!(let [CoreValue::RangeCheck, CoreValue::Dict(dict)] = inputs);
+                // Returning the same dict since it is exactly the same as the squashed one.
+                (vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0)
+            }
         CoreConcreteLibfunc::Felt252SquashedDict(_) => {
-            unimplemented!("Simulation of Felt252SquashedDict is not implemented yet.");
-        }
+                unimplemented!("Simulation of Felt252SquashedDict is not implemented yet.");
+            }
         CoreConcreteLibfunc::Pedersen(_) => {
-            unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
-        }
+                unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
+            }
         CoreConcreteLibfunc::Poseidon(_) => {
-            unimplemented!("Simulation of the Poseidon hash function is not implemented yet.");
-        }
+                unimplemented!("Simulation of the Poseidon hash function is not implemented yet.");
+            }
         CoreConcreteLibfunc::Starknet(_) => {
-            unimplemented!("Simulation of the Starknet functionalities is not implemented yet.")
-        }
+                unimplemented!("Simulation of the Starknet functionalities is not implemented yet.")
+            }
         CoreConcreteLibfunc::Nullable(_) => {
-            unimplemented!("Simulation of nullable is not implemented yet.")
-        }
+                unimplemented!("Simulation of nullable is not implemented yet.")
+            }
         CoreConcreteLibfunc::Debug(_) => {
-            take_inputs!(let [CoreValue::Array(arr)] = inputs);
-            let mut bytes = Vec::new();
-            for limb in arr {
-                let limb = extract_matches!(limb, CoreValue::Felt252);
-                bytes.extend(limb.to_bytes_be());
+                take_inputs!(let [CoreValue::Array(arr)] = inputs);
+                let mut bytes = Vec::new();
+                for limb in arr {
+                    let limb = extract_matches!(limb, CoreValue::Felt252);
+                    bytes.extend(limb.to_bytes_be());
+                }
+                if let Ok(s) = String::from_utf8(bytes) {
+                    print!("{s}");
+                } else {
+                    println!("Not utf8");
+                }
+                (vec![], 0)
             }
-            if let Ok(s) = String::from_utf8(bytes) {
-                print!("{s}");
-            } else {
-                println!("Not utf8");
-            }
-            (vec![], 0)
-        }
         CoreConcreteLibfunc::SnapshotTake(_) => {
-            let [value] = take_inputs(inputs)?;
-            (vec![value.clone(), value], 0)
-        }
+                let [value] = take_inputs(inputs)?;
+                (vec![value.clone(), value], 0)
+            }
         CoreConcreteLibfunc::Cast(_) => unimplemented!(),
         CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
@@ -301,6 +301,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Blake(_) => unimplemented!(),
         CoreConcreteLibfunc::Trace(_) => unimplemented!(),
         CoreConcreteLibfunc::QM31(_) => unimplemented!(),
+        CoreConcreteLibfunc::UnSafePanic(_) => unimplemented!(),
     })
 }
 

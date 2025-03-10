@@ -3,23 +3,22 @@ use std::collections::VecDeque;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty, never_ty};
+use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_core_function_id, get_panic_ty, never_ty};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{self as semantic, GenericArgumentId};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, GenericArgumentId, TypeLongId};
+use cairo_lang_utils::{extract_matches, Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
+use cairo_lang_utils::LookupIntern;
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx, Signature};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, SemanticFunctionIdEx, Signature};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo,
-    MatchInfo, Statement, StatementCall, StatementEnumConstruct, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement, StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -32,7 +31,7 @@ pub fn lower_panics(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &FlatLowered,
 ) -> Maybe<FlatLowered> {
-    let variables = VariableAllocator::new(
+    let mut variables = VariableAllocator::new(
         db,
         function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
@@ -48,6 +47,35 @@ pub fn lower_panics(
             signature: lowered.signature.clone(),
         });
     }
+
+    let never_ty = never_ty(db.upcast());
+
+    let panic_func_id = FunctionLongId::Semantic(get_core_function_id(db.upcast(), "unsafe_panic".into(), vec![])).intern(db);
+    let mut new_blocks = lowered.blocks.clone();
+    for block in new_blocks.iter_mut() {
+        let FlatBlockEnd::Panic(err_data) = &mut block.end else {
+            continue;
+        };
+
+        let location = err_data.location;
+
+        block.end = FlatBlockEnd::Match {
+            info: MatchInfo::Extern(MatchExternInfo {
+                arms: vec![],
+                location,
+                function: panic_func_id,
+                inputs: vec![],
+            }),
+        }
+    }
+
+    return Ok(FlatLowered {
+        diagnostics: Default::default(),
+        variables: variables.variables,
+        blocks: new_blocks,
+        parameters: lowered.parameters.clone(),
+        signature: lowered.signature.clone(),
+    });
 
     let signature = function_id.signature(db)?;
     // All types should be fully concrete at this point.

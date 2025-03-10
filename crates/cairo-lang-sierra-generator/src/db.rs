@@ -170,7 +170,7 @@ fn get_function_signature(
     }
 
     let mut ret_types = implicits;
-    if may_panic {
+    if may_panic && false {
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
     } else {

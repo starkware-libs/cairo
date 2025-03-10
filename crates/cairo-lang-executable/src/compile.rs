@@ -197,7 +197,7 @@ pub fn compile_executable_function_in_prepared_db(
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
     assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
-    let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
+    let builder = RunnableBuilder::new(sierra_program.clone(), None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
             // Note that the `last` is used here as the call site is the most relevant location.
@@ -211,7 +211,7 @@ pub fn compile_executable_function_in_prepared_db(
             }
         }
 
-        anyhow::anyhow!("Failed to create runnable builder: {}\n{}", err, locs.join("\n"))
+        anyhow::anyhow!("{:?}\n Failed to create runnable builder: {}\n{}", SierraProgramWithDebug{ program: sierra_program, debug_info}.debug(db), err, locs.join("\n"))
     })?;
 
     // If syscalls are allowed it means we allow for unsound programs.

@@ -157,11 +157,10 @@ Parameters: v0: test::bar::Coupon
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::panics::Panic) <- struct_construct()
-  (v3: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v2, v1)
-  (v4: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v3)
+  (v2: core::never) <- core::panics::unsafe_panic()
 End:
-  Return(v4)
+  Match(match_enum(v2) {
+  })
 
 //! > ==========================================================================
 

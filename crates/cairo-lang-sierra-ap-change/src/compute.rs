@@ -146,7 +146,13 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         idx: StatementIdx,
     ) -> Result<(), ApChangeError> {
         let mut max_change = 0;
-        for (ap_change, target) in self.get_branches(idx)? {
+        
+        let branches = self.get_branches(idx)?;
+        if branches.is_empty() {
+            return Ok(());
+        }
+
+        for (ap_change, target) in branches {
             let Some(target_ap_change) = self.known_ap_change_to_return.get(&target) else {
                 return Ok(());
             };

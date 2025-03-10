@@ -48,27 +48,25 @@ End:
 
 blk2:
 Statements:
-  (v8: (core::integer::u64,)) <- struct_construct(v6)
-  (v9: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v8)
 End:
-  Return(v5, v9)
+  Return(v5, v6)
 
 blk3:
 Statements:
 End:
-  Goto(blk5, {v7 -> v10})
+  Goto(blk5, {})
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v0 -> v10})
+  Goto(blk5, {})
 
 blk5:
 Statements:
-  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v12: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v11)
+  (v8: core::never) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
 End:
-  Return(v10, v12)
+  Match(match_enum(v8) {
+  })
 
 //! > lowering
 Main:
@@ -142,7 +140,5 @@ foo
 Parameters: v0: core::integer::u128
 blk0 (root):
 Statements:
-  (v1: (core::integer::u128,)) <- struct_construct(v0)
-  (v2: core::panics::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v1)
 End:
-  Return(v2)
+  Return(v0)
