@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId, VariantId,
+    ModuleFileId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
+    VariantId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
@@ -564,6 +565,9 @@ impl<'db> Resolver<'db> {
                     }
                 }
             }
+            syntax::node::ast::PathSegment::Missing(_) => {
+                panic!("Encountered missing path segment while resolving a path.")
+            }
         })
     }
 
@@ -727,6 +731,9 @@ impl<'db> Resolver<'db> {
                     }
                 }
             }
+            syntax::node::ast::PathSegment::Missing(_) => {
+                panic!("Encountered missing path segment while resolving a path.")
+            }
         })
     }
 
@@ -741,7 +748,7 @@ impl<'db> Resolver<'db> {
         let syntax_db = self.db.upcast();
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
-            ast::PathSegment::WithGenericArgs(_) => false,
+            ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
             ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == SUPER_KW,
         }) {
             module_id = match module_id {
@@ -1166,6 +1173,9 @@ impl<'db> Resolver<'db> {
                 )?)
             }
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
+            ResolvedGenericItem::TraitItem(id) => {
+                panic!("`{}` is not a module item.", id.full_path(self.db.upcast()))
+            }
         })
     }
 
