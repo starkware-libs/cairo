@@ -16,6 +16,7 @@ pub enum SyntaxKind {
     PathSegmentSimple,
     OptionTerminalColonColonEmpty,
     PathSegmentWithGenericArgs,
+    PathSegmentMissing,
     ExprPath,
     ExprParenthesized,
     ExprUnary,
