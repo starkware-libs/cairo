@@ -63,6 +63,7 @@ mod squashed_felt252_dict;
 mod starknet;
 mod structure;
 mod trace;
+mod unsafe_panic;
 
 #[cfg(test)]
 mod test_utils;
@@ -723,6 +724,7 @@ pub fn compile_invocation(
         Blake(libfunc) => blake::build(libfunc, builder),
         Trace(libfunc) => trace::build(libfunc, builder),
         QM31(libfunc) => qm31::build(libfunc, builder),
+        UnsafePanic(_) => unsafe_panic::build(builder),
     }
 }
 
