@@ -45,12 +45,16 @@ End:
 
 blk3:
 Statements:
-  (v7: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v4)
 End:
-  Return(v7)
+  Goto(blk5, {v4 -> v7})
 
 blk4:
 Statements:
-  (v8: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v2)
+End:
+  Goto(blk5, {v2 -> v7})
+
+blk5:
+Statements:
+  (v8: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v7)
 End:
   Return(v8)

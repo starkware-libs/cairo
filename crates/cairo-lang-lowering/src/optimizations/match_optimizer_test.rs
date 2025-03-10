@@ -42,6 +42,7 @@ fn test_match_optimizer(
     OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
 
     let mut after = before.clone();
     OptimizationPhase::OptimizeMatches.apply(db, function_id, &mut after).unwrap();
