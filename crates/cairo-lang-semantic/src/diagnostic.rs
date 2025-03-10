@@ -940,6 +940,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
             }
+            SemanticDiagnosticKind::SelfKeywordOnlyInModules => {
+                format!("The 'self' keyword can only be used in module paths")
+            }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
@@ -1420,6 +1423,7 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    SelfKeywordOnlyInModules,
     DerefCycle {
         deref_chain: String,
     },
