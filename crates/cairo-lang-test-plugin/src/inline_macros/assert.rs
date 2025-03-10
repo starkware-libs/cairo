@@ -145,15 +145,6 @@ trait CompareAssertionPlugin: NamedPlugin {
             ",
         });
         let (content, code_mappings) = builder.build();
-        let mut diagnostics = vec![];
-        if !metadata.cfg_set.contains(&Cfg::kv("target", "test"))
-            && !metadata.cfg_set.contains(&Cfg::name("test"))
-        {
-            diagnostics.push(PluginDiagnostic::error(
-                syntax,
-                format!("`{}` macro is only available in test mode.", Self::NAME),
-            ));
-        }
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
@@ -162,7 +153,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 aux_data: None,
                 diagnostics_note: Default::default(),
             }),
-            diagnostics,
+            diagnostics: vec![],
         }
     }
 }
