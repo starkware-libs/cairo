@@ -1,9 +1,11 @@
 use std::collections::VecDeque;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty, never_ty};
+use cairo_lang_semantic::corelib::{
+    core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty, never_ty,
+};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};
@@ -14,12 +16,15 @@ use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx, Signature};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, SemanticFunctionIdEx, Signature,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
+use crate::optimizations::strategy::OptimizationPhase;
 use crate::{
     BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo,
-    MatchInfo, Statement, StatementCall, StatementEnumConstruct, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementEnumConstruct,
+    StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -36,12 +41,45 @@ pub fn lower_panics(
     if !db.function_with_body_may_panic(function_id)? {
         return Ok(());
     }
-
     let variables = VariableAllocator::new(
         db,
         function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
+
+    if flag_unsafe_panic(db.upcast()) {
+        let semantic_db = db.upcast();
+        let panics = core_submodule(semantic_db, "panics");
+        let panic_func_id = FunctionLongId::Semantic(get_function_id(
+            semantic_db,
+            panics,
+            "unsafe_panic".into(),
+            vec![],
+        ))
+        .intern(db);
+
+        for block in lowered.blocks.iter_mut() {
+            let FlatBlockEnd::Panic(err_data) = &mut block.end else {
+                continue;
+            };
+
+            block.statements.truncate(0);
+            block.end = FlatBlockEnd::Match {
+                info: MatchInfo::Extern(MatchExternInfo {
+                    arms: vec![],
+                    location: err_data.location,
+                    function: panic_func_id,
+                    inputs: vec![],
+                }),
+            }
+        }
+
+        // This needs to be applied before `add_destructs` otherwise we might encounter unused
+        // variables that require panic_destruct.
+        OptimizationPhase::EarlyUnsafePanic.apply(db, function_id, lowered)?;
+
+        return Ok(());
+    }
 
     let signature = function_id.signature(db)?;
     // All types should be fully concrete at this point.
