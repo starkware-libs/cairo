@@ -1652,6 +1652,7 @@ impl From<&ExprMissing> for SyntaxStablePtrId {
 pub enum PathSegment {
     Simple(PathSegmentSimple),
     WithGenericArgs(PathSegmentWithGenericArgs),
+    Missing(PathSegmentMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentPtr(pub SyntaxStablePtrId);
@@ -1679,6 +1680,11 @@ impl From<PathSegmentWithGenericArgsPtr> for PathSegmentPtr {
         Self(value.0)
     }
 }
+impl From<PathSegmentMissingPtr> for PathSegmentPtr {
+    fn from(value: PathSegmentMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<PathSegmentSimpleGreen> for PathSegmentGreen {
     fn from(value: PathSegmentSimpleGreen) -> Self {
         Self(value.0)
@@ -1689,6 +1695,11 @@ impl From<PathSegmentWithGenericArgsGreen> for PathSegmentGreen {
         Self(value.0)
     }
 }
+impl From<PathSegmentMissingGreen> for PathSegmentGreen {
+    fn from(value: PathSegmentMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegment {
@@ -1696,7 +1707,7 @@ impl TypedSyntaxNode for PathSegment {
     type StablePtr = PathSegmentPtr;
     type Green = PathSegmentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
+        PathSegmentGreen(PathSegmentMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -1706,6 +1717,9 @@ impl TypedSyntaxNode for PathSegment {
             }
             SyntaxKind::PathSegmentWithGenericArgs => {
                 PathSegment::WithGenericArgs(PathSegmentWithGenericArgs::from_syntax_node(db, node))
+            }
+            SyntaxKind::PathSegmentMissing => {
+                PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
         }
@@ -1719,6 +1733,9 @@ impl TypedSyntaxNode for PathSegment {
             SyntaxKind::PathSegmentWithGenericArgs => Some(PathSegment::WithGenericArgs(
                 PathSegmentWithGenericArgs::from_syntax_node(db, node),
             )),
+            SyntaxKind::PathSegmentMissing => {
+                Some(PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -1726,6 +1743,7 @@ impl TypedSyntaxNode for PathSegment {
         match self {
             PathSegment::Simple(x) => x.as_syntax_node(),
             PathSegment::WithGenericArgs(x) => x.as_syntax_node(),
+            PathSegment::Missing(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -1740,7 +1758,12 @@ impl From<&PathSegment> for SyntaxStablePtrId {
 impl PathSegment {
     /// Checks if a kind of a variant of [PathSegment].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs)
+        matches!(
+            kind,
+            SyntaxKind::PathSegmentSimple
+                | SyntaxKind::PathSegmentWithGenericArgs
+                | SyntaxKind::PathSegmentMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2123,6 +2146,89 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
 }
 impl From<&PathSegmentWithGenericArgs> for SyntaxStablePtrId {
     fn from(node: &PathSegmentWithGenericArgs) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PathSegmentMissing {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl PathSegmentMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> PathSegmentMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        PathSegmentMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::PathSegmentMissing,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl PathSegmentMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentMissingPtr(pub SyntaxStablePtrId);
+impl PathSegmentMissingPtr {}
+impl TypedStablePtr for PathSegmentMissingPtr {
+    type SyntaxNode = PathSegmentMissing;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> PathSegmentMissing {
+        PathSegmentMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<PathSegmentMissingPtr> for SyntaxStablePtrId {
+    fn from(ptr: PathSegmentMissingPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentMissingGreen(pub GreenId);
+impl TypedSyntaxNode for PathSegmentMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentMissing);
+    type StablePtr = PathSegmentMissingPtr;
+    type Green = PathSegmentMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PathSegmentMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::PathSegmentMissing,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PathSegmentMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PathSegmentMissing
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PathSegmentMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PathSegmentMissingPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&PathSegmentMissing> for SyntaxStablePtrId {
+    fn from(node: &PathSegmentMissing) -> Self {
         node.stable_ptr().untyped()
     }
 }
