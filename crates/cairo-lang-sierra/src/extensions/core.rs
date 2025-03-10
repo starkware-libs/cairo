@@ -53,6 +53,7 @@ use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
 use super::trace::TraceLibfunc;
 use super::uninitialized::UninitializedType;
+use super::unsafe_panic::UnsafePanicLibfunc;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
@@ -154,5 +155,6 @@ define_libfunc_hierarchy! {
         BoundedInt(BoundedIntLibfunc),
         Trace(TraceLibfunc),
         QM31(QM31Libfunc),
+        UnsafePanic(UnsafePanicLibfunc),
     }, CoreConcreteLibfunc
 }
