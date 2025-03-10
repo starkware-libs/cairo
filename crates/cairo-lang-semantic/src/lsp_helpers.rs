@@ -187,7 +187,7 @@ fn visible_importables_in_module_ex(
             ResolvedGenericItem::Impl(item_id) => {
                 (ImportableId::Impl(item_id), item_id.name(db.upcast()))
             }
-            ResolvedGenericItem::Variable(_) => continue,
+            ResolvedGenericItem::Variable(_) | ResolvedGenericItem::TraitItem(_) => continue,
         };
 
         result.push((resolved_item, name.to_string()));

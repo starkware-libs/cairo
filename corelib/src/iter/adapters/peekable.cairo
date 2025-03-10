@@ -1,4 +1,4 @@
-/// An iterator with a `peek()` that returns a copy to the next
+/// An iterator with a `peek()` that returns a copy of the next
 /// element.
 ///
 /// This `struct` is created by the [`peekable`] method on [`Iterator`]. See its

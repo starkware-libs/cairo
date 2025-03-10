@@ -68,10 +68,7 @@ impl ComponentsGenerationData {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-            let component_name = match component_path.elements(db).last().unwrap() {
-                ast::PathSegment::WithGenericArgs(x) => x.ident(db),
-                ast::PathSegment::Simple(x) => x.ident(db),
-            };
+            let component_name = component_path.elements(db).last().unwrap().identifier_ast(db);
 
             let has_component_impl = RewriteNode::interpolate_patched(
                 &formatdoc!(
