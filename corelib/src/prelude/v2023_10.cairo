@@ -10,6 +10,7 @@ pub use crate::clone::Clone;
 pub use crate::dict::{Felt252Dict, Felt252DictTrait, SquashedFelt252Dict};
 pub use crate::gas::GasBuiltin;
 pub use crate::integer::{Bitwise, i128, i16, i32, i64, i8, u128, u16, u256, u32, u64, u8};
+pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 pub use crate::nullable::{Nullable, NullableTrait};
 pub use crate::ops::Deref;
 pub use crate::option::Option::{None, Some};
@@ -20,19 +21,10 @@ pub use crate::poseidon::Poseidon;
 pub use crate::result::Result::{Err, Ok};
 pub use crate::result::{Result, ResultTrait};
 pub use crate::serde::Serde;
-pub use crate::traits::{
-    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
-    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
-};
-pub use crate::iter::{FromIterator, IntoIterator, Iterator};
-pub use crate::zeroable::NonZero;
-pub use crate::{
-    RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, to_byte_array, usize,
-};
-#[feature("corelib-internal-use")]
-pub use crate::starknet::System;
 #[feature("corelib-internal-use")]
 pub use crate::starknet;
+#[feature("corelib-internal-use")]
+pub use crate::starknet::System;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]
@@ -68,3 +60,11 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
+pub use crate::traits::{
+    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
+    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
+};
+pub use crate::zeroable::NonZero;
+pub use crate::{
+    RangeCheck, SegmentArena, assert, bool, felt252, keccak, math, to_byte_array, usize,
+};
