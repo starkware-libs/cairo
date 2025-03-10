@@ -262,6 +262,7 @@
         "u96_limbs_less_than_guarantee_verify",
         "u96_single_limb_less_than_guarantee_verify",
         "unbox",
+        "unsafe_panic",
         "unwrap_non_zero",
         "upcast",
         "withdraw_gas",
