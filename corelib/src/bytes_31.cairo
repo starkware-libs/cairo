@@ -14,12 +14,12 @@
 //! assert!(value[0] == 0xbb);
 //! ```
 
-use crate::traits::{Into, TryInto};
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;

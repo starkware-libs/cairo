@@ -1265,23 +1265,17 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         (_, UsePath::Multi(_)) => Ordering::Less,
 
         // Case for Leaf vs Single and Single vs Leaf.
-        (UsePath::Leaf(a_leaf), UsePath::Single(b_single)) => {
-            let a_str = a_leaf.extract_ident(db);
-            let b_str = b_single.extract_ident(db);
-
-            match a_str.cmp(&b_str) {
+        (UsePath::Leaf(a), UsePath::Single(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
                 // Leaf is always ordered before Single if equal.
                 Ordering::Equal => Ordering::Less,
                 other => other,
             }
         }
 
-        (UsePath::Single(a_single), UsePath::Leaf(b_leaf)) => {
-            let a_str = a_single.extract_ident(db);
-            let b_str = b_leaf.extract_ident(db);
-
-            // Compare the extracted identifiers.
-            match a_str.cmp(&b_str) {
+        (UsePath::Single(a), UsePath::Leaf(b)) => {
+            // Compare the identifiers.
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
                 // Single is ordered after Leaf if equal.
                 Ordering::Equal => Ordering::Greater,
                 other => other,
@@ -1290,29 +1284,19 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
 
         // Case for Leaf vs Leaf: compare their identifiers, and only if they are equal, compare
         // their aliases.
-        (UsePath::Leaf(a_leaf), UsePath::Leaf(b_leaf)) => {
-            match a_leaf.extract_ident(db).cmp(&b_leaf.extract_ident(db)) {
-                Ordering::Equal => a_leaf.extract_alias(db).cmp(&b_leaf.extract_alias(db)),
+        (UsePath::Leaf(a), UsePath::Leaf(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+                Ordering::Equal => a.extract_alias(db).cmp(&b.extract_alias(db)),
                 other => other,
             }
         }
 
         // Case for Single vs Single: compare their identifiers, then move to the next segment if
         // equal.
-        (UsePath::Single(a_single), UsePath::Single(b_single)) => {
-            let a_ident = a_single.extract_ident(db);
-            let b_ident = b_single.extract_ident(db);
-
-            match (a_ident.as_str(), b_ident.as_str()) {
-                ("super" | "crate", "super" | "crate") => a_ident.cmp(&b_ident),
-                ("super" | "crate", _) => Ordering::Greater,
-                (_, "super" | "crate") => Ordering::Less,
-                _ => match a_ident.cmp(&b_ident) {
-                    Ordering::Equal => {
-                        compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
-                    }
-                    other => other,
-                },
+        (UsePath::Single(a), UsePath::Single(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+                Ordering::Equal => compare_use_paths(&a.use_path(db), &b.use_path(db), db),
+                other => other,
             }
         }
 
@@ -1320,6 +1304,16 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         (UsePath::Star(_), UsePath::Star(_)) => Ordering::Equal,
         (UsePath::Star(_), _) => Ordering::Less,
         (_, UsePath::Star(_)) => Ordering::Greater,
+    }
+}
+
+/// Compares two names, with special handling for "super" and "crate".
+fn compare_names(a: &str, b: &str) -> Ordering {
+    match (a, b) {
+        ("super" | "crate", "super" | "crate") => a.cmp(b),
+        ("super" | "crate", _) => Ordering::Greater,
+        (_, "super" | "crate") => Ordering::Less,
+        _ => a.cmp(b),
     }
 }
 

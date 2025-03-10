@@ -1,7 +1,7 @@
+use crate::blake::{blake2s_compress, blake2s_finalize};
 use crate::hash::{HashStateExTrait, HashStateTrait};
 use crate::poseidon::PoseidonTrait;
 use crate::test::test_utils::assert_eq;
-use crate::blake::{blake2s_compress, blake2s_finalize};
 
 #[test]
 fn test_pedersen_hash() {

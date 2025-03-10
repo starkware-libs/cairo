@@ -61,15 +61,15 @@
 //!
 //! [`append`]: ArrayTrait::append
 
-use crate::box::BoxTrait;
-use crate::iter::Iterator;
-use crate::metaprogramming::TypeEqual;
-use crate::serde::Serde;
 use crate::RangeCheck;
+use crate::box::BoxTrait;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
+use crate::iter::Iterator;
+use crate::metaprogramming::TypeEqual;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
+use crate::serde::Serde;
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
 /// A collection of elements of the same type contiguous in memory.

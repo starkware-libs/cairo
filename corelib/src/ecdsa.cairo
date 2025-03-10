@@ -14,13 +14,13 @@
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
 use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
-use crate::{ec, math};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::IsZeroResult;
+use crate::{ec, math};
 
 /// Verifies an ECDSA signature against a message hash and public key.
 ///

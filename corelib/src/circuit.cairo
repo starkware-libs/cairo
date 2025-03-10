@@ -764,8 +764,8 @@ extern fn get_circuit_output<C, Output>(
 /// Helper module to convert into `u384`.
 mod conversions {
     use crate::integer::{downcast, upcast};
-    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
     use crate::internal::bounded_int;
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
     use super::{u384, u96};
 
     const POW128: felt252 = 0x100000000000000000000000000000000;
