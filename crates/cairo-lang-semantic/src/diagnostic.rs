@@ -1055,7 +1055,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedImport { .. }
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
-            | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
