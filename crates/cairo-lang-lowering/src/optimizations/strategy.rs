@@ -150,6 +150,8 @@ pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrate
         OptimizationPhase::DedupBlocks,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::EarlyUnsafePanic,
+        OptimizationPhase::TrimUnreachable,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
