@@ -51,12 +51,12 @@
 //! let _result = state.finalize();
 //! ```
 
-use crate::zeroable::IsZeroResult;
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
+use crate::zeroable::IsZeroResult;
 
 pub mod stark_curve {
     /// The STARK Curve is defined by the equation y² ≡ x³ + α·x + β (mod p).

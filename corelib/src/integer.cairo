@@ -65,14 +65,14 @@
 //! * [`TryInto`] for potentially fallible conversions
 //! * [`Into`] for infallible conversions to wider types
 
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
-#[allow(unused_imports)]
-use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
-use crate::RangeCheck;
+#[allow(unused_imports)]
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(spapini): Add method for const creation from Integer.
 pub trait NumericLiteral<T>;

@@ -2,7 +2,6 @@ pub use starknet::storage::{
     StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
     StoragePointerWriteAccess,
 };
-pub use crate::ops::Deref;
 use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
 use crate::box::{Box, BoxTrait};
 use crate::byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
@@ -23,7 +22,12 @@ use crate::integer::{
     U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, u128, u128_is_zero, u16, u256, u32, u64,
     u8,
 };
+#[feature("corelib-internal-use")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
+use crate::integer::{u128_sqrt, u256_sqrt};
+use crate::iter::{FromIterator, IntoIterator, Iterator};
 use crate::nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
+pub use crate::ops::Deref;
 use crate::option::Option::{None, Some};
 use crate::option::{Option, OptionTrait};
 use crate::panics::{Panic, PanicResult, panic};
@@ -32,32 +36,11 @@ use crate::poseidon::Poseidon;
 use crate::result::Result::{Err, Ok};
 use crate::result::{Result, ResultTrait};
 use crate::serde::Serde;
-use crate::string::StringLiteral;
-use crate::traits::{
-    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
-    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
-    TupleSize0Copy, TupleSize0Drop,
-};
-use crate::iter::{FromIterator, IntoIterator, Iterator};
-use crate::zeroable::{NonZero, Zeroable};
-use crate::{
-    BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,
-    BoolPartialEq, BoolSerde, Felt252Add, Felt252AddEq, Felt252Default, Felt252Felt252DictValue,
-    Felt252Mul, Felt252MulEq, Felt252Neg, Felt252PartialEq, Felt252Serde, Felt252Sub, Felt252SubEq,
-    Felt252TryIntoNonZero, RangeCheck, SegmentArena, array, assert, bool, bool_and_impl,
-    bool_not_impl, bool_or_impl, bool_to_felt252, bool_xor_impl, box, byte_array, bytes_31, clone,
-    cmp, debug, dict, drop, dup, ec, ecdsa, felt252, felt252_add, felt252_const, felt252_div,
-    felt252_is_zero, felt252_mul, felt252_sub, gas, hash, integer, internal, keccak, math, never,
-    nullable, option, panic_with_felt252, panics, pedersen, poseidon, result, serde, string,
-    testing, to_byte_array, traits, usize, zeroable,
-};
-#[feature("corelib-internal-use")]
-use crate::starknet::System;
 #[feature("corelib-internal-use")]
 use crate::starknet;
 #[feature("corelib-internal-use")]
-#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
-use crate::integer::{u128_sqrt, u256_sqrt};
+use crate::starknet::System;
+use crate::string::StringLiteral;
 #[cfg(test)]
 use crate::test;
 #[deprecated(
@@ -85,5 +68,22 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
+use crate::traits::{
+    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
+    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
+    TupleSize0Copy, TupleSize0Drop,
+};
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index, IndexView};
+use crate::zeroable::{NonZero, Zeroable};
+use crate::{
+    BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,
+    BoolPartialEq, BoolSerde, Felt252Add, Felt252AddEq, Felt252Default, Felt252Felt252DictValue,
+    Felt252Mul, Felt252MulEq, Felt252Neg, Felt252PartialEq, Felt252Serde, Felt252Sub, Felt252SubEq,
+    Felt252TryIntoNonZero, RangeCheck, SegmentArena, array, assert, bool, bool_and_impl,
+    bool_not_impl, bool_or_impl, bool_to_felt252, bool_xor_impl, box, byte_array, bytes_31, clone,
+    cmp, debug, dict, drop, dup, ec, ecdsa, felt252, felt252_add, felt252_const, felt252_div,
+    felt252_is_zero, felt252_mul, felt252_sub, gas, hash, integer, internal, keccak, math, never,
+    nullable, option, panic_with_felt252, panics, pedersen, poseidon, result, serde, string,
+    testing, to_byte_array, traits, usize, zeroable,
+};
