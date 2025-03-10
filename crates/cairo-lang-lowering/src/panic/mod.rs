@@ -1,9 +1,12 @@
 use std::collections::VecDeque;
 
+use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty, never_ty};
+use cairo_lang_semantic::corelib::{
+    core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty, never_ty,
+};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};
@@ -14,12 +17,14 @@ use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx, Signature};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, SemanticFunctionIdEx, Signature,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo,
-    MatchInfo, Statement, StatementCall, StatementEnumConstruct, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementEnumConstruct,
+    StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -36,12 +41,39 @@ pub fn lower_panics(
     if !db.function_with_body_may_panic(function_id)? {
         return Ok(());
     }
-
     let variables = VariableAllocator::new(
         db,
         function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
+
+    let opt_trace_fn = if matches!(
+        db.get_flag(FlagId::new(db.upcast(), "panic_backtrace")),
+        Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
+    ) {
+        Some(
+            ModuleHelper::core(db.upcast())
+                .submodule("internal")
+                .function_id(
+                    "trace",
+                    vec![GenericArgumentId::Constant(
+                        ConstValue::Int(
+                            0x70616e6963u64.into(), // 'panic' as numeric.
+                            db.core_info().felt252,
+                        )
+                        .intern(db),
+                    )],
+                )
+                .lowered(db),
+        )
+    } else {
+        None
+    };
+
+    if flag_unsafe_panic(db.upcast()) {
+        lower_unsafe_panic(db, lowered, opt_trace_fn);
+        return Ok(());
+    }
 
     let signature = function_id.signature(db)?;
     // All types should be fully concrete at this point.
@@ -54,23 +86,7 @@ pub fn lower_panics(
         panic_info,
     };
 
-    if matches!(
-        db.get_flag(FlagId::new(db.upcast(), "panic_backtrace")),
-        Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
-    ) {
-        let trace_fn = ModuleHelper::core(db.upcast())
-            .submodule("internal")
-            .function_id(
-                "trace",
-                vec![GenericArgumentId::Constant(
-                    ConstValue::Int(
-                        0x70616e6963u64.into(), // 'panic' as numeric.
-                        db.core_info().felt252,
-                    )
-                    .intern(db),
-                )],
-            )
-            .lowered(db);
+    if let Some(trace_fn) = opt_trace_fn {
         for block in ctx.block_queue.iter_mut() {
             if let FlatBlockEnd::Panic(end) = &block.end {
                 block.statements.push(Statement::Call(StatementCall {
@@ -93,6 +109,56 @@ pub fn lower_panics(
     lowered.blocks = ctx.flat_blocks.build().unwrap();
 
     Ok(())
+}
+
+/// Lowering phase that converts BlockEnd::Panic into BlockEnd::Match { function: unsafe_panic }.
+/// 'opt_trace_fn' is an optional function to call before the panic.
+fn lower_unsafe_panic(
+    db: &dyn LoweringGroup,
+    lowered: &mut FlatLowered,
+    opt_trace_fn: Option<FunctionId>,
+) {
+    let semantic_db = db.upcast();
+    let panics = core_submodule(semantic_db, "panics");
+    let panic_func_id = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        panics,
+        "unsafe_panic".into(),
+        vec![],
+    ))
+    .intern(db);
+
+    for block in lowered.blocks.iter_mut() {
+        let FlatBlockEnd::Panic(err_data) = &mut block.end else {
+            continue;
+        };
+
+        // Clean up undroppable panic related variables to pass add_destructs.
+        let Some(Statement::StructConstruct(tuple_construct)) = block.statements.pop() else {
+            panic!("Expected a tuple construct before the panic.");
+        };
+        assert_eq!(tuple_construct.output, err_data.var_id);
+        assert_matches!( block.statements.pop(), Some(Statement::StructConstruct(panic_consturct)) if panic_consturct.output == tuple_construct.inputs[0].var_id);
+
+        if let Some(trace_fn) = opt_trace_fn {
+            block.statements.push(Statement::Call(StatementCall {
+                function: trace_fn,
+                inputs: vec![],
+                with_coupon: false,
+                outputs: vec![],
+                location: err_data.location,
+            }));
+        }
+
+        block.end = FlatBlockEnd::Match {
+            info: MatchInfo::Extern(MatchExternInfo {
+                arms: vec![],
+                location: err_data.location,
+                function: panic_func_id,
+                inputs: vec![],
+            }),
+        }
+    }
 }
 
 /// Handles the lowering of panics in a single block.
