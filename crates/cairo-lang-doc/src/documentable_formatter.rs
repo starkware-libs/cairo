@@ -55,6 +55,8 @@ impl fmt::Display for SignatureError {
     }
 }
 
+impl std::error::Error for SignatureError {}
+
 /// Used for indenting children items of complex data type signature e.g. struct members.
 const INDENT: &str = "    ";
 /// Returned when item's signature could not be determined.
@@ -85,30 +87,25 @@ pub fn get_item_signature_with_links(
                 ModuleItemId::Impl(item_id) => item_id.get_signature_with_links(&mut f),
                 ModuleItemId::ExternType(item_id) => item_id.get_signature_with_links(&mut f),
                 ModuleItemId::ExternFunction(item_id) => item_id.get_signature_with_links(&mut f),
-                _ => panic!("get_item_signature not implemented for item_id: {:?}", item_id),
+                ModuleItemId::Submodule(_) => (None, vec![]),
+                ModuleItemId::Use(_) => (None, vec![]),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
                 TraitItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
                 TraitItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
                 TraitItemId::Type(item_id) => item_id.get_signature_with_links(&mut f),
-                _ => {
-                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-                }
+                TraitItemId::Impl(_) => (None, vec![]),
             },
             LookupItemId::ImplItem(item_id) => match item_id {
                 ImplItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
                 ImplItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
                 ImplItemId::Type(item_id) => item_id.get_signature_with_links(&mut f),
-                _ => {
-                    panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-                }
+                ImplItemId::Impl(_) => (None, vec![]),
             },
         },
         DocumentableItemId::Member(item_id) => item_id.get_signature_with_links(&mut f),
         DocumentableItemId::Variant(item_id) => item_id.get_signature_with_links(&mut f),
-        DocumentableItemId::Crate(_) => {
-            panic!("get_item_signature not implemented for item_id: {:?}", item_id)
-        }
+        DocumentableItemId::Crate(_) => (None, vec![]),
     }
 }
 
@@ -148,9 +145,6 @@ pub trait HirDisplay {
         f: &mut HirFormatter<'_>,
     ) -> (Option<String>, Vec<LocationLink>) {
         let signature = self.get_signature(f);
-        println!("get_signature_with_links");
-        println!("sign: {:?}", signature);
-        // (self.get_signature(f), f.location_links.clone())
         (signature, f.location_links.clone())
     }
 }
@@ -285,11 +279,12 @@ impl HirDisplay for VariantId {
 impl HirDisplay for EnumId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let enum_full_signature = get_enum_signature_data(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}enum {} {{",
             get_syntactic_visibility(&enum_full_signature.visibility),
             enum_full_signature.name,
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(enum_full_signature.full_path.clone())
         })?;
@@ -311,7 +306,7 @@ impl HirDisplay for EnumId {
                             )
                         })?;
                     } else {
-                        f.write_str(&format!("\n{INDENT}{name},",)).map_err(|_| {
+                        write!(f, "\n{INDENT}{name},").map_err(|_| {
                             SignatureError::FailedWritingSignature(
                                 enum_full_signature.full_path.clone(),
                             )
@@ -332,27 +327,34 @@ impl HirDisplay for EnumId {
 impl HirDisplay for MemberId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let member_full_signature = get_member_signature_data(f.db.upcast(), *self)?;
-        if member_full_signature.return_type.unwrap().is_unit(f.db.upcast()) {
-            f.write_str(&format!(
-                "{}{}",
-                get_syntactic_visibility(&member_full_signature.visibility),
-                member_full_signature.name
-            ))
-            .map_err(|_| {
-                SignatureError::FailedWritingSignature(member_full_signature.full_path.clone())
-            })
-        } else {
-            f.write_type(
-                Some(&format!(
-                    "{}{}: ",
+        if let Some(return_type) = member_full_signature.return_type {
+            if return_type.is_unit(f.db.upcast()) {
+                write!(
+                    f,
+                    "{}{}",
                     get_syntactic_visibility(&member_full_signature.visibility),
-                    member_full_signature.name,
-                )),
-                member_full_signature.return_type.unwrap(),
-                None,
-                &member_full_signature.full_path,
-            )
-            .map_err(|_| SignatureError::FailedWritingType(member_full_signature.full_path.clone()))
+                    member_full_signature.name
+                )
+                .map_err(|_| {
+                    SignatureError::FailedWritingSignature(member_full_signature.full_path.clone())
+                })
+            } else {
+                f.write_type(
+                    Some(&format!(
+                        "{}{}: ",
+                        get_syntactic_visibility(&member_full_signature.visibility),
+                        member_full_signature.name,
+                    )),
+                    return_type,
+                    None,
+                    &member_full_signature.full_path,
+                )
+                .map_err(|_| {
+                    SignatureError::FailedWritingType(member_full_signature.full_path.clone())
+                })
+            }
+        } else {
+            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db.upcast())))
         }
     }
 }
@@ -365,17 +367,20 @@ impl HirDisplay for StructId {
                 SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
             })?;
         }
-        f.write_str(&format!(
+        write!(
+            f,
             "{}struct {}",
             get_syntactic_visibility(&struct_full_signature.visibility),
             struct_full_signature.name,
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
         })?;
-        write_generic_params(struct_full_signature.generic_params.unwrap(), f).map_err(|_| {
-            SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
-        })?;
+        if let Some(generic_params) = struct_full_signature.generic_params {
+            write_generic_params(generic_params, f).map_err(|_| {
+                SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
+            })?;
+        }
         f.write_str(" {").map_err(|_| {
             SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
         })?;
@@ -415,62 +420,71 @@ impl HirDisplay for FreeFunctionId {
 impl HirDisplay for ConstantId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let constant_full_signature = get_constant_signature_data(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}const {}: ",
             get_syntactic_visibility(&constant_full_signature.visibility),
             constant_full_signature.name,
-        ))
-        .map_err(|_| {
-            SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
-        })?;
-        f.write_type(
-            None,
-            constant_full_signature.return_type.unwrap(),
-            Some(" = "),
-            &constant_full_signature.full_path,
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
         })?;
-
-        match constant_full_signature.return_value_expr.unwrap() {
-            Expr::Literal(v) => f.write_str(&format!("{};", v.value,)).map_err(|_| {
-                SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
-            }),
-            Expr::FunctionCall(_) => {
-                let const_value_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                    .constant_const_value(*self)
-                    .map_err(|_| {
-                        SignatureError::FailedRetrievingSemanticData(
-                            constant_full_signature.full_path.clone(),
-                        )
-                    })?;
-                let constant_value = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
-                    .lookup_intern_const_value(const_value_id);
-                if let ConstValue::Int(value, _) = constant_value {
-                    write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
-                        |_| {
+        if let Some(return_type) = constant_full_signature.return_type {
+            f.write_type(None, return_type, Some(" = "), &constant_full_signature.full_path)
+                .map_err(|_| {
+                    SignatureError::FailedWritingSignature(
+                        constant_full_signature.full_path.clone(),
+                    )
+                })?;
+        }
+        if let Some(return_value_expr) = constant_full_signature.return_value_expr {
+            match return_value_expr {
+                Expr::Literal(v) => write!(f, "{};", v.value,).map_err(|_| {
+                    SignatureError::FailedWritingSignature(
+                        constant_full_signature.full_path.clone(),
+                    )
+                }),
+                Expr::FunctionCall(_) => {
+                    let const_value_id = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
+                        .constant_const_value(*self)
+                        .map_err(|_| {
+                            SignatureError::FailedRetrievingSemanticData(
+                                constant_full_signature.full_path.clone(),
+                            )
+                        })?;
+                    let constant_value = <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db)
+                        .lookup_intern_const_value(const_value_id);
+                    if let ConstValue::Int(value, _) = constant_value {
+                        write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
+                            |_| {
+                                SignatureError::FailedWritingSignature(
+                                    constant_full_signature.full_path.clone(),
+                                )
+                            },
+                        )?;
+                        write!(f, " // = {}", value).map_err(|_| {
                             SignatureError::FailedWritingSignature(
                                 constant_full_signature.full_path.clone(),
                             )
-                        },
-                    )?;
-                    f.write_str(&format!(" // = {}", value)).map_err(|_| {
-                        SignatureError::FailedWritingSignature(
-                            constant_full_signature.full_path.clone(),
+                        })
+                    } else {
+                        write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
+                            |_| {
+                                SignatureError::FailedWritingSignature(
+                                    constant_full_signature.full_path.clone(),
+                                )
+                            },
                         )
-                    })
-                } else {
-                    write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(|_| {
-                        SignatureError::FailedWritingSignature(
-                            constant_full_signature.full_path.clone(),
-                        )
-                    })
+                    }
                 }
+                _ => write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(|_| {
+                    SignatureError::FailedWritingSignature(
+                        constant_full_signature.full_path.clone(),
+                    )
+                }),
             }
-            _ => write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(|_| {
-                SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
-            }),
+        } else {
+            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db.upcast())))
         }
     }
 }
@@ -478,15 +492,17 @@ impl HirDisplay for ConstantId {
 impl HirDisplay for ImplConstantDefId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let constant_full_signature = get_impl_constant_signature_data(f.db.upcast(), *self)?;
-        f.write_type(
-            Some(&format!("const {}: ", constant_full_signature.name,)),
-            constant_full_signature.return_type.unwrap(),
-            Some(" = "),
-            &constant_full_signature.full_path,
-        )
-        .map_err(|_| {
-            SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
-        })?;
+        if let Some(return_type) = constant_full_signature.return_type {
+            f.write_type(
+                Some(&format!("const {}: ", constant_full_signature.name,)),
+                return_type,
+                Some(" = "),
+                &constant_full_signature.full_path,
+            )
+            .map_err(|_| {
+                SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
+            })?;
+        }
         write_syntactic_evaluation(f, constant_full_signature.item_id)
             .map_err(|_| SignatureError::FailedWritingSignature(constant_full_signature.full_path))
     }
@@ -511,30 +527,40 @@ impl HirDisplay for ImplFunctionId {
 impl HirDisplay for TraitId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let trait_full_signature = get_trait_signature_data(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}trait {}",
             get_syntactic_visibility(&trait_full_signature.visibility),
             trait_full_signature.name,
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(trait_full_signature.full_path.clone())
         })?;
-        write_generic_params(trait_full_signature.generic_params.unwrap(), f)
-            .map_err(|_| SignatureError::FailedWritingSignature(trait_full_signature.full_path))
+        if let Some(generic_params) = trait_full_signature.generic_params {
+            write_generic_params(generic_params, f)
+                .map_err(|_| SignatureError::FailedWritingSignature(trait_full_signature.full_path))
+        } else {
+            Ok(())
+        }
     }
 }
 
 impl HirDisplay for TraitConstantId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let trait_const_full_signature = get_trait_const_signature_data(f.db.upcast(), *self)?;
-        f.write_str(&format!(
-            "const {}: {};",
-            trait_const_full_signature.name,
-            extract_and_format(
-                &trait_const_full_signature.return_type.unwrap().format(f.db.upcast())
-            ),
-        ))
-        .map_err(|_| SignatureError::FailedWritingSignature(trait_const_full_signature.full_path))
+        if let Some(return_type) = trait_const_full_signature.return_type {
+            write!(
+                f,
+                "const {}: {};",
+                trait_const_full_signature.name,
+                extract_and_format(&return_type.format(f.db.upcast())),
+            )
+            .map_err(|_| {
+                SignatureError::FailedWritingSignature(trait_const_full_signature.full_path)
+            })
+        } else {
+            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db.upcast())))
+        }
     }
 }
 
@@ -550,23 +576,26 @@ impl HirDisplay for ImplDefId {
                     ));
                 }
             };
-        let resolver_generic_params = format_resolver_generic_params(
-            f.db,
-            impl_def_full_signature.resolver_generic_params.unwrap(),
-        );
-        f.write_str(&format!(
-            "{}impl {}{} of {}",
-            get_syntactic_visibility(&impl_def_full_signature.visibility),
-            impl_def_full_signature.name,
-            resolver_generic_params,
-            trait_id.name(f.db.upcast()),
-        ))
-        .map_err(|_| {
-            SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
-        })?;
-        write_generic_args(impl_def_full_signature.generic_args.unwrap(), f).map_err(|_| {
-            SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
-        })?;
+        if let Some(resolver_generic_params) = impl_def_full_signature.resolver_generic_params {
+            let resolver_generic_params =
+                format_resolver_generic_params(f.db, resolver_generic_params);
+            write!(
+                f,
+                "{}impl {}{} of {}",
+                get_syntactic_visibility(&impl_def_full_signature.visibility),
+                impl_def_full_signature.name,
+                resolver_generic_params,
+                trait_id.name(f.db.upcast()),
+            )
+            .map_err(|_| {
+                SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
+            })?;
+        }
+        if let Some(generic_args) = impl_def_full_signature.generic_args {
+            write_generic_args(generic_args, f).map_err(|_| {
+                SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
+            })?;
+        }
         f.write_str(";")
             .map_err(|_| SignatureError::FailedWritingSignature(impl_def_full_signature.full_path))
     }
@@ -575,11 +604,12 @@ impl HirDisplay for ImplDefId {
 impl HirDisplay for ImplAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let impl_alias_full_signature = get_impl_alias_signature_data(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}impl {} = ",
             get_syntactic_visibility(&impl_alias_full_signature.visibility),
             self.name(f.db.upcast()),
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(impl_alias_full_signature.full_path.clone())
         })?;
@@ -593,11 +623,12 @@ impl HirDisplay for ModuleTypeAliasId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let module_type_alias_full_signature =
             get_module_type_alias_full_signature(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}type {} = ",
             get_syntactic_visibility(&module_type_alias_full_signature.visibility),
             self.name(f.db.upcast()),
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(
                 module_type_alias_full_signature.full_path.clone(),
@@ -612,7 +643,7 @@ impl HirDisplay for ModuleTypeAliasId {
 impl HirDisplay for TraitTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let trait_type_full_signature = get_trait_type_full_signature(f.db.upcast(), *self)?;
-        f.write_str(&format!("type {};", trait_type_full_signature.name,)).map_err(|_| {
+        write!(f, "type {};", trait_type_full_signature.name,).map_err(|_| {
             SignatureError::FailedWritingSignature(trait_type_full_signature.full_path)
         })
     }
@@ -621,47 +652,59 @@ impl HirDisplay for TraitTypeId {
 impl HirDisplay for ImplTypeDefId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db.upcast(), *self)?;
-        f.write_str(&format!(
-            "type {} = {};",
-            impl_type_def_full_signature.name,
-            extract_and_format(
-                &impl_type_def_full_signature.return_type.unwrap().format(f.db.upcast())
-            ),
-        ))
-        .map_err(|_| SignatureError::FailedWritingSignature(impl_type_def_full_signature.full_path))
+        if let Some(return_type) = impl_type_def_full_signature.return_type {
+            write!(
+                f,
+                "type {} = {};",
+                impl_type_def_full_signature.name,
+                extract_and_format(&return_type.format(f.db.upcast())),
+            )
+            .map_err(|_| {
+                SignatureError::FailedWritingSignature(impl_type_def_full_signature.full_path)
+            })
+        } else {
+            Err(SignatureError::FailedRetrievingSemanticData(self.full_path(f.db.upcast())))
+        }
     }
 }
 
 impl HirDisplay for ExternTypeId {
     fn hir_fmt(&self, f: &mut HirFormatter<'_>) -> Result<(), SignatureError> {
         let extern_type_full_signature = get_extern_type_full_signature(f.db.upcast(), *self)?;
-        f.write_str(&format!(
+        write!(
+            f,
             "{}extern type {}",
             get_syntactic_visibility(&extern_type_full_signature.visibility),
             self.name(f.db.upcast()),
-        ))
+        )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(extern_type_full_signature.full_path.clone())
         })?;
-        let generic_params = extern_type_full_signature.generic_params.unwrap();
-        if !generic_params.is_empty() {
-            f.write_str("<").map_err(|_| {
-                SignatureError::FailedWritingSignature(extern_type_full_signature.full_path.clone())
-            })?;
-            for param in generic_params {
-                f.write_str(
-                    param.id().name(f.db.upcast()).unwrap_or(SmolStr::from(MISSING)).as_str(),
-                )
-                .map_err(|_| {
+        if let Some(generic_params) = extern_type_full_signature.generic_params {
+            if !generic_params.is_empty() {
+                f.write_str("<").map_err(|_| {
+                    SignatureError::FailedWritingSignature(
+                        extern_type_full_signature.full_path.clone(),
+                    )
+                })?;
+                for param in generic_params {
+                    f.write_str(
+                        param.id().name(f.db.upcast()).unwrap_or(SmolStr::from(MISSING)).as_str(),
+                    )
+                    .map_err(|_| {
+                        SignatureError::FailedWritingSignature(
+                            extern_type_full_signature.full_path.clone(),
+                        )
+                    })?;
+                }
+                f.write_str(">").map_err(|_| {
                     SignatureError::FailedWritingSignature(
                         extern_type_full_signature.full_path.clone(),
                     )
                 })?;
             }
-            f.write_str(">").map_err(|_| {
-                SignatureError::FailedWritingSignature(extern_type_full_signature.full_path.clone())
-            })?;
-        }
+        };
+
         f.write_str(";").map_err(|_| {
             SignatureError::FailedWritingSignature(extern_type_full_signature.full_path)
         })
@@ -690,11 +733,12 @@ impl HirDisplay for ExternFunctionId {
             })?;
             let mut count = signature.implicits.len();
             for type_id in &signature.implicits {
-                f.write_str(&format!(
+                write!(
+                    f,
                     "{}{}",
                     extract_and_format(&type_id.format(f.db.upcast())),
                     if count == 1 { ")".to_string() } else { ", ".to_string() }
-                ))
+                )
                 .map_err(|_| {
                     SignatureError::FailedWritingSignature(self.full_path(f.db.upcast()))
                 })?;
@@ -737,8 +781,8 @@ pub fn extract_and_format(input: &str) -> String {
             .map(|part| {
                 let mut parts = part.split("::").filter(|s| !s.is_empty()).collect::<Vec<_>>();
 
-                if parts.len() >= 2 && parts.last().unwrap().contains("<") {
-                    let last = parts.pop().unwrap();
+                if parts.len() >= 2 && parts.last().unwrap_or(&"").contains("<") {
+                    let last = parts.pop().unwrap_or("");
                     let generic_parts = last
                         .split::<&[_]>(&['<', '>', ':'])
                         .filter(|s| !s.is_empty())
@@ -823,13 +867,14 @@ fn write_function_signature(
         None => "".to_string(),
     };
 
-    f.write_str(&format!(
+    write!(
+        f,
         "{}{}fn {}{}",
         get_syntactic_visibility(&documentable_signature.visibility),
         syntactic_kind,
         documentable_signature.name,
         resolver_generic_params,
-    ))?;
+    )?;
     if let Some(generic_args) = documentable_signature.generic_args {
         write_generic_args(generic_args, f)?;
     }
@@ -853,10 +898,7 @@ fn write_function_signature(
                 )?;
             } else {
                 let type_definition = get_type_clause(syntax_node, f.db).unwrap_or_default();
-                f.write_str(&format!(
-                    "{modifier}{modifier_postfix}{}{type_definition}{postfix}",
-                    param.name,
-                ))?;
+                write!(f, "{modifier}{modifier_postfix}{}{type_definition}{postfix}", param.name,)?;
             }
             count -= 1;
         }
@@ -931,8 +973,8 @@ fn write_generic_args(
     }
     generic_args.iter().for_each(|arg| {
         let documentable_id = resolve_generic_arg(*arg, f.db);
-        f.write_link(extract_and_format(&arg.format(f.db.upcast())), documentable_id).unwrap();
-        f.write_str(if count == 1 { ">" } else { ", " }).unwrap();
+        let _ = f.write_link(extract_and_format(&arg.format(f.db.upcast())), documentable_id);
+        let _ = f.write_str(if count == 1 { ">" } else { ", " });
         count -= 1;
     });
     Ok(())
@@ -962,33 +1004,36 @@ fn write_syntactic_evaluation(
     f: &mut HirFormatter<'_>,
     item_id: DocumentableItemId,
 ) -> Result<(), fmt::Error> {
-    let syntax_node = item_id.stable_location(f.db.upcast()).unwrap().syntax_node(f.db.upcast());
-
-    if matches!(
-        &syntax_node.green_node(f.db.upcast()).details,
-        green::GreenNodeDetails::Node { .. }
-    ) {
-        let mut is_after_evaluation_value = false;
-        for child in f.db.get_children(syntax_node.clone()).iter() {
-            let kind = child.kind(f.db.upcast());
-            if !matches!(kind, SyntaxKind::Trivia) {
-                if matches!(kind, SyntaxKind::TerminalSemicolon) {
-                    f.buf.write_str(";")?;
-                    return Ok(());
-                }
-                if is_after_evaluation_value {
-                    f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
-                        child,
-                        f.db.upcast(),
-                    ))?;
-                };
-                if matches!(kind, SyntaxKind::TerminalEq) {
-                    is_after_evaluation_value = true;
+    if let Some(stable_location) = item_id.stable_location(f.db.upcast()) {
+        let syntax_node = stable_location.syntax_node(f.db.upcast());
+        if matches!(
+            &syntax_node.green_node(f.db.upcast()).details,
+            green::GreenNodeDetails::Node { .. }
+        ) {
+            let mut is_after_evaluation_value = false;
+            for child in f.db.get_children(syntax_node.clone()).iter() {
+                let kind = child.kind(f.db.upcast());
+                if !matches!(kind, SyntaxKind::Trivia) {
+                    if matches!(kind, SyntaxKind::TerminalSemicolon) {
+                        f.buf.write_str(";")?;
+                        return Ok(());
+                    }
+                    if is_after_evaluation_value {
+                        f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
+                            child,
+                            f.db.upcast(),
+                        ))?;
+                    };
+                    if matches!(kind, SyntaxKind::TerminalEq) {
+                        is_after_evaluation_value = true;
+                    }
                 }
             }
-        }
-    };
-    Ok(())
+        };
+        Ok(())
+    } else {
+        Err(fmt::Error)
+    }
 }
 
 /// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
@@ -1065,10 +1110,15 @@ fn resolve_generic_arg(
             Ok(type_id) => resolve_type(db, type_id),
             Err(_) => None,
         },
-        GenericArgumentId::Impl(impl_id) => {
-            let trait_id = impl_id.concrete_trait(db.upcast()).unwrap().trait_id(db.upcast());
-            Some(DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id))))
-        }
+        GenericArgumentId::Impl(impl_id) => match impl_id.concrete_trait(db.upcast()) {
+            Ok(concrete_trait) => {
+                let trait_id = concrete_trait.trait_id(db.upcast());
+                Some(DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(
+                    trait_id,
+                ))))
+            }
+            Err(_) => None,
+        },
         GenericArgumentId::NegImpl => None,
     }
 }
@@ -1090,9 +1140,7 @@ fn resolve_type(db: &dyn DocGroup, type_id: TypeId) -> Option<DocumentableItemId
                 ))))
             }
         },
-        TypeLongId::Tuple(_) => {
-            panic!("resolve_type not implemented for TypeLongId::Tuple")
-        }
+        TypeLongId::Tuple(_) => None,
         TypeLongId::Snapshot(type_id) => resolve_type(db, type_id),
         TypeLongId::GenericParameter(generic_param_id) => {
             let item = generic_param_id.generic_item(db.upcast());
@@ -1296,24 +1344,30 @@ fn get_member_signature_data(
 ) -> Result<DocumentableItemSignatureData, SignatureError> {
     let name = item_id.name(db.upcast());
     let struct_id = item_id.struct_id(db.upcast());
-    let semantic_members =
-        <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).struct_members(struct_id).unwrap();
-    let member = semantic_members.get(&name).unwrap();
-    Ok(DocumentableItemSignatureData {
-        item_id: Member(item_id),
-        name,
-        visibility: member.visibility,
-        generic_args: None,
-        generic_params: None,
-        variants: None,
-        members: None,
-        return_type: Some(member.ty),
-        attributes: None,
-        params: None,
-        resolver_generic_params: None,
-        return_value_expr: None,
-        full_path: item_id.full_path(db.upcast()),
-    })
+    match <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db).struct_members(struct_id) {
+        Ok(struct_members) => {
+            if let Some(member) = struct_members.get(&name) {
+                Ok(DocumentableItemSignatureData {
+                    item_id: Member(item_id),
+                    name,
+                    visibility: member.visibility,
+                    generic_args: None,
+                    generic_params: None,
+                    variants: None,
+                    members: None,
+                    return_type: Some(member.ty),
+                    attributes: None,
+                    params: None,
+                    resolver_generic_params: None,
+                    return_value_expr: None,
+                    full_path: item_id.full_path(db.upcast()),
+                })
+            } else {
+                Err(SignatureError::FailedRetrievingSemanticData(item_id.full_path(db.upcast())))
+            }
+        }
+        Err(_) => Err(SignatureError::FailedRetrievingSemanticData(item_id.full_path(db.upcast()))),
+    }
 }
 
 /// Retrieves data for free function signature formatting.
