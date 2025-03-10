@@ -16,6 +16,7 @@ cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.11.
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.11.2" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.2" }
+assert_matches.workspace = true
 id-arena.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
