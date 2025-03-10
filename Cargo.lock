@@ -931,6 +931,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
+ "id-arena",
  "indoc",
  "itertools 0.14.0",
  "log",

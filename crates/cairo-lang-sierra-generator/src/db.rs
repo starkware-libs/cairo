@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
@@ -149,7 +150,6 @@ fn get_function_signature(
     // there.
     let lowered_function_id = function_id.lookup_intern(db);
     let signature = lowered_function_id.signature(db.upcast())?;
-    let may_panic = db.function_may_panic(lowered_function_id)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
@@ -170,6 +170,9 @@ fn get_function_signature(
     }
 
     let mut ret_types = implicits;
+
+    let may_panic =
+        !flag_unsafe_panic(db.upcast()) && db.function_may_panic(lowered_function_id)?;
     if may_panic {
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
