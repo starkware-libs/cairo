@@ -108,8 +108,17 @@ struct RunArgs {
     #[clap(long, conflicts_with = "build_only")]
     secure_run: Option<bool>,
     /// Can we allow for missing builtins.
-    #[clap(long)]
+    #[clap(long, conflicts_with = "build_only")]
     allow_missing_builtins: Option<bool>,
+    /// Disable padding of the trace.
+    /// By default, the trace is padded to accommodate the expected builtins-n_steps relationships
+    /// according to the layout.
+    /// When the padding is disabled:
+    /// - It doesn't modify/pad n_steps.
+    /// - It still pads each builtin segment to the next power of 2 (w.r.t the number of used
+    ///   instances of the builtin) compared to their sizes at the end of the execution.
+    #[clap(long, conflicts_with = "build_only")]
+    disable_trace_padding: Option<bool>,
     #[clap(flatten)]
     proof_outputs: ProofOutputArgs,
 }
@@ -255,6 +264,7 @@ fn main() -> anyhow::Result<()> {
         proof_mode: args.run.standalone,
         secure_run: args.run.secure_run,
         allow_missing_builtins: args.run.allow_missing_builtins,
+        disable_trace_padding: args.run.disable_trace_padding.unwrap_or_default(),
         ..Default::default()
     };
 
