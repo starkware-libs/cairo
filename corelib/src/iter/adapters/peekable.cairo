@@ -46,7 +46,7 @@ impl PeekableIterator<
 pub impl PeekableTraitImpl<
     I, impl IterI: Iterator<I>, +Copy<IterI::Item>, +Drop<IterI::Item>,
 > of PeekableTrait<I> {
-    /// Returns a copy to the next() value without advancing the iterator.
+    /// Returns a copy of the next() value without advancing the iterator.
     ///
     /// Like [`next`], if there is a value, it is wrapped in a `Some(T)`.
     /// But if the iteration is over, `None` is returned.
