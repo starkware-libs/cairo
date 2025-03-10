@@ -1,7 +1,7 @@
 //! Trait and implementations for raising a value to a power.
 //!
 //! This module provides efficient exponentiation operations for numeric types using
-//! the square-and-multiply algorithm, which achieves logarithmic time complexity O(log n).
+//! the square and multiply algorithm, which achieves logarithmic time complexity O(log n).
 
 /// Raises a value to the power of `exp`.
 ///
