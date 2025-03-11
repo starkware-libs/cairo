@@ -10,6 +10,7 @@ pub mod helper;
 pub mod ids;
 pub mod inline_macros;
 pub mod items;
+pub mod keyword;
 pub mod lookup_item;
 pub mod lsp_helpers;
 pub mod plugin;

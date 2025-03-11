@@ -19,6 +19,7 @@ use crate::expr::inference::InferenceId;
 use crate::items::functions::GenericFunctionId;
 use crate::items::us::SemanticUseEx;
 use crate::items::visibility::peek_visible_in;
+use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolvedGenericItem, Resolver};
 use crate::types::TypeHead;
 
@@ -49,7 +50,7 @@ pub fn methods_in_module(
             let Some(first_param) = signature.params.first() else {
                 continue;
             };
-            if first_param.name != "self" {
+            if first_param.name != SELF_PARAM_KW {
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {

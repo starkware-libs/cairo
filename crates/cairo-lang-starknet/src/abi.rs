@@ -10,6 +10,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId, get_impl_at_context};
 use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
@@ -477,7 +478,7 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
+        require(first_param.name == SELF_PARAM_KW).ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
         let expected_storage_ty = is_ref
             .then_some(storage_type)
