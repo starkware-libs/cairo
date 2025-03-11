@@ -33,7 +33,7 @@ const OPCODE_EXT_OFFSET: u64 = 63;
 
 impl InstructionRepr {
     pub fn encode(&self) -> Vec<BigInt> {
-        // Convert the offsets from possibly negative numbers in the range [-2^15, 2^15)
+        // Convert the offsets from possible negative numbers in the range [-2^15, 2^15)
         // to positive numbers in the range [0, 2^16) centered around 2^15.
         let off0_enc: u64 = ((self.off0 as i32) + (1 << (OFFSET_BITS - 1))) as u64;
         let off1_enc: u64 = ((self.off1 as i32) + (1 << (OFFSET_BITS - 1))) as u64;
