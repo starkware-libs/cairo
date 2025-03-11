@@ -19,18 +19,26 @@ ExprBinary
 └── Top level kind: ExprBinary
     ├── lhs (kind: ExprBinary)
     │   ├── lhs (kind: ExprPath)
-    │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       └── ident (kind: TokenIdentifier): 'a'
+    │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   └── segments (kind: ExprPathInner)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'a'
     │   ├── op (kind: TokenAndAnd): '&&'
     │   └── rhs (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'b'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'b'
     ├── op (kind: TokenOrOr): '||'
     └── rhs (kind: ExprBinary)
         ├── lhs (kind: ExprPath)
-        │   └── item #0 (kind: PathSegmentSimple)
-        │       └── ident (kind: TokenIdentifier): 'c'
+        │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   └── segments (kind: ExprPathInner)
+        │       └── item #0 (kind: PathSegmentSimple)
+        │           └── ident (kind: TokenIdentifier): 'c'
         ├── op (kind: TokenAndAnd): '&&'
         └── rhs (kind: ExprPath)
-            └── item #0 (kind: PathSegmentSimple)
-                └── ident (kind: TokenIdentifier): 'd'
+            ├── dollar (kind: OptionTerminalDollarEmpty) []
+            └── segments (kind: ExprPathInner)
+                └── item #0 (kind: PathSegmentSimple)
+                    └── ident (kind: TokenIdentifier): 'd'

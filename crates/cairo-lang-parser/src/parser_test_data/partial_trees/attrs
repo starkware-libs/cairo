@@ -49,8 +49,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'derive'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'derive'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList)
@@ -58,15 +60,19 @@ VariantList
     │   │       │   │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │   │       └── value (kind: ExprPath)
-    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Copy'
+    │   │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   └── ident (kind: TokenIdentifier): 'Copy'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   └── item #1 (kind: Arg)
     │   │       │   │       ├── modifiers (kind: ModifierList) []
     │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │           └── value (kind: ExprPath)
-    │   │       │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │                   └── ident (kind: TokenIdentifier): 'Drop'
+    │   │       │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │               └── segments (kind: ExprPathInner)
+    │   │       │   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                       └── ident (kind: TokenIdentifier): 'Drop'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── visibility (kind: VisibilityDefault) []
@@ -82,8 +88,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'empty_attr'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'empty_attr'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList) []
@@ -102,8 +110,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'derive'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'derive'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList)
@@ -111,29 +121,37 @@ VariantList
     │   │       │   │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │   │       └── value (kind: ExprPath)
-    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Copy'
+    │   │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   └── ident (kind: TokenIdentifier): 'Copy'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   ├── item #1 (kind: Arg)
     │   │       │   │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │   │       └── value (kind: ExprPath)
-    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Drop'
+    │   │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   └── ident (kind: TokenIdentifier): 'Drop'
     │   │       │   │   ├── separator #1 (kind: TokenComma): ','
     │   │       │   │   ├── item #2 (kind: Arg)
     │   │       │   │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │   │       └── value (kind: ExprPath)
-    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'PartialEq'
+    │   │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   └── ident (kind: TokenIdentifier): 'PartialEq'
     │   │       │   │   ├── separator #2 (kind: TokenComma): ','
     │   │       │   │   └── item #3 (kind: Arg)
     │   │       │   │       ├── modifiers (kind: ModifierList) []
     │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │           └── value (kind: ExprPath)
-    │   │       │   │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │                   └── ident (kind: TokenIdentifier): 'Serde'
+    │   │       │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │               └── segments (kind: ExprPathInner)
+    │   │       │   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                       └── ident (kind: TokenIdentifier): 'Serde'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── visibility (kind: VisibilityDefault) []
@@ -149,8 +167,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'post'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'post'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList)
@@ -176,8 +196,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'cfg'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'cfg'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList)
@@ -186,8 +208,10 @@ VariantList
     │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │           └── value (kind: ExprFunctionCall)
     │   │       │   │               ├── path (kind: ExprPath)
-    │   │       │   │               │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │               │       └── ident (kind: TokenIdentifier): 'attr'
+    │   │       │   │               │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │               │   └── segments (kind: ExprPathInner)
+    │   │       │   │               │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │               │           └── ident (kind: TokenIdentifier): 'attr'
     │   │       │   │               └── arguments (kind: ArgListParenthesized)
     │   │       │   │                   ├── lparen (kind: TokenLParen): '('
     │   │       │   │                   ├── arguments (kind: ArgList)
@@ -197,8 +221,10 @@ VariantList
     │   │       │   │                   │           ├── name (kind: TokenIdentifier): 'value'
     │   │       │   │                   │           ├── colon (kind: TokenColon): ':'
     │   │       │   │                   │           └── value (kind: ExprPath)
-    │   │       │   │                   │               └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │                   │                   └── ident (kind: TokenIdentifier): 'C'
+    │   │       │   │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │                   │               └── segments (kind: ExprPathInner)
+    │   │       │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │                       └── ident (kind: TokenIdentifier): 'C'
     │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
@@ -211,8 +237,10 @@ VariantList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'cfg_attr'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'cfg_attr'
     │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │       │   ├── arguments (kind: ArgList)
@@ -220,16 +248,20 @@ VariantList
     │   │       │   │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │   │       └── value (kind: ExprPath)
-    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'test'
+    │   │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   └── ident (kind: TokenIdentifier): 'test'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   └── item #1 (kind: Arg)
     │   │       │   │       ├── modifiers (kind: ModifierList) []
     │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
     │   │       │   │           └── value (kind: ExprFunctionCall)
     │   │       │   │               ├── path (kind: ExprPath)
-    │   │       │   │               │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │               │       └── ident (kind: TokenIdentifier): 'assert_instr'
+    │   │       │   │               │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │               │   └── segments (kind: ExprPathInner)
+    │   │       │   │               │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │               │           └── ident (kind: TokenIdentifier): 'assert_instr'
     │   │       │   │               └── arguments (kind: ArgListParenthesized)
     │   │       │   │                   ├── lparen (kind: TokenLParen): '('
     │   │       │   │                   ├── arguments (kind: ArgList)
@@ -240,12 +272,16 @@ VariantList
     │   │       │   │                   │           ├── colon (kind: TokenColon): ':'
     │   │       │   │                   │           └── value (kind: ExprBinary)
     │   │       │   │                   │               ├── lhs (kind: ExprPath)
-    │   │       │   │                   │               │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │                   │               │       └── ident (kind: TokenIdentifier): 'add_a'
+    │   │       │   │                   │               │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │                   │               │   └── segments (kind: ExprPathInner)
+    │   │       │   │                   │               │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │               │           └── ident (kind: TokenIdentifier): 'add_a'
     │   │       │   │                   │               ├── op (kind: TokenDot): '.'
     │   │       │   │                   │               └── rhs (kind: ExprPath)
-    │   │       │   │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │                   │                       └── ident (kind: TokenIdentifier): 'b'
+    │   │       │   │                   │                   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │                   │                   └── segments (kind: ExprPathInner)
+    │   │       │   │                   │                       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │                           └── ident (kind: TokenIdentifier): 'b'
     │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
@@ -258,8 +294,10 @@ VariantList
         │       ├── hash (kind: TokenHash): '#'
         │       ├── lbrack (kind: TokenLBrack): '['
         │       ├── attr (kind: ExprPath)
-        │       │   └── item #0 (kind: PathSegmentSimple)
-        │       │       └── ident (kind: TokenIdentifier): 'attr'
+        │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │       │   └── segments (kind: ExprPathInner)
+        │       │       └── item #0 (kind: PathSegmentSimple)
+        │       │           └── ident (kind: TokenIdentifier): 'attr'
         │       ├── arguments (kind: ArgListParenthesized)
         │       │   ├── lparen (kind: TokenLParen): '('
         │       │   ├── arguments (kind: ArgList)
@@ -267,18 +305,22 @@ VariantList
         │       │   │   │   ├── modifiers (kind: ModifierList) []
         │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
         │       │   │   │       └── value (kind: ExprPath)
-        │       │   │   │           ├── item #0 (kind: PathSegmentSimple)
-        │       │   │   │           │   └── ident (kind: TokenIdentifier): 'foo'
-        │       │   │   │           ├── separator #0 (kind: TokenColonColon): '::'
-        │       │   │   │           └── item #1 (kind: PathSegmentSimple)
-        │       │   │   │               └── ident (kind: TokenIdentifier): 'bar'
+        │       │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │       │   │   │           └── segments (kind: ExprPathInner)
+        │       │   │   │               ├── item #0 (kind: PathSegmentSimple)
+        │       │   │   │               │   └── ident (kind: TokenIdentifier): 'foo'
+        │       │   │   │               ├── separator #0 (kind: TokenColonColon): '::'
+        │       │   │   │               └── item #1 (kind: PathSegmentSimple)
+        │       │   │   │                   └── ident (kind: TokenIdentifier): 'bar'
         │       │   │   ├── separator #0 (kind: TokenComma): ','
         │       │   │   └── item #1 (kind: Arg)
         │       │   │       ├── modifiers (kind: ModifierList) []
         │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
         │       │   │           └── value (kind: ExprPath)
-        │       │   │               └── item #0 (kind: PathSegmentSimple)
-        │       │   │                   └── ident (kind: TokenIdentifier): 'qwe'
+        │       │   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │       │   │               └── segments (kind: ExprPathInner)
+        │       │   │                   └── item #0 (kind: PathSegmentSimple)
+        │       │   │                       └── ident (kind: TokenIdentifier): 'qwe'
         │       │   └── rparen (kind: TokenRParen): ')'
         │       └── rbrack (kind: TokenRBrack): ']'
         ├── visibility (kind: VisibilityDefault) []

@@ -43,8 +43,8 @@ pub struct Parser<'a> {
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
     /// An accumulating vector of pending skipped tokens diagnostics.
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
-    /// An indicator of whether to allow placeholders exprs.
-    allow_placeholder_exprs: bool,
+    /// An indicator if we are inside a macro rule expansion.
+    is_inside_macro_expansion: bool,
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -124,7 +124,7 @@ impl<'a> Parser<'a> {
             last_trivia_length: Default::default(),
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
-            allow_placeholder_exprs: false,
+            is_inside_macro_expansion: false,
         }
     }
 
@@ -838,7 +838,12 @@ impl<'a> Parser<'a> {
     fn is_peek_identifier_like(&self) -> bool {
         let kind = self.peek().kind;
         kind.is_keyword_terminal()
-            || matches!(kind, SyntaxKind::TerminalUnderscore | SyntaxKind::TerminalIdentifier)
+            || matches!(
+                kind,
+                SyntaxKind::TerminalUnderscore
+                    | SyntaxKind::TerminalIdentifier
+                    | SyntaxKind::TerminalDollar
+            )
     }
 
     /// Returns a GreenId of a node with an identifier kind.
@@ -1434,7 +1439,7 @@ impl<'a> Parser<'a> {
     fn try_parse_atom(&mut self, lbrace_allowed: LbraceAllowed) -> TryParseResult<ExprGreen> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
                 // Call parse_path() and not expect_path(), because it's cheap.
                 let path = self.parse_path();
                 match self.peek().kind {
@@ -1480,9 +1485,6 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalOrOr if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_closure_expr_nullary().into())
-            }
-            SyntaxKind::TerminalDollar if self.allow_placeholder_exprs => {
-                Ok(self.expect_placeholder_expr().into())
             }
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -1819,7 +1821,6 @@ impl<'a> Parser<'a> {
 
         // Read an expression.
         let value = self.try_parse_expr()?;
-
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
         if self.peek().kind == SyntaxKind::TerminalColon {
@@ -1845,22 +1846,35 @@ impl<'a> Parser<'a> {
             return None;
         };
 
+        // Extract ExprPathInner
+        let [_dollar, path_inner] = children0[..] else {
+            return None;
+        };
+
+        let GreenNode {
+            kind: SyntaxKind::ExprPathInner,
+            details: GreenNodeDetails::Node { children: children1, .. },
+        } = &*path_inner.lookup_intern(self.db)
+        else {
+            return None;
+        };
+
         // Check that it has one child.
-        let [path_segment] = children0[..] else {
+        let [path_segment] = children1[..] else {
             return None;
         };
 
         // Check that `path_segment` is `PathSegmentSimple`.
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
-            details: GreenNodeDetails::Node { children: children1, .. },
+            details: GreenNodeDetails::Node { children: children2, .. },
         } = &*path_segment.lookup_intern(self.db)
         else {
             return None;
         };
 
         // Check that it has one child.
-        let [ident] = children1[..] else {
+        let [ident] = children2[..] else {
             return None;
         };
 
@@ -2049,10 +2063,10 @@ impl<'a> Parser<'a> {
     /// Parses an expr block, while allowing placeholder expressions. Restores the previous
     /// placeholder expression setting after parsing.
     fn parse_block_with_placeholders(&mut self) -> ExprBlockGreen {
-        let prev_allow_placeholder_exprs = self.allow_placeholder_exprs;
-        self.allow_placeholder_exprs = true;
+        let prev_allow_placeholder_exprs = self.is_inside_macro_expansion;
+        self.is_inside_macro_expansion = true;
         let block = self.parse_block();
-        self.allow_placeholder_exprs = prev_allow_placeholder_exprs;
+        self.is_inside_macro_expansion = prev_allow_placeholder_exprs;
         block
     }
     /// Assumes the current token is `Match`.
@@ -2221,14 +2235,6 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Assumes the current token is Dollar.
-    /// Expected pattern: `$<identifier>`.
-    fn expect_placeholder_expr(&mut self) -> ExprPlaceholderGreen {
-        let dollar = self.take::<TerminalDollar>();
-        let name = self.parse_identifier();
-        ExprPlaceholder::new_green(self.db, dollar, name)
-    }
-
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be
     /// parsed.
     pub fn try_parse_match_arm(&mut self) -> TryParseResult<MatchArmGreen> {
@@ -2271,6 +2277,7 @@ impl<'a> Parser<'a> {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
                 // then ExprPath.
                 let path = self.parse_path();
+                n!("Peek: {:?}", self.peek());
                 match self.peek().kind {
                     SyntaxKind::TerminalLBrace => {
                         let lbrace = self.take::<TerminalLBrace>();
@@ -2299,16 +2306,33 @@ impl<'a> Parser<'a> {
                         PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
                     _ => {
-                        let green_node = path.0.lookup_intern(self.db);
-                        let children = match &green_node.details {
-                            GreenNodeDetails::Node { children, width: _ } => children,
-                            _ => return Err(TryParseFailure::SkipToken),
+                        // Check that `expr` is `ExprPath`.
+                        let GreenNode {
+                            kind: SyntaxKind::ExprPath,
+                            details: GreenNodeDetails::Node { children: path_children, .. },
+                        } = &*path.0.lookup_intern(self.db)
+                        else {
+                            return Err(TryParseFailure::SkipToken);
                         };
+
+                        // Extract ExprPathInner
+                        let [_dollar, path_inner] = path_children[..] else {
+                            return Err(TryParseFailure::SkipToken);
+                        };
+
+                        let GreenNode {
+                            kind: SyntaxKind::ExprPathInner,
+                            details: GreenNodeDetails::Node { children: inner_path_children, .. },
+                        } = &*path_inner.lookup_intern(self.db)
+                        else {
+                            return Err(TryParseFailure::SkipToken);
+                        };
+
                         // If the path has more than 1 element assume it's a simplified Enum variant
                         // Eg. MyEnum::A(()) ~ MyEnum::A
                         // Multi-element path identifiers aren't allowed, for now this mechanism is
                         // sufficient.
-                        match children.len() {
+                        match inner_path_children.len() {
                             // 0 => return None, - unreachable
                             1 => path.into(),
                             _ => PatternEnum::new_green(
@@ -2691,7 +2715,21 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_path(&mut self) -> ExprPathGreen {
-        let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
+        let dollar = match self.peek().kind {
+            SyntaxKind::TerminalDollar => {
+                let dollar = self.take::<TerminalDollar>();
+                if !self.is_inside_macro_expansion {
+                    self.add_diagnostic(ParserDiagnosticKind::InvalidPlaceholderPath, TextSpan {
+                        start: self.offset,
+                        end: self.offset.add_width(self.current_width),
+                    })
+                };
+                dollar.into()
+            }
+            _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
+        };
+
+        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_path_segment();
             children.push(segment.into());
@@ -2703,7 +2741,7 @@ impl<'a> Parser<'a> {
             break;
         }
 
-        ExprPath::new_green(self.db, children)
+        ExprPath::new_green(self.db, dollar, ExprPathInner::new_green(self.db, children))
     }
     /// Returns a GreenId of a node with kind ExprPath or TryParseFailure if a path can't be parsed.
     fn try_parse_path(&mut self) -> TryParseResult<ExprPathGreen> {
@@ -2718,7 +2756,12 @@ impl<'a> Parser<'a> {
     ///
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_type_path(&mut self) -> ExprPathGreen {
-        let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
+        let dollar = match self.peek().kind {
+            SyntaxKind::TerminalDollar => self.take::<TerminalDollar>().into(),
+            _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
+        };
+
+        let mut children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_type_path_segment();
             children.push(segment.into());
@@ -2730,7 +2773,7 @@ impl<'a> Parser<'a> {
             break;
         }
 
-        ExprPath::new_green(self.db, children)
+        ExprPath::new_green(self.db, dollar, ExprPathInner::new_green(self.db, children))
     }
 
     /// Returns a PathSegment and an optional separator.

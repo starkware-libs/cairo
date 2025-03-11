@@ -110,13 +110,17 @@ ExprBlock
     │   ├── patterns (kind: PatternListOr)
     │   │   └── item #0 (kind: PatternEnum)
     │   │       ├── path (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'Some'
     │   │       └── pattern (kind: PatternEnumInnerPattern)
     │   │           ├── lparen (kind: TokenLParen): '('
     │   │           ├── pattern (kind: ExprPath)
-    │   │           │   └── item #0 (kind: PathSegmentSimple)
-    │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           │   └── segments (kind: ExprPathInner)
+    │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │   │           │           └── ident (kind: TokenIdentifier): 'x'
     │   │           └── rparen (kind: TokenRParen): ')'
     │   ├── eq (kind: TokenEq): '='
     │   └── expr (kind: TokenLiteralNumber): '2'
@@ -140,13 +144,17 @@ ExprBlock
                     │   ├── patterns (kind: PatternListOr)
                     │   │   └── item #0 (kind: PatternEnum)
                     │   │       ├── path (kind: ExprPath)
-                    │   │       │   └── item #0 (kind: PathSegmentSimple)
-                    │   │       │       └── ident (kind: TokenIdentifier): 'None'
+                    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+                    │   │       │   └── segments (kind: ExprPathInner)
+                    │   │       │       └── item #0 (kind: PathSegmentSimple)
+                    │   │       │           └── ident (kind: TokenIdentifier): 'None'
                     │   │       └── pattern (kind: PatternEnumInnerPattern)
                     │   │           ├── lparen (kind: TokenLParen): '('
                     │   │           ├── pattern (kind: ExprPath)
-                    │   │           │   └── item #0 (kind: PathSegmentSimple)
-                    │   │           │       └── ident (kind: TokenIdentifier): 'y'
+                    │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+                    │   │           │   └── segments (kind: ExprPathInner)
+                    │   │           │       └── item #0 (kind: PathSegmentSimple)
+                    │   │           │           └── ident (kind: TokenIdentifier): 'y'
                     │   │           └── rparen (kind: TokenRParen): ')'
                     │   ├── eq (kind: TokenEq): '='
                     │   └── expr (kind: TokenLiteralNumber): '8'
@@ -184,13 +192,17 @@ ExprBlock
     │   ├── patterns (kind: PatternListOr)
     │   │   └── item #0 (kind: PatternEnum)
     │   │       ├── path (kind: ExprPath)
-    │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   └── segments (kind: ExprPathInner)
+    │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │           └── ident (kind: TokenIdentifier): 'Some'
     │   │       └── pattern (kind: PatternEnumInnerPattern)
     │   │           ├── lparen (kind: TokenLParen): '('
     │   │           ├── pattern (kind: ExprPath)
-    │   │           │   └── item #0 (kind: PathSegmentSimple)
-    │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           │   └── segments (kind: ExprPathInner)
+    │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │   │           │           └── ident (kind: TokenIdentifier): 'x'
     │   │           └── rparen (kind: TokenRParen): ')'
     │   ├── eq (kind: TokenEq): '='
     │   └── expr (kind: ExprBinary)
