@@ -247,7 +247,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("ExprPlaceholder")
         .node("dollar", "TerminalDollar")
-        .node("name", "TerminalIdentifier")
+        .node("path", "ExprPath")
     )
     // --- Struct ctor ---
     .add_struct(StructBuilder::new("StructArgExpr")

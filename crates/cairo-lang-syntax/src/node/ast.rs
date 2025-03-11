@@ -6392,13 +6392,13 @@ pub struct ExprPlaceholder {
 }
 impl ExprPlaceholder {
     pub const INDEX_DOLLAR: usize = 0;
-    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_PATH: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         dollar: TerminalDollarGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
     ) -> ExprPlaceholderGreen {
-        let children: Vec<GreenId> = vec![dollar.0, name.0];
+        let children: Vec<GreenId> = vec![dollar.0, path.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         ExprPlaceholderGreen(
             Arc::new(GreenNode {
@@ -6413,8 +6413,8 @@ impl ExprPlaceholder {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
         TerminalDollar::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6445,10 +6445,7 @@ impl TypedSyntaxNode for ExprPlaceholder {
             Arc::new(GreenNode {
                 kind: SyntaxKind::ExprPlaceholder,
                 details: GreenNodeDetails::Node {
-                    children: vec![
-                        TerminalDollar::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                    ],
+                    children: vec![TerminalDollar::missing(db).0, ExprPath::missing(db).0],
                     width: TextWidth::default(),
                 },
             })

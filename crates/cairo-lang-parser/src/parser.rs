@@ -2225,8 +2225,8 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `$<identifier>`.
     fn expect_placeholder_expr(&mut self) -> ExprPlaceholderGreen {
         let dollar = self.take::<TerminalDollar>();
-        let name = self.parse_identifier();
-        ExprPlaceholder::new_green(self.db, dollar, name)
+        let path = self.parse_path();
+        ExprPlaceholder::new_green(self.db, dollar, path)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or TryParseFailure if a match arm can't be

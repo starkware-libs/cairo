@@ -186,16 +186,18 @@ fn expand_macro_rule_ex(
 ) {
     if node.kind(db) == SyntaxKind::ExprPlaceholder {
         let placeholder_node = ExprPlaceholder::from_syntax_node(db, node.clone());
-        let placeholder_name =
-            placeholder_node.name(db).as_syntax_node().get_text_without_trivia(db);
-        if let Some(value) = captures.get(&placeholder_name) {
-            res_buffer.push_str(value);
-        } else {
-            // TODO(Gil): verify in the declaration that all the used placeholders in the expansion
-            // are present in the captures.
-            panic!("Placeholder not found in captures.");
+        if placeholder_node.path(db).elements(db).len() == 1 {
+            let placeholder_name =
+                placeholder_node.path(db).as_syntax_node().get_text_without_trivia(db);
+            if let Some(value) = captures.get(&placeholder_name) {
+                res_buffer.push_str(value);
+            } else {
+                // TODO(Gil): verify in the declaration that all the used placeholders in the
+                // expansion are present in the captures.
+                panic!("Placeholder not found in captures.");
+            }
+            return;
         }
-        return;
     }
     if node.kind(db).is_terminal() {
         res_buffer.push_str(&node.get_text(db));

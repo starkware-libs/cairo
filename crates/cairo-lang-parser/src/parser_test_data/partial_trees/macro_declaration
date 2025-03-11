@@ -42,7 +42,9 @@ macro macro_name {
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
     │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'placeholder'
+    │       │       │   │       │       └── path (kind: ExprPath)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'placeholder'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
@@ -99,7 +101,9 @@ macro macro_name {
     │       │   │   │   │       │   ├── op (kind: TokenPlus): '+'
     │       │   │   │   │       │   └── rhs (kind: ExprPlaceholder)
     │       │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │   │   │   │       │       └── name (kind: TokenIdentifier): 'placeholder'
+    │       │   │   │   │       │       └── path (kind: ExprPath)
+    │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'placeholder'
     │       │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -130,7 +134,9 @@ macro macro_name {
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
     │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── path (kind: ExprPath)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'x'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
@@ -258,7 +264,9 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
     │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── path (kind: ExprPath)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'x'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
