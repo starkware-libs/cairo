@@ -1,7 +1,7 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles,
@@ -11,11 +11,10 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
+use cairo_lang_utils::{Intern, OptionFrom, Upcast, extract_matches};
 
 use crate::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
@@ -393,7 +392,7 @@ fn get_recursive_module_semantic_diagnostics(
     let mut diagnostics: DiagnosticsBuilder<_> =
         db.module_semantic_diagnostics(module_id).unwrap().into();
     for submodule_id in db.module_submodules_ids(module_id).unwrap().iter() {
-        if is_submodule_inline(db, *submodule_id) {
+        if db.is_submodule_inline(*submodule_id) {
             diagnostics.extend(get_recursive_module_semantic_diagnostics(
                 db,
                 ModuleId::Submodule(*submodule_id),
@@ -401,13 +400,4 @@ fn get_recursive_module_semantic_diagnostics(
         }
     }
     diagnostics.build()
-}
-
-/// Returns true if the given submodule is inline (i.e. has a body), false otherwise.
-fn is_submodule_inline(db: &dyn SemanticGroup, submodule: SubmoduleId) -> bool {
-    let SubmoduleLongId(_, ptr) = submodule.lookup_intern(db);
-    match ptr.lookup(db.upcast()).body(db.upcast()) {
-        ast::MaybeModuleBody::Some(_) => true,
-        ast::MaybeModuleBody::None(_) => false,
-    }
 }
