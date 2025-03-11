@@ -38,8 +38,10 @@ fn bar() -> (felt252) {
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
-    │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           └── segments (kind: ExprPathInner)
+    │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │                   └── ident (kind: TokenIdentifier): 'int'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: Param)
     │   │   ├── modifiers (kind: ModifierList)
@@ -48,8 +50,10 @@ fn bar() -> (felt252) {
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
-    │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt252'
+    │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │           └── segments (kind: ExprPathInner)
+    │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Param)
     │   │   ├── modifiers (kind: ModifierList)
@@ -67,25 +71,33 @@ fn bar() -> (felt252) {
     │       └── type_clause (kind: TypeClause)
     │           ├── colon (kind: TokenColon): ':'
     │           └── ty (kind: ExprPath)
-    │               └── item #0 (kind: PathSegmentSimple)
-    │                   └── ident (kind: TokenIdentifier): 'felt252'
+    │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               └── segments (kind: ExprPathInner)
+    │                   └── item #0 (kind: PathSegmentSimple)
+    │                       └── ident (kind: TokenIdentifier): 'felt252'
     ├── rparen (kind: TokenRParen): ')'
     ├── ret_ty (kind: ReturnTypeClause)
     │   ├── arrow (kind: TokenArrow): '->'
     │   └── ty (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'felt252'
     ├── implicits_clause (kind: ImplicitsClause)
     │   ├── implicits_kw (kind: TokenImplicits): 'implicits'
     │   ├── lparen (kind: TokenLParen): '('
     │   ├── implicits (kind: ImplicitsList)
     │   │   ├── item #0 (kind: ExprPath)
-    │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'RangeCheck'
+    │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │   └── segments (kind: ExprPathInner)
+    │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │           └── ident (kind: TokenIdentifier): 'RangeCheck'
     │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   └── item #1 (kind: ExprPath)
-    │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │           └── ident (kind: TokenIdentifier): 'Hash'
+    │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       └── segments (kind: ExprPathInner)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'Hash'
     │   └── rparen (kind: TokenRParen): ')'
     └── optional_no_panic (kind: TokenNoPanic): 'nopanic'
 └── Top level kind: FunctionSignature
@@ -98,8 +110,10 @@ fn bar() -> (felt252) {
     │       ├── lparen (kind: TokenLParen): '('
     │       ├── expressions (kind: ExprList)
     │       │   └── item #0 (kind: ExprPath)
-    │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       └── segments (kind: ExprPathInner)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'felt252'
     │       └── rparen (kind: TokenRParen): ')'
     ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []

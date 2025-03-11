@@ -19,15 +19,19 @@ ExprFor
 └── Top level kind: ExprFor
     ├── for_kw (kind: TokenFor): 'for'
     ├── pattern (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'i'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'i'
     ├── identifier (kind: TokenIdentifier): 'in'
     ├── expr (kind: ExprBinary)
     │   ├── lhs (kind: TokenLiteralNumber): '1'
     │   ├── op (kind: TokenDotDot): '..'
     │   └── rhs (kind: ExprPath)
-    │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'x'
+    │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       └── segments (kind: ExprPathInner)
+    │           └── item #0 (kind: PathSegmentSimple)
+    │               └── ident (kind: TokenIdentifier): 'x'
     └── body (kind: ExprBlock)
         ├── lbrace (kind: TokenLBrace): '{'
         ├── statements (kind: StatementList) []
@@ -55,8 +59,10 @@ ExprBinary
 //! > expected_tree
 └── Top level kind: ExprBinary
     ├── lhs (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'x'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
     ├── op (kind: TokenPlusEq): '+='
     └── rhs (kind: ExprBinary)
         ├── lhs (kind: ExprBinary)

@@ -24,8 +24,10 @@ GenericArgs
     │       ├── colon (kind: TokenColon): ':'
     │       └── value (kind: GenericArgValueExpr)
     │           └── expr (kind: ExprPath)
-    │               └── item #0 (kind: PathSegmentSimple)
-    │                   └── ident (kind: TokenIdentifier): 'usize'
+    │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │               └── segments (kind: ExprPathInner)
+    │                   └── item #0 (kind: PathSegmentSimple)
+    │                       └── ident (kind: TokenIdentifier): 'usize'
     └── rangle (kind: TokenGT): '>'
 
 //! > ==========================================================================

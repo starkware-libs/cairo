@@ -15,6 +15,8 @@ pub enum SyntaxKind {
     OptionTerminalColonColonEmpty,
     PathSegmentWithGenericArgs,
     ExprPath,
+    OptionTerminalDollarEmpty,
+    ExprPathInner,
     ExprParenthesized,
     ExprUnary,
     ExprBinary,

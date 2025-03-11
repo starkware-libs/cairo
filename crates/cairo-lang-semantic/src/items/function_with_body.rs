@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::Itertools;
@@ -271,14 +271,14 @@ pub fn get_inline_config(
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db.upcast()) == "always" => {
+            ] if &path.as_syntax_node().get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if &path.node.get_text(db.upcast()) == "never" => {
+            ] if &path.as_syntax_node().get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {

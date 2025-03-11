@@ -38,7 +38,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
-    let [trait_ast_segment] = &trait_ast.elements(db)[..] else {
+    let [trait_ast_segment] = &trait_ast.segments(db).elements(db)[..] else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
@@ -110,7 +110,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                             return false;
                         };
                         let [ast::PathSegment::Simple(trait_generic_arg)] =
-                            &trait_generic_arg.elements(db)[..]
+                            &trait_generic_arg.segments(db).elements(db)[..]
                         else {
                             return false;
                         };
