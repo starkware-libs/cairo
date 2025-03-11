@@ -38,8 +38,8 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
-        &[]
+    fn notes(&self, _db: &Self::DbType) -> Vec<DiagnosticNote> {
+        Vec::new()
     }
     fn severity(&self) -> Severity {
         Severity::Error

@@ -72,13 +72,28 @@ pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
     pub message: String,
     pub severity: Severity,
+    pub note: Option<String>,
 }
 impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            message,
+            severity: Severity::Error,
+            note: None,
+        }
     }
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            message,
+            severity: Severity::Warning,
+            note: None,
+        }
+    }
+    pub fn with_note(mut self, note: String) -> Self {
+        self.note = Some(note);
+        self
     }
 }
 
