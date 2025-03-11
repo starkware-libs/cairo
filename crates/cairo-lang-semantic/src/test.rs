@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::plugin::{
-    MacroPlugin, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
@@ -137,5 +137,79 @@ fn test_mapping_translate_consecutive_spans() {
             ^^^^^^
 
     "#}
+    );
+}
+
+#[derive(Debug, Default)]
+struct DiagnosticNoteTestPlugin;
+impl MacroPlugin for DiagnosticNoteTestPlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
+        // Only run plugin in the test file.
+        let ptr = item_ast.stable_ptr();
+        let file = ptr.0.file_id(db);
+        let path = file.full_path(db.upcast());
+        if path != "lib.cairo" {
+            return PluginResult::default();
+        }
+
+        // Find the first function in the file
+        if let ast::ModuleItem::FreeFunction(function) = &item_ast {
+            let name = function.declaration(db).name(db);
+
+            // Create a diagnostic with a note
+            let diagnostic =
+                PluginDiagnostic::error(name.stable_ptr(), "Test diagnostic with note".into())
+                    .with_note("This is a note about the error".into());
+
+            return PluginResult {
+                code: None,
+                diagnostics: vec![diagnostic],
+                remove_original_item: false,
+            };
+        }
+
+        PluginResult::default()
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+#[test]
+fn test_diagnostic_with_note() {
+    // Setup db with the test plugin.
+    let mut suite = get_default_plugin_suite();
+    suite.add_plugin::<DiagnosticNoteTestPlugin>();
+    let mut db_val = SemanticDatabaseForTesting::with_plugin_suite(suite);
+
+    // Create test file with a simple function
+    let content = indoc! {r#"
+        fn foo() -> felt252 {
+            0
+        }
+    "#};
+    let (test_module, _diagnostics) = setup_test_module(&db_val, content).split();
+    let module_id = test_module.module_id;
+
+    // Read semantic diagnostics
+    let db = &mut db_val;
+    let diags = db.module_semantic_diagnostics(module_id).unwrap();
+    let diags = diags.format(db);
+    assert_eq!(
+        diags,
+        indoc! {r#"
+        error: Plugin diagnostic: Test diagnostic with note
+         --> lib.cairo:1:4
+        fn foo() -> felt252 {
+           ^^^
+        note: This is a note about the error
+
+        "#}
     );
 }
