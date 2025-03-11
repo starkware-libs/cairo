@@ -92,8 +92,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
         }
     }
 
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
-        &self.location.notes
+    fn notes(&self, _db: &Self::DbType) -> Vec<DiagnosticNote> {
+        self.location.notes.clone()
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
