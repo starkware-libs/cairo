@@ -972,7 +972,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 false
             } else {
                 matches!(
-                    parent_kind(db, &path_node),
+                    grandparent_kind(db, &path_node),
                     Some(
                         SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous

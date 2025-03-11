@@ -252,7 +252,7 @@ pub trait AsSegments {
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
-        self.elements(db)
+        self.segments(db).elements(db)
     }
 }
 impl AsSegments for Vec<ast::PathSegment> {
