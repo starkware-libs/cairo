@@ -194,7 +194,7 @@ fn extract_item_module_level_documentation(
         DocumentableItemId::LookupItem(LookupItemId::ModuleItem(ModuleItemId::Submodule(
             submodule_id,
         ))) => {
-            if db.is_submodule_inline(submodule_id).is_ok_and(|is_inline| is_inline) {
+            if db.is_submodule_inline(submodule_id) {
                 return None;
             }
             let module_file_id = db.module_main_file(ModuleId::Submodule(submodule_id)).ok()?;
