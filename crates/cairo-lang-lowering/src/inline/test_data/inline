@@ -771,7 +771,7 @@ End:
 // The goal of this test is to test the block renaming logic.
 // A panicable function can have a block with a low `block_id` with a match_arm that goes
 // to a higher 'block_id'.
-// We want to test this outside of the outer scope as the last block is rebuild last.
+// We want to test this outside of the outer scope as the last block is rebuilt last.
 
 //! > test_runner_name
 test_function_inlining
