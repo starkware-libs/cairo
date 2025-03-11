@@ -40,7 +40,7 @@ pub struct FlattenedStorage<T> {}
 impl FlattenedStorageDrop<T> of Drop<FlattenedStorage<T>> {}
 impl FlattenedStorageCopy<T> of Copy<FlattenedStorage<T>> {}
 
-/// Dereference a flattened storage into a the storage object containing the members of the object.
+/// Dereference a flattened storage into the storage object containing the members of the object.
 impl FlattenedStorageDeref<
     T, impl StorageImpl: StorageTrait<T>,
 > of core::ops::Deref<FlattenedStorage<T>> {
@@ -50,7 +50,7 @@ impl FlattenedStorageDeref<
     }
 }
 
-/// Dereference a mutable flattened storage into a the storage object containing a mutable version
+/// Dereference a mutable flattened storage into the storage object containing a mutable version
 /// of the members of the object.
 impl MutableFlattenedStorageDeref<
     T, impl StorageImpl: StorageTraitMut<T>,
