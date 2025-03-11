@@ -14,7 +14,11 @@ use indoc::formatdoc;
 #[command(version, verbatim_doc_comment)]
 struct Args {
     /// The path of the file to compile.
+    #[arg()]
     file: String,
+
+    /// The output file path.
+    #[arg()]
     output: String,
 }
 
