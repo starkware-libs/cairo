@@ -285,7 +285,7 @@ impl InferenceEmbeddings for Inference<'_> {
     }
 
     /// Tries to infer a trait function as a method for `self_ty`.
-    /// Supports snapshot snapshot coercions.
+    /// Supports snapshot coercions.
     ///
     /// Returns the deduced type and the number of snapshots that need to be added to it.
     ///
