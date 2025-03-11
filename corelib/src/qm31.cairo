@@ -6,7 +6,7 @@
 /// The `qm31` type, defining an extension field over 4 `m31`s.
 pub extern type qm31;
 
-/// The field for the Mersenne prme with `n` 31.
+/// The field for the Mersenne prime with `n` 31.
 pub type m31 = core::internal::bounded_int::BoundedInt<0, 0x7ffffffe>;
 
 pub trait QM31Trait {
@@ -100,4 +100,20 @@ impl M31IntoQM31 of Into<m31, qm31> {
     fn into(self: m31) -> qm31 {
         qm31_from_m31(self)
     }
+}
+
+/// Additional `m31` actions for specific implementations based on `qm31` opcode.
+pub mod m31_ops {
+    use super::m31;
+
+    /// Addition of `m31`s in field.
+    extern fn m31_add(a: m31, b: m31) -> m31 nopanic;
+    /// Subtraction of `m31`s in field.
+    extern fn m31_sub(a: m31, b: m31) -> m31 nopanic;
+    /// Multiplication of `m31`s in field.
+    extern fn m31_mul(a: m31, b: m31) -> m31 nopanic;
+    /// Division of `m31`s in field.
+    extern fn m31_div(a: m31, b: NonZero<m31>) -> m31 nopanic;
+
+    pub use {m31_add as add, m31_div as div, m31_mul as mul, m31_sub as sub};
 }
