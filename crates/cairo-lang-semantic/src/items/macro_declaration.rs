@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::ExprPlaceholder;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -35,12 +36,14 @@ pub struct MacroRuleData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PlaceholderKind {
     Identifier,
+    Expr,
 }
 
 impl From<ast::MacroRuleParamKind> for PlaceholderKind {
     fn from(kind: ast::MacroRuleParamKind) -> Self {
         match kind {
             ast::MacroRuleParamKind::Identifier(_) => PlaceholderKind::Identifier,
+            ast::MacroRuleParamKind::Expr(_) => PlaceholderKind::Expr,
             ast::MacroRuleParamKind::Missing(_) => unreachable!(
                 "Missing macro rule param kind, should have been handled by the parser."
             ),
@@ -137,23 +140,55 @@ fn is_macro_rule_match_ex(
                 let placeholder_kind: PlaceholderKind = param.kind(db.upcast()).into();
                 let placeholder_name =
                     param.name(db.upcast()).as_syntax_node().get_text_without_trivia(db.upcast());
-                let token_tree_leaf = input_iter.next()?;
                 match placeholder_kind {
-                    PlaceholderKind::Identifier => match token_tree_leaf {
-                        ast::TokenTree::Token(token_tree_leaf) => {
-                            match token_tree_leaf.leaf(db.upcast()) {
-                                ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                    captures.insert(
-                                        placeholder_name,
-                                        terminal_identifier.text(db.upcast()).to_string(),
-                                    );
+                    PlaceholderKind::Identifier => {
+                        let token_tree_leaf: &ast::TokenTree = input_iter.next()?;
+                        match token_tree_leaf {
+                            ast::TokenTree::Token(token_tree_leaf) => {
+                                match token_tree_leaf.leaf(db.upcast()) {
+                                    ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
+                                        captures.insert(
+                                            placeholder_name,
+                                            terminal_identifier.text(db.upcast()).to_string(),
+                                        );
+                                    }
+                                    _ => return None,
                                 }
-                                _ => return None,
+                            }
+                            ast::TokenTree::Subtree(_) => return None,
+                            ast::TokenTree::Missing(_) => unreachable!(),
+                        }
+                    }
+                    PlaceholderKind::Expr => {
+                        let expr_node = as_expr_macro_token_tree(
+                            input_iter.clone().cloned(),
+                            input.stable_ptr().0.file_id(db.upcast()),
+                            db.upcast(),
+                        )?;
+                        let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
+                        captures.insert(placeholder_name, expr_text.to_string());
+                        let expr_length = expr_text.len();
+                        let mut current_length = 0;
+
+                        // TODO(Dean): Use the iterator directly in the parser and advance it while
+                        // parsing the expression, instead of manually tracking the length and
+                        // iterating separately.
+                        for token_tree_leaf in input_iter.by_ref() {
+                            let token_text = match token_tree_leaf {
+                                ast::TokenTree::Token(token_tree_leaf) => {
+                                    token_tree_leaf.as_syntax_node().get_text(db.upcast())
+                                }
+                                ast::TokenTree::Subtree(token_subtree) => {
+                                    token_subtree.as_syntax_node().get_text(db.upcast())
+                                }
+                                ast::TokenTree::Missing(_) => unreachable!(),
+                            };
+                            current_length += token_text.len();
+                            if current_length >= expr_length {
+                                break;
                             }
                         }
-                        ast::TokenTree::Subtree(_) => return None,
-                        ast::TokenTree::Missing(_) => unreachable!(),
-                    },
+                    }
                 }
             }
             ast::MacroRuleElement::Subtree(matcher_subtree) => {
