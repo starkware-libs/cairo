@@ -91,7 +91,7 @@ fn should_inline_lowered(
 ) -> Maybe<bool> {
     let lowered = db.inlined_function_with_body_lowered(function_id)?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
-    // Functions which contains only a call or a literal are always inlined.
+    // Functions which contain only a call or a literal are always inlined.
 
     let weight_of_blocks = ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered);
 
@@ -101,7 +101,7 @@ fn should_inline_lowered(
 
     let root_block = lowered.blocks.root_block()?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
-    // Functions which contains only a call or a literal are always inlined.
+    // Functions which contain only a call or a literal are always inlined.
     let num_of_statements: usize =
         lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
     if num_of_statements < inline_small_functions_threshold {
