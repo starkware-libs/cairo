@@ -47,10 +47,10 @@ struct Args {
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     prebuilt: bool,
 
-    #[arg(flatten)]
+    #[command(flatten)]
     build: BuildArgs,
 
-    #[arg(flatten)]
+    #[command(flatten)]
     run: RunArgs,
 
     /// Prints the bytecode size.
@@ -83,7 +83,7 @@ struct BuildArgs {
 #[derive(Parser, Debug)]
 struct RunArgs {
     /// Serialized arguments to the executable function.
-    #[arg(flatten)]
+    #[command(flatten)]
     args: SerializedArgs,
     /// Whether to print the outputs.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
@@ -119,7 +119,7 @@ struct RunArgs {
     ///   instances of the builtin) compared to their sizes at the end of the execution.
     #[arg(long, conflicts_with = "build_only")]
     disable_trace_padding: Option<bool>,
-    #[arg(flatten)]
+    #[command(flatten)]
     proof_outputs: ProofOutputArgs,
 }
 
