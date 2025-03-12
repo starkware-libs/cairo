@@ -114,6 +114,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::BranchInversion,
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::CancelOps,
+        // Must be right before const folding.
+        OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ConstFolding,
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::SplitStructs,
