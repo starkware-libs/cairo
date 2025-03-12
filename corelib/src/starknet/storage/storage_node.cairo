@@ -34,7 +34,7 @@
 //! #[starknet::storage_node]
 //! struct MyStruct {
 //!    a: felt252,
-//!    b: Map<felt252, felt52>,
+//!    b: Map<felt252, felt252>,
 //! }
 //! ```
 //!
@@ -43,7 +43,7 @@
 //! ```
 //! struct MyStructStorageNode {
 //!     a: PendingStoragePath<felt252>,
-//!     b: PendingStoragePath<Map<felt252, felt52>>,
+//!     b: PendingStoragePath<Map<felt252, felt252>>,
 //! }
 //!
 //! impl MyStructStorageNodeImpl of StorageNode<MyStruct> {
