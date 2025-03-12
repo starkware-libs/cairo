@@ -60,7 +60,7 @@ fn test_lowering_consistency() {
 ///
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The crate to compile.
     path: PathBuf,
