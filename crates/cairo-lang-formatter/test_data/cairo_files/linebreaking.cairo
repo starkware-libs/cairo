@@ -24,7 +24,7 @@ fn foo(x: T) -> S {
         let foo = |first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T| { 1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9 };
     }
 
-impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}
+impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}
 
 /// A comment that should be broken because it is too long to fit in a single line. Some more words to make it longer. And even longer as we want it to be broken into three lines. Lorem ipsum dolor sit amet.
 fn function_for_a_comment() {
