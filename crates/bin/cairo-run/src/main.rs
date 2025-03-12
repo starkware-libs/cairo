@@ -26,23 +26,18 @@ use clap::Parser;
 struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,
-
     /// Whether path is a single file.
     #[arg(short, long)]
     single_file: bool,
-
     /// Allows the compilation to succeed with warnings.
     #[arg(long)]
     allow_warnings: bool,
-
     /// In cases where gas is available, the amount of provided gas.
     #[arg(long)]
     available_gas: Option<usize>,
-
     /// Whether to print the memory.
     #[arg(long, default_value_t = false)]
     print_full_memory: bool,
-
     /// Whether to run the profiler.
     #[arg(long, default_value_t = false)]
     run_profiler: bool,
