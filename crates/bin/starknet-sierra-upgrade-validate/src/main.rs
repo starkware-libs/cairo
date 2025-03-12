@@ -36,23 +36,18 @@ struct Cli {
         conflicts_with_all = ["fullnode_url", "fullnode_args"]
     )]
     input_files: Vec<String>,
-
     /// The allowed libfuncs list to use (default: most recent audited list).
     #[arg(long, conflicts_with = "allowed_libfuncs_list_file")]
     allowed_libfuncs_list_name: Option<String>,
-
     /// A file of the allowed libfuncs list to use.
     #[arg(long, conflicts_with = "allowed_libfuncs_list_name")]
     allowed_libfuncs_list_file: Option<String>,
-
     /// Sierra version to override to prior to compilation.
     #[arg(long)]
     override_version: Option<String>,
-
     /// The max bytecode size.
     #[arg(long, default_value_t = 180000)]
     max_bytecode_size: usize,
-
     /// The url of the rpc server, if provided - Sierra classes would be read from it, and no input
     /// files should be provided.
     #[arg(
@@ -62,10 +57,8 @@ struct Cli {
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,
-
     #[command(flatten)]
     fullnode_args: Option<FullnodeArgs>,
-
     /// The output file to write the Sierra classes into.
     #[arg(long)]
     class_info_output_file: Option<String>,
