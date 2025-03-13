@@ -91,7 +91,7 @@ pub trait RebuilderEx: Rebuilder {
         statement
     }
 
-    /// Apply map_var_id to all the variable in the `remapping`.
+    /// Apply map_var_id to all the variables in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
         let mut remapping = VarRemapping {
             remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
