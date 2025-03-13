@@ -519,6 +519,7 @@ fn compute_expr_inline_macro_semantic(
         content: content.into(),
         code_mappings: mappings.into(),
         kind: FileKind::Expr,
+        is_macro_generated: true,
     })
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;

@@ -731,6 +731,7 @@ fn priv_module_sub_files(
                     content: generated.content.into(),
                     code_mappings: generated.code_mappings.into(),
                     kind: FileKind::Module,
+                    is_macro_generated: true,
                 });
                 aux_data.push(generated.aux_data);
             }

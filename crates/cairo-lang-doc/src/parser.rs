@@ -185,6 +185,7 @@ impl<'a> DocumentationCommentParser<'a> {
             content: Default::default(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
+            is_macro_generated: false,
         })
         .intern(self.db);
 

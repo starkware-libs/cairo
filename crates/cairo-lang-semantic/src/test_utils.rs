@@ -138,6 +138,7 @@ pub fn setup_test_crate_ex(
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_macro_generated: false,
     })
     .intern(db);
 

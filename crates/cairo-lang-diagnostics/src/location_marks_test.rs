@@ -25,6 +25,7 @@ fn test_location_marks() {
         content: content.into(),
         code_mappings: [].into(),
         kind: FileKind::Module,
+        is_macro_generated: false,
     })
     .intern(&db);
     let summary = db.file_summary(file).unwrap();
