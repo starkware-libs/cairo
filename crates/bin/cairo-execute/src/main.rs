@@ -22,7 +22,7 @@ use num_bigint::BigInt;
 /// Compiles a Cairo project and runs a function marked `#[executable]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The basic input path for the run.
     /// If `--prebuilt` is provided, this is the path to the prebuilt executable.
@@ -32,7 +32,7 @@ struct Args {
     input_path: PathBuf,
 
     /// Whether to only build and save into the given path.
-    #[clap(long, requires = "output_path")]
+    #[arg(long, requires = "output_path")]
     build_only: bool,
 
     /// The path to save the result of the run.
@@ -40,17 +40,17 @@ struct Args {
     /// In `--build-only` this would be the executable artifact.
     /// In bootloader mode it will be the resulting cairo PIE file.
     /// In standalone mode this parameter is disallowed.
-    #[clap(long, required_unless_present("standalone"))]
+    #[arg(long, required_unless_present("standalone"))]
     output_path: Option<PathBuf>,
 
     /// Whether to only run a prebuilt executable.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     prebuilt: bool,
 
-    #[clap(flatten)]
+    #[command(flatten)]
     build: BuildArgs,
 
-    #[clap(flatten)]
+    #[command(flatten)]
     run: RunArgs,
 
     /// Prints the bytecode size.
@@ -83,21 +83,21 @@ struct BuildArgs {
 #[derive(Parser, Debug)]
 struct RunArgs {
     /// Serialized arguments to the executable function.
-    #[clap(flatten)]
+    #[command(flatten)]
     args: SerializedArgs,
     /// Whether to print the outputs.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     print_outputs: bool,
 
     /// When using dynamic layout, its parameters must be specified through a layout params file.
-    #[clap(long, default_value = "plain", value_enum, conflicts_with = "build_only")]
+    #[arg(long, default_value = "plain", value_enum, conflicts_with = "build_only")]
     layout: LayoutName,
     /// Required when using with dynamic layout.
     /// Ignored otherwise.
-    #[clap(long, required_if_eq("layout", "dynamic"))]
+    #[arg(long, required_if_eq("layout", "dynamic"))]
     cairo_layout_params_file: Option<PathBuf>,
     /// If set, the program will be run in standalone mode.
-    #[clap(
+    #[arg(
         long,
         default_value_t = false,
         conflicts_with_all = ["build_only", "output_path"],
@@ -105,10 +105,10 @@ struct RunArgs {
     )]
     standalone: bool,
     /// If set, the program will be run in secure mode.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     secure_run: Option<bool>,
     /// Can we allow for missing builtins.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     allow_missing_builtins: Option<bool>,
     /// Disable padding of the trace.
     /// By default, the trace is padded to accommodate the expected builtins-n_steps relationships
@@ -117,9 +117,9 @@ struct RunArgs {
     /// - It doesn't modify/pad n_steps.
     /// - It still pads each builtin segment to the next power of 2 (w.r.t the number of used
     ///   instances of the builtin) compared to their sizes at the end of the execution.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     disable_trace_padding: Option<bool>,
-    #[clap(flatten)]
+    #[command(flatten)]
     proof_outputs: ProofOutputArgs,
 }
 
@@ -143,16 +143,16 @@ struct SerializedArgs {
 #[derive(Parser, Debug)]
 struct ProofOutputArgs {
     /// The resulting trace file.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     trace_file: Option<PathBuf>,
     /// The resulting memory file.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     memory_file: Option<PathBuf>,
     /// The resulting AIR public input file.
-    #[clap(long, conflicts_with = "build_only")]
+    #[arg(long, conflicts_with = "build_only")]
     air_public_input: Option<PathBuf>,
     /// The resulting AIR private input file.
-    #[clap(long, conflicts_with = "build_only", requires_all=["trace_file", "memory_file"])]
+    #[arg(long, conflicts_with = "build_only", requires_all=["trace_file", "memory_file"])]
     air_private_input: Option<PathBuf>,
 }
 

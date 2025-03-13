@@ -22,7 +22,7 @@ use clap::Parser;
 /// Compiles a Cairo project and runs the function `main`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,

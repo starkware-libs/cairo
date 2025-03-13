@@ -66,7 +66,7 @@ fn test_l2_to_l1_messages() {
     contract.send_message_to_l1();
     contract.send_message_to_l1();
 
-    // Assert other addresses did not sent messages.
+    // Assert other addresses did not send messages.
     assert!(testing::pop_l2_to_l1_message(OTHER_CONTRACT_ADDRESS).is_none());
 
     // Pop messages.
