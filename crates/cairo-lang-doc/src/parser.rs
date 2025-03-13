@@ -82,6 +82,15 @@ impl<'a> DocumentationCommentParser<'a> {
             Some(&mut replacer),
         );
 
+        let mut is_heading = false;
+        let is_after_heading =
+            |is_heading: &mut bool, tokens: &mut Vec<DocumentationCommentToken>| {
+                if *is_heading {
+                    tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                    *is_heading = false;
+                }
+            };
+
         for event in parser {
             match event {
                 Event::Text(text) => {
@@ -89,6 +98,7 @@ impl<'a> DocumentationCommentParser<'a> {
                         link.label.push_str(&text);
                     } else {
                         tokens.push(DocumentationCommentToken::Content(text.into_string()));
+                        is_after_heading(&mut is_heading, &mut tokens);
                     }
                 }
 
@@ -99,6 +109,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     } else {
                         tokens.push(DocumentationCommentToken::Content(complete_code));
                     }
+                    is_after_heading(&mut is_heading, &mut tokens);
                 }
                 Event::Start(Tag::Link { link_type, dest_url, .. }) => {
                     match link_type {
@@ -128,6 +139,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     if let Some(link) = current_link.take() {
                         tokens.push(DocumentationCommentToken::Link(link));
                     }
+                    is_after_heading(&mut is_heading, &mut tokens);
                 }
                 Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language))) => {
                     tokens.push(DocumentationCommentToken::Content(format!("\n```{}\n", language)));
@@ -137,15 +149,33 @@ impl<'a> DocumentationCommentParser<'a> {
                         tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
                     }
                     is_indented_code_block = false;
+                    is_after_heading(&mut is_heading, &mut tokens);
                 }
                 Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) => {
                     is_indented_code_block = true;
                 }
                 Event::Start(Tag::Heading { level, .. }) => {
+                    if let Some(last_token) = tokens.last_mut() {
+                        match last_token {
+                            DocumentationCommentToken::Content(content) => {
+                                if !content.ends_with('\n') {
+                                    tokens
+                                        .push(DocumentationCommentToken::Content("\n".to_string()));
+                                }
+                            }
+                            DocumentationCommentToken::Link(link_token) => {
+                                if !link_token.label.ends_with('\n') {
+                                    tokens
+                                        .push(DocumentationCommentToken::Content("\n".to_string()));
+                                }
+                            }
+                        }
+                    }
                     tokens.push(DocumentationCommentToken::Content(format!(
                         "  {} ",
                         heading_level_to_markdown(level)
                     )));
+                    is_heading = true;
                 }
                 _ => {}
             }

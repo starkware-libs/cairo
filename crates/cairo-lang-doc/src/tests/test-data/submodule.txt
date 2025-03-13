@@ -16,6 +16,14 @@ hello = "src"
 
 //! We don't take responsibility for compiling this file.
 //! So don't even try.
+//!
+//! # Test markdown headings
+//!
+//! ## One after another
+//!
+//! ### ```fn code_can_be_heading()```
+//!
+//! #### [link can be heading](URL)
 
 /// This one is just a prefix comment for a module.
 /// ```rust
@@ -58,12 +66,33 @@ This is a testing crate file. It's for the tests purposes only.
 ```
 This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.
 
+# Test markdown headings
+
+## One after another
+
+### ```fn code_can_be_heading()```
+
+#### [link can be heading](URL)
+
 //! > Item documentation tokens #1
 Content("This is a testing crate file. It's for the tests purposes only.")
 Content("\n```cairo\n")
 Content("  let a = 5;\n")
 Content("```\n")
 Content("This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.")
+Content("\n")
+Content("  # ")
+Content("Test markdown headings")
+Content("\n")
+Content("  ## ")
+Content("One after another")
+Content("\n")
+Content("  ### ")
+Content("`fn code_can_be_heading()`")
+Content("\n")
+Content("  #### ")
+CommentLinkToken { label: "link can be heading", path: Some("URL"), resolved_item_name: None }
+Content("")
 
 //! > Item signature #2
 
