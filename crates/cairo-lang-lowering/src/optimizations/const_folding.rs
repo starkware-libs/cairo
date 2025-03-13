@@ -42,8 +42,20 @@ enum VarInfo {
     Struct(Vec<Option<VarInfo>>),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Reachability {
+    /// The block is not reachable from the function start after const-folding.
+    Unreachable,
+    /// The block is reachable from the function start only through the goto at the end of the given
+    /// block.
+    FromSingleGoto(BlockId),
+    /// The block is reachable from the function start after const-folding - just does not fit
+    /// `FromSingleGoto`.
+    Any,
+}
+
 /// Performs constant folding on the lowered program.
-/// The optimization works better when the blocks are topologically sorted.
+/// The optimization only works when the blocks are topologically sorted.
 pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
@@ -57,15 +69,24 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         variables: &mut lowered.variables,
         libfunc_info: &libfunc_info,
     };
-    let mut stack = vec![BlockId::root()];
-    let mut visited = vec![false; lowered.blocks.len()];
-    while let Some(block_id) = stack.pop() {
-        if visited[block_id.0] {
-            continue;
+    let mut reachability = vec![Reachability::Unreachable; lowered.blocks.len()];
+    reachability[0] = Reachability::Any;
+    for block_id in 0..lowered.blocks.len() {
+        match reachability[block_id] {
+            Reachability::Unreachable => continue,
+            Reachability::Any => {}
+            Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
+                FlatBlockEnd::Goto(_, remapping) => {
+                    for (dst, src) in remapping.iter() {
+                        if let Some(v) = ctx.as_const(src.var_id) {
+                            ctx.var_info.insert(*dst, VarInfo::Const(v.clone()));
+                        }
+                    }
+                }
+                _ => unreachable!("Expected a goto end"),
+            },
         }
-        visited[block_id.0] = true;
-
-        let block = &mut lowered.blocks[block_id];
+        let block = &mut lowered.blocks[BlockId(block_id)];
         let mut additional_consts = vec![];
         for stmt in block.statements.iter_mut() {
             ctx.maybe_replace_inputs(stmt.inputs_mut());
@@ -172,14 +193,12 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         block.statements.splice(0..0, additional_consts.into_iter().map(Statement::Const));
 
         match &mut block.end {
-            FlatBlockEnd::Goto(block_id, remappings) => {
-                stack.push(*block_id);
+            FlatBlockEnd::Goto(_, remappings) => {
                 for (_, v) in remappings.iter_mut() {
                     ctx.maybe_replace_input(v);
                 }
             }
             FlatBlockEnd::Match { info } => {
-                stack.extend(info.arms().iter().map(|arm| arm.block_id));
                 ctx.maybe_replace_inputs(info.inputs_mut());
                 match info {
                     MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
@@ -204,6 +223,21 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             }
             FlatBlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+        }
+        match &block.end {
+            FlatBlockEnd::Goto(dst_block_id, _) => {
+                reachability[dst_block_id.0] = match reachability[dst_block_id.0] {
+                    Reachability::Unreachable => Reachability::FromSingleGoto(BlockId(block_id)),
+                    Reachability::FromSingleGoto(_) | Reachability::Any => Reachability::Any,
+                }
+            }
+            FlatBlockEnd::Match { info } => {
+                for arm in info.arms() {
+                    assert_eq!(reachability[arm.block_id.0], Reachability::Unreachable);
+                    reachability[arm.block_id.0] = Reachability::Any;
+                }
+            }
+            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(..) => {}
         }
     }
 }
