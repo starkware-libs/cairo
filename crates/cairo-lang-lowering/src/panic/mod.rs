@@ -3,14 +3,13 @@ use std::collections::VecDeque;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_core_function_id, get_panic_ty, never_ty};
+use cairo_lang_semantic::corelib::{core_module, get_core_enum_concrete_variant, get_core_function_id, get_panic_ty, get_ty_by_name, never_ty};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{self as semantic, ConcreteTypeId, GenericArgumentId, TypeLongId};
-use cairo_lang_utils::{extract_matches, Intern, Upcast};
+use cairo_lang_semantic::{self as semantic, GenericArgumentId};
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
-use cairo_lang_utils::LookupIntern;
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
@@ -31,7 +30,7 @@ pub fn lower_panics(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &FlatLowered,
 ) -> Maybe<FlatLowered> {
-    let mut variables = VariableAllocator::new(
+    let variables = VariableAllocator::new(
         db,
         function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
@@ -48,23 +47,21 @@ pub fn lower_panics(
         });
     }
 
-    let never_ty = never_ty(db.upcast());
 
-    let panic_func_id = FunctionLongId::Semantic(get_core_function_id(db.upcast(), "unsafe_panic".into(), vec![])).intern(db);
+  
     let mut new_blocks = lowered.blocks.clone();
     for block in new_blocks.iter_mut() {
         let FlatBlockEnd::Panic(err_data) = &mut block.end else {
             continue;
         };
 
-        let location = err_data.location;
-
+        let panic_func_id = FunctionLongId::Semantic(get_core_function_id(db.upcast(), "unsafe_panic".into(), vec![ GenericArgumentId::Type(variables.variables[err_data.var_id].ty)])).intern(db);
         block.end = FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 arms: vec![],
-                location,
+                location: err_data.location,
                 function: panic_func_id,
-                inputs: vec![],
+                inputs: vec![*err_data],
             }),
         }
     }

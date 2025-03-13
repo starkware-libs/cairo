@@ -10,11 +10,12 @@ use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{
-    CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
+    create_metadata, CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder
 };
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
+use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::{Intern, Upcast, write_comma_separated};
 use itertools::Itertools;
@@ -197,6 +198,18 @@ pub fn compile_executable_function_in_prepared_db(
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
     assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
+
+
+    let sierra_program = DebugReplacer { db }.apply(&sierra_program);
+    let metadata = create_metadata(&sierra_program, None)?;
+    let replacer = DebugReplacer { db };
+
+    for (func_id, ap_change) in metadata.ap_change_info.function_ap_change.iter() {
+        let func_name = replacer.replace_function_id(func_id);
+        eprintln!("Function: {:?} - ap_change: {:?}", func_name, ap_change);
+    }
+    
+    
     let builder = RunnableBuilder::new(sierra_program.clone(), None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {

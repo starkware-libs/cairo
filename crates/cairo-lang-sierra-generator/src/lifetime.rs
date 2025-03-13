@@ -5,8 +5,9 @@ mod test;
 use std::fmt::Debug;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_lowering as lowering;
+use cairo_lang_lowering::{self as lowering, Variable};
 use cairo_lang_lowering::{BlockId, VariableId};
+use id_arena::Arena;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, zip_eq};
@@ -105,7 +106,7 @@ pub fn find_variable_lifetime(
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
     lowered_function.blocks.has_root()?;
-    let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
+    let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default(), variables: &lowered_function.variables };
     let mut analysis = BackAnalysis::new(lowered_function, context);
 
     let mut root_demands = analysis.get_root_info();
@@ -132,6 +133,7 @@ pub fn find_variable_lifetime(
 struct VariableLifetimeContext<'a> {
     local_vars: &'a OrderedHashSet<VariableId>,
     res: VariableLifetimeResult,
+    variables: &'a Arena<Variable>,
 }
 
 /// Can this state lead to any return.
@@ -168,7 +170,14 @@ impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
         // No need for drops when no return statement is reachable, as this is what validates all
         // variables are used. This specifically handles the case of matching on a never
         // enum, so we won't try to drop variables containing builtins.
-        if matches!(aux, ReturnState::Reachable) {
+        // if matches!(aux, ReturnState::Reachable) {
+        //     self.res.add_drop(var, position);
+        // }
+        if let SierraGenVar::LoweringVar(var_id) = var {
+            if self.variables[var_id].droppable.is_ok() {
+                self.res.add_drop(var, position);
+            }
+        } else {
             self.res.add_drop(var, position);
         }
     }

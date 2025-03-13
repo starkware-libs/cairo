@@ -4,6 +4,7 @@
 //! This is similar to the borrow checking algorithm, except we handle "undroppable drops" by adding
 //! destructor calls.
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
@@ -18,6 +19,7 @@ use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
 use crate::db::LoweringGroup;
+use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
@@ -47,7 +49,6 @@ pub struct DestructAdder<'a> {
     /// The actual return type of a never function after adding panics.
     never_fn_actual_return_ty: TypeId,
     is_panic_destruct_fn: bool,
-    unsafe_panic: bool,
 }
 
 /// A destructor call that needs to be added.
@@ -158,10 +159,10 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
                 return;
             }
         }
+        let lowered_formatter = LoweredFormatter::new(self.db, &self.lowered.variables);
+        eprintln!("{:?}", self.lowered.debug(&lowered_formatter));
 
-        if !self.unsafe_panic {
-            panic!("Borrow checker should have caught this.")
-        }
+        panic!("Borrow checker should have caught this {:?}: v{}.", position, var_id.index())
     }
 }
 
@@ -303,7 +304,6 @@ pub fn add_destructs(
         panic_ty,
         never_fn_actual_return_ty,
         is_panic_destruct_fn,
-        unsafe_panic: true,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();

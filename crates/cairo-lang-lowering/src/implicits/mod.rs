@@ -1,20 +1,21 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::{self as semantic, GenericArgumentId, TypeLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
+use cairo_lang_utils::Intern;
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, DependencyType, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage,
+    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement, StatementStructConstruct, VarUsage
 };
 
 struct Context<'a> {
@@ -162,7 +163,9 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
         }
         let implicits = block_body_implicits(ctx, block_id)?;
         // End.
-        match &mut ctx.lowered.blocks[block_id].end {
+
+        let FlatBlock { statements, end } =  &mut ctx.lowered.blocks[block_id];
+        match end {
             FlatBlockEnd::Return(rets, _location) => {
                 rets.splice(0..0, implicits.iter().cloned());
             }
@@ -200,6 +203,19 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                                 "Multiple jumps to arm blocks are not allowed."
                             );
                         }
+                        if info.arms().is_empty() {
+                            let tuple_ty = TypeLongId::Tuple(ctx.implicits_tys.clone()).intern(ctx.db);
+                            let new_input_var = ctx.variables.new_var(VarRequest { ty: tuple_ty, location: ctx.location });
+
+                            statements.push(Statement::StructConstruct(StatementStructConstruct { inputs: implicits.clone(), output: new_input_var }));
+
+                            *info = MatchInfo::Extern(MatchExternInfo {
+                                inputs: vec![VarUsage { var_id: new_input_var, location: ctx.location }],
+                                function: FunctionLongId::Semantic(semantic::corelib::get_core_function_id(ctx.db.upcast(), "unsafe_panic".into(), vec![GenericArgumentId::Type(tuple_ty)])).intern(ctx.db),
+                                arms: vec![],
+                                location: ctx.location,
+                            });
+                        }
                     }
                     MatchInfo::Extern(stmt) => {
                         let callee_implicits = ctx.db.function_implicits(stmt.function)?;
@@ -229,6 +245,24 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                             );
 
                             var_ids.splice(0..0, implicit_input_vars);
+                        }
+
+
+                        if let Some((func_id, _gargs)) = stmt.function.get_extern(ctx.db) {
+                            if func_id.name(ctx.db.upcast()) == "unsafe_panic" {
+                                let panic_input = stmt.inputs[0];
+                                let tuple_ty = TypeLongId::Tuple(chain!(ctx.implicits_tys.iter().copied(), [ctx.variables.variables[panic_input.var_id].ty]).collect()).intern(ctx.db);
+                                let new_input_var = ctx.variables.new_var(VarRequest { ty: tuple_ty, location });
+
+                                let inputs = chain!(implicits.iter().cloned(), [panic_input]).collect();
+
+
+
+                                statements.push(Statement::StructConstruct(StatementStructConstruct { inputs, output: new_input_var }));
+                                stmt.inputs[0].var_id = new_input_var;
+                                stmt.function = FunctionLongId::Semantic(semantic::corelib::get_core_function_id(ctx.db.upcast(), "unsafe_panic".into(), vec![GenericArgumentId::Type(tuple_ty)])).intern(ctx.db);
+                            }
+                            
                         }
                     }
                 }

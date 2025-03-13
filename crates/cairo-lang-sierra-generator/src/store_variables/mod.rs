@@ -6,9 +6,11 @@ mod state;
 #[cfg(test)]
 mod test;
 
+use cairo_lang_lowering::lower::generators::Snapshot;
+use cairo_lang_sierra::extensions::snapshot::SnapshotTakeLibfunc;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
-use cairo_lang_sierra::ids::ConcreteLibfuncId;
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, VarId};
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, extract_matches};
@@ -141,6 +143,13 @@ impl<'a> AddStoreVariableStatements<'a> {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
                         let branch_signature = &signature.branch_signatures[0];
+
+                        if let [a, b, c] = invocation.args.as_slice() {
+                            if a.id == 114 && b.id == 117 && c.id == 118 {
+                                println!("{:?}, {:?}. {:?}", state.variables.get(&VarId::from(116)),  state.variables.get(b), branch_signature.ap_change)
+                            }
+                         }
+
                         match branch_signature.ap_change {
                             SierraApChange::Unknown => {
                                 // If the ap-change is unknown, variables that will be revoked
@@ -150,12 +159,23 @@ impl<'a> AddStoreVariableStatements<'a> {
                             SierraApChange::BranchAlign | SierraApChange::Known { .. } => {}
                         }
 
+
                         state.register_outputs(
                             results,
                             branch_signature,
                             &invocation.args,
                             &arg_states,
                         );
+
+
+
+                        if libfunc_long_id.generic_id.0.as_str() == SnapshotTakeLibfunc::STR_ID {
+                            if let [a, b] = results.as_slice() {
+                               if invocation.args[0].id == 107 && a.id == 116 && b.id == 117 {
+                                   println!("{:?}, {:?}", state.variables.get(a),  state.variables.get(b))
+                               }
+                            }
+                        }
                         state_opt = Some(std::mem::take(state));
                     }
                     _ => {

@@ -6,7 +6,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::{chain, zip_eq};
+use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
@@ -241,6 +241,9 @@ impl ProgramAnnotations {
     ) -> Result<(), InconsistentReferenceError> {
         // Check if there is a mismatch at the number of variables.
         if actual.refs.len() != expected.refs.len() {
+            println!("{:?}", actual.refs.keys().collect_vec());
+            println!("{:?}", expected.refs.keys().collect_vec());
+
             return Err(InconsistentReferenceError::VariableCountMismatch);
         }
         let ap_tracking_enabled =

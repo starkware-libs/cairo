@@ -87,6 +87,8 @@ impl RunnableBuilder {
     ) -> Result<Self, BuildError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
+
+        eprintln!("metadata: {:?}", metadata.ap_change_info);
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
         let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry).unwrap();
@@ -95,6 +97,8 @@ impl RunnableBuilder {
             &metadata,
             SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
         )?;
+
+      
 
         Ok(Self {
             sierra_program,
@@ -614,7 +618,7 @@ pub fn create_code_footer() -> Vec<Instruction> {
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
-fn create_metadata(
+pub fn create_metadata(
     sierra_program: &SierraProgram,
     metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, BuildError> {

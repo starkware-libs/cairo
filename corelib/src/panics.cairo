@@ -47,7 +47,7 @@ pub enum PanicResult<T> {
 /// ```
 pub extern fn panic(data: Array<felt252>) -> crate::never;
 
-pub extern fn unsafe_panic() -> crate::never nopanic; 
+pub extern fn unsafe_panic<T>(panic_tuple: T) -> crate::never nopanic; 
 
 /// Panics with a `ByteArray` message.
 ///

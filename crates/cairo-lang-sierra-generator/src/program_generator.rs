@@ -8,7 +8,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
@@ -188,7 +188,6 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        let sierra_program = DebugReplacer { db }.apply(&self.program);
         let mut funcs = sierra_program.funcs.iter().peekable();
         while let Some(func) = funcs.next() {
             let start = func.entry_point.0;
