@@ -868,7 +868,7 @@ fn compute_expr_function_call_semantic(
     let path = syntax.path(syntax_db);
     let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
     // Check if this is a variable.
-    let segments = path.elements(syntax_db);
+    let segments = path.segments(syntax_db).elements(syntax_db);
     let mut is_shadowed_by_variable = false;
     if let [PathSegment::Simple(ident_segment)] = &segments[..] {
         let identifier = ident_segment.ident(syntax_db);
@@ -997,6 +997,7 @@ fn compute_expr_function_call_semantic(
             if is_shadowed_by_variable {
                 return Err(ctx.diagnostics.report(&path, CallingShadowedFunction {
                     shadowed_function_name: path
+                        .segments(syntax_db)
                         .elements(syntax_db)
                         .first()
                         .unwrap()
@@ -2193,11 +2194,12 @@ fn maybe_compute_pattern_semantic(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-            if path.elements(syntax_db).len() > 1 {
+            if path.segments(syntax_db).elements(syntax_db).len() > 1 {
                 return Err(ctx.diagnostics.report(path, Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
-            let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
+            let identifier =
+                path.segments(syntax_db).elements(syntax_db)[0].identifier_ast(syntax_db);
             create_variable_pattern(
                 ctx,
                 identifier,
@@ -2826,7 +2828,7 @@ fn expr_as_identifier(
     path: &ast::ExprPath,
     syntax_db: &dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-    let segments = path.elements(syntax_db);
+    let segments = path.segments(syntax_db).elements(syntax_db);
     if segments.len() == 1 {
         return Ok(segments[0].identifier(syntax_db));
     }
@@ -2877,7 +2879,8 @@ fn method_call_expr(
     // TODO(spapini): Look also in uses.
     let syntax_db = ctx.db.upcast();
     let path = expr.path(syntax_db);
-    let Ok([segment]): Result<[_; 1], _> = path.elements(syntax_db).try_into() else {
+    let Ok([segment]): Result<[_; 1], _> = path.segments(syntax_db).elements(syntax_db).try_into()
+    else {
         return Err(ctx.diagnostics.report(&expr, InvalidMemberExpression));
     };
     let func_name = segment.identifier(syntax_db);
@@ -3253,7 +3256,7 @@ fn finalized_snapshot_peeled_ty(
 fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let segments = path.elements(syntax_db);
+    let segments = path.segments(syntax_db).elements(syntax_db);
     if segments.is_empty() {
         return Err(ctx.diagnostics.report(path, Unsupported));
     }

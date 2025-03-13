@@ -2146,33 +2146,40 @@ impl From<&PathSegmentWithGenericArgs> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ExprPath(ElementList<PathSegment, 2>);
-impl Deref for ExprPath {
-    type Target = ElementList<PathSegment, 2>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+pub struct ExprPath {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprPath {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_SEGMENTS: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        children: Vec<ExprPathElementOrSeparatorGreen>,
+        dollar: OptionTerminalDollarGreen,
+        segments: ExprPathInnerGreen,
     ) -> ExprPathGreen {
-        let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
+        let children: Vec<GreenId> = vec![dollar.0, segments.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         ExprPathGreen(
             Arc::new(GreenNode {
                 kind: SyntaxKind::ExprPath,
-                details: GreenNodeDetails::Node {
-                    children: children.iter().map(|x| x.id()).collect(),
-                    width,
-                },
+                details: GreenNodeDetails::Node { children, width },
             })
             .intern(db),
         )
     }
 }
+impl ExprPath {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> OptionTerminalDollar {
+        OptionTerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn segments(&self, db: &dyn SyntaxGroup) -> ExprPathInner {
+        ExprPathInner::from_syntax_node(db, self.children[1].clone())
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPathPtr(pub SyntaxStablePtrId);
+impl ExprPathPtr {}
 impl TypedStablePtr for ExprPathPtr {
     type SyntaxNode = ExprPath;
     fn untyped(&self) -> SyntaxStablePtrId {
@@ -2188,29 +2195,6 @@ impl From<ExprPathPtr> for SyntaxStablePtrId {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub enum ExprPathElementOrSeparatorGreen {
-    Separator(TerminalColonColonGreen),
-    Element(PathSegmentGreen),
-}
-impl From<TerminalColonColonGreen> for ExprPathElementOrSeparatorGreen {
-    fn from(value: TerminalColonColonGreen) -> Self {
-        ExprPathElementOrSeparatorGreen::Separator(value)
-    }
-}
-impl From<PathSegmentGreen> for ExprPathElementOrSeparatorGreen {
-    fn from(value: PathSegmentGreen) -> Self {
-        ExprPathElementOrSeparatorGreen::Element(value)
-    }
-}
-impl ExprPathElementOrSeparatorGreen {
-    fn id(&self) -> GreenId {
-        match self {
-            ExprPathElementOrSeparatorGreen::Separator(green) => green.0,
-            ExprPathElementOrSeparatorGreen::Element(green) => green.0,
-        }
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPathGreen(pub GreenId);
 impl TypedSyntaxNode for ExprPath {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPath);
@@ -2220,20 +2204,32 @@ impl TypedSyntaxNode for ExprPath {
         ExprPathGreen(
             Arc::new(GreenNode {
                 kind: SyntaxKind::ExprPath,
-                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        OptionTerminalDollar::missing(db).0,
+                        ExprPathInner::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
             })
             .intern(db),
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        Self(ElementList::new(node))
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprPath,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprPath
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        if node.kind(db) == SyntaxKind::ExprPath {
-            Some(Self(ElementList::new(node)))
-        } else {
-            None
-        }
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprPath { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
@@ -2244,6 +2240,289 @@ impl TypedSyntaxNode for ExprPath {
 }
 impl From<&ExprPath> for SyntaxStablePtrId {
     fn from(node: &ExprPath) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalDollar {
+    Empty(OptionTerminalDollarEmpty),
+    TerminalDollar(TerminalDollar),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalDollarPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionTerminalDollarPtr {
+    type SyntaxNode = OptionTerminalDollar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalDollar {
+        OptionTerminalDollar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalDollarPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalDollarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionTerminalDollarEmptyPtr> for OptionTerminalDollarPtr {
+    fn from(value: OptionTerminalDollarEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDollarPtr> for OptionTerminalDollarPtr {
+    fn from(value: TerminalDollarPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalDollarEmptyGreen> for OptionTerminalDollarGreen {
+    fn from(value: OptionTerminalDollarEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDollarGreen> for OptionTerminalDollarGreen {
+    fn from(value: TerminalDollarGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalDollarGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalDollar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalDollarPtr;
+    type Green = OptionTerminalDollarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalDollarEmpty => {
+                OptionTerminalDollar::Empty(OptionTerminalDollarEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDollar => {
+                OptionTerminalDollar::TerminalDollar(TerminalDollar::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalDollar"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalDollarEmpty => Some(OptionTerminalDollar::Empty(
+                OptionTerminalDollarEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalDollar => Some(OptionTerminalDollar::TerminalDollar(
+                TerminalDollar::from_syntax_node(db, node),
+            )),
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalDollar::Empty(x) => x.as_syntax_node(),
+            OptionTerminalDollar::TerminalDollar(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalDollarPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalDollar> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalDollar) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl OptionTerminalDollar {
+    /// Checks if a kind of a variant of [OptionTerminalDollar].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionTerminalDollarEmpty | SyntaxKind::TerminalDollar)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalDollarEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionTerminalDollarEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalDollarEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionTerminalDollarEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalDollarEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionTerminalDollarEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalDollarEmptyPtr(pub SyntaxStablePtrId);
+impl OptionTerminalDollarEmptyPtr {}
+impl TypedStablePtr for OptionTerminalDollarEmptyPtr {
+    type SyntaxNode = OptionTerminalDollarEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalDollarEmpty {
+        OptionTerminalDollarEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalDollarEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalDollarEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalDollarEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalDollarEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalDollarEmpty);
+    type StablePtr = OptionTerminalDollarEmptyPtr;
+    type Green = OptionTerminalDollarEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalDollarEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalDollarEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalDollarEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalDollarEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionTerminalDollarEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalDollarEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalDollarEmpty> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalDollarEmpty) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprPathInner(ElementList<PathSegment, 2>);
+impl Deref for ExprPathInner {
+    type Target = ElementList<PathSegment, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl ExprPathInner {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<ExprPathInnerElementOrSeparatorGreen>,
+    ) -> ExprPathInnerGreen {
+        let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
+        ExprPathInnerGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPathInner,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.id()).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPathInnerPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for ExprPathInnerPtr {
+    type SyntaxNode = ExprPathInner;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprPathInner {
+        ExprPathInner::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprPathInnerPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprPathInnerPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum ExprPathInnerElementOrSeparatorGreen {
+    Separator(TerminalColonColonGreen),
+    Element(PathSegmentGreen),
+}
+impl From<TerminalColonColonGreen> for ExprPathInnerElementOrSeparatorGreen {
+    fn from(value: TerminalColonColonGreen) -> Self {
+        ExprPathInnerElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<PathSegmentGreen> for ExprPathInnerElementOrSeparatorGreen {
+    fn from(value: PathSegmentGreen) -> Self {
+        ExprPathInnerElementOrSeparatorGreen::Element(value)
+    }
+}
+impl ExprPathInnerElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            ExprPathInnerElementOrSeparatorGreen::Separator(green) => green.0,
+            ExprPathInnerElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPathInnerGreen(pub GreenId);
+impl TypedSyntaxNode for ExprPathInner {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPathInner);
+    type StablePtr = ExprPathInnerPtr;
+    type Green = ExprPathInnerGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprPathInnerGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPathInner,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::ExprPathInner {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprPathInnerPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprPathInner> for SyntaxStablePtrId {
+    fn from(node: &ExprPathInner) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -6392,13 +6671,13 @@ pub struct ExprPlaceholder {
 }
 impl ExprPlaceholder {
     pub const INDEX_DOLLAR: usize = 0;
-    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_PATH: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         dollar: TerminalDollarGreen,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
     ) -> ExprPlaceholderGreen {
-        let children: Vec<GreenId> = vec![dollar.0, name.0];
+        let children: Vec<GreenId> = vec![dollar.0, path.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         ExprPlaceholderGreen(
             Arc::new(GreenNode {
@@ -6413,8 +6692,8 @@ impl ExprPlaceholder {
     pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
         TerminalDollar::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6445,10 +6724,7 @@ impl TypedSyntaxNode for ExprPlaceholder {
             Arc::new(GreenNode {
                 kind: SyntaxKind::ExprPlaceholder,
                 details: GreenNodeDetails::Node {
-                    children: vec![
-                        TerminalDollar::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                    ],
+                    children: vec![TerminalDollar::missing(db).0, ExprPath::missing(db).0],
                     width: TextWidth::default(),
                 },
             })

@@ -4,8 +4,9 @@ use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, 
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::ExprPlaceholder;
+use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -235,18 +236,22 @@ fn expand_macro_rule_ex(
     captures: &OrderedHashMap<String, String>,
     res_buffer: &mut String,
 ) {
-    if node.kind(db) == SyntaxKind::ExprPlaceholder {
-        let placeholder_node = ExprPlaceholder::from_syntax_node(db, node.clone());
-        let placeholder_name =
-            placeholder_node.name(db).as_syntax_node().get_text_without_trivia(db);
-        if let Some(value) = captures.get(&placeholder_name) {
-            res_buffer.push_str(value);
-        } else {
-            // TODO(Gil): verify in the declaration that all the used placeholders in the expansion
-            // are present in the captures.
-            panic!("Placeholder not found in captures.");
+    if node.kind(db) == SyntaxKind::ExprPath {
+        let path_node = ExprPath::from_syntax_node(db, node.clone());
+
+        if let ast::OptionTerminalDollar::TerminalDollar(_) = path_node.dollar(db) {
+            if path_node.segments(db).elements(db).len() == 1 {
+                let placeholder_name = path_node.identifier(db).to_string();
+                if let Some(value) = captures.get(&placeholder_name) {
+                    res_buffer.push_str(value);
+                } else {
+                    // TODO(Gil): verify in the declaration that all the used placeholders in the
+                    // expansion are present in the captures.
+                    panic!("Placeholder not found in captures.");
+                }
+                return;
+            }
         }
-        return;
     }
     if node.kind(db).is_terminal() {
         res_buffer.push_str(&node.get_text(db));

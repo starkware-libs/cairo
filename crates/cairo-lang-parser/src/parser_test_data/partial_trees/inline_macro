@@ -18,8 +18,10 @@ ExprInlineMacro
 //! > expected_tree
 └── Top level kind: ExprInlineMacro
     ├── path (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'println'
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'println'
     ├── bang (kind: TokenNot): '!'
     └── arguments (kind: TokenTreeNode)
         └── subtree (kind: ParenthesizedTokenTree)

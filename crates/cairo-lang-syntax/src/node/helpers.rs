@@ -65,6 +65,19 @@ impl GetIdentifier for ast::ExprPathGreen {
             GreenNodeDetails::Node { children, width: _ } => children,
             _ => panic!("Unexpected token"),
         };
+        let segment_green = ast::ExprPathInnerGreen(*children.last().unwrap());
+        segment_green.identifier(db)
+    }
+}
+
+impl GetIdentifier for ast::ExprPathInnerGreen {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = self.0.lookup_intern(db);
+        let children = match &green_node.details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
         segment_green.identifier(db)
@@ -83,7 +96,7 @@ impl GetIdentifier for ast::TerminalIdentifierGreen {
 impl GetIdentifier for ast::ExprPath {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.elements(db).last().cloned().unwrap().identifier(db)
+        self.segments(db).elements(db).last().cloned().unwrap().identifier(db)
     }
 }
 

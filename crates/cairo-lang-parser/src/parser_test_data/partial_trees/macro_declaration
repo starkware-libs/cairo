@@ -40,9 +40,11 @@ macro macro_name {
     │       │       │   │       ├── expr (kind: ExprBinary)
     │       │       │   │       │   ├── lhs (kind: TokenLiteralNumber): '2'
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
-    │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
+    │       │       │   │       │   └── rhs (kind: ExprPath)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'placeholder'
+    │       │       │   │       │       └── segments (kind: ExprPathInner)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'placeholder'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
@@ -97,9 +99,11 @@ macro macro_name {
     │       │   │   │   │       ├── expr (kind: ExprBinary)
     │       │   │   │   │       │   ├── lhs (kind: TokenLiteralNumber): '2'
     │       │   │   │   │       │   ├── op (kind: TokenPlus): '+'
-    │       │   │   │   │       │   └── rhs (kind: ExprPlaceholder)
+    │       │   │   │   │       │   └── rhs (kind: ExprPath)
     │       │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │   │   │   │       │       └── name (kind: TokenIdentifier): 'placeholder'
+    │       │   │   │   │       │       └── segments (kind: ExprPathInner)
+    │       │   │   │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │   │   │   │       │               └── ident (kind: TokenIdentifier): 'placeholder'
     │       │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -129,9 +133,11 @@ macro macro_name {
     │       │       │   │       ├── expr (kind: ExprBinary)
     │       │       │   │       │   ├── lhs (kind: TokenLiteralNumber): '2'
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
-    │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
+    │       │       │   │       │   └── rhs (kind: ExprPath)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── segments (kind: ExprPathInner)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'x'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
@@ -147,7 +153,7 @@ test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 fn foo() {
-    2 + $ placeholder
+    2 + $placeholder
 }
 
 //! > top_level_kind
@@ -155,14 +161,9 @@ fn foo() {
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:2:8
-    2 + $ placeholder
-       ^
-
-error: Skipped tokens. Expected: statement.
+error: Placeholder expression ($expression) is allowed only in the context of a macro rule.
  --> dummy_file.cairo:2:9
-    2 + $ placeholder
+    2 + $placeholder
         ^
 
 //! > expected_tree
@@ -186,18 +187,16 @@ error: Skipped tokens. Expected: statement.
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
-    │           │   ├── child #0 (kind: StatementExpr)
-    │           │   │   ├── attributes (kind: AttributeList) []
-    │           │   │   ├── expr (kind: ExprBinary)
-    │           │   │   │   ├── lhs (kind: TokenLiteralNumber): '2'
-    │           │   │   │   ├── op (kind: TokenPlus): '+'
-    │           │   │   │   └── rhs: Missing []
-    │           │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │           │   └── child #1 (kind: StatementExpr)
+    │           │   └── child #0 (kind: StatementExpr)
     │           │       ├── attributes (kind: AttributeList) []
-    │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegmentSimple)
-    │           │       │       └── ident (kind: TokenIdentifier): 'placeholder'
+    │           │       ├── expr (kind: ExprBinary)
+    │           │       │   ├── lhs (kind: TokenLiteralNumber): '2'
+    │           │       │   ├── op (kind: TokenPlus): '+'
+    │           │       │   └── rhs (kind: ExprPath)
+    │           │       │       ├── dollar (kind: TokenDollar): '$'
+    │           │       │       └── segments (kind: ExprPathInner)
+    │           │       │           └── item #0 (kind: PathSegmentSimple)
+    │           │       │               └── ident (kind: TokenIdentifier): 'placeholder'
     │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
@@ -257,9 +256,11 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       │       │   │       ├── expr (kind: ExprBinary)
     │       │       │   │       │   ├── lhs (kind: TokenLiteralNumber): '2'
     │       │       │   │       │   ├── op (kind: TokenPlus): '+'
-    │       │       │   │       │   └── rhs (kind: ExprPlaceholder)
+    │       │       │   │       │   └── rhs (kind: ExprPath)
     │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
-    │       │       │   │       │       └── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── segments (kind: ExprPathInner)
+    │       │       │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │               └── ident (kind: TokenIdentifier): 'x'
     │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
