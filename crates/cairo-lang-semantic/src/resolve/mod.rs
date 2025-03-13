@@ -249,15 +249,27 @@ enum UseStarResult {
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
+    /// Is the path prefixed with a `$`, indicating a resolver site modifier.
+    fn is_placeholder_prefixed(&self, db: &dyn SyntaxGroup) -> bool;
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
         self.segments(db).elements(db)
     }
+    fn is_placeholder_prefixed(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.dollar(db) {
+            ast::OptionTerminalDollar::Empty(_) => false,
+            ast::OptionTerminalDollar::TerminalDollar(_) => true,
+        }
+    }
 }
 impl AsSegments for Vec<ast::PathSegment> {
     fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
         self
+    }
+    /// A dollar can prefix only the first segment of a path, thus irrelevant to a list of segments.
+    fn is_placeholder_prefixed(&self, _: &dyn SyntaxGroup) -> bool {
+        false
     }
 }
 
