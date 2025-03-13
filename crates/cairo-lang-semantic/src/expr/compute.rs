@@ -521,7 +521,7 @@ fn compute_expr_inline_macro_semantic(
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
-    let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
+    let expr_syntax = ctx.db.macro_generated_file_expr_syntax(new_file)?;
     let expr = compute_expr_semantic(ctx, &expr_syntax);
     Ok(expr.expr)
 }

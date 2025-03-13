@@ -18,15 +18,27 @@ mod db_test;
 pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
     /// Should only be used internally.
     /// Parses a file and returns the result and the generated [ParserDiagnostic].
-    fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;
+    fn priv_file_syntax_data(&self, file_id: FileId, is_generated_code: bool) -> SyntaxData;
     /// Parses a file and returns its SyntaxNode.
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
+    /// Parses a file and returns its SyntaxNode. Allows syntax special to macro generated code
+    /// (resolver site modifiers outside of macro rules).
+    fn macro_generated_file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
     /// Parses a file and returns its AST as an expression.
     fn file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
+    /// Parses a file and returns its AST as an expression. Allows syntax special to macro generated
+    /// code (resolver site modifiers outside of macro rules).
+    fn macro_generated_file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
     /// Returns the parser diagnostics for this file.
     fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;
+    /// Returns the parser diagnostics for this file. Allows syntax special to macro generated
+    /// code (resolver site modifiers outside of macro rules).
+    fn macro_generated_file_syntax_diagnostics(
+        &self,
+        file_id: FileId,
+    ) -> Diagnostics<ParserDiagnostic>;
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -35,21 +47,35 @@ pub struct SyntaxData {
     syntax: Maybe<SyntaxNode>,
 }
 
-pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
+pub fn priv_file_syntax_data(
+    db: &dyn ParserGroup,
+    file_id: FileId,
+    is_macro_generated_code: bool,
+) -> SyntaxData {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db.upcast()) {
         FileKind::Module => {
-            Parser::parse_file(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
+            Parser::parse_file(db.upcast(), &mut diagnostics, file_id, &s, is_macro_generated_code)
+                .as_syntax_node()
         }
-        FileKind::Expr => {
-            Parser::parse_file_expr(db.upcast(), &mut diagnostics, file_id, &s).as_syntax_node()
-        }
+        FileKind::Expr => Parser::parse_file_expr(
+            db.upcast(),
+            &mut diagnostics,
+            file_id,
+            &s,
+            is_macro_generated_code,
+        )
+        .as_syntax_node(),
     });
     SyntaxData { diagnostics: diagnostics.build(), syntax }
 }
 
 pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxNode> {
-    db.priv_file_syntax_data(file_id).syntax
+    db.priv_file_syntax_data(file_id, false).syntax
+}
+
+pub fn macro_generated_file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxNode> {
+    db.priv_file_syntax_data(file_id, true).syntax
 }
 
 pub fn file_module_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<SyntaxFile> {
@@ -58,7 +84,12 @@ pub fn file_module_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Syntax
 }
 
 pub fn file_expr_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Expr> {
-    assert_eq!(file_id.kind(db.upcast()), FileKind::Expr, "file_id must be a module");
+    assert_eq!(file_id.kind(db.upcast()), FileKind::Expr, "file_id must be an expr");
+    Ok(Expr::from_syntax_node(db.upcast(), db.file_syntax(file_id)?))
+}
+
+pub fn macro_generated_file_expr_syntax(db: &dyn ParserGroup, file_id: FileId) -> Maybe<Expr> {
+    assert_eq!(file_id.kind(db.upcast()), FileKind::Expr, "file_id must be an expr");
     Ok(Expr::from_syntax_node(db.upcast(), db.file_syntax(file_id)?))
 }
 
@@ -66,5 +97,12 @@ pub fn file_syntax_diagnostics(
     db: &dyn ParserGroup,
     file_id: FileId,
 ) -> Diagnostics<ParserDiagnostic> {
-    db.priv_file_syntax_data(file_id).diagnostics
+    db.priv_file_syntax_data(file_id, false).diagnostics
+}
+
+pub fn macro_generated_file_syntax_diagnostics(
+    db: &dyn ParserGroup,
+    file_id: FileId,
+) -> Diagnostics<ParserDiagnostic> {
+    db.priv_file_syntax_data(file_id, true).diagnostics
 }
