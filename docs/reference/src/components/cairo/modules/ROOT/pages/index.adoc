@@ -32,5 +32,5 @@ site.
 |link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+[Request a feature]
 |link:https://github.com/starkware-libs/cairo/discussions[Ask a Question]
 |link:https://github.com/starkware-libs/cairo/actions/workflows/ci.yml[GitHub Workflow Status]
-|link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[Submit a pull requests]
+|link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[Submit a pull request]
 |===
