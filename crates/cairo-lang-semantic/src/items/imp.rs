@@ -1434,7 +1434,7 @@ pub fn priv_impl_definition_data(
     })
 }
 
-/// An helper function to report diagnostics of items in an impl (used in
+/// A helper function to report diagnostics of items in an impl (used in
 /// priv_impl_definition_data).
 fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     syntax_db: &dyn SyntaxGroup,
