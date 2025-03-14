@@ -831,7 +831,7 @@ fn lower_single_pattern(
     Ok(())
 }
 
-/// An helper function to handle patterns of tuples or fixed size arrays.
+/// A helper function to handle patterns of tuples or fixed size arrays.
 fn lower_tuple_like_pattern_helper(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
