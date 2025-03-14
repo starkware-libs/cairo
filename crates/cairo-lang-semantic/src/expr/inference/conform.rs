@@ -281,7 +281,7 @@ impl InferenceConform for Inference<'_> {
         (n_snapshots, long_ty1)
     }
 
-    /// Conforms generics args. See `conform_ty()`.
+    /// Conforms generic args. See `conform_ty()`.
     fn conform_generic_args(
         &mut self,
         gargs0: &[GenericArgumentId],
@@ -292,7 +292,7 @@ impl InferenceConform for Inference<'_> {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Conforms a generics arg. See `conform_ty()`.
+    /// Conforms a generic arg. See `conform_ty()`.
     fn conform_generic_arg(
         &mut self,
         garg0: GenericArgumentId,
@@ -389,7 +389,7 @@ impl InferenceConform for Inference<'_> {
         }
     }
 
-    /// Conforms generics traits. See `conform_ty()`.
+    /// Conforms generic traits. See `conform_ty()`.
     fn conform_traits(
         &mut self,
         trt0: ConcreteTraitId,
@@ -436,7 +436,7 @@ impl InferenceConform for Inference<'_> {
         self.internal_ty_contains_var(ty, var)
     }
 
-    /// Checks if a slice of generics arguments contain a certain [InferenceVar] somewhere. Used to
+    /// Checks if a slice of generic arguments contain a certain [InferenceVar] somewhere. Used to
     /// avoid inference cycles.
     fn generic_args_contain_var(
         &mut self,
@@ -739,7 +739,7 @@ impl Inference<'_> {
         self.set_impl_type_bounds(impl_type_bounds);
     }
 
-    /// An helper function for getting for an impl type assignment.
+    /// A helper function for getting for an impl type assignment.
     /// Creates a new type var if the impl type is not yet assigned.
     fn impl_type_assignment(
         &mut self,
