@@ -205,11 +205,6 @@ fn need_separator(
     {
         return true;
     }
-    if kind0 == SyntaxKind::TerminalShortString
-        && matches!(kind1, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
-    {
-        return true;
-    }
     if (text0 == "&" && text1.starts_with('&'))
         || (text0 == "|" && text1.starts_with('|'))
         || (text0 == "/" && text1.starts_with('/'))
