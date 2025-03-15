@@ -84,6 +84,8 @@ FunctionId: FunctionId = {
     <id:ConcreteLabel> => FunctionId::from_string(id),
     <id:ConcreteLabel> "[" <extra:BasicLabel> "]"  =>
         FunctionId::from_string(format!("{id}[{extra}]")),
+    <id:ConcreteLabel> "[" <start:UnsignedInt> <end:SignedInt> "]"  =>
+        FunctionId::from_string(format!("{id}[{start}{end}]")),
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
