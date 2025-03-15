@@ -12,7 +12,6 @@ use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGeneric
 use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
-use semantic::items::imp::ImplLookupContext;
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -22,24 +21,24 @@ pub fn get_concrete_type_id(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    match type_id.lookup_intern(db) {
-        semantic::TypeLongId::Snapshot(inner_ty)
-            if db.type_info(ImplLookupContext::default(), inner_ty)?.copyable.is_ok() =>
-        {
-            db.get_concrete_type_id(inner_ty)
-        }
+    Ok(match type_id.lookup_intern(db) {
+        semantic::TypeLongId::Snapshot(inner_ty) => snapshot_ty(
+            &SierraSignatureSpecializationContext(db),
+            db.get_concrete_type_id(inner_ty)?,
+        )
+        .unwrap(),
         semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
         ) if db.is_self_referential(type_id)? => {
-            Ok(SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db))
+            SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db)
         }
-        _ => Ok(if type_id.is_phantom(db.upcast()) {
+        _ => if type_id.is_phantom(db.upcast()) {
             SierraGeneratorTypeLongId::Phantom(type_id)
         } else {
             SierraGeneratorTypeLongId::Regular(db.get_concrete_long_type_id(type_id)?)
         }
-        .intern(db)),
-    }
+        .intern(db),
+    })
 }
 
 /// See [SierraGenGroup::get_index_enum_type_id] for documentation.
