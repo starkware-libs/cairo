@@ -66,4 +66,5 @@ mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;
 mod revoked_locals;
+mod self_ref_non_derived;
 mod zero_sized_locals;
