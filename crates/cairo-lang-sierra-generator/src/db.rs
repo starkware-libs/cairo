@@ -194,13 +194,12 @@ fn get_type_info(
     let long_id = match concrete_type_id.lookup_intern(db) {
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
-            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
-            let info = db.type_info(ImplLookupContext::default(), ty)?;
+            let (droppable, duplicatable) = info_by_traits(db, ty)?;
             return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
-                long_id,
+                long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
                 storable: true,
-                droppable: info.droppable.is_ok(),
-                duplicatable: info.copyable.is_ok(),
+                droppable,
+                duplicatable,
                 zero_sized: false,
             }));
         }
@@ -226,6 +225,26 @@ fn get_type_info(
         panic!("Got failure while specializing type `{long_id}`: {err}")
     });
     Ok(Arc::new(concrete_ty.info().clone()))
+}
+
+/// Returns the approximation of `ty`s droppable and copyable traits.
+///
+/// A type is considered `Copy` if it is `Copy` or all its dependencies are `Copy`.
+/// A type is considered `Drop` if it is `Drop` or all its dependencies are `Drop`.
+fn info_by_traits(db: &dyn SierraGenGroup, ty: semantic::TypeId) -> Maybe<(bool, bool)> {
+    let info = db.type_info(ImplLookupContext::default(), ty)?;
+    if info.droppable.is_ok() && info.copyable.is_ok() {
+        return Ok((true, true));
+    }
+    let mut deps_droppable = true;
+    let mut deps_copyable = true;
+    let deps = db.type_dependencies(ty)?;
+    for dep in deps.iter() {
+        let dep_info = db.type_info(ImplLookupContext::default(), *dep)?;
+        deps_droppable &= dep_info.droppable.is_ok();
+        deps_copyable &= dep_info.copyable.is_ok();
+    }
+    Ok((info.droppable.is_ok() || deps_droppable, info.copyable.is_ok() || deps_copyable))
 }
 
 /// Returns the concrete Sierra long type id given the concrete id.
