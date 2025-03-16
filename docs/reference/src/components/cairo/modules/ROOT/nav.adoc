@@ -1,5 +1,5 @@
 // Introduction
 * Introduction
-** xref:index.adoc[Welcome to Cairo]
-** xref:how-to-contribute.adoc[How to contribute]
-** xref:roadmap.adoc[Cairo 0 feature parity]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/ROOT/pages/index.adoc[Welcome to Cairo]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/appendices/pages/contribution-guidelines.adoc[How to contribute]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/ROOT/pages/roadmap.adoc[Cairo 0 feature parity]
