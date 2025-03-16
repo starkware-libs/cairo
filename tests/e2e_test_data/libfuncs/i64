@@ -383,57 +383,6 @@ test::foo@F0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer:
 
 //! > ==========================================================================
 
-//! > i64_is_zero libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo_code
-use zeroable::IsZeroResult;
-fn foo(a: i64) -> i64 {
-    match integer::i64_is_zero(a) {
-        IsZeroResult::Zero => 123_i64,
-        IsZeroResult::NonZero(x) => x.into(),
-    }
-}
-
-//! > casm
-jmp rel 5 if [fp + -3] != 0;
-[ap + 0] = 123, ap++;
-ret;
-[ap + 0] = [fp + -3], ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 200})
-
-//! > sierra_code
-type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<i64, 123> = Const<i64, 123> [storable: false, drop: false, dup: false, zero_sized: false];
-type NonZero<i64> = NonZero<i64> [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc i64_is_zero = i64_is_zero;
-libfunc branch_align = branch_align;
-libfunc const_as_immediate<Const<i64, 123>> = const_as_immediate<Const<i64, 123>>;
-libfunc store_temp<i64> = store_temp<i64>;
-libfunc unwrap_non_zero<i64> = unwrap_non_zero<i64>;
-
-F0:
-i64_is_zero([0]) { fallthrough() F0_B0([1]) };
-branch_align() -> ();
-const_as_immediate<Const<i64, 123>>() -> ([2]);
-store_temp<i64>([2]) -> ([2]);
-return([2]);
-F0_B0:
-branch_align() -> ();
-unwrap_non_zero<i64>([1]) -> ([3]);
-store_temp<i64>([3]) -> ([3]);
-return([3]);
-
-test::foo@F0([0]: i64) -> (i64);
-
-//! > ==========================================================================
-
 //! > i64_diff libfunc
 
 //! > test_runner_name

@@ -258,7 +258,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
                 vec![ApChange::Known(0)]
             }
-            Sint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Sint128Concrete::Operation(_) => {
                 vec![ApChange::Known(3), ApChange::Known(4), ApChange::Known(4)]
             }
@@ -466,14 +465,13 @@ fn uint_ap_change<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits>(
 }
 
 /// Returns the ap changes for s8/s16/s32/s64 libfuncs.
-fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
+fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits>(
     libfunc: &SintConcrete<TSintTraits>,
 ) -> Vec<ApChange> {
     match libfunc {
         SintConcrete::Const(_) | SintConcrete::ToFelt252(_) => vec![ApChange::Known(0)],
         SintConcrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         SintConcrete::FromFelt252(_) => vec![ApChange::Known(3), ApChange::Known(7)],
-        SintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         SintConcrete::WideMul(_) => vec![ApChange::Known(0)],
         SintConcrete::Operation(_) => {
             vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]
