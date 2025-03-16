@@ -1944,7 +1944,6 @@ impl NumericLiterali8 of NumericLiteral<i8>;
 extern const fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
 extern const fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
-extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
 
 impl I8Serde = crate::serde::into_felt252_based::SerdeImpl<i8>;
@@ -2031,7 +2030,6 @@ impl NumericLiterali16 of NumericLiteral<i16>;
 extern const fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
 extern const fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
-extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
 
 impl I16Serde = crate::serde::into_felt252_based::SerdeImpl<i16>;
@@ -2119,7 +2117,6 @@ impl NumericLiterali32 of NumericLiteral<i32>;
 extern const fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
 extern const fn i32_to_felt252(a: i32) -> felt252 nopanic;
 
-extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 
 impl I32Serde = crate::serde::into_felt252_based::SerdeImpl<i32>;
@@ -2207,7 +2204,6 @@ impl NumericLiterali64 of NumericLiteral<i64>;
 extern const fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
 extern const fn i64_to_felt252(a: i64) -> felt252 nopanic;
 
-extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 
 impl I64Serde = crate::serde::into_felt252_based::SerdeImpl<i64>;
@@ -2295,7 +2291,6 @@ impl NumericLiterali128 of NumericLiteral<i128>;
 extern const fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
 extern const fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
-extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
 
 impl I128Serde = crate::serde::into_felt252_based::SerdeImpl<i128>;
