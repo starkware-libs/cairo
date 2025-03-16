@@ -143,7 +143,6 @@ pub fn build_sint<
         SintConcrete::Equal(_) => misc::build_cell_eq(builder),
         SintConcrete::ToFelt252(_) => misc::build_identity(builder),
         SintConcrete::FromFelt252(_) => build_sint_from_felt252(builder, MIN_VALUE, MAX_VALUE),
-        SintConcrete::IsZero(_) => misc::build_is_zero(builder),
         SintConcrete::WideMul(_) => build_small_wide_mul(builder),
         SintConcrete::Operation(libfunc) => {
             build_sint_overflowing_operation(builder, MIN_VALUE, MAX_VALUE, libfunc.operator)

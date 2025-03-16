@@ -259,7 +259,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
                 vec![ApChange::Known(0)]
             }
-            Sint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Sint128Concrete::Operation(_) => {
                 vec![ApChange::Known(3), ApChange::Known(4), ApChange::Known(4)]
             }
@@ -482,7 +481,6 @@ fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
         SintConcrete::Const(_) | SintConcrete::ToFelt252(_) => vec![ApChange::Known(0)],
         SintConcrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         SintConcrete::FromFelt252(_) => vec![ApChange::Known(3), ApChange::Known(7)],
-        SintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         SintConcrete::WideMul(_) => vec![ApChange::Known(0)],
         SintConcrete::Operation(_) => {
             vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]

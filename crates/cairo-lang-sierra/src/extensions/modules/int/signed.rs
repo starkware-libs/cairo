@@ -8,7 +8,7 @@ use super::{
     IntWideMulLibfunc,
 };
 use crate::define_libfunc_hierarchy;
-use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
+use crate::extensions::is_zero::IsZeroTraits;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
@@ -35,14 +35,13 @@ pub trait SintTraits: IntTraits {
 }
 
 define_libfunc_hierarchy! {
-    pub enum SintLibfunc<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits> {
+    pub enum SintLibfunc<TSintTraits: SintTraits + IntMulTraits> {
         Const(IntConstLibfunc<TSintTraits>),
         Equal(IntEqualLibfunc<TSintTraits>),
         ToFelt252(IntToFelt252Libfunc<TSintTraits>),
         FromFelt252(IntFromFelt252Libfunc<TSintTraits>),
         Operation(SintOperationLibfunc<TSintTraits>),
         Diff(SintDiffLibfunc<TSintTraits>),
-        IsZero(IsZeroLibfunc<TSintTraits>),
         WideMul(IntWideMulLibfunc<TSintTraits>),
     }, SintConcrete
 }
