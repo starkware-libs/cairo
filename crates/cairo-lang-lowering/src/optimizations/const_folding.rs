@@ -662,7 +662,7 @@ impl ConstFoldingLibfuncInfo {
                 core.extern_function_id("felt252_is_zero"),
                 bounded_int_module.extern_function_id("bounded_int_is_zero")
             ],
-            ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
+            ["u8", "u16", "u32", "u64", "u128", "u256"]
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_is_zero")))
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
@@ -701,28 +701,32 @@ impl ConstFoldingLibfuncInfo {
         let bounded_int_constrain = bounded_int_module.extern_function_id("bounded_int_constrain");
         let type_value_ranges = OrderedHashMap::from_iter(
             [
-                ("u8", BigInt::ZERO, u8::MAX.into()),
-                ("u16", BigInt::ZERO, u16::MAX.into()),
-                ("u32", BigInt::ZERO, u32::MAX.into()),
-                ("u64", BigInt::ZERO, u64::MAX.into()),
-                ("u128", BigInt::ZERO, u128::MAX.into()),
-                ("u256", BigInt::ZERO, BigInt::from(1) << 256),
-                ("i8", i8::MIN.into(), i8::MAX.into()),
-                ("i16", i16::MIN.into(), i16::MAX.into()),
-                ("i32", i32::MIN.into(), i32::MAX.into()),
-                ("i64", i64::MIN.into(), i64::MAX.into()),
-                ("i128", i128::MIN.into(), i128::MAX.into()),
+                ("u8", BigInt::ZERO, u8::MAX.into(), false),
+                ("u16", BigInt::ZERO, u16::MAX.into(), false),
+                ("u32", BigInt::ZERO, u32::MAX.into(), false),
+                ("u64", BigInt::ZERO, u64::MAX.into(), false),
+                ("u128", BigInt::ZERO, u128::MAX.into(), false),
+                ("u256", BigInt::ZERO, BigInt::from(1) << 256, false),
+                ("i8", i8::MIN.into(), i8::MAX.into(), true),
+                ("i16", i16::MIN.into(), i16::MAX.into(), true),
+                ("i32", i32::MIN.into(), i32::MAX.into(), true),
+                ("i64", i64::MIN.into(), i64::MAX.into(), true),
+                ("i128", i128::MIN.into(), i128::MAX.into(), true),
             ]
-            .map(|(ty, min, max): (&str, BigInt, BigInt)| {
-                let info = TypeInfo {
-                    min,
-                    max,
-                    is_zero: integer_module
-                        .function_id(format!("{ty}_is_zero"), vec![])
-                        .lowered(db),
-                };
-                (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), info)
-            }),
+            .map(
+                |(ty_name, min, max, as_bounded_int): (&str, BigInt, BigInt, bool)| {
+                    let ty = corelib::get_core_ty_by_name(db.upcast(), ty_name.into(), vec![]);
+                    let is_zero = if as_bounded_int {
+                        bounded_int_module
+                            .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
+                    } else {
+                        integer_module.function_id(format!("{ty_name}_is_zero"), vec![])
+                    }
+                    .lowered(db);
+                    let info = TypeInfo { min, max, is_zero };
+                    (ty, info)
+                },
+            ),
         );
         Self {
             felt_sub,
