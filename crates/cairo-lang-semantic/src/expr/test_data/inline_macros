@@ -1049,3 +1049,31 @@ error: No matching rule found in inline macro `add_one`.
  --> lib.cairo:7:5
     add_one!(x z);
     ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test $defsite only path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    a_macro!(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro a_macro {
+    ($x:ident) => {
+        $defsite
+    };
+}
+
+//! > expected_diagnostics
+error: Empty path after `$defsite` is not allowed.
+ --> lib.cairo[a_macro]:2:10
+        $defsite
+         ^^^^^^^

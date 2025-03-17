@@ -1,12 +1,13 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
     ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId, VariantId,
 };
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -70,6 +71,11 @@ pub const SUPER_KW: &str = "super";
 pub const CRATE_KW: &str = "crate";
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
+
+// Macro related keywords. Notice that the `$` is not included here as it is only a prefix and not a
+// part of the segment.
+/// The modifier for a macro definition site.
+pub const MACRO_DEF_SITE: &str = "defsite";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -205,6 +211,8 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    /// The resolver data for resolving items from the definition site of a macro.
+    pub macro_defsite_data: Option<Arc<ResolverData>>,
     pub owning_crate_id: CrateId,
     pub settings: CrateSettings,
 }
@@ -286,7 +294,7 @@ impl<'db> Resolver<'db> {
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
-        Self { owning_crate_id, settings, db, data }
+        Self { owning_crate_id, settings, db, data, macro_defsite_data: None }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -392,6 +400,14 @@ impl<'db> Resolver<'db> {
         item_type: NotFoundItemType,
         statement_env: Option<&mut Environment>,
     ) -> Maybe<ResolvedConcreteItem> {
+        if path.is_placeholder(self.db.upcast()) {
+            return self.resolve_placeholder_concrete_path(
+                diagnostics,
+                path,
+                item_type,
+                statement_env,
+            );
+        }
         self.resolve_path_inner::<ResolvedConcreteItem>(
             diagnostics,
             path,
@@ -616,6 +632,15 @@ impl<'db> Resolver<'db> {
                 }
                 _ => Ok(()),
             };
+        if path.is_placeholder(self.db.upcast()) {
+            return self.resolve_placeholder_generic_path(
+                diagnostics,
+                path,
+                item_type,
+                allow_generic_args,
+                statement_env,
+            );
+        }
         self.resolve_path_inner::<ResolvedGenericItem>(
             diagnostics,
             path,
@@ -1996,6 +2021,113 @@ impl<'db> Resolver<'db> {
             segment_stable_ptr,
         );
         specialized_item
+    }
+
+    // TODO(Gil): Unify the concrete and generic versions of this function. The problem is that the
+    // unified function should have a function argument with an inner impl argument (impl
+    // AsSegments), which is not allowed in Rust.
+    /// Resolves the path assuming the first segment is a valid resolver modifier (currently only
+    /// `$defsite`). If it's a valid modifier and there is a macro defsite resolver data in
+    /// context Returns the resolved item in the defsite context.
+    fn resolve_placeholder_concrete_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        path: impl AsSegments,
+        item_type: NotFoundItemType,
+        statement_env: Option<&mut Environment>,
+    ) -> Maybe<ResolvedConcreteItem> {
+        let elements_vec = path.to_segments(self.db.upcast());
+        let mut segments = elements_vec.iter().peekable();
+        if segments.len() == 1 {
+            return Err(diagnostics
+                .report(segments.next().unwrap().stable_ptr(), EmptyPathAfterResolverModifier));
+        }
+        match segments.peek() {
+            Some(ast::PathSegment::Simple(path_segment_simple)) => {
+                let ident = path_segment_simple.ident(self.db.upcast());
+                let ident_text = ident.text(self.db.upcast());
+                if ident_text == MACRO_DEF_SITE {
+                    segments.next();
+                    if let Some(defsite_resolver_data) = self.macro_defsite_data.as_ref() {
+                        let mut macro_defsite_resolver = Resolver::with_data(
+                            self.db,
+                            defsite_resolver_data
+                                .clone_with_inference_id(self.db, self.inference_data.inference_id),
+                        );
+                        macro_defsite_resolver.resolve_concrete_path_ex(
+                            diagnostics,
+                            segments.cloned().collect_vec(),
+                            item_type,
+                            statement_env,
+                        )
+                    } else {
+                        Err(diagnostics
+                            .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                    }
+                } else {
+                    Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
+                        modifier: ident_text,
+                    }))
+                }
+            }
+            _ => {
+                // Empty path segment after a `$`, diagnostic was added in the parser.
+                Err(skip_diagnostic())
+            }
+        }
+    }
+
+    /// Resolves the path assuming the first segment is a valid resolver modifier (currently only
+    /// `$defsite`). If it's a valid modifier and there is a macro defsite resolver data in
+    /// context Returns the resolved item in the defsite context.
+    fn resolve_placeholder_generic_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        path: impl AsSegments,
+        item_type: NotFoundItemType,
+        allow_generic_args: bool,
+        statement_env: Option<&mut Environment>,
+    ) -> Maybe<ResolvedGenericItem> {
+        let elements_vec = path.to_segments(self.db.upcast());
+        let mut segments = elements_vec.iter().peekable();
+        if segments.len() == 1 {
+            return Err(diagnostics
+                .report(segments.next().unwrap().stable_ptr(), EmptyPathAfterResolverModifier));
+        }
+        match segments.peek() {
+            Some(ast::PathSegment::Simple(path_segment_simple)) => {
+                let ident = path_segment_simple.ident(self.db.upcast());
+                let ident_text = ident.text(self.db.upcast());
+                if ident_text == MACRO_DEF_SITE {
+                    segments.next();
+                    if let Some(defsite_resolver_data) = self.macro_defsite_data.as_ref() {
+                        let mut macro_defsite_resolver = Resolver::with_data(
+                            self.db,
+                            defsite_resolver_data
+                                .clone_with_inference_id(self.db, self.inference_data.inference_id),
+                        );
+                        macro_defsite_resolver.resolve_generic_path_inner(
+                            diagnostics,
+                            segments.cloned().collect_vec(),
+                            item_type,
+                            allow_generic_args,
+                            statement_env,
+                        )
+                    } else {
+                        Err(diagnostics
+                            .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                    }
+                } else {
+                    Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
+                        modifier: ident_text,
+                    }))
+                }
+            }
+            _ => {
+                // Empty path segment after a `$`, diagnostic was added in the parser.
+                Err(skip_diagnostic())
+            }
+        }
     }
 }
 
