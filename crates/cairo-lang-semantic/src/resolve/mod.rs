@@ -448,7 +448,13 @@ impl<'db> Resolver<'db> {
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
         ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedConcreteItem> {
-        if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
+        if let Some(base_module) = self.try_handle_super_segments(
+            diagnostics,
+            segments,
+            |resolved_items, db, segment, module_id| {
+                resolved_items.mark_concrete(db, segment, ResolvedConcreteItem::Module(module_id));
+            },
+        ) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
         }
 
@@ -469,26 +475,29 @@ impl<'db> Resolver<'db> {
                     }
                     ResolvedBase::StatementEnvironment(generic_item) => {
                         let segment = segments.next().unwrap();
-                        self.specialize_generic_statement_arg(
+                        let concrete_item = self.specialize_generic_statement_arg(
                             segment,
                             diagnostics,
                             &identifier,
                             generic_item,
                             segment.generic_args(syntax_db),
-                        )
+                        );
+                        self.resolved_items.mark_concrete(db, segment, concrete_item)
                     }
                     ResolvedBase::FoundThroughGlobalUse {
                         item_info: inner_module_item,
                         containing_module: module_id,
                     } => {
                         let segment = segments.next().unwrap();
-                        self.specialize_generic_inner_item(
+
+                        let concrete_item = self.specialize_generic_inner_item(
                             diagnostics,
                             module_id,
                             &identifier,
                             inner_module_item,
                             segment,
-                        )?
+                        )?;
+                        self.resolved_items.mark_concrete(db, segment, concrete_item)
                     }
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
@@ -508,8 +517,11 @@ impl<'db> Resolver<'db> {
                     resolve_self_segment(db, diagnostics, &identifier, &self.data.trait_or_impl_ctx)
                 {
                     // The first segment is `Self`. Consume it and return.
-                    segments.next().unwrap();
-                    return resolved_item;
+                    return Ok(self.resolved_items.mark_concrete(
+                        db,
+                        segments.next().unwrap(),
+                        resolved_item?,
+                    ));
                 }
 
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
@@ -525,26 +537,29 @@ impl<'db> Resolver<'db> {
                         ),
                         ResolvedBase::StatementEnvironment(generic_item) => {
                             let segment = segments.next().unwrap();
-                            self.specialize_generic_statement_arg(
+
+                            let concrete_item = self.specialize_generic_statement_arg(
                                 segment,
                                 diagnostics,
                                 &identifier,
                                 generic_item,
                                 segment.generic_args(syntax_db),
-                            )
+                            );
+                            self.resolved_items.mark_concrete(db, segment, concrete_item)
                         }
                         ResolvedBase::FoundThroughGlobalUse {
                             item_info: inner_module_item,
                             containing_module: module_id,
                         } => {
                             let segment = segments.next().unwrap();
-                            self.specialize_generic_inner_item(
+                            let concrete_item = self.specialize_generic_inner_item(
                                 diagnostics,
                                 module_id,
                                 &identifier,
                                 inner_module_item,
                                 segment,
-                            )?
+                            )?;
+                            self.resolved_items.mark_concrete(db, segment, concrete_item)
                         }
                         ResolvedBase::Ambiguous(module_items) => {
                             return Err(
@@ -655,7 +670,13 @@ impl<'db> Resolver<'db> {
         allow_generic_args: bool,
         ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
-        if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
+        if let Some(base_module) = self.try_handle_super_segments(
+            diagnostics,
+            segments,
+            |resolved_items, db, segment, module_id| {
+                resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
+            },
+        ) {
             return Ok(ResolvedGenericItem::Module(base_module?));
         }
         let db = self.db;
@@ -681,11 +702,14 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::FoundThroughGlobalUse {
                         item_info: inner_module_item, ..
                     } => {
-                        segments.next();
                         self.data
                             .used_items
                             .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
-                        ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
+                        let generic_item = ResolvedGenericItem::from_module_item(
+                            self.db,
+                            inner_module_item.item_id,
+                        )?;
+                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
                     }
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
@@ -709,17 +733,20 @@ impl<'db> Resolver<'db> {
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
                     ),
                     ResolvedBase::StatementEnvironment(generic_item) => {
-                        segments.next();
-                        generic_item
+                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
                     }
                     ResolvedBase::FoundThroughGlobalUse {
                         item_info: inner_module_item, ..
                     } => {
-                        segments.next();
                         self.data
                             .used_items
                             .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
-                        ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
+
+                        let generic_item = ResolvedGenericItem::from_module_item(
+                            self.db,
+                            inner_module_item.item_id,
+                        )?;
+                        self.resolved_items.mark_generic(db, segments.next().unwrap(), generic_item)
                     }
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
@@ -744,9 +771,15 @@ impl<'db> Resolver<'db> {
     /// exists. If there's none - returns None.
     /// If there are, but that's an invalid path, adds to diagnostics and returns `Some(Err)`.
     fn try_handle_super_segments(
-        &self,
+        &mut self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        mut mark: impl FnMut(
+            &mut ResolvedItems,
+            &dyn SemanticGroup,
+            &syntax::node::ast::PathSegment,
+            ModuleId,
+        ),
     ) -> Option<Maybe<ModuleId>> {
         let syntax_db = self.db.upcast();
         let mut module_id = self.module_file_id.0;
@@ -758,7 +791,12 @@ impl<'db> Resolver<'db> {
                 ModuleId::CrateRoot(_) => {
                     return Some(Err(diagnostics.report(segment, SuperUsedInRootModule)));
                 }
-                ModuleId::Submodule(submodule_id) => submodule_id.parent_module(self.db.upcast()),
+                ModuleId::Submodule(submodule_id) => {
+                    let db = self.db;
+                    let parent = submodule_id.parent_module(self.db.upcast());
+                    mark(&mut self.resolved_items, db, segment, parent);
+                    parent
+                }
             };
         }
         (module_id != self.module_file_id.0).then_some(Ok(module_id))
