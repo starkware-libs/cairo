@@ -1902,7 +1902,7 @@ pub fn get_resolver_data_options(
             }
             ModuleItemId::TypeAlias(id) => vec![db.module_type_alias_resolver_data(id)],
             ModuleItemId::ImplAlias(id) => vec![db.impl_alias_resolver_data(id)],
-            ModuleItemId::Trait(_) => vec![],
+            ModuleItemId::Trait(id) => vec![db.trait_resolver_data(id)],
             ModuleItemId::Impl(id) => vec![db.impl_def_resolver_data(id)],
             ModuleItemId::ExternType(_) => vec![],
             ModuleItemId::ExternFunction(id) => {
