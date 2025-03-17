@@ -435,8 +435,8 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
-    let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
-
+    let macro_name = syntax.path(syntax_db).identifier(ctx.db.upcast()).to_string();
+    let prev_macro_resolver_data = ctx.resolver.macro_defsite_data.clone();
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
         matches!(
@@ -461,7 +461,6 @@ fn compute_expr_inline_macro_semantic(
         NotFoundItemType::Macro,
         Some(&mut ctx.environment),
     );
-
     let (content, name, mappings) = if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) =
         user_defined_macro
     {
@@ -475,6 +474,8 @@ fn compute_expr_inline_macro_semantic(
                 .diagnostics
                 .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
         };
+        let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
+        ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
         (expanded_code, macro_name.into(), vec![])
     } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
         let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
@@ -523,6 +524,7 @@ fn compute_expr_inline_macro_semantic(
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
     let expr = compute_expr_semantic(ctx, &expr_syntax);
+    ctx.resolver.macro_defsite_data = prev_macro_resolver_data;
     Ok(expr.expr)
 }
 
