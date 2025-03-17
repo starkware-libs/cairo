@@ -1,5 +1,3 @@
-use std::ops::Not;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -11,7 +9,6 @@ use itertools::{Itertools, chain, intersperse};
 
 use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
-use crate::markdown::cleanup_doc_markdown;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
@@ -80,27 +77,12 @@ fn get_item_documentation_as_tokens(
 
     let doc_parser = DocumentationCommentParser::new(db.upcast());
 
-    let mut outer_comment_tokens =
+    let outer_comment_tokens =
         outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
-
-    if let Some(outer_comment_tokens) = &mut outer_comment_tokens {
-        trim_last_token(outer_comment_tokens);
-    }
-
-    let mut inner_comment_tokens =
+    let inner_comment_tokens =
         inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
-
-    if let Some(inner_comment_tokens) = &mut inner_comment_tokens {
-        trim_last_token(inner_comment_tokens);
-    }
-
-    let mut module_level_comment_tokens = module_level_comment
+    let module_level_comment_tokens = module_level_comment
         .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
-
-    if let Some(module_level_comment_tokens) = &mut module_level_comment_tokens {
-        trim_last_token(module_level_comment_tokens);
-    }
-
     let separator_token = vec![DocumentationCommentToken::Content(" ".to_string())];
 
     let result: Vec<Vec<DocumentationCommentToken>> =
@@ -179,10 +161,7 @@ fn extract_item_outer_documentation(
         .take_while_ref(|line| is_comment_line(line) || line.trim_start().starts_with("#"))
         .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
         .collect::<Vec<_>>();
-
-    let result = join_lines_of_comments(&lines);
-
-    cleanup_doc(result)
+    Some(join_lines_of_comments(&lines))
 }
 
 /// Gets the module level comments of the item.
@@ -212,19 +191,7 @@ fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> Option<St
         .skip_while(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
         .collect::<Vec<_>>();
-
-    let result = join_lines_of_comments(&lines);
-
-    cleanup_doc(result)
-}
-
-/// Formats markdown part of the documentation, and returns None, if the final documentation is
-/// empty or contains only whitespaces.
-fn cleanup_doc(doc: String) -> Option<String> {
-    let doc = cleanup_doc_markdown(doc);
-
-    // Nullify empty or just-whitespace documentation strings as they are not useful.
-    doc.trim().is_empty().not().then_some(doc)
+    Some(join_lines_of_comments(&lines))
 }
 
 /// Gets the module level comments of certain file.
@@ -240,9 +207,7 @@ fn extract_item_module_level_documentation_from_file(
         .take_while_ref(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
         .collect::<Vec<_>>();
-
-    let result = join_lines_of_comments(&lines);
-    cleanup_doc(result)
+    Some(join_lines_of_comments(&lines))
 }
 
 /// This function does 2 things to the line of comment:
@@ -278,48 +243,10 @@ fn is_comment_line(line: &str) -> bool {
 /// Parses the lines of extracted comments so it can be displayed.
 /// It also takes note for Fenced and Indented code blocks, and doesn't trim them.
 fn join_lines_of_comments(lines: &Vec<String>) -> String {
-    let mut in_code_block = false;
     let mut result = String::new();
-
     for line in lines {
-        let trimmed_line = line.trim_start();
-        // 4 spaces or a tab.
-        let is_indented_code_line =
-            (line.starts_with("    ") || line.starts_with("\t")) && !in_code_block;
-        let contains_delimiter = trimmed_line.starts_with("```") || is_indented_code_line;
-
-        if contains_delimiter {
-            // If we stumble upon the opening of a code block, we have to make a newline.
-            if !in_code_block && !result.ends_with('\n') {
-                result.push('\n');
-            }
-            in_code_block = !in_code_block;
-
-            result.push_str(line);
-            result.push('\n');
-            continue;
-        }
-
-        if in_code_block {
-            result.push_str(line);
-            result.push('\n');
-        } else {
-            // Outside code blocks, handle paragraph breaks identified by empty lines.
-            if trimmed_line.is_empty() {
-                result.push_str("\n\n");
-            } else {
-                if !result.is_empty() && !result.ends_with("\n\n") && !result.ends_with('\n') {
-                    result.push(' ');
-                }
-                result.push_str(trimmed_line);
-            }
-        }
+        result.push_str(line);
+        result.push('\n');
     }
-    result.trim_end().to_string()
-}
-
-fn trim_last_token(tokens: &mut [DocumentationCommentToken]) {
-    if let Some(DocumentationCommentToken::Content(token)) = tokens.last_mut() {
-        *token = token.trim_end().to_string();
-    }
+    result.to_string()
 }

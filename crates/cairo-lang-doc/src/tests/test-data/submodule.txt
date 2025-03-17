@@ -61,10 +61,12 @@ mod inner_sub_module {
 
 //! > Item documentation #1
 This is a testing crate file. It's for the tests purposes only.
-```cairo
+```
   let a = 5;
 ```
-This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.
+This is also testing crate. After the code example.
+We don't take responsibility for compiling this file.
+So don't even try.
 
 # Test markdown headings
 
@@ -75,11 +77,17 @@ This is also testing crate. After the code example. We don't take responsibility
 #### [link can be heading](URL)
 
 //! > Item documentation tokens #1
+Content("\n")
 Content("This is a testing crate file. It's for the tests purposes only.")
 Content("\n```cairo\n")
 Content("  let a = 5;\n")
 Content("```\n")
-Content("This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.")
+Content("\n")
+Content("This is also testing crate. After the code example.")
+Content("\n")
+Content("We don't take responsibility for compiling this file.")
+Content("\n")
+Content("So don't even try.")
 Content("\n")
 Content("  # ")
 Content("Test markdown headings")
@@ -92,35 +100,50 @@ Content("`fn code_can_be_heading()`")
 Content("\n")
 Content("  #### ")
 CommentLinkToken { label: "link can be heading", path: Some("URL"), resolved_item_name: None }
-Content("")
+Content("\n")
 
 //! > Item signature #2
 
 //! > Item documentation #2
-This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only! This one is just a prefix comment for a module.
+This is a submodule regarding the module_level_comments.
+It's used to make sure crate / module level comments are parsed in a correct way.
+Testing purposes only! This one is just a prefix comment for a module.
 ```rust
   let a = String::from("This also works fine");
 ```
 As mentioned above.
 
 //! > Item documentation tokens #2
+Content("\n")
 Content("This one is just a prefix comment for a module.")
 Content("\n```rust\n")
 Content("  let a = String::from(\"This also works fine\");\n")
 Content("```\n")
+Content("\n")
 Content("As mentioned above.")
 Content(" ")
-Content("This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only!")
+Content(" ")
+Content("\n")
+Content("This is a submodule regarding the module_level_comments.")
+Content("\n")
+Content("It's used to make sure crate / module level comments are parsed in a correct way.")
+Content("\n")
+Content("Testing purposes only!")
 
 //! > Item signature #3
 
 //! > Item documentation #3
-[super::main] This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module
+[super::main] This comment just proves that it won't be considered as a file-module comment. It just
+refers to the inner_sub_module
 
 //! > Item documentation tokens #3
+Content("\n")
 CommentLinkToken { label: "super::main", path: None, resolved_item_name: Some("main") }
 Content(" ")
-Content("This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module")
+Content("\n")
+Content("This comment just proves that it won't be considered as a file-module comment. It just")
+Content("\n")
+Content("refers to the inner_sub_module")
 
 //! > Item signature #4
 fn hello()
@@ -129,21 +152,28 @@ fn hello()
 Hello function inside the inner module.
 
 //! > Item documentation tokens #4
+Content("\n")
 Content("Hello function inside the inner module.")
+Content(" ")
 
 //! > Item signature #5
 fn main()
 
 //! > Item documentation #5
-Main function. Uses [cairo_submodule_code::inner_sub_module]. Empty code example.
+Main function.
+Uses [cairo_submodule_code::inner_sub_module]. Empty code example.
 ```rust
 ```
 
 //! > Item documentation tokens #5
-Content("Main function. Uses ")
+Content("\n")
+Content("Main function.")
+Content("\n")
+Content("Uses ")
 CommentLinkToken { label: "cairo_submodule_code::inner_sub_module", path: None, resolved_item_name: Some("inner_sub_module") }
 Content(".")
 Content(" ")
+Content("\n")
 Content("Empty code example.")
 Content("\n```rust\n")
-Content("```")
+Content("```\n")

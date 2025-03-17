@@ -46,6 +46,24 @@ pub enum DocumentationCommentToken {
     Link(CommentLinkToken),
 }
 
+impl DocumentationCommentToken {
+    /// Checks if string representation of [`DocumentationCommentToken`] ends with newline.
+    pub fn ends_with_newline(self) -> bool {
+        match self {
+            DocumentationCommentToken::Content(content) => content.ends_with('\n'),
+            DocumentationCommentToken::Link(link_token) => link_token.label.ends_with('\n'),
+        }
+    }
+}
+
+/// Helper struct for formatting possibly nested Markdown lists.
+struct DocCommentListItem {
+    /// Order list item separator
+    delimiter: Option<u64>,
+    /// Flag for a list with order elements
+    is_ordered_list: bool,
+}
+
 /// Parses plain documentation comments into [DocumentationCommentToken]s.
 pub struct DocumentationCommentParser<'a> {
     db: &'a dyn DocGroup,
@@ -82,105 +100,160 @@ impl<'a> DocumentationCommentParser<'a> {
             Some(&mut replacer),
         );
 
-        let mut is_heading = false;
-        let is_after_heading =
-            |is_heading: &mut bool, tokens: &mut Vec<DocumentationCommentToken>| {
-                if *is_heading {
-                    tokens.push(DocumentationCommentToken::Content("\n".to_string()));
-                    *is_heading = false;
+        let mut list_nesting: Vec<DocCommentListItem> = Vec::new();
+        let write_list_item_prefix =
+            |list_nesting: &mut Vec<DocCommentListItem>,
+             tokens: &mut Vec<DocumentationCommentToken>| {
+                if !list_nesting.is_empty() {
+                    let indent = "  ".repeat(list_nesting.len() - 1);
+                    let list_nesting = list_nesting.last_mut().unwrap();
+
+                    let item_delimiter = if list_nesting.is_ordered_list {
+                        let delimiter = list_nesting.delimiter.unwrap_or(0);
+                        list_nesting.delimiter = Some(delimiter + 1);
+                        format!("{indent}{delimiter}.",)
+                    } else {
+                        format!("{indent}-")
+                    };
+                    tokens.push(DocumentationCommentToken::Content(format!(
+                        "{indent}{item_delimiter} "
+                    )));
+                    true
+                } else {
+                    false
                 }
             };
 
+        let mut last_two_events = [None, None];
+
         for event in parser {
-            match event {
+            let current_event = event.clone();
+            match current_event {
                 Event::Text(text) => {
+                    write_list_item_prefix(&mut list_nesting, &mut tokens);
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&text);
                     } else {
                         tokens.push(DocumentationCommentToken::Content(text.into_string()));
-                        is_after_heading(&mut is_heading, &mut tokens);
                     }
                 }
-
                 Event::Code(code) => {
+                    write_list_item_prefix(&mut list_nesting, &mut tokens);
                     let complete_code = format!("`{}`", code);
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&complete_code);
                     } else {
                         tokens.push(DocumentationCommentToken::Content(complete_code));
                     }
-                    is_after_heading(&mut is_heading, &mut tokens);
                 }
-                Event::Start(Tag::Link { link_type, dest_url, .. }) => {
-                    match link_type {
-                        LinkType::ShortcutUnknown | LinkType::Shortcut => {
-                            let path = if dest_url.starts_with("`") && dest_url.ends_with("`") {
-                                dest_url.trim_start_matches("`").trim_end_matches("`").to_string()
-                            } else {
-                                dest_url.clone().to_string()
-                            };
-                            current_link = Some(CommentLinkToken {
-                                label: "".to_string(),
-                                path: None,
-                                resolved_item: self.resolve_linked_item(item_id, path), /* Or resolve item here */
-                            });
-                        }
-                        _ => {
-                            current_link = Some(CommentLinkToken {
-                                label: "".to_string(),
-                                path: Some(dest_url.clone().into_string()),
-                                resolved_item: self
-                                    .resolve_linked_item(item_id, dest_url.clone().into_string()), /* Or resolve item here */
-                            });
-                        }
-                    }
-                }
-                Event::End(TagEnd::Link) => {
-                    if let Some(link) = current_link.take() {
-                        tokens.push(DocumentationCommentToken::Link(link));
-                    }
-                    is_after_heading(&mut is_heading, &mut tokens);
-                }
-                Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language))) => {
-                    tokens.push(DocumentationCommentToken::Content(format!("\n```{}\n", language)));
-                }
-                Event::End(TagEnd::CodeBlock) => {
-                    if !is_indented_code_block {
-                        tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
-                    }
-                    is_indented_code_block = false;
-                    is_after_heading(&mut is_heading, &mut tokens);
-                }
-                Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) => {
-                    is_indented_code_block = true;
-                }
-                Event::Start(Tag::Heading { level, .. }) => {
-                    if let Some(last_token) = tokens.last_mut() {
-                        match last_token {
-                            DocumentationCommentToken::Content(content) => {
-                                if !content.ends_with('\n') {
+                Event::Start(tag_start) => {
+                    match tag_start {
+                        Tag::Heading { level, .. } => {
+                            if let Some(last_token) = tokens.last_mut() {
+                                if !last_token.clone().ends_with_newline() {
                                     tokens
                                         .push(DocumentationCommentToken::Content("\n".to_string()));
                                 }
                             }
-                            DocumentationCommentToken::Link(link_token) => {
-                                if !link_token.label.ends_with('\n') {
-                                    tokens
-                                        .push(DocumentationCommentToken::Content("\n".to_string()));
+                            tokens.push(DocumentationCommentToken::Content(format!(
+                                "  {} ",
+                                heading_level_to_markdown(level)
+                            )));
+                        }
+                        Tag::List(list_type) => {
+                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                            list_nesting.push(DocCommentListItem {
+                                delimiter: list_type,
+                                is_ordered_list: list_type.is_some(),
+                            });
+                        }
+                        Tag::CodeBlock(kind) => match kind {
+                            CodeBlockKind::Fenced(language) => {
+                                if language.trim().is_empty() {
+                                    tokens.push(DocumentationCommentToken::Content(String::from(
+                                        "\n```cairo\n",
+                                    )));
+                                } else {
+                                    tokens.push(DocumentationCommentToken::Content(format!(
+                                        "\n```{}\n",
+                                        language
+                                    )));
+                                }
+                            }
+                            CodeBlockKind::Indented => {
+                                is_indented_code_block = true;
+                            }
+                        },
+                        Tag::Link { link_type, dest_url, .. } => {
+                            match link_type {
+                                LinkType::ShortcutUnknown | LinkType::Shortcut => {
+                                    let path =
+                                        if dest_url.starts_with("`") && dest_url.ends_with("`") {
+                                            dest_url
+                                                .trim_start_matches("`")
+                                                .trim_end_matches("`")
+                                                .to_string()
+                                        } else {
+                                            dest_url.clone().to_string()
+                                        };
+                                    current_link = Some(CommentLinkToken {
+                                        label: "".to_string(),
+                                        path: None,
+                                        resolved_item: self.resolve_linked_item(item_id, path), /* Or resolve item here */
+                                    });
+                                }
+                                _ => {
+                                    current_link = Some(CommentLinkToken {
+                                        label: "".to_string(),
+                                        path: Some(dest_url.clone().into_string()),
+                                        resolved_item: self.resolve_linked_item(
+                                            item_id,
+                                            dest_url.clone().into_string(),
+                                        ), /* Or resolve item here */
+                                    });
                                 }
                             }
                         }
+                        Tag::Paragraph => {
+                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                        }
+                        _ => {}
                     }
-                    tokens.push(DocumentationCommentToken::Content(format!(
-                        "  {} ",
-                        heading_level_to_markdown(level)
-                    )));
-                    is_heading = true;
+                }
+                Event::End(tag_end) => match tag_end {
+                    TagEnd::Heading(_) => {
+                        tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                    }
+                    TagEnd::List(_) => {
+                        list_nesting.pop();
+                    }
+                    TagEnd::Item => {
+                        if !matches!(last_two_events[0], Some(Event::End(_)))
+                            | !matches!(last_two_events[1], Some(Event::End(_)))
+                        {
+                            tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                        }
+                    }
+                    TagEnd::CodeBlock => {
+                        if !is_indented_code_block {
+                            tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
+                        }
+                        is_indented_code_block = false;
+                    }
+                    TagEnd::Link => {
+                        if let Some(link) = current_link.take() {
+                            tokens.push(DocumentationCommentToken::Link(link));
+                        }
+                    }
+                    _ => {}
+                },
+                Event::SoftBreak => {
+                    tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                 }
                 _ => {}
             }
+            last_two_events = [last_two_events[1].clone(), Some(event)];
         }
-
         tokens
     }
 
