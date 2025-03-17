@@ -103,3 +103,72 @@ fn test_add_exprs() {
     assert_eq!(add_exprs!(abc 1 2), 3);
     assert_eq!(add_exprs!(0 2), 2);
 }
+
+
+mod inner {
+    fn foo(x: felt252) -> felt252 {
+        x + 1
+    }
+
+    pub macro add_one {
+        ($x:ident) => {
+            $defsite::foo($x)
+        };
+    }
+
+    pub macro add_ten {
+        ($x:ident) => {
+            $defsite::foo($x) + 9
+        };
+    }
+
+    pub macro add_recursive {
+        ($x:ident) => {
+            let x = $x;
+            $defsite::foo(x) + $defsite::inner::add_one!(x)
+        };
+    }
+    mod inner {
+        fn foo(x: felt252) -> felt252 {
+            x + 2
+        }
+
+        pub macro add_one {
+            ($x:expr) => {
+                $defsite::foo($x)
+            };
+        }
+    }
+}
+
+
+#[test]
+fn test_macro_add_one_with_defsite() {
+    let x1 = 1;
+    let x2 = 2;
+    let x3 = 3;
+    assert_eq!(inner::add_one!(x1), 2);
+    assert_eq!(inner::add_one!(x2), 3);
+    assert_eq!(inner::add_one!(x3), 4);
+}
+
+
+#[test]
+fn test_macro_add_recursive() {
+    let x1 = 1;
+    let x2 = 2;
+    let x3 = 3;
+    assert_eq!(inner::add_recursive!(x1), 5);
+    assert_eq!(inner::add_recursive!(x2), 7);
+    assert_eq!(inner::add_recursive!(x3), 9);
+}
+
+#[test]
+fn test_macro_add_ten() {
+    let x1 = 1;
+    let x2 = 2;
+    let x3 = 3;
+    assert_eq!(inner::add_ten!(x1), 11);
+    assert_eq!(inner::add_ten!(x2), 12);
+    assert_eq!(inner::add_ten!(x3), 13);
+}
