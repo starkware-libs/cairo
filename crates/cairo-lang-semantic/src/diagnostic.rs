@@ -357,7 +357,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
                 impl_def_id,
                 impl_function_id,
@@ -802,7 +801,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     ty.format(db)
                 )
             }
-
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
                 "Unsupported `inline` arguments.".into()
             }
@@ -966,6 +964,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
+            }
+            SemanticDiagnosticKind::ResolverModifierNotSupportedInContext => {
+                "`$defsite` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
+                format!("`${}` is not supported.", modifier)
             }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
@@ -1445,6 +1449,10 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    ResolverModifierNotSupportedInContext,
+    UnknownResolverModifier {
+        modifier: SmolStr,
+    },
     DerefCycle {
         deref_chain: String,
     },
