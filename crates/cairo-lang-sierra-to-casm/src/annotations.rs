@@ -63,7 +63,7 @@ pub enum AnnotationError {
     },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
-    #[error("#{statement_idx}: Attempting to enable ap tracking when already enabled.")]
+    #[error("#{statement_idx}: Attempting to enable AP tracking when already enabled.")]
     ApTrackingAlreadyEnabled { statement_idx: StatementIdx },
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
@@ -76,14 +76,14 @@ pub enum AnnotationError {
         introduction_point: IntroductionPoint,
         error: ApChangeError,
     },
-    #[error("#{source_statement_idx} -> #{destination_statement_idx}: Ap tracking error")]
+    #[error("#{source_statement_idx} -> #{destination_statement_idx}: AP tracking error")]
     ApTrackingError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
         error: ApChangeError,
     },
     #[error(
-        "#{statement_idx}: Invalid function ap change annotation. Expected ap tracking: \
+        "#{statement_idx}: Invalid function AP change annotation. Expected ap tracking: \
          {expected:?}, got: {actual:?}."
     )]
     InvalidFunctionApChange {
@@ -132,13 +132,13 @@ pub enum InconsistentReferenceError {
     ApTrackingDisabled(VarId),
 }
 
-/// Annotation that represent the state at each program statement.
+/// Annotation that represents the state at each program statement.
 #[derive(Clone, Debug)]
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
     /// The function id that the statement belongs to.
     pub function_id: FunctionId,
-    /// Indicates whether convergence in allowed in the given statement.
+    /// Indicates whether convergence is allowed in the given statement.
     pub convergence_allowed: bool,
     pub environment: Environment,
 }
@@ -223,7 +223,7 @@ impl ProgramAnnotations {
                 )?;
 
                 // Note that we ignore annotations here.
-                // a flow cannot converge with a branch target.
+                // A flow cannot converge with a branch target.
                 if !expected_annotations.convergence_allowed {
                     return Err(AnnotationError::InvalidConvergence { statement_idx });
                 }
@@ -239,7 +239,7 @@ impl ProgramAnnotations {
         actual: &StatementAnnotations,
         expected: &StatementAnnotations,
     ) -> Result<(), InconsistentReferenceError> {
-        // Check if there is a mismatch at the number of variables.
+        // Check if there is a mismatch in the number of variables.
         if actual.refs.len() != expected.refs.len() {
             return Err(InconsistentReferenceError::VariableCountMismatch);
         }
