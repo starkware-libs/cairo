@@ -967,6 +967,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SelfMustBeFirst => {
                 "`Self` can only be the first segment of a path.".into()
             }
+            SemanticDiagnosticKind::ResolverModifierNotSupportedInContext => {
+                "`$defsite` is not supported in this context.".into()
+            }
+            SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
+                format!("`${}` is not supported.", modifier)
+            }
+            SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
+                "Empty path after `$defsite` is not allowed.".into()
+            }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
@@ -1445,6 +1454,11 @@ pub enum SemanticDiagnosticKind {
     FixedSizeArraySizeTooBig,
     SelfNotSupportedInContext,
     SelfMustBeFirst,
+    ResolverModifierNotSupportedInContext,
+    UnknownResolverModifier {
+        modifier: SmolStr,
+    },
+    EmptyPathAfterResolverModifier,
     DerefCycle {
         deref_chain: String,
     },
