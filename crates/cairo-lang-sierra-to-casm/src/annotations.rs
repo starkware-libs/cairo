@@ -76,7 +76,7 @@ pub enum AnnotationError {
         introduction_point: IntroductionPoint,
         error: ApChangeError,
     },
-    #[error("#{source_statement_idx} -> #{destination_statement_idx}: ap tracking error")]
+    #[error("#{source_statement_idx} -> #{destination_statement_idx}: Ap tracking error")]
     ApTrackingError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
