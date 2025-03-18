@@ -75,6 +75,7 @@ fn main()
 //! > Item documentation #2
 
 //! > Item documentation tokens #2
+Content(" ")
 
 //! > Item signature #3
 fn free_function<T, TPartialEq, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T) -> bool
@@ -82,6 +83,7 @@ fn free_function<T, TPartialEq, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T)
 //! > Item documentation #3
 
 //! > Item documentation tokens #3
+Content(" ")
 
 //! > Item signature #4
 enum MemberEnum {
@@ -159,6 +161,7 @@ fn area<T, T>(self: T) -> u32
 //! > Item documentation #13
 
 //! > Item documentation tokens #13
+Content(" ")
 
 //! > Item signature #14
 struct Circle {
@@ -203,6 +206,7 @@ fn area(self: Circle) -> u32
 //! > Item documentation #19
 
 //! > Item documentation tokens #19
+Content(" ")
 
 //! > Item signature #20
 trait ATrait
