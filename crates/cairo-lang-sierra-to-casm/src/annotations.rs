@@ -63,7 +63,7 @@ pub enum AnnotationError {
     },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
-    #[error("#{statement_idx}: Attempting to enable AP tracking when already enabled.")]
+    #[error("#{statement_idx}: Attempting to enable ap tracking when already enabled.")]
     ApTrackingAlreadyEnabled { statement_idx: StatementIdx },
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
@@ -76,14 +76,14 @@ pub enum AnnotationError {
         introduction_point: IntroductionPoint,
         error: ApChangeError,
     },
-    #[error("#{source_statement_idx} -> #{destination_statement_idx}: AP tracking error")]
+    #[error("#{source_statement_idx} -> #{destination_statement_idx}: ap tracking error")]
     ApTrackingError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
         error: ApChangeError,
     },
     #[error(
-        "#{statement_idx}: Invalid function AP change annotation. Expected ap tracking: \
+        "#{statement_idx}: Invalid function ap change annotation. Expected ap tracking: \
          {expected:?}, got: {actual:?}."
     )]
     InvalidFunctionApChange {
