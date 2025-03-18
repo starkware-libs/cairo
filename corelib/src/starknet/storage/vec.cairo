@@ -81,7 +81,7 @@ use core::ops::Range;
 use super::{
     IntoIterRange, Mutable, StorageAsPath, StorageAsPointer, StoragePath, StoragePathTrait,
     StoragePathUpdateTrait, StoragePointer0Offset, StoragePointerReadAccess,
-    StoragePointerWriteAccess,
+    StoragePointerWriteAccess, StoragePathMutableConversion,
 };
 
 /// Represents a dynamic array in contract storage.
@@ -425,26 +425,20 @@ pub trait MutableVecTrait<T> {
     ) -> Option<Self::ElementType>;
 }
 
-/// Implement `MutableVecTrait` for `StoragePath<Mutable<Vec<T>>`.
+/// Implement `MutableVecTrait` for `StoragePath<Mutable<Vec<T>>>`.
 impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
     type ElementType = T;
 
     fn get(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> Option<StoragePath<Mutable<T>>> {
-        let vec_len = self.len();
-        if index < vec_len {
-            Some(self.update(index))
-        } else {
-            None
-        }
+        Some(self.as_non_mut().get(index)?.as_mut())
     }
 
     fn at(self: StoragePath<Mutable<Vec<T>>>, index: u64) -> StoragePath<Mutable<T>> {
-        assert!(index < self.len(), "Index out of bounds");
-        self.update(index)
+        self.as_non_mut().at(index).as_mut()
     }
 
     fn len(self: StoragePath<Mutable<Vec<T>>>) -> u64 {
-        self.as_ptr().read()
+        self.as_non_mut().len()
     }
 
     fn allocate(self: StoragePath<Mutable<Vec<T>>>) -> StoragePath<Mutable<T>> {
@@ -452,7 +446,6 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         self.as_ptr().write(vec_len + 1);
         self.update(vec_len)
     }
-
     fn push<+Drop<Self::ElementType>, +starknet::Store<Self::ElementType>>(
         self: StoragePath<Mutable<Vec<T>>>, value: Self::ElementType,
     ) {
@@ -480,6 +473,7 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         Some(last_element)
     }
 }
+
 /// Implement `MutableVecTrait` for any type that implements StorageAsPath into a storage
 /// path that implements MutableVecTrait.
 impl PathableMutableVecImpl<

@@ -568,6 +568,26 @@ impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
 }
 
+pub trait StoragePathMutableConversion<T> {
+    /// Converts a `StoragePath<Mutable<T>>` to a `StoragePath<T>`. This is useful to expose
+    /// functions implemented for `StoragePath<T>` on a `StoragePath<Mutable<T>>`.
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T>;
+    /// Converts a `StoragePath<T>` to a `StoragePath<Mutable<T>>`. This is useful to converts the
+    /// result of a non-mutable function to a mutable one.
+    fn as_mut(self: StoragePath<T>) -> StoragePath<Mutable<T>>;
+}
+
+
+impl StoragePathAsNonMutImpl<T> of StoragePathMutableConversion<T> {
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T> {
+        StoragePath { __hash_state__: self.__hash_state__ }
+    }
+    fn as_mut(self: StoragePath<T>) -> StoragePath<Mutable<T>> {
+        StoragePath { __hash_state__: self.__hash_state__ }
+    }
+}
+
+
 /// Trait for turning collection of values into an iterator over a specific range.
 pub trait IntoIterRange<T> {
     type IntoIter;
