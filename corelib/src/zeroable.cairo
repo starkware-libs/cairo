@@ -82,12 +82,14 @@ pub extern type NonZero<T>;
 impl NonZeroCopy<T> of Copy<NonZero<T>>;
 impl NonZeroDrop<T> of Drop<NonZero<T>>;
 
-impl NonZeroNeg<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
+use crate::internal::bounded_int::{NegateHelper};
+
+impl NonZeroNeg<
+    T, +Neg<T>, +TryInto<T, NonZero<T>>, impl NH: NegateHelper<NonZero<T>>
+> of Neg<NonZero<T>> {
     fn neg(a: NonZero<T>) -> NonZero<T> {
-        // TODO(orizi): Optimize using bounded integers.
-        let value: T = a.into();
-        let negated: T = -value;
-        negated.try_into().unwrap()
+        // Using bounded integers for more efficient negation
+        NH::negate(a)
     }
 }
 
