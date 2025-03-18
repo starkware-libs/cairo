@@ -53,7 +53,7 @@ pub fn priv_impl_alias_semantic_data(
     }
 }
 
-/// An helper function to compute the semantic data of an impl-alias item.
+/// A helper function to compute the semantic data of an impl-alias item.
 pub fn impl_alias_semantic_data_helper(
     db: &(dyn SemanticGroup),
     impl_alias_ast: &ast::ItemImplAlias,
@@ -111,7 +111,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
     priv_impl_alias_semantic_data(db, *impl_alias_id, true)
 }
 
-/// An helper function to compute the semantic data of an impl-alias item when a cycle is detected.
+/// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
 pub fn impl_alias_semantic_data_cycle_helper(
     db: &(dyn SemanticGroup),
     impl_alias_ast: &ast::ItemImplAlias,
