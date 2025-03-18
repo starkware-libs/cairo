@@ -132,13 +132,13 @@ pub enum InconsistentReferenceError {
     ApTrackingDisabled(VarId),
 }
 
-/// Annotation that represent the state at each program statement.
+/// Annotation that represents the state at each program statement.
 #[derive(Clone, Debug)]
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
     /// The function id that the statement belongs to.
     pub function_id: FunctionId,
-    /// Indicates whether convergence in allowed in the given statement.
+    /// Indicates whether convergence is allowed in the given statement.
     pub convergence_allowed: bool,
     pub environment: Environment,
 }
@@ -223,7 +223,7 @@ impl ProgramAnnotations {
                 )?;
 
                 // Note that we ignore annotations here.
-                // a flow cannot converge with a branch target.
+                // A flow cannot converge with a branch target.
                 if !expected_annotations.convergence_allowed {
                     return Err(AnnotationError::InvalidConvergence { statement_idx });
                 }
@@ -239,7 +239,7 @@ impl ProgramAnnotations {
         actual: &StatementAnnotations,
         expected: &StatementAnnotations,
     ) -> Result<(), InconsistentReferenceError> {
-        // Check if there is a mismatch at the number of variables.
+        // Check if there is a mismatch in the number of variables.
         if actual.refs.len() != expected.refs.len() {
             return Err(InconsistentReferenceError::VariableCountMismatch);
         }
