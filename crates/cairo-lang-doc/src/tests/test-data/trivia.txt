@@ -61,6 +61,7 @@ const a: u32 = 123;
 Const comment
 
 //! > Item documentation tokens #2
+Content("\n")
 Content("Const comment")
 
 //! > Item signature #3
@@ -75,6 +76,7 @@ pub struct Pair<T, U> {
 Test Pair
 
 //! > Item documentation tokens #3
+Content("\n")
 Content("Test Pair")
 
 //! > Item signature #4
@@ -84,6 +86,7 @@ first: T
 first field
 
 //! > Item documentation tokens #4
+Content("\n")
 Content("first field")
 
 //! > Item signature #5
@@ -93,6 +96,7 @@ second: U
 second field
 
 //! > Item documentation tokens #5
+Content("\n")
 Content("second field")
 
 //! > Item signature #6
@@ -104,10 +108,14 @@ struct Pair2<T, U> {
 }
 
 //! > Item documentation #6
-A second struct defining a pair. As above.
+A second struct defining a pair.
+As above.
 
 //! > Item documentation tokens #6
-Content("A second struct defining a pair. As above.")
+Content("\n")
+Content("A second struct defining a pair.")
+Content("\n")
+Content("As above.")
 
 //! > Item signature #7
 pub first: T
@@ -116,6 +124,7 @@ pub first: T
 First field
 
 //! > Item documentation tokens #7
+Content("\n")
 Content("First field")
 
 //! > Item signature #8
@@ -125,6 +134,7 @@ second: U
 Second field
 
 //! > Item documentation tokens #8
+Content("\n")
 Content("Second field")
 
 //! > Item signature #9
@@ -144,6 +154,7 @@ Var1
 First variant
 
 //! > Item documentation tokens #10
+Content("\n")
 Content("First variant")
 
 //! > Item signature #11
@@ -153,6 +164,7 @@ Var2
 Second variant
 
 //! > Item documentation tokens #11
+Content("\n")
 Content("Second variant")
 
 //! > Item signature #12
@@ -162,4 +174,5 @@ pub extern type S<T>;
 extern type comment
 
 //! > Item documentation tokens #12
+Content("\n")
 Content("extern type comment")
