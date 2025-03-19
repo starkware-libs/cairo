@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -49,20 +47,23 @@ pub trait DocGroup:
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
-    let tokens = get_item_documentation_as_tokens(db, item_id)?;
-    let mut buff = String::new();
-    for doc_token in &tokens {
-        match doc_token {
-            DocumentationCommentToken::Content(content) => buff.push_str(content),
-            DocumentationCommentToken::Link(link) => {
-                write!(&mut buff, "[{}]", link.label).ok()?;
-                if let Some(path) = &link.path {
-                    write!(&mut buff, "({})", path).ok()?;
+    let tokens = get_item_documentation_as_tokens(db, item_id);
+    tokens.map(|tokens| {
+        tokens
+            .iter()
+            .map(|doc_token| match doc_token {
+                DocumentationCommentToken::Content(content) => content.clone(),
+                DocumentationCommentToken::Link(link) => {
+                    let path_formatted = if let Some(path) = link.path.clone() {
+                        format!("({})", path)
+                    } else {
+                        String::new()
+                    };
+                    format!("[{}]{}", link.label.clone(), path_formatted)
                 }
-            }
-        }
-    }
-    Some(buff)
+            })
+            .join("")
+    })
 }
 
 fn get_item_documentation_as_tokens(
@@ -79,8 +80,8 @@ fn get_item_documentation_as_tokens(
             extract_item_outer_documentation(db, item_id),
             // In case if item_id is a module, there are 2 possible cases:
             // 1. Inline module: It could have inner comments, but not the module_level.
-            // 2. Non-inline Module (module as a file): It could have module level comments, but
-            //    not the inner ones.
+            // 2. Non-inline Module (module as a file): It could have module level comments, but not the
+            //    inner ones.
             extract_item_inner_documentation(db, item_id),
             extract_item_module_level_documentation(db.upcast(), item_id),
         ),
