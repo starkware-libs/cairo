@@ -309,7 +309,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         remapping: &VarRemapping,
     ) {
         if remapping.is_empty() {
-            // Do nothing. Keep the candidate if exists.
+            // Do nothing. Keep the candidate if it exists.
             return;
         }
 
