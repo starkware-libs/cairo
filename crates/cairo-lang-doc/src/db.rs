@@ -80,8 +80,8 @@ fn get_item_documentation_as_tokens(
             extract_item_outer_documentation(db, item_id),
             // In case if item_id is a module, there are 2 possible cases:
             // 1. Inline module: It could have inner comments, but not the module_level.
-            // 2. Non-inline Module (module as a file): It could have module level comments, but not the
-            //    inner ones.
+            // 2. Non-inline Module (module as a file): It could have module level comments, but
+            //    not the inner ones.
             extract_item_inner_documentation(db, item_id),
             extract_item_module_level_documentation(db.upcast(), item_id),
         ),
