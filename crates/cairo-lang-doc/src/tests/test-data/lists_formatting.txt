@@ -58,8 +58,8 @@ nested list
 3. C
     1. A1
     2. B1
-       1. A2
-       2. B2
+        1. A2
+        2. B2
     3. C1
 4. D
 
@@ -74,7 +74,6 @@ not a list
 3. Fourth item
 
 //! > Item documentation tokens #1
-Content("\n")
 Content("simple list")
 Content("\n")
 Content("1. ")

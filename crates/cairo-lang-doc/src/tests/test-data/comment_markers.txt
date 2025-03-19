@@ -51,10 +51,9 @@ fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(self: Option<
 //! > Item documentation #3
 Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
 or returns `None` (if `None`).
-
 # Examples
 
-```
+```cairo
 let maybe_some_string: Option<ByteArray> = Some("Hello, World!");
 // `Option::map` takes self *by value*, consuming `maybe_some_string`
 let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
@@ -65,7 +64,6 @@ assert!(x.map(|s: ByteArray| s.len()) == None);
 ```
 
 //! > Item documentation tokens #3
-Content("\n")
 Content("Maps an ")
 Content("`Option<T>`")
 Content(" to ")
@@ -80,10 +78,9 @@ Content(" (if ")
 Content("`None`")
 Content(").")
 Content("\n")
-Content("  # ")
+Content("# ")
 Content("Examples")
 Content("\n")
 Content("\n```cairo\n")
 Content("let maybe_some_string: Option<ByteArray> = Some(\"Hello, World!\");\n// `Option::map` takes self *by value*, consuming `maybe_some_string`\nlet maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());\nassert!(maybe_some_len == Some(13));\n\nlet x: Option<ByteArray> = None;\nassert!(x.map(|s: ByteArray| s.len()) == None);\n")
 Content("```")
-Content(" ")
