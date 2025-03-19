@@ -86,7 +86,7 @@ pub fn get_use_path_segments(
     Ok(rev_segments.into_iter().rev().collect())
 }
 
-/// Returns the parent `UsePathSingle` of a use path if exists.
+/// Returns the parent `UsePathSingle` of a use path if it exists.
 fn get_parent_single_use_path(
     db: &dyn SyntaxGroup,
     use_path: &ast::UsePath,
