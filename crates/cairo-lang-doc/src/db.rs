@@ -5,7 +5,7 @@ use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
-use itertools::{Itertools, chain, intersperse};
+use itertools::{Itertools, intersperse};
 
 use crate::documentable_formatter::LocationLink;
 use crate::documentable_item::DocumentableItemId;
@@ -47,21 +47,23 @@ pub trait DocGroup:
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
-    match item_id {
-        DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
-        item_id => {
-            let (outer_comments, inner_comments, module_level_comments) =
-                get_item_documentation_content(db, item_id);
-            match (module_level_comments, outer_comments, inner_comments) {
-                (None, None, None) => None,
-                (module_level_comments, outer_comments, inner_comments) => Some(
-                    chain!(&module_level_comments, &outer_comments, &inner_comments)
-                        .map(|comment| comment.trim_end())
-                        .join(" "),
-                ),
-            }
-        }
-    }
+    let tokens = get_item_documentation_as_tokens(db, item_id);
+    tokens.map(|tokens| {
+        tokens
+            .iter()
+            .map(|doc_token| match doc_token {
+                DocumentationCommentToken::Content(content) => content.clone(),
+                DocumentationCommentToken::Link(link) => {
+                    let path_formatted = if let Some(path) = link.path.clone() {
+                        format!("({})", path)
+                    } else {
+                        String::new()
+                    };
+                    format!("[{}]{}", link.label.clone(), path_formatted)
+                }
+            })
+            .join("")
+    })
 }
 
 fn get_item_documentation_as_tokens(
@@ -72,7 +74,17 @@ fn get_item_documentation_as_tokens(
         DocumentableItemId::Crate(crate_id) => {
             (None, None, get_crate_root_module_documentation(db, crate_id))
         }
-        item_id => get_item_documentation_content(db, item_id),
+        item_id => (
+            // We check for different type of comments for the item. Even modules can have both
+            // inner and module level comments.
+            extract_item_outer_documentation(db, item_id),
+            // In case if item_id is a module, there are 2 possible cases:
+            // 1. Inline module: It could have inner comments, but not the module_level.
+            // 2. Non-inline Module (module as a file): It could have module level comments, but not the
+            //    inner ones.
+            extract_item_inner_documentation(db, item_id),
+            extract_item_module_level_documentation(db.upcast(), item_id),
+        ),
     };
 
     let doc_parser = DocumentationCommentParser::new(db.upcast());
@@ -83,37 +95,18 @@ fn get_item_documentation_as_tokens(
         inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
     let module_level_comment_tokens = module_level_comment
         .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
-    let separator_token = vec![DocumentationCommentToken::Content(" ".to_string())];
 
-    let result: Vec<Vec<DocumentationCommentToken>> =
-        [outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens]
+    let mut result: Vec<Vec<DocumentationCommentToken>> =
+        [module_level_comment_tokens, outer_comment_tokens, inner_comment_tokens]
             .into_iter()
             .flatten()
             .collect();
-
+    result.retain(|v| !v.is_empty());
     if result.is_empty() {
         return None;
     }
-
+    let separator_token = vec![DocumentationCommentToken::Content(" ".to_string())];
     Some(intersperse(result, separator_token).flatten().collect())
-}
-
-/// Get the raw documentation content from the item.
-fn get_item_documentation_content(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
-) -> (Option<String>, Option<String>, Option<String>) {
-    // We check for different types of comments for the item. Even modules can have both
-    // inner and module level comments.
-    let outer_comments = extract_item_outer_documentation(db, item_id);
-    // In case if item_id is a module, there are 2 possible cases:
-    // 1. Inline module: It could have inner comments, but not the module_level.
-    // 2. Non-inline Module (module as a file): It could have module level comments, but not the
-    //    inner ones.
-    let inner_comments = extract_item_inner_documentation(db, item_id);
-    let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
-
-    (outer_comments, inner_comments, module_level_comments)
 }
 
 /// Gets the crate level documentation.
@@ -139,7 +132,7 @@ fn extract_item_inner_documentation(
             .stable_location(db.upcast())?
             .syntax_node(db.upcast())
             .get_text_without_inner_commentable_children(db.upcast());
-        extract_item_inner_documentation_from_raw_text(raw_text)
+        Some(extract_item_inner_documentation_from_raw_text(raw_text))
     } else {
         None
     }
@@ -185,15 +178,13 @@ fn extract_item_module_level_documentation(
 }
 
 /// Only gets the comments inside the item.
-fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> Option<String> {
-    Some(
-        raw_text
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .skip_while(|line| is_comment_line(line))
-            .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-            .join("\n"),
-    )
+fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> String {
+    raw_text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .skip_while(|line| is_comment_line(line))
+        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
+        .join("\n")
 }
 
 /// Gets the module level comments of certain file.
@@ -202,7 +193,6 @@ fn extract_item_module_level_documentation_from_file(
     file_id: FileId,
 ) -> Option<String> {
     let file_content = db.file_content(file_id)?.to_string();
-
     Some(
         file_content
             .lines()

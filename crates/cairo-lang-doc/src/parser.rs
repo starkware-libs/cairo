@@ -131,7 +131,14 @@ impl<'a> DocumentationCommentParser<'a> {
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&text);
                     } else {
-                        tokens.push(DocumentationCommentToken::Content(text.into_string()));
+                        let text = {
+                            if is_indented_code_block {
+                                format!("    {}", text)
+                            } else {
+                                text.to_string()
+                            }
+                        };
+                        tokens.push(DocumentationCommentToken::Content(text));
                     }
                 }
                 Event::Code(code) => {
@@ -153,7 +160,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                 }
                             }
                             tokens.push(DocumentationCommentToken::Content(format!(
-                                "  {} ",
+                                "{} ",
                                 heading_level_to_markdown(level)
                             )));
                         }
@@ -178,6 +185,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                 }
                             }
                             CodeBlockKind::Indented => {
+                                tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
                                 is_indented_code_block = true;
                             }
                         },
@@ -252,6 +260,11 @@ impl<'a> DocumentationCommentParser<'a> {
             last_two_events = [last_two_events[1].clone(), Some(event)];
         }
 
+        if let Some(DocumentationCommentToken::Content(token)) = tokens.first() {
+            if token == "\n" {
+                tokens.remove(0);
+            }
+        }
         if let Some(DocumentationCommentToken::Content(token)) = tokens.last_mut() {
             *token = token.trim_end().to_string();
             if token.is_empty() {
