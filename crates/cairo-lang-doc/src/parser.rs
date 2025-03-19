@@ -120,6 +120,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     )));
                 }
             };
+        let mut prefix_list_item = false;
 
         let mut last_two_events = [None, None];
 
@@ -127,7 +128,10 @@ impl<'a> DocumentationCommentParser<'a> {
             let current_event = event.clone();
             match current_event {
                 Event::Text(text) => {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
+                    if prefix_list_item {
+                        write_list_item_prefix(&mut list_nesting, &mut tokens);
+                        prefix_list_item = false;
+                    }
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&text);
                     } else {
@@ -142,7 +146,10 @@ impl<'a> DocumentationCommentParser<'a> {
                     }
                 }
                 Event::Code(code) => {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
+                    if prefix_list_item {
+                        write_list_item_prefix(&mut list_nesting, &mut tokens);
+                        prefix_list_item = false;
+                    }
                     let complete_code = format!("`{}`", code);
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&complete_code);
@@ -221,6 +228,9 @@ impl<'a> DocumentationCommentParser<'a> {
                         }
                         Tag::Paragraph => {
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                        }
+                        Tag::Item => {
+                            prefix_list_item = true;
                         }
                         _ => {}
                     }

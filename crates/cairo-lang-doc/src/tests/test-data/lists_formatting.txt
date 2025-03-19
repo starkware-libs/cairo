@@ -32,6 +32,7 @@ hello = "src"
 //! unordered list
 //! - A
 //! - B
+//! - `multiple elements item` gets prefix only once
 //!
 //! not a list
 //! 0. First item
@@ -66,6 +67,7 @@ nested list
 unordered list
 - A
 - B
+- `multiple elements item` gets prefix only once
 
 not a list
 0. First item
@@ -135,6 +137,10 @@ Content("A")
 Content("\n")
 Content("- ")
 Content("B")
+Content("\n")
+Content("- ")
+Content("`multiple elements item`")
+Content(" gets prefix only once")
 Content("\n")
 Content("\n")
 Content("not a list")
