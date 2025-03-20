@@ -16,9 +16,10 @@ use cairo_lang_syntax::node::ast::{Expr, ExprPath, ItemModule};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
+use itertools::Itertools;
 use pulldown_cmark::{
-    BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options, Parser as MarkdownParser,
-    Tag, TagEnd,
+    Alignment, BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options,
+    Parser as MarkdownParser, Tag, TagEnd,
 };
 
 use crate::db::DocGroup;
@@ -94,9 +95,11 @@ impl<'a> DocumentationCommentParser<'a> {
             None
         };
 
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
         let parser = MarkdownParser::new_with_broken_link_callback(
             &documentation_comment,
-            Options::empty(),
+            options,
             Some(&mut replacer),
         );
 
@@ -121,8 +124,8 @@ impl<'a> DocumentationCommentParser<'a> {
                 }
             };
         let mut prefix_list_item = false;
-
         let mut last_two_events = [None, None];
+        let mut table_aligment: Vec<Alignment> = Vec::new();
 
         for event in parser {
             let current_event = event.clone();
@@ -226,17 +229,24 @@ impl<'a> DocumentationCommentParser<'a> {
                                 }
                             }
                         }
-                        Tag::Paragraph => {
+                        Tag::Paragraph | Tag::TableRow => {
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                         Tag::Item => {
                             prefix_list_item = true;
                         }
+                        Tag::Table(aligment) => {
+                            table_aligment = aligment;
+                            tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                        }
+                        Tag::TableCell => {
+                            tokens.push(DocumentationCommentToken::Content("|".to_string()));
+                        }
                         _ => {}
                     }
                 }
                 Event::End(tag_end) => match tag_end {
-                    TagEnd::Heading(_) => {
+                    TagEnd::Heading(_) | TagEnd::Table => {
                         tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                     }
                     TagEnd::List(_) => {
@@ -249,6 +259,19 @@ impl<'a> DocumentationCommentParser<'a> {
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                     }
+                    TagEnd::TableHead => {
+                        tokens.push(DocumentationCommentToken::Content(format!(
+                            "|\n|{}|",
+                            table_aligment
+                                .iter()
+                                .map(|a| {
+                                    let (left, right) = get_alignment_markers(a);
+                                    format!("{}---{}", left, right)
+                                })
+                                .join("|")
+                        )));
+                        table_aligment.clear();
+                    }
                     TagEnd::CodeBlock => {
                         if !is_indented_code_block {
                             tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
@@ -259,6 +282,9 @@ impl<'a> DocumentationCommentParser<'a> {
                         if let Some(link) = current_link.take() {
                             tokens.push(DocumentationCommentToken::Link(link));
                         }
+                    }
+                    TagEnd::TableRow => {
+                        tokens.push(DocumentationCommentToken::Content("|".to_string()));
                     }
                     _ => {}
                 },
@@ -506,4 +532,15 @@ fn heading_level_to_markdown(heading_level: HeadingLevel) -> String {
         HeadingLevel::H5 => heading_char.repeat(5),
         HeadingLevel::H6 => heading_char.repeat(6),
     }
+}
+
+/// Maps [`Alignment`] to correct markdown markers.
+fn get_alignment_markers(alignment: &Alignment) -> (String, String) {
+    let (left, right) = match alignment {
+        Alignment::None => ("", ""),
+        Alignment::Left => (":", ""),
+        Alignment::Right => ("", ":"),
+        Alignment::Center => (":", ":"),
+    };
+    (left.to_string(), right.to_string())
 }
