@@ -39,3 +39,38 @@ Statements:
   () <- test::use_a_copy(v0)
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Cache Generated Impl 
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() {
+    let x = |a| {
+        a + 5
+    };
+    let y = x(5);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:9
+    let y = x(5);
+        ^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()
