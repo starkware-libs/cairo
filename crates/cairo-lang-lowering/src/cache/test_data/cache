@@ -39,3 +39,37 @@ Statements:
   () <- test::use_a_copy(v0)
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Cache Generated Impl 
+
+//! > test_runner_name
+test_cache_check
+
+//! > function
+fn foo() -> u32 {
+    let x = |a| {
+        a + 5
+    };
+    x(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 10
+  (v1: (core::integer::u32,)) <- struct_construct(v0)
+  (v2: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v1)
+End:
+  Return(v2)
