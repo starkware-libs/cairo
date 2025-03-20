@@ -76,12 +76,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn cached_multi_lowerings(
         &self,
         crate_id: cairo_lang_filesystem::ids::CrateId,
-    ) -> Option<
-        Arc<(
-            OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>,
-            OrderedHashMap<TypeId, TypeInfo>,
-        )>,
-    >;
+    ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>>;
 
     /// Computes the lowered representation of a function with a body before borrow checking.
     fn priv_function_with_body_lowering(
@@ -405,7 +400,7 @@ fn priv_function_with_body_multi_lowering(
 ) -> Maybe<Arc<MultiLowering>> {
     let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
-        if let Some(multi_lowering) = map.0.get(&function_id) {
+        if let Some(multi_lowering) = map.get(&function_id) {
             // println!("cached {:?}", function_id.full_path(db.upcast()));
             return Ok(Arc::new(multi_lowering.clone()));
         } else {
@@ -427,12 +422,7 @@ fn priv_function_with_body_multi_lowering(
 fn cached_multi_lowerings(
     db: &dyn LoweringGroup,
     crate_id: cairo_lang_filesystem::ids::CrateId,
-) -> Option<
-    Arc<(
-        OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>,
-        OrderedHashMap<TypeId, TypeInfo>,
-    )>,
-> {
+) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
     load_cached_crate_functions(db, crate_id)
 }
 
