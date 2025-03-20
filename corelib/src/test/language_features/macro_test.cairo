@@ -105,46 +105,38 @@ fn test_add_exprs() {
 }
 
 macro optional_repetitions {
-    ($x:ident) => {
+    ($x:ident?) => {
         $x
     };
 
-    ($x:ident {$y:ident }? {$z:ident }?) => {
-        2
+    ($x:expr?) => {
+        $x
     };
 
-    ($x:ident {$y:ident, {$z:ident }? }?) => {
-        OptionTrait::unwrap_or(z, OptionTrait::unwrap_or(y, $x))
+    ($x:expr? $y:ident) => {
+        $x
     };
 
-    ($x:ident, $y:ident?) => {
-        OptionTrait::unwrap_or(y, $x)
+    ($x:expr? | $y:expr?) => {
+        $x
     };
 
-    ($x:ident, $y:ident?, $z:ident?) => {
-        OptionTrait::unwrap_or(z, OptionTrait::unwrap_or(y, $x))
+    ($x:ident?, $y:ident?) => {
+        $y
+    };
+
+    ($x:ident $y:expr?) => {
+        $y
     };
 }
 #[test]
 fn test_macro_optional_repetitions() {
     let x = 1;
+    let y = 2;
     assert_eq!(optional_repetitions!(x), 1);
-    let y: Option<felt252> = Some(2);
+    assert_eq!(optional_repetitions!(2), 2);
+    assert_eq!(optional_repetitions!(2 x), 2);
+    assert_eq!(optional_repetitions!(0 | 1), 0);
     assert_eq!(optional_repetitions!(x, y), 2);
-    let z: Option<felt252> = Some(3);
-    assert_eq!(optional_repetitions!(x, y, z), 3);
-    assert_eq!(optional_repetitions!(x {y, {
-        z
-    }}), 3);
-}
-
-#[test]
-fn test_macro_optional_repetitions_expansion() {
-    let x = 1;
-    let y: Option<felt252> = Some(2);
-    let z: Option<felt252> = Some(3);
-    let expanded_y = optional_repetitions!(x, y);
-    let expanded_y_z = optional_repetitions!(x, y, z);
-    assert_eq!(expanded_y, OptionTrait::unwrap_or(y, x));
-    assert_eq!(expanded_y_z, OptionTrait::unwrap_or(z, OptionTrait::unwrap_or(y, x)));
+    assert_eq!(optional_repetitions!(x 2), 2);
 }

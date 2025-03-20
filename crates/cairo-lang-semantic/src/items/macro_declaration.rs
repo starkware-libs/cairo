@@ -149,53 +149,63 @@ fn is_macro_rule_match_ex(
                 let placeholder_kind: PlaceholderKind = param.kind(db.upcast()).into();
                 let placeholder_name =
                     param.name(db.upcast()).as_syntax_node().get_text_without_trivia(db.upcast());
+                let optional = param.optional(db.upcast()).text(db.upcast()).is_empty();
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
-                        let token_tree_leaf: &ast::TokenTree = input_iter.next()?;
-                        match token_tree_leaf {
-                            ast::TokenTree::Token(token_tree_leaf) => {
-                                match token_tree_leaf.leaf(db.upcast()) {
-                                    ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
+                        if let Some(token_tree_leaf) = input_iter.next() {
+                            match token_tree_leaf {
+                                ast::TokenTree::Token(token_tree_leaf)
+                                    if matches!(
+                                        token_tree_leaf.leaf(db.upcast()),
+                                        ast::TokenNode::TerminalIdentifier(_)
+                                    ) =>
+                                {
+                                    if let ast::TokenNode::TerminalIdentifier(terminal_identifier) =
+                                        token_tree_leaf.leaf(db.upcast())
+                                    {
                                         captures.insert(
                                             placeholder_name,
                                             terminal_identifier.text(db.upcast()).to_string(),
                                         );
                                     }
-                                    _ => return None,
                                 }
+                                _ => return None,
                             }
-                            ast::TokenTree::Subtree(_) => return None,
-                            ast::TokenTree::Missing(_) => unreachable!(),
+                        } else if !optional {
+                            return None;
                         }
                     }
                     PlaceholderKind::Expr => {
-                        let expr_node = as_expr_macro_token_tree(
+                        if let Some(expr_node) = as_expr_macro_token_tree(
                             input_iter.clone().cloned(),
                             input.stable_ptr().0.file_id(db.upcast()),
                             db.upcast(),
-                        )?;
-                        let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
-                        captures.insert(placeholder_name, expr_text.to_string());
-                        let expr_length = expr_text.len();
-                        let mut current_length = 0;
+                        ) {
+                            let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
+                            captures.insert(placeholder_name, expr_text.to_string());
+                            let expr_length = expr_text.len();
+                            let mut current_length = 0;
 
-                        // TODO(Dean): Use the iterator directly in the parser and advance it while
-                        // parsing the expression, instead of manually tracking the length and
-                        // iterating separately.
-                        for token_tree_leaf in input_iter.by_ref() {
-                            let token_text = match token_tree_leaf {
-                                ast::TokenTree::Token(token_tree_leaf) => {
-                                    token_tree_leaf.as_syntax_node().get_text(db.upcast())
+                            // TODO(Dean): Use the iterator directly in the parser and advance it
+                            // while parsing the expression, instead of manually tracking the length
+                            // and iterating separately.
+                            for token_tree_leaf in input_iter.by_ref() {
+                                let token_text = match token_tree_leaf {
+                                    ast::TokenTree::Token(token_tree_leaf) => {
+                                        token_tree_leaf.as_syntax_node().get_text(db.upcast())
+                                    }
+                                    ast::TokenTree::Subtree(token_subtree) => {
+                                        token_subtree.as_syntax_node().get_text(db.upcast())
+                                    }
+                                    ast::TokenTree::Missing(_) => unreachable!(),
+                                };
+                                current_length += token_text.len();
+                                if current_length >= expr_length {
+                                    break;
                                 }
-                                ast::TokenTree::Subtree(token_subtree) => {
-                                    token_subtree.as_syntax_node().get_text(db.upcast())
-                                }
-                                ast::TokenTree::Missing(_) => unreachable!(),
-                            };
-                            current_length += token_text.len();
-                            if current_length >= expr_length {
-                                break;
                             }
+                        } else if !optional {
+                            return None;
                         }
                     }
                 }
@@ -215,32 +225,10 @@ fn is_macro_rule_match_ex(
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
-            ast::MacroRuleElement::Repetition(repetition) => {
-                let rep_op = repetition.operator(db.upcast());
-                if rep_op.as_syntax_node().get_text_without_trivia(db.upcast()) == "?" {
-                    if let Some(next_input_token) = input_iter.next() {
-                        let mut temp_captures = OrderedHashMap::default();
-                        if is_macro_rule_match_ex(
-                            db,
-                            repetition.subtree(db.upcast()),
-                            match next_input_token {
-                                ast::TokenTree::Subtree(subtree) => subtree,
-                                _ => return None,
-                            },
-                            &mut temp_captures,
-                        )
-                        .is_some()
-                        {
-                            input_iter.next();
-                            captures.extend(temp_captures);
-                        }
-                    }
-                    continue;
-                }
-            }
+            // TODO(Dean): Implement repetition matching (i.e. `+` and `*`).
+            ast::MacroRuleElement::Repetition(_) => todo!(),
         }
     }
-
     if input_iter.next().is_some() {
         return None;
     }
@@ -298,7 +286,14 @@ fn expand_macro_rule_ex(
                 } else {
                     // TODO(Gil): verify in the declaration that all the used placeholders in the
                     // expansion are present in the captures.
-                    panic!("Placeholder not found in captures.");
+                    let is_optional = db
+                        .get_children(path_node.as_syntax_node())
+                        .iter()
+                        .any(|child| child.kind(db) == SyntaxKind::TerminalQuestionMark);
+                    if is_optional {
+                        return;
+                    }
+                    panic!("Placeholder '{}' not found in captures.", placeholder_name);
                 }
                 return;
             }

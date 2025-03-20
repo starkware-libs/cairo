@@ -23220,14 +23220,16 @@ impl MacroRuleParam {
     pub const INDEX_NAME: usize = 1;
     pub const INDEX_COLON: usize = 2;
     pub const INDEX_KIND: usize = 3;
+    pub const INDEX_OPTIONAL: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         dollar: TerminalDollarGreen,
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
         kind: MacroRuleParamKindGreen,
+        optional: TerminalQuestionMarkGreen,
     ) -> MacroRuleParamGreen {
-        let children: Vec<GreenId> = vec![dollar.0, name.0, colon.0, kind.0];
+        let children: Vec<GreenId> = vec![dollar.0, name.0, colon.0, kind.0, optional.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         MacroRuleParamGreen(
             Arc::new(GreenNode {
@@ -23250,6 +23252,9 @@ impl MacroRuleParam {
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> MacroRuleParamKind {
         MacroRuleParamKind::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn optional(&self, db: &dyn SyntaxGroup) -> TerminalQuestionMark {
+        TerminalQuestionMark::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23285,6 +23290,7 @@ impl TypedSyntaxNode for MacroRuleParam {
                         TerminalIdentifier::missing(db).0,
                         TerminalColon::missing(db).0,
                         MacroRuleParamKind::missing(db).0,
+                        TerminalQuestionMark::missing(db).0,
                     ],
                     width: TextWidth::default(),
                 },
@@ -23322,6 +23328,231 @@ impl TypedSyntaxNode for MacroRuleParam {
 impl From<&MacroRuleParam> for SyntaxStablePtrId {
     fn from(node: &MacroRuleParam) -> Self {
         node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroRepetition {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroRepetition {
+    pub const INDEX_DOLLAR_OPEN: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_ELEMENTS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_OPERATOR: usize = 4;
+    pub const INDEX_SEPARATOR: usize = 5;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar_open: TerminalDollarGreen,
+        lparen: TerminalLParenGreen,
+        elements: MacroRuleElementsGreen,
+        rparen: TerminalRParenGreen,
+        operator: MacroRepetitionOperatorGreen,
+        separator: TerminalCommaGreen,
+    ) -> MacroRepetitionGreen {
+        let children: Vec<GreenId> =
+            vec![dollar_open.0, lparen.0, elements.0, rparen.0, operator.0, separator.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRepetition,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroRepetition {
+    pub fn dollar_open(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroRuleElements {
+        MacroRuleElements::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> TerminalComma {
+        TerminalComma::from_syntax_node(db, self.children[5].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionPtr(pub SyntaxStablePtrId);
+impl MacroRepetitionPtr {}
+impl TypedStablePtr for MacroRepetitionPtr {
+    type SyntaxNode = MacroRepetition;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRepetition {
+        MacroRepetition::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRepetitionPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRepetitionPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRepetition {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetition);
+    type StablePtr = MacroRepetitionPtr;
+    type Green = MacroRepetitionGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRepetition,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        MacroRuleElements::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                        MacroRepetitionOperator::missing(db).0,
+                        TerminalComma::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRepetition,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRepetition
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRepetition {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRepetitionPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroRepetition> for SyntaxStablePtrId {
+    fn from(node: &MacroRepetition) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MacroRepetitionOperator {
+    ZeroOrMore(TerminalMul),
+    OneOrMore(TerminalPlus),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionOperatorPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for MacroRepetitionOperatorPtr {
+    type SyntaxNode = MacroRepetitionOperator;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRepetitionOperatorPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRepetitionOperatorPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalMulPtr> for MacroRepetitionOperatorPtr {
+    fn from(value: TerminalMulPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusPtr> for MacroRepetitionOperatorPtr {
+    fn from(value: TerminalPlusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulGreen> for MacroRepetitionOperatorGreen {
+    fn from(value: TerminalMulGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusGreen> for MacroRepetitionOperatorGreen {
+    fn from(value: TerminalPlusGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionOperatorGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRepetitionOperator {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MacroRepetitionOperatorPtr;
+    type Green = MacroRepetitionOperatorGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalMul => {
+                MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalPlus => {
+                MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "MacroRepetitionOperator"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalMul => {
+                Some(MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalPlus => {
+                Some(MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MacroRepetitionOperator::ZeroOrMore(x) => x.as_syntax_node(),
+            MacroRepetitionOperator::OneOrMore(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRepetitionOperatorPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&MacroRepetitionOperator> for SyntaxStablePtrId {
+    fn from(node: &MacroRepetitionOperator) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl MacroRepetitionOperator {
+    /// Checks if a kind of a variant of [MacroRepetitionOperator].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::TerminalMul | SyntaxKind::TerminalPlus)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

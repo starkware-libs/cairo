@@ -77,8 +77,9 @@ macro some_macro {
     │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
     │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │   │   ├── colon (kind: TokenColon): ':'
-    │       │       │   │   │   └── kind (kind: ParamIdent)
-    │       │       │   │   │       └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   │   ├── kind (kind: ParamIdent)
+    │       │       │   │   │   │   └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   │   └── optional: Missing
     │       │       │   │   ├── child #5 (kind: TokenTreeLeaf)
     │       │       │   │   │   └── leaf (kind: TokenPlus): '+'
     │       │       │   │   └── child #6 (kind: MacroMatcherWrapper)
@@ -89,8 +90,9 @@ macro some_macro {
     │       │       │   │           │   │   ├── dollar (kind: TokenDollar): '$'
     │       │       │   │           │   │   ├── name (kind: TokenIdentifier): 'y'
     │       │       │   │           │   │   ├── colon (kind: TokenColon): ':'
-    │       │       │   │           │   │   └── kind (kind: ParamIdent)
-    │       │       │   │           │   │       └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │           │   │   ├── kind (kind: ParamIdent)
+    │       │       │   │           │   │   │   └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │           │   │   └── optional: Missing
     │       │       │   │           │   ├── child #1 (kind: TokenTreeLeaf)
     │       │       │   │           │   │   └── leaf (kind: TokenPlus): '+'
     │       │       │   │           │   └── child #2 (kind: MacroMatcherWrapper)

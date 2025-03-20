@@ -695,7 +695,12 @@ impl<'a> Parser<'a> {
                 let ident = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
                 let kind = self.parse_macro_rule_param_kind();
-                Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind).into())
+                let optional = if self.peek().kind == SyntaxKind::TerminalQuestionMark {
+                    self.take::<TerminalQuestionMark>()
+                } else {
+                    TerminalQuestionMark::missing(self.db)
+                };
+                Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind, optional).into())
             }
             SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrace

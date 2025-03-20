@@ -115,8 +115,9 @@ macro macro_name {
     │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
     │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │   │   ├── colon (kind: TokenColon): ':'
-    │       │       │   │   │   └── kind (kind: ParamIdent)
-    │       │       │   │   │       └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   │   ├── kind (kind: ParamIdent)
+    │       │       │   │   │   │   └── ident (kind: TokenIdentifier): 'ident'
+    │       │       │   │   │   └── optional: Missing
     │       │       │   │   ├── child #1 (kind: TokenTreeLeaf)
     │       │       │   │   │   └── leaf (kind: TokenIdentifier): 'x'
     │       │       │   │   ├── child #2 (kind: TokenTreeLeaf)
@@ -243,7 +244,8 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       │       │   │   │   ├── dollar (kind: TokenDollar): '$'
     │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │   │   ├── colon (kind: TokenColon): ':'
-    │       │       │   │   │   └── kind (kind: MacroRuleParamKindMissing) []
+    │       │       │   │   │   ├── kind (kind: MacroRuleParamKindMissing) []
+    │       │       │   │   │   └── optional: Missing
     │       │       │   │   └── child #1 (kind: TokenTreeLeaf)
     │       │       │   │       └── leaf (kind: TokenIdentifier): 'unknown'
     │       │       │   └── rparen (kind: TokenRParen): ')'
