@@ -291,6 +291,9 @@ impl<'a> DocumentationCommentParser<'a> {
                 Event::SoftBreak => {
                     tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                 }
+                Event::Rule => {
+                    tokens.push(DocumentationCommentToken::Content("\n___\n".to_string()));
+                }
                 _ => {}
             }
             last_two_events = [last_two_events[1].clone(), Some(event)];
