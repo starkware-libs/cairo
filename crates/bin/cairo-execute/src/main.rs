@@ -101,7 +101,7 @@ struct RunArgs {
         long,
         default_value_t = false,
         conflicts_with_all = ["build_only", "output_path"],
-        requires_all=["air_public_input", "air_private_input"],
+        requires_ifs = [("standalone", "air_public_input"), ("standalone", "air_private_input")],
     )]
     standalone: bool,
     /// If set, the program will be run in secure mode.
@@ -152,7 +152,7 @@ struct ProofOutputArgs {
     #[arg(long, conflicts_with = "build_only")]
     air_public_input: Option<PathBuf>,
     /// The resulting AIR private input file.
-    #[arg(long, conflicts_with = "build_only", requires_all=["trace_file", "memory_file"])]
+    #[arg(long, conflicts_with = "build_only", requires_ifs = [("standalone", "trace_file"), ("standalone", "memory_file")])]
     air_private_input: Option<PathBuf>,
 }
 
