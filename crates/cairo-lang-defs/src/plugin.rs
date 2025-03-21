@@ -70,15 +70,31 @@ pub struct PluginResult {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
+    pub end_ptr: Option<SyntaxStablePtrId>,
     pub message: String,
     pub severity: Severity,
 }
 impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            end_ptr: None,
+            message,
+            severity: Severity::Error,
+        }
     }
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            end_ptr: None,
+            message,
+            severity: Severity::Warning,
+        }
+    }
+
+    pub fn with_end_ptr(mut self, end_ptr: impl Into<SyntaxStablePtrId>) -> Self {
+        self.end_ptr = Some(end_ptr.into());
+        self
     }
 }
 

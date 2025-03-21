@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::plugin::{
-    MacroPlugin, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
@@ -168,5 +168,88 @@ fn test_mapping_translate_consecutive_spans() {
             ^^^^^^
 
     "#}
+    );
+}
+
+#[derive(Debug, Default)]
+struct EndPtrTestPlugin;
+impl MacroPlugin for EndPtrTestPlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
+        // Only run plugin in the test file.
+        let ptr = item_ast.stable_ptr();
+        let file = ptr.0.file_id(db);
+        let path = file.full_path(db.upcast());
+        if path != "lib.cairo" {
+            return PluginResult::default();
+        }
+
+        // Find the first function in the file
+        if let ast::ModuleItem::FreeFunction(function) = &item_ast {
+            // Get function body statements
+            let elements = function.body(db).statements(db).elements(db);
+
+            assert!(elements.len() >= 2);
+            let first_stmt = &elements[0];
+            let second_stmt = &elements[1];
+            // Create a diagnostic that spans from the first statement to the second statement
+            let diagnostic = PluginDiagnostic::error(
+                first_stmt.stable_ptr(),
+                "Test diagnostic with end_ptr".into(),
+            )
+            .with_end_ptr(second_stmt.stable_ptr());
+
+            return PluginResult {
+                code: None,
+                diagnostics: vec![diagnostic],
+                remove_original_item: false,
+            };
+        }
+
+        PluginResult::default()
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+#[test]
+fn test_diagnostic_with_end_ptr() {
+    // Setup db with the test plugin.
+    let mut suite = get_default_plugin_suite();
+    suite.add_plugin::<EndPtrTestPlugin>();
+    let mut db_val = SemanticDatabaseForTesting::with_plugin_suite(suite);
+
+    // Create test file.
+    let content = indoc! {r#"
+        fn foo() -> felt252 {
+            let x = 1;
+            let y = 2;
+            x + y
+        }
+    "#};
+    let (test_module, _diagnostics) = setup_test_module(&db_val, content).split();
+    let module_id = test_module.module_id;
+
+    // Read semantic diagnostics.
+    let db = &mut db_val;
+    let diags = db.module_semantic_diagnostics(module_id).unwrap();
+    let diags = diags.format(db);
+    assert_eq!(
+        diags,
+        indoc! {r#"
+        error: Plugin diagnostic: Test diagnostic with end_ptr
+         --> lib.cairo:2:5-3:14
+              let x = 1;
+         _____^
+        |     let y = 2;
+        |______________^
+
+        "#}
     );
 }
