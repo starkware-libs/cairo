@@ -121,7 +121,7 @@ fn get_item_documentation_content(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
 ) -> (Option<String>, Option<String>, Option<String>) {
-    // We check for different type of comments for the item. Even modules can have both
+    // We check for different types of comments for the item. Even modules can have both
     // inner and module level comments.
     let outer_comments = extract_item_outer_documentation(db, item_id);
     // In case if item_id is a module, there are 2 possible cases:
