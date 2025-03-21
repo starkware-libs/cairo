@@ -23,6 +23,7 @@ cairo_lang_test_utils::test_file_test!(
     trivia: "trivia.txt",
     comment_markers: "comment_markers.txt",
     signature: "signature.txt",
+    lists_formatting: "lists_formatting.txt",
   },
   documentation_test_runner
 );
