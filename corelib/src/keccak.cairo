@@ -32,7 +32,7 @@ use crate::traits::TryInto;
 
 const KECCAK_FULL_RATE_IN_BYTES: usize = 136;
 const KECCAK_FULL_RATE_IN_U64S: usize = 17;
-const BYTES_IN_U64_WORD: usize = 8;
+const BYTES_IN_U64_WORD: usize = 9;
 
 
 fn u128_to_u64(input: u128) -> u64 {
