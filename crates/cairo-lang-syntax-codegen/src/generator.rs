@@ -124,7 +124,7 @@ fn generate_key_fields_code() -> rust::Tokens {
     let spec = get_spec();
     let mut arms = rust::Tokens::new();
 
-    for Node { name, kind } in spec.into_iter() {
+    for Node { name, kind } in spec {
         match kind {
             NodeKind::Struct { members } | NodeKind::Terminal { members, .. } => {
                 let mut fields = rust::Tokens::new();
@@ -193,7 +193,7 @@ fn generate_ast_code() -> rust::Tokens {
     let spec_clone = spec.clone();
     let all_tokens: Vec<_> =
         spec_clone.iter().filter(|node| matches!(node.kind, NodeKind::Terminal { .. })).collect();
-    for Node { name, kind } in spec.into_iter() {
+    for Node { name, kind } in spec {
         tokens.extend(match kind {
             NodeKind::Enum { variants, missing_variant } => {
                 let variants_list = match variants {
