@@ -52,7 +52,7 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_all = ["fullnode_args"], 
+        requires_ifs = [("fullnode_url", "fullnode_args")], 
         required_unless_present = "input_files", 
         conflicts_with = "input_files"
     )]
