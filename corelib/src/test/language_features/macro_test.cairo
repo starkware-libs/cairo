@@ -103,3 +103,40 @@ fn test_add_exprs() {
     assert_eq!(add_exprs!(abc 1 2), 3);
     assert_eq!(add_exprs!(0 2), 2);
 }
+
+macro optional_repetitions {
+    ($x:ident?) => {
+        $x
+    };
+
+    ($x:expr?) => {
+        $x
+    };
+
+    ($x:expr? $y:ident) => {
+        $x
+    };
+
+    ($x:expr? | $y:expr?) => {
+        $x
+    };
+
+    ($x:ident?, $y:ident?) => {
+        $y
+    };
+
+    ($x:ident $y:expr?) => {
+        $y
+    };
+}
+#[test]
+fn test_macro_optional_repetitions() {
+    let x = 1;
+    let y = 2;
+    assert_eq!(optional_repetitions!(x), 1);
+    assert_eq!(optional_repetitions!(2), 2);
+    assert_eq!(optional_repetitions!(2 x), 2);
+    assert_eq!(optional_repetitions!(0 | 1), 0);
+    assert_eq!(optional_repetitions!(x, y), 2);
+    assert_eq!(optional_repetitions!(x 2), 2);
+}
