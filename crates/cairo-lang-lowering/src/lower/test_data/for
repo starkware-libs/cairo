@@ -162,41 +162,41 @@ End:
 
 blk4:
 Statements:
-  (v23: core::array::Span::<core::felt252>) <- struct_construct(v18)
 End:
   Match(match_enum(v19) {
-    Option::Some(v24) => blk5,
-    Option::None(v25) => blk6,
+    Option::Some(v23) => blk5,
+    Option::None(v24) => blk6,
   })
 
 blk5:
 Statements:
-  (v26: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v27: @core::felt252) <- core::box::unbox::<@core::felt252>(v24)
-  (v28: core::option::Option::<@core::felt252>) <- Option::Some(v27)
+  (v25: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
+  (v26: @core::felt252) <- core::box::unbox::<@core::felt252>(v23)
+  (v27: core::option::Option::<@core::felt252>) <- Option::Some(v26)
 End:
-  Goto(blk7, {v26 -> v29, v28 -> v30})
+  Goto(blk7, {v25 -> v28, v27 -> v29})
 
 blk6:
 Statements:
-  (v31: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
-  (v32: ()) <- struct_construct()
-  (v33: core::option::Option::<@core::felt252>) <- Option::None(v32)
+  (v30: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v17)
+  (v31: ()) <- struct_construct()
+  (v32: core::option::Option::<@core::felt252>) <- Option::None(v31)
 End:
-  Goto(blk7, {v31 -> v29, v33 -> v30})
+  Goto(blk7, {v30 -> v28, v32 -> v29})
 
 blk7:
 Statements:
-  (v34: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
+  (v33: core::array::Span::<core::felt252>) <- struct_construct(v18)
+  (v34: core::array::SpanIter::<core::felt252>) <- struct_construct(v33)
 End:
-  Match(match_enum(v30) {
+  Match(match_enum(v29) {
     Option::Some(v35) => blk8,
     Option::None(v36) => blk9,
   })
 
 blk8:
 Statements:
-  (v37: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
+  (v37: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v28)
   (v38: core::felt252) <- core::felt252_add(v3, v4)
   (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v41: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v37, v34, v38, v4)
 End:
@@ -204,7 +204,7 @@ End:
 
 blk9:
 Statements:
-  (v42: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v29)
+  (v42: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v28)
   (v43: ()) <- struct_construct()
   (v44: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v34, v3, v43)
   (v45: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v44)

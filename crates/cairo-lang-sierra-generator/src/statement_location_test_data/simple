@@ -123,15 +123,45 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-store_temp<u8>([2]) -> ([5])
+struct_construct<Tuple<u8>>([2]) -> ([5])
 Originating location:
-        MyEnum::A(a) => a,
-                        ^
+      match my_enum {
+ _____^
+| ...
+|     }
+|_____^
 In function: lib.cairo::foo
-jump() { label_test::foo::4() }
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([5]) -> ([6])
 Originating location:
-        MyEnum::A(a) => a,
-                        ^
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+store_temp<RangeCheck>([0]) -> ([0])
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([6]) -> ([6])
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+return([0], [6])
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
 In function: lib.cairo::foo
 label_test::foo::1:
 Originating location:
@@ -149,22 +179,15 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-store_temp<u8>([3]) -> ([5])
+struct_construct<Tuple<u8>>([3]) -> ([7])
 Originating location:
-        MyEnum::B(b) => b,
-                        ^
+      match my_enum {
+ _____^
+| ...
+|     }
+|_____^
 In function: lib.cairo::foo
-label_test::foo::4:
-Originating location:
-        MyEnum::B(b) => b,
-                        ^
-In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([5]) -> ([6])
-Originating location:
-        MyEnum::B(b) => b,
-                        ^
-In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([7]) -> ([8])
 Originating location:
   fn foo(my_enum: MyEnum) -> u8 {
  _______________________________^
@@ -180,7 +203,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([8]) -> ([8])
 Originating location:
   fn foo(my_enum: MyEnum) -> u8 {
  _______________________________^
@@ -188,7 +211,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::foo
-return([0], [7])
+return([0], [8])
 Originating location:
   fn foo(my_enum: MyEnum) -> u8 {
  _______________________________^
@@ -212,12 +235,12 @@ Originating location:
 |     }
 |_____^
 In function: lib.cairo::foo
-struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
+struct_deconstruct<Tuple<u8, u8>>([4]) -> ([9], [10])
 Originating location:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                   ^^^^^^^^
 In function: lib.cairo::foo
-dup<u8>([9]) -> ([9], [10])
+dup<u8>([10]) -> ([10], [11])
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -229,7 +252,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-dup<u8>([8]) -> ([8], [11])
+dup<u8>([9]) -> ([9], [12])
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -241,7 +264,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
+u8_overflowing_sub([0], [11], [12]) { fallthrough([13], [14]) label_test::foo::4([15], [16]) }
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -265,7 +288,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-drop<u8>([13]) -> ()
+drop<u8>([14]) -> ()
 Originating location:
         u8_overflowing_sub(lhs, rhs).into_is_err()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -277,7 +300,7 @@ Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^^^^^^^
 In function: lib.cairo::foo
-u8_wide_mul([8], [9]) -> ([16])
+u8_wide_mul([9], [10]) -> ([17])
 Originating location:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
         ^^^^^^^^^^^^^^^^^^^^^
@@ -286,7 +309,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<u16>([16]) -> ([16])
+store_temp<u16>([17]) -> ([17])
 Originating location:
         downcast(self)
         ^^^^^^^^^^^^^^
@@ -299,7 +322,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-downcast<u16, u8>([12], [16]) { fallthrough([17], [18]) label_test::foo::7([19]) }
+downcast<u16, u8>([13], [17]) { fallthrough([18], [19]) label_test::foo::6([20]) }
 Originating location:
         downcast(self)
         ^^^^^^^^^^^^^^
@@ -325,7 +348,7 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([18]) -> ([20])
+struct_construct<Tuple<u8>>([19]) -> ([21])
 Originating location:
         downcast(self)
         ^^^^^^^^^^^^^^
@@ -338,13 +361,56 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([21]) -> ([22])
 Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+store_temp<RangeCheck>([18]) -> ([18])
+Originating location:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([22]) -> ([22])
+Originating location:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+return([18], [22])
+Originating location:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+label_test::foo::6:
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+branch_align() -> ()
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+function_call<user@core::panic_with_const_felt252::<608642107937639184217240406363762551>>() -> ([23])
+Originating location:
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -354,13 +420,10 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<RangeCheck>([17]) -> ([17])
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([23]) -> ([24])
 Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -370,180 +433,111 @@ Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
+store_temp<RangeCheck>([20]) -> ([20])
 Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
-return([17], [21])
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([24]) -> ([24])
 Originating location:
-      const fn expect(self: Option<T>, err: felt252) -> T {
- _________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+return([20], [24])
+Originating location:
             c1 * c2
             ^^^^^^^
 In function: lib.cairo::foo
 label_test::foo::7:
 Originating location:
-        downcast(self)
-        ^^^^^^^^^^^^^^
-In function: core::integer::DowncastableIntTryInto::try_into
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
             c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+label_test::foo::4:
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+branch_align() -> ()
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+drop<u8>([16]) -> ()
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+u8_overflowing_add([15], [9], [10]) { fallthrough([25], [26]) label_test::foo::8([27], [28]) }
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        downcast(self)
-        ^^^^^^^^^^^^^^
-In function: core::integer::DowncastableIntTryInto::try_into
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
 Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-function_call<user@core::panic_with_const_felt252::<608642107937639184217240406363762551>>() -> ([22])
+struct_construct<Tuple<u8>>([26]) -> ([29])
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
 Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([22]) -> ([23])
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([29]) -> ([30])
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<RangeCheck>([19]) -> ([19])
+store_temp<RangeCheck>([25]) -> ([25])
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([23]) -> ([23])
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([30]) -> ([30])
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-return([19], [23])
+return([25], [30])
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
+            c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
 label_test::foo::8:
 Originating location:
-            None => crate::panic_with_felt252(err),
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::option::OptionTraitImpl::expect
-Inlined at:
-        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Mul::mul
-Inlined at:
-            c1 * c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::5:
-Originating location:
-        u8_overflowing_sub(lhs, rhs).into_is_err()
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8PartialOrd::lt
-Inlined at:
-        Self::lt(rhs, lhs)
-        ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        MyEnum::C((c1, c2)) => { if c1 > c2 {
-                                    ^^^^^^^
-In function: lib.cairo::foo
-branch_align() -> ()
-Originating location:
-        u8_overflowing_sub(lhs, rhs).into_is_err()
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8PartialOrd::lt
-Inlined at:
-        Self::lt(rhs, lhs)
-        ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        MyEnum::C((c1, c2)) => { if c1 > c2 {
-                                    ^^^^^^^
-In function: lib.cairo::foo
-drop<u8>([15]) -> ()
-Originating location:
-        u8_overflowing_sub(lhs, rhs).into_is_err()
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8PartialOrd::lt
-Inlined at:
-        Self::lt(rhs, lhs)
-        ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        MyEnum::C((c1, c2)) => { if c1 > c2 {
-                                    ^^^^^^^
-In function: lib.cairo::foo
-u8_overflowing_add([14], [8], [9]) { fallthrough([24], [25]) label_test::foo::9([26], [27]) }
-Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::integer::U8Add::add
@@ -560,7 +554,7 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-struct_construct<Tuple<u8>>([25]) -> ([28])
+drop<u8>([28]) -> ()
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -569,10 +563,23 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([28]) -> ([29])
+function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([31])
+Originating location:
+            Err(_) => crate::panic_with_felt252(err),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([31]) -> ([32])
 Originating location:
       const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
+ _____^
 | ...
 |     }
 |_____^
@@ -585,182 +592,33 @@ Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<RangeCheck>([24]) -> ([24])
+store_temp<RangeCheck>([27]) -> ([27])
 Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([29]) -> ([29])
+store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([32]) -> ([32])
 Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-return([24], [29])
+return([27], [32])
 Originating location:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _______________________________________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
 label_test::foo::9:
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
-branch_align() -> ()
+label_test::foo::5:
 Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-drop<u8>([27]) -> ()
-Originating location:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-function_call<user@core::panic_with_const_felt252::<608642104203229548495787928534675319>>() -> ([30])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1>([30]) -> ([31])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<RangeCheck>([26]) -> ([26])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([31]) -> ([31])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-return([26], [31])
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::10:
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
-            c1 + c2
-            ^^^^^^^
-In function: lib.cairo::foo
-label_test::foo::6:
-Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
 label_test::foo::3:
 Originating location:
-            Err(_) => crate::panic_with_felt252(err),
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
-        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U8Add::add
-Inlined at:
             c1 + c2
             ^^^^^^^
 In function: lib.cairo::foo
@@ -917,17 +775,21 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
+store_temp<RangeCheck>([0]) -> ([15])
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
 jump() { label_test::main::5() }
 Originating location:
-      match a {
- _____^
+  fn main() {
+ _^
 | ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
+| }
+|_^
 In function: lib.cairo::main
 label_test::main::1:
 Originating location:
@@ -965,18 +827,6 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::5:
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
-In function: lib.cairo::main
 store_temp<RangeCheck>([0]) -> ([15])
 Originating location:
   fn main() {
@@ -985,7 +835,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::main
-jump() { label_test::main::6() }
+jump() { label_test::main::5() }
 Originating location:
   fn main() {
  _^
@@ -1059,7 +909,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::7() }
+jump() { label_test::main::6() }
 Originating location:
       match a {
  _____^
@@ -1137,7 +987,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::7:
+label_test::main::6:
 Originating location:
       match a {
  _____^
@@ -1149,7 +999,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) label_test::main::8([26], [27]) }
+u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) label_test::main::7([26], [27]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1214,7 +1064,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::6:
+label_test::main::5:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1227,7 +1077,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-enum_match<test::MyEnum>([5]) { fallthrough([29]) label_test::main::10([30]) label_test::main::11([31]) label_test::main::12([32]) }
+enum_match<test::MyEnum>([5]) { fallthrough([29]) label_test::main::9([30]) label_test::main::10([31]) label_test::main::11([32]) }
 Originating location:
       match a {
  _____^
@@ -1263,19 +1113,23 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::14() }
+store_temp<RangeCheck>([15]) -> ([33])
 Originating location:
-      match a {
- _____^
+  fn main() {
+ _^
 | ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
+| }
+|_^
 In function: lib.cairo::main
-label_test::main::10:
+jump() { label_test::main::13() }
+Originating location:
+  fn main() {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+label_test::main::9:
 Originating location:
       match a {
  _____^
@@ -1311,18 +1165,6 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::14:
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(d);
-            ^^^^^^
-In function: lib.cairo::main
 store_temp<RangeCheck>([15]) -> ([33])
 Originating location:
   fn main() {
@@ -1331,7 +1173,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::main
-jump() { label_test::main::15() }
+jump() { label_test::main::13() }
 Originating location:
   fn main() {
  _^
@@ -1339,7 +1181,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::main
-label_test::main::11:
+label_test::main::10:
 Originating location:
       match a {
  _____^
@@ -1405,7 +1247,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::16() }
+jump() { label_test::main::14() }
 Originating location:
       match a {
  _____^
@@ -1417,7 +1259,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::12:
+label_test::main::11:
 Originating location:
       match a {
  _____^
@@ -1483,7 +1325,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::16:
+label_test::main::14:
 Originating location:
       match a {
  _____^
@@ -1495,7 +1337,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) label_test::main::17([44], [45]) }
+u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) label_test::main::15([44], [45]) }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1560,7 +1402,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::15:
+label_test::main::13:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1623,7 +1465,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::main
-label_test::main::17:
+label_test::main::15:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1675,7 +1517,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-jump() { label_test::main::19() }
+jump() { label_test::main::17() }
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1688,7 +1530,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::18:
+label_test::main::16:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1701,7 +1543,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::13:
+label_test::main::12:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1714,7 +1556,7 @@ Inlined at:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::8:
+label_test::main::7:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1779,7 +1621,7 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::19:
+label_test::main::17:
 Originating location:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1829,7 +1671,7 @@ Originating location:
     let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
-label_test::main::9:
+label_test::main::8:
 Originating location:
     let _ = foo(d);
             ^^^^^^
@@ -4544,10 +4386,6 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::bool>([30]) -> ([31])
 Originating location:
-            return false;
-            ^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
         lhs.span() == rhs.span()
         ^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayPartialEq::eq
@@ -4560,10 +4398,6 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 jump() { label_test::some_array_checks::6() }
 Originating location:
-            return false;
-            ^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
         lhs.span() == rhs.span()
         ^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayPartialEq::eq
@@ -4804,13 +4638,6 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::bool>([37]) -> ([31])
 Originating location:
-      fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
- _________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
         lhs.span() == rhs.span()
         ^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayPartialEq::eq
@@ -4823,13 +4650,6 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 label_test::some_array_checks::6:
 Originating location:
-      fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
- _________________________________________________^
-| ...
-|     }
-|_____^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
         lhs.span() == rhs.span()
         ^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayPartialEq::eq
