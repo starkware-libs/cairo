@@ -427,7 +427,7 @@ pub fn lower_loop_function(
 ) -> Maybe<FlatLowered> {
     let loop_expr_id = loop_ctx.loop_expr_id;
     let mut ctx =
-        LoweringContext::new(encapsulating_ctx, function_id, loop_signature.clone(), return_type)?;
+        LoweringContext::new(encapsulating_ctx, function_id, loop_signature, return_type)?;
     let old_loop_ctx = std::mem::replace(&mut ctx.current_loop_ctx, Some(loop_ctx));
 
     // Initialize builder.
