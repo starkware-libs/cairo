@@ -764,7 +764,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     }
 }
 
-/// Checks if given paths come form the same root.
+/// Checks if given paths come from the same root.
 fn is_the_same_root(path1: &str, path2: &str) -> bool {
     fn extract_root(input: &str) -> &str {
         if let Some(index) = input.find("::") { &input[..index] } else { input }
