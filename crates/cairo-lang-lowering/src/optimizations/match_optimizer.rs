@@ -159,7 +159,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         }
     }
 
-    for block in new_blocks.into_iter() {
+    for block in new_blocks {
         lowered.blocks.push(block);
     }
 }
