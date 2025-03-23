@@ -2,16 +2,17 @@
 #[path = "return_optimization_test.rs"]
 mod test;
 
-use cairo_lang_semantic as semantic;
-use cairo_lang_utils::{extract_matches, require};
-use itertools::Itertools;
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeLongId};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{Intern, require};
 use semantic::MatchArmSelector;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
-use crate::ids::LocationId;
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -21,7 +22,11 @@ use crate::{
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
 /// end and there was no side effects later, the end is replaced with a return statement.
-pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn return_optimization(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+    lowered: &mut FlatLowered,
+) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -37,18 +42,79 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         });
     }
 
+    let mut variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).base_semantic_function(db),
+        lowered.variables.clone(),
+    )
+    .unwrap();
+
     for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes.into_iter() {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
-        block.end = FlatBlockEnd::Return(
-            return_info
-                .returned_vars
-                .iter()
-                .map(|var_info| *extract_matches!(var_info, ValueInfo::Var))
-                .collect_vec(),
+        let vars = prepare_early_return_vars(
+            &mut variables,
+            block,
             return_info.location,
-        )
+            &return_info.returned_vars,
+        );
+        block.end = FlatBlockEnd::Return(vars, return_info.location)
     }
+
+    lowered.variables = variables.variables;
+}
+
+/// Return a vector of VarUsage's based on the input `ret_infos`.
+/// Adds `StructConstruct` and `EnumConstruct` statements to the block as needed.
+/// Assumes that early return is possible for the given `ret_infos`.
+fn prepare_early_return_vars(
+    variables: &mut VariableAllocator<'_>,
+    block: &mut FlatBlock,
+    location: LocationId,
+    ret_infos: &[ValueInfo],
+) -> Vec<VarUsage> {
+    let mut res = vec![];
+
+    for var_info in ret_infos.iter() {
+        match var_info {
+            ValueInfo::Var(var_usage) => {
+                res.push(*var_usage);
+            }
+            ValueInfo::StructConstruct { ty, var_infos } => {
+                let inputs = prepare_early_return_vars(variables, block, location, var_infos);
+
+                let output = variables.new_var(VarRequest { ty: *ty, location });
+                block
+                    .statements
+                    .push(Statement::StructConstruct(StatementStructConstruct { inputs, output }));
+                res.push(VarUsage { var_id: output, location });
+            }
+            ValueInfo::EnumConstruct { var_info, variant } => {
+                let input = prepare_early_return_vars(
+                    variables,
+                    block,
+                    location,
+                    std::slice::from_ref(var_info),
+                )[0];
+
+                let ty = TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id))
+                    .intern(variables.db);
+
+                let output = variables.new_var(VarRequest { ty, location });
+                block.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+                    variant: variant.clone(),
+                    input,
+                    output,
+                }));
+                res.push(VarUsage { var_id: output, location });
+            }
+            ValueInfo::Interchangeable(_) => {
+                unreachable!("early_return_possible should have prevented this.")
+            }
+        }
+    }
+
+    res
 }
 
 pub struct ReturnOptimizerContext<'a> {
@@ -394,21 +460,38 @@ impl AnalyzerInfo {
         }
     }
 
+    fn internal_early_return_possible(returned_vars: &[ValueInfo]) -> bool {
+        returned_vars.iter().all(|var_info| match var_info {
+            ValueInfo::Var(_) => true,
+            ValueInfo::StructConstruct { ty: _, var_infos } => {
+                Self::internal_early_return_possible(var_infos)
+            }
+            ValueInfo::EnumConstruct { var_info, variant: _ } => {
+                Self::internal_early_return_possible(std::slice::from_ref(var_info))
+            }
+            ValueInfo::Interchangeable(_) => false,
+        })
+    }
+
     /// Returns true if an early return is possible according to 'self'.
     fn early_return_possible(&self) -> bool {
         let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
 
-        returned_vars.iter().all(|var_info| match var_info {
-            ValueInfo::Var(_) => true,
-            ValueInfo::StructConstruct { .. } => false,
-            ValueInfo::EnumConstruct { .. } => false,
-            ValueInfo::Interchangeable(_) => false,
-        })
+        Self::internal_early_return_possible(returned_vars)
     }
 }
 
 impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     type Info = AnalyzerInfo;
+
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+        if info.early_return_possible() {
+            self.fixes.push(FixInfo {
+                location: (block_id, 0),
+                return_info: info.opt_return_info.clone().unwrap(),
+            });
+        }
+    }
 
     fn visit_stmt(
         &mut self,

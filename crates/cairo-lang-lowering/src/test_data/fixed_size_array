@@ -117,9 +117,11 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 10
   (v1: test::MyStruct) <- struct_construct(v0)
-  (v2: [test::MyStruct; 3]) <- struct_construct(v1, v1, v1)
+  (v2: test::MyStruct) <- struct_construct(v0)
+  (v3: test::MyStruct) <- struct_construct(v0)
+  (v4: [test::MyStruct; 3]) <- struct_construct(v1, v2, v3)
 End:
-  Return(v2)
+  Return(v4)
 
 //! > ==========================================================================
 
