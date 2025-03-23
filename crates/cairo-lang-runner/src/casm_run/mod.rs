@@ -2331,7 +2331,7 @@ pub fn build_cairo_runner(
     let dynamic_layout_params = None;
     let proof_mode = false;
     let trace_enabled = true;
-    let disable_trace_padding = true;
+    let disable_trace_padding = false;
     CairoRunner::new(
         &program,
         LayoutName::all_cairo,
