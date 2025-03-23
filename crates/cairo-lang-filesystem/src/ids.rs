@@ -173,7 +173,7 @@ impl FileId {
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(_) => FileKind::Module,
-            FileLongId::Virtual(vf) => vf.kind.clone(),
+            FileLongId::Virtual(vf) => vf.kind,
             FileLongId::External(_) => FileKind::Module,
         }
     }
