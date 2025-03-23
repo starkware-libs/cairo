@@ -771,11 +771,13 @@ dependencies = [
 name = "cairo-lang-runner"
 version = "2.11.2"
 dependencies = [
+ "anyhow",
  "ark-ff",
  "ark-secp256k1",
  "ark-secp256r1",
  "cairo-lang-casm",
  "cairo-lang-compiler",
+ "cairo-lang-executable",
  "cairo-lang-lowering",
  "cairo-lang-runnable-utils",
  "cairo-lang-semantic",
@@ -794,6 +796,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "rand 0.9.0",
+ "serde_json",
  "sha2",
  "smol_str",
  "starknet-types-core",
@@ -1161,8 +1164,7 @@ dependencies = [
 [[package]]
 name = "cairo-vm"
 version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b51a63d0c89638a1de1fa9a685b80dc3b7e6c0ecdc050b4e1a182b8ef00190"
+source = "git+https://github.com/lambdaclass/cairo-vm.git?rev=b9fb58d6b879f92cbd76abd85ea44db8eb81b554#b9fb58d6b879f92cbd76abd85ea44db8eb81b554"
 dependencies = [
  "anyhow",
  "bincode 2.0.0-rc.3",

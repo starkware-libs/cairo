@@ -1,17 +1,21 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
+use std::path::PathBuf;
 
+use anyhow::Context;
 use cairo_lang_casm::hints::Hint;
+use cairo_lang_executable::executable::{EntryPointKind, Executable};
 use cairo_lang_runnable_utils::builder::{BuildError, EntryCodeConfig, RunnableBuilder};
-use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
+use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -19,16 +23,18 @@ use cairo_lang_utils::{extract_matches, require};
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::HintParams;
 use cairo_vm::types::builtin_name::BuiltinName;
+use cairo_vm::types::program::Program;
+use cairo_vm::types::relocatable::MaybeRelocatable;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
+use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
 use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
@@ -125,7 +131,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 }
 
 /// An argument to a sierra function run,
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Arg {
     Value(Felt252),
     Array(Vec<Arg>),
@@ -682,4 +688,60 @@ pub fn initialize_vm(vm: &mut VirtualMachine, data_len: usize) -> Result<(), Box
 /// The size in memory of the arguments.
 fn args_size(args: &[Arg]) -> usize {
     args.iter().map(Arg::size).sum()
+}
+
+pub fn setup_program_and_args(
+    executable: &Executable,
+    standalone: bool,
+    args_file: Option<&PathBuf>,
+    args_list: &[BigInt],
+) -> anyhow::Result<(Program, Vec<Arg>, HashMap<String, Hint>)> {
+    let data: Vec<MaybeRelocatable> =
+        executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
+    let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
+    let program = if standalone {
+        let entrypoint = executable
+            .entrypoints
+            .iter()
+            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
+            .with_context(|| "No `Standalone` entrypoint found.")?;
+        Program::new_for_proof(
+            entrypoint.builtins.clone(),
+            data,
+            entrypoint.offset,
+            entrypoint.offset + 4,
+            hints,
+            Default::default(),
+            Default::default(),
+            vec![],
+            None,
+        )
+    } else {
+        let entrypoint = executable
+            .entrypoints
+            .iter()
+            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
+            .with_context(|| "No `Bootloader` entrypoint found.")?;
+        Program::new(
+            entrypoint.builtins.clone(),
+            data,
+            Some(entrypoint.offset),
+            hints,
+            Default::default(),
+            Default::default(),
+            vec![],
+            None,
+        )
+    }
+    .with_context(|| "Failed setting up program.")?;
+
+    let user_args = if let Some(path) = args_file {
+        let as_vec: Vec<BigUintAsHex> = serde_json::from_reader(std::fs::File::open(path)?)
+            .with_context(|| "Failed reading args file.")?;
+        as_vec.into_iter().map(|v| Arg::Value(v.value.into())).collect()
+    } else {
+        args_list.iter().map(|v| Arg::Value(v.into())).collect()
+    };
+
+    Ok((program, user_args, string_to_hint))
 }

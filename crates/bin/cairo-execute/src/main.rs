@@ -5,17 +5,14 @@ use anyhow::Context;
 use bincode::enc::write::Writer;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_executable::compile::{ExecutableConfig, compile_executable};
-use cairo_lang_executable::executable::{EntryPointKind, Executable};
+use cairo_lang_executable::compile::{compile_executable, ExecutableConfig};
+use cairo_lang_executable::executable::Executable;
 use cairo_lang_runner::casm_run::format_for_panic;
-use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
-use cairo_lang_utils::bigint::BigUintAsHex;
-use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
+use cairo_lang_runner::{setup_program_and_args, Arg, CairoHintProcessor};
+use cairo_vm::cairo_run;
+use cairo_vm::cairo_run::{cairo_run_program, CairoRunConfig};
 use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
-use cairo_vm::types::program::Program;
-use cairo_vm::types::relocatable::MaybeRelocatable;
-use cairo_vm::{Felt252, cairo_run};
 use clap::Parser;
 use num_bigint::BigInt;
 
@@ -193,52 +190,12 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let data =
-        executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
-    let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
-    let program = if args.run.standalone {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
-            .with_context(|| "No `Standalone` entrypoint found.")?;
-        Program::new_for_proof(
-            entrypoint.builtins.clone(),
-            data,
-            entrypoint.offset,
-            entrypoint.offset + 4,
-            hints,
-            Default::default(),
-            Default::default(),
-            vec![],
-            None,
-        )
-    } else {
-        let entrypoint = executable
-            .entrypoints
-            .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
-            .with_context(|| "No `Bootloader` entrypoint found.")?;
-        Program::new(
-            entrypoint.builtins.clone(),
-            data,
-            Some(entrypoint.offset),
-            hints,
-            Default::default(),
-            Default::default(),
-            vec![],
-            None,
-        )
-    }
-    .with_context(|| "Failed setting up program.")?;
-
-    let user_args = if let Some(path) = args.run.args.as_file {
-        let as_vec: Vec<BigUintAsHex> = serde_json::from_reader(std::fs::File::open(&path)?)
-            .with_context(|| "Failed reading args file.")?;
-        as_vec.into_iter().map(|v| Arg::Value(v.value.into())).collect()
-    } else {
-        args.run.args.as_list.iter().map(|v| Arg::Value(v.into())).collect()
-    };
+    let (program, user_args, string_to_hint) = setup_program_and_args(
+        &executable,
+        args.run.standalone,
+        args.run.args.as_file.as_ref(),
+        &args.run.args.as_list,
+    )?;
 
     let mut hint_processor = CairoHintProcessor {
         runner: None,

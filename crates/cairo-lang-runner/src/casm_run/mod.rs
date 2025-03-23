@@ -11,7 +11,7 @@ use cairo_lang_casm::operand::{
 };
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
-use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
+use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
@@ -45,7 +45,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources, args_size};
+use crate::{args_size, Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources};
 
 #[cfg(test)]
 mod test;
@@ -423,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
@@ -1320,7 +1320,9 @@ impl CairoHintProcessor<'_> {
         match core_hint {
             ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
-                extract_relocatable(vm, dst)?,
+                cairo_vm::types::relocatable::MaybeRelocatable::RelocatableValue(
+                    extract_relocatable(vm, dst)?,
+                ),
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
@@ -2423,7 +2425,11 @@ impl FormattedItem {
     }
     /// Wraps the formatted item with quote, if it's a string. Otherwise returns it as is.
     pub fn quote_if_string(self) -> String {
-        if self.is_string { format!("\"{}\"", self.item) } else { self.item }
+        if self.is_string {
+            format!("\"{}\"", self.item)
+        } else {
+            self.item
+        }
     }
 }
 
