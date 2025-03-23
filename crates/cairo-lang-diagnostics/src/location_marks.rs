@@ -95,7 +95,7 @@ fn get_multiple_lines_location_marks(
         res += "| ...\n";
     }
 
-    res += &get_line_content(summary.clone(), last_line_idx, content.clone(), false);
+    res += &get_line_content(summary, last_line_idx, content.clone(), false);
     res += "|";
     res.extend(repeat_n('_', end_line_col));
     res.push('^');
