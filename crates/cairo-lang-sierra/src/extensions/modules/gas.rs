@@ -163,7 +163,7 @@ impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
     }
 }
 
-/// Represents different type of costs.
+/// Represents different types of costs.
 /// Note that if you add a type here you should update 'iter_precost'
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
