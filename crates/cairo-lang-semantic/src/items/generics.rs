@@ -341,7 +341,7 @@ pub fn priv_generic_param_data(
 
     let mut opt_generic_param_syntax = None;
     for param_syntax in
-        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
+        generic_params_syntax.generic_params(syntax_db).elements(syntax_db)
     {
         let cur_generic_param_id =
             GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
