@@ -37,7 +37,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         });
     }
 
-    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes.into_iter() {
+    for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
         block.end = FlatBlockEnd::Return(

@@ -165,7 +165,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
         let old_statements = std::mem::take(&mut block.statements);
         let statements = &mut block.statements;
 
-        for mut stmt in old_statements.into_iter() {
+        for mut stmt in old_statements {
             match stmt {
                 Statement::StructDestructure(stmt) => {
                     if let Some(output_split) =

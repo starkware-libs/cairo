@@ -352,7 +352,7 @@ pub fn add_destructs(
     };
 
     for ((block_id, statement_idx, destruct_type, match_block_id), destructions) in
-        destructions.into_iter().sorted_by_key(as_tuple).rev().chunk_by(as_tuple).into_iter()
+        &destructions.into_iter().sorted_by_key(as_tuple).rev().chunk_by(as_tuple)
     {
         let mut stmts = vec![];
 
