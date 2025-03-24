@@ -35,7 +35,7 @@ mod test_utils;
 /// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct SyntaxNode(Arc<SyntaxNodeInner>);
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct SyntaxNodeInner {
     green: GreenId,
     /// Number of characters from the beginning of the file to the start of the span of this
@@ -43,6 +43,15 @@ struct SyntaxNodeInner {
     offset: TextOffset,
     parent: Option<SyntaxNode>,
     stable_ptr: SyntaxStablePtrId,
+}
+/// Hash implementation without using `parent`, as it is should be determined by green id in any
+/// case.
+impl Hash for SyntaxNodeInner {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.green.hash(state);
+        self.offset.hash(state);
+        self.stable_ptr.hash(state);
+    }
 }
 impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
