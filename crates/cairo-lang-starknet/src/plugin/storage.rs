@@ -236,8 +236,8 @@ fn get_simple_member_code(
         config.rename.as_deref().map_or_else(|| member_name.clone(), RewriteNode::text);
     let patches = [
         ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
-        ("member_visibility".to_string(), member_visibility.clone()),
-        ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
+        ("member_visibility".to_string(), member_visibility),
+        ("member_wrapper_type".to_string(), member_wrapper_type),
         ("member_name".to_string(), member_name),
         ("member_selector_name".to_string(), member_selector_name),
         ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),

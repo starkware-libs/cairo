@@ -551,7 +551,7 @@ pub fn handle_storage_interface_enum(
     add_node_enum_definition(db, &mut builder, enum_ast, args.clone(), false);
     add_node_enum_impl(db, &mut builder, enum_ast, (args.clone(), params.clone()), false);
     add_node_enum_definition(db, &mut builder, enum_ast, args.clone(), true);
-    add_node_enum_impl(db, &mut builder, enum_ast, (args.clone(), params.clone()), true);
+    add_node_enum_impl(db, &mut builder, enum_ast, (args, params), true);
 
     builder.build()
 }
@@ -585,7 +585,7 @@ fn add_interface_struct_definition(
         ),
         &[
             ("struct_visibility".to_string(), struct_visibility),
-            ("object_name".to_string(), struct_name_rewrite_node.clone()),
+            ("object_name".to_string(), struct_name_rewrite_node),
             ("generic_params".to_string(), params),
         ]
         .into(),
