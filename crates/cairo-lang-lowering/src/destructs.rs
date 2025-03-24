@@ -310,26 +310,24 @@ pub fn add_destructs(
     );
     assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
-    let mut variables = VariableAllocator::new(
-        db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
-        lowered.variables.clone(),
-    )
-    .unwrap();
-
     let info = db.core_info();
     let plain_trait_function = info.destruct_fn;
     let panic_trait_function = info.panic_destruct_fn;
 
     // Add destructions.
+    let destructions = analysis.analyzer.destructions;
     let stable_ptr = function_id
         .function_with_body_id(db.upcast())
         .base_semantic_function(db)
         .untyped_stable_ptr(db.upcast());
 
+    let mut variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).base_semantic_function(db),
+        std::mem::take(&mut lowered.variables),
+    )
+    .unwrap();
     let location = variables.get_location(stable_ptr);
-
-    let destructions = analysis.analyzer.destructions;
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
