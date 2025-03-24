@@ -177,7 +177,7 @@ impl ConstValue {
     /// Returns the value of an int const as a BigInt.
     pub fn into_int(self) -> Option<BigInt> {
         match self {
-            ConstValue::Int(value, _) => Some(value.clone()),
+            ConstValue::Int(value, _) => Some(value),
             _ => None,
         }
     }

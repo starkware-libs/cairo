@@ -88,7 +88,7 @@ pub fn impl_alias_semantic_data_helper(
     inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
-    let generic_params = inference.rewrite(generic_params_data.generic_params.clone()).no_err();
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
 
     let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
