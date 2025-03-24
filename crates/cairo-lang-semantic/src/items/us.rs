@@ -94,7 +94,7 @@ fn get_parent_single_use_path(
     use SyntaxKind::*;
     let mut node = use_path.as_syntax_node();
     loop {
-        node = node.parent().expect("`UsePath` is not under an `ItemUse`.");
+        node = node.parent(db).expect("`UsePath` is not under an `ItemUse`.");
         match node.kind(db) {
             ItemUse => return None,
             UsePathSingle => return Some(ast::UsePathSingle::from_syntax_node(db, node)),
@@ -114,7 +114,7 @@ pub fn priv_use_semantic_data_cycle(
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
-    let err = Err(diagnostics.report(&use_ast, UseCycle));
+    let err = Err(diagnostics.report(use_ast.stable_ptr(db.upcast()), UseCycle));
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
     Ok(UseData {
@@ -177,15 +177,18 @@ pub fn priv_global_use_semantic_data(
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let edition = resolver.settings.edition;
+    let syntax_db = db.upcast();
     if edition.ignore_visibility() {
         // We block support for global use where visibility is ignored.
-        diagnostics.report(&star_ast, GlobalUsesNotSupportedInEdition(edition));
+        diagnostics
+            .report(star_ast.stable_ptr(syntax_db), GlobalUsesNotSupportedInEdition(edition));
     }
 
-    let item = star_ast.get_item(db.upcast());
-    let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
+    let item = star_ast.get_item(syntax_db);
+    let segments = get_use_path_segments(syntax_db, star_ast.clone())?;
     if segments.is_empty() {
-        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(), UseStarEmptyPath));
+        let imported_module =
+            Err(diagnostics.report(star_ast.stable_ptr(syntax_db), UseStarEmptyPath));
         return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
     }
     resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
@@ -200,7 +203,7 @@ pub fn priv_global_use_semantic_data(
     let imported_module = match resolved_item {
         ResolvedGenericItem::Module(module_id) => Ok(module_id),
         _ => Err(diagnostics.report(
-            last_segment.stable_ptr(),
+            last_segment.stable_ptr(syntax_db),
             UnexpectedElement {
                 expected: vec![ElementKind::Module],
                 actual: (&resolved_item).into(),
@@ -235,16 +238,17 @@ pub fn priv_global_use_semantic_data_cycle(
     let mut diagnostics = SemanticDiagnostics::default();
     let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
-    let segments = get_use_path_segments(db.upcast(), star_ast)?;
+    let syntax_db = db.upcast();
+    let segments = get_use_path_segments(syntax_db, star_ast)?;
     let err = if cycle.participant_keys().count() <= 3 && segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
         // uses, but which includes itself - but we don't want to report a cycle in this case.
         diagnostics.report(
-            segments.last().unwrap().stable_ptr(),
+            segments.last().unwrap().stable_ptr(syntax_db),
             PathNotFound(NotFoundItemType::Identifier),
         )
     } else {
-        diagnostics.report(&global_use_ast, UseCycle)
+        diagnostics.report(global_use_ast.stable_ptr(syntax_db), UseCycle)
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }

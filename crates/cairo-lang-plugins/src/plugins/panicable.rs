@@ -7,7 +7,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -62,7 +62,7 @@ fn generate_panicable_code(
     if attrs.len() > 1 {
         let extra_attr = attrs.swap_remove(1);
         diagnostics.push(PluginDiagnostic::error(
-            &extra_attr,
+            extra_attr.stable_ptr(db),
             "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -73,7 +73,7 @@ fn generate_panicable_code(
         extract_success_ty_and_variants(db, &signature)
     else {
         diagnostics.push(PluginDiagnostic::error(
-            &signature.ret_ty(db),
+            signature.ret_ty(db).stable_ptr(db),
             "Currently only wrapping functions returning an Option<T> or Result<T, E>".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -85,7 +85,7 @@ fn generate_panicable_code(
 
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
         diagnostics.push(PluginDiagnostic::error(
-            attr.stable_ptr.untyped(),
+            attr.stable_ptr,
             "Failed to extract panic data attribute".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };

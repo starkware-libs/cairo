@@ -70,7 +70,7 @@ pub fn priv_struct_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -123,7 +123,7 @@ pub fn struct_generic_params_data(
         &struct_ast.generic_params(db.upcast()),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -195,7 +195,7 @@ pub fn priv_struct_definition_data(
             .data
             .feature_config
             .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
-        let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
+        let id = MemberLongId(module_file_id, member.stable_ptr(syntax_db)).intern(db);
         let ty = resolve_type(
             db,
             &mut diagnostics,
@@ -208,14 +208,17 @@ pub fn priv_struct_definition_data(
         if let Some(_other_member) =
             members.insert(member_name.clone(), Member { id, ty, visibility })
         {
-            diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
+            diagnostics.report(
+                member.stable_ptr(syntax_db),
+                StructMemberRedefinition { struct_id, member_name },
+            );
         }
         resolver.data.feature_config.restore(feature_restore);
     }
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
 
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();

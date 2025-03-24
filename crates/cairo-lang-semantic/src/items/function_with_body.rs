@@ -5,7 +5,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::Itertools;
@@ -312,6 +313,7 @@ pub fn get_inline_config(
 /// If there is no implicit precedence influencing attribute, then this function returns
 /// [ImplicitPrecedence::UNSPECIFIED].
 pub fn get_implicit_precedence<'a>(
+    syntax_db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     attributes: &'a [Attribute],
@@ -324,36 +326,42 @@ pub fn get_implicit_precedence<'a>(
     // Report warnings for overridden attributes if any.
     for attr in attributes {
         diagnostics.report(
-            attr.id_stable_ptr.untyped(),
+            attr.id_stable_ptr,
             SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute,
         );
     }
 
-    let Ok(types) = attr
-        .args
-        .iter()
-        .map(|arg| match &arg.variant {
-            AttributeArgVariant::Unnamed(value) => {
-                let ast::Expr::Path(path) = value else {
-                    return Err(diagnostics.report(
-                        value,
-                        SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
-                    ));
-                };
+    let Ok(types) =
+        attr.args
+            .iter()
+            .map(|arg| match &arg.variant {
+                AttributeArgVariant::Unnamed(value) => {
+                    let ast::Expr::Path(path) = value else {
+                        return Err(diagnostics.report(
+                            value.stable_ptr(syntax_db),
+                            SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
+                        ));
+                    };
 
-                resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type).and_then(
-                    |resolved_item: crate::resolve::ResolvedConcreteItem| {
-                        try_extract_matches!(resolved_item, ResolvedConcreteItem::Type).ok_or_else(
-                            || diagnostics.report(value, SemanticDiagnosticKind::UnknownType),
-                        )
-                    },
-                )
-            }
+                    resolver
+                        .resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)
+                        .and_then(|resolved_item: crate::resolve::ResolvedConcreteItem| {
+                            try_extract_matches!(resolved_item, ResolvedConcreteItem::Type)
+                                .ok_or_else(|| {
+                                    diagnostics.report(
+                                        value.stable_ptr(syntax_db),
+                                        SemanticDiagnosticKind::UnknownType,
+                                    )
+                                })
+                        })
+                }
 
-            _ => Err(diagnostics
-                .report(&arg.arg, SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments)),
-        })
-        .try_collect::<TypeId, Vec<_>, _>()
+                _ => Err(diagnostics.report(
+                    arg.arg.stable_ptr(syntax_db),
+                    SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
+                )),
+            })
+            .try_collect::<TypeId, Vec<_>, _>()
     else {
         return (ImplicitPrecedence::UNSPECIFIED, None);
     };

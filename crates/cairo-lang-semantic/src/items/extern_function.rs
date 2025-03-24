@@ -89,7 +89,7 @@ pub fn extern_function_declaration_generic_params_data(
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -169,7 +169,8 @@ pub fn priv_extern_function_declaration_data(
             GenericFunctionId::Extern
         );
         if extern_function_id != panic_function {
-            diagnostics.report(&extern_function_syntax, PanicableExternFunction);
+            diagnostics
+                .report(extern_function_syntax.stable_ptr(syntax_db), PanicableExternFunction);
         }
     }
 
@@ -186,7 +187,7 @@ pub fn priv_extern_function_declaration_data(
     }
 
     let (_, implicit_precedence_attr) =
-        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
     if let Some(attr) = implicit_precedence_attr {
         diagnostics
             .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
@@ -194,7 +195,7 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(syntax_db).untyped());
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();

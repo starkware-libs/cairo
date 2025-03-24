@@ -86,7 +86,7 @@ pub fn function_identifier_relative_to_file_module(
                 let function_name =
                     cairo_lang_syntax::node::ast::FunctionWithBody::from_syntax_node(
                         syntax_db,
-                        syntax_node.clone(),
+                        syntax_node,
                     )
                     .declaration(syntax_db)
                     .name(syntax_db)
@@ -101,7 +101,7 @@ pub fn function_identifier_relative_to_file_module(
             cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
                 let impl_name = cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(
                     syntax_db,
-                    syntax_node.clone(),
+                    syntax_node,
                 )
                 .name(syntax_db)
                 .text(syntax_db);
@@ -110,7 +110,7 @@ pub fn function_identifier_relative_to_file_module(
             cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
                 let module_name = cairo_lang_syntax::node::ast::ItemModule::from_syntax_node(
                     syntax_db,
-                    syntax_node.clone(),
+                    syntax_node,
                 )
                 .name(syntax_db)
                 .text(syntax_db);
@@ -118,7 +118,7 @@ pub fn function_identifier_relative_to_file_module(
             }
             _ => {}
         }
-        if let Some(parent) = syntax_node.parent() {
+        if let Some(parent) = syntax_node.parent(syntax_db) {
             syntax_node = parent;
         } else {
             break;

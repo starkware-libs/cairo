@@ -206,7 +206,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                 } else {
                     PluginResult {
                         diagnostics: vec![PluginDiagnostic::error(
-                            &struct_ast,
+                            struct_ast.stable_ptr(db),
                             "Double indirection diagnostic".to_string(),
                         )],
                         ..PluginResult::default()

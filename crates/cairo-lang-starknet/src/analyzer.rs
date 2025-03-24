@@ -53,14 +53,15 @@ fn add_non_starknet_interface_embeddable_diagnostics(
     let Ok(impls) = db.module_impls(module_id) else {
         return;
     };
+    let syntax_db = db.upcast();
     for (id, item) in impls.iter() {
-        if !item.has_attr(db.upcast(), EMBEDDABLE_ATTR) {
+        if !item.has_attr(syntax_db, EMBEDDABLE_ATTR) {
             continue;
         }
         let Ok(impl_trait) = db.impl_def_trait(*id) else { continue };
-        if !impl_trait.has_attr(db.upcast(), STARKNET_INTERFACE_ATTR).unwrap_or(true) {
+        if !impl_trait.has_attr(db, STARKNET_INTERFACE_ATTR).unwrap_or(true) {
             diagnostics.push(PluginDiagnostic::warning(
-                item.stable_ptr().untyped(),
+                item.stable_ptr(syntax_db).untyped(),
                 "Impls with the embeddable attribute must implement a starknet interface trait."
                     .to_string(),
             ));
@@ -173,8 +174,9 @@ fn analyze_storage_struct(
     );
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
+    let syntax_db = db.upcast();
     for (member_name, member) in members.iter() {
-        let member_ast = member.id.stable_ptr(db.upcast()).lookup(db.upcast());
+        let member_ast = member.id.stable_ptr(db.upcast()).lookup(syntax_db);
         let member_type = member.ty.lookup_intern(db);
         let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
 
@@ -189,9 +191,9 @@ fn analyze_storage_struct(
                 get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
 
             if let Err(inference_error) = inference_result {
-                let type_pointer = member_ast.type_clause(db.upcast()).ty(db.upcast());
+                let type_pointer = member_ast.type_clause(syntax_db).ty(syntax_db);
                 diagnostics.push(PluginDiagnostic::warning(
-                    &type_pointer,
+                    type_pointer.stable_ptr(syntax_db),
                     format!(
                         "Missing `ValidStorageTypeTrait` for member type. Inference failed with: \
                          `{}`. Possible solutions: implement `Store`, mark type with \
@@ -217,7 +219,7 @@ fn analyze_storage_struct(
             member_name.clone(),
             paths_data,
             &mut vec![],
-            member_ast.name(db.upcast()).stable_ptr().untyped(),
+            member_ast.name(db.upcast()).stable_ptr(syntax_db).untyped(),
             diagnostics,
         );
     }
