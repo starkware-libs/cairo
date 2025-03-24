@@ -406,7 +406,7 @@ impl<'db> Resolver<'db> {
                 },
                 validate_segment: |_, _| Ok(()),
                 mark: |resolved_items, db, segment, item| {
-                    resolved_items.mark_concrete(db, segment, item.clone());
+                    resolved_items.mark_concrete(db, segment, item);
                 },
             },
         )
@@ -638,7 +638,7 @@ impl<'db> Resolver<'db> {
                 },
                 validate_segment,
                 mark: |resolved_items, db, segment, item| {
-                    resolved_items.mark_generic(db, segment, item.clone());
+                    resolved_items.mark_generic(db, segment, item);
                 },
             },
         )
@@ -771,7 +771,7 @@ impl<'db> Resolver<'db> {
         identifier: &TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ModuleItemInfo> {
-        match self.db.module_item_info_by_name(*module_id, ident.clone())? {
+        match self.db.module_item_info_by_name(*module_id, ident)? {
             Some(info) => Ok(info),
             None => match self.resolve_path_using_use_star(*module_id, identifier) {
                 UseStarResult::UniquePathFound(item_info) => Ok(item_info),
@@ -859,9 +859,8 @@ impl<'db> Resolver<'db> {
                 else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                if let Ok(Some(trait_item_info)) =
+                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident)
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
@@ -904,9 +903,8 @@ impl<'db> Resolver<'db> {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
 
-                if let Ok(Some(trait_item_info)) = self
-                    .db
-                    .trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident.clone())
+                if let Ok(Some(trait_item_info)) =
+                    self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident)
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
@@ -1016,7 +1014,7 @@ impl<'db> Resolver<'db> {
                     let impl_def_id: ImplDefId = concrete_impl.impl_def_id(self.db);
 
                     if let Ok(Some(impl_item_info)) =
-                        self.db.impl_item_info_by_name(impl_def_id, ident.clone())
+                        self.db.impl_item_info_by_name(impl_def_id, ident)
                     {
                         self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
                     }
@@ -2041,7 +2039,7 @@ impl<'db> Resolver<'db> {
             .specialize_generic_module_item(
                 diagnostics,
                 identifier,
-                inner_generic_item.clone(),
+                inner_generic_item,
                 generic_args_syntax.clone(),
             )
             .unwrap();
