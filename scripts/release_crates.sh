@@ -43,6 +43,7 @@ CRATES_TO_PUBLISH=(
     cairo-lang-runner
     cairo-lang-test-plugin
     cairo-lang-test-runner
+    cairo-lang-execute-utils
     cairo-lang-doc
     cairo-compile
     cairo-format

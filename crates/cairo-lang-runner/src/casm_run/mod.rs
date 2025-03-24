@@ -423,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
