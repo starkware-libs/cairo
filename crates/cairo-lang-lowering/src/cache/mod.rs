@@ -14,8 +14,8 @@ use cairo_lang_defs::ids::{
     ImplFunctionLongId, LanguageElementId, LocalVarId, LocalVarLongId, MemberLongId, ModuleFileId,
     ModuleId, ParamLongId, PluginGeneratedFileId, PluginGeneratedFileLongId, StatementConstLongId,
     StatementItemId, StatementUseLongId, StructLongId, SubmoduleId, SubmoduleLongId,
-    TraitConstantId, TraitConstantLongId, TraitFunctionLongId, TraitLongId, TraitTypeId,
-    TraitTypeLongId, VariantLongId,
+    TraitConstantId, TraitConstantLongId, TraitFunctionLongId, TraitImplId, TraitImplLongId,
+    TraitLongId, TraitTypeId, TraitTypeLongId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{
@@ -31,7 +31,7 @@ use cairo_lang_semantic::items::functions::{
 };
 use cairo_lang_semantic::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use cairo_lang_semantic::items::imp::{
-    GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplLongId,
+    GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
 };
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -46,7 +46,7 @@ use cairo_lang_syntax::node::ast::{
     ExprPtr, FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr,
     ItemExternFunctionPtr, ItemExternTypePtr, ItemImplPtr, ItemModulePtr, ItemStructPtr,
     ItemTraitPtr, MemberPtr, ParamPtr, TerminalIdentifierPtr, TraitItemConstantPtr,
-    TraitItemFunctionPtr, TraitItemTypePtr, UsePathLeafPtr, VariantPtr,
+    TraitItemFunctionPtr, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr, VariantPtr,
 };
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
@@ -2064,6 +2064,7 @@ impl TraitTypeCached {
 enum ImplCached {
     Concrete(ConcreteImplCached),
     GenericParameter(GenericParamCached),
+    ImplImpl(ImplImplCached),
     GeneratedImpl(GeneratedImplCached),
 }
 impl ImplCached {
@@ -2078,7 +2079,10 @@ impl ImplCached {
             ImplLongId::GeneratedImpl(generated_impl) => {
                 ImplCached::GeneratedImpl(GeneratedImplCached::new(generated_impl, ctx))
             }
-            ImplLongId::ImplVar(_) | ImplLongId::ImplImpl(_) | ImplLongId::SelfImpl(_) => {
+            ImplLongId::ImplImpl(impl_impl) => {
+                ImplCached::ImplImpl(ImplImplCached::new(impl_impl, ctx))
+            }
+            ImplLongId::ImplVar(_) | ImplLongId::SelfImpl(_) => {
                 unreachable!(
                     "impl {:?} is not supported for caching",
                     impl_id.debug(ctx.db.elongate())
@@ -2092,6 +2096,7 @@ impl ImplCached {
             ImplCached::GenericParameter(generic_param) => {
                 ImplLongId::GenericParameter(generic_param.embed(ctx))
             }
+            ImplCached::ImplImpl(impl_impl) => ImplLongId::ImplImpl(impl_impl.embed(ctx)),
             ImplCached::GeneratedImpl(generated_impl) => {
                 ImplLongId::GeneratedImpl(generated_impl.embed(ctx))
             }
@@ -2151,6 +2156,39 @@ impl ConcreteImplCached {
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
         long_id.intern(ctx.db)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ImplImplCached {
+    impl_id: ImplIdCached,
+    trait_impl_id: TraitImplCached,
+}
+impl ImplImplCached {
+    fn new(impl_impl_id: ImplImplId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
+        Self {
+            impl_id: ImplIdCached::new(impl_impl_id.impl_id(), ctx),
+            trait_impl_id: TraitImplCached::new(impl_impl_id.trait_impl_id(), ctx),
+        }
+    }
+    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ImplImplId {
+        let impl_id = self.impl_id.embed(ctx);
+        let trait_impl_id = self.trait_impl_id.embed(ctx);
+        ImplImplId::new(impl_id, trait_impl_id, ctx.db)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct TraitImplCached {
+    language_element: LanguageElementCached,
+}
+impl TraitImplCached {
+    fn new(trait_impl_id: TraitImplId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
+        Self { language_element: LanguageElementCached::new(trait_impl_id, ctx) }
+    }
+    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> TraitImplId {
+        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        TraitImplLongId(module_file_id, TraitItemImplPtr(stable_ptr)).intern(ctx.db)
     }
 }
 
