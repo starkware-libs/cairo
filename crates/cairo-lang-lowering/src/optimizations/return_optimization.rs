@@ -11,7 +11,7 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::ids::LocationId;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -27,15 +27,8 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     }
     let ctx = ReturnOptimizerContext { db, lowered, fixes: vec![] };
     let mut analysis = BackAnalysis::new(lowered, ctx);
-    let info = analysis.get_root_info();
-    let mut ctx = analysis.analyzer;
-
-    if info.early_return_possible() {
-        ctx.fixes.push(FixInfo {
-            location: (BlockId::root(), 0),
-            return_info: info.opt_return_info.unwrap(),
-        });
-    }
+    analysis.get_root_info();
+    let ctx = analysis.analyzer;
 
     for FixInfo { location: (block_id, statement_idx), return_info } in ctx.fixes {
         let block = &mut lowered.blocks[block_id];
@@ -92,9 +85,7 @@ impl ReturnOptimizerContext<'_> {
             let mut curr_info = info.clone();
             curr_info.apply_match_arm(self.is_droppable(input.var_id), &input_info, arm);
 
-            require(curr_info.early_return_possible())?;
-
-            match curr_info.opt_return_info {
+            match curr_info.try_get_early_return_info() {
                 Some(return_info)
                     if opt_last_info
                         .map(|x: ReturnInfo| x.returned_vars == return_info.returned_vars)
@@ -102,7 +93,7 @@ impl ReturnOptimizerContext<'_> {
                 {
                     // If this is the first iteration or the returned var are the same as the
                     // previous iteration, then the optimization is still applicable.
-                    opt_last_info = Some(return_info)
+                    opt_last_info = Some(return_info.clone())
                 }
                 _ => return None,
             }
@@ -394,21 +385,31 @@ impl AnalyzerInfo {
         }
     }
 
-    /// Returns true if an early return is possible according to 'self'.
-    fn early_return_possible(&self) -> bool {
-        let Some(ReturnInfo { ref returned_vars, .. }) = self.opt_return_info else { return false };
+    /// Returns a vector of ValueInfos for the returns or None.
+    fn try_get_early_return_info(&self) -> Option<&ReturnInfo> {
+        let return_info = self.opt_return_info.as_ref()?;
 
-        returned_vars.iter().all(|var_info| match var_info {
+        if !return_info.returned_vars.iter().all(|var_info| match var_info {
             ValueInfo::Var(_) => true,
             ValueInfo::StructConstruct { .. } => false,
             ValueInfo::EnumConstruct { .. } => false,
             ValueInfo::Interchangeable(_) => false,
-        })
+        }) {
+            return None;
+        }
+
+        Some(return_info)
     }
 }
 
 impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     type Info = AnalyzerInfo;
+
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+        if let Some(return_info) = info.try_get_early_return_info() {
+            self.fixes.push(FixInfo { location: (block_id, 0), return_info: return_info.clone() });
+        }
+    }
 
     fn visit_stmt(
         &mut self,
@@ -416,7 +417,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         (block_idx, statement_idx): StatementLocation,
         stmt: &'a Statement,
     ) {
-        let opt_orig_info = if info.early_return_possible() { Some(info.clone()) } else { None };
+        let opt_early_return_info = info.try_get_early_return_info().cloned();
 
         match stmt {
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
@@ -445,11 +446,11 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
             _ => info.invalidate(),
         }
 
-        if let Some(return_info) = opt_orig_info {
-            if !info.early_return_possible() {
+        if let Some(early_return_info) = opt_early_return_info {
+            if info.try_get_early_return_info().is_none() {
                 self.fixes.push(FixInfo {
                     location: (block_idx, statement_idx + 1),
-                    return_info: return_info.opt_return_info.unwrap(),
+                    return_info: early_return_info,
                 });
             }
         }
@@ -479,18 +480,6 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     ) -> Self::Info {
         let infos: Vec<_> = infos.collect();
         let opt_return_info = self.try_merge_match(match_info, &infos);
-        if opt_return_info.is_none() {
-            // If the optimization is not applicable before the match, check if it is applicable
-            // in the arms.
-            for (arm, info) in match_info.arms().iter().zip(infos) {
-                if info.early_return_possible() {
-                    self.fixes.push(FixInfo {
-                        location: (arm.block_id, 0),
-                        return_info: info.opt_return_info.unwrap(),
-                    });
-                }
-            }
-        }
         Self::Info { opt_return_info }
     }
 
