@@ -125,7 +125,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 }
 
 /// An argument to a sierra function run,
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Arg {
     Value(Felt252),
     Array(Vec<Arg>),
