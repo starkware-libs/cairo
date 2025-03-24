@@ -36,7 +36,7 @@ fn handle_struct(
     let generic_params = struct_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            generic_params.stable_ptr(db).untyped(),
             format!("{EVENT_TYPE_NAME} structs with generic arguments are unsupported"),
         ));
         return None;
@@ -117,14 +117,14 @@ fn get_field_kind_for_member(
     // Currently, nested fields are unsupported.
     if is_nested {
         diagnostics.push(PluginDiagnostic::error(
-            member.stable_ptr().untyped(),
+            member.stable_ptr(db).untyped(),
             "Nested event fields are currently unsupported".to_string(),
         ));
     }
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic::error(
-            member.stable_ptr().untyped(),
+            member.stable_ptr(db).untyped(),
             "Serde event fields are currently unsupported".to_string(),
         ));
     }
@@ -152,7 +152,7 @@ fn get_field_kind_for_variant(
     // Currently, nested fields are unsupported.
     if is_nested {
         diagnostics.push(PluginDiagnostic::error(
-            variant.stable_ptr().untyped(),
+            variant.stable_ptr(db),
             "Nested event fields are currently unsupported".to_string(),
         ));
     }
@@ -164,7 +164,7 @@ fn get_field_kind_for_variant(
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic::error(
-            variant.stable_ptr().untyped(),
+            variant.stable_ptr(db),
             "Serde event fields are currently unsupported".to_string(),
         ));
     }
@@ -188,7 +188,7 @@ fn handle_enum(
     let generic_params = enum_ast.generic_params(db);
     let ast::OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic::error(
-            generic_params.stable_ptr().untyped(),
+            generic_params.stable_ptr(db),
             format!("{EVENT_TYPE_NAME} enums with generic arguments are unsupported"),
         ));
         return None;

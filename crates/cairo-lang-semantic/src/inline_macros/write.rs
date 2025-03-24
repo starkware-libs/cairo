@@ -8,7 +8,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
 use num_bigint::{BigInt, Sign};
@@ -162,31 +162,31 @@ impl FormattingInfo {
         let mut args_iter = argument_list_elements.iter();
         let Some(formatter_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
-                arguments.lparen(db).stable_ptr().untyped(),
+                arguments.lparen(db).stable_ptr(db),
                 "Macro expected formatter argument.".to_string(),
             )]);
         };
         let Some(formatter_expr) = try_extract_unnamed_arg(db, formatter_arg) else {
             return Err(vec![PluginDiagnostic::error(
-                formatter_arg.stable_ptr().untyped(),
+                formatter_arg.stable_ptr(db),
                 "Formatter argument must unnamed.".to_string(),
             )]);
         };
         if matches!(formatter_expr, ast::Expr::String(_)) {
             return Err(vec![PluginDiagnostic::error(
-                formatter_arg.stable_ptr().untyped(),
+                formatter_arg.stable_ptr(db),
                 "Formatter argument must not be a string literal.".to_string(),
             )]);
         }
         let Some(format_string_arg) = args_iter.next() else {
             return Err(vec![PluginDiagnostic::error(
-                arguments.lparen(db).stable_ptr().untyped(),
+                arguments.lparen(db).stable_ptr(db),
                 "Macro expected format string argument.".to_string(),
             )]);
         };
         let Some(format_string_expr) = try_extract_unnamed_arg(db, format_string_arg) else {
             return Err(vec![PluginDiagnostic::error(
-                format_string_arg.stable_ptr().untyped(),
+                format_string_arg.stable_ptr(db),
                 "Format string argument must be unnamed.".to_string(),
             )]);
         };
@@ -194,7 +194,7 @@ impl FormattingInfo {
             .and_then(|arg| arg.string_value(db))
         else {
             return Err(vec![PluginDiagnostic::error(
-                format_string_arg.stable_ptr().untyped(),
+                format_string_arg.stable_ptr(db),
                 "Format string argument must be a string literal.".to_string(),
             )]);
         };
@@ -203,7 +203,7 @@ impl FormattingInfo {
             .filter_map(|arg| {
                 try_extract_unnamed_arg(db, arg).on_none(|| {
                     diagnostics.push(PluginDiagnostic::error(
-                        arg.stable_ptr().untyped(),
+                        arg.stable_ptr(db),
                         "Expected unnamed argument.".to_string(),
                     ))
                 })
@@ -258,7 +258,7 @@ impl FormattingInfo {
                     Ok(argument_info) => argument_info,
                     Err(error_message) => {
                         diagnostics.push(PluginDiagnostic::error(
-                            self.format_string_arg.as_syntax_node().stable_ptr(),
+                            self.format_string_arg.stable_ptr(builder.db),
                             format!("Invalid format string: {error_message}."),
                         ));
                         return;
@@ -268,7 +268,7 @@ impl FormattingInfo {
                     PlaceholderArgumentSource::Positional(positional) => {
                         let Some(arg) = self.args.get(positional) else {
                             diagnostics.push(PluginDiagnostic::error(
-                                self.format_string_arg.as_syntax_node().stable_ptr(),
+                                self.format_string_arg.stable_ptr(builder.db),
                                 format!(
                                     "Invalid reference to positional argument {positional} (there \
                                      are {} arguments).",
@@ -333,7 +333,7 @@ impl FormattingInfo {
                     format_iter.next();
                 } else {
                     diagnostics.push(PluginDiagnostic::error(
-                        self.format_string_arg.as_syntax_node().stable_ptr(),
+                        self.format_string_arg.stable_ptr(builder.db),
                         "Closing `}` without a matching `{`.".to_string(),
                     ));
                 }
@@ -343,7 +343,7 @@ impl FormattingInfo {
         }
         if missing_args > 0 {
             diagnostics.push(PluginDiagnostic::error(
-                self.format_string_arg.as_syntax_node().stable_ptr(),
+                self.format_string_arg.stable_ptr(builder.db),
                 format!(
                     "{} positional arguments in format string, but only {} arguments.",
                     self.args.len() + missing_args,
@@ -373,7 +373,7 @@ impl FormattingInfo {
         for (position, used) in arg_used.into_iter().enumerate() {
             if !used {
                 diagnostics.push(PluginDiagnostic::error(
-                    self.args[position].as_syntax_node().stable_ptr(),
+                    self.args[position].stable_ptr(builder.db),
                     "Unused argument.".to_string(),
                 ));
             }

@@ -26,12 +26,12 @@ impl MacroPlugin for CompileErrorPlugin {
                 );
                 let ast::Expr::String(err_message) = compilation_error_arg else {
                     return PluginResult::diagnostic_only(PluginDiagnostic::error(
-                        &compilation_error_arg,
+                        compilation_error_arg.stable_ptr(db),
                         "`compile_error!` argument must be an unnamed string argument.".to_string(),
                     ));
                 };
                 return PluginResult::diagnostic_only(PluginDiagnostic::error(
-                    &inline_macro_ast,
+                    inline_macro_ast.stable_ptr(db),
                     err_message.text(db).to_string(),
                 ));
             }

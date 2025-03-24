@@ -38,8 +38,8 @@ impl SyntaxStablePtrId {
             SyntaxStablePtr::Child { parent, .. } => {
                 let parent = parent.lookup(db);
                 for child in db.get_children(parent).iter() {
-                    if child.stable_ptr() == *self {
-                        return child.clone();
+                    if child.stable_ptr(db) == *self {
+                        return *child;
                     }
                 }
                 unreachable!();

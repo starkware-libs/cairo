@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::{Itertools, chain};
 
@@ -28,14 +28,14 @@ pub fn handle_default(
             });
             let Some((default_variant, _)) = default_variants.next() else {
                 diagnostics.push(PluginDiagnostic::error(
-                    derived,
+                    derived.stable_ptr(db),
                     "derive `Default` for enum only supported with a default variant.".into(),
                 ));
                 return None;
             };
             for (_, extra_default_attr) in default_variants {
                 diagnostics.push(PluginDiagnostic::error(
-                    &extra_default_attr,
+                    extra_default_attr.stable_ptr(db),
                     "Multiple variants annotated with `#[default]`".into(),
                 ));
             }

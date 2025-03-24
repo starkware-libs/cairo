@@ -569,81 +569,89 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         for item_ast in &priv_module_data.items {
             match item_ast.clone() {
                 ast::ModuleItem::Constant(constant) => {
-                    let item_id = ConstantLongId(module_file_id, constant.stable_ptr()).intern(db);
+                    let item_id =
+                        ConstantLongId(module_file_id, constant.stable_ptr(syntax_db)).intern(db);
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::ModuleItem::Module(module) => {
-                    let item_id = SubmoduleLongId(module_file_id, module.stable_ptr()).intern(db);
+                    let item_id =
+                        SubmoduleLongId(module_file_id, module.stable_ptr(syntax_db)).intern(db);
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::ModuleItem::Use(us) => {
-                    for leaf in get_all_path_leaves(db.upcast(), &us) {
-                        let id = UseLongId(module_file_id, leaf.stable_ptr()).intern(db);
+                    for leaf in get_all_path_leaves(syntax_db, &us) {
+                        let id = UseLongId(module_file_id, leaf.stable_ptr(syntax_db)).intern(db);
                         uses.insert(id, leaf);
                         items.push(ModuleItemId::Use(id));
                     }
-                    for star in get_all_path_stars(db.upcast(), &us) {
-                        let id = GlobalUseLongId(module_file_id, star.stable_ptr()).intern(db);
+                    for star in get_all_path_stars(syntax_db, &us) {
+                        let id =
+                            GlobalUseLongId(module_file_id, star.stable_ptr(syntax_db)).intern(db);
                         global_uses.insert(id, star);
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
                     let item_id =
-                        FreeFunctionLongId(module_file_id, function.stable_ptr()).intern(db);
+                        FreeFunctionLongId(module_file_id, function.stable_ptr(syntax_db))
+                            .intern(db);
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
                 ast::ModuleItem::ExternFunction(extern_function) => {
                     let item_id =
-                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr())
+                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr(syntax_db))
                             .intern(db);
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
                 ast::ModuleItem::ExternType(extern_type) => {
                     let item_id =
-                        ExternTypeLongId(module_file_id, extern_type.stable_ptr()).intern(db);
+                        ExternTypeLongId(module_file_id, extern_type.stable_ptr(syntax_db))
+                            .intern(db);
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
                 ast::ModuleItem::Trait(trt) => {
-                    let item_id = TraitLongId(module_file_id, trt.stable_ptr()).intern(db);
+                    let item_id = TraitLongId(module_file_id, trt.stable_ptr(syntax_db)).intern(db);
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
                 ast::ModuleItem::Impl(imp) => {
-                    let item_id = ImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
+                    let item_id =
+                        ImplDefLongId(module_file_id, imp.stable_ptr(syntax_db)).intern(db);
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
                 ast::ModuleItem::Struct(structure) => {
-                    let item_id = StructLongId(module_file_id, structure.stable_ptr()).intern(db);
+                    let item_id =
+                        StructLongId(module_file_id, structure.stable_ptr(syntax_db)).intern(db);
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
                 ast::ModuleItem::Enum(enm) => {
-                    let item_id = EnumLongId(module_file_id, enm.stable_ptr()).intern(db);
+                    let item_id = EnumLongId(module_file_id, enm.stable_ptr(syntax_db)).intern(db);
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
                     let item_id =
-                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr()).intern(db);
+                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr(syntax_db))
+                            .intern(db);
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
                 ast::ModuleItem::ImplAlias(impl_alias) => {
-                    let item_id =
-                        ImplAliasLongId(module_file_id, impl_alias.stable_ptr()).intern(db);
+                    let item_id = ImplAliasLongId(module_file_id, impl_alias.stable_ptr(syntax_db))
+                        .intern(db);
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
                 ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic::error(
-                        &inline_macro_ast,
+                        inline_macro_ast.stable_ptr(syntax_db),
                         format!(
                             "Unknown inline item macro: '{}'.",
                             inline_macro_ast.name(db.upcast()).text(db.upcast())
@@ -759,7 +767,7 @@ fn priv_module_sub_files(
                 let generated_file_id = FileLongId::External(
                     PluginGeneratedFileLongId {
                         module_id,
-                        stable_ptr: item_ast.stable_ptr().untyped(),
+                        stable_ptr: item_ast.stable_ptr(syntax_db).untyped(),
                         name: generated.name.clone(),
                     }
                     .intern(db)
@@ -809,7 +817,7 @@ fn collect_extra_allowed_attributes(
             let args = attr.clone().structurize(db).args;
             if args.is_empty() {
                 plugin_diagnostics.push(PluginDiagnostic::error(
-                    attr.stable_ptr(),
+                    attr.stable_ptr(db),
                     "Expected arguments.".to_string(),
                 ));
                 continue;
@@ -822,7 +830,7 @@ fn collect_extra_allowed_attributes(
                     }
                 }
                 plugin_diagnostics.push(PluginDiagnostic::error(
-                    &arg.arg,
+                    arg.arg.stable_ptr(db),
                     "Expected simple identifier.".to_string(),
                 ));
             }
@@ -846,8 +854,10 @@ pub fn validate_attributes_flat(
             || extra_allowed_attributes.contains(&attr_text)
             || local_extra_attributes.contains(&attr_text))
         {
-            plugin_diagnostics
-                .push(PluginDiagnostic::error(&attr, "Unsupported attribute.".to_string()));
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(db),
+                "Unsupported attribute.".to_string(),
+            ));
         }
     }
 }
@@ -1261,21 +1271,21 @@ fn module_item_name_stable_ptr(
     let data = db.priv_module_data(module_id)?;
     let db = db.upcast();
     Ok(match &item_id {
-        ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::Use(id) => data.uses[id].name_stable_ptr(db),
         ModuleItemId::FreeFunction(id) => {
-            data.free_functions[id].declaration(db).name(db).stable_ptr().untyped()
+            data.free_functions[id].declaration(db).name(db).stable_ptr(db).untyped()
         }
-        ModuleItemId::Struct(id) => data.structs[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Enum(id) => data.enums[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::TypeAlias(id) => data.type_aliases[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::ImplAlias(id) => data.impl_aliases[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Trait(id) => data.traits[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Struct(id) => data.structs[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::Enum(id) => data.enums[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::TypeAlias(id) => data.type_aliases[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::ImplAlias(id) => data.impl_aliases[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::Trait(id) => data.traits[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr(db).untyped(),
+        ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::ExternFunction(id) => {
-            data.extern_functions[id].declaration(db).name(db).stable_ptr().untyped()
+            data.extern_functions[id].declaration(db).name(db).stable_ptr(db).untyped()
         }
     })
 }

@@ -736,7 +736,7 @@ impl Signature {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
-        let stable_ptr = signature_syntax.stable_ptr();
+        let stable_ptr = signature_syntax.stable_ptr(syntax_db);
         let is_const = matches!(
             declaration_syntax.optional_const(syntax_db),
             ast::OptionTerminalConst::TerminalConst(_)
@@ -883,7 +883,9 @@ fn update_env_with_ast_params(
     for ast_param in ast_params.iter() {
         let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
 
-        if env.add_param(diagnostics, semantic_param.clone(), ast_param, function_title_id).is_ok()
+        if env
+            .add_param(db, diagnostics, semantic_param.clone(), ast_param, function_title_id)
+            .is_ok()
         {
             semantic_params.push(semantic_param);
         }
@@ -902,11 +904,11 @@ fn ast_param_to_semantic(
 
     let name = ast_param.name(syntax_db).text(syntax_db);
 
-    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr()).intern(db);
+    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(syntax_db)).intern(db);
 
     let ty = match ast_param.type_clause(syntax_db) {
         ast::OptionTypeClause::Empty(missing) => {
-            resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
+            resolver.inference().new_type_var(Some(missing.stable_ptr(syntax_db).untyped()))
         }
         ast::OptionTypeClause::TypeClause(ty_syntax) => {
             resolve_type(db, diagnostics, resolver, &ty_syntax.ty(syntax_db))
@@ -924,7 +926,7 @@ fn ast_param_to_semantic(
         name,
         ty,
         mutability,
-        stable_ptr: ast_param.name(syntax_db).stable_ptr(),
+        stable_ptr: ast_param.name(syntax_db).stable_ptr(syntax_db),
     }
 }
 

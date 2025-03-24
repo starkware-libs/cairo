@@ -43,7 +43,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    &arguments_syntax.lparen(db),
+                    arguments_syntax.lparen(db).stable_ptr(db),
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
@@ -54,7 +54,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    lhs,
+                    lhs.stable_ptr(db),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -63,7 +63,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    rhs,
+                    rhs.stable_ptr(db),
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
             };
@@ -177,7 +177,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             && !metadata.cfg_set.contains(&Cfg::name("test"))
         {
             diagnostics.push(PluginDiagnostic::error(
-                syntax,
+                syntax.stable_ptr(db),
                 format!("`{}` macro is only available in test mode.", Self::NAME),
             ));
         }

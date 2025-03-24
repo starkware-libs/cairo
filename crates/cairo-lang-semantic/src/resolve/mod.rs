@@ -89,12 +89,13 @@ impl ResolvedItems {
         segment: &syntax::node::ast::PathSegment,
         resolved_item: ResolvedConcreteItem,
     ) -> ResolvedConcreteItem {
-        let identifier = segment.identifier_ast(db.upcast());
+        let syntax_db = db.upcast();
+        let identifier = segment.identifier_ast(syntax_db);
         if let Some(generic_item) = resolved_item.generic(db) {
             // Mark the generic item as well, for language server resolved_items.
-            self.generic.insert(identifier.stable_ptr(), generic_item);
+            self.generic.insert(identifier.stable_ptr(syntax_db), generic_item);
         }
-        self.concrete.insert(identifier.stable_ptr(), resolved_item.clone());
+        self.concrete.insert(identifier.stable_ptr(syntax_db), resolved_item.clone());
         resolved_item
     }
     // Relates a path segment to a ResolvedGenericItem, and adds to a resolved_items map. This will
@@ -105,8 +106,9 @@ impl ResolvedItems {
         segment: &syntax::node::ast::PathSegment,
         resolved_item: ResolvedGenericItem,
     ) -> ResolvedGenericItem {
-        let identifier = segment.identifier_ast(db.upcast());
-        self.generic.insert(identifier.stable_ptr(), resolved_item.clone());
+        let syntax_db = db.upcast();
+        let identifier = segment.identifier_ast(syntax_db);
+        self.generic.insert(identifier.stable_ptr(syntax_db), resolved_item.clone());
         resolved_item
     }
 }
@@ -421,8 +423,9 @@ impl<'db> Resolver<'db> {
         inner_item_info: ModuleItemInfo,
         segment: &ast::PathSegment,
     ) -> Maybe<ResolvedConcreteItem> {
-        let generic_args_syntax = segment.generic_args(self.db.upcast());
-        let segment_stable_ptr = segment.stable_ptr().untyped();
+        let syntax_db = self.db.upcast();
+        let generic_args_syntax = segment.generic_args(syntax_db);
+        let segment_stable_ptr = segment.stable_ptr(syntax_db).untyped();
         self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
         self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
         let inner_generic_item =
@@ -433,7 +436,10 @@ impl<'db> Resolver<'db> {
             inner_generic_item.clone(),
             generic_args_syntax.clone(),
         )?;
-        self.data.resolved_items.generic.insert(identifier.stable_ptr(), inner_generic_item);
+        self.data
+            .resolved_items
+            .generic
+            .insert(identifier.stable_ptr(syntax_db), inner_generic_item);
         self.handle_same_impl_trait(
             diagnostics,
             &mut specialized_item,
@@ -465,7 +471,7 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
                         return Err(diagnostics.report(
-                            &generic_segment.generic_args(syntax_db),
+                            generic_segment.generic_args(syntax_db).stable_ptr(syntax_db),
                             UnexpectedGenericArgs,
                         ));
                     }
@@ -493,11 +499,14 @@ impl<'db> Resolver<'db> {
                         )?
                     }
                     ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                        return Err(diagnostics.report(
+                            identifier.stable_ptr(syntax_db),
+                            AmbiguousPath(module_items),
+                        ));
                     }
                     ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
                         return Err(diagnostics.report(
-                            &identifier,
+                            identifier.stable_ptr(syntax_db),
                             ItemNotVisible(module_item_id, containing_modules),
                         ));
                     }
@@ -549,13 +558,14 @@ impl<'db> Resolver<'db> {
                             )?
                         }
                         ResolvedBase::Ambiguous(module_items) => {
-                            return Err(
-                                diagnostics.report(&identifier, AmbiguousPath(module_items))
-                            );
+                            return Err(diagnostics.report(
+                                identifier.stable_ptr(syntax_db),
+                                AmbiguousPath(module_items),
+                            ));
                         }
                         ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
                             return Err(diagnostics.report(
-                                &identifier,
+                                identifier.stable_ptr(syntax_db),
                                 ItemNotVisible(module_item_id, containing_modules),
                             ));
                         }
@@ -608,7 +618,8 @@ impl<'db> Resolver<'db> {
         let validate_segment =
             |diagnostics: &mut SemanticDiagnostics, segment: &ast::PathSegment| match segment {
                 ast::PathSegment::WithGenericArgs(generic_args) if !allow_generic_args => {
-                    Err(diagnostics.report(generic_args, UnexpectedGenericArgs))
+                    Err(diagnostics
+                        .report(generic_args.stable_ptr(self.db.upcast()), UnexpectedGenericArgs))
                 }
                 _ => Ok(()),
             };
@@ -661,8 +672,10 @@ impl<'db> Resolver<'db> {
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 if !allow_generic_args {
-                    return Err(diagnostics
-                        .report(&generic_segment.generic_args(syntax_db), UnexpectedGenericArgs));
+                    return Err(diagnostics.report(
+                        generic_segment.generic_args(syntax_db).stable_ptr(syntax_db),
+                        UnexpectedGenericArgs,
+                    ));
                 }
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
@@ -671,7 +684,7 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
                         return Err(diagnostics.report(
-                            &generic_segment.generic_args(syntax_db),
+                            generic_segment.generic_args(syntax_db).stable_ptr(syntax_db),
                             UnexpectedGenericArgs,
                         ));
                     }
@@ -686,11 +699,14 @@ impl<'db> Resolver<'db> {
                         ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
                     }
                     ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                        return Err(diagnostics.report(
+                            identifier.stable_ptr(syntax_db),
+                            AmbiguousPath(module_items),
+                        ));
                     }
                     ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
                         return Err(diagnostics.report(
-                            &identifier,
+                            identifier.stable_ptr(syntax_db),
                             ItemNotVisible(module_item_id, containing_modules),
                         ));
                     }
@@ -720,11 +736,14 @@ impl<'db> Resolver<'db> {
                         ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
                     }
                     ResolvedBase::Ambiguous(module_items) => {
-                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                        return Err(diagnostics.report(
+                            identifier.stable_ptr(syntax_db),
+                            AmbiguousPath(module_items),
+                        ));
                     }
                     ResolvedBase::ItemNotVisible(module_item_id, containing_modules) => {
                         return Err(diagnostics.report(
-                            &identifier,
+                            identifier.stable_ptr(syntax_db),
                             ItemNotVisible(module_item_id, containing_modules),
                         ));
                     }
@@ -754,7 +773,9 @@ impl<'db> Resolver<'db> {
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
-                    return Some(Err(diagnostics.report(segment, SuperUsedInRootModule)));
+                    return Some(Err(
+                        diagnostics.report(segment.stable_ptr(syntax_db), SuperUsedInRootModule)
+                    ));
                 }
                 ModuleId::Submodule(submodule_id) => submodule_id.parent_module(self.db.upcast()),
             };
@@ -771,21 +792,24 @@ impl<'db> Resolver<'db> {
         identifier: &TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ModuleItemInfo> {
+        let syntax_db = self.db.upcast();
         match self.db.module_item_info_by_name(*module_id, ident)? {
             Some(info) => Ok(info),
-            None => match self.resolve_path_using_use_star(*module_id, identifier) {
-                UseStarResult::UniquePathFound(item_info) => Ok(item_info),
-                UseStarResult::AmbiguousPath(module_items) => {
-                    Err(diagnostics.report(identifier, AmbiguousPath(module_items)))
+            None => {
+                match self.resolve_path_using_use_star(*module_id, identifier) {
+                    UseStarResult::UniquePathFound(item_info) => Ok(item_info),
+                    UseStarResult::AmbiguousPath(module_items) => Err(diagnostics
+                        .report(identifier.stable_ptr(syntax_db), AmbiguousPath(module_items))),
+                    UseStarResult::PathNotFound => Err(diagnostics
+                        .report(identifier.stable_ptr(syntax_db), PathNotFound(item_type))),
+                    UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
+                        Err(diagnostics.report(
+                            identifier.stable_ptr(syntax_db),
+                            ItemNotVisible(module_item_id, containing_modules),
+                        ))
+                    }
                 }
-                UseStarResult::PathNotFound => {
-                    Err(diagnostics.report(identifier, PathNotFound(item_type)))
-                }
-                UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                    Err(diagnostics
-                        .report(identifier, ItemNotVisible(module_item_id, containing_modules)))
-                }
-            },
+            }
         }
     }
 
@@ -804,7 +828,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         if identifier.text(syntax_db) == SELF_TYPE_KW {
-            return Err(diagnostics.report(identifier, SelfMustBeFirst));
+            return Err(diagnostics.report(identifier.stable_ptr(syntax_db), SelfMustBeFirst));
         }
 
         match containing_item {
@@ -812,7 +836,7 @@ impl<'db> Resolver<'db> {
                 // Prefix `super` segments should be removed earlier. Middle `super` segments are
                 // not allowed.
                 if ident == SUPER_KW {
-                    return Err(diagnostics.report(identifier, InvalidPath));
+                    return Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath));
                 }
                 let inner_item_info = self.resolve_module_inner_item(
                     module_id,
@@ -835,20 +859,21 @@ impl<'db> Resolver<'db> {
                     ty.lookup_intern(self.db)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
-                    let variants = self
-                        .db
-                        .enum_variants(enum_id)
-                        .map_err(|_| diagnostics.report(identifier, UnknownEnum))?;
+                    let variants = self.db.enum_variants(enum_id).map_err(|_| {
+                        diagnostics.report(identifier.stable_ptr(syntax_db), UnknownEnum)
+                    })?;
                     let variant_id = variants.get(&ident).ok_or_else(|| {
-                        diagnostics
-                            .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
+                        diagnostics.report(
+                            identifier.stable_ptr(syntax_db),
+                            NoSuchVariant { enum_id, variant_name: ident },
+                        )
                     })?;
                     let variant = self.db.variant_semantic(enum_id, *variant_id)?;
                     let concrete_variant =
                         self.db.concrete_enum_variant(concrete_enum_id, &variant)?;
                     Ok(ResolvedConcreteItem::Variant(concrete_variant))
                 } else {
-                    Err(diagnostics.report(identifier, InvalidPath))
+                    Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath))
                 }
             }
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
@@ -857,7 +882,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
                 else {
-                    return Err(diagnostics.report(identifier, InvalidPath));
+                    return Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath));
                 };
                 if let Ok(Some(trait_item_info)) =
                     self.db.trait_item_info_by_name(concrete_trait_id.trait_id(self.db), ident)
@@ -869,7 +894,7 @@ impl<'db> Resolver<'db> {
                     TraitItemId::Function(trait_function_id) => {
                         ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
-                            identifier.stable_ptr().untyped(),
+                            identifier.stable_ptr(syntax_db).untyped(),
                             GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id,
                                 function: trait_function_id,
@@ -900,7 +925,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .trait_item_by_name(concrete_trait_id.trait_id(self.db), ident.clone())?
                 else {
-                    return Err(diagnostics.report(identifier, InvalidPath));
+                    return Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath));
                 };
 
                 if let Ok(Some(trait_item_info)) =
@@ -918,7 +943,7 @@ impl<'db> Resolver<'db> {
                             trait_function_id,
                         )
                         .intern(self.db);
-                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let identifier_stable_ptr = identifier.stable_ptr(syntax_db).untyped();
                         let impl_lookup_context = self.impl_lookup_context();
                         let generic_function =
                             GenericFunctionId::Impl(self.inference().infer_trait_generic_function(
@@ -939,7 +964,7 @@ impl<'db> Resolver<'db> {
                             ConcreteTraitTypeId::new(self.db, *concrete_trait_id, trait_type_id);
 
                         let impl_lookup_context = self.impl_lookup_context();
-                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let identifier_stable_ptr = identifier.stable_ptr(syntax_db).untyped();
                         let ty = self.inference().infer_trait_type(
                             concrete_trait_type,
                             &impl_lookup_context,
@@ -956,7 +981,7 @@ impl<'db> Resolver<'db> {
                         .intern(self.db);
 
                         let impl_lookup_context = self.impl_lookup_context();
-                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let identifier_stable_ptr = identifier.stable_ptr(syntax_db).untyped();
                         let imp_constant_id = self.inference().infer_trait_constant(
                             concrete_trait_constant,
                             &impl_lookup_context,
@@ -980,7 +1005,7 @@ impl<'db> Resolver<'db> {
                         .intern(self.db);
 
                         let impl_lookup_context = self.impl_lookup_context();
-                        let identifier_stable_ptr = identifier.stable_ptr().untyped();
+                        let identifier_stable_ptr = identifier.stable_ptr(syntax_db).untyped();
                         let impl_impl_id = self.inference().infer_trait_impl(
                             concrete_trait_impl,
                             &impl_lookup_context,
@@ -1002,7 +1027,7 @@ impl<'db> Resolver<'db> {
                 let trait_id = concrete_trait_id.trait_id(self.db);
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident.clone())?
                 else {
-                    return Err(diagnostics.report(identifier, InvalidPath));
+                    return Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath));
                 };
                 if let Ok(Some(trait_item_info)) = self
                     .db
@@ -1030,7 +1055,7 @@ impl<'db> Resolver<'db> {
 
                         Ok(ResolvedConcreteItem::Function(self.specialize_function(
                             diagnostics,
-                            identifier.stable_ptr().untyped(),
+                            identifier.stable_ptr(syntax_db).untyped(),
                             generic_function_id,
                             &generic_args_syntax.unwrap_or_default(),
                         )?))
@@ -1067,17 +1092,20 @@ impl<'db> Resolver<'db> {
             }
             ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
                 if !are_coupons_enabled(self.db, self.module_file_id) {
-                    diagnostics.report(identifier, CouponsDisabled);
+                    diagnostics.report(identifier.stable_ptr(syntax_db), CouponsDisabled);
                 }
                 if matches!(
                     function_id.get_concrete(self.db).generic_function,
                     GenericFunctionId::Extern(_)
                 ) {
-                    return Err(diagnostics.report(identifier, CouponForExternFunctionNotAllowed));
+                    return Err(diagnostics.report(
+                        identifier.stable_ptr(syntax_db),
+                        CouponForExternFunctionNotAllowed,
+                    ));
                 }
                 Ok(ResolvedConcreteItem::Type(TypeLongId::Coupon(*function_id).intern(self.db)))
             }
-            _ => Err(diagnostics.report(identifier, InvalidPath)),
+            _ => Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath)),
         }
     }
 
@@ -1089,20 +1117,23 @@ impl<'db> Resolver<'db> {
         generic_item: ResolvedGenericItem,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> Maybe<ResolvedConcreteItem> {
+        let syntax_db = self.db.upcast();
         Ok(match generic_item {
             ResolvedGenericItem::GenericConstant(id) => {
                 ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?)
             }
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args_syntax.is_some() {
-                    return Err(diagnostics.report(identifier, UnexpectedGenericArgs));
+                    return Err(
+                        diagnostics.report(identifier.stable_ptr(syntax_db), UnexpectedGenericArgs)
+                    );
                 }
                 ResolvedConcreteItem::Module(module_id)
             }
             ResolvedGenericItem::GenericFunction(generic_function) => {
                 ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                     generic_function,
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -1110,7 +1141,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::GenericType(generic_type) => {
                 ResolvedConcreteItem::Type(self.specialize_type(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                     generic_type,
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -1124,7 +1155,7 @@ impl<'db> Resolver<'db> {
                     GenericSubstitution::default(),
                     &generic_params,
                     &generic_args_syntax.unwrap_or_default(),
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                 )?;
                 ResolvedConcreteItem::Type(
                     GenericSubstitution::new(&generic_params, &generic_args)
@@ -1139,7 +1170,7 @@ impl<'db> Resolver<'db> {
                     GenericSubstitution::default(),
                     &generic_params,
                     &generic_args_syntax.unwrap_or_default(),
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                 )?;
                 ResolvedConcreteItem::Impl(
                     GenericSubstitution::new(&generic_params, &generic_args)
@@ -1149,7 +1180,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                     trait_id,
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -1157,7 +1188,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Impl(impl_def_id) => ResolvedConcreteItem::Impl(
                 ImplLongId::Concrete(self.specialize_impl(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                     impl_def_id,
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -1166,7 +1197,7 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::Variant(var) => {
                 ResolvedConcreteItem::Variant(self.specialize_variant(
                     diagnostics,
-                    identifier.stable_ptr().untyped(),
+                    identifier.stable_ptr(syntax_db).untyped(),
                     var.id,
                     &generic_args_syntax.unwrap_or_default(),
                 )?)
@@ -1276,14 +1307,14 @@ impl<'db> Resolver<'db> {
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
-                        identifier,
+                        identifier.stable_ptr(syntax_db),
                         NoSuchVariant { enum_id: *enum_id, variant_name: ident },
                     )
                 })?;
                 let variant = self.db.variant_semantic(*enum_id, *variant_id)?;
                 Ok(ResolvedGenericItem::Variant(variant))
             }
-            _ => Err(diagnostics.report(identifier, InvalidPath)),
+            _ => Err(diagnostics.report(identifier.stable_ptr(syntax_db), InvalidPath)),
         }
     }
 
@@ -1600,11 +1631,15 @@ impl<'db> Resolver<'db> {
                 ast::GenericArg::Named(arg_syntax) => {
                     let name = arg_syntax.name(syntax_db).text(syntax_db);
                     let Some((index, generic_param_id)) = generic_param_by_name.get(&name) else {
-                        return Err(diagnostics.report(arg_syntax, UnknownGenericParam(name)));
+                        return Err(diagnostics
+                            .report(arg_syntax.stable_ptr(syntax_db), UnknownGenericParam(name)));
                     };
                     if let Some(prev_index) = last_named_arg_index {
                         if prev_index > index {
-                            return Err(diagnostics.report(arg_syntax, GenericArgOutOfOrder(name)));
+                            return Err(diagnostics.report(
+                                arg_syntax.stable_ptr(syntax_db),
+                                GenericArgOutOfOrder(name),
+                            ));
                         }
                     }
                     last_named_arg_index = Some(index);
@@ -1612,16 +1647,20 @@ impl<'db> Resolver<'db> {
                         .insert(*generic_param_id, arg_syntax.value(syntax_db))
                         .is_some()
                     {
-                        return Err(diagnostics.report(arg_syntax, GenericArgDuplicate(name)));
+                        return Err(diagnostics
+                            .report(arg_syntax.stable_ptr(syntax_db), GenericArgDuplicate(name)));
                     }
                 }
                 ast::GenericArg::Unnamed(arg_syntax) => {
                     if last_named_arg_index.is_some() {
-                        return Err(diagnostics.report(arg_syntax, PositionalGenericAfterNamed));
+                        return Err(diagnostics.report(
+                            arg_syntax.stable_ptr(syntax_db),
+                            PositionalGenericAfterNamed,
+                        ));
                     }
                     let generic_param = generic_params.get(idx).ok_or_else(|| {
                         diagnostics.report(
-                            arg_syntax,
+                            arg_syntax.stable_ptr(syntax_db),
                             TooManyGenericArguments {
                                 expected: generic_params.len(),
                                 actual: generic_args_syntax.len(),
@@ -1659,6 +1698,7 @@ impl<'db> Resolver<'db> {
                     inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
                 });
         };
+        let syntax_db = self.db.upcast();
         Ok(match generic_param {
             GenericParam::Type(_) => {
                 let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
@@ -1690,7 +1730,7 @@ impl<'db> Resolver<'db> {
                     self.db,
                     &mut ctx,
                     &value,
-                    generic_arg_syntax.stable_ptr().untyped(),
+                    generic_arg_syntax.stable_ptr(syntax_db).untyped(),
                     const_param.ty,
                     false,
                 );
@@ -1703,7 +1743,9 @@ impl<'db> Resolver<'db> {
 
             GenericParam::Impl(param) => {
                 let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
-                    .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                    .ok_or_else(|| {
+                        diagnostics.report(generic_arg_syntax.stable_ptr(syntax_db), UnknownImpl)
+                    })?;
                 let resolved_impl = match self.resolve_concrete_path(
                     diagnostics,
                     expr_path,
@@ -1713,7 +1755,10 @@ impl<'db> Resolver<'db> {
                     ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
                         ImplLongId::SelfImpl(concrete_trait_id).intern(self.db)
                     }
-                    _ => return Err(diagnostics.report(generic_arg_syntax, UnknownImpl)),
+                    _ => {
+                        return Err(diagnostics
+                            .report(generic_arg_syntax.stable_ptr(syntax_db), UnknownImpl));
+                    }
                 };
                 let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                 let expected_concrete_trait = param.concrete_trait?;
@@ -1722,7 +1767,7 @@ impl<'db> Resolver<'db> {
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                 {
                     let diag_added = diagnostics.report(
-                        generic_arg_syntax,
+                        generic_arg_syntax.stable_ptr(syntax_db),
                         TraitMismatch {
                             expected_trt: expected_concrete_trait,
                             actual_trt: impl_def_concrete_trait,
@@ -1749,7 +1794,8 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Impl(resolved_impl)
             }
             GenericParam::NegImpl(_) => {
-                return Err(diagnostics.report(generic_arg_syntax, ArgPassedToNegativeImpl));
+                return Err(diagnostics
+                    .report(generic_arg_syntax.stable_ptr(syntax_db), ArgPassedToNegativeImpl));
             }
         })
     }
@@ -1773,12 +1819,13 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         item_info: &T,
     ) {
+        let syntax_db = self.db.upcast();
         match &item_info.feature_kind() {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
-                    identifier,
+                    identifier.stable_ptr(syntax_db),
                     UnstableFeature { feature_name: feature.clone(), note: note.clone() },
                 );
             }
@@ -1787,7 +1834,7 @@ impl<'db> Resolver<'db> {
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
-                    identifier,
+                    identifier.stable_ptr(syntax_db),
                     DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
                 );
             }
@@ -1795,7 +1842,7 @@ impl<'db> Resolver<'db> {
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
-                    identifier,
+                    identifier.stable_ptr(syntax_db),
                     InternalFeature { feature_name: feature.clone(), note: note.clone() },
                 );
             }
@@ -1813,7 +1860,10 @@ impl<'db> Resolver<'db> {
         item_info: &ModuleItemInfo,
     ) {
         if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
-            diagnostics.report(identifier, ItemNotVisible(item_info.item_id, vec![]));
+            diagnostics.report(
+                identifier.stable_ptr(self.db.upcast()),
+                ItemNotVisible(item_info.item_id, vec![]),
+            );
         }
 
         self.validate_feature_constraints(diagnostics, identifier, item_info);
@@ -2034,7 +2084,7 @@ impl<'db> Resolver<'db> {
         inner_generic_item: ResolvedGenericItem,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> ResolvedConcreteItem {
-        let segment_stable_ptr = segment.stable_ptr().untyped();
+        let segment_stable_ptr = segment.stable_ptr(self.db.upcast()).untyped();
         let mut specialized_item = self
             .specialize_generic_module_item(
                 diagnostics,
@@ -2073,7 +2123,9 @@ fn resolve_actual_self_segment(
     trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Maybe<ResolvedConcreteItem> {
     match trait_or_impl_ctx {
-        TraitOrImplContext::None => Err(diagnostics.report(identifier, SelfNotSupportedInContext)),
+        TraitOrImplContext::None => {
+            Err(diagnostics.report(identifier.stable_ptr(db.upcast()), SelfNotSupportedInContext))
+        }
         TraitOrImplContext::Trait(trait_id) => {
             let generic_parameters = db.trait_generic_params(*trait_id)?;
             let concrete_trait_id = ConcreteTraitLongId {
