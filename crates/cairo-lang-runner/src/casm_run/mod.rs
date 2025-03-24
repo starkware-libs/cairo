@@ -423,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
@@ -1320,7 +1320,10 @@ impl CairoHintProcessor<'_> {
         match core_hint {
             ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
-                extract_relocatable(vm, dst)?,
+                #[allow(clippy::useless_conversion)]
+                {
+                    extract_relocatable(vm, dst)?.into()
+                },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
