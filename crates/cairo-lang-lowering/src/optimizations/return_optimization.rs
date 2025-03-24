@@ -33,7 +33,7 @@ pub fn return_optimization(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if info.early_return_possible() {
         ctx.fixes.push(FixInfo {
             location: (BlockId::root(), 0),
-            return_info: info.opt_return_info.clone().unwrap(),
+            return_info: info.opt_return_info.unwrap(),
         });
     }
 

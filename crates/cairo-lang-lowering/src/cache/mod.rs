@@ -2661,7 +2661,7 @@ impl FileCached {
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> FileLongId {
         match self {
-            FileCached::OnDisk(path) => FileLongId::OnDisk(path.clone()),
+            FileCached::OnDisk(path) => FileLongId::OnDisk(path),
             FileCached::Virtual(virtual_file) => FileLongId::Virtual(virtual_file.embed(ctx)),
             FileCached::External(external_file) => {
                 FileLongId::External(external_file.embed(ctx).as_intern_id())
