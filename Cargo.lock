@@ -440,8 +440,8 @@ dependencies = [
  "bincode 2.0.0-rc.3",
  "cairo-lang-compiler",
  "cairo-lang-executable",
+ "cairo-lang-execute-utils",
  "cairo-lang-runner",
- "cairo-lang-utils",
  "cairo-vm",
  "clap",
  "num-bigint",
@@ -606,6 +606,20 @@ dependencies = [
  "serde",
  "test-case",
  "test-log",
+]
+
+[[package]]
+name = "cairo-lang-execute-utils"
+version = "2.11.2"
+dependencies = [
+ "anyhow",
+ "cairo-lang-casm",
+ "cairo-lang-executable",
+ "cairo-lang-runner",
+ "cairo-lang-utils",
+ "cairo-vm",
+ "num-bigint",
+ "serde_json",
 ]
 
 [[package]]
