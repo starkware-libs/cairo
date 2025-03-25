@@ -169,12 +169,12 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
 fn statement_can_be_optimized_out(
     stmt: &Statement,
     info: &mut AnalysisInfo<'_>,
+    mut candidate: OptimizationCandidate<'_>,
     statement_location: (BlockId, usize),
 ) -> Option<FixInfo> {
     let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
         return None;
     };
-    let candidate = info.candidate.as_mut()?;
     if *output != candidate.match_variable {
         return None;
     }
@@ -218,8 +218,8 @@ fn statement_can_be_optimized_out(
         arm_idx,
         target_block: arm.block_id,
         remapping,
-        reachable_blocks: candidate.arm_reachable_blocks[arm_idx].clone(),
-        additional_remapping: candidate.additional_remappings.clone().unwrap_or_default(),
+        reachable_blocks: std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]),
+        additional_remapping: candidate.additional_remappings.unwrap_or_default(),
     })
 }
 
@@ -288,7 +288,12 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        if let Some(fix_info) = statement_can_be_optimized_out(stmt, info, statement_location) {
+        let Some(candidate) = std::mem::take(&mut info.candidate) else {
+            return;
+        };
+        if let Some(fix_info) =
+            statement_can_be_optimized_out(stmt, info, candidate, statement_location)
+        {
             self.fixes.push(fix_info);
         } else {
             info.demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
@@ -297,8 +302,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
             );
         }
-
-        info.candidate = None;
     }
 
     fn visit_goto(
