@@ -236,15 +236,13 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 .branch_ap_change(idx, &ap_change, |id| self.function_ap_change.get(id).cloned())
             {
                 base_info.ap_change += ap_change;
-            } else {
-                continue;
-            }
-            match self.tracking_info.entry(target) {
-                Entry::Occupied(e) => {
-                    e.into_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
-                }
-                Entry::Vacant(e) => {
-                    e.insert(base_info);
+                match self.tracking_info.entry(target) {
+                    Entry::Occupied(e) => {
+                        e.into_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(base_info);
+                    }
                 }
             }
         }
