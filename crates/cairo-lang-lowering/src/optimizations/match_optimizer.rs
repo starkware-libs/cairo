@@ -15,7 +15,7 @@ use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::utils::RebuilderEx;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VarUsage, VariableId,
+    StatementEnumConstruct, StatementStructConstruct, VarRemapping, VarUsage, VariableId,
 };
 
 pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
@@ -89,6 +89,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         remapping,
         reachable_blocks,
         additional_remapping,
+        opt_struct_construct,
     } in ctx.fixes
     {
         // Choose new variables for each destination of the additional remappings (see comment
@@ -103,8 +104,6 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             new_remapping.insert(new_var, *dst);
             renamed_vars.insert(*var, new_var);
         }
-        let mut var_renamer =
-            VarRenamer { renamed_vars: renamed_vars.clone().into_iter().collect() };
 
         let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
@@ -113,6 +112,31 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             "The optimization can only be applied to the last statement in the block."
         );
         block.statements.pop();
+
+        if let Some(mut struct_construct) = opt_struct_construct {
+            // Allocate a new output, if it was not allocated before.
+            let new_output =
+                *var_renaming.entry((struct_construct.output, arm_idx)).or_insert_with(|| {
+                    lowered.variables.alloc(lowered.variables[struct_construct.output].clone())
+                });
+
+            renamed_vars.insert(struct_construct.output, new_output);
+            for input in struct_construct.inputs.iter_mut() {
+                if let Some(orig_var_usage) = additional_remapping.get(&input.var_id) {
+                    input.var_id = orig_var_usage.var_id;
+                }
+            }
+
+            struct_construct.output =
+                lowered.variables.alloc(lowered.variables[struct_construct.output].clone());
+
+            let location = lowered.variables[struct_construct.output].location;
+            new_remapping
+                .insert(new_output, VarUsage { var_id: struct_construct.output, location });
+
+            block.statements.push(Statement::StructConstruct(struct_construct));
+        }
+
         block.end = FlatBlockEnd::Goto(target_block, new_remapping);
 
         if statement_location.0 == match_block {
@@ -145,6 +169,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         for (var, new_var) in renamed_vars.iter() {
             new_block_remapping.insert(*new_var, VarUsage { var_id: *var, location: *location });
         }
+
         new_blocks.push(FlatBlock {
             statements: vec![],
             end: FlatBlockEnd::Goto(arm.block_id, new_block_remapping),
@@ -152,6 +177,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         arm.block_id = next_block_id;
         next_block_id = next_block_id.next_block_id();
 
+        let mut var_renamer = VarRenamer { renamed_vars: renamed_vars.into_iter().collect() };
         // Apply the variable renaming to the reachable blocks.
         for block_id in reachable_blocks {
             let block = &mut lowered.blocks[block_id];
@@ -167,14 +193,12 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
 /// Returns true if the statement can be optimized out and false otherwise.
 /// If the statement can be optimized, returns a [FixInfo] object.
 fn statement_can_be_optimized_out(
-    stmt: &Statement,
+    enum_construct_stmt: &StatementEnumConstruct,
     info: &mut AnalysisInfo<'_>,
     mut candidate: OptimizationCandidate<'_>,
     statement_location: (BlockId, usize),
 ) -> Option<FixInfo> {
-    let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
-        return None;
-    };
+    let StatementEnumConstruct { variant, input, output } = enum_construct_stmt;
     if *output != candidate.match_variable {
         return None;
     }
@@ -220,6 +244,7 @@ fn statement_can_be_optimized_out(
         remapping,
         reachable_blocks: std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]),
         additional_remapping: candidate.additional_remappings.unwrap_or_default(),
+        opt_struct_construct: candidate.opt_struct_construct.cloned(),
     })
 }
 
@@ -238,6 +263,8 @@ pub struct FixInfo {
     reachable_blocks: OrderedHashSet<BlockId>,
     /// Additional remappings that appeared in a `Goto` leading to the match.
     additional_remapping: VarRemapping,
+
+    opt_struct_construct: Option<StatementStructConstruct>,
 }
 
 #[derive(Clone)]
@@ -262,6 +289,8 @@ struct OptimizationCandidate<'a> {
 
     /// Additional remappings that appeared in a `Goto` leading to the match.
     additional_remappings: Option<VarRemapping>,
+
+    opt_struct_construct: Option<&'a StatementStructConstruct>,
 }
 
 pub struct MatchOptimizerContext {
@@ -286,14 +315,31 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &'a Statement,
     ) {
-        if let Some(candidate) = std::mem::take(&mut info.candidate) {
-            if let Some(fix_info) =
-                statement_can_be_optimized_out(stmt, info, candidate, statement_location)
-            {
-                self.fixes.push(fix_info);
-                return;
+        if let Some(mut candidate) = std::mem::take(&mut info.candidate) {
+            match stmt {
+                Statement::EnumConstruct(enum_construct_stmt) => {
+                    if let Some(fix_info) = statement_can_be_optimized_out(
+                        enum_construct_stmt,
+                        info,
+                        candidate,
+                        statement_location,
+                    ) {
+                        self.fixes.push(fix_info);
+                        return;
+                    }
+                }
+                Statement::StructConstruct(struct_construct_stmt)
+                    if !candidate.future_merge
+                        && candidate.additional_remappings.is_none()
+                        && candidate.opt_struct_construct.is_none() =>
+                {
+                    // candidate is still applicable.
+                    candidate.opt_struct_construct = Some(struct_construct_stmt);
+                    info.candidate = Some(candidate);
+                }
+                _ => {}
             }
         }
 
@@ -408,6 +454,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     future_merge: found_collision,
                     arm_reachable_blocks,
                     additional_remappings: None,
+                    opt_struct_construct: None,
                 })
             }
             _ => None,
