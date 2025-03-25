@@ -49,8 +49,8 @@ trait T
 fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(self: Option<T>, f: F) -> Option<U>
 
 //! > Item documentation #3
-Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`) or returns `None` (if `None`).
-
+Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
+or returns `None` (if `None`).
 # Examples
 
 ```cairo
@@ -70,13 +70,15 @@ Content(" to ")
 Content("`Option<U>`")
 Content(" by applying a function to a contained value (if ")
 Content("`Some`")
-Content(") or returns ")
+Content(")")
+Content("\n")
+Content("or returns ")
 Content("`None`")
 Content(" (if ")
 Content("`None`")
 Content(").")
 Content("\n")
-Content("  # ")
+Content("# ")
 Content("Examples")
 Content("\n")
 Content("\n```cairo\n")
