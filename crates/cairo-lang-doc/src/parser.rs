@@ -125,7 +125,7 @@ impl<'a> DocumentationCommentParser<'a> {
             };
         let mut prefix_list_item = false;
         let mut last_two_events = [None, None];
-        let mut table_aligment: Vec<Alignment> = Vec::new();
+        let mut table_alignment: Vec<Alignment> = Vec::new();
 
         for event in parser {
             let current_event = event.clone();
@@ -235,8 +235,8 @@ impl<'a> DocumentationCommentParser<'a> {
                         Tag::Item => {
                             prefix_list_item = true;
                         }
-                        Tag::Table(aligment) => {
-                            table_aligment = aligment;
+                        Tag::Table(alignment) => {
+                            table_alignment = alignment;
                             tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
                         }
                         Tag::TableCell => {
@@ -262,7 +262,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     TagEnd::TableHead => {
                         tokens.push(DocumentationCommentToken::Content(format!(
                             "|\n|{}|",
-                            table_aligment
+                            table_alignment
                                 .iter()
                                 .map(|a| {
                                     let (left, right) = get_alignment_markers(a);
@@ -270,7 +270,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                 })
                                 .join("|")
                         )));
-                        table_aligment.clear();
+                        table_alignment.clear();
                     }
                     TagEnd::CodeBlock => {
                         if !is_indented_code_block {
