@@ -2961,10 +2961,10 @@ End:
 blk5:
 Statements:
   (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
-  (v24: core::result::Result::<(), core::integer::u32>) <- Result::Err(v17)
-  (v25: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::EarlyReturn(v24)
-  (v26: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v13, v9)
-  (v27: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v26, v25)
+  (v24: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v13, v9)
+  (v25: core::result::Result::<(), core::integer::u32>) <- Result::Err(v17)
+  (v26: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::EarlyReturn(v25)
+  (v27: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v24, v26)
   (v28: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v27)
 End:
   Return(v12, v23, v28)

@@ -143,6 +143,8 @@ pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrate
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::DedupBlocks,
         OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
 }
