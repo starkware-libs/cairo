@@ -174,6 +174,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
     let mut arr = ArrayTrait::new();
@@ -193,6 +194,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -216,6 +218,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -238,6 +241,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -1234,6 +1238,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
     let mut arr = ArrayTrait::new();
@@ -1253,6 +1258,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1276,6 +1282,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -1298,6 +1305,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();

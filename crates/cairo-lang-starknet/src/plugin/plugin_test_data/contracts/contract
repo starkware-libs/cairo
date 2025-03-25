@@ -198,6 +198,7 @@ fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     let res = get_something(@contract_state, ref __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -226,6 +227,7 @@ fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     set_something(ref contract_state, ref __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -257,6 +259,7 @@ fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -287,6 +290,7 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
     let mut arr = ArrayTrait::new();

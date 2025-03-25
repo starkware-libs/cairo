@@ -352,6 +352,7 @@ fn generate_entry_point_wrapper(
                 core::option::OptionTraitImpl::expect(
                     core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
                 );
+                core::gas::redeposit_gas();
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
                 $output_handling$
             }}

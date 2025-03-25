@@ -1531,6 +1531,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I1::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1575,6 +1576,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I2::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1619,6 +1621,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I2I::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1755,6 +1758,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     foo(@contract_state, );
     let mut arr = ArrayTrait::new();

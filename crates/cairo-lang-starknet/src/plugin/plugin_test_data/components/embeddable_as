@@ -847,6 +847,7 @@ fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractS
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, _>::do_nothing(@contract_state, );
     let mut arr = ArrayTrait::new();
