@@ -10,14 +10,14 @@ use itertools::Itertools;
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
-use crate::{BlockId, FlatBlockEnd, FlatLowered, Statement, StatementCall};
+use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall};
 
 /// Adds redeposit gas actions.
 ///
 /// The algorithm is as follows:
 /// Check if the function will have the `GasBuiltin` implicit after the lower_implicits stage.
-/// If so, add a `redeposit_gas` call at the beginning of every branch in the code.
-/// Otherwise, do nothing.
+/// If so, add a `redeposit_gas` call at the beginning of every (non withdraw_gas) branch in the
+/// code. Otherwise, do nothing.
 ///
 /// Note that for implementation simplicity this stage must be applied before `LowerImplicits`
 /// stage.
@@ -46,13 +46,13 @@ pub fn gas_redeposit(
         "`GasRedeposit` stage must be called before `LowerImplicits` stage"
     );
 
-    let redeposit_gas = corelib::get_function_id(
-        db.upcast(),
-        corelib::core_submodule(db.upcast(), "gas"),
-        "redeposit_gas".into(),
-        vec![],
-    )
-    .lowered(db);
+    let gas_submodule = corelib::core_submodule(db.upcast(), "gas");
+    let redeposit_gas =
+        corelib::get_function_id(db.upcast(), gas_submodule, "redeposit_gas".into(), vec![])
+            .lowered(db);
+
+    let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast()).map(|id| id.lowered(db));
+
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     let mut redeposit_commands = vec![];
@@ -67,10 +67,13 @@ pub fn gas_redeposit(
                 stack.push(*block_id);
             }
             FlatBlockEnd::Match { info } => {
-                let location = info.location().with_auto_generation_note(db, "withdraw_gas");
+                let is_withdraw_gas = matches!(info, MatchInfo::Extern(match_extern_info) if withdraw_gas_fns.contains(&match_extern_info.function));
+                let location = info.location().with_auto_generation_note(db, "redeposit_gas");
                 for arm in info.arms() {
                     stack.push(arm.block_id);
-                    redeposit_commands.push((arm.block_id, location));
+                    if !is_withdraw_gas {
+                        redeposit_commands.push((arm.block_id, location));
+                    }
                 }
             }
             &FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
