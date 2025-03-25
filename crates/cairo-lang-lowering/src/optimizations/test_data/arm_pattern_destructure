@@ -126,44 +126,39 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk11:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk12:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk13:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk14:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk15:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk16:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk17:
-Statements:
-End:
-  Goto(blk18, {})
-
-blk18:
 Statements:
 End:
   Return()
@@ -235,97 +230,92 @@ blk9:
 Statements:
 End:
   Match(match_enum(v24) {
-    MyEnum::a(v63) => blk26,
-    MyEnum::b(v62) => blk25,
-    MyEnum::c(v61) => blk24,
-    MyEnum::d(v60) => blk23,
-    MyEnum::e(v59) => blk22,
-    MyEnum::f(v58) => blk21,
-    MyEnum::g(v57) => blk20,
-    MyEnum::h(v56) => blk19,
+    MyEnum::a(v53) => blk25,
+    MyEnum::b(v52) => blk24,
+    MyEnum::c(v51) => blk23,
+    MyEnum::d(v50) => blk22,
+    MyEnum::e(v49) => blk21,
+    MyEnum::f(v48) => blk20,
+    MyEnum::g(v47) => blk19,
+    MyEnum::h(v46) => blk18,
   })
 
 blk10:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk11:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk12:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk13:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk14:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk15:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk16:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk17:
 Statements:
 End:
-  Goto(blk18, {})
+  Return()
 
 blk18:
 Statements:
 End:
-  Return()
+  Goto(blk17, {v46 -> v45})
 
 blk19:
 Statements:
 End:
-  Goto(blk17, {v56 -> v45})
+  Goto(blk16, {v47 -> v44})
 
 blk20:
 Statements:
 End:
-  Goto(blk16, {v57 -> v44})
+  Goto(blk15, {v48 -> v43})
 
 blk21:
 Statements:
 End:
-  Goto(blk15, {v58 -> v43})
+  Goto(blk14, {v49 -> v42})
 
 blk22:
 Statements:
 End:
-  Goto(blk14, {v59 -> v42})
+  Goto(blk13, {v50 -> v41})
 
 blk23:
 Statements:
 End:
-  Goto(blk13, {v60 -> v41})
+  Goto(blk12, {v51 -> v40})
 
 blk24:
 Statements:
 End:
-  Goto(blk12, {v61 -> v40})
+  Goto(blk11, {v52 -> v39})
 
 blk25:
 Statements:
 End:
-  Goto(blk11, {v62 -> v39})
-
-blk26:
-Statements:
-End:
-  Goto(blk10, {v63 -> v38})
+  Goto(blk10, {v53 -> v38})

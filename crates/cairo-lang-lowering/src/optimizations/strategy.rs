@@ -59,7 +59,7 @@ impl OptimizationPhase {
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
-            OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
+            OptimizationPhase::OptimizeMatches => optimize_matches(db, lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
