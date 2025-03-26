@@ -80,15 +80,10 @@ impl TypedSyntaxNode for Trivia {
         if node.kind(db) == SyntaxKind::Trivia { Some(Self(ElementList::new(node))) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TriviaPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Trivia> for SyntaxStablePtrId {
-    fn from(node: &Trivia) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TriviaPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -257,13 +252,8 @@ impl TypedSyntaxNode for Trivium {
             Trivium::SkippedNode(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TriviumPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Trivium> for SyntaxStablePtrId {
-    fn from(node: &Trivium) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TriviumPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Trivium {
@@ -719,13 +709,8 @@ impl TypedSyntaxNode for Expr {
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Expr> for SyntaxStablePtrId {
-    fn from(node: &Expr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Expr {
@@ -852,15 +837,10 @@ impl TypedSyntaxNode for ExprList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprList> for SyntaxStablePtrId {
-    fn from(node: &ExprList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -889,10 +869,10 @@ impl Arg {
 }
 impl Arg {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0].clone())
+        ModifierList::from_syntax_node(db, self.children[0])
     }
     pub fn arg_clause(&self, db: &dyn SyntaxGroup) -> ArgClause {
-        ArgClause::from_syntax_node(db, self.children[1].clone())
+        ArgClause::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -939,7 +919,7 @@ impl TypedSyntaxNode for Arg {
             kind,
             SyntaxKind::Arg
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -947,15 +927,10 @@ impl TypedSyntaxNode for Arg {
         if kind == SyntaxKind::Arg { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Arg> for SyntaxStablePtrId {
-    fn from(node: &Arg) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1056,13 +1031,8 @@ impl TypedSyntaxNode for ArgClause {
             ArgClause::FieldInitShorthand(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&ArgClause> for SyntaxStablePtrId {
-    fn from(node: &ArgClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl ArgClause {
@@ -1104,13 +1074,13 @@ impl ArgClauseNamed {
 }
 impl ArgClauseNamed {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1].clone())
+        TerminalColon::from_syntax_node(db, self.children[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2].clone())
+        Expr::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1161,7 +1131,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
             kind,
             SyntaxKind::ArgClauseNamed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1173,15 +1143,10 @@ impl TypedSyntaxNode for ArgClauseNamed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgClauseNamedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgClauseNamed> for SyntaxStablePtrId {
-    fn from(node: &ArgClauseNamed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgClauseNamedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1205,7 +1170,7 @@ impl ArgClauseUnnamed {
 }
 impl ArgClauseUnnamed {
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1252,7 +1217,7 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
             kind,
             SyntaxKind::ArgClauseUnnamed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1264,15 +1229,10 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgClauseUnnamedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgClauseUnnamed> for SyntaxStablePtrId {
-    fn from(node: &ArgClauseUnnamed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgClauseUnnamedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1301,10 +1261,10 @@ impl ArgClauseFieldInitShorthand {
 }
 impl ArgClauseFieldInitShorthand {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0].clone())
+        TerminalColon::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> ExprFieldInitShorthand {
-        ExprFieldInitShorthand::from_syntax_node(db, self.children[1].clone())
+        ExprFieldInitShorthand::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1354,7 +1314,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
             kind,
             SyntaxKind::ArgClauseFieldInitShorthand
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1366,15 +1326,10 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgClauseFieldInitShorthandPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgClauseFieldInitShorthand> for SyntaxStablePtrId {
-    fn from(node: &ArgClauseFieldInitShorthand) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgClauseFieldInitShorthandPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1401,7 +1356,7 @@ impl ExprFieldInitShorthand {
 }
 impl ExprFieldInitShorthand {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1448,7 +1403,7 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
             kind,
             SyntaxKind::ExprFieldInitShorthand
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1460,15 +1415,10 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprFieldInitShorthandPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprFieldInitShorthand> for SyntaxStablePtrId {
-    fn from(node: &ExprFieldInitShorthand) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprFieldInitShorthandPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1558,15 +1508,10 @@ impl TypedSyntaxNode for ArgList {
         if node.kind(db) == SyntaxKind::ArgList { Some(Self(ElementList::new(node))) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgList> for SyntaxStablePtrId {
-    fn from(node: &ArgList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1629,7 +1574,7 @@ impl TypedSyntaxNode for ExprMissing {
             kind,
             SyntaxKind::ExprMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1637,15 +1582,10 @@ impl TypedSyntaxNode for ExprMissing {
         if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprMissing> for SyntaxStablePtrId {
-    fn from(node: &ExprMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1746,13 +1686,8 @@ impl TypedSyntaxNode for PathSegment {
             PathSegment::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&PathSegment> for SyntaxStablePtrId {
-    fn from(node: &PathSegment) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PathSegmentPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl PathSegment {
@@ -1790,7 +1725,7 @@ impl PathSegmentSimple {
 }
 impl PathSegmentSimple {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1837,7 +1772,7 @@ impl TypedSyntaxNode for PathSegmentSimple {
             kind,
             SyntaxKind::PathSegmentSimple
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -1849,15 +1784,10 @@ impl TypedSyntaxNode for PathSegmentSimple {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentSimplePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PathSegmentSimple> for SyntaxStablePtrId {
-    fn from(node: &PathSegmentSimple) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PathSegmentSimplePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1943,13 +1873,8 @@ impl TypedSyntaxNode for OptionTerminalColonColon {
             OptionTerminalColonColon::TerminalColonColon(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalColonColonPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalColonColon> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalColonColon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalColonColonPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionTerminalColonColon {
@@ -2018,7 +1943,7 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
             kind,
             SyntaxKind::OptionTerminalColonColonEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2030,15 +1955,10 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalColonColonEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalColonColonEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalColonColonEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalColonColonEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2069,13 +1989,13 @@ impl PathSegmentWithGenericArgs {
 }
 impl PathSegmentWithGenericArgs {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
     pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalColonColon {
-        OptionTerminalColonColon::from_syntax_node(db, self.children[1].clone())
+        OptionTerminalColonColon::from_syntax_node(db, self.children[1])
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgs {
-        GenericArgs::from_syntax_node(db, self.children[2].clone())
+        GenericArgs::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2126,7 +2046,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
             kind,
             SyntaxKind::PathSegmentWithGenericArgs
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2138,15 +2058,10 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentWithGenericArgsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PathSegmentWithGenericArgs> for SyntaxStablePtrId {
-    fn from(node: &PathSegmentWithGenericArgs) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PathSegmentWithGenericArgsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2173,7 +2088,7 @@ impl PathSegmentMissing {
 }
 impl PathSegmentMissing {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2220,7 +2135,7 @@ impl TypedSyntaxNode for PathSegmentMissing {
             kind,
             SyntaxKind::PathSegmentMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2232,15 +2147,10 @@ impl TypedSyntaxNode for PathSegmentMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PathSegmentMissing> for SyntaxStablePtrId {
-    fn from(node: &PathSegmentMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PathSegmentMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2334,15 +2244,10 @@ impl TypedSyntaxNode for ExprPath {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprPathPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprPath> for SyntaxStablePtrId {
-    fn from(node: &ExprPath) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprPathPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2373,13 +2278,13 @@ impl ExprParenthesized {
 }
 impl ExprParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2430,7 +2335,7 @@ impl TypedSyntaxNode for ExprParenthesized {
             kind,
             SyntaxKind::ExprParenthesized
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2442,15 +2347,10 @@ impl TypedSyntaxNode for ExprParenthesized {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprParenthesizedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprParenthesized> for SyntaxStablePtrId {
-    fn from(node: &ExprParenthesized) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2479,10 +2379,10 @@ impl ExprUnary {
 }
 impl ExprUnary {
     pub fn op(&self, db: &dyn SyntaxGroup) -> UnaryOperator {
-        UnaryOperator::from_syntax_node(db, self.children[0].clone())
+        UnaryOperator::from_syntax_node(db, self.children[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2529,7 +2429,7 @@ impl TypedSyntaxNode for ExprUnary {
             kind,
             SyntaxKind::ExprUnary
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2537,15 +2437,10 @@ impl TypedSyntaxNode for ExprUnary {
         if kind == SyntaxKind::ExprUnary { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprUnaryPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprUnary> for SyntaxStablePtrId {
-    fn from(node: &ExprUnary) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprUnaryPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2678,13 +2573,8 @@ impl TypedSyntaxNode for UnaryOperator {
             UnaryOperator::Desnap(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UnaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&UnaryOperator> for SyntaxStablePtrId {
-    fn from(node: &UnaryOperator) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UnaryOperatorPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl UnaryOperator {
@@ -2728,13 +2618,13 @@ impl ExprBinary {
 }
 impl ExprBinary {
     pub fn lhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
     pub fn op(&self, db: &dyn SyntaxGroup) -> BinaryOperator {
-        BinaryOperator::from_syntax_node(db, self.children[1].clone())
+        BinaryOperator::from_syntax_node(db, self.children[1])
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2].clone())
+        Expr::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2785,7 +2675,7 @@ impl TypedSyntaxNode for ExprBinary {
             kind,
             SyntaxKind::ExprBinary
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -2793,15 +2683,10 @@ impl TypedSyntaxNode for ExprBinary {
         if kind == SyntaxKind::ExprBinary { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprBinaryPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprBinary> for SyntaxStablePtrId {
-    fn from(node: &ExprBinary) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprBinaryPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3290,13 +3175,8 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::DotDotEq(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        BinaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&BinaryOperator> for SyntaxStablePtrId {
-    fn from(node: &BinaryOperator) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        BinaryOperatorPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl BinaryOperator {
@@ -3361,13 +3241,13 @@ impl ExprListParenthesized {
 }
 impl ExprListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1].clone())
+        ExprList::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3418,7 +3298,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
             kind,
             SyntaxKind::ExprListParenthesized
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -3430,15 +3310,10 @@ impl TypedSyntaxNode for ExprListParenthesized {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListParenthesizedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprListParenthesized> for SyntaxStablePtrId {
-    fn from(node: &ExprListParenthesized) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprListParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3467,10 +3342,10 @@ impl ExprFunctionCall {
 }
 impl ExprFunctionCall {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
+        ExprPath::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgListParenthesized {
-        ArgListParenthesized::from_syntax_node(db, self.children[1].clone())
+        ArgListParenthesized::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3517,7 +3392,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             kind,
             SyntaxKind::ExprFunctionCall
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -3529,15 +3404,10 @@ impl TypedSyntaxNode for ExprFunctionCall {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprFunctionCallPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprFunctionCall> for SyntaxStablePtrId {
-    fn from(node: &ExprFunctionCall) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprFunctionCallPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3568,13 +3438,13 @@ impl ArgListParenthesized {
 }
 impl ArgListParenthesized {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1].clone())
+        ArgList::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3625,7 +3495,7 @@ impl TypedSyntaxNode for ArgListParenthesized {
             kind,
             SyntaxKind::ArgListParenthesized
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -3637,15 +3507,10 @@ impl TypedSyntaxNode for ArgListParenthesized {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgListParenthesizedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgListParenthesized> for SyntaxStablePtrId {
-    fn from(node: &ArgListParenthesized) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgListParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3733,13 +3598,8 @@ impl TypedSyntaxNode for OptionArgListParenthesized {
             OptionArgListParenthesized::ArgListParenthesized(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionArgListParenthesizedPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionArgListParenthesized> for SyntaxStablePtrId {
-    fn from(node: &OptionArgListParenthesized) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionArgListParenthesizedPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionArgListParenthesized {
@@ -3811,7 +3671,7 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
             kind,
             SyntaxKind::OptionArgListParenthesizedEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -3823,15 +3683,10 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionArgListParenthesizedEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionArgListParenthesizedEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionArgListParenthesizedEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionArgListParenthesizedEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3860,10 +3715,10 @@ impl ExprStructCtorCall {
 }
 impl ExprStructCtorCall {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
+        ExprPath::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgListBraced {
-        StructArgListBraced::from_syntax_node(db, self.children[1].clone())
+        StructArgListBraced::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3910,7 +3765,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             kind,
             SyntaxKind::ExprStructCtorCall
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -3922,15 +3777,10 @@ impl TypedSyntaxNode for ExprStructCtorCall {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprStructCtorCallPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprStructCtorCall> for SyntaxStablePtrId {
-    fn from(node: &ExprStructCtorCall) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprStructCtorCallPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3961,13 +3811,13 @@ impl StructArgListBraced {
 }
 impl StructArgListBraced {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
-        StructArgList::from_syntax_node(db, self.children[1].clone())
+        StructArgList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4018,7 +3868,7 @@ impl TypedSyntaxNode for StructArgListBraced {
             kind,
             SyntaxKind::StructArgListBraced
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4030,15 +3880,10 @@ impl TypedSyntaxNode for StructArgListBraced {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgListBracedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StructArgListBraced> for SyntaxStablePtrId {
-    fn from(node: &StructArgListBraced) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgListBracedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4069,13 +3914,13 @@ impl ExprBlock {
 }
 impl ExprBlock {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn statements(&self, db: &dyn SyntaxGroup) -> StatementList {
-        StatementList::from_syntax_node(db, self.children[1].clone())
+        StatementList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4126,7 +3971,7 @@ impl TypedSyntaxNode for ExprBlock {
             kind,
             SyntaxKind::ExprBlock
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4134,15 +3979,10 @@ impl TypedSyntaxNode for ExprBlock {
         if kind == SyntaxKind::ExprBlock { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprBlockPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprBlock> for SyntaxStablePtrId {
-    fn from(node: &ExprBlock) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprBlockPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4177,19 +4017,19 @@ impl ExprMatch {
 }
 impl ExprMatch {
     pub fn match_kw(&self, db: &dyn SyntaxGroup) -> TerminalMatch {
-        TerminalMatch::from_syntax_node(db, self.children[0].clone())
+        TerminalMatch::from_syntax_node(db, self.children[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[2])
     }
     pub fn arms(&self, db: &dyn SyntaxGroup) -> MatchArms {
-        MatchArms::from_syntax_node(db, self.children[3].clone())
+        MatchArms::from_syntax_node(db, self.children[3])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[4].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4242,7 +4082,7 @@ impl TypedSyntaxNode for ExprMatch {
             kind,
             SyntaxKind::ExprMatch
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4250,15 +4090,10 @@ impl TypedSyntaxNode for ExprMatch {
         if kind == SyntaxKind::ExprMatch { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprMatchPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprMatch> for SyntaxStablePtrId {
-    fn from(node: &ExprMatch) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprMatchPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4352,15 +4187,10 @@ impl TypedSyntaxNode for MatchArms {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MatchArmsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&MatchArms> for SyntaxStablePtrId {
-    fn from(node: &MatchArms) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MatchArmsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4391,13 +4221,13 @@ impl MatchArm {
 }
 impl MatchArm {
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
-        PatternListOr::from_syntax_node(db, self.children[0].clone())
+        PatternListOr::from_syntax_node(db, self.children[0])
     }
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> TerminalMatchArrow {
-        TerminalMatchArrow::from_syntax_node(db, self.children[1].clone())
+        TerminalMatchArrow::from_syntax_node(db, self.children[1])
     }
     pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2].clone())
+        Expr::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4448,7 +4278,7 @@ impl TypedSyntaxNode for MatchArm {
             kind,
             SyntaxKind::MatchArm
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4456,15 +4286,10 @@ impl TypedSyntaxNode for MatchArm {
         if kind == SyntaxKind::MatchArm { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MatchArmPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&MatchArm> for SyntaxStablePtrId {
-    fn from(node: &MatchArm) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MatchArmPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4497,16 +4322,16 @@ impl ExprIf {
 }
 impl ExprIf {
     pub fn if_kw(&self, db: &dyn SyntaxGroup) -> TerminalIf {
-        TerminalIf::from_syntax_node(db, self.children[0].clone())
+        TerminalIf::from_syntax_node(db, self.children[0])
     }
     pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
-        Condition::from_syntax_node(db, self.children[1].clone())
+        Condition::from_syntax_node(db, self.children[1])
     }
     pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[2].clone())
+        ExprBlock::from_syntax_node(db, self.children[2])
     }
     pub fn else_clause(&self, db: &dyn SyntaxGroup) -> OptionElseClause {
-        OptionElseClause::from_syntax_node(db, self.children[3].clone())
+        OptionElseClause::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4558,7 +4383,7 @@ impl TypedSyntaxNode for ExprIf {
             kind,
             SyntaxKind::ExprIf
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4566,15 +4391,10 @@ impl TypedSyntaxNode for ExprIf {
         if kind == SyntaxKind::ExprIf { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprIfPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprIf> for SyntaxStablePtrId {
-    fn from(node: &ExprIf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprIfPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4653,13 +4473,8 @@ impl TypedSyntaxNode for Condition {
             Condition::Expr(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ConditionPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Condition> for SyntaxStablePtrId {
-    fn from(node: &Condition) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ConditionPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Condition {
@@ -4698,16 +4513,16 @@ impl ConditionLet {
 }
 impl ConditionLet {
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
-        TerminalLet::from_syntax_node(db, self.children[0].clone())
+        TerminalLet::from_syntax_node(db, self.children[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternListOr {
-        PatternListOr::from_syntax_node(db, self.children[1].clone())
+        PatternListOr::from_syntax_node(db, self.children[1])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[2].clone())
+        TerminalEq::from_syntax_node(db, self.children[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3].clone())
+        Expr::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4759,7 +4574,7 @@ impl TypedSyntaxNode for ConditionLet {
             kind,
             SyntaxKind::ConditionLet
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4767,15 +4582,10 @@ impl TypedSyntaxNode for ConditionLet {
         if kind == SyntaxKind::ConditionLet { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ConditionLetPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ConditionLet> for SyntaxStablePtrId {
-    fn from(node: &ConditionLet) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ConditionLetPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4799,7 +4609,7 @@ impl ConditionExpr {
 }
 impl ConditionExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4846,7 +4656,7 @@ impl TypedSyntaxNode for ConditionExpr {
             kind,
             SyntaxKind::ConditionExpr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -4858,15 +4668,10 @@ impl TypedSyntaxNode for ConditionExpr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ConditionExprPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ConditionExpr> for SyntaxStablePtrId {
-    fn from(node: &ConditionExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ConditionExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4941,13 +4746,8 @@ impl TypedSyntaxNode for BlockOrIf {
             BlockOrIf::If(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        BlockOrIfPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&BlockOrIf> for SyntaxStablePtrId {
-    fn from(node: &BlockOrIf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        BlockOrIfPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl BlockOrIf {
@@ -4982,10 +4782,10 @@ impl ExprLoop {
 }
 impl ExprLoop {
     pub fn loop_kw(&self, db: &dyn SyntaxGroup) -> TerminalLoop {
-        TerminalLoop::from_syntax_node(db, self.children[0].clone())
+        TerminalLoop::from_syntax_node(db, self.children[0])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[1].clone())
+        ExprBlock::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5032,7 +4832,7 @@ impl TypedSyntaxNode for ExprLoop {
             kind,
             SyntaxKind::ExprLoop
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5040,15 +4840,10 @@ impl TypedSyntaxNode for ExprLoop {
         if kind == SyntaxKind::ExprLoop { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprLoopPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprLoop> for SyntaxStablePtrId {
-    fn from(node: &ExprLoop) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprLoopPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5079,13 +4874,13 @@ impl ExprWhile {
 }
 impl ExprWhile {
     pub fn while_kw(&self, db: &dyn SyntaxGroup) -> TerminalWhile {
-        TerminalWhile::from_syntax_node(db, self.children[0].clone())
+        TerminalWhile::from_syntax_node(db, self.children[0])
     }
     pub fn condition(&self, db: &dyn SyntaxGroup) -> Condition {
-        Condition::from_syntax_node(db, self.children[1].clone())
+        Condition::from_syntax_node(db, self.children[1])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[2].clone())
+        ExprBlock::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5136,7 +4931,7 @@ impl TypedSyntaxNode for ExprWhile {
             kind,
             SyntaxKind::ExprWhile
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5144,15 +4939,10 @@ impl TypedSyntaxNode for ExprWhile {
         if kind == SyntaxKind::ExprWhile { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprWhilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprWhile> for SyntaxStablePtrId {
-    fn from(node: &ExprWhile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprWhilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5187,19 +4977,19 @@ impl ExprFor {
 }
 impl ExprFor {
     pub fn for_kw(&self, db: &dyn SyntaxGroup) -> TerminalFor {
-        TerminalFor::from_syntax_node(db, self.children[0].clone())
+        TerminalFor::from_syntax_node(db, self.children[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1].clone())
+        Pattern::from_syntax_node(db, self.children[1])
     }
     pub fn identifier(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3].clone())
+        Expr::from_syntax_node(db, self.children[3])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[4].clone())
+        ExprBlock::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5269,7 +5059,7 @@ impl TypedSyntaxNode for ExprFor {
             kind,
             SyntaxKind::ExprFor
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5277,15 +5067,10 @@ impl TypedSyntaxNode for ExprFor {
         if kind == SyntaxKind::ExprFor { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprForPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprFor> for SyntaxStablePtrId {
-    fn from(node: &ExprFor) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprForPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5314,10 +5099,10 @@ impl ElseClause {
 }
 impl ElseClause {
     pub fn else_kw(&self, db: &dyn SyntaxGroup) -> TerminalElse {
-        TerminalElse::from_syntax_node(db, self.children[0].clone())
+        TerminalElse::from_syntax_node(db, self.children[0])
     }
     pub fn else_block_or_if(&self, db: &dyn SyntaxGroup) -> BlockOrIf {
-        BlockOrIf::from_syntax_node(db, self.children[1].clone())
+        BlockOrIf::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5364,7 +5149,7 @@ impl TypedSyntaxNode for ElseClause {
             kind,
             SyntaxKind::ElseClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5372,15 +5157,10 @@ impl TypedSyntaxNode for ElseClause {
         if kind == SyntaxKind::ElseClause { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ElseClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ElseClause> for SyntaxStablePtrId {
-    fn from(node: &ElseClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ElseClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5466,13 +5246,8 @@ impl TypedSyntaxNode for OptionElseClause {
             OptionElseClause::ElseClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionElseClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionElseClause> for SyntaxStablePtrId {
-    fn from(node: &OptionElseClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionElseClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionElseClause {
@@ -5541,7 +5316,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
             kind,
             SyntaxKind::OptionElseClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5553,15 +5328,10 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionElseClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionElseClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionElseClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionElseClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5590,10 +5360,10 @@ impl ExprErrorPropagate {
 }
 impl ExprErrorPropagate {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
     pub fn op(&self, db: &dyn SyntaxGroup) -> TerminalQuestionMark {
-        TerminalQuestionMark::from_syntax_node(db, self.children[1].clone())
+        TerminalQuestionMark::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5640,7 +5410,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
             kind,
             SyntaxKind::ExprErrorPropagate
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5652,15 +5422,10 @@ impl TypedSyntaxNode for ExprErrorPropagate {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprErrorPropagatePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprErrorPropagate> for SyntaxStablePtrId {
-    fn from(node: &ExprErrorPropagate) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprErrorPropagatePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5693,16 +5458,16 @@ impl ExprIndexed {
 }
 impl ExprIndexed {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[1].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[1])
     }
     pub fn index_expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2].clone())
+        Expr::from_syntax_node(db, self.children[2])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[3].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5754,7 +5519,7 @@ impl TypedSyntaxNode for ExprIndexed {
             kind,
             SyntaxKind::ExprIndexed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5762,15 +5527,10 @@ impl TypedSyntaxNode for ExprIndexed {
         if kind == SyntaxKind::ExprIndexed { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprIndexedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprIndexed> for SyntaxStablePtrId {
-    fn from(node: &ExprIndexed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprIndexedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5801,13 +5561,13 @@ impl ExprInlineMacro {
 }
 impl ExprInlineMacro {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
+        ExprPath::from_syntax_node(db, self.children[0])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[1].clone())
+        TerminalNot::from_syntax_node(db, self.children[1])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[2].clone())
+        WrappedArgList::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5858,7 +5618,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind,
             SyntaxKind::ExprInlineMacro
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5870,15 +5630,10 @@ impl TypedSyntaxNode for ExprInlineMacro {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprInlineMacroPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprInlineMacro> for SyntaxStablePtrId {
-    fn from(node: &ExprInlineMacro) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5911,16 +5666,16 @@ impl ExprFixedSizeArray {
 }
 impl ExprFixedSizeArray {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[0])
     }
     pub fn exprs(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1].clone())
+        ExprList::from_syntax_node(db, self.children[1])
     }
     pub fn size(&self, db: &dyn SyntaxGroup) -> OptionFixedSizeArraySize {
-        OptionFixedSizeArraySize::from_syntax_node(db, self.children[2].clone())
+        OptionFixedSizeArraySize::from_syntax_node(db, self.children[2])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[3].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5972,7 +5727,7 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
             kind,
             SyntaxKind::ExprFixedSizeArray
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -5984,15 +5739,10 @@ impl TypedSyntaxNode for ExprFixedSizeArray {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprFixedSizeArrayPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprFixedSizeArray> for SyntaxStablePtrId {
-    fn from(node: &ExprFixedSizeArray) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprFixedSizeArrayPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6021,10 +5771,10 @@ impl FixedSizeArraySize {
 }
 impl FixedSizeArraySize {
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[0].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[0])
     }
     pub fn size(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6071,7 +5821,7 @@ impl TypedSyntaxNode for FixedSizeArraySize {
             kind,
             SyntaxKind::FixedSizeArraySize
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6083,15 +5833,10 @@ impl TypedSyntaxNode for FixedSizeArraySize {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        FixedSizeArraySizePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&FixedSizeArraySize> for SyntaxStablePtrId {
-    fn from(node: &FixedSizeArraySize) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        FixedSizeArraySizePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6177,13 +5922,8 @@ impl TypedSyntaxNode for OptionFixedSizeArraySize {
             OptionFixedSizeArraySize::FixedSizeArraySize(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionFixedSizeArraySizePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionFixedSizeArraySize> for SyntaxStablePtrId {
-    fn from(node: &OptionFixedSizeArraySize) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionFixedSizeArraySizePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionFixedSizeArraySize {
@@ -6252,7 +5992,7 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
             kind,
             SyntaxKind::OptionFixedSizeArraySizeEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6264,15 +6004,10 @@ impl TypedSyntaxNode for OptionFixedSizeArraySizeEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionFixedSizeArraySizeEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionFixedSizeArraySizeEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionFixedSizeArraySizeEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionFixedSizeArraySizeEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6305,16 +6040,16 @@ impl ExprClosure {
 }
 impl ExprClosure {
     pub fn wrapper(&self, db: &dyn SyntaxGroup) -> ClosureParamWrapper {
-        ClosureParamWrapper::from_syntax_node(db, self.children[0].clone())
+        ClosureParamWrapper::from_syntax_node(db, self.children[0])
     }
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
-        OptionReturnTypeClause::from_syntax_node(db, self.children[1].clone())
+        OptionReturnTypeClause::from_syntax_node(db, self.children[1])
     }
     pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
-        OptionTerminalNoPanic::from_syntax_node(db, self.children[2].clone())
+        OptionTerminalNoPanic::from_syntax_node(db, self.children[2])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3].clone())
+        Expr::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6366,7 +6101,7 @@ impl TypedSyntaxNode for ExprClosure {
             kind,
             SyntaxKind::ExprClosure
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6374,15 +6109,10 @@ impl TypedSyntaxNode for ExprClosure {
         if kind == SyntaxKind::ExprClosure { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprClosurePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprClosure> for SyntaxStablePtrId {
-    fn from(node: &ExprClosure) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprClosurePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6468,13 +6198,8 @@ impl TypedSyntaxNode for ClosureParamWrapper {
             ClosureParamWrapper::NAry(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ClosureParamWrapperPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&ClosureParamWrapper> for SyntaxStablePtrId {
-    fn from(node: &ClosureParamWrapper) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ClosureParamWrapperPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl ClosureParamWrapper {
@@ -6511,13 +6236,13 @@ impl ClosureParamWrapperNAry {
 }
 impl ClosureParamWrapperNAry {
     pub fn leftor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
-        TerminalOr::from_syntax_node(db, self.children[0].clone())
+        TerminalOr::from_syntax_node(db, self.children[0])
     }
     pub fn params(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1].clone())
+        ParamList::from_syntax_node(db, self.children[1])
     }
     pub fn rightor(&self, db: &dyn SyntaxGroup) -> TerminalOr {
-        TerminalOr::from_syntax_node(db, self.children[2].clone())
+        TerminalOr::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6568,7 +6293,7 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
             kind,
             SyntaxKind::ClosureParamWrapperNAry
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6580,15 +6305,10 @@ impl TypedSyntaxNode for ClosureParamWrapperNAry {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ClosureParamWrapperNAryPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ClosureParamWrapperNAry> for SyntaxStablePtrId {
-    fn from(node: &ClosureParamWrapperNAry) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ClosureParamWrapperNAryPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6617,10 +6337,10 @@ impl StructArgExpr {
 }
 impl StructArgExpr {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0].clone())
+        TerminalColon::from_syntax_node(db, self.children[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6667,7 +6387,7 @@ impl TypedSyntaxNode for StructArgExpr {
             kind,
             SyntaxKind::StructArgExpr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6679,15 +6399,10 @@ impl TypedSyntaxNode for StructArgExpr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgExprPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StructArgExpr> for SyntaxStablePtrId {
-    fn from(node: &StructArgExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6773,13 +6488,8 @@ impl TypedSyntaxNode for OptionStructArgExpr {
             OptionStructArgExpr::StructArgExpr(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionStructArgExprPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionStructArgExpr> for SyntaxStablePtrId {
-    fn from(node: &OptionStructArgExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionStructArgExprPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionStructArgExpr {
@@ -6848,7 +6558,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
             kind,
             SyntaxKind::OptionStructArgExprEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6860,15 +6570,10 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionStructArgExprEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionStructArgExprEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionStructArgExprEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionStructArgExprEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6897,10 +6602,10 @@ impl StructArgSingle {
 }
 impl StructArgSingle {
     pub fn identifier(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
     pub fn arg_expr(&self, db: &dyn SyntaxGroup) -> OptionStructArgExpr {
-        OptionStructArgExpr::from_syntax_node(db, self.children[1].clone())
+        OptionStructArgExpr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6959,7 +6664,7 @@ impl TypedSyntaxNode for StructArgSingle {
             kind,
             SyntaxKind::StructArgSingle
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -6971,15 +6676,10 @@ impl TypedSyntaxNode for StructArgSingle {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgSinglePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StructArgSingle> for SyntaxStablePtrId {
-    fn from(node: &StructArgSingle) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgSinglePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7008,10 +6708,10 @@ impl StructArgTail {
 }
 impl StructArgTail {
     pub fn dotdot(&self, db: &dyn SyntaxGroup) -> TerminalDotDot {
-        TerminalDotDot::from_syntax_node(db, self.children[0].clone())
+        TerminalDotDot::from_syntax_node(db, self.children[0])
     }
     pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7058,7 +6758,7 @@ impl TypedSyntaxNode for StructArgTail {
             kind,
             SyntaxKind::StructArgTail
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -7070,15 +6770,10 @@ impl TypedSyntaxNode for StructArgTail {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgTailPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StructArgTail> for SyntaxStablePtrId {
-    fn from(node: &StructArgTail) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgTailPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7161,13 +6856,8 @@ impl TypedSyntaxNode for StructArg {
             StructArg::StructArgTail(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&StructArg> for SyntaxStablePtrId {
-    fn from(node: &StructArg) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl StructArg {
@@ -7267,15 +6957,10 @@ impl TypedSyntaxNode for StructArgList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StructArgList> for SyntaxStablePtrId {
-    fn from(node: &StructArgList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StructArgListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7306,13 +6991,13 @@ impl ArgListBraced {
 }
 impl ArgListBraced {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1].clone())
+        ArgList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7363,7 +7048,7 @@ impl TypedSyntaxNode for ArgListBraced {
             kind,
             SyntaxKind::ArgListBraced
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -7375,15 +7060,10 @@ impl TypedSyntaxNode for ArgListBraced {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgListBracedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgListBraced> for SyntaxStablePtrId {
-    fn from(node: &ArgListBraced) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgListBracedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7414,13 +7094,13 @@ impl ArgListBracketed {
 }
 impl ArgListBracketed {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[0])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
-        ArgList::from_syntax_node(db, self.children[1].clone())
+        ArgList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7471,7 +7151,7 @@ impl TypedSyntaxNode for ArgListBracketed {
             kind,
             SyntaxKind::ArgListBracketed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -7483,15 +7163,10 @@ impl TypedSyntaxNode for ArgListBracketed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ArgListBracketedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ArgListBracketed> for SyntaxStablePtrId {
-    fn from(node: &ArgListBracketed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ArgListBracketedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7612,13 +7287,8 @@ impl TypedSyntaxNode for WrappedArgList {
             WrappedArgList::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        WrappedArgListPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&WrappedArgList> for SyntaxStablePtrId {
-    fn from(node: &WrappedArgList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        WrappedArgListPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl WrappedArgList {
@@ -7693,7 +7363,7 @@ impl TypedSyntaxNode for WrappedArgListMissing {
             kind,
             SyntaxKind::WrappedArgListMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -7705,15 +7375,10 @@ impl TypedSyntaxNode for WrappedArgListMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        WrappedArgListMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&WrappedArgListMissing> for SyntaxStablePtrId {
-    fn from(node: &WrappedArgListMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        WrappedArgListMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7960,13 +7625,8 @@ impl TypedSyntaxNode for Pattern {
             Pattern::Path(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Pattern> for SyntaxStablePtrId {
-    fn from(node: &Pattern) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Pattern {
@@ -8015,10 +7675,10 @@ impl PatternIdentifier {
 }
 impl PatternIdentifier {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0].clone())
+        ModifierList::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8074,7 +7734,7 @@ impl TypedSyntaxNode for PatternIdentifier {
             kind,
             SyntaxKind::PatternIdentifier
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -8086,15 +7746,10 @@ impl TypedSyntaxNode for PatternIdentifier {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternIdentifierPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternIdentifier> for SyntaxStablePtrId {
-    fn from(node: &PatternIdentifier) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternIdentifierPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8127,16 +7782,16 @@ impl PatternStruct {
 }
 impl PatternStruct {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
+        ExprPath::from_syntax_node(db, self.children[0])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[1].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[1])
     }
     pub fn params(&self, db: &dyn SyntaxGroup) -> PatternStructParamList {
-        PatternStructParamList::from_syntax_node(db, self.children[2].clone())
+        PatternStructParamList::from_syntax_node(db, self.children[2])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[3].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8188,7 +7843,7 @@ impl TypedSyntaxNode for PatternStruct {
             kind,
             SyntaxKind::PatternStruct
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -8200,15 +7855,10 @@ impl TypedSyntaxNode for PatternStruct {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternStructPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternStruct> for SyntaxStablePtrId {
-    fn from(node: &PatternStruct) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternStructPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8302,15 +7952,10 @@ impl TypedSyntaxNode for PatternStructParamList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternStructParamListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternStructParamList> for SyntaxStablePtrId {
-    fn from(node: &PatternStructParamList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternStructParamListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8341,13 +7986,13 @@ impl PatternTuple {
 }
 impl PatternTuple {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
-        PatternList::from_syntax_node(db, self.children[1].clone())
+        PatternList::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8398,7 +8043,7 @@ impl TypedSyntaxNode for PatternTuple {
             kind,
             SyntaxKind::PatternTuple
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -8406,15 +8051,10 @@ impl TypedSyntaxNode for PatternTuple {
         if kind == SyntaxKind::PatternTuple { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternTuplePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternTuple> for SyntaxStablePtrId {
-    fn from(node: &PatternTuple) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternTuplePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8445,13 +8085,13 @@ impl PatternFixedSizeArray {
 }
 impl PatternFixedSizeArray {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[0])
     }
     pub fn patterns(&self, db: &dyn SyntaxGroup) -> PatternList {
-        PatternList::from_syntax_node(db, self.children[1].clone())
+        PatternList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8502,7 +8142,7 @@ impl TypedSyntaxNode for PatternFixedSizeArray {
             kind,
             SyntaxKind::PatternFixedSizeArray
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -8514,15 +8154,10 @@ impl TypedSyntaxNode for PatternFixedSizeArray {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternFixedSizeArrayPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternFixedSizeArray> for SyntaxStablePtrId {
-    fn from(node: &PatternFixedSizeArray) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternFixedSizeArrayPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8616,15 +8251,10 @@ impl TypedSyntaxNode for PatternList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternList> for SyntaxStablePtrId {
-    fn from(node: &PatternList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8718,15 +8348,10 @@ impl TypedSyntaxNode for PatternListOr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternListOrPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternListOr> for SyntaxStablePtrId {
-    fn from(node: &PatternListOr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternListOrPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8830,13 +8455,8 @@ impl TypedSyntaxNode for PatternStructParam {
             PatternStructParam::Tail(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternStructParamPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&PatternStructParam> for SyntaxStablePtrId {
-    fn from(node: &PatternStructParam) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternStructParamPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl PatternStructParam {
@@ -8880,16 +8500,16 @@ impl PatternStructParamWithExpr {
 }
 impl PatternStructParamWithExpr {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0].clone())
+        ModifierList::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2].clone())
+        TerminalColon::from_syntax_node(db, self.children[2])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[3].clone())
+        Pattern::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8941,7 +8561,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
             kind,
             SyntaxKind::PatternStructParamWithExpr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -8953,15 +8573,10 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternStructParamWithExprPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternStructParamWithExpr> for SyntaxStablePtrId {
-    fn from(node: &PatternStructParamWithExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternStructParamWithExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8990,10 +8605,10 @@ impl PatternEnum {
 }
 impl PatternEnum {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[0].clone())
+        ExprPath::from_syntax_node(db, self.children[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPattern {
-        OptionPatternEnumInnerPattern::from_syntax_node(db, self.children[1].clone())
+        OptionPatternEnumInnerPattern::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9043,7 +8658,7 @@ impl TypedSyntaxNode for PatternEnum {
             kind,
             SyntaxKind::PatternEnum
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9051,15 +8666,10 @@ impl TypedSyntaxNode for PatternEnum {
         if kind == SyntaxKind::PatternEnum { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternEnumPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternEnum> for SyntaxStablePtrId {
-    fn from(node: &PatternEnum) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternEnumPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9090,13 +8700,13 @@ impl PatternEnumInnerPattern {
 }
 impl PatternEnumInnerPattern {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1].clone())
+        Pattern::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9147,7 +8757,7 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
             kind,
             SyntaxKind::PatternEnumInnerPattern
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9159,15 +8769,10 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        PatternEnumInnerPatternPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&PatternEnumInnerPattern> for SyntaxStablePtrId {
-    fn from(node: &PatternEnumInnerPattern) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PatternEnumInnerPatternPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9259,13 +8864,8 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPattern {
             OptionPatternEnumInnerPattern::PatternEnumInnerPattern(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionPatternEnumInnerPatternPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionPatternEnumInnerPattern> for SyntaxStablePtrId {
-    fn from(node: &OptionPatternEnumInnerPattern) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionPatternEnumInnerPatternPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionPatternEnumInnerPattern {
@@ -9337,7 +8937,7 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
             kind,
             SyntaxKind::OptionPatternEnumInnerPatternEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9349,15 +8949,10 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionPatternEnumInnerPatternEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionPatternEnumInnerPatternEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionPatternEnumInnerPatternEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionPatternEnumInnerPatternEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9386,10 +8981,10 @@ impl TypeClause {
 }
 impl TypeClause {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[0].clone())
+        TerminalColon::from_syntax_node(db, self.children[0])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9436,7 +9031,7 @@ impl TypedSyntaxNode for TypeClause {
             kind,
             SyntaxKind::TypeClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9444,15 +9039,10 @@ impl TypedSyntaxNode for TypeClause {
         if kind == SyntaxKind::TypeClause { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TypeClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TypeClause> for SyntaxStablePtrId {
-    fn from(node: &TypeClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TypeClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9538,13 +9128,8 @@ impl TypedSyntaxNode for OptionTypeClause {
             OptionTypeClause::TypeClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionTypeClause> for SyntaxStablePtrId {
-    fn from(node: &OptionTypeClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTypeClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionTypeClause {
@@ -9613,7 +9198,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
             kind,
             SyntaxKind::OptionTypeClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9625,15 +9210,10 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTypeClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionTypeClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionTypeClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTypeClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9662,10 +9242,10 @@ impl ReturnTypeClause {
 }
 impl ReturnTypeClause {
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> TerminalArrow {
-        TerminalArrow::from_syntax_node(db, self.children[0].clone())
+        TerminalArrow::from_syntax_node(db, self.children[0])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -9712,7 +9292,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             kind,
             SyntaxKind::ReturnTypeClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9724,15 +9304,10 @@ impl TypedSyntaxNode for ReturnTypeClause {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ReturnTypeClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ReturnTypeClause> for SyntaxStablePtrId {
-    fn from(node: &ReturnTypeClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ReturnTypeClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9818,13 +9393,8 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
             OptionReturnTypeClause::ReturnTypeClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionReturnTypeClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionReturnTypeClause> for SyntaxStablePtrId {
-    fn from(node: &OptionReturnTypeClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionReturnTypeClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionReturnTypeClause {
@@ -9893,7 +9463,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
             kind,
             SyntaxKind::OptionReturnTypeClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -9905,15 +9475,10 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionReturnTypeClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionReturnTypeClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionReturnTypeClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionReturnTypeClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10080,13 +9645,8 @@ impl TypedSyntaxNode for Statement {
             Statement::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Statement> for SyntaxStablePtrId {
-    fn from(node: &Statement) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Statement {
@@ -10169,15 +9729,10 @@ impl TypedSyntaxNode for StatementList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementList> for SyntaxStablePtrId {
-    fn from(node: &StatementList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10240,7 +9795,7 @@ impl TypedSyntaxNode for StatementMissing {
             kind,
             SyntaxKind::StatementMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10252,15 +9807,10 @@ impl TypedSyntaxNode for StatementMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementMissing> for SyntaxStablePtrId {
-    fn from(node: &StatementMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10300,25 +9850,25 @@ impl StatementLet {
 }
 impl StatementLet {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
-        TerminalLet::from_syntax_node(db, self.children[1].clone())
+        TerminalLet::from_syntax_node(db, self.children[1])
     }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[2].clone())
+        Pattern::from_syntax_node(db, self.children[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[3].clone())
+        OptionTypeClause::from_syntax_node(db, self.children[3])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[4].clone())
+        TerminalEq::from_syntax_node(db, self.children[4])
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[5].clone())
+        Expr::from_syntax_node(db, self.children[5])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[6])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10382,7 +9932,7 @@ impl TypedSyntaxNode for StatementLet {
             kind,
             SyntaxKind::StatementLet
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10390,15 +9940,10 @@ impl TypedSyntaxNode for StatementLet {
         if kind == SyntaxKind::StatementLet { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementLetPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementLet> for SyntaxStablePtrId {
-    fn from(node: &StatementLet) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementLetPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10484,13 +10029,8 @@ impl TypedSyntaxNode for OptionTerminalSemicolon {
             OptionTerminalSemicolon::TerminalSemicolon(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalSemicolonPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalSemicolon> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalSemicolon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalSemicolonPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionTerminalSemicolon {
@@ -10559,7 +10099,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
             kind,
             SyntaxKind::OptionTerminalSemicolonEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10571,15 +10111,10 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalSemicolonEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalSemicolonEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalSemicolonEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalSemicolonEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10610,13 +10145,13 @@ impl StatementExpr {
 }
 impl StatementExpr {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+        Expr::from_syntax_node(db, self.children[1])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> OptionTerminalSemicolon {
-        OptionTerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+        OptionTerminalSemicolon::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10667,7 +10202,7 @@ impl TypedSyntaxNode for StatementExpr {
             kind,
             SyntaxKind::StatementExpr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10679,15 +10214,10 @@ impl TypedSyntaxNode for StatementExpr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementExprPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementExpr> for SyntaxStablePtrId {
-    fn from(node: &StatementExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10718,13 +10248,13 @@ impl StatementContinue {
 }
 impl StatementContinue {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn continue_kw(&self, db: &dyn SyntaxGroup) -> TerminalContinue {
-        TerminalContinue::from_syntax_node(db, self.children[1].clone())
+        TerminalContinue::from_syntax_node(db, self.children[1])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10775,7 +10305,7 @@ impl TypedSyntaxNode for StatementContinue {
             kind,
             SyntaxKind::StatementContinue
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10787,15 +10317,10 @@ impl TypedSyntaxNode for StatementContinue {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementContinuePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementContinue> for SyntaxStablePtrId {
-    fn from(node: &StatementContinue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementContinuePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10819,7 +10344,7 @@ impl ExprClause {
 }
 impl ExprClause {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10866,7 +10391,7 @@ impl TypedSyntaxNode for ExprClause {
             kind,
             SyntaxKind::ExprClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -10874,15 +10399,10 @@ impl TypedSyntaxNode for ExprClause {
         if kind == SyntaxKind::ExprClause { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ExprClause> for SyntaxStablePtrId {
-    fn from(node: &ExprClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10968,13 +10488,8 @@ impl TypedSyntaxNode for OptionExprClause {
             OptionExprClause::ExprClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionExprClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionExprClause> for SyntaxStablePtrId {
-    fn from(node: &OptionExprClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionExprClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionExprClause {
@@ -11043,7 +10558,7 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
             kind,
             SyntaxKind::OptionExprClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11055,15 +10570,10 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionExprClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionExprClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionExprClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionExprClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11096,16 +10606,16 @@ impl StatementReturn {
 }
 impl StatementReturn {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
-        TerminalReturn::from_syntax_node(db, self.children[1].clone())
+        TerminalReturn::from_syntax_node(db, self.children[1])
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[2].clone())
+        OptionExprClause::from_syntax_node(db, self.children[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11157,7 +10667,7 @@ impl TypedSyntaxNode for StatementReturn {
             kind,
             SyntaxKind::StatementReturn
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11169,15 +10679,10 @@ impl TypedSyntaxNode for StatementReturn {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementReturnPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementReturn> for SyntaxStablePtrId {
-    fn from(node: &StatementReturn) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementReturnPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11210,16 +10715,16 @@ impl StatementBreak {
 }
 impl StatementBreak {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn break_kw(&self, db: &dyn SyntaxGroup) -> TerminalBreak {
-        TerminalBreak::from_syntax_node(db, self.children[1].clone())
+        TerminalBreak::from_syntax_node(db, self.children[1])
     }
     pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
-        OptionExprClause::from_syntax_node(db, self.children[2].clone())
+        OptionExprClause::from_syntax_node(db, self.children[2])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11271,7 +10776,7 @@ impl TypedSyntaxNode for StatementBreak {
             kind,
             SyntaxKind::StatementBreak
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11283,15 +10788,10 @@ impl TypedSyntaxNode for StatementBreak {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementBreakPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementBreak> for SyntaxStablePtrId {
-    fn from(node: &StatementBreak) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementBreakPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11315,7 +10815,7 @@ impl StatementItem {
 }
 impl StatementItem {
     pub fn item(&self, db: &dyn SyntaxGroup) -> ModuleItem {
-        ModuleItem::from_syntax_node(db, self.children[0].clone())
+        ModuleItem::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11362,7 +10862,7 @@ impl TypedSyntaxNode for StatementItem {
             kind,
             SyntaxKind::StatementItem
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11374,15 +10874,10 @@ impl TypedSyntaxNode for StatementItem {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        StatementItemPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&StatementItem> for SyntaxStablePtrId {
-    fn from(node: &StatementItem) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementItemPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11413,13 +10908,13 @@ impl Param {
 }
 impl Param {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
-        ModifierList::from_syntax_node(db, self.children[0].clone())
+        ModifierList::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+        OptionTypeClause::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11479,7 +10974,7 @@ impl TypedSyntaxNode for Param {
             kind,
             SyntaxKind::Param
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11487,15 +10982,10 @@ impl TypedSyntaxNode for Param {
         if kind == SyntaxKind::Param { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ParamPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Param> for SyntaxStablePtrId {
-    fn from(node: &Param) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ParamPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11563,15 +11053,10 @@ impl TypedSyntaxNode for ModifierList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModifierListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ModifierList> for SyntaxStablePtrId {
-    fn from(node: &ModifierList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModifierListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11646,13 +11131,8 @@ impl TypedSyntaxNode for Modifier {
             Modifier::Mut(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModifierPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Modifier> for SyntaxStablePtrId {
-    fn from(node: &Modifier) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModifierPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Modifier {
@@ -11752,15 +11232,10 @@ impl TypedSyntaxNode for ParamList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ParamList> for SyntaxStablePtrId {
-    fn from(node: &ParamList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ParamListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11793,16 +11268,16 @@ impl ImplicitsClause {
 }
 impl ImplicitsClause {
     pub fn implicits_kw(&self, db: &dyn SyntaxGroup) -> TerminalImplicits {
-        TerminalImplicits::from_syntax_node(db, self.children[0].clone())
+        TerminalImplicits::from_syntax_node(db, self.children[0])
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[1].clone())
+        TerminalLParen::from_syntax_node(db, self.children[1])
     }
     pub fn implicits(&self, db: &dyn SyntaxGroup) -> ImplicitsList {
-        ImplicitsList::from_syntax_node(db, self.children[2].clone())
+        ImplicitsList::from_syntax_node(db, self.children[2])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+        TerminalRParen::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11854,7 +11329,7 @@ impl TypedSyntaxNode for ImplicitsClause {
             kind,
             SyntaxKind::ImplicitsClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -11866,15 +11341,10 @@ impl TypedSyntaxNode for ImplicitsClause {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplicitsClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ImplicitsClause> for SyntaxStablePtrId {
-    fn from(node: &ImplicitsClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplicitsClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11968,15 +11438,10 @@ impl TypedSyntaxNode for ImplicitsList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplicitsListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ImplicitsList> for SyntaxStablePtrId {
-    fn from(node: &ImplicitsList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplicitsListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12062,13 +11527,8 @@ impl TypedSyntaxNode for OptionImplicitsClause {
             OptionImplicitsClause::ImplicitsClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionImplicitsClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionImplicitsClause> for SyntaxStablePtrId {
-    fn from(node: &OptionImplicitsClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionImplicitsClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionImplicitsClause {
@@ -12137,7 +11597,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
             kind,
             SyntaxKind::OptionImplicitsClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12149,15 +11609,10 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionImplicitsClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionImplicitsClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionImplicitsClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionImplicitsClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12243,13 +11698,8 @@ impl TypedSyntaxNode for OptionTerminalNoPanic {
             OptionTerminalNoPanic::TerminalNoPanic(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalNoPanicPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalNoPanic> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalNoPanic) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalNoPanicPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionTerminalNoPanic {
@@ -12318,7 +11768,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
             kind,
             SyntaxKind::OptionTerminalNoPanicEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12330,15 +11780,10 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalNoPanicEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalNoPanicEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalNoPanicEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalNoPanicEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12424,13 +11869,8 @@ impl TypedSyntaxNode for OptionTerminalConst {
             OptionTerminalConst::TerminalConst(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalConstPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalConst> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalConst) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalConstPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionTerminalConst {
@@ -12499,7 +11939,7 @@ impl TypedSyntaxNode for OptionTerminalConstEmpty {
             kind,
             SyntaxKind::OptionTerminalConstEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12511,15 +11951,10 @@ impl TypedSyntaxNode for OptionTerminalConstEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTerminalConstEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionTerminalConstEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionTerminalConstEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionTerminalConstEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12563,22 +11998,22 @@ impl FunctionSignature {
 }
 impl FunctionSignature {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1].clone())
+        ParamList::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
-        OptionReturnTypeClause::from_syntax_node(db, self.children[3].clone())
+        OptionReturnTypeClause::from_syntax_node(db, self.children[3])
     }
     pub fn implicits_clause(&self, db: &dyn SyntaxGroup) -> OptionImplicitsClause {
-        OptionImplicitsClause::from_syntax_node(db, self.children[4].clone())
+        OptionImplicitsClause::from_syntax_node(db, self.children[4])
     }
     pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
-        OptionTerminalNoPanic::from_syntax_node(db, self.children[5].clone())
+        OptionTerminalNoPanic::from_syntax_node(db, self.children[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12632,7 +12067,7 @@ impl TypedSyntaxNode for FunctionSignature {
             kind,
             SyntaxKind::FunctionSignature
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12644,15 +12079,10 @@ impl TypedSyntaxNode for FunctionSignature {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        FunctionSignaturePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&FunctionSignature> for SyntaxStablePtrId {
-    fn from(node: &FunctionSignature) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        FunctionSignaturePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12685,16 +12115,16 @@ impl Member {
 }
 impl Member {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[3].clone())
+        TypeClause::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12755,7 +12185,7 @@ impl TypedSyntaxNode for Member {
             kind,
             SyntaxKind::Member
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12763,15 +12193,10 @@ impl TypedSyntaxNode for Member {
         if kind == SyntaxKind::Member { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MemberPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Member> for SyntaxStablePtrId {
-    fn from(node: &Member) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MemberPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12865,15 +12290,10 @@ impl TypedSyntaxNode for MemberList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MemberListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&MemberList> for SyntaxStablePtrId {
-    fn from(node: &MemberList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MemberListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12904,13 +12324,13 @@ impl Variant {
 }
 impl Variant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+        OptionTypeClause::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -12970,7 +12390,7 @@ impl TypedSyntaxNode for Variant {
             kind,
             SyntaxKind::Variant
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -12978,15 +12398,10 @@ impl TypedSyntaxNode for Variant {
         if kind == SyntaxKind::Variant { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VariantPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Variant> for SyntaxStablePtrId {
-    fn from(node: &Variant) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VariantPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13080,15 +12495,10 @@ impl TypedSyntaxNode for VariantList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VariantListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&VariantList> for SyntaxStablePtrId {
-    fn from(node: &VariantList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VariantListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13385,13 +12795,8 @@ impl TypedSyntaxNode for ModuleItem {
             ModuleItem::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModuleItemPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&ModuleItem> for SyntaxStablePtrId {
-    fn from(node: &ModuleItem) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModuleItemPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl ModuleItem {
@@ -13482,15 +12887,10 @@ impl TypedSyntaxNode for ModuleItemList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModuleItemListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ModuleItemList> for SyntaxStablePtrId {
-    fn from(node: &ModuleItemList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModuleItemListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13553,7 +12953,7 @@ impl TypedSyntaxNode for ModuleItemMissing {
             kind,
             SyntaxKind::ModuleItemMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -13565,15 +12965,10 @@ impl TypedSyntaxNode for ModuleItemMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModuleItemMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ModuleItemMissing> for SyntaxStablePtrId {
-    fn from(node: &ModuleItemMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModuleItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13608,19 +13003,19 @@ impl Attribute {
 }
 impl Attribute {
     pub fn hash(&self, db: &dyn SyntaxGroup) -> TerminalHash {
-        TerminalHash::from_syntax_node(db, self.children[0].clone())
+        TerminalHash::from_syntax_node(db, self.children[0])
     }
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[1].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[1])
     }
     pub fn attr(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[2].clone())
+        ExprPath::from_syntax_node(db, self.children[2])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> OptionArgListParenthesized {
-        OptionArgListParenthesized::from_syntax_node(db, self.children[3].clone())
+        OptionArgListParenthesized::from_syntax_node(db, self.children[3])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[4].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13673,7 +13068,7 @@ impl TypedSyntaxNode for Attribute {
             kind,
             SyntaxKind::Attribute
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -13681,15 +13076,10 @@ impl TypedSyntaxNode for Attribute {
         if kind == SyntaxKind::Attribute { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AttributePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&Attribute> for SyntaxStablePtrId {
-    fn from(node: &Attribute) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AttributePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13757,15 +13147,10 @@ impl TypedSyntaxNode for AttributeList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AttributeListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&AttributeList> for SyntaxStablePtrId {
-    fn from(node: &AttributeList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AttributeListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13828,7 +13213,7 @@ impl TypedSyntaxNode for VisibilityDefault {
             kind,
             SyntaxKind::VisibilityDefault
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -13840,15 +13225,10 @@ impl TypedSyntaxNode for VisibilityDefault {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityDefaultPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&VisibilityDefault> for SyntaxStablePtrId {
-    fn from(node: &VisibilityDefault) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VisibilityDefaultPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13879,13 +13259,13 @@ impl VisibilityPubArgumentClause {
 }
 impl VisibilityPubArgumentClause {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+        TerminalLParen::from_syntax_node(db, self.children[0])
     }
     pub fn argument(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+        TerminalRParen::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13936,7 +13316,7 @@ impl TypedSyntaxNode for VisibilityPubArgumentClause {
             kind,
             SyntaxKind::VisibilityPubArgumentClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -13948,15 +13328,10 @@ impl TypedSyntaxNode for VisibilityPubArgumentClause {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityPubArgumentClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&VisibilityPubArgumentClause> for SyntaxStablePtrId {
-    fn from(node: &VisibilityPubArgumentClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VisibilityPubArgumentClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14050,13 +13425,8 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClause {
             OptionVisibilityPubArgumentClause::VisibilityPubArgumentClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionVisibilityPubArgumentClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionVisibilityPubArgumentClause> for SyntaxStablePtrId {
-    fn from(node: &OptionVisibilityPubArgumentClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionVisibilityPubArgumentClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionVisibilityPubArgumentClause {
@@ -14130,7 +13500,7 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
             kind,
             SyntaxKind::OptionVisibilityPubArgumentClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14142,15 +13512,10 @@ impl TypedSyntaxNode for OptionVisibilityPubArgumentClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionVisibilityPubArgumentClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionVisibilityPubArgumentClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionVisibilityPubArgumentClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionVisibilityPubArgumentClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14179,10 +13544,10 @@ impl VisibilityPub {
 }
 impl VisibilityPub {
     pub fn pub_kw(&self, db: &dyn SyntaxGroup) -> TerminalPub {
-        TerminalPub::from_syntax_node(db, self.children[0].clone())
+        TerminalPub::from_syntax_node(db, self.children[0])
     }
     pub fn argument_clause(&self, db: &dyn SyntaxGroup) -> OptionVisibilityPubArgumentClause {
-        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.children[1].clone())
+        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14232,7 +13597,7 @@ impl TypedSyntaxNode for VisibilityPub {
             kind,
             SyntaxKind::VisibilityPub
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14244,15 +13609,10 @@ impl TypedSyntaxNode for VisibilityPub {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityPubPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&VisibilityPub> for SyntaxStablePtrId {
-    fn from(node: &VisibilityPub) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VisibilityPubPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14333,13 +13693,8 @@ impl TypedSyntaxNode for Visibility {
             Visibility::Pub(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&Visibility> for SyntaxStablePtrId {
-    fn from(node: &Visibility) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        VisibilityPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl Visibility {
@@ -14380,19 +13735,19 @@ impl ItemModule {
 }
 impl ItemModule {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn module_kw(&self, db: &dyn SyntaxGroup) -> TerminalModule {
-        TerminalModule::from_syntax_node(db, self.children[2].clone())
+        TerminalModule::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeModuleBody {
-        MaybeModuleBody::from_syntax_node(db, self.children[4].clone())
+        MaybeModuleBody::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14454,7 +13809,7 @@ impl TypedSyntaxNode for ItemModule {
             kind,
             SyntaxKind::ItemModule
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14462,15 +13817,10 @@ impl TypedSyntaxNode for ItemModule {
         if kind == SyntaxKind::ItemModule { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemModulePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemModule> for SyntaxStablePtrId {
-    fn from(node: &ItemModule) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemModulePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14553,13 +13903,8 @@ impl TypedSyntaxNode for MaybeModuleBody {
             MaybeModuleBody::None(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MaybeModuleBodyPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&MaybeModuleBody> for SyntaxStablePtrId {
-    fn from(node: &MaybeModuleBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MaybeModuleBodyPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl MaybeModuleBody {
@@ -14596,13 +13941,13 @@ impl ModuleBody {
 }
 impl ModuleBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> ModuleItemList {
-        ModuleItemList::from_syntax_node(db, self.children[1].clone())
+        ModuleItemList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14653,7 +13998,7 @@ impl TypedSyntaxNode for ModuleBody {
             kind,
             SyntaxKind::ModuleBody
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14661,15 +14006,10 @@ impl TypedSyntaxNode for ModuleBody {
         if kind == SyntaxKind::ModuleBody { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ModuleBodyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ModuleBody> for SyntaxStablePtrId {
-    fn from(node: &ModuleBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ModuleBodyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14705,19 +14045,19 @@ impl FunctionDeclaration {
 }
 impl FunctionDeclaration {
     pub fn optional_const(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
-        OptionTerminalConst::from_syntax_node(db, self.children[0].clone())
+        OptionTerminalConst::from_syntax_node(db, self.children[0])
     }
     pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[1].clone())
+        TerminalFunction::from_syntax_node(db, self.children[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3])
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[4].clone())
+        FunctionSignature::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14779,7 +14119,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
             kind,
             SyntaxKind::FunctionDeclaration
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14791,15 +14131,10 @@ impl TypedSyntaxNode for FunctionDeclaration {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        FunctionDeclarationPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&FunctionDeclaration> for SyntaxStablePtrId {
-    fn from(node: &FunctionDeclaration) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        FunctionDeclarationPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14849,28 +14184,28 @@ impl ItemConstant {
 }
 impl ItemConstant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[2].clone())
+        TerminalConst::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[4].clone())
+        TypeClause::from_syntax_node(db, self.children[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5].clone())
+        TerminalEq::from_syntax_node(db, self.children[5])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[6].clone())
+        Expr::from_syntax_node(db, self.children[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -14935,7 +14270,7 @@ impl TypedSyntaxNode for ItemConstant {
             kind,
             SyntaxKind::ItemConstant
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -14943,15 +14278,10 @@ impl TypedSyntaxNode for ItemConstant {
         if kind == SyntaxKind::ItemConstant { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemConstantPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemConstant> for SyntaxStablePtrId {
-    fn from(node: &ItemConstant) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemConstantPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14984,16 +14314,16 @@ impl FunctionWithBody {
 }
 impl FunctionWithBody {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[2].clone())
+        FunctionDeclaration::from_syntax_node(db, self.children[2])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[3].clone())
+        ExprBlock::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15054,7 +14384,7 @@ impl TypedSyntaxNode for FunctionWithBody {
             kind,
             SyntaxKind::FunctionWithBody
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15066,15 +14396,10 @@ impl TypedSyntaxNode for FunctionWithBody {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        FunctionWithBodyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&FunctionWithBody> for SyntaxStablePtrId {
-    fn from(node: &FunctionWithBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        FunctionWithBodyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15110,19 +14435,19 @@ impl ItemExternFunction {
 }
 impl ItemExternFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[2].clone())
+        TerminalExtern::from_syntax_node(db, self.children[2])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[3].clone())
+        FunctionDeclaration::from_syntax_node(db, self.children[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15184,7 +14509,7 @@ impl TypedSyntaxNode for ItemExternFunction {
             kind,
             SyntaxKind::ItemExternFunction
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15196,15 +14521,10 @@ impl TypedSyntaxNode for ItemExternFunction {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemExternFunctionPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemExternFunction> for SyntaxStablePtrId {
-    fn from(node: &ItemExternFunction) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemExternFunctionPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15251,25 +14571,25 @@ impl ItemExternType {
 }
 impl ItemExternType {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn extern_kw(&self, db: &dyn SyntaxGroup) -> TerminalExtern {
-        TerminalExtern::from_syntax_node(db, self.children[2].clone())
+        TerminalExtern::from_syntax_node(db, self.children[2])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[3].clone())
+        TerminalType::from_syntax_node(db, self.children[3])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[4].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[4])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[5].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[5])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[6])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15333,7 +14653,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind,
             SyntaxKind::ItemExternType
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15345,15 +14665,10 @@ impl TypedSyntaxNode for ItemExternType {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemExternTypePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemExternType> for SyntaxStablePtrId {
-    fn from(node: &ItemExternType) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemExternTypePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15391,22 +14706,22 @@ impl ItemTrait {
 }
 impl ItemTrait {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn trait_kw(&self, db: &dyn SyntaxGroup) -> TerminalTrait {
-        TerminalTrait::from_syntax_node(db, self.children[2].clone())
+        TerminalTrait::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitBody {
-        MaybeTraitBody::from_syntax_node(db, self.children[5].clone())
+        MaybeTraitBody::from_syntax_node(db, self.children[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15469,7 +14784,7 @@ impl TypedSyntaxNode for ItemTrait {
             kind,
             SyntaxKind::ItemTrait
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15477,15 +14792,10 @@ impl TypedSyntaxNode for ItemTrait {
         if kind == SyntaxKind::ItemTrait { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemTraitPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemTrait> for SyntaxStablePtrId {
-    fn from(node: &ItemTrait) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemTraitPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15568,13 +14878,8 @@ impl TypedSyntaxNode for MaybeTraitBody {
             MaybeTraitBody::None(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MaybeTraitBodyPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&MaybeTraitBody> for SyntaxStablePtrId {
-    fn from(node: &MaybeTraitBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MaybeTraitBodyPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl MaybeTraitBody {
@@ -15611,13 +14916,13 @@ impl TraitBody {
 }
 impl TraitBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> TraitItemList {
-        TraitItemList::from_syntax_node(db, self.children[1].clone())
+        TraitItemList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -15668,7 +14973,7 @@ impl TypedSyntaxNode for TraitBody {
             kind,
             SyntaxKind::TraitBody
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15676,15 +14981,10 @@ impl TypedSyntaxNode for TraitBody {
         if kind == SyntaxKind::TraitBody { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitBodyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitBody> for SyntaxStablePtrId {
-    fn from(node: &TraitBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitBodyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15752,15 +15052,10 @@ impl TypedSyntaxNode for TraitItemList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemList> for SyntaxStablePtrId {
-    fn from(node: &TraitItemList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15893,13 +15188,8 @@ impl TypedSyntaxNode for TraitItem {
             TraitItem::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&TraitItem> for SyntaxStablePtrId {
-    fn from(node: &TraitItem) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl TraitItem {
@@ -15975,7 +15265,7 @@ impl TypedSyntaxNode for TraitItemMissing {
             kind,
             SyntaxKind::TraitItemMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -15987,15 +15277,10 @@ impl TypedSyntaxNode for TraitItemMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemMissing> for SyntaxStablePtrId {
-    fn from(node: &TraitItemMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16026,13 +15311,13 @@ impl TraitItemFunction {
 }
 impl TraitItemFunction {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn declaration(&self, db: &dyn SyntaxGroup) -> FunctionDeclaration {
-        FunctionDeclaration::from_syntax_node(db, self.children[1].clone())
+        FunctionDeclaration::from_syntax_node(db, self.children[1])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitFunctionBody {
-        MaybeTraitFunctionBody::from_syntax_node(db, self.children[2].clone())
+        MaybeTraitFunctionBody::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16092,7 +15377,7 @@ impl TypedSyntaxNode for TraitItemFunction {
             kind,
             SyntaxKind::TraitItemFunction
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16104,15 +15389,10 @@ impl TypedSyntaxNode for TraitItemFunction {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemFunctionPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemFunction> for SyntaxStablePtrId {
-    fn from(node: &TraitItemFunction) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemFunctionPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16148,19 +15428,19 @@ impl TraitItemType {
 }
 impl TraitItemType {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[1].clone())
+        TerminalType::from_syntax_node(db, self.children[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16222,7 +15502,7 @@ impl TypedSyntaxNode for TraitItemType {
             kind,
             SyntaxKind::TraitItemType
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16234,15 +15514,10 @@ impl TypedSyntaxNode for TraitItemType {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemTypePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemType> for SyntaxStablePtrId {
-    fn from(node: &TraitItemType) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemTypePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16278,19 +15553,19 @@ impl TraitItemConstant {
 }
 impl TraitItemConstant {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[1].clone())
+        TerminalConst::from_syntax_node(db, self.children[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[3].clone())
+        TypeClause::from_syntax_node(db, self.children[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16352,7 +15627,7 @@ impl TypedSyntaxNode for TraitItemConstant {
             kind,
             SyntaxKind::TraitItemConstant
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16364,15 +15639,10 @@ impl TypedSyntaxNode for TraitItemConstant {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemConstantPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemConstant> for SyntaxStablePtrId {
-    fn from(node: &TraitItemConstant) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemConstantPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16410,22 +15680,22 @@ impl TraitItemImpl {
 }
 impl TraitItemImpl {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[1].clone())
+        TerminalImpl::from_syntax_node(db, self.children[1])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[3].clone())
+        TerminalColon::from_syntax_node(db, self.children[3])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[4].clone())
+        ExprPath::from_syntax_node(db, self.children[4])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16488,7 +15758,7 @@ impl TypedSyntaxNode for TraitItemImpl {
             kind,
             SyntaxKind::TraitItemImpl
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16500,15 +15770,10 @@ impl TypedSyntaxNode for TraitItemImpl {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TraitItemImplPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TraitItemImpl> for SyntaxStablePtrId {
-    fn from(node: &TraitItemImpl) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TraitItemImplPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16594,13 +15859,8 @@ impl TypedSyntaxNode for MaybeTraitFunctionBody {
             MaybeTraitFunctionBody::None(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MaybeTraitFunctionBodyPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&MaybeTraitFunctionBody> for SyntaxStablePtrId {
-    fn from(node: &MaybeTraitFunctionBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MaybeTraitFunctionBodyPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl MaybeTraitFunctionBody {
@@ -16656,28 +15916,28 @@ impl ItemImpl {
 }
 impl ItemImpl {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[2].clone())
+        TerminalImpl::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn of_kw(&self, db: &dyn SyntaxGroup) -> TerminalOf {
-        TerminalOf::from_syntax_node(db, self.children[5].clone())
+        TerminalOf::from_syntax_node(db, self.children[5])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[6].clone())
+        ExprPath::from_syntax_node(db, self.children[6])
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeImplBody {
-        MaybeImplBody::from_syntax_node(db, self.children[7].clone())
+        MaybeImplBody::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16742,7 +16002,7 @@ impl TypedSyntaxNode for ItemImpl {
             kind,
             SyntaxKind::ItemImpl
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16750,15 +16010,10 @@ impl TypedSyntaxNode for ItemImpl {
         if kind == SyntaxKind::ItemImpl { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemImplPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemImpl> for SyntaxStablePtrId {
-    fn from(node: &ItemImpl) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemImplPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16793,19 +16048,19 @@ impl ItemInlineMacro {
 }
 impl ItemInlineMacro {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
-        TerminalNot::from_syntax_node(db, self.children[2].clone())
+        TerminalNot::from_syntax_node(db, self.children[2])
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
-        WrappedArgList::from_syntax_node(db, self.children[3].clone())
+        WrappedArgList::from_syntax_node(db, self.children[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16858,7 +16113,7 @@ impl TypedSyntaxNode for ItemInlineMacro {
             kind,
             SyntaxKind::ItemInlineMacro
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16870,15 +16125,10 @@ impl TypedSyntaxNode for ItemInlineMacro {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemInlineMacroPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemInlineMacro> for SyntaxStablePtrId {
-    fn from(node: &ItemInlineMacro) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16902,7 +16152,7 @@ impl ItemHeaderDoc {
 }
 impl ItemHeaderDoc {
     pub fn empty(&self, db: &dyn SyntaxGroup) -> TerminalEmpty {
-        TerminalEmpty::from_syntax_node(db, self.children[0].clone())
+        TerminalEmpty::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -16949,7 +16199,7 @@ impl TypedSyntaxNode for ItemHeaderDoc {
             kind,
             SyntaxKind::ItemHeaderDoc
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -16961,15 +16211,10 @@ impl TypedSyntaxNode for ItemHeaderDoc {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemHeaderDocPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemHeaderDoc> for SyntaxStablePtrId {
-    fn from(node: &ItemHeaderDoc) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemHeaderDocPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17048,13 +16293,8 @@ impl TypedSyntaxNode for MaybeImplBody {
             MaybeImplBody::None(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        MaybeImplBodyPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&MaybeImplBody> for SyntaxStablePtrId {
-    fn from(node: &MaybeImplBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        MaybeImplBodyPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl MaybeImplBody {
@@ -17091,13 +16331,13 @@ impl ImplBody {
 }
 impl ImplBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn items(&self, db: &dyn SyntaxGroup) -> ImplItemList {
-        ImplItemList::from_syntax_node(db, self.children[1].clone())
+        ImplItemList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17148,7 +16388,7 @@ impl TypedSyntaxNode for ImplBody {
             kind,
             SyntaxKind::ImplBody
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -17156,15 +16396,10 @@ impl TypedSyntaxNode for ImplBody {
         if kind == SyntaxKind::ImplBody { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplBodyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ImplBody> for SyntaxStablePtrId {
-    fn from(node: &ImplBody) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplBodyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17232,15 +16467,10 @@ impl TypedSyntaxNode for ImplItemList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplItemListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ImplItemList> for SyntaxStablePtrId {
-    fn from(node: &ImplItemList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplItemListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17483,13 +16713,8 @@ impl TypedSyntaxNode for ImplItem {
             ImplItem::Missing(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplItemPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&ImplItem> for SyntaxStablePtrId {
-    fn from(node: &ImplItem) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplItemPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl ImplItem {
@@ -17572,7 +16797,7 @@ impl TypedSyntaxNode for ImplItemMissing {
             kind,
             SyntaxKind::ImplItemMissing
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -17584,15 +16809,10 @@ impl TypedSyntaxNode for ImplItemMissing {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ImplItemMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ImplItemMissing> for SyntaxStablePtrId {
-    fn from(node: &ImplItemMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ImplItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17642,28 +16862,28 @@ impl ItemImplAlias {
 }
 impl ItemImplAlias {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[2].clone())
+        TerminalImpl::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5].clone())
+        TerminalEq::from_syntax_node(db, self.children[5])
     }
     pub fn impl_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[6].clone())
+        ExprPath::from_syntax_node(db, self.children[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17728,7 +16948,7 @@ impl TypedSyntaxNode for ItemImplAlias {
             kind,
             SyntaxKind::ItemImplAlias
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -17740,15 +16960,10 @@ impl TypedSyntaxNode for ItemImplAlias {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemImplAliasPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemImplAlias> for SyntaxStablePtrId {
-    fn from(node: &ItemImplAlias) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemImplAliasPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17798,28 +17013,28 @@ impl ItemStruct {
 }
 impl ItemStruct {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn struct_kw(&self, db: &dyn SyntaxGroup) -> TerminalStruct {
-        TerminalStruct::from_syntax_node(db, self.children[2].clone())
+        TerminalStruct::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[5].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[5])
     }
     pub fn members(&self, db: &dyn SyntaxGroup) -> MemberList {
-        MemberList::from_syntax_node(db, self.children[6].clone())
+        MemberList::from_syntax_node(db, self.children[6])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[7].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -17884,7 +17099,7 @@ impl TypedSyntaxNode for ItemStruct {
             kind,
             SyntaxKind::ItemStruct
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -17892,15 +17107,10 @@ impl TypedSyntaxNode for ItemStruct {
         if kind == SyntaxKind::ItemStruct { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemStructPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemStruct> for SyntaxStablePtrId {
-    fn from(node: &ItemStruct) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemStructPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17950,28 +17160,28 @@ impl ItemEnum {
 }
 impl ItemEnum {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn enum_kw(&self, db: &dyn SyntaxGroup) -> TerminalEnum {
-        TerminalEnum::from_syntax_node(db, self.children[2].clone())
+        TerminalEnum::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[5].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[5])
     }
     pub fn variants(&self, db: &dyn SyntaxGroup) -> VariantList {
-        VariantList::from_syntax_node(db, self.children[6].clone())
+        VariantList::from_syntax_node(db, self.children[6])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[7].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18036,7 +17246,7 @@ impl TypedSyntaxNode for ItemEnum {
             kind,
             SyntaxKind::ItemEnum
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18044,15 +17254,10 @@ impl TypedSyntaxNode for ItemEnum {
         if kind == SyntaxKind::ItemEnum { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemEnumPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemEnum> for SyntaxStablePtrId {
-    fn from(node: &ItemEnum) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemEnumPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18102,28 +17307,28 @@ impl ItemTypeAlias {
 }
 impl ItemTypeAlias {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn type_kw(&self, db: &dyn SyntaxGroup) -> TerminalType {
-        TerminalType::from_syntax_node(db, self.children[2].clone())
+        TerminalType::from_syntax_node(db, self.children[2])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[3].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[3])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[4])
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[5].clone())
+        TerminalEq::from_syntax_node(db, self.children[5])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[6].clone())
+        Expr::from_syntax_node(db, self.children[6])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[7].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[7])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18188,7 +17393,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
             kind,
             SyntaxKind::ItemTypeAlias
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18200,15 +17405,10 @@ impl TypedSyntaxNode for ItemTypeAlias {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemTypeAliasPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemTypeAlias> for SyntaxStablePtrId {
-    fn from(node: &ItemTypeAlias) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemTypeAliasPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18244,19 +17444,19 @@ impl ItemUse {
 }
 impl ItemUse {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
-        AttributeList::from_syntax_node(db, self.children[0].clone())
+        AttributeList::from_syntax_node(db, self.children[0])
     }
     pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
-        Visibility::from_syntax_node(db, self.children[1].clone())
+        Visibility::from_syntax_node(db, self.children[1])
     }
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
-        TerminalUse::from_syntax_node(db, self.children[2].clone())
+        TerminalUse::from_syntax_node(db, self.children[2])
     }
     pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
-        UsePath::from_syntax_node(db, self.children[3].clone())
+        UsePath::from_syntax_node(db, self.children[3])
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18318,7 +17518,7 @@ impl TypedSyntaxNode for ItemUse {
             kind,
             SyntaxKind::ItemUse
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18326,15 +17526,10 @@ impl TypedSyntaxNode for ItemUse {
         if kind == SyntaxKind::ItemUse { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ItemUsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&ItemUse> for SyntaxStablePtrId {
-    fn from(node: &ItemUse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ItemUsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18441,13 +17636,8 @@ impl TypedSyntaxNode for UsePath {
             UsePath::Star(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&UsePath> for SyntaxStablePtrId {
-    fn from(node: &UsePath) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl UsePath {
@@ -18488,10 +17678,10 @@ impl UsePathLeaf {
 }
 impl UsePathLeaf {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
-        PathSegment::from_syntax_node(db, self.children[0].clone())
+        PathSegment::from_syntax_node(db, self.children[0])
     }
     pub fn alias_clause(&self, db: &dyn SyntaxGroup) -> OptionAliasClause {
-        OptionAliasClause::from_syntax_node(db, self.children[1].clone())
+        OptionAliasClause::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18555,7 +17745,7 @@ impl TypedSyntaxNode for UsePathLeaf {
             kind,
             SyntaxKind::UsePathLeaf
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18563,15 +17753,10 @@ impl TypedSyntaxNode for UsePathLeaf {
         if kind == SyntaxKind::UsePathLeaf { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathLeafPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&UsePathLeaf> for SyntaxStablePtrId {
-    fn from(node: &UsePathLeaf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathLeafPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18602,13 +17787,13 @@ impl UsePathSingle {
 }
 impl UsePathSingle {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
-        PathSegment::from_syntax_node(db, self.children[0].clone())
+        PathSegment::from_syntax_node(db, self.children[0])
     }
     pub fn colon_colon(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
-        TerminalColonColon::from_syntax_node(db, self.children[1].clone())
+        TerminalColonColon::from_syntax_node(db, self.children[1])
     }
     pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
-        UsePath::from_syntax_node(db, self.children[2].clone())
+        UsePath::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18659,7 +17844,7 @@ impl TypedSyntaxNode for UsePathSingle {
             kind,
             SyntaxKind::UsePathSingle
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18671,15 +17856,10 @@ impl TypedSyntaxNode for UsePathSingle {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathSinglePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&UsePathSingle> for SyntaxStablePtrId {
-    fn from(node: &UsePathSingle) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathSinglePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18710,13 +17890,13 @@ impl UsePathMulti {
 }
 impl UsePathMulti {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrace::from_syntax_node(db, self.children[0])
     }
     pub fn use_paths(&self, db: &dyn SyntaxGroup) -> UsePathList {
-        UsePathList::from_syntax_node(db, self.children[1].clone())
+        UsePathList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18767,7 +17947,7 @@ impl TypedSyntaxNode for UsePathMulti {
             kind,
             SyntaxKind::UsePathMulti
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18775,15 +17955,10 @@ impl TypedSyntaxNode for UsePathMulti {
         if kind == SyntaxKind::UsePathMulti { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathMultiPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&UsePathMulti> for SyntaxStablePtrId {
-    fn from(node: &UsePathMulti) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathMultiPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18807,7 +17982,7 @@ impl UsePathStar {
 }
 impl UsePathStar {
     pub fn star(&self, db: &dyn SyntaxGroup) -> TerminalMul {
-        TerminalMul::from_syntax_node(db, self.children[0].clone())
+        TerminalMul::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18854,7 +18029,7 @@ impl TypedSyntaxNode for UsePathStar {
             kind,
             SyntaxKind::UsePathStar
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -18862,15 +18037,10 @@ impl TypedSyntaxNode for UsePathStar {
         if kind == SyntaxKind::UsePathStar { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathStarPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&UsePathStar> for SyntaxStablePtrId {
-    fn from(node: &UsePathStar) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathStarPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18964,15 +18134,10 @@ impl TypedSyntaxNode for UsePathList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        UsePathListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&UsePathList> for SyntaxStablePtrId {
-    fn from(node: &UsePathList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        UsePathListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19001,10 +18166,10 @@ impl AliasClause {
 }
 impl AliasClause {
     pub fn as_kw(&self, db: &dyn SyntaxGroup) -> TerminalAs {
-        TerminalAs::from_syntax_node(db, self.children[0].clone())
+        TerminalAs::from_syntax_node(db, self.children[0])
     }
     pub fn alias(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19060,7 +18225,7 @@ impl TypedSyntaxNode for AliasClause {
             kind,
             SyntaxKind::AliasClause
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19068,15 +18233,10 @@ impl TypedSyntaxNode for AliasClause {
         if kind == SyntaxKind::AliasClause { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AliasClausePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&AliasClause> for SyntaxStablePtrId {
-    fn from(node: &AliasClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AliasClausePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19162,13 +18322,8 @@ impl TypedSyntaxNode for OptionAliasClause {
             OptionAliasClause::AliasClause(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionAliasClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionAliasClause> for SyntaxStablePtrId {
-    fn from(node: &OptionAliasClause) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionAliasClausePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionAliasClause {
@@ -19237,7 +18392,7 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
             kind,
             SyntaxKind::OptionAliasClauseEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19249,15 +18404,10 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionAliasClauseEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionAliasClauseEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionAliasClauseEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionAliasClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19340,13 +18490,8 @@ impl TypedSyntaxNode for GenericArg {
             GenericArg::Named(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&GenericArg> for SyntaxStablePtrId {
-    fn from(node: &GenericArg) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl GenericArg {
@@ -19383,13 +18528,13 @@ impl GenericArgNamed {
 }
 impl GenericArgNamed {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1].clone())
+        TerminalColon::from_syntax_node(db, self.children[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue {
-        GenericArgValue::from_syntax_node(db, self.children[2].clone())
+        GenericArgValue::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19440,7 +18585,7 @@ impl TypedSyntaxNode for GenericArgNamed {
             kind,
             SyntaxKind::GenericArgNamed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19452,15 +18597,10 @@ impl TypedSyntaxNode for GenericArgNamed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgNamedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericArgNamed> for SyntaxStablePtrId {
-    fn from(node: &GenericArgNamed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgNamedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19484,7 +18624,7 @@ impl GenericArgUnnamed {
 }
 impl GenericArgUnnamed {
     pub fn value(&self, db: &dyn SyntaxGroup) -> GenericArgValue {
-        GenericArgValue::from_syntax_node(db, self.children[0].clone())
+        GenericArgValue::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19531,7 +18671,7 @@ impl TypedSyntaxNode for GenericArgUnnamed {
             kind,
             SyntaxKind::GenericArgUnnamed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19543,15 +18683,10 @@ impl TypedSyntaxNode for GenericArgUnnamed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgUnnamedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericArgUnnamed> for SyntaxStablePtrId {
-    fn from(node: &GenericArgUnnamed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgUnnamedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19636,13 +18771,8 @@ impl TypedSyntaxNode for GenericArgValue {
             GenericArgValue::Underscore(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgValuePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&GenericArgValue> for SyntaxStablePtrId {
-    fn from(node: &GenericArgValue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgValuePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl GenericArgValue {
@@ -19672,7 +18802,7 @@ impl GenericArgValueExpr {
 }
 impl GenericArgValueExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[0].clone())
+        Expr::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19719,7 +18849,7 @@ impl TypedSyntaxNode for GenericArgValueExpr {
             kind,
             SyntaxKind::GenericArgValueExpr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19731,15 +18861,10 @@ impl TypedSyntaxNode for GenericArgValueExpr {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgValueExprPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericArgValueExpr> for SyntaxStablePtrId {
-    fn from(node: &GenericArgValueExpr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgValueExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19770,13 +18895,13 @@ impl GenericArgs {
 }
 impl GenericArgs {
     pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
-        TerminalLT::from_syntax_node(db, self.children[0].clone())
+        TerminalLT::from_syntax_node(db, self.children[0])
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgList {
-        GenericArgList::from_syntax_node(db, self.children[1].clone())
+        GenericArgList::from_syntax_node(db, self.children[1])
     }
     pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
-        TerminalGT::from_syntax_node(db, self.children[2].clone())
+        TerminalGT::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -19827,7 +18952,7 @@ impl TypedSyntaxNode for GenericArgs {
             kind,
             SyntaxKind::GenericArgs
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -19835,15 +18960,10 @@ impl TypedSyntaxNode for GenericArgs {
         if kind == SyntaxKind::GenericArgs { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericArgs> for SyntaxStablePtrId {
-    fn from(node: &GenericArgs) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19937,15 +19057,10 @@ impl TypedSyntaxNode for GenericArgList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericArgList> for SyntaxStablePtrId {
-    fn from(node: &GenericArgList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericArgListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19976,13 +19091,13 @@ impl AssociatedItemConstraint {
 }
 impl AssociatedItemConstraint {
     pub fn item(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[1].clone())
+        TerminalColon::from_syntax_node(db, self.children[1])
     }
     pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[2].clone())
+        Expr::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20033,7 +19148,7 @@ impl TypedSyntaxNode for AssociatedItemConstraint {
             kind,
             SyntaxKind::AssociatedItemConstraint
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -20045,15 +19160,10 @@ impl TypedSyntaxNode for AssociatedItemConstraint {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AssociatedItemConstraintPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&AssociatedItemConstraint> for SyntaxStablePtrId {
-    fn from(node: &AssociatedItemConstraint) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AssociatedItemConstraintPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20084,16 +19194,16 @@ impl AssociatedItemConstraints {
 }
 impl AssociatedItemConstraints {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
-        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+        TerminalLBrack::from_syntax_node(db, self.children[0])
     }
     pub fn associated_item_constraints(
         &self,
         db: &dyn SyntaxGroup,
     ) -> AssociatedItemConstraintList {
-        AssociatedItemConstraintList::from_syntax_node(db, self.children[1].clone())
+        AssociatedItemConstraintList::from_syntax_node(db, self.children[1])
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
-        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+        TerminalRBrack::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20144,7 +19254,7 @@ impl TypedSyntaxNode for AssociatedItemConstraints {
             kind,
             SyntaxKind::AssociatedItemConstraints
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -20156,15 +19266,10 @@ impl TypedSyntaxNode for AssociatedItemConstraints {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AssociatedItemConstraintsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&AssociatedItemConstraints> for SyntaxStablePtrId {
-    fn from(node: &AssociatedItemConstraints) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AssociatedItemConstraintsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20258,15 +19363,10 @@ impl TypedSyntaxNode for AssociatedItemConstraintList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        AssociatedItemConstraintListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&AssociatedItemConstraintList> for SyntaxStablePtrId {
-    fn from(node: &AssociatedItemConstraintList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        AssociatedItemConstraintListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20360,13 +19460,8 @@ impl TypedSyntaxNode for OptionAssociatedItemConstraints {
             OptionAssociatedItemConstraints::AssociatedItemConstraints(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionAssociatedItemConstraintsPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionAssociatedItemConstraints> for SyntaxStablePtrId {
-    fn from(node: &OptionAssociatedItemConstraints) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionAssociatedItemConstraintsPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionAssociatedItemConstraints {
@@ -20440,7 +19535,7 @@ impl TypedSyntaxNode for OptionAssociatedItemConstraintsEmpty {
             kind,
             SyntaxKind::OptionAssociatedItemConstraintsEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -20452,15 +19547,10 @@ impl TypedSyntaxNode for OptionAssociatedItemConstraintsEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionAssociatedItemConstraintsEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionAssociatedItemConstraintsEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionAssociatedItemConstraintsEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionAssociatedItemConstraintsEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20552,13 +19642,8 @@ impl TypedSyntaxNode for OptionWrappedGenericParamList {
             OptionWrappedGenericParamList::WrappedGenericParamList(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionWrappedGenericParamListPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&OptionWrappedGenericParamList> for SyntaxStablePtrId {
-    fn from(node: &OptionWrappedGenericParamList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionWrappedGenericParamListPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl OptionWrappedGenericParamList {
@@ -20630,7 +19715,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
             kind,
             SyntaxKind::OptionWrappedGenericParamListEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -20642,15 +19727,10 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionWrappedGenericParamListEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&OptionWrappedGenericParamListEmpty> for SyntaxStablePtrId {
-    fn from(node: &OptionWrappedGenericParamListEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        OptionWrappedGenericParamListEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20681,13 +19761,13 @@ impl WrappedGenericParamList {
 }
 impl WrappedGenericParamList {
     pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
-        TerminalLT::from_syntax_node(db, self.children[0].clone())
+        TerminalLT::from_syntax_node(db, self.children[0])
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> GenericParamList {
-        GenericParamList::from_syntax_node(db, self.children[1].clone())
+        GenericParamList::from_syntax_node(db, self.children[1])
     }
     pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
-        TerminalGT::from_syntax_node(db, self.children[2].clone())
+        TerminalGT::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -20738,7 +19818,7 @@ impl TypedSyntaxNode for WrappedGenericParamList {
             kind,
             SyntaxKind::WrappedGenericParamList
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -20750,15 +19830,10 @@ impl TypedSyntaxNode for WrappedGenericParamList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        WrappedGenericParamListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&WrappedGenericParamList> for SyntaxStablePtrId {
-    fn from(node: &WrappedGenericParamList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        WrappedGenericParamListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20852,15 +19927,10 @@ impl TypedSyntaxNode for GenericParamList {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamListPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamList> for SyntaxStablePtrId {
-    fn from(node: &GenericParamList) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamListPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -20997,13 +20067,8 @@ impl TypedSyntaxNode for GenericParam {
             GenericParam::NegativeImpl(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&GenericParam> for SyntaxStablePtrId {
-    fn from(node: &GenericParam) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl GenericParam {
@@ -21040,7 +20105,7 @@ impl GenericParamType {
 }
 impl GenericParamType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21096,7 +20161,7 @@ impl TypedSyntaxNode for GenericParamType {
             kind,
             SyntaxKind::GenericParamType
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21108,15 +20173,10 @@ impl TypedSyntaxNode for GenericParamType {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamTypePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamType> for SyntaxStablePtrId {
-    fn from(node: &GenericParamType) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamTypePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21149,16 +20209,16 @@ impl GenericParamConst {
 }
 impl GenericParamConst {
     pub fn const_kw(&self, db: &dyn SyntaxGroup) -> TerminalConst {
-        TerminalConst::from_syntax_node(db, self.children[0].clone())
+        TerminalConst::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2].clone())
+        TerminalColon::from_syntax_node(db, self.children[2])
     }
     pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[3].clone())
+        Expr::from_syntax_node(db, self.children[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21219,7 +20279,7 @@ impl TypedSyntaxNode for GenericParamConst {
             kind,
             SyntaxKind::GenericParamConst
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21231,15 +20291,10 @@ impl TypedSyntaxNode for GenericParamConst {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamConstPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamConst> for SyntaxStablePtrId {
-    fn from(node: &GenericParamConst) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamConstPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21275,19 +20330,19 @@ impl GenericParamImplNamed {
 }
 impl GenericParamImplNamed {
     pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
-        TerminalImpl::from_syntax_node(db, self.children[0].clone())
+        TerminalImpl::from_syntax_node(db, self.children[0])
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
-        TerminalColon::from_syntax_node(db, self.children[2].clone())
+        TerminalColon::from_syntax_node(db, self.children[2])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[3].clone())
+        ExprPath::from_syntax_node(db, self.children[3])
     }
     pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[4].clone())
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[4])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21349,7 +20404,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
             kind,
             SyntaxKind::GenericParamImplNamed
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21361,15 +20416,10 @@ impl TypedSyntaxNode for GenericParamImplNamed {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamImplNamedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamImplNamed> for SyntaxStablePtrId {
-    fn from(node: &GenericParamImplNamed) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamImplNamedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21400,13 +20450,13 @@ impl GenericParamImplAnonymous {
 }
 impl GenericParamImplAnonymous {
     pub fn plus(&self, db: &dyn SyntaxGroup) -> TerminalPlus {
-        TerminalPlus::from_syntax_node(db, self.children[0].clone())
+        TerminalPlus::from_syntax_node(db, self.children[0])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1].clone())
+        ExprPath::from_syntax_node(db, self.children[1])
     }
     pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedItemConstraints {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[2].clone())
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21457,7 +20507,7 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             kind,
             SyntaxKind::GenericParamImplAnonymous
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21469,15 +20519,10 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamImplAnonymousPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamImplAnonymous> for SyntaxStablePtrId {
-    fn from(node: &GenericParamImplAnonymous) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamImplAnonymousPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21506,10 +20551,10 @@ impl GenericParamNegativeImpl {
 }
 impl GenericParamNegativeImpl {
     pub fn minus(&self, db: &dyn SyntaxGroup) -> TerminalMinus {
-        TerminalMinus::from_syntax_node(db, self.children[0].clone())
+        TerminalMinus::from_syntax_node(db, self.children[0])
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1].clone())
+        ExprPath::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21556,7 +20601,7 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
             kind,
             SyntaxKind::GenericParamNegativeImpl
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21568,15 +20613,10 @@ impl TypedSyntaxNode for GenericParamNegativeImpl {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericParamNegativeImplPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&GenericParamNegativeImpl> for SyntaxStablePtrId {
-    fn from(node: &GenericParamNegativeImpl) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        GenericParamNegativeImplPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21600,7 +20640,7 @@ impl TriviumSkippedNode {
 }
 impl TriviumSkippedNode {
     pub fn node(&self, db: &dyn SyntaxGroup) -> SkippedNode {
-        SkippedNode::from_syntax_node(db, self.children[0].clone())
+        SkippedNode::from_syntax_node(db, self.children[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21647,7 +20687,7 @@ impl TypedSyntaxNode for TriviumSkippedNode {
             kind,
             SyntaxKind::TriviumSkippedNode
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21659,15 +20699,10 @@ impl TypedSyntaxNode for TriviumSkippedNode {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TriviumSkippedNodePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TriviumSkippedNode> for SyntaxStablePtrId {
-    fn from(node: &TriviumSkippedNode) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TriviumSkippedNodePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21750,13 +20785,8 @@ impl TypedSyntaxNode for SkippedNode {
             SkippedNode::VisibilityPub(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        SkippedNodePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&SkippedNode> for SyntaxStablePtrId {
-    fn from(node: &SkippedNode) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        SkippedNodePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl SkippedNode {
@@ -21780,8 +20810,11 @@ impl Token for TokenIdentifier {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21821,7 +20854,7 @@ impl TypedSyntaxNode for TokenIdentifier {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIdentifier)
@@ -21829,21 +20862,16 @@ impl TypedSyntaxNode for TokenIdentifier {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenIdentifierPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenIdentifier> for SyntaxStablePtrId {
-    fn from(node: &TokenIdentifier) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenIdentifierPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21876,13 +20904,13 @@ impl Terminal for TerminalIdentifier {
 }
 impl TerminalIdentifier {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenIdentifier {
-        TokenIdentifier::from_syntax_node(db, self.children[1].clone())
+        TokenIdentifier::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21933,7 +20961,7 @@ impl TypedSyntaxNode for TerminalIdentifier {
             kind,
             SyntaxKind::TerminalIdentifier
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -21945,15 +20973,10 @@ impl TypedSyntaxNode for TerminalIdentifier {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalIdentifierPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalIdentifier> for SyntaxStablePtrId {
-    fn from(node: &TerminalIdentifier) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalIdentifierPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -21971,8 +20994,11 @@ impl Token for TokenLiteralNumber {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22012,7 +21038,7 @@ impl TypedSyntaxNode for TokenLiteralNumber {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
@@ -22021,21 +21047,16 @@ impl TypedSyntaxNode for TokenLiteralNumber {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLiteralNumberPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLiteralNumber> for SyntaxStablePtrId {
-    fn from(node: &TokenLiteralNumber) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLiteralNumberPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22068,13 +21089,13 @@ impl Terminal for TerminalLiteralNumber {
 }
 impl TerminalLiteralNumber {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLiteralNumber {
-        TokenLiteralNumber::from_syntax_node(db, self.children[1].clone())
+        TokenLiteralNumber::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22125,7 +21146,7 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
             kind,
             SyntaxKind::TerminalLiteralNumber
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -22137,15 +21158,10 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLiteralNumberPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLiteralNumber> for SyntaxStablePtrId {
-    fn from(node: &TerminalLiteralNumber) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLiteralNumberPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22163,8 +21179,11 @@ impl Token for TokenShortString {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22204,7 +21223,7 @@ impl TypedSyntaxNode for TokenShortString {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenShortString)
@@ -22212,21 +21231,16 @@ impl TypedSyntaxNode for TokenShortString {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenShortStringPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenShortString> for SyntaxStablePtrId {
-    fn from(node: &TokenShortString) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenShortStringPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22259,13 +21273,13 @@ impl Terminal for TerminalShortString {
 }
 impl TerminalShortString {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenShortString {
-        TokenShortString::from_syntax_node(db, self.children[1].clone())
+        TokenShortString::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22316,7 +21330,7 @@ impl TypedSyntaxNode for TerminalShortString {
             kind,
             SyntaxKind::TerminalShortString
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -22328,15 +21342,10 @@ impl TypedSyntaxNode for TerminalShortString {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalShortStringPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalShortString> for SyntaxStablePtrId {
-    fn from(node: &TerminalShortString) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalShortStringPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22354,8 +21363,11 @@ impl Token for TokenString {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22395,7 +21407,7 @@ impl TypedSyntaxNode for TokenString {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenString)
@@ -22403,21 +21415,16 @@ impl TypedSyntaxNode for TokenString {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenStringPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenString> for SyntaxStablePtrId {
-    fn from(node: &TokenString) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenStringPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22450,13 +21457,13 @@ impl Terminal for TerminalString {
 }
 impl TerminalString {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenString {
-        TokenString::from_syntax_node(db, self.children[1].clone())
+        TokenString::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22507,7 +21514,7 @@ impl TypedSyntaxNode for TerminalString {
             kind,
             SyntaxKind::TerminalString
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -22519,15 +21526,10 @@ impl TypedSyntaxNode for TerminalString {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalStringPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalString> for SyntaxStablePtrId {
-    fn from(node: &TerminalString) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalStringPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22545,8 +21547,11 @@ impl Token for TokenAs {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22586,7 +21591,7 @@ impl TypedSyntaxNode for TokenAs {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAs)
@@ -22594,21 +21599,16 @@ impl TypedSyntaxNode for TokenAs {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenAsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenAs> for SyntaxStablePtrId {
-    fn from(node: &TokenAs) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenAsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22641,13 +21641,13 @@ impl Terminal for TerminalAs {
 }
 impl TerminalAs {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAs {
-        TokenAs::from_syntax_node(db, self.children[1].clone())
+        TokenAs::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22698,7 +21698,7 @@ impl TypedSyntaxNode for TerminalAs {
             kind,
             SyntaxKind::TerminalAs
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -22706,15 +21706,10 @@ impl TypedSyntaxNode for TerminalAs {
         if kind == SyntaxKind::TerminalAs { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalAsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalAs> for SyntaxStablePtrId {
-    fn from(node: &TerminalAs) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalAsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22732,8 +21727,11 @@ impl Token for TokenConst {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22773,7 +21771,7 @@ impl TypedSyntaxNode for TokenConst {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenConst)
@@ -22781,21 +21779,16 @@ impl TypedSyntaxNode for TokenConst {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenConstPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenConst> for SyntaxStablePtrId {
-    fn from(node: &TokenConst) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenConstPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22828,13 +21821,13 @@ impl Terminal for TerminalConst {
 }
 impl TerminalConst {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenConst {
-        TokenConst::from_syntax_node(db, self.children[1].clone())
+        TokenConst::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22885,7 +21878,7 @@ impl TypedSyntaxNode for TerminalConst {
             kind,
             SyntaxKind::TerminalConst
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -22897,15 +21890,10 @@ impl TypedSyntaxNode for TerminalConst {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalConstPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalConst> for SyntaxStablePtrId {
-    fn from(node: &TerminalConst) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalConstPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22923,8 +21911,11 @@ impl Token for TokenElse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -22964,7 +21955,7 @@ impl TypedSyntaxNode for TokenElse {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenElse)
@@ -22972,21 +21963,16 @@ impl TypedSyntaxNode for TokenElse {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenElsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenElse> for SyntaxStablePtrId {
-    fn from(node: &TokenElse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenElsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23019,13 +22005,13 @@ impl Terminal for TerminalElse {
 }
 impl TerminalElse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenElse {
-        TokenElse::from_syntax_node(db, self.children[1].clone())
+        TokenElse::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23076,7 +22062,7 @@ impl TypedSyntaxNode for TerminalElse {
             kind,
             SyntaxKind::TerminalElse
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -23084,15 +22070,10 @@ impl TypedSyntaxNode for TerminalElse {
         if kind == SyntaxKind::TerminalElse { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalElsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalElse> for SyntaxStablePtrId {
-    fn from(node: &TerminalElse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalElsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23110,8 +22091,11 @@ impl Token for TokenEnum {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23151,7 +22135,7 @@ impl TypedSyntaxNode for TokenEnum {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEnum)
@@ -23159,21 +22143,16 @@ impl TypedSyntaxNode for TokenEnum {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenEnumPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenEnum> for SyntaxStablePtrId {
-    fn from(node: &TokenEnum) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenEnumPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23206,13 +22185,13 @@ impl Terminal for TerminalEnum {
 }
 impl TerminalEnum {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEnum {
-        TokenEnum::from_syntax_node(db, self.children[1].clone())
+        TokenEnum::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23263,7 +22242,7 @@ impl TypedSyntaxNode for TerminalEnum {
             kind,
             SyntaxKind::TerminalEnum
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -23271,15 +22250,10 @@ impl TypedSyntaxNode for TerminalEnum {
         if kind == SyntaxKind::TerminalEnum { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalEnumPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalEnum> for SyntaxStablePtrId {
-    fn from(node: &TerminalEnum) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalEnumPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23297,8 +22271,11 @@ impl Token for TokenExtern {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23338,7 +22315,7 @@ impl TypedSyntaxNode for TokenExtern {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenExtern)
@@ -23346,21 +22323,16 @@ impl TypedSyntaxNode for TokenExtern {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenExternPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenExtern> for SyntaxStablePtrId {
-    fn from(node: &TokenExtern) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenExternPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23393,13 +22365,13 @@ impl Terminal for TerminalExtern {
 }
 impl TerminalExtern {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenExtern {
-        TokenExtern::from_syntax_node(db, self.children[1].clone())
+        TokenExtern::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23450,7 +22422,7 @@ impl TypedSyntaxNode for TerminalExtern {
             kind,
             SyntaxKind::TerminalExtern
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -23462,15 +22434,10 @@ impl TypedSyntaxNode for TerminalExtern {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalExternPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalExtern> for SyntaxStablePtrId {
-    fn from(node: &TerminalExtern) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalExternPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23488,8 +22455,11 @@ impl Token for TokenFalse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23529,7 +22499,7 @@ impl TypedSyntaxNode for TokenFalse {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFalse)
@@ -23537,21 +22507,16 @@ impl TypedSyntaxNode for TokenFalse {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenFalsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenFalse> for SyntaxStablePtrId {
-    fn from(node: &TokenFalse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenFalsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23584,13 +22549,13 @@ impl Terminal for TerminalFalse {
 }
 impl TerminalFalse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFalse {
-        TokenFalse::from_syntax_node(db, self.children[1].clone())
+        TokenFalse::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23641,7 +22606,7 @@ impl TypedSyntaxNode for TerminalFalse {
             kind,
             SyntaxKind::TerminalFalse
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -23653,15 +22618,10 @@ impl TypedSyntaxNode for TerminalFalse {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalFalsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalFalse> for SyntaxStablePtrId {
-    fn from(node: &TerminalFalse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalFalsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23679,8 +22639,11 @@ impl Token for TokenFunction {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23720,7 +22683,7 @@ impl TypedSyntaxNode for TokenFunction {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFunction)
@@ -23728,21 +22691,16 @@ impl TypedSyntaxNode for TokenFunction {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenFunctionPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenFunction> for SyntaxStablePtrId {
-    fn from(node: &TokenFunction) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenFunctionPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23775,13 +22733,13 @@ impl Terminal for TerminalFunction {
 }
 impl TerminalFunction {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFunction {
-        TokenFunction::from_syntax_node(db, self.children[1].clone())
+        TokenFunction::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23832,7 +22790,7 @@ impl TypedSyntaxNode for TerminalFunction {
             kind,
             SyntaxKind::TerminalFunction
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -23844,15 +22802,10 @@ impl TypedSyntaxNode for TerminalFunction {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalFunctionPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalFunction> for SyntaxStablePtrId {
-    fn from(node: &TerminalFunction) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalFunctionPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23870,8 +22823,11 @@ impl Token for TokenIf {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -23911,7 +22867,7 @@ impl TypedSyntaxNode for TokenIf {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIf)
@@ -23919,21 +22875,16 @@ impl TypedSyntaxNode for TokenIf {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenIfPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenIf> for SyntaxStablePtrId {
-    fn from(node: &TokenIf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenIfPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -23966,13 +22917,13 @@ impl Terminal for TerminalIf {
 }
 impl TerminalIf {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenIf {
-        TokenIf::from_syntax_node(db, self.children[1].clone())
+        TokenIf::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24023,7 +22974,7 @@ impl TypedSyntaxNode for TerminalIf {
             kind,
             SyntaxKind::TerminalIf
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24031,15 +22982,10 @@ impl TypedSyntaxNode for TerminalIf {
         if kind == SyntaxKind::TerminalIf { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalIfPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalIf> for SyntaxStablePtrId {
-    fn from(node: &TerminalIf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalIfPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24057,8 +23003,11 @@ impl Token for TokenWhile {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24098,7 +23047,7 @@ impl TypedSyntaxNode for TokenWhile {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenWhile)
@@ -24106,21 +23055,16 @@ impl TypedSyntaxNode for TokenWhile {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenWhilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenWhile> for SyntaxStablePtrId {
-    fn from(node: &TokenWhile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenWhilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24153,13 +23097,13 @@ impl Terminal for TerminalWhile {
 }
 impl TerminalWhile {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenWhile {
-        TokenWhile::from_syntax_node(db, self.children[1].clone())
+        TokenWhile::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24210,7 +23154,7 @@ impl TypedSyntaxNode for TerminalWhile {
             kind,
             SyntaxKind::TerminalWhile
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24222,15 +23166,10 @@ impl TypedSyntaxNode for TerminalWhile {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalWhilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalWhile> for SyntaxStablePtrId {
-    fn from(node: &TerminalWhile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalWhilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24248,8 +23187,11 @@ impl Token for TokenFor {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24289,7 +23231,7 @@ impl TypedSyntaxNode for TokenFor {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFor)
@@ -24297,21 +23239,16 @@ impl TypedSyntaxNode for TokenFor {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenForPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenFor> for SyntaxStablePtrId {
-    fn from(node: &TokenFor) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenForPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24344,13 +23281,13 @@ impl Terminal for TerminalFor {
 }
 impl TerminalFor {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenFor {
-        TokenFor::from_syntax_node(db, self.children[1].clone())
+        TokenFor::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24401,7 +23338,7 @@ impl TypedSyntaxNode for TerminalFor {
             kind,
             SyntaxKind::TerminalFor
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24409,15 +23346,10 @@ impl TypedSyntaxNode for TerminalFor {
         if kind == SyntaxKind::TerminalFor { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalForPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalFor> for SyntaxStablePtrId {
-    fn from(node: &TerminalFor) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalForPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24435,8 +23367,11 @@ impl Token for TokenLoop {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24476,7 +23411,7 @@ impl TypedSyntaxNode for TokenLoop {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLoop)
@@ -24484,21 +23419,16 @@ impl TypedSyntaxNode for TokenLoop {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLoopPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLoop> for SyntaxStablePtrId {
-    fn from(node: &TokenLoop) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLoopPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24531,13 +23461,13 @@ impl Terminal for TerminalLoop {
 }
 impl TerminalLoop {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLoop {
-        TokenLoop::from_syntax_node(db, self.children[1].clone())
+        TokenLoop::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24588,7 +23518,7 @@ impl TypedSyntaxNode for TerminalLoop {
             kind,
             SyntaxKind::TerminalLoop
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24596,15 +23526,10 @@ impl TypedSyntaxNode for TerminalLoop {
         if kind == SyntaxKind::TerminalLoop { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLoopPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLoop> for SyntaxStablePtrId {
-    fn from(node: &TerminalLoop) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLoopPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24622,8 +23547,11 @@ impl Token for TokenImpl {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24663,7 +23591,7 @@ impl TypedSyntaxNode for TokenImpl {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImpl)
@@ -24671,21 +23599,16 @@ impl TypedSyntaxNode for TokenImpl {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenImplPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenImpl> for SyntaxStablePtrId {
-    fn from(node: &TokenImpl) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenImplPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24718,13 +23641,13 @@ impl Terminal for TerminalImpl {
 }
 impl TerminalImpl {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenImpl {
-        TokenImpl::from_syntax_node(db, self.children[1].clone())
+        TokenImpl::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24775,7 +23698,7 @@ impl TypedSyntaxNode for TerminalImpl {
             kind,
             SyntaxKind::TerminalImpl
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24783,15 +23706,10 @@ impl TypedSyntaxNode for TerminalImpl {
         if kind == SyntaxKind::TerminalImpl { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalImplPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalImpl> for SyntaxStablePtrId {
-    fn from(node: &TerminalImpl) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalImplPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24809,8 +23727,11 @@ impl Token for TokenImplicits {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24850,7 +23771,7 @@ impl TypedSyntaxNode for TokenImplicits {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImplicits)
@@ -24858,21 +23779,16 @@ impl TypedSyntaxNode for TokenImplicits {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenImplicitsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenImplicits> for SyntaxStablePtrId {
-    fn from(node: &TokenImplicits) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenImplicitsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -24905,13 +23821,13 @@ impl Terminal for TerminalImplicits {
 }
 impl TerminalImplicits {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenImplicits {
-        TokenImplicits::from_syntax_node(db, self.children[1].clone())
+        TokenImplicits::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -24962,7 +23878,7 @@ impl TypedSyntaxNode for TerminalImplicits {
             kind,
             SyntaxKind::TerminalImplicits
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -24974,15 +23890,10 @@ impl TypedSyntaxNode for TerminalImplicits {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalImplicitsPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalImplicits> for SyntaxStablePtrId {
-    fn from(node: &TerminalImplicits) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalImplicitsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25000,8 +23911,11 @@ impl Token for TokenLet {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25041,7 +23955,7 @@ impl TypedSyntaxNode for TokenLet {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLet)
@@ -25049,21 +23963,16 @@ impl TypedSyntaxNode for TokenLet {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLetPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLet> for SyntaxStablePtrId {
-    fn from(node: &TokenLet) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLetPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25096,13 +24005,13 @@ impl Terminal for TerminalLet {
 }
 impl TerminalLet {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLet {
-        TokenLet::from_syntax_node(db, self.children[1].clone())
+        TokenLet::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25153,7 +24062,7 @@ impl TypedSyntaxNode for TerminalLet {
             kind,
             SyntaxKind::TerminalLet
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -25161,15 +24070,10 @@ impl TypedSyntaxNode for TerminalLet {
         if kind == SyntaxKind::TerminalLet { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLetPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLet> for SyntaxStablePtrId {
-    fn from(node: &TerminalLet) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLetPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25187,8 +24091,11 @@ impl Token for TokenMatch {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25228,7 +24135,7 @@ impl TypedSyntaxNode for TokenMatch {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMatch)
@@ -25236,21 +24143,16 @@ impl TypedSyntaxNode for TokenMatch {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMatchPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMatch> for SyntaxStablePtrId {
-    fn from(node: &TokenMatch) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMatchPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25283,13 +24185,13 @@ impl Terminal for TerminalMatch {
 }
 impl TerminalMatch {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMatch {
-        TokenMatch::from_syntax_node(db, self.children[1].clone())
+        TokenMatch::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25340,7 +24242,7 @@ impl TypedSyntaxNode for TerminalMatch {
             kind,
             SyntaxKind::TerminalMatch
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -25352,15 +24254,10 @@ impl TypedSyntaxNode for TerminalMatch {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMatchPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMatch> for SyntaxStablePtrId {
-    fn from(node: &TerminalMatch) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMatchPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25378,8 +24275,11 @@ impl Token for TokenModule {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25419,7 +24319,7 @@ impl TypedSyntaxNode for TokenModule {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModule)
@@ -25427,21 +24327,16 @@ impl TypedSyntaxNode for TokenModule {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenModulePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenModule> for SyntaxStablePtrId {
-    fn from(node: &TokenModule) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenModulePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25474,13 +24369,13 @@ impl Terminal for TerminalModule {
 }
 impl TerminalModule {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenModule {
-        TokenModule::from_syntax_node(db, self.children[1].clone())
+        TokenModule::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25531,7 +24426,7 @@ impl TypedSyntaxNode for TerminalModule {
             kind,
             SyntaxKind::TerminalModule
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -25543,15 +24438,10 @@ impl TypedSyntaxNode for TerminalModule {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalModulePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalModule> for SyntaxStablePtrId {
-    fn from(node: &TerminalModule) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalModulePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25569,8 +24459,11 @@ impl Token for TokenMut {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25610,7 +24503,7 @@ impl TypedSyntaxNode for TokenMut {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMut)
@@ -25618,21 +24511,16 @@ impl TypedSyntaxNode for TokenMut {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMutPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMut> for SyntaxStablePtrId {
-    fn from(node: &TokenMut) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMutPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25665,13 +24553,13 @@ impl Terminal for TerminalMut {
 }
 impl TerminalMut {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMut {
-        TokenMut::from_syntax_node(db, self.children[1].clone())
+        TokenMut::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25722,7 +24610,7 @@ impl TypedSyntaxNode for TerminalMut {
             kind,
             SyntaxKind::TerminalMut
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -25730,15 +24618,10 @@ impl TypedSyntaxNode for TerminalMut {
         if kind == SyntaxKind::TerminalMut { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMutPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMut> for SyntaxStablePtrId {
-    fn from(node: &TerminalMut) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMutPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25756,8 +24639,11 @@ impl Token for TokenNoPanic {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25797,7 +24683,7 @@ impl TypedSyntaxNode for TokenNoPanic {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNoPanic)
@@ -25805,21 +24691,16 @@ impl TypedSyntaxNode for TokenNoPanic {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenNoPanicPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenNoPanic> for SyntaxStablePtrId {
-    fn from(node: &TokenNoPanic) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenNoPanicPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25852,13 +24733,13 @@ impl Terminal for TerminalNoPanic {
 }
 impl TerminalNoPanic {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNoPanic {
-        TokenNoPanic::from_syntax_node(db, self.children[1].clone())
+        TokenNoPanic::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25909,7 +24790,7 @@ impl TypedSyntaxNode for TerminalNoPanic {
             kind,
             SyntaxKind::TerminalNoPanic
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -25921,15 +24802,10 @@ impl TypedSyntaxNode for TerminalNoPanic {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalNoPanicPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalNoPanic> for SyntaxStablePtrId {
-    fn from(node: &TerminalNoPanic) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalNoPanicPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -25947,8 +24823,11 @@ impl Token for TokenOf {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -25988,7 +24867,7 @@ impl TypedSyntaxNode for TokenOf {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOf)
@@ -25996,21 +24875,16 @@ impl TypedSyntaxNode for TokenOf {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenOfPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenOf> for SyntaxStablePtrId {
-    fn from(node: &TokenOf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenOfPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26043,13 +24917,13 @@ impl Terminal for TerminalOf {
 }
 impl TerminalOf {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOf {
-        TokenOf::from_syntax_node(db, self.children[1].clone())
+        TokenOf::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26100,7 +24974,7 @@ impl TypedSyntaxNode for TerminalOf {
             kind,
             SyntaxKind::TerminalOf
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -26108,15 +24982,10 @@ impl TypedSyntaxNode for TerminalOf {
         if kind == SyntaxKind::TerminalOf { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalOfPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalOf> for SyntaxStablePtrId {
-    fn from(node: &TerminalOf) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalOfPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26134,8 +25003,11 @@ impl Token for TokenRef {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26175,7 +25047,7 @@ impl TypedSyntaxNode for TokenRef {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRef)
@@ -26183,21 +25055,16 @@ impl TypedSyntaxNode for TokenRef {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenRefPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenRef> for SyntaxStablePtrId {
-    fn from(node: &TokenRef) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenRefPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26230,13 +25097,13 @@ impl Terminal for TerminalRef {
 }
 impl TerminalRef {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRef {
-        TokenRef::from_syntax_node(db, self.children[1].clone())
+        TokenRef::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26287,7 +25154,7 @@ impl TypedSyntaxNode for TerminalRef {
             kind,
             SyntaxKind::TerminalRef
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -26295,15 +25162,10 @@ impl TypedSyntaxNode for TerminalRef {
         if kind == SyntaxKind::TerminalRef { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalRefPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalRef> for SyntaxStablePtrId {
-    fn from(node: &TerminalRef) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalRefPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26321,8 +25183,11 @@ impl Token for TokenContinue {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26362,7 +25227,7 @@ impl TypedSyntaxNode for TokenContinue {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenContinue)
@@ -26370,21 +25235,16 @@ impl TypedSyntaxNode for TokenContinue {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenContinuePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenContinue> for SyntaxStablePtrId {
-    fn from(node: &TokenContinue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenContinuePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26417,13 +25277,13 @@ impl Terminal for TerminalContinue {
 }
 impl TerminalContinue {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenContinue {
-        TokenContinue::from_syntax_node(db, self.children[1].clone())
+        TokenContinue::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26474,7 +25334,7 @@ impl TypedSyntaxNode for TerminalContinue {
             kind,
             SyntaxKind::TerminalContinue
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -26486,15 +25346,10 @@ impl TypedSyntaxNode for TerminalContinue {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalContinuePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalContinue> for SyntaxStablePtrId {
-    fn from(node: &TerminalContinue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalContinuePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26512,8 +25367,11 @@ impl Token for TokenReturn {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26553,7 +25411,7 @@ impl TypedSyntaxNode for TokenReturn {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenReturn)
@@ -26561,21 +25419,16 @@ impl TypedSyntaxNode for TokenReturn {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenReturnPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenReturn> for SyntaxStablePtrId {
-    fn from(node: &TokenReturn) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenReturnPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26608,13 +25461,13 @@ impl Terminal for TerminalReturn {
 }
 impl TerminalReturn {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenReturn {
-        TokenReturn::from_syntax_node(db, self.children[1].clone())
+        TokenReturn::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26665,7 +25518,7 @@ impl TypedSyntaxNode for TerminalReturn {
             kind,
             SyntaxKind::TerminalReturn
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -26677,15 +25530,10 @@ impl TypedSyntaxNode for TerminalReturn {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalReturnPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalReturn> for SyntaxStablePtrId {
-    fn from(node: &TerminalReturn) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalReturnPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26703,8 +25551,11 @@ impl Token for TokenBreak {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26744,7 +25595,7 @@ impl TypedSyntaxNode for TokenBreak {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBreak)
@@ -26752,21 +25603,16 @@ impl TypedSyntaxNode for TokenBreak {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenBreakPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenBreak> for SyntaxStablePtrId {
-    fn from(node: &TokenBreak) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenBreakPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26799,13 +25645,13 @@ impl Terminal for TerminalBreak {
 }
 impl TerminalBreak {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBreak {
-        TokenBreak::from_syntax_node(db, self.children[1].clone())
+        TokenBreak::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26856,7 +25702,7 @@ impl TypedSyntaxNode for TerminalBreak {
             kind,
             SyntaxKind::TerminalBreak
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -26868,15 +25714,10 @@ impl TypedSyntaxNode for TerminalBreak {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalBreakPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalBreak> for SyntaxStablePtrId {
-    fn from(node: &TerminalBreak) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalBreakPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26894,8 +25735,11 @@ impl Token for TokenStruct {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -26935,7 +25779,7 @@ impl TypedSyntaxNode for TokenStruct {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenStruct)
@@ -26943,21 +25787,16 @@ impl TypedSyntaxNode for TokenStruct {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenStructPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenStruct> for SyntaxStablePtrId {
-    fn from(node: &TokenStruct) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenStructPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -26990,13 +25829,13 @@ impl Terminal for TerminalStruct {
 }
 impl TerminalStruct {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenStruct {
-        TokenStruct::from_syntax_node(db, self.children[1].clone())
+        TokenStruct::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27047,7 +25886,7 @@ impl TypedSyntaxNode for TerminalStruct {
             kind,
             SyntaxKind::TerminalStruct
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27059,15 +25898,10 @@ impl TypedSyntaxNode for TerminalStruct {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalStructPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalStruct> for SyntaxStablePtrId {
-    fn from(node: &TerminalStruct) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalStructPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27085,8 +25919,11 @@ impl Token for TokenTrait {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27126,7 +25963,7 @@ impl TypedSyntaxNode for TokenTrait {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrait)
@@ -27134,21 +25971,16 @@ impl TypedSyntaxNode for TokenTrait {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenTraitPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenTrait> for SyntaxStablePtrId {
-    fn from(node: &TokenTrait) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenTraitPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27181,13 +26013,13 @@ impl Terminal for TerminalTrait {
 }
 impl TerminalTrait {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenTrait {
-        TokenTrait::from_syntax_node(db, self.children[1].clone())
+        TokenTrait::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27238,7 +26070,7 @@ impl TypedSyntaxNode for TerminalTrait {
             kind,
             SyntaxKind::TerminalTrait
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27250,15 +26082,10 @@ impl TypedSyntaxNode for TerminalTrait {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalTraitPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalTrait> for SyntaxStablePtrId {
-    fn from(node: &TerminalTrait) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalTraitPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27276,8 +26103,11 @@ impl Token for TokenTrue {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27317,7 +26147,7 @@ impl TypedSyntaxNode for TokenTrue {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrue)
@@ -27325,21 +26155,16 @@ impl TypedSyntaxNode for TokenTrue {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenTruePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenTrue> for SyntaxStablePtrId {
-    fn from(node: &TokenTrue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenTruePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27372,13 +26197,13 @@ impl Terminal for TerminalTrue {
 }
 impl TerminalTrue {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenTrue {
-        TokenTrue::from_syntax_node(db, self.children[1].clone())
+        TokenTrue::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27429,7 +26254,7 @@ impl TypedSyntaxNode for TerminalTrue {
             kind,
             SyntaxKind::TerminalTrue
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27437,15 +26262,10 @@ impl TypedSyntaxNode for TerminalTrue {
         if kind == SyntaxKind::TerminalTrue { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalTruePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalTrue> for SyntaxStablePtrId {
-    fn from(node: &TerminalTrue) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalTruePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27463,8 +26283,11 @@ impl Token for TokenType {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27504,7 +26327,7 @@ impl TypedSyntaxNode for TokenType {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenType)
@@ -27512,21 +26335,16 @@ impl TypedSyntaxNode for TokenType {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenTypePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenType> for SyntaxStablePtrId {
-    fn from(node: &TokenType) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenTypePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27559,13 +26377,13 @@ impl Terminal for TerminalType {
 }
 impl TerminalType {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenType {
-        TokenType::from_syntax_node(db, self.children[1].clone())
+        TokenType::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27616,7 +26434,7 @@ impl TypedSyntaxNode for TerminalType {
             kind,
             SyntaxKind::TerminalType
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27624,15 +26442,10 @@ impl TypedSyntaxNode for TerminalType {
         if kind == SyntaxKind::TerminalType { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalTypePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalType> for SyntaxStablePtrId {
-    fn from(node: &TerminalType) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalTypePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27650,8 +26463,11 @@ impl Token for TokenUse {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27691,7 +26507,7 @@ impl TypedSyntaxNode for TokenUse {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUse)
@@ -27699,21 +26515,16 @@ impl TypedSyntaxNode for TokenUse {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenUsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenUse> for SyntaxStablePtrId {
-    fn from(node: &TokenUse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenUsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27746,13 +26557,13 @@ impl Terminal for TerminalUse {
 }
 impl TerminalUse {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenUse {
-        TokenUse::from_syntax_node(db, self.children[1].clone())
+        TokenUse::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27803,7 +26614,7 @@ impl TypedSyntaxNode for TerminalUse {
             kind,
             SyntaxKind::TerminalUse
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27811,15 +26622,10 @@ impl TypedSyntaxNode for TerminalUse {
         if kind == SyntaxKind::TerminalUse { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalUsePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalUse> for SyntaxStablePtrId {
-    fn from(node: &TerminalUse) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalUsePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27837,8 +26643,11 @@ impl Token for TokenPub {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27878,7 +26687,7 @@ impl TypedSyntaxNode for TokenPub {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPub)
@@ -27886,21 +26695,16 @@ impl TypedSyntaxNode for TokenPub {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenPubPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenPub> for SyntaxStablePtrId {
-    fn from(node: &TokenPub) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenPubPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -27933,13 +26737,13 @@ impl Terminal for TerminalPub {
 }
 impl TerminalPub {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPub {
-        TokenPub::from_syntax_node(db, self.children[1].clone())
+        TokenPub::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -27990,7 +26794,7 @@ impl TypedSyntaxNode for TerminalPub {
             kind,
             SyntaxKind::TerminalPub
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -27998,15 +26802,10 @@ impl TypedSyntaxNode for TerminalPub {
         if kind == SyntaxKind::TerminalPub { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalPubPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalPub> for SyntaxStablePtrId {
-    fn from(node: &TerminalPub) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalPubPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28024,8 +26823,11 @@ impl Token for TokenAnd {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28065,7 +26867,7 @@ impl TypedSyntaxNode for TokenAnd {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAnd)
@@ -28073,21 +26875,16 @@ impl TypedSyntaxNode for TokenAnd {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenAndPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenAnd> for SyntaxStablePtrId {
-    fn from(node: &TokenAnd) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenAndPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28120,13 +26917,13 @@ impl Terminal for TerminalAnd {
 }
 impl TerminalAnd {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAnd {
-        TokenAnd::from_syntax_node(db, self.children[1].clone())
+        TokenAnd::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28177,7 +26974,7 @@ impl TypedSyntaxNode for TerminalAnd {
             kind,
             SyntaxKind::TerminalAnd
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -28185,15 +26982,10 @@ impl TypedSyntaxNode for TerminalAnd {
         if kind == SyntaxKind::TerminalAnd { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalAndPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalAnd> for SyntaxStablePtrId {
-    fn from(node: &TerminalAnd) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalAndPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28211,8 +27003,11 @@ impl Token for TokenAndAnd {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28252,7 +27047,7 @@ impl TypedSyntaxNode for TokenAndAnd {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAndAnd)
@@ -28260,21 +27055,16 @@ impl TypedSyntaxNode for TokenAndAnd {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenAndAndPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenAndAnd> for SyntaxStablePtrId {
-    fn from(node: &TokenAndAnd) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenAndAndPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28307,13 +27097,13 @@ impl Terminal for TerminalAndAnd {
 }
 impl TerminalAndAnd {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAndAnd {
-        TokenAndAnd::from_syntax_node(db, self.children[1].clone())
+        TokenAndAnd::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28364,7 +27154,7 @@ impl TypedSyntaxNode for TerminalAndAnd {
             kind,
             SyntaxKind::TerminalAndAnd
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -28376,15 +27166,10 @@ impl TypedSyntaxNode for TerminalAndAnd {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalAndAndPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalAndAnd> for SyntaxStablePtrId {
-    fn from(node: &TerminalAndAnd) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalAndAndPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28402,8 +27187,11 @@ impl Token for TokenArrow {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28443,7 +27231,7 @@ impl TypedSyntaxNode for TokenArrow {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenArrow)
@@ -28451,21 +27239,16 @@ impl TypedSyntaxNode for TokenArrow {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenArrowPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenArrow> for SyntaxStablePtrId {
-    fn from(node: &TokenArrow) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenArrowPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28498,13 +27281,13 @@ impl Terminal for TerminalArrow {
 }
 impl TerminalArrow {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenArrow {
-        TokenArrow::from_syntax_node(db, self.children[1].clone())
+        TokenArrow::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28555,7 +27338,7 @@ impl TypedSyntaxNode for TerminalArrow {
             kind,
             SyntaxKind::TerminalArrow
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -28567,15 +27350,10 @@ impl TypedSyntaxNode for TerminalArrow {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalArrowPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalArrow> for SyntaxStablePtrId {
-    fn from(node: &TerminalArrow) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalArrowPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28593,8 +27371,11 @@ impl Token for TokenAt {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28634,7 +27415,7 @@ impl TypedSyntaxNode for TokenAt {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAt)
@@ -28642,21 +27423,16 @@ impl TypedSyntaxNode for TokenAt {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenAtPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenAt> for SyntaxStablePtrId {
-    fn from(node: &TokenAt) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenAtPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28689,13 +27465,13 @@ impl Terminal for TerminalAt {
 }
 impl TerminalAt {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAt {
-        TokenAt::from_syntax_node(db, self.children[1].clone())
+        TokenAt::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28746,7 +27522,7 @@ impl TypedSyntaxNode for TerminalAt {
             kind,
             SyntaxKind::TerminalAt
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -28754,15 +27530,10 @@ impl TypedSyntaxNode for TerminalAt {
         if kind == SyntaxKind::TerminalAt { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalAtPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalAt> for SyntaxStablePtrId {
-    fn from(node: &TerminalAt) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalAtPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28780,8 +27551,11 @@ impl Token for TokenBadCharacters {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28821,7 +27595,7 @@ impl TypedSyntaxNode for TokenBadCharacters {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
@@ -28830,21 +27604,16 @@ impl TypedSyntaxNode for TokenBadCharacters {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenBadCharactersPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenBadCharacters> for SyntaxStablePtrId {
-    fn from(node: &TokenBadCharacters) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenBadCharactersPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28877,13 +27646,13 @@ impl Terminal for TerminalBadCharacters {
 }
 impl TerminalBadCharacters {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBadCharacters {
-        TokenBadCharacters::from_syntax_node(db, self.children[1].clone())
+        TokenBadCharacters::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -28934,7 +27703,7 @@ impl TypedSyntaxNode for TerminalBadCharacters {
             kind,
             SyntaxKind::TerminalBadCharacters
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -28946,15 +27715,10 @@ impl TypedSyntaxNode for TerminalBadCharacters {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalBadCharactersPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalBadCharacters> for SyntaxStablePtrId {
-    fn from(node: &TerminalBadCharacters) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalBadCharactersPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -28972,8 +27736,11 @@ impl Token for TokenColon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29013,7 +27780,7 @@ impl TypedSyntaxNode for TokenColon {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColon)
@@ -29021,21 +27788,16 @@ impl TypedSyntaxNode for TokenColon {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenColonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenColon> for SyntaxStablePtrId {
-    fn from(node: &TokenColon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenColonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29068,13 +27830,13 @@ impl Terminal for TerminalColon {
 }
 impl TerminalColon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenColon {
-        TokenColon::from_syntax_node(db, self.children[1].clone())
+        TokenColon::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29125,7 +27887,7 @@ impl TypedSyntaxNode for TerminalColon {
             kind,
             SyntaxKind::TerminalColon
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -29137,15 +27899,10 @@ impl TypedSyntaxNode for TerminalColon {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalColonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalColon> for SyntaxStablePtrId {
-    fn from(node: &TerminalColon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalColonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29163,8 +27920,11 @@ impl Token for TokenColonColon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29204,7 +27964,7 @@ impl TypedSyntaxNode for TokenColonColon {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColonColon)
@@ -29212,21 +27972,16 @@ impl TypedSyntaxNode for TokenColonColon {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenColonColonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenColonColon> for SyntaxStablePtrId {
-    fn from(node: &TokenColonColon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenColonColonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29259,13 +28014,13 @@ impl Terminal for TerminalColonColon {
 }
 impl TerminalColonColon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenColonColon {
-        TokenColonColon::from_syntax_node(db, self.children[1].clone())
+        TokenColonColon::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29316,7 +28071,7 @@ impl TypedSyntaxNode for TerminalColonColon {
             kind,
             SyntaxKind::TerminalColonColon
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -29328,15 +28083,10 @@ impl TypedSyntaxNode for TerminalColonColon {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalColonColonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalColonColon> for SyntaxStablePtrId {
-    fn from(node: &TerminalColonColon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalColonColonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29354,8 +28104,11 @@ impl Token for TokenComma {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29395,7 +28148,7 @@ impl TypedSyntaxNode for TokenComma {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenComma)
@@ -29403,21 +28156,16 @@ impl TypedSyntaxNode for TokenComma {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenCommaPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenComma> for SyntaxStablePtrId {
-    fn from(node: &TokenComma) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenCommaPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29450,13 +28198,13 @@ impl Terminal for TerminalComma {
 }
 impl TerminalComma {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenComma {
-        TokenComma::from_syntax_node(db, self.children[1].clone())
+        TokenComma::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29507,7 +28255,7 @@ impl TypedSyntaxNode for TerminalComma {
             kind,
             SyntaxKind::TerminalComma
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -29519,15 +28267,10 @@ impl TypedSyntaxNode for TerminalComma {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalCommaPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalComma> for SyntaxStablePtrId {
-    fn from(node: &TerminalComma) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalCommaPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29545,8 +28288,11 @@ impl Token for TokenDiv {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29586,7 +28332,7 @@ impl TypedSyntaxNode for TokenDiv {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDiv)
@@ -29594,21 +28340,16 @@ impl TypedSyntaxNode for TokenDiv {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenDivPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenDiv> for SyntaxStablePtrId {
-    fn from(node: &TokenDiv) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenDivPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29641,13 +28382,13 @@ impl Terminal for TerminalDiv {
 }
 impl TerminalDiv {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDiv {
-        TokenDiv::from_syntax_node(db, self.children[1].clone())
+        TokenDiv::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29698,7 +28439,7 @@ impl TypedSyntaxNode for TerminalDiv {
             kind,
             SyntaxKind::TerminalDiv
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -29706,15 +28447,10 @@ impl TypedSyntaxNode for TerminalDiv {
         if kind == SyntaxKind::TerminalDiv { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalDivPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalDiv> for SyntaxStablePtrId {
-    fn from(node: &TerminalDiv) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalDivPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29732,8 +28468,11 @@ impl Token for TokenDivEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29773,7 +28512,7 @@ impl TypedSyntaxNode for TokenDivEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDivEq)
@@ -29781,21 +28520,16 @@ impl TypedSyntaxNode for TokenDivEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenDivEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenDivEq> for SyntaxStablePtrId {
-    fn from(node: &TokenDivEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenDivEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29828,13 +28562,13 @@ impl Terminal for TerminalDivEq {
 }
 impl TerminalDivEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDivEq {
-        TokenDivEq::from_syntax_node(db, self.children[1].clone())
+        TokenDivEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29885,7 +28619,7 @@ impl TypedSyntaxNode for TerminalDivEq {
             kind,
             SyntaxKind::TerminalDivEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -29897,15 +28631,10 @@ impl TypedSyntaxNode for TerminalDivEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalDivEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalDivEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalDivEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalDivEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -29923,8 +28652,11 @@ impl Token for TokenDot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -29964,7 +28696,7 @@ impl TypedSyntaxNode for TokenDot {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDot)
@@ -29972,21 +28704,16 @@ impl TypedSyntaxNode for TokenDot {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenDotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenDot> for SyntaxStablePtrId {
-    fn from(node: &TokenDot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenDotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30019,13 +28746,13 @@ impl Terminal for TerminalDot {
 }
 impl TerminalDot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDot {
-        TokenDot::from_syntax_node(db, self.children[1].clone())
+        TokenDot::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30076,7 +28803,7 @@ impl TypedSyntaxNode for TerminalDot {
             kind,
             SyntaxKind::TerminalDot
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -30084,15 +28811,10 @@ impl TypedSyntaxNode for TerminalDot {
         if kind == SyntaxKind::TerminalDot { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalDotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalDot> for SyntaxStablePtrId {
-    fn from(node: &TerminalDot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalDotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30110,8 +28832,11 @@ impl Token for TokenDotDot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30151,7 +28876,7 @@ impl TypedSyntaxNode for TokenDotDot {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDot)
@@ -30159,21 +28884,16 @@ impl TypedSyntaxNode for TokenDotDot {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenDotDotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenDotDot> for SyntaxStablePtrId {
-    fn from(node: &TokenDotDot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenDotDotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30206,13 +28926,13 @@ impl Terminal for TerminalDotDot {
 }
 impl TerminalDotDot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDotDot {
-        TokenDotDot::from_syntax_node(db, self.children[1].clone())
+        TokenDotDot::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30263,7 +28983,7 @@ impl TypedSyntaxNode for TerminalDotDot {
             kind,
             SyntaxKind::TerminalDotDot
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -30275,15 +28995,10 @@ impl TypedSyntaxNode for TerminalDotDot {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalDotDotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalDotDot> for SyntaxStablePtrId {
-    fn from(node: &TerminalDotDot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalDotDotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30301,8 +29016,11 @@ impl Token for TokenDotDotEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30342,7 +29060,7 @@ impl TypedSyntaxNode for TokenDotDotEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDotEq)
@@ -30350,21 +29068,16 @@ impl TypedSyntaxNode for TokenDotDotEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenDotDotEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenDotDotEq> for SyntaxStablePtrId {
-    fn from(node: &TokenDotDotEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenDotDotEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30397,13 +29110,13 @@ impl Terminal for TerminalDotDotEq {
 }
 impl TerminalDotDotEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenDotDotEq {
-        TokenDotDotEq::from_syntax_node(db, self.children[1].clone())
+        TokenDotDotEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30454,7 +29167,7 @@ impl TypedSyntaxNode for TerminalDotDotEq {
             kind,
             SyntaxKind::TerminalDotDotEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -30466,15 +29179,10 @@ impl TypedSyntaxNode for TerminalDotDotEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalDotDotEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalDotDotEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalDotDotEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalDotDotEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30492,8 +29200,11 @@ impl Token for TokenEndOfFile {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30533,7 +29244,7 @@ impl TypedSyntaxNode for TokenEndOfFile {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEndOfFile)
@@ -30541,21 +29252,16 @@ impl TypedSyntaxNode for TokenEndOfFile {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenEndOfFilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenEndOfFile> for SyntaxStablePtrId {
-    fn from(node: &TokenEndOfFile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenEndOfFilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30588,13 +29294,13 @@ impl Terminal for TerminalEndOfFile {
 }
 impl TerminalEndOfFile {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEndOfFile {
-        TokenEndOfFile::from_syntax_node(db, self.children[1].clone())
+        TokenEndOfFile::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30645,7 +29351,7 @@ impl TypedSyntaxNode for TerminalEndOfFile {
             kind,
             SyntaxKind::TerminalEndOfFile
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -30657,15 +29363,10 @@ impl TypedSyntaxNode for TerminalEndOfFile {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalEndOfFilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalEndOfFile> for SyntaxStablePtrId {
-    fn from(node: &TerminalEndOfFile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalEndOfFilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30683,8 +29384,11 @@ impl Token for TokenEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30724,7 +29428,7 @@ impl TypedSyntaxNode for TokenEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEq)
@@ -30732,21 +29436,16 @@ impl TypedSyntaxNode for TokenEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenEq> for SyntaxStablePtrId {
-    fn from(node: &TokenEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30779,13 +29478,13 @@ impl Terminal for TerminalEq {
 }
 impl TerminalEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEq {
-        TokenEq::from_syntax_node(db, self.children[1].clone())
+        TokenEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30836,7 +29535,7 @@ impl TypedSyntaxNode for TerminalEq {
             kind,
             SyntaxKind::TerminalEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -30844,15 +29543,10 @@ impl TypedSyntaxNode for TerminalEq {
         if kind == SyntaxKind::TerminalEq { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30870,8 +29564,11 @@ impl Token for TokenEqEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -30911,7 +29608,7 @@ impl TypedSyntaxNode for TokenEqEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEqEq)
@@ -30919,21 +29616,16 @@ impl TypedSyntaxNode for TokenEqEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenEqEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenEqEq> for SyntaxStablePtrId {
-    fn from(node: &TokenEqEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenEqEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -30966,13 +29658,13 @@ impl Terminal for TerminalEqEq {
 }
 impl TerminalEqEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEqEq {
-        TokenEqEq::from_syntax_node(db, self.children[1].clone())
+        TokenEqEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31023,7 +29715,7 @@ impl TypedSyntaxNode for TerminalEqEq {
             kind,
             SyntaxKind::TerminalEqEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31031,15 +29723,10 @@ impl TypedSyntaxNode for TerminalEqEq {
         if kind == SyntaxKind::TerminalEqEq { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalEqEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalEqEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalEqEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalEqEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31057,8 +29744,11 @@ impl Token for TokenGE {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31098,7 +29788,7 @@ impl TypedSyntaxNode for TokenGE {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGE)
@@ -31106,21 +29796,16 @@ impl TypedSyntaxNode for TokenGE {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenGEPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenGE> for SyntaxStablePtrId {
-    fn from(node: &TokenGE) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenGEPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31153,13 +29838,13 @@ impl Terminal for TerminalGE {
 }
 impl TerminalGE {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenGE {
-        TokenGE::from_syntax_node(db, self.children[1].clone())
+        TokenGE::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31210,7 +29895,7 @@ impl TypedSyntaxNode for TerminalGE {
             kind,
             SyntaxKind::TerminalGE
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31218,15 +29903,10 @@ impl TypedSyntaxNode for TerminalGE {
         if kind == SyntaxKind::TerminalGE { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalGEPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalGE> for SyntaxStablePtrId {
-    fn from(node: &TerminalGE) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalGEPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31244,8 +29924,11 @@ impl Token for TokenGT {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31285,7 +29968,7 @@ impl TypedSyntaxNode for TokenGT {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGT)
@@ -31293,21 +29976,16 @@ impl TypedSyntaxNode for TokenGT {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenGTPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenGT> for SyntaxStablePtrId {
-    fn from(node: &TokenGT) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenGTPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31340,13 +30018,13 @@ impl Terminal for TerminalGT {
 }
 impl TerminalGT {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenGT {
-        TokenGT::from_syntax_node(db, self.children[1].clone())
+        TokenGT::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31397,7 +30075,7 @@ impl TypedSyntaxNode for TerminalGT {
             kind,
             SyntaxKind::TerminalGT
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31405,15 +30083,10 @@ impl TypedSyntaxNode for TerminalGT {
         if kind == SyntaxKind::TerminalGT { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalGTPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalGT> for SyntaxStablePtrId {
-    fn from(node: &TerminalGT) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalGTPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31431,8 +30104,11 @@ impl Token for TokenHash {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31472,7 +30148,7 @@ impl TypedSyntaxNode for TokenHash {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenHash)
@@ -31480,21 +30156,16 @@ impl TypedSyntaxNode for TokenHash {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenHashPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenHash> for SyntaxStablePtrId {
-    fn from(node: &TokenHash) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenHashPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31527,13 +30198,13 @@ impl Terminal for TerminalHash {
 }
 impl TerminalHash {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenHash {
-        TokenHash::from_syntax_node(db, self.children[1].clone())
+        TokenHash::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31584,7 +30255,7 @@ impl TypedSyntaxNode for TerminalHash {
             kind,
             SyntaxKind::TerminalHash
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31592,15 +30263,10 @@ impl TypedSyntaxNode for TerminalHash {
         if kind == SyntaxKind::TerminalHash { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalHashPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalHash> for SyntaxStablePtrId {
-    fn from(node: &TerminalHash) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalHashPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31618,8 +30284,11 @@ impl Token for TokenLBrace {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31659,7 +30328,7 @@ impl TypedSyntaxNode for TokenLBrace {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrace)
@@ -31667,21 +30336,16 @@ impl TypedSyntaxNode for TokenLBrace {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLBracePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLBrace> for SyntaxStablePtrId {
-    fn from(node: &TokenLBrace) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLBracePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31714,13 +30378,13 @@ impl Terminal for TerminalLBrace {
 }
 impl TerminalLBrace {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLBrace {
-        TokenLBrace::from_syntax_node(db, self.children[1].clone())
+        TokenLBrace::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31771,7 +30435,7 @@ impl TypedSyntaxNode for TerminalLBrace {
             kind,
             SyntaxKind::TerminalLBrace
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31783,15 +30447,10 @@ impl TypedSyntaxNode for TerminalLBrace {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLBracePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLBrace> for SyntaxStablePtrId {
-    fn from(node: &TerminalLBrace) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLBracePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31809,8 +30468,11 @@ impl Token for TokenLBrack {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31850,7 +30512,7 @@ impl TypedSyntaxNode for TokenLBrack {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrack)
@@ -31858,21 +30520,16 @@ impl TypedSyntaxNode for TokenLBrack {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLBrackPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLBrack> for SyntaxStablePtrId {
-    fn from(node: &TokenLBrack) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLBrackPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -31905,13 +30562,13 @@ impl Terminal for TerminalLBrack {
 }
 impl TerminalLBrack {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLBrack {
-        TokenLBrack::from_syntax_node(db, self.children[1].clone())
+        TokenLBrack::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -31962,7 +30619,7 @@ impl TypedSyntaxNode for TerminalLBrack {
             kind,
             SyntaxKind::TerminalLBrack
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -31974,15 +30631,10 @@ impl TypedSyntaxNode for TerminalLBrack {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLBrackPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLBrack> for SyntaxStablePtrId {
-    fn from(node: &TerminalLBrack) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLBrackPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32000,8 +30652,11 @@ impl Token for TokenLE {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32041,7 +30696,7 @@ impl TypedSyntaxNode for TokenLE {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLE)
@@ -32049,21 +30704,16 @@ impl TypedSyntaxNode for TokenLE {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLEPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLE> for SyntaxStablePtrId {
-    fn from(node: &TokenLE) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLEPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32096,13 +30746,13 @@ impl Terminal for TerminalLE {
 }
 impl TerminalLE {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLE {
-        TokenLE::from_syntax_node(db, self.children[1].clone())
+        TokenLE::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32153,7 +30803,7 @@ impl TypedSyntaxNode for TerminalLE {
             kind,
             SyntaxKind::TerminalLE
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -32161,15 +30811,10 @@ impl TypedSyntaxNode for TerminalLE {
         if kind == SyntaxKind::TerminalLE { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLEPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLE> for SyntaxStablePtrId {
-    fn from(node: &TerminalLE) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLEPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32187,8 +30832,11 @@ impl Token for TokenLParen {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32228,7 +30876,7 @@ impl TypedSyntaxNode for TokenLParen {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLParen)
@@ -32236,21 +30884,16 @@ impl TypedSyntaxNode for TokenLParen {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLParenPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLParen> for SyntaxStablePtrId {
-    fn from(node: &TokenLParen) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLParenPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32283,13 +30926,13 @@ impl Terminal for TerminalLParen {
 }
 impl TerminalLParen {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLParen {
-        TokenLParen::from_syntax_node(db, self.children[1].clone())
+        TokenLParen::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32340,7 +30983,7 @@ impl TypedSyntaxNode for TerminalLParen {
             kind,
             SyntaxKind::TerminalLParen
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -32352,15 +30995,10 @@ impl TypedSyntaxNode for TerminalLParen {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLParenPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLParen> for SyntaxStablePtrId {
-    fn from(node: &TerminalLParen) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLParenPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32378,8 +31016,11 @@ impl Token for TokenLT {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32419,7 +31060,7 @@ impl TypedSyntaxNode for TokenLT {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLT)
@@ -32427,21 +31068,16 @@ impl TypedSyntaxNode for TokenLT {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenLTPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenLT> for SyntaxStablePtrId {
-    fn from(node: &TokenLT) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenLTPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32474,13 +31110,13 @@ impl Terminal for TerminalLT {
 }
 impl TerminalLT {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenLT {
-        TokenLT::from_syntax_node(db, self.children[1].clone())
+        TokenLT::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32531,7 +31167,7 @@ impl TypedSyntaxNode for TerminalLT {
             kind,
             SyntaxKind::TerminalLT
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -32539,15 +31175,10 @@ impl TypedSyntaxNode for TerminalLT {
         if kind == SyntaxKind::TerminalLT { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalLTPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalLT> for SyntaxStablePtrId {
-    fn from(node: &TerminalLT) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalLTPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32565,8 +31196,11 @@ impl Token for TokenMatchArrow {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32606,7 +31240,7 @@ impl TypedSyntaxNode for TokenMatchArrow {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMatchArrow)
@@ -32614,21 +31248,16 @@ impl TypedSyntaxNode for TokenMatchArrow {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMatchArrowPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMatchArrow> for SyntaxStablePtrId {
-    fn from(node: &TokenMatchArrow) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMatchArrowPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32661,13 +31290,13 @@ impl Terminal for TerminalMatchArrow {
 }
 impl TerminalMatchArrow {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMatchArrow {
-        TokenMatchArrow::from_syntax_node(db, self.children[1].clone())
+        TokenMatchArrow::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32718,7 +31347,7 @@ impl TypedSyntaxNode for TerminalMatchArrow {
             kind,
             SyntaxKind::TerminalMatchArrow
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -32730,15 +31359,10 @@ impl TypedSyntaxNode for TerminalMatchArrow {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMatchArrowPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMatchArrow> for SyntaxStablePtrId {
-    fn from(node: &TerminalMatchArrow) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMatchArrowPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32756,8 +31380,11 @@ impl Token for TokenMinus {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32797,7 +31424,7 @@ impl TypedSyntaxNode for TokenMinus {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinus)
@@ -32805,21 +31432,16 @@ impl TypedSyntaxNode for TokenMinus {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMinusPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMinus> for SyntaxStablePtrId {
-    fn from(node: &TokenMinus) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMinusPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32852,13 +31474,13 @@ impl Terminal for TerminalMinus {
 }
 impl TerminalMinus {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMinus {
-        TokenMinus::from_syntax_node(db, self.children[1].clone())
+        TokenMinus::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32909,7 +31531,7 @@ impl TypedSyntaxNode for TerminalMinus {
             kind,
             SyntaxKind::TerminalMinus
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -32921,15 +31543,10 @@ impl TypedSyntaxNode for TerminalMinus {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMinusPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMinus> for SyntaxStablePtrId {
-    fn from(node: &TerminalMinus) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMinusPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32947,8 +31564,11 @@ impl Token for TokenMinusEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -32988,7 +31608,7 @@ impl TypedSyntaxNode for TokenMinusEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinusEq)
@@ -32996,21 +31616,16 @@ impl TypedSyntaxNode for TokenMinusEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMinusEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMinusEq> for SyntaxStablePtrId {
-    fn from(node: &TokenMinusEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMinusEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33043,13 +31658,13 @@ impl Terminal for TerminalMinusEq {
 }
 impl TerminalMinusEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMinusEq {
-        TokenMinusEq::from_syntax_node(db, self.children[1].clone())
+        TokenMinusEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33100,7 +31715,7 @@ impl TypedSyntaxNode for TerminalMinusEq {
             kind,
             SyntaxKind::TerminalMinusEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -33112,15 +31727,10 @@ impl TypedSyntaxNode for TerminalMinusEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMinusEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMinusEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalMinusEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMinusEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33138,8 +31748,11 @@ impl Token for TokenMod {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33179,7 +31792,7 @@ impl TypedSyntaxNode for TokenMod {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMod)
@@ -33187,21 +31800,16 @@ impl TypedSyntaxNode for TokenMod {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenModPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMod> for SyntaxStablePtrId {
-    fn from(node: &TokenMod) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenModPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33234,13 +31842,13 @@ impl Terminal for TerminalMod {
 }
 impl TerminalMod {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMod {
-        TokenMod::from_syntax_node(db, self.children[1].clone())
+        TokenMod::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33291,7 +31899,7 @@ impl TypedSyntaxNode for TerminalMod {
             kind,
             SyntaxKind::TerminalMod
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -33299,15 +31907,10 @@ impl TypedSyntaxNode for TerminalMod {
         if kind == SyntaxKind::TerminalMod { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalModPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMod> for SyntaxStablePtrId {
-    fn from(node: &TerminalMod) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalModPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33325,8 +31928,11 @@ impl Token for TokenModEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33366,7 +31972,7 @@ impl TypedSyntaxNode for TokenModEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModEq)
@@ -33374,21 +31980,16 @@ impl TypedSyntaxNode for TokenModEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenModEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenModEq> for SyntaxStablePtrId {
-    fn from(node: &TokenModEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenModEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33421,13 +32022,13 @@ impl Terminal for TerminalModEq {
 }
 impl TerminalModEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenModEq {
-        TokenModEq::from_syntax_node(db, self.children[1].clone())
+        TokenModEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33478,7 +32079,7 @@ impl TypedSyntaxNode for TerminalModEq {
             kind,
             SyntaxKind::TerminalModEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -33490,15 +32091,10 @@ impl TypedSyntaxNode for TerminalModEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalModEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalModEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalModEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalModEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33516,8 +32112,11 @@ impl Token for TokenMul {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33557,7 +32156,7 @@ impl TypedSyntaxNode for TokenMul {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMul)
@@ -33565,21 +32164,16 @@ impl TypedSyntaxNode for TokenMul {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMulPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMul> for SyntaxStablePtrId {
-    fn from(node: &TokenMul) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMulPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33612,13 +32206,13 @@ impl Terminal for TerminalMul {
 }
 impl TerminalMul {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMul {
-        TokenMul::from_syntax_node(db, self.children[1].clone())
+        TokenMul::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33669,7 +32263,7 @@ impl TypedSyntaxNode for TerminalMul {
             kind,
             SyntaxKind::TerminalMul
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -33677,15 +32271,10 @@ impl TypedSyntaxNode for TerminalMul {
         if kind == SyntaxKind::TerminalMul { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMulPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMul> for SyntaxStablePtrId {
-    fn from(node: &TerminalMul) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMulPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33703,8 +32292,11 @@ impl Token for TokenMulEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33744,7 +32336,7 @@ impl TypedSyntaxNode for TokenMulEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMulEq)
@@ -33752,21 +32344,16 @@ impl TypedSyntaxNode for TokenMulEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMulEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMulEq> for SyntaxStablePtrId {
-    fn from(node: &TokenMulEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMulEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33799,13 +32386,13 @@ impl Terminal for TerminalMulEq {
 }
 impl TerminalMulEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMulEq {
-        TokenMulEq::from_syntax_node(db, self.children[1].clone())
+        TokenMulEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33856,7 +32443,7 @@ impl TypedSyntaxNode for TerminalMulEq {
             kind,
             SyntaxKind::TerminalMulEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -33868,15 +32455,10 @@ impl TypedSyntaxNode for TerminalMulEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalMulEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalMulEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalMulEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalMulEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33894,8 +32476,11 @@ impl Token for TokenNeq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -33935,7 +32520,7 @@ impl TypedSyntaxNode for TokenNeq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNeq)
@@ -33943,21 +32528,16 @@ impl TypedSyntaxNode for TokenNeq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenNeqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenNeq> for SyntaxStablePtrId {
-    fn from(node: &TokenNeq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenNeqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -33990,13 +32570,13 @@ impl Terminal for TerminalNeq {
 }
 impl TerminalNeq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNeq {
-        TokenNeq::from_syntax_node(db, self.children[1].clone())
+        TokenNeq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34047,7 +32627,7 @@ impl TypedSyntaxNode for TerminalNeq {
             kind,
             SyntaxKind::TerminalNeq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34055,15 +32635,10 @@ impl TypedSyntaxNode for TerminalNeq {
         if kind == SyntaxKind::TerminalNeq { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalNeqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalNeq> for SyntaxStablePtrId {
-    fn from(node: &TerminalNeq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalNeqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34081,8 +32656,11 @@ impl Token for TokenNot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34122,7 +32700,7 @@ impl TypedSyntaxNode for TokenNot {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNot)
@@ -34130,21 +32708,16 @@ impl TypedSyntaxNode for TokenNot {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenNotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenNot> for SyntaxStablePtrId {
-    fn from(node: &TokenNot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenNotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34177,13 +32750,13 @@ impl Terminal for TerminalNot {
 }
 impl TerminalNot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNot {
-        TokenNot::from_syntax_node(db, self.children[1].clone())
+        TokenNot::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34234,7 +32807,7 @@ impl TypedSyntaxNode for TerminalNot {
             kind,
             SyntaxKind::TerminalNot
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34242,15 +32815,10 @@ impl TypedSyntaxNode for TerminalNot {
         if kind == SyntaxKind::TerminalNot { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalNotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalNot> for SyntaxStablePtrId {
-    fn from(node: &TerminalNot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalNotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34268,8 +32836,11 @@ impl Token for TokenBitNot {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34309,7 +32880,7 @@ impl TypedSyntaxNode for TokenBitNot {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBitNot)
@@ -34317,21 +32888,16 @@ impl TypedSyntaxNode for TokenBitNot {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenBitNotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenBitNot> for SyntaxStablePtrId {
-    fn from(node: &TokenBitNot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenBitNotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34364,13 +32930,13 @@ impl Terminal for TerminalBitNot {
 }
 impl TerminalBitNot {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBitNot {
-        TokenBitNot::from_syntax_node(db, self.children[1].clone())
+        TokenBitNot::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34421,7 +32987,7 @@ impl TypedSyntaxNode for TerminalBitNot {
             kind,
             SyntaxKind::TerminalBitNot
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34433,15 +32999,10 @@ impl TypedSyntaxNode for TerminalBitNot {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalBitNotPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalBitNot> for SyntaxStablePtrId {
-    fn from(node: &TerminalBitNot) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalBitNotPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34459,8 +33020,11 @@ impl Token for TokenOr {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34500,7 +33064,7 @@ impl TypedSyntaxNode for TokenOr {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOr)
@@ -34508,21 +33072,16 @@ impl TypedSyntaxNode for TokenOr {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenOrPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenOr> for SyntaxStablePtrId {
-    fn from(node: &TokenOr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenOrPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34555,13 +33114,13 @@ impl Terminal for TerminalOr {
 }
 impl TerminalOr {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOr {
-        TokenOr::from_syntax_node(db, self.children[1].clone())
+        TokenOr::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34612,7 +33171,7 @@ impl TypedSyntaxNode for TerminalOr {
             kind,
             SyntaxKind::TerminalOr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34620,15 +33179,10 @@ impl TypedSyntaxNode for TerminalOr {
         if kind == SyntaxKind::TerminalOr { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalOrPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalOr> for SyntaxStablePtrId {
-    fn from(node: &TerminalOr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalOrPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34646,8 +33200,11 @@ impl Token for TokenOrOr {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34687,7 +33244,7 @@ impl TypedSyntaxNode for TokenOrOr {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOrOr)
@@ -34695,21 +33252,16 @@ impl TypedSyntaxNode for TokenOrOr {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenOrOrPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenOrOr> for SyntaxStablePtrId {
-    fn from(node: &TokenOrOr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenOrOrPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34742,13 +33294,13 @@ impl Terminal for TerminalOrOr {
 }
 impl TerminalOrOr {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenOrOr {
-        TokenOrOr::from_syntax_node(db, self.children[1].clone())
+        TokenOrOr::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34799,7 +33351,7 @@ impl TypedSyntaxNode for TerminalOrOr {
             kind,
             SyntaxKind::TerminalOrOr
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34807,15 +33359,10 @@ impl TypedSyntaxNode for TerminalOrOr {
         if kind == SyntaxKind::TerminalOrOr { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalOrOrPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalOrOr> for SyntaxStablePtrId {
-    fn from(node: &TerminalOrOr) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalOrOrPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34833,8 +33380,11 @@ impl Token for TokenPlus {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34874,7 +33424,7 @@ impl TypedSyntaxNode for TokenPlus {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlus)
@@ -34882,21 +33432,16 @@ impl TypedSyntaxNode for TokenPlus {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenPlusPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenPlus> for SyntaxStablePtrId {
-    fn from(node: &TokenPlus) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenPlusPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34929,13 +33474,13 @@ impl Terminal for TerminalPlus {
 }
 impl TerminalPlus {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPlus {
-        TokenPlus::from_syntax_node(db, self.children[1].clone())
+        TokenPlus::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -34986,7 +33531,7 @@ impl TypedSyntaxNode for TerminalPlus {
             kind,
             SyntaxKind::TerminalPlus
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -34994,15 +33539,10 @@ impl TypedSyntaxNode for TerminalPlus {
         if kind == SyntaxKind::TerminalPlus { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalPlusPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalPlus> for SyntaxStablePtrId {
-    fn from(node: &TerminalPlus) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalPlusPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35020,8 +33560,11 @@ impl Token for TokenPlusEq {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35061,7 +33604,7 @@ impl TypedSyntaxNode for TokenPlusEq {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlusEq)
@@ -35069,21 +33612,16 @@ impl TypedSyntaxNode for TokenPlusEq {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenPlusEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenPlusEq> for SyntaxStablePtrId {
-    fn from(node: &TokenPlusEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenPlusEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35116,13 +33654,13 @@ impl Terminal for TerminalPlusEq {
 }
 impl TerminalPlusEq {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenPlusEq {
-        TokenPlusEq::from_syntax_node(db, self.children[1].clone())
+        TokenPlusEq::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35173,7 +33711,7 @@ impl TypedSyntaxNode for TerminalPlusEq {
             kind,
             SyntaxKind::TerminalPlusEq
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -35185,15 +33723,10 @@ impl TypedSyntaxNode for TerminalPlusEq {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalPlusEqPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalPlusEq> for SyntaxStablePtrId {
-    fn from(node: &TerminalPlusEq) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalPlusEqPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35211,8 +33744,11 @@ impl Token for TokenQuestionMark {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35252,7 +33788,7 @@ impl TypedSyntaxNode for TokenQuestionMark {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenQuestionMark)
@@ -35260,21 +33796,16 @@ impl TypedSyntaxNode for TokenQuestionMark {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenQuestionMarkPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenQuestionMark> for SyntaxStablePtrId {
-    fn from(node: &TokenQuestionMark) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenQuestionMarkPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35307,13 +33838,13 @@ impl Terminal for TerminalQuestionMark {
 }
 impl TerminalQuestionMark {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenQuestionMark {
-        TokenQuestionMark::from_syntax_node(db, self.children[1].clone())
+        TokenQuestionMark::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35364,7 +33895,7 @@ impl TypedSyntaxNode for TerminalQuestionMark {
             kind,
             SyntaxKind::TerminalQuestionMark
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -35376,15 +33907,10 @@ impl TypedSyntaxNode for TerminalQuestionMark {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalQuestionMarkPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalQuestionMark> for SyntaxStablePtrId {
-    fn from(node: &TerminalQuestionMark) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalQuestionMarkPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35402,8 +33928,11 @@ impl Token for TokenRBrace {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35443,7 +33972,7 @@ impl TypedSyntaxNode for TokenRBrace {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrace)
@@ -35451,21 +33980,16 @@ impl TypedSyntaxNode for TokenRBrace {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenRBracePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenRBrace> for SyntaxStablePtrId {
-    fn from(node: &TokenRBrace) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenRBracePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35498,13 +34022,13 @@ impl Terminal for TerminalRBrace {
 }
 impl TerminalRBrace {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRBrace {
-        TokenRBrace::from_syntax_node(db, self.children[1].clone())
+        TokenRBrace::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35555,7 +34079,7 @@ impl TypedSyntaxNode for TerminalRBrace {
             kind,
             SyntaxKind::TerminalRBrace
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -35567,15 +34091,10 @@ impl TypedSyntaxNode for TerminalRBrace {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalRBracePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalRBrace> for SyntaxStablePtrId {
-    fn from(node: &TerminalRBrace) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalRBracePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35593,8 +34112,11 @@ impl Token for TokenRBrack {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35634,7 +34156,7 @@ impl TypedSyntaxNode for TokenRBrack {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrack)
@@ -35642,21 +34164,16 @@ impl TypedSyntaxNode for TokenRBrack {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenRBrackPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenRBrack> for SyntaxStablePtrId {
-    fn from(node: &TokenRBrack) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenRBrackPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35689,13 +34206,13 @@ impl Terminal for TerminalRBrack {
 }
 impl TerminalRBrack {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRBrack {
-        TokenRBrack::from_syntax_node(db, self.children[1].clone())
+        TokenRBrack::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35746,7 +34263,7 @@ impl TypedSyntaxNode for TerminalRBrack {
             kind,
             SyntaxKind::TerminalRBrack
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -35758,15 +34275,10 @@ impl TypedSyntaxNode for TerminalRBrack {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalRBrackPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalRBrack> for SyntaxStablePtrId {
-    fn from(node: &TerminalRBrack) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalRBrackPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35784,8 +34296,11 @@ impl Token for TokenRParen {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35825,7 +34340,7 @@ impl TypedSyntaxNode for TokenRParen {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRParen)
@@ -35833,21 +34348,16 @@ impl TypedSyntaxNode for TokenRParen {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenRParenPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenRParen> for SyntaxStablePtrId {
-    fn from(node: &TokenRParen) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenRParenPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35880,13 +34390,13 @@ impl Terminal for TerminalRParen {
 }
 impl TerminalRParen {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenRParen {
-        TokenRParen::from_syntax_node(db, self.children[1].clone())
+        TokenRParen::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -35937,7 +34447,7 @@ impl TypedSyntaxNode for TerminalRParen {
             kind,
             SyntaxKind::TerminalRParen
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -35949,15 +34459,10 @@ impl TypedSyntaxNode for TerminalRParen {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalRParenPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalRParen> for SyntaxStablePtrId {
-    fn from(node: &TerminalRParen) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalRParenPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -35975,8 +34480,11 @@ impl Token for TokenSemicolon {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36016,7 +34524,7 @@ impl TypedSyntaxNode for TokenSemicolon {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenSemicolon)
@@ -36024,21 +34532,16 @@ impl TypedSyntaxNode for TokenSemicolon {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenSemicolonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenSemicolon> for SyntaxStablePtrId {
-    fn from(node: &TokenSemicolon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenSemicolonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36071,13 +34574,13 @@ impl Terminal for TerminalSemicolon {
 }
 impl TerminalSemicolon {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenSemicolon {
-        TokenSemicolon::from_syntax_node(db, self.children[1].clone())
+        TokenSemicolon::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36128,7 +34631,7 @@ impl TypedSyntaxNode for TerminalSemicolon {
             kind,
             SyntaxKind::TerminalSemicolon
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -36140,15 +34643,10 @@ impl TypedSyntaxNode for TerminalSemicolon {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalSemicolonPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalSemicolon> for SyntaxStablePtrId {
-    fn from(node: &TerminalSemicolon) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalSemicolonPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36166,8 +34664,11 @@ impl Token for TokenUnderscore {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36207,7 +34708,7 @@ impl TypedSyntaxNode for TokenUnderscore {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUnderscore)
@@ -36215,21 +34716,16 @@ impl TypedSyntaxNode for TokenUnderscore {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenUnderscorePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenUnderscore> for SyntaxStablePtrId {
-    fn from(node: &TokenUnderscore) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenUnderscorePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36262,13 +34758,13 @@ impl Terminal for TerminalUnderscore {
 }
 impl TerminalUnderscore {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenUnderscore {
-        TokenUnderscore::from_syntax_node(db, self.children[1].clone())
+        TokenUnderscore::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36319,7 +34815,7 @@ impl TypedSyntaxNode for TerminalUnderscore {
             kind,
             SyntaxKind::TerminalUnderscore
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -36331,15 +34827,10 @@ impl TypedSyntaxNode for TerminalUnderscore {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalUnderscorePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalUnderscore> for SyntaxStablePtrId {
-    fn from(node: &TerminalUnderscore) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalUnderscorePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36357,8 +34848,11 @@ impl Token for TokenXor {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36398,7 +34892,7 @@ impl TypedSyntaxNode for TokenXor {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenXor)
@@ -36406,21 +34900,16 @@ impl TypedSyntaxNode for TokenXor {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenXorPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenXor> for SyntaxStablePtrId {
-    fn from(node: &TokenXor) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenXorPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36453,13 +34942,13 @@ impl Terminal for TerminalXor {
 }
 impl TerminalXor {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenXor {
-        TokenXor::from_syntax_node(db, self.children[1].clone())
+        TokenXor::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36510,7 +34999,7 @@ impl TypedSyntaxNode for TerminalXor {
             kind,
             SyntaxKind::TerminalXor
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -36518,15 +35007,10 @@ impl TypedSyntaxNode for TerminalXor {
         if kind == SyntaxKind::TerminalXor { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalXorPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalXor> for SyntaxStablePtrId {
-    fn from(node: &TerminalXor) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalXorPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36555,10 +35039,10 @@ impl SyntaxFile {
 }
 impl SyntaxFile {
     pub fn items(&self, db: &dyn SyntaxGroup) -> ModuleItemList {
-        ModuleItemList::from_syntax_node(db, self.children[0].clone())
+        ModuleItemList::from_syntax_node(db, self.children[0])
     }
     pub fn eof(&self, db: &dyn SyntaxGroup) -> TerminalEndOfFile {
-        TerminalEndOfFile::from_syntax_node(db, self.children[1].clone())
+        TerminalEndOfFile::from_syntax_node(db, self.children[1])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36605,7 +35089,7 @@ impl TypedSyntaxNode for SyntaxFile {
             kind,
             SyntaxKind::SyntaxFile
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -36613,15 +35097,10 @@ impl TypedSyntaxNode for SyntaxFile {
         if kind == SyntaxKind::SyntaxFile { Some(Self::from_syntax_node(db, node)) } else { None }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        SyntaxFilePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&SyntaxFile> for SyntaxStablePtrId {
-    fn from(node: &SyntaxFile) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        SyntaxFilePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36639,8 +35118,11 @@ impl Token for TokenEmpty {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36680,7 +35162,7 @@ impl TypedSyntaxNode for TokenEmpty {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEmpty)
@@ -36688,21 +35170,16 @@ impl TypedSyntaxNode for TokenEmpty {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenEmpty> for SyntaxStablePtrId {
-    fn from(node: &TokenEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36735,13 +35212,13 @@ impl Terminal for TerminalEmpty {
 }
 impl TerminalEmpty {
     pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
+        Trivia::from_syntax_node(db, self.children[0])
     }
     pub fn token(&self, db: &dyn SyntaxGroup) -> TokenEmpty {
-        TokenEmpty::from_syntax_node(db, self.children[1].clone())
+        TokenEmpty::from_syntax_node(db, self.children[1])
     }
     pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
+        Trivia::from_syntax_node(db, self.children[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36792,7 +35269,7 @@ impl TypedSyntaxNode for TerminalEmpty {
             kind,
             SyntaxKind::TerminalEmpty
         );
-        let children = db.get_children(node.clone());
+        let children = db.get_children(node);
         Self { node, children }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -36804,15 +35281,10 @@ impl TypedSyntaxNode for TerminalEmpty {
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TerminalEmpty> for SyntaxStablePtrId {
-    fn from(node: &TerminalEmpty) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TerminalEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36830,8 +35302,11 @@ impl Token for TokenSingleLineComment {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36871,7 +35346,7 @@ impl TypedSyntaxNode for TokenSingleLineComment {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
@@ -36880,21 +35355,16 @@ impl TypedSyntaxNode for TokenSingleLineComment {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenSingleLineCommentPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenSingleLineComment> for SyntaxStablePtrId {
-    fn from(node: &TokenSingleLineComment) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenSingleLineCommentPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36912,8 +35382,11 @@ impl Token for TokenSingleLineInnerComment {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -36953,7 +35426,7 @@ impl TypedSyntaxNode for TokenSingleLineInnerComment {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
@@ -36962,21 +35435,16 @@ impl TypedSyntaxNode for TokenSingleLineInnerComment {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenSingleLineInnerCommentPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenSingleLineInnerComment> for SyntaxStablePtrId {
-    fn from(node: &TokenSingleLineInnerComment) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenSingleLineInnerCommentPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36994,8 +35462,11 @@ impl Token for TokenSingleLineDocComment {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37035,7 +35506,7 @@ impl TypedSyntaxNode for TokenSingleLineDocComment {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
@@ -37044,21 +35515,16 @@ impl TypedSyntaxNode for TokenSingleLineDocComment {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenSingleLineDocCommentPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenSingleLineDocComment> for SyntaxStablePtrId {
-    fn from(node: &TokenSingleLineDocComment) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenSingleLineDocCommentPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37076,8 +35542,11 @@ impl Token for TokenWhitespace {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37117,7 +35586,7 @@ impl TypedSyntaxNode for TokenWhitespace {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenWhitespace)
@@ -37125,21 +35594,16 @@ impl TypedSyntaxNode for TokenWhitespace {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenWhitespacePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenWhitespace> for SyntaxStablePtrId {
-    fn from(node: &TokenWhitespace) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenWhitespacePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37157,8 +35621,11 @@ impl Token for TokenNewline {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37198,7 +35665,7 @@ impl TypedSyntaxNode for TokenNewline {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNewline)
@@ -37206,21 +35673,16 @@ impl TypedSyntaxNode for TokenNewline {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenNewlinePtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenNewline> for SyntaxStablePtrId {
-    fn from(node: &TokenNewline) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenNewlinePtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37238,8 +35700,11 @@ impl Token for TokenMissing {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37279,7 +35744,7 @@ impl TypedSyntaxNode for TokenMissing {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMissing)
@@ -37287,21 +35752,16 @@ impl TypedSyntaxNode for TokenMissing {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenMissingPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenMissing> for SyntaxStablePtrId {
-    fn from(node: &TokenMissing) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -37319,8 +35779,11 @@ impl Token for TokenSkipped {
         )
     }
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
-            .clone()
+        extract_matches!(
+            &self.node.lookup_intern(db).green.lookup_intern(db).details,
+            GreenNodeDetails::Token
+        )
+        .clone()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -37360,7 +35823,7 @@ impl TypedSyntaxNode for TokenSkipped {
         )
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
                 panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenSkipped)
@@ -37368,21 +35831,16 @@ impl TypedSyntaxNode for TokenSkipped {
         }
     }
     fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-        match node.0.green.lookup_intern(db).details {
+        match node.lookup_intern(db).green.lookup_intern(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
+        self.node
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenSkippedPtr(self.node.0.stable_ptr)
-    }
-}
-impl From<&TokenSkipped> for SyntaxStablePtrId {
-    fn from(node: &TokenSkipped) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenSkippedPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -38831,13 +37289,8 @@ impl TypedSyntaxNode for TokenNode {
             TokenNode::TerminalEmpty(x) => x.as_syntax_node(),
         }
     }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenNodePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl From<&TokenNode> for SyntaxStablePtrId {
-    fn from(node: &TokenNode) -> Self {
-        node.stable_ptr().untyped()
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        TokenNodePtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
     }
 }
 impl TokenNode {

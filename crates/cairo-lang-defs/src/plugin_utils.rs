@@ -137,7 +137,7 @@ macro_rules! extract_macro_unnamed_args {
         let Some(args) = args else {
             return $crate::plugin_utils::PluginResultTrait::diagnostic_only(
                 PluginDiagnostic::error(
-                    $syntax,
+                    $syntax.stable_ptr($db),
                     format!(
                         "Macro `{}` must have exactly {} unnamed arguments.",
                         $crate::plugin_utils::InlineMacroCall::path($syntax, $db)

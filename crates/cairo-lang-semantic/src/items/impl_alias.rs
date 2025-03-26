@@ -79,13 +79,15 @@ pub fn impl_alias_semantic_data_helper(
         NotFoundItemType::Impl,
     );
     let resolved_impl = item.and_then(|item| {
-        try_extract_matches!(item, ResolvedConcreteItem::Impl)
-            .ok_or_else(|| diagnostics.report(&impl_alias_ast.impl_path(syntax_db), UnknownImpl))
+        try_extract_matches!(item, ResolvedConcreteItem::Impl).ok_or_else(|| {
+            diagnostics
+                .report(impl_alias_ast.impl_path(syntax_db).stable_ptr(syntax_db), UnknownImpl)
+        })
     });
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(syntax_db).untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
     let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
@@ -124,7 +126,9 @@ pub fn impl_alias_semantic_data_cycle_helper(
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let syntax_db = db.upcast();
-    let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
+    let err =
+        Err(diagnostics
+            .report(impl_alias_ast.name(syntax_db).stable_ptr(syntax_db), ImplAliasCycle));
     let generic_params = generic_params_data.generic_params.clone();
     diagnostics.extend(generic_params_data.diagnostics);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
@@ -219,7 +223,7 @@ pub fn impl_alias_generic_params_data_helper(
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);

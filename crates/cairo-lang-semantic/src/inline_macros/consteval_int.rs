@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
 
@@ -32,7 +32,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         const DEPRECATION_FEATURE: &str = r#""deprecated-consteval-int-macro""#;
         if !metadata.allowed_features.contains(DEPRECATION_FEATURE) {
             diagnostics.push(PluginDiagnostic::warning(
-                syntax.stable_ptr().untyped(),
+                syntax.stable_ptr(db),
                 format!(
                     "Usage of deprecated macro `{}` with no `#[feature({DEPRECATION_FEATURE})]` \
                      attribute. Note: Use simple calculations instead, as these are supported in \
@@ -131,7 +131,7 @@ pub fn compute_constant_expr(
             ),
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    bin_expr.stable_ptr().untyped(),
+                    bin_expr.stable_ptr(db),
                     "Unsupported binary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -143,7 +143,7 @@ pub fn compute_constant_expr(
             }
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    un_expr.stable_ptr().untyped(),
+                    un_expr.stable_ptr(db),
                     "Unsupported unary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -154,7 +154,7 @@ pub fn compute_constant_expr(
         }
         _ => {
             diagnostics.push(PluginDiagnostic::error(
-                value.stable_ptr().untyped(),
+                value.stable_ptr(db),
                 "Unsupported expression in consteval_int macro".to_string(),
             ));
             None

@@ -1273,12 +1273,17 @@ impl StatementItemId {
         }
     }
     pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+        let syntax_db = db.upcast();
         match self {
-            StatementItemId::Constant(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
-            }
+            StatementItemId::Constant(id) => id
+                .lookup_intern(db)
+                .1
+                .lookup(syntax_db)
+                .name(syntax_db)
+                .stable_ptr(syntax_db)
+                .untyped(),
             StatementItemId::Use(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name_stable_ptr(db.upcast())
+                id.lookup_intern(db).1.lookup(syntax_db).name_stable_ptr(syntax_db)
             }
         }
     }

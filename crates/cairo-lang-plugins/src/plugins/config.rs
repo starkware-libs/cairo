@@ -245,7 +245,7 @@ fn parse_predicate_item(
                 "not" => {
                     if args.len() != 1 {
                         diagnostics.push(PluginDiagnostic::error(
-                            call.stable_ptr(),
+                            call.stable_ptr(db),
                             "`not` operator expects exactly one argument.".into(),
                         ));
                         None
@@ -260,7 +260,7 @@ fn parse_predicate_item(
                 "and" => {
                     if args.len() < 2 {
                         diagnostics.push(PluginDiagnostic::error(
-                            call.stable_ptr(),
+                            call.stable_ptr(db),
                             "`and` operator expects at least two arguments.".into(),
                         ));
                         None
@@ -275,7 +275,7 @@ fn parse_predicate_item(
                 "or" => {
                     if args.len() < 2 {
                         diagnostics.push(PluginDiagnostic::error(
-                            call.stable_ptr(),
+                            call.stable_ptr(db),
                             "`or` operator expects at least two arguments.".into(),
                         ));
                         None
@@ -289,7 +289,7 @@ fn parse_predicate_item(
                 }
                 _ => {
                     diagnostics.push(PluginDiagnostic::error(
-                        call.stable_ptr(),
+                        call.stable_ptr(db),
                         format!("Unsupported operator: `{}`.", operator),
                     ));
                     None
@@ -298,7 +298,7 @@ fn parse_predicate_item(
         }
         None => {
             diagnostics.push(PluginDiagnostic::error(
-                item.arg.stable_ptr().untyped(),
+                item.arg.stable_ptr(db).untyped(),
                 "Invalid configuration argument.".into(),
             ));
             None

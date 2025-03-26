@@ -1011,7 +1011,7 @@ fn write_syntactic_evaluation(
             green::GreenNodeDetails::Node { .. }
         ) {
             let mut is_after_evaluation_value = false;
-            for child in f.db.get_children(syntax_node.clone()).iter() {
+            for child in f.db.get_children(syntax_node).iter() {
                 let kind = child.kind(f.db.upcast());
                 if !matches!(kind, SyntaxKind::Trivia) {
                     if matches!(kind, SyntaxKind::TerminalSemicolon) {

@@ -7,7 +7,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 
 use super::utils::PluginTypeInfo;
 
@@ -41,7 +41,7 @@ impl MacroPlugin for DerivePlugin {
                 None => {
                     let maybe_error = item_ast.find_attr(db, DERIVE_ATTR).map(|derive_attr| {
                         vec![PluginDiagnostic::error(
-                            derive_attr.as_syntax_node().stable_ptr(),
+                            derive_attr.as_syntax_node().stable_ptr(db),
                             "`derive` may only be applied to `struct`s and `enum`s".to_string(),
                         )]
                     });
@@ -87,10 +87,8 @@ fn generate_derive_code_for_type(
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {
-            diagnostics.push(PluginDiagnostic::error(
-                attr.args_stable_ptr.untyped(),
-                "Expected args.".into(),
-            ));
+            diagnostics
+                .push(PluginDiagnostic::error(attr.args_stable_ptr, "Expected args.".into()));
             continue;
         }
 
@@ -100,7 +98,8 @@ fn generate_derive_code_for_type(
                 ..
             } = arg
             else {
-                diagnostics.push(PluginDiagnostic::error(&arg.arg, "Expected path.".into()));
+                diagnostics
+                    .push(PluginDiagnostic::error(arg.arg.stable_ptr(db), "Expected path.".into()));
                 continue;
             };
 
@@ -118,7 +117,7 @@ fn generate_derive_code_for_type(
                 _ => {
                     if !metadata.declared_derives.contains(&derived) {
                         diagnostics.push(PluginDiagnostic::error(
-                            &derived_path,
+                            derived_path.stable_ptr(db),
                             format!("Unknown derive `{derived}` - a plugin might be missing."),
                         ));
                     }

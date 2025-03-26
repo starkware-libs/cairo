@@ -482,7 +482,7 @@ pub fn impl_def_generic_params_data(
         &impl_ast.generic_params(db.upcast()),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_ast.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -562,9 +562,10 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
 
-    let trait_path_syntax = impl_ast.trait_path(db.upcast());
+    let syntax_db = db.upcast();
+    let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
-    resolve_trait_path(&mut diagnostics, &mut resolver, &trait_path_syntax)
+    resolve_trait_path(syntax_db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_concrete_trait].
@@ -645,10 +646,13 @@ pub fn priv_impl_declaration_data_inner(
             .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
             .and_then(|resolved_item| match resolved_item {
                 ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
-                _ => Err(diagnostics.report(&trait_path_syntax, SemanticDiagnosticKind::NotATrait)),
+                _ => Err(diagnostics.report(
+                    trait_path_syntax.stable_ptr(syntax_db),
+                    SemanticDiagnosticKind::NotATrait,
+                )),
             })
     } else {
-        Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
+        Err(diagnostics.report(trait_path_syntax.stable_ptr(syntax_db), ImplRequirementCycle))
     };
 
     let info = db.core_info();
@@ -667,7 +671,7 @@ pub fn priv_impl_declaration_data_inner(
             && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)
         {
             diagnostics.report(
-                &trait_path_syntax,
+                trait_path_syntax.stable_ptr(syntax_db),
                 CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
             );
         }
@@ -675,7 +679,7 @@ pub fn priv_impl_declaration_data_inner(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, impl_ast.stable_ptr(syntax_db).untyped());
 
     let concrete_trait: Result<ConcreteTraitId, DiagnosticAdded> =
         inference.rewrite(concrete_trait).no_err();
@@ -1246,7 +1250,7 @@ pub fn priv_impl_definition_data(
         &mut diagnostics,
         lookup_context,
         concrete_trait,
-        impl_ast.stable_ptr().untyped(),
+        impl_ast.stable_ptr(syntax_db).untyped(),
     )
     // Ignore the result.
     .ok();
@@ -1294,7 +1298,7 @@ pub fn priv_impl_definition_data(
                 }
                 ImplItem::Function(func) => {
                     let impl_function_id =
-                        ImplFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
+                        ImplFunctionLongId(module_file_id, func.stable_ptr(syntax_db)).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let feature_kind = FeatureKind::from_ast(
@@ -1312,13 +1316,16 @@ pub fn priv_impl_definition_data(
                         )
                         .is_some()
                     {
-                        diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
+                        diagnostics.report(
+                            name_node.stable_ptr(syntax_db),
+                            NameDefinedMultipleTimes(name),
+                        );
                     }
                     function_asts.insert(impl_function_id, func);
                 }
                 ImplItem::Type(ty) => {
                     let impl_type_id =
-                        ImplTypeDefLongId(module_file_id, ty.stable_ptr()).intern(db);
+                        ImplTypeDefLongId(module_file_id, ty.stable_ptr(syntax_db)).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let feature_kind = FeatureKind::from_ast(
@@ -1333,13 +1340,17 @@ pub fn priv_impl_definition_data(
                         )
                         .is_some()
                     {
-                        diagnostics.report(&name_node, NameDefinedMultipleTimes(name));
+                        diagnostics.report(
+                            name_node.stable_ptr(syntax_db),
+                            NameDefinedMultipleTimes(name),
+                        );
                     }
                     item_type_asts.insert(impl_type_id, ty);
                 }
                 ImplItem::Constant(constant) => {
                     let impl_constant_id =
-                        ImplConstantDefLongId(module_file_id, constant.stable_ptr()).intern(db);
+                        ImplConstantDefLongId(module_file_id, constant.stable_ptr(syntax_db))
+                            .intern(db);
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let feature_kind = FeatureKind::from_ast(
@@ -1358,7 +1369,7 @@ pub fn priv_impl_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
@@ -1366,7 +1377,7 @@ pub fn priv_impl_definition_data(
                 }
                 ImplItem::Impl(imp) => {
                     let impl_impl_id =
-                        ImplImplDefLongId(module_file_id, imp.stable_ptr()).intern(db);
+                        ImplImplDefLongId(module_file_id, imp.stable_ptr(syntax_db)).intern(db);
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let feature_kind = FeatureKind::from_ast(
@@ -1382,7 +1393,7 @@ pub fn priv_impl_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
@@ -1418,7 +1429,7 @@ pub fn priv_impl_definition_data(
             // in cairo_spec).
             // TODO(TomerStarkware): make sure we do not report missing if the trait item is
             // unsupported in impl.
-            &impl_ast.name(syntax_db),
+            impl_ast.name(syntax_db).stable_ptr(syntax_db),
             SemanticDiagnosticKind::MissingItemsInImpl(missing_items_in_impl),
         );
     }
@@ -1442,7 +1453,7 @@ fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     kw_terminal: Terminal,
 ) {
     diagnostics.report(
-        kw_terminal.as_syntax_node().stable_ptr(),
+        kw_terminal.as_syntax_node().stable_ptr(syntax_db),
         InvalidImplItem(kw_terminal.text(syntax_db)),
     );
 }
@@ -2385,7 +2396,7 @@ fn validate_impl_item_type(
     let type_name = impl_type_def_id.name(defs_db);
     let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
         diagnostics.report(
-            impl_type_ast,
+            impl_type_ast.stable_ptr(syntax_db),
             ImplItemNotInTrait {
                 impl_def_id,
                 impl_item_name: type_name,
@@ -2400,7 +2411,7 @@ fn validate_impl_item_type(
     let generic_params_node = impl_type_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
         diagnostics.report(
-            &generic_params_node,
+            generic_params_node.stable_ptr(syntax_db),
             GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "type".into() },
         );
     }
@@ -2588,7 +2599,7 @@ fn validate_impl_item_constant(
     let trait_constant_id =
         db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
             diagnostics.report(
-                impl_constant_ast,
+                impl_constant_ast.stable_ptr(syntax_db),
                 ImplItemNotInTrait {
                     impl_def_id,
                     impl_item_name: constant_name,
@@ -2611,7 +2622,10 @@ fn validate_impl_item_constant(
     let expected_ty = inference.rewrite(concrete_trait_constant_ty).no_err();
     let actual_ty = inference.rewrite(constant_ty).no_err();
     if expected_ty != actual_ty {
-        diagnostics.report(&impl_constant_type_clause_ast, WrongType { expected_ty, actual_ty });
+        diagnostics.report(
+            impl_constant_type_clause_ast.stable_ptr(syntax_db),
+            WrongType { expected_ty, actual_ty },
+        );
     }
     Ok(trait_constant_id)
 }
@@ -2858,7 +2872,7 @@ fn validate_impl_item_impl(
     let impl_name = impl_impl_def_id.name(defs_db);
     let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.clone())?.ok_or_else(|| {
         diagnostics.report(
-            impl_impl_ast,
+            impl_impl_ast.stable_ptr(syntax_db),
             ImplItemNotInTrait {
                 impl_def_id,
                 impl_item_name: impl_name,
@@ -2873,7 +2887,7 @@ fn validate_impl_item_impl(
     let generic_params_node = impl_impl_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
         diagnostics.report(
-            &generic_params_node,
+            generic_params_node.stable_ptr(syntax_db),
             GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "impl".into() },
         );
     }
@@ -2895,7 +2909,7 @@ fn validate_impl_item_impl(
             .is_err()
         {
             diagnostics.report(
-                impl_impl_ast,
+                impl_impl_ast.stable_ptr(syntax_db),
                 TraitMismatch {
                     expected_trt: concrete_trait_impl_concrete_trait?,
                     actual_trt: resolved_impl_concrete_trait?,
@@ -3158,7 +3172,7 @@ pub fn priv_impl_function_generic_params_data(
         &declaration.generic_params(syntax_db),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -3266,11 +3280,11 @@ pub fn priv_impl_function_declaration_data(
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let (implicit_precedence, _) =
-        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
 
     let inference = &mut resolver.inference();
     // Check fully resolved.
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr(syntax_db).untyped());
     let trait_function_id = validate_impl_function_signature(
         db,
         &mut diagnostics,
@@ -3343,7 +3357,7 @@ fn validate_impl_function_signature(
     let trait_function_id =
         db.trait_function_by_name(trait_id, function_name.clone())?.ok_or_else(|| {
             diagnostics.report(
-                impl_function_syntax,
+                impl_function_syntax.stable_ptr(syntax_db),
                 ImplItemNotInTrait {
                     impl_def_id,
                     impl_item_name: function_name,
@@ -3362,7 +3376,7 @@ fn validate_impl_function_signature(
     let func_generics = db.concrete_trait_function_generic_params(concrete_trait_function)?;
     if impl_func_generics.len() != func_generics.len() {
         diagnostics.report(
-            &impl_function_syntax.declaration(syntax_db).name(syntax_db),
+            impl_function_syntax.declaration(syntax_db).name(syntax_db).stable_ptr(syntax_db),
             WrongNumberOfGenericParamsForImplFunction {
                 expected: func_generics.len(),
                 actual: impl_func_generics.len(),
@@ -3458,7 +3472,7 @@ fn validate_impl_function_signature(
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(
-            &signature_syntax.parameters(syntax_db),
+            signature_syntax.parameters(syntax_db).stable_ptr(syntax_db),
             WrongNumberOfParameters {
                 impl_def_id,
                 impl_function_id,
@@ -3478,12 +3492,13 @@ fn validate_impl_function_signature(
 
         if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
             diagnostics.report(
-                &extract_matches!(
+                extract_matches!(
                     signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
                         .type_clause(syntax_db),
                     OptionTypeClause::TypeClause
                 )
-                .ty(syntax_db),
+                .ty(syntax_db)
+                .stable_ptr(syntax_db),
                 WrongParameterType {
                     impl_def_id,
                     impl_function_id,
@@ -3497,16 +3512,18 @@ fn validate_impl_function_signature(
         if trait_param.mutability != param.mutability {
             if trait_param.mutability == Mutability::Reference {
                 diagnostics.report(
-                    &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
-                        .modifiers(syntax_db),
+                    signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                        .modifiers(syntax_db)
+                        .stable_ptr(syntax_db),
                     ParameterShouldBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
 
             if param.mutability == Mutability::Reference {
                 diagnostics.report(
-                    &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
-                        .modifiers(syntax_db),
+                    signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                        .modifiers(syntax_db)
+                        .stable_ptr(syntax_db),
                     ParameterShouldNotBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
@@ -3514,7 +3531,9 @@ fn validate_impl_function_signature(
 
         if trait_param.name != param.name {
             diagnostics.report(
-                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx].name(syntax_db),
+                signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                    .name(syntax_db)
+                    .stable_ptr(syntax_db),
                 WrongParameterName {
                     impl_def_id,
                     impl_function_id,
@@ -3526,11 +3545,17 @@ fn validate_impl_function_signature(
     }
 
     if !concrete_trait_signature.panicable && signature.panicable {
-        diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
+        diagnostics.report(
+            signature_syntax.stable_ptr(syntax_db),
+            PassPanicAsNopanic { impl_function_id, trait_id },
+        );
     }
 
     if concrete_trait_signature.is_const && !signature.is_const {
-        diagnostics.report(signature_syntax, PassConstAsNonConst { impl_function_id, trait_id });
+        diagnostics.report(
+            signature_syntax.stable_ptr(syntax_db),
+            PassConstAsNonConst { impl_function_id, trait_id },
+        );
     }
 
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
@@ -3545,7 +3570,7 @@ fn validate_impl_function_signature(
                 impl_function_syntax.body(syntax_db).lbrace(syntax_db).as_syntax_node()
             }
         }
-        .stable_ptr();
+        .stable_ptr(syntax_db);
         diagnostics.report(
             location_ptr,
             WrongReturnTypeForImpl {

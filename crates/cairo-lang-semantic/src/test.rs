@@ -82,7 +82,7 @@ impl MacroPlugin for MappingsPlugin {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         // Only run plugin in the test file.
-        let ptr = item_ast.stable_ptr();
+        let ptr = item_ast.stable_ptr(db);
         let file = ptr.0.file_id(db);
         let path = file.full_path(db.upcast());
         if path != "lib.cairo" {

@@ -45,7 +45,7 @@ pub fn handle_storage_struct(
                 substorage_members_init_code.push(init_code);
             } else {
                 diagnostics.push(PluginDiagnostic::error(
-                    member.stable_ptr(),
+                    member.stable_ptr(db),
                     format!(
                         "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                          [some_path::]{STORAGE_STRUCT_NAME}`"

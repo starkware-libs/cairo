@@ -66,7 +66,7 @@ fn get_dep_component_generate_code_helper(
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
             let diagnostics = vec![PluginDiagnostic::error(
-                contract_arg.stable_ptr().untyped(),
+                contract_arg.stable_ptr(db).untyped(),
                 format!(
                     "The first argument of `{}` macro must have only a `ref` modifier.",
                     GetDepComponentMutMacro::NAME

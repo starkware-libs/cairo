@@ -375,15 +375,10 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
-                self.node.clone()
+                self.node
             }
-            fn stable_ptr(&self) -> Self::StablePtr {
-                $ptr_name(self.node.0.stable_ptr)
-            }
-        }
-        impl From<&$name> for SyntaxStablePtrId {
-            fn from(node: &$name) -> Self {
-                node.stable_ptr().untyped()
+            fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+                $ptr_name(self.node.stable_ptr(db))
             }
         }
     }
@@ -494,13 +489,8 @@ fn gen_enum_code(
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
                 }
             }
-            fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
-            }
-        }
-        impl From<&$(&name)> for SyntaxStablePtrId {
-            fn from(node: &$(&name)) -> Self {
-                node.stable_ptr().untyped()
+            fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+                $(&ptr_name)(self.as_syntax_node().lookup_intern(db).stable_ptr)
             }
         }
         impl $(&name) {
@@ -530,7 +520,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }).intern(db))
             }
             fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-                extract_matches!(&self.node.0.green.lookup_intern(db).details,
+                extract_matches!(&self.node.lookup_intern(db).green.lookup_intern(db).details,
                     GreenNodeDetails::Token).clone()
             }
         }
@@ -569,7 +559,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }).intern(db))
             }
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-                match node.0.green.lookup_intern(db).details {
+                match node.lookup_intern(db).green.lookup_intern(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
                         "Expected a token {:?}, not an internal node",
@@ -578,21 +568,16 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }
             }
             fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
-                match node.0.green.lookup_intern(db).details {
+                match node.lookup_intern(db).green.lookup_intern(db).details {
                     GreenNodeDetails::Token(_) => Some(Self { node }),
                     GreenNodeDetails::Node { .. } => None,
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
-                self.node.clone()
+                self.node
             }
-            fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.node.0.stable_ptr)
-            }
-        }
-        impl From<&$(&name)> for SyntaxStablePtrId {
-            fn from(node: &$(&name)) -> Self {
-                node.stable_ptr().untyped()
+            fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+                $(&ptr_name)(self.node.stable_ptr(db))
             }
         }
     }
@@ -621,7 +606,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         params.extend(quote! {$name: $(&child_green),});
         body.extend(quote! {
             pub fn $name(&self, db: &dyn SyntaxGroup) -> $kind {
-                $kind::from_syntax_node(db, self.children[$i].clone())
+                $kind::from_syntax_node(db, self.children[$i])
             }
         });
         args_for_missing.extend(quote! {$kind::missing(db).0,});
@@ -731,7 +716,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 let kind = node.kind(db);
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
-                let children = db.get_children(node.clone());
+                let children = db.get_children(node);
                 Self { node, children }
             }
             fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
@@ -743,15 +728,10 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
-                self.node.clone()
+                self.node
             }
-            fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.node.0.stable_ptr)
-            }
-        }
-        impl From<&$(&name)> for SyntaxStablePtrId {
-            fn from(node: &$(&name)) -> Self {
-                node.stable_ptr().untyped()
+            fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+                $(&ptr_name)(self.node.stable_ptr(db))
             }
         }
     }

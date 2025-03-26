@@ -71,7 +71,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
         if !matches!(item_ast, ast::ModuleItem::Struct(_)) && !storage_node_attrs.is_empty() {
             for attr in &storage_node_attrs {
                 diagnostics.push(PluginDiagnostic::error(
-                    attr,
+                    attr.stable_ptr(db),
                     "Can only be applied to structs.".to_string(),
                 ));
             }
@@ -80,7 +80,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
         if !matches!(item_ast, ast::ModuleItem::Enum(_)) && !sub_pointers_attrs.is_empty() {
             for attr in &sub_pointers_attrs {
                 diagnostics.push(PluginDiagnostic::error(
-                    attr,
+                    attr.stable_ptr(db),
                     "Can only be applied to enums.".to_string(),
                 ));
             }
@@ -89,13 +89,13 @@ impl MacroPlugin for StorageInterfacesPlugin {
             ast::ModuleItem::Struct(struct_ast) if !storage_node_attrs.is_empty() => {
                 for attr in &storage_node_attrs[1..] {
                     diagnostics.push(PluginDiagnostic::error(
-                        attr,
+                        attr.stable_ptr(db),
                         "Multiple storage node attributes are not allowed.".to_string(),
                     ));
                 }
                 if has_derive(&struct_ast, db, STORE_TRAIT).is_some() {
                     diagnostics.push(PluginDiagnostic::error(
-                        struct_ast.as_syntax_node().stable_ptr(),
+                        struct_ast.stable_ptr(db),
                         format!(
                             "Storage node attribute cannot be used with derive of `{STORE_TRAIT}`."
                         ),
@@ -122,7 +122,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
             ast::ModuleItem::Enum(enum_ast) if !sub_pointers_attrs.is_empty() => {
                 for attr in &sub_pointers_attrs[1..] {
                     diagnostics.push(PluginDiagnostic::error(
-                        attr,
+                        attr.stable_ptr(db),
                         "Multiple sub pointers attributes are not allowed.".to_string(),
                     ));
                 }
@@ -131,7 +131,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                             if extract_single_unnamed_arg(db, args.arguments(db)).is_some())
                 {
                     diagnostics.push(PluginDiagnostic::error(
-                        &arguments,
+                        arguments.stable_ptr(db),
                         "Sub pointers attribute must have exactly one unnamed argument."
                             .to_string(),
                     ));
@@ -862,7 +862,7 @@ pub fn get_member_storage_config(
     for attr in member.query_attr(db, SUBSTORAGE_ATTR) {
         if result.kind != StorageMemberKind::Basic {
             diagnostics.push(PluginDiagnostic::error(
-                &attr,
+                attr.stable_ptr(db),
                 "Multiple storage attributes are not allowed.".to_string(),
             ));
         }
@@ -872,13 +872,13 @@ pub fn get_member_storage_config(
     for attr in member.query_attr(db, RENAME_ATTR) {
         if result.kind != StorageMemberKind::Basic {
             diagnostics.push(PluginDiagnostic::error(
-                &attr,
+                attr.stable_ptr(db),
                 "The `rename` attribute cannot be used with other storage attributes.".to_string(),
             ));
         }
         if result.rename.is_some() {
             diagnostics.push(PluginDiagnostic::error(
-                &attr,
+                attr.stable_ptr(db),
                 "Multiple `rename` attributes are not allowed.".to_string(),
             ));
         }

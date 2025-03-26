@@ -11,7 +11,7 @@ use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, ast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
@@ -100,7 +100,7 @@ fn test_generic_item_id(
         match node.kind(db) {
             SyntaxKind::ItemModule => {
                 let submodule_id =
-                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr()))
+                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr(db)))
                         .intern(db);
                 module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id), FileIndex(0));
             }
@@ -109,7 +109,7 @@ fn test_generic_item_id(
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
                 let param_id =
-                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr()))
+                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
                 writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
@@ -117,7 +117,7 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in db.get_children(node.clone()).iter() {
+        for child in db.get_children(*node).iter() {
             find_generics(db, module_file_id, child, output);
         }
     }
@@ -243,7 +243,10 @@ impl MacroPlugin for DummyPlugin {
                     aux_data: None,
                     diagnostics_note: Default::default(),
                 }),
-                diagnostics: vec![PluginDiagnostic::error(&free_function_ast, "bla".into())],
+                diagnostics: vec![PluginDiagnostic::error(
+                    free_function_ast.stable_ptr(db),
+                    "bla".into(),
+                )],
                 remove_original_item: false,
             },
             _ => PluginResult::default(),

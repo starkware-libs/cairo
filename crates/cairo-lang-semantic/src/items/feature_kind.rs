@@ -45,7 +45,7 @@ impl FeatureKind {
             return Self::Stable;
         };
         if unstable_attrs.len() + deprecated_attrs.len() + internal_attrs.len() > 1 {
-            add_diag(diagnostics, &attrs.stable_ptr(), FeatureMarkerDiagnostic::MultipleMarkers);
+            add_diag(diagnostics, &attrs.stable_ptr(db), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
         }
 
@@ -101,7 +101,11 @@ fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
-            add_diag(diagnostics, &arg.stable_ptr(), FeatureMarkerDiagnostic::UnsupportedArgument);
+            add_diag(
+                diagnostics,
+                &arg.stable_ptr(db),
+                FeatureMarkerDiagnostic::UnsupportedArgument,
+            );
             continue;
         };
         let Some(i) = allowed_args.iter().position(|x| x == &name.text.as_str()) else {

@@ -901,7 +901,9 @@ impl ABIError {
         // TODO(orizi): Add more error locations.
         match self {
             ABIError::SemanticError => None,
-            ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr().untyped()),
+            ABIError::EventFlatVariantMustBeEnum(attr) => {
+                Some(attr.stable_ptr(db.upcast()).untyped())
+            }
             ABIError::NoStorage => None,
             ABIError::UnexpectedType => None,
             ABIError::EntrypointMustHaveSelf => None,

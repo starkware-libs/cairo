@@ -5,7 +5,7 @@ use cairo_lang_syntax::attribute::structured::{
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{QueryAttrs, is_single_arg_attr};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
@@ -173,7 +173,7 @@ pub fn has_v0_attribute_ex(
     };
     validate_v0(db, diagnostics, &attr, attr_name);
     if let Some(deprecated) = deprecated() {
-        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr().untyped(), deprecated));
+        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr(db), deprecated));
     }
     true
 }
@@ -187,7 +187,7 @@ pub fn validate_v0(
 ) {
     if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic::error(
-            attr.stable_ptr().untyped(),
+            attr.stable_ptr(db),
             format!("Only #[{name}(v0)] is supported."),
         ));
     }
@@ -215,7 +215,7 @@ pub fn forbid_attribute_in_impl(
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
         diagnostics.push(PluginDiagnostic::error(
-            attr.stable_ptr().untyped(),
+            attr.stable_ptr(db),
             format!(
                 "The `{attr_name}` attribute is not allowed inside an impl marked as \
                  `{embedded_impl_attr}`."

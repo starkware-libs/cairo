@@ -141,7 +141,7 @@ fn get_module_aliased_functions(
             {
                 Ok(Aliased {
                     value: function_id,
-                    alias: leaf.stable_ptr().identifier(db.upcast()).to_string(),
+                    alias: leaf.stable_ptr(db.upcast()).identifier(db.upcast()).to_string(),
                 })
             } else {
                 bail!("Expected a free function.")
@@ -208,7 +208,7 @@ fn get_impl_aliases_abi_functions(
                 let concrete_wrapper = resolver
                     .specialize_function(
                         &mut diagnostics,
-                        impl_alias.stable_ptr().untyped(),
+                        impl_alias.stable_ptr(syntax_db).untyped(),
                         GenericFunctionId::Free(f),
                         &generic_args,
                     )

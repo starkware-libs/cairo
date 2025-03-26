@@ -4,6 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
@@ -21,8 +22,8 @@ impl StableLocation {
         self.0.file_id(db.upcast())
     }
 
-    pub fn from_ast<TNode: TypedSyntaxNode>(node: &TNode) -> Self {
-        Self(node.as_syntax_node().stable_ptr())
+    pub fn from_ast<TNode: TypedSyntaxNode>(db: &dyn SyntaxGroup, node: &TNode) -> Self {
+        Self(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
