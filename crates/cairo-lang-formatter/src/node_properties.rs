@@ -471,7 +471,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     false,
                 ))
             }
-            Some(SyntaxKind::TraitItemList) | Some(SyntaxKind::ImplItemList) => {
+            Some(SyntaxKind::TraitItemList | SyntaxKind::ImplItemList) => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     13,
                     BreakLinePointIndentation::NotIndented,
