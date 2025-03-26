@@ -332,12 +332,17 @@ impl<'db> Resolver<'db> {
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
+        let first_segment = segments.peek().cloned();
         let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
             self,
             diagnostics,
             &mut segments,
             statement_env,
         )?;
+        // It is unexpected for `first_segment` to ever be `None` but better safe than sorry.
+        if let Some(first_segment) = first_segment {
+            (callbacks.mark)(&mut self.resolved_items, db, first_segment, item.clone());
+        }
 
         // Follow modules.
         while let Some(segment) = segments.next() {
@@ -515,16 +520,16 @@ impl<'db> Resolver<'db> {
                 }
 
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
-                    self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
+                    segments.next().unwrap();
+                    local_item
                 } else {
                     match self.determine_base(&identifier, statement_env) {
                         // This item lies inside a module.
                         ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
-                        ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
-                            db,
-                            segments.next().unwrap(),
-                            ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
-                        ),
+                        ResolvedBase::Crate(crate_id) => {
+                            segments.next().unwrap();
+                            ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id))
+                        }
                         ResolvedBase::StatementEnvironment(generic_item) => {
                             let segment = segments.next().unwrap();
                             self.specialize_generic_statement_arg(
@@ -701,11 +706,10 @@ impl<'db> Resolver<'db> {
                 match self.determine_base(&identifier, statement_env) {
                     // This item lies inside a module.
                     ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
-                    ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
-                    ),
+                    ResolvedBase::Crate(crate_id) => {
+                        segments.next().unwrap();
+                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id))
+                    }
                     ResolvedBase::StatementEnvironment(generic_item) => {
                         segments.next();
                         generic_item
