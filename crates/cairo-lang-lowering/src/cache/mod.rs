@@ -33,6 +33,7 @@ use cairo_lang_semantic::items::generics::{GenericParamConst, GenericParamImpl, 
 use cairo_lang_semantic::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
 };
+use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -124,17 +125,27 @@ pub fn generate_crate_cache(
                 function_ids.push(FunctionWithBodyId::Impl(*impl_func));
             }
         }
+        for trait_id in db.module_traits_ids(*module_id)?.iter() {
+            for trait_func in db.trait_functions(*trait_id)?.values() {
+                function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+            }
+        }
     }
 
     let mut ctx = CacheSavingContext::new(db, crate_id);
     let cached = function_ids
         .iter()
-        .map(|id| {
-            let multi = db.priv_function_with_body_multi_lowering(*id)?;
-            Ok((
+        .filter_map(|id| {
+            db.function_body(*id).ok()?;
+            let multi = match db.priv_function_with_body_multi_lowering(*id) {
+                Ok(multi) => multi,
+                Err(err) => return Some(Err(err)),
+            };
+
+            Some(Ok((
                 DefsFunctionWithBodyIdCached::new(*id, &mut ctx.semantic_ctx),
                 MultiLoweringCached::new((*multi).clone(), &mut ctx),
-            ))
+            )))
         })
         .collect::<Maybe<Vec<_>>>()?;
 
@@ -1589,6 +1600,7 @@ impl SemanticConcreteFunctionWithBodyCached {
 enum GenericFunctionWithBodyCached {
     Free(LanguageElementCached),
     Impl(ConcreteImplCached, ImplFunctionBodyCached),
+    Trait(ConcreteTraitCached, LanguageElementCached),
 }
 
 impl GenericFunctionWithBodyCached {
@@ -1604,9 +1616,10 @@ impl GenericFunctionWithBodyCached {
                 ConcreteImplCached::new(id.concrete_impl_id, ctx),
                 ImplFunctionBodyCached::new(id.function_body, ctx),
             ),
-            GenericFunctionWithBodyId::Trait(_id) => {
-                unreachable!("Trait functions are not supported in serialization")
-            }
+            GenericFunctionWithBodyId::Trait(id) => GenericFunctionWithBodyCached::Trait(
+                ConcreteTraitCached::new(id.concrete_trait(ctx.db), ctx),
+                LanguageElementCached::new(id.trait_function(ctx.db), ctx),
+            ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericFunctionWithBodyId {
@@ -1623,6 +1636,22 @@ impl GenericFunctionWithBodyCached {
                     concrete_impl_id: id.embed(ctx),
                     function_body: function_body.embed(ctx),
                 })
+            }
+            GenericFunctionWithBodyCached::Trait(id, name) => {
+                let concrete_trait_id = id.embed(ctx);
+                let (module_file_id, stable_ptr) = name.embed(ctx);
+                let trait_function_id =
+                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
+                        .intern(ctx.db);
+
+                GenericFunctionWithBodyId::Trait(
+                    ConcreteTraitGenericFunctionLongId::new(
+                        ctx.db,
+                        concrete_trait_id,
+                        trait_function_id,
+                    )
+                    .intern(ctx.db),
+                )
             }
         }
     }
@@ -2066,6 +2095,7 @@ enum ImplCached {
     GenericParameter(GenericParamCached),
     ImplImpl(ImplImplCached),
     GeneratedImpl(GeneratedImplCached),
+    SelfImpl(ConcreteTraitCached),
 }
 impl ImplCached {
     fn new(impl_id: ImplLongId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
@@ -2082,7 +2112,10 @@ impl ImplCached {
             ImplLongId::ImplImpl(impl_impl) => {
                 ImplCached::ImplImpl(ImplImplCached::new(impl_impl, ctx))
             }
-            ImplLongId::ImplVar(_) | ImplLongId::SelfImpl(_) => {
+            ImplLongId::SelfImpl(concrete_trait) => {
+                ImplCached::SelfImpl(ConcreteTraitCached::new(concrete_trait, ctx))
+            }
+            ImplLongId::ImplVar(_) => {
                 unreachable!(
                     "impl {:?} is not supported for caching",
                     impl_id.debug(ctx.db.elongate())
@@ -2100,6 +2133,7 @@ impl ImplCached {
             ImplCached::GeneratedImpl(generated_impl) => {
                 ImplLongId::GeneratedImpl(generated_impl.embed(ctx))
             }
+            ImplCached::SelfImpl(concrete_trait) => ImplLongId::SelfImpl(concrete_trait.embed(ctx)),
         }
     }
 }
