@@ -306,7 +306,7 @@ impl<'a> AbiBuilder<'a> {
             items.push(Item::Function(f));
         }
 
-        let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
+        let interface_item = Item::Interface(Interface { name: interface_path, items });
         self.add_abi_item(interface_item, true, source)?;
 
         Ok(())
