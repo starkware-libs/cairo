@@ -971,12 +971,12 @@ fn write_generic_args(
     if !generic_args.is_empty() {
         f.write_str("<")?;
     }
-    generic_args.iter().for_each(|arg| {
+    for arg in generic_args.iter() {
         let documentable_id = resolve_generic_arg(*arg, f.db);
         let _ = f.write_link(extract_and_format(&arg.format(f.db.upcast())), documentable_id);
         let _ = f.write_str(if count == 1 { ">" } else { ", " });
         count -= 1;
-    });
+    }
     Ok(())
 }
 
