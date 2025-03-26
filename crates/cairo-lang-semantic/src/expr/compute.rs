@@ -71,14 +71,15 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
-    EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
+    EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
+    ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
-    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
-    resolve_type_with_environment, verify_fixed_size_array_size, wrap_in_snapshots,
+    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
+    verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
@@ -939,7 +940,7 @@ fn compute_expr_function_call_semantic(
         ctx.diagnostics,
         &path,
         NotFoundItemType::Function,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     )?;
 
     match item {
@@ -1754,12 +1755,12 @@ fn compute_expr_closure_semantic(
             .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
 
         let return_type = match syntax.ret_ty(syntax_db) {
-            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_with_environment(
+            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
                 new_ctx.db,
                 new_ctx.diagnostics,
                 &mut new_ctx.resolver,
                 &ty_syntax.ty(syntax_db),
-                Some(&mut new_ctx.environment),
+                ResolutionContext::Statement(&mut new_ctx.environment),
             ),
             OptionReturnTypeClause::Empty(missing) => {
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
@@ -2195,7 +2196,7 @@ fn maybe_compute_pattern_semantic(
                 ctx.diagnostics,
                 &path,
                 NotFoundItemType::Identifier,
-                Some(&mut ctx.environment),
+                ResolutionContext::Statement(&mut ctx.environment),
             )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
@@ -2241,7 +2242,7 @@ fn maybe_compute_pattern_semantic(
                 &mut Default::default(),
                 path,
                 NotFoundItemType::Identifier,
-                Some(&mut ctx.environment),
+                ResolutionContext::Statement(&mut ctx.environment),
             );
             if let Ok(item) = item_result {
                 if let Some(generic_variant) =
@@ -2298,7 +2299,7 @@ fn maybe_compute_pattern_semantic(
                     ctx.diagnostics,
                     &pattern_struct.path(syntax_db),
                     NotFoundItemType::Type,
-                    Some(&mut ctx.environment)
+                    ResolutionContext::Statement(&mut ctx.environment)
                 )?,
                 ResolvedConcreteItem::Type
             )
@@ -2637,12 +2638,12 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty = resolve_type_with_environment(
+    let ty = resolve_type_ex(
         db,
         ctx.diagnostics,
         &mut ctx.resolver,
         &ast::Expr::Path(path.clone()),
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     );
     ty.check_not_missing(db)?;
 
@@ -3323,7 +3324,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         ctx.diagnostics,
         path,
         NotFoundItemType::Identifier,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     )?;
 
     match resolved_item {
@@ -3591,12 +3592,12 @@ pub fn compute_statement_semantic(
                 }
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
-                    let explicit_type = resolve_type_with_environment(
+                    let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         &var_type_path,
-                        Some(&mut ctx.environment),
+                        ResolutionContext::Statement(&mut ctx.environment),
                     );
 
                     let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
@@ -3780,12 +3781,12 @@ pub fn compute_statement_semantic(
                     let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
                     let rhs = const_syntax.value(db.upcast());
                     let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type_with_environment(
+                    let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         &lhs,
-                        Some(&mut ctx.environment),
+                        ResolutionContext::Statement(&mut ctx.environment),
                     );
                     let rhs_resolved_expr = resolve_const_expr_and_evaluate(
                         db,
@@ -3818,7 +3819,7 @@ pub fn compute_statement_semantic(
                             ctx.diagnostics,
                             segments,
                             NotFoundItemType::Identifier,
-                            Some(&mut ctx.environment),
+                            ResolutionContext::Statement(&mut ctx.environment),
                         )?;
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
