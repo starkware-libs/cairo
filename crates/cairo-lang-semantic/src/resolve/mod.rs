@@ -237,6 +237,15 @@ impl Resolver<'_> {
     }
 }
 
+pub enum ResolutionContext<'a> {
+    /// Default resolution.
+    Default,
+    /// The resolution is of a module item.
+    ModuleItem(ModuleItemId),
+    /// The resolution is in a statement environment.
+    Statement(&'a mut Environment),
+}
+
 /// The result of resolveing an item using `use *` imports.
 enum UseStarResult {
     /// A unique path was found, considering only the `use *` imports.
@@ -301,14 +310,12 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
-        statement_env: Option<&mut Environment>,
         mut callbacks: ResolvePathInnerCallbacks<
             ResolvedItem,
-            impl FnMut(
+            impl FnOnce(
                 &mut Resolver<'_>,
                 &mut SemanticDiagnostics,
                 &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
-                Option<&mut Environment>,
             ) -> Maybe<ResolvedItem>,
             impl FnMut(
                 &mut Resolver<'_>,
@@ -332,12 +339,8 @@ impl<'db> Resolver<'db> {
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
-        let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
-            self,
-            diagnostics,
-            &mut segments,
-            statement_env,
-        )?;
+        let mut item: ResolvedItem =
+            (callbacks.resolve_path_first_segment)(self, diagnostics, &mut segments)?;
 
         // Follow modules.
         while let Some(segment) = segments.next() {
@@ -370,7 +373,7 @@ impl<'db> Resolver<'db> {
         path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
-        self.resolve_concrete_path_ex(diagnostics, path, item_type, None)
+        self.resolve_concrete_path_ex(diagnostics, path, item_type, ResolutionContext::Default)
     }
 
     /// Resolves a concrete item, given a path.
@@ -380,21 +383,16 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
-        statement_env: Option<&mut Environment>,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedConcreteItem> {
         self.resolve_path_inner::<ResolvedConcreteItem>(
             diagnostics,
             path,
             item_type,
-            statement_env,
             ResolvePathInnerCallbacks {
                 resolved_item_type: PhantomData,
-                resolve_path_first_segment: |resolver, diagnostics, segments, statement_env| {
-                    resolver.resolve_concrete_path_first_segment(
-                        diagnostics,
-                        segments,
-                        statement_env,
-                    )
+                resolve_path_first_segment: |resolver, diagnostics, segments| {
+                    resolver.resolve_concrete_path_first_segment(diagnostics, segments, ctx)
                 },
                 resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
                     resolver.resolve_path_next_segment_concrete(
@@ -448,7 +446,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
-        statement_env: Option<&mut Environment>,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedConcreteItem> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
@@ -460,7 +458,7 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                match self.determine_base(&identifier, statement_env) {
+                match self.determine_base(&identifier, ctx) {
                     ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
@@ -517,7 +515,7 @@ impl<'db> Resolver<'db> {
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
                 } else {
-                    match self.determine_base(&identifier, statement_env) {
+                    match self.determine_base(&identifier, ctx) {
                         // This item lies inside a module.
                         ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
                         ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
@@ -577,9 +575,9 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
-        statement_env: Option<&mut Environment>,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
-        self.resolve_generic_path_inner(diagnostics, path, item_type, false, statement_env)
+        self.resolve_generic_path_inner(diagnostics, path, item_type, false, ctx)
     }
     /// Resolves a generic item, given a concrete item path, while ignoring the generic args.
     /// Guaranteed to result in at most one diagnostic.
@@ -588,9 +586,14 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
-        statement_env: Option<&mut Environment>,
     ) -> Maybe<ResolvedGenericItem> {
-        self.resolve_generic_path_inner(diagnostics, path, item_type, true, statement_env)
+        self.resolve_generic_path_inner(
+            diagnostics,
+            path,
+            item_type,
+            true,
+            ResolutionContext::Default,
+        )
     }
 
     /// Resolves a generic item, given a path.
@@ -603,7 +606,7 @@ impl<'db> Resolver<'db> {
         path: impl AsSegments,
         item_type: NotFoundItemType,
         allow_generic_args: bool,
-        statement_env: Option<&mut Environment>,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
         let validate_segment =
             |diagnostics: &mut SemanticDiagnostics, segment: &ast::PathSegment| match segment {
@@ -616,15 +619,14 @@ impl<'db> Resolver<'db> {
             diagnostics,
             path,
             item_type,
-            statement_env,
             ResolvePathInnerCallbacks {
                 resolved_item_type: PhantomData,
-                resolve_path_first_segment: |resolver, diagnostics, segments, statement_env| {
+                resolve_path_first_segment: |resolver, diagnostics, segments| {
                     resolver.resolve_generic_path_first_segment(
                         diagnostics,
                         segments,
                         allow_generic_args,
-                        statement_env,
+                        ctx,
                     )
                 },
                 resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
@@ -651,7 +653,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
         allow_generic_args: bool,
-        statement_env: Option<&mut Environment>,
+        ctx: ResolutionContext<'_>,
     ) -> Maybe<ResolvedGenericItem> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedGenericItem::Module(base_module?));
@@ -666,7 +668,7 @@ impl<'db> Resolver<'db> {
                 }
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                match self.determine_base(&identifier, statement_env) {
+                match self.determine_base(&identifier, ctx) {
                     ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
                     ResolvedBase::Crate(_) => {
                         // Crates do not have generics.
@@ -698,7 +700,7 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
-                match self.determine_base(&identifier, statement_env) {
+                match self.determine_base(&identifier, ctx) {
                     // This item lies inside a module.
                     ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
                     ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
@@ -1321,20 +1323,22 @@ impl<'db> Resolver<'db> {
     fn determine_base(
         &mut self,
         identifier: &ast::TerminalIdentifier,
-        statement_env: Option<&mut Environment>,
+        mut ctx: ResolutionContext<'_>,
     ) -> ResolvedBase {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
         let module_id = self.module_file_id.0;
-        if let Some(env) = statement_env {
+        if let ResolutionContext::Statement(ref mut env) = ctx {
             if let Some(inner_generic_arg) = get_statement_item_by_name(env, &ident) {
                 return ResolvedBase::StatementEnvironment(inner_generic_arg);
             }
         }
 
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(_)) = self.db.module_item_by_name(module_id, ident.clone()) {
-            return ResolvedBase::Module(module_id);
+        if let Ok(Some(item_id)) = self.db.module_item_by_name(module_id, ident.clone()) {
+            if !matches!(ctx, ResolutionContext::ModuleItem(id) if id == item_id) {
+                return ResolvedBase::Module(module_id);
+            }
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
@@ -2116,11 +2120,10 @@ enum ResolvedBase {
 /// The callbacks to be used by `resolve_path_inner`.
 struct ResolvePathInnerCallbacks<ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
 where
-    ResolveFirst: FnMut(
+    ResolveFirst: FnOnce(
         &mut Resolver<'_>,
         &mut SemanticDiagnostics,
         &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
-        Option<&mut Environment>,
     ) -> Maybe<ResolvedItem>,
     ResolveNext: FnMut(
         &mut Resolver<'_>,

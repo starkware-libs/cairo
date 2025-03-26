@@ -22,7 +22,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
-use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
+use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -36,8 +36,8 @@ pub struct UseData {
 pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
-    let inference_id =
-        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+    let module_item_id = ModuleItemId::Use(use_id);
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -50,7 +50,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
         &mut diagnostics,
         segments,
         NotFoundItemType::Identifier,
-        None,
+        ResolutionContext::ModuleItem(module_item_id),
     );
     let resolver_data: Arc<ResolverData> = Arc::new(resolver.data);
 
@@ -108,21 +108,13 @@ fn get_parent_single_use_path(
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    cycle: &salsa::Cycle,
+    _cycle: &salsa::Cycle,
     use_id: &UseId,
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
-    let err = Err(diagnostics.report(
-        &use_ast,
-        if cycle.participant_keys().count() == 1 {
-            // `use bad_name`, finds itself but we don't want to report a cycle in that case.
-            PathNotFound(NotFoundItemType::Identifier)
-        } else {
-            UseCycle
-        },
-    ));
+    let err = Err(diagnostics.report(&use_ast, UseCycle));
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
     Ok(UseData {
@@ -201,7 +193,7 @@ pub fn priv_global_use_semantic_data(
         &mut diagnostics,
         segments.clone(),
         NotFoundItemType::Identifier,
-        None,
+        ResolutionContext::Default,
     )?;
     // unwrap always safe as the resolver already resolved the entire path.
     let last_segment = segments.last().unwrap();
@@ -311,5 +303,8 @@ pub fn priv_module_use_star_modules(
             stack.push(module_id_found);
         }
     }
+    // Remove the current module from the list of all modules, as if items in the module not found
+    // previously, it was explicitly ignored.
+    all_modules.swap_remove(&module_id);
     Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
 }

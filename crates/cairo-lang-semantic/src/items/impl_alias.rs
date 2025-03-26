@@ -268,7 +268,6 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
         &mut diagnostics,
         &impl_path_syntax,
         NotFoundItemType::Impl,
-        None,
     ) {
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),

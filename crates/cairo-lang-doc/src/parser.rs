@@ -11,7 +11,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::resolve::{AsSegments, ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::resolve::{AsSegments, ResolutionContext, ResolvedGenericItem, Resolver};
 use cairo_lang_syntax::node::ast::{Expr, ExprPath, ItemModule};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -302,7 +302,7 @@ impl<'a> DocumentationCommentParser<'a> {
                 &mut diagnostics,
                 segments.to_segments(self.db.upcast()),
                 NotFoundItemType::Identifier,
-                None,
+                ResolutionContext::Default,
             )
             .ok()?
             .to_documentable_item_id(self.db.upcast())

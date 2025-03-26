@@ -40,7 +40,43 @@ use NonExisting;
 use internal::bar;
 
 //! > expected_diagnostics
-error[E0006]: Identifier not found.
+error: Item `test::NonExisting` is not visible in this context through module `test`.
  --> lib.cairo:4:5
 use NonExisting;
     ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Single segment usage of prelude.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use Array;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Single segment usage of dependency crate.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use core;
+
+//! > expected_diagnostics
