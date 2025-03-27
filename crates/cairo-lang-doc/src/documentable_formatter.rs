@@ -933,24 +933,29 @@ fn write_generic_params(
         let mut count = generic_params.len();
         f.write_str("<")?;
         for param in generic_params {
-            let generic_item = param.id().generic_item(f.db.upcast());
-            let documentable_id = resolve_generic_item(generic_item, f.db.upcast());
             match param {
                 GenericParam::Type(param_type) => {
                     let name = extract_and_format(&param_type.id.format(f.db.upcast()));
-                    f.write_link(name, documentable_id)?;
-                    f.write_str(if count == 1 { "" } else { ", " })?
+                    write!(f, "{}{}", name, if count == 1 { "" } else { ", " })?;
                 }
                 GenericParam::Const(param_const) => {
                     let name = extract_and_format(&param_const.id.format(f.db.upcast()));
-                    f.write_str("const")?;
-                    f.write_link(name, documentable_id)?;
-                    f.write_str(if count == 1 { "" } else { ", " })?
+                    write!(f, "const {}{}", name, if count == 1 { "" } else { ", " })?;
                 }
                 GenericParam::Impl(param_impl) => {
                     let name = extract_and_format(&param_impl.id.format(f.db.upcast()));
-                    f.write_link(name, documentable_id)?;
-                    f.write_str(if count == 1 { "" } else { ", " })?
+                    match param_impl.concrete_trait {
+                        Ok(concrete_trait) => {
+                            let documentable_id =
+                                DocumentableItemId::from(LookupItemId::ModuleItem(
+                                    ModuleItemId::Trait(concrete_trait.trait_id(f.db.upcast())),
+                                ));
+                            f.write_link(name, Some(documentable_id))?;
+                        }
+                        Err(_) => {
+                            write!(f, "{}{}", name, if count == 1 { "" } else { ", " })?;
+                        }
+                    }
                 }
                 GenericParam::NegImpl(_) => f.write_str(MISSING)?,
             };
