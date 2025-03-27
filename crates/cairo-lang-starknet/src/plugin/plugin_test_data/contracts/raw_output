@@ -130,6 +130,7 @@ fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     test_raw_output(ref contract_state, )
 }
@@ -145,6 +146,7 @@ fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<f
     core::option::OptionTraitImpl::expect(
         core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
     );
+    core::gas::redeposit_gas();
     let mut contract_state = unsafe_new_contract_state();
     test_raw_output_with_spaces(ref contract_state, )
 }
