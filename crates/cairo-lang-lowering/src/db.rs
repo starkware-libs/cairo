@@ -451,8 +451,9 @@ fn priv_concrete_function_with_body_lowered_flat(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_db = db.upcast();
-    let mut lowered =
-        (*db.function_with_body_lowering(function.function_with_body_id(db))?).clone();
+    let generic_function_id = function.function_with_body_id(db);
+    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
+    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }

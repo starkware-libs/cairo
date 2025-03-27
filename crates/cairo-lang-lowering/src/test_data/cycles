@@ -25,29 +25,7 @@ error: Call cycle of `nopanic` functions is not allowed.
 |_^
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas(v0, v1) {
-    Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk2,
-  })
-
-blk1:
-Statements:
-  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<((),)>) <- test::foo(v3, v7, v2)
-End:
-  Return(v8, v9, v10)
-
-blk2:
-Statements:
-  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
-End:
-  Return(v5, v11, v13)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 

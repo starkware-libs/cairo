@@ -1,5 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
@@ -14,7 +15,9 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
+use crate::FlatLowered;
 use crate::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
 
 #[salsa::database(
@@ -101,5 +104,17 @@ impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
 impl Upcast<dyn ParserGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
+    }
+}
+
+/// Helper for formatting a lowered representation for tests.
+pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&FlatLowered>) -> String {
+    match lowered {
+        Some(lowered) => {
+            let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+            format!("{:?}", lowered.debug(&lowered_formatter))
+        }
+        None => "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
+            .to_string(),
     }
 }
