@@ -421,6 +421,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
+name = "cache-crate"
+version = "2.11.2"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-filesystem",
+ "cairo-lang-lowering",
+ "cairo-lang-semantic",
+ "cairo-lang-starknet",
+ "cairo-lang-utils",
+ "clap",
+ "convert_case",
+ "itertools 0.14.0",
+]
+
+[[package]]
 name = "cairo-compile"
 version = "2.11.2"
 dependencies = [
@@ -517,6 +535,7 @@ dependencies = [
 name = "cairo-lang-defs"
 version = "2.11.2"
 dependencies = [
+ "bincode 1.3.3",
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",

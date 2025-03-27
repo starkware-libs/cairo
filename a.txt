@@ -1,0 +1,524 @@
+core_lib_dir "/home/tomer/workspace/cairo_main/cairo/corelib/src"
+crate CrateIdentifier("contracts_commons 0.1.0 (path+file:///home/tomer/workspace/starknet-staking/workspace/packages/contracts/Scarb.toml)") blob Some("artifacts/contracts_commons")
+crate CrateIdentifier("openzeppelin 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin")
+crate CrateIdentifier("openzeppelin_access 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_access")
+crate CrateIdentifier("openzeppelin_account 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_account")
+crate CrateIdentifier("openzeppelin_finance 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_finance")
+crate CrateIdentifier("openzeppelin_governance 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_governance")
+crate CrateIdentifier("openzeppelin_introspection 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_introspection")
+crate CrateIdentifier("openzeppelin_merkle_tree 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_merkle_tree")
+crate CrateIdentifier("openzeppelin_presets 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_presets")
+crate CrateIdentifier("openzeppelin_security 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_security")
+crate CrateIdentifier("openzeppelin_token 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_token")
+crate CrateIdentifier("openzeppelin_upgrades 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_upgrades")
+crate CrateIdentifier("openzeppelin_utils 0.20.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/openzeppelin_utils")
+crate CrateIdentifier("snforge_std 0.34.0 (registry+https://scarbs.xyz/)") blob Some("artifacts/snforge_std")
+crate CrateIdentifier("staking 1.7.13 (path+file:///home/tomer/workspace/starknet-staking/workspace/apps/staking/contracts/Scarb.toml)") blob Some("artifacts/staking")
+main crate length: 15
+module_data: "openzeppelin" 1
+[None]
+module_data: "openzeppelin_account" 1
+[None]
+module_data: "account" 1
+[None]
+module_data: "AccountComponent" 18
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnerAdded", Nested), ("OwnerRemoved", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("new_owner_guid", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("removed_owner_guid", KeySerde)] } })), None, None, None, None, None, None, None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_SRC6Impl" 1
+[None]
+module_data: "__l1_handler_SRC6Impl" 1
+[None]
+module_data: "__constructor_SRC6Impl" 1
+[None]
+module_data: "__external_DeclarerImpl" 1
+[None]
+module_data: "__l1_handler_DeclarerImpl" 1
+[None]
+module_data: "__constructor_DeclarerImpl" 1
+[None]
+module_data: "__external_DeployableImpl" 1
+[None]
+module_data: "__l1_handler_DeployableImpl" 1
+[None]
+module_data: "__constructor_DeployableImpl" 1
+[None]
+module_data: "__external_PublicKeyImpl" 1
+[None]
+module_data: "__l1_handler_PublicKeyImpl" 1
+[None]
+module_data: "__constructor_PublicKeyImpl" 1
+[None]
+module_data: "__external_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__l1_handler_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__constructor_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__external_PublicKeyCamelImpl" 1
+[None]
+module_data: "__l1_handler_PublicKeyCamelImpl" 1
+[None]
+module_data: "__constructor_PublicKeyCamelImpl" 1
+[None]
+module_data: "__external_AccountMixinImpl" 1
+[None]
+module_data: "__l1_handler_AccountMixinImpl" 1
+[None]
+module_data: "__constructor_AccountMixinImpl" 1
+[None]
+module_data: "eth_account" 1
+[None]
+module_data: "EthAccountComponent" 18
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnerAdded", Nested), ("OwnerRemoved", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("new_owner_guid", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("removed_owner_guid", KeySerde)] } })), None, None, None, None, None, None, None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_SRC6Impl" 1
+[None]
+module_data: "__l1_handler_SRC6Impl" 1
+[None]
+module_data: "__constructor_SRC6Impl" 1
+[None]
+module_data: "__external_DeclarerImpl" 1
+[None]
+module_data: "__l1_handler_DeclarerImpl" 1
+[None]
+module_data: "__constructor_DeclarerImpl" 1
+[None]
+module_data: "__external_DeployableImpl" 1
+[None]
+module_data: "__l1_handler_DeployableImpl" 1
+[None]
+module_data: "__constructor_DeployableImpl" 1
+[None]
+module_data: "__external_PublicKeyImpl" 1
+[None]
+module_data: "__l1_handler_PublicKeyImpl" 1
+[None]
+module_data: "__constructor_PublicKeyImpl" 1
+[None]
+module_data: "__external_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__l1_handler_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__constructor_SRC6CamelOnlyImpl" 1
+[None]
+module_data: "__external_PublicKeyCamelImpl" 1
+[None]
+module_data: "__l1_handler_PublicKeyCamelImpl" 1
+[None]
+module_data: "__constructor_PublicKeyCamelImpl" 1
+[None]
+module_data: "__external_EthAccountMixinImpl" 1
+[None]
+module_data: "__l1_handler_EthAccountMixinImpl" 1
+[None]
+module_data: "__constructor_EthAccountMixinImpl" 1
+[None]
+module_data: "extensions" 1
+[None]
+module_data: "src9" 1
+[None]
+module_data: "interface" 19
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "snip12_utils" 1
+[None]
+module_data: "src9" 1
+[None]
+module_data: "SRC9Component" 8
+[None, None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_OutsideExecutionV2Impl" 1
+[None]
+module_data: "__l1_handler_OutsideExecutionV2Impl" 1
+[None]
+module_data: "__constructor_OutsideExecutionV2Impl" 1
+[None]
+module_data: "interface" 188
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "utils" 1
+[None]
+module_data: "secp256_point" 1
+[None]
+module_data: "signature" 2
+[None, None]
+module_data: "openzeppelin_finance" 1
+[None]
+module_data: "vesting" 1
+[None]
+module_data: "interface" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "vesting" 1
+[None]
+module_data: "VestingComponent" 10
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("AmountReleased", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("token", KeySerde), ("amount", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_VestingImpl" 1
+[None]
+module_data: "__l1_handler_VestingImpl" 1
+[None]
+module_data: "__constructor_VestingImpl" 1
+[None]
+module_data: "openzeppelin_governance" 1
+[None]
+module_data: "governor" 1
+[None]
+module_data: "extensions" 1
+[None]
+module_data: "governor_core_execution" 1
+[None]
+module_data: "GovernorCoreExecutionComponent" 6
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None]
+module_data: "governor_counting_simple" 1
+[None]
+module_data: "GovernorCountingSimpleComponent" 12
+[None, None, None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None, None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "governor_settings" 1
+[None]
+module_data: "GovernorSettingsComponent" 14
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("VotingDelayUpdated", Nested), ("VotingPeriodUpdated", Nested), ("ProposalThresholdUpdated", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_voting_delay", DataSerde), ("new_voting_delay", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_voting_period", DataSerde), ("new_voting_period", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_proposal_threshold", DataSerde), ("new_proposal_threshold", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_GovernorSettingsAdminImpl" 1
+[None]
+module_data: "__l1_handler_GovernorSettingsAdminImpl" 1
+[None]
+module_data: "__constructor_GovernorSettingsAdminImpl" 1
+[None]
+module_data: "governor_timelock_execution" 1
+[None]
+module_data: "GovernorTimelockExecutionComponent" 10
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("TimelockUpdated", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_timelock", DataSerde), ("new_timelock", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_TimelockedImpl" 1
+[None]
+module_data: "__l1_handler_TimelockedImpl" 1
+[None]
+module_data: "__constructor_TimelockedImpl" 1
+[None]
+module_data: "governor_votes" 1
+[None]
+module_data: "GovernorVotesComponent" 8
+[None, None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_VotesTokenImpl" 1
+[None]
+module_data: "__l1_handler_VotesTokenImpl" 1
+[None]
+module_data: "__constructor_VotesTokenImpl" 1
+[None]
+module_data: "governor_votes_quorum_fraction" 1
+[None]
+module_data: "GovernorVotesQuorumFractionComponent" 10
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("QuorumNumeratorUpdated", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_quorum_numerator", DataSerde), ("new_quorum_numerator", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_QuorumFractionImpl" 1
+[None]
+module_data: "__l1_handler_QuorumFractionImpl" 1
+[None]
+module_data: "__constructor_QuorumFractionImpl" 1
+[None]
+module_data: "interface" 69
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "governor" 1
+[None]
+module_data: "GovernorComponent" 21
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("ProposalCreated", Nested), ("ProposalQueued", Nested), ("ProposalExecuted", Nested), ("ProposalCanceled", Nested), ("VoteCast", Nested), ("VoteCastWithParams", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("proposal_id", KeySerde), ("proposer", KeySerde), ("calls", DataSerde), ("signatures", DataSerde), ("vote_start", DataSerde), ("vote_end", DataSerde), ("description", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("proposal_id", KeySerde), ("eta_seconds", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("proposal_id", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("proposal_id", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("voter", KeySerde), ("proposal_id", DataSerde), ("support", DataSerde), ("weight", DataSerde), ("reason", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("voter", KeySerde), ("proposal_id", DataSerde), ("support", DataSerde), ("weight", DataSerde), ("reason", DataSerde), ("params", DataSerde)] } })), None, None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_GovernorImpl" 1
+[None]
+module_data: "__l1_handler_GovernorImpl" 1
+[None]
+module_data: "__constructor_GovernorImpl" 1
+[None]
+module_data: "interface" 36
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "proposal_core" 2
+[None, None]
+module_data: "vote" 3
+[None, None, None]
+module_data: "multisig" 1
+[None]
+module_data: "interface" 19
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "multisig" 1
+[None]
+module_data: "MultisigComponent" 24
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("SignerAdded", Nested), ("SignerRemoved", Nested), ("QuorumUpdated", Nested), ("TransactionSubmitted", Nested), ("TransactionConfirmed", Nested), ("TransactionExecuted", Nested), ("ConfirmationRevoked", Nested), ("CallSalt", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("signer", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("signer", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_quorum", DataSerde), ("new_quorum", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("signer", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("signer", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("signer", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("salt", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_MultisigImpl" 1
+[None]
+module_data: "__l1_handler_MultisigImpl" 1
+[None]
+module_data: "__constructor_MultisigImpl" 1
+[None]
+module_data: "storage_utils" 3
+[None, None, None]
+module_data: "timelock" 1
+[None]
+module_data: "interface" 36
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "timelock_controller" 1
+[None]
+module_data: "TimelockControllerComponent" 19
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("CallScheduled", Nested), ("CallExecuted", Nested), ("CallSalt", Nested), ("CallCancelled", Nested), ("MinDelayChanged", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("index", KeySerde), ("call", DataSerde), ("predecessor", DataSerde), ("delay", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("index", KeySerde), ("call", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde), ("salt", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("id", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("old_duration", DataSerde), ("new_duration", DataSerde)] } })), None, None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_TimelockImpl" 1
+[None]
+module_data: "__l1_handler_TimelockImpl" 1
+[None]
+module_data: "__constructor_TimelockImpl" 1
+[None]
+module_data: "__external_TimelockMixinImpl" 1
+[None]
+module_data: "__l1_handler_TimelockMixinImpl" 1
+[None]
+module_data: "__constructor_TimelockMixinImpl" 1
+[None]
+module_data: "utils" 1
+[None]
+module_data: "call_impls" 1
+[None]
+module_data: "votes" 1
+[None]
+module_data: "delegation" 2
+[None, None]
+module_data: "interface" 35
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "votes" 1
+[None]
+module_data: "VotesComponent" 12
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("DelegateChanged", Nested), ("DelegateVotesChanged", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("delegator", KeySerde), ("from_delegate", KeySerde), ("to_delegate", KeySerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("delegate", KeySerde), ("previous_votes", DataSerde), ("new_votes", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_VotesImpl" 1
+[None]
+module_data: "__l1_handler_VotesImpl" 1
+[None]
+module_data: "__constructor_VotesImpl" 1
+[None]
+module_data: "openzeppelin_merkle_tree" 1
+[None]
+module_data: "hashes" 1
+[None]
+module_data: "merkle_proof" 1
+[None]
+module_data: "openzeppelin_presets" 1
+[None]
+module_data: "account" 1
+[None]
+module_data: "AccountUpgradeable" 6
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "AccountUpgradeable" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("AccountEvent", Flat), ("SRC5Event", Flat), ("SRC9Event", Flat), ("UpgradeableEvent", Flat)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "AccountUpgradeable" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "AccountUpgradeable" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "AccountUpgradeable" }))]
+module_data: "erc1155" 1
+[None]
+module_data: "ERC1155Upgradeable" 6
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC1155Upgradeable" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnableEvent", Flat), ("ERC1155Event", Flat), ("SRC5Event", Flat), ("UpgradeableEvent", Flat)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC1155Upgradeable" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC1155Upgradeable" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC1155Upgradeable" }))]
+module_data: "erc20" 1
+[None]
+module_data: "ERC20Upgradeable" 6
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC20Upgradeable" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnableEvent", Flat), ("ERC20Event", Flat), ("UpgradeableEvent", Flat)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC20Upgradeable" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC20Upgradeable" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC20Upgradeable" }))]
+module_data: "erc721" 1
+[None]
+module_data: "ERC721Upgradeable" 7
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC721Upgradeable" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnableEvent", Flat), ("ERC721Event", Flat), ("SRC5Event", Flat), ("UpgradeableEvent", Flat)] } })), None, None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC721Upgradeable" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC721Upgradeable" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "ERC721Upgradeable" }))]
+module_data: "eth_account" 1
+[None]
+module_data: "EthAccountUpgradeable" 6
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "EthAccountUpgradeable" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("EthAccountEvent", Flat), ("SRC5Event", Flat), ("SRC9Event", Flat), ("UpgradeableEvent", Flat)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "EthAccountUpgradeable" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "EthAccountUpgradeable" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "EthAccountUpgradeable" }))]
+module_data: "interfaces" 1
+[None]
+module_data: "account" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "erc1155" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "erc20" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "erc721" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "eth_account" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "vesting" 18
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "universal_deployer" 1
+[None]
+module_data: "UniversalDeployer" 8
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "UniversalDeployer" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("ContractDeployed", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("address", DataSerde), ("deployer", DataSerde), ("from_zero", DataSerde), ("class_hash", DataSerde), ("calldata", DataSerde), ("salt", DataSerde)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "UniversalDeployer" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "UniversalDeployer" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "UniversalDeployer" }))]
+module_data: "vesting" 1
+[None]
+module_data: "VestingWallet" 6
+[None, Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "VestingWallet" })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("OwnableEvent", Flat), ("VestingEvent", Flat)] } })), None, None]
+module_data: "__external" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "VestingWallet" }))]
+module_data: "__l1_handler" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "VestingWallet" }))]
+module_data: "__constructor" 1
+[Some(DynGeneratedFileAuxData(StarknetContractAuxData { contract_name: "VestingWallet" }))]
+module_data: "openzeppelin_security" 1
+[None]
+module_data: "initializable" 1
+[None]
+module_data: "InitializableComponent" 8
+[None, None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_InitializableImpl" 1
+[None]
+module_data: "__l1_handler_InitializableImpl" 1
+[None]
+module_data: "__constructor_InitializableImpl" 1
+[None]
+module_data: "interface" 35
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "pausable" 1
+[None]
+module_data: "PausableComponent" 12
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("Paused", Nested), ("Unpaused", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("account", DataSerde)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("account", DataSerde)] } })), None, None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "__external_PausableImpl" 1
+[None]
+module_data: "__l1_handler_PausableImpl" 1
+[None]
+module_data: "__constructor_PausableImpl" 1
+[None]
+module_data: "reentrancyguard" 1
+[None]
+module_data: "ReentrancyGuardComponent" 7
+[None, None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [] } })), None, None]
+module_data: "Errors" 1
+[None]
+module_data: "openzeppelin_upgrades" 1
+[None]
+module_data: "interface" 35
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+module_data: "upgradeable" 1
+[None]
+module_data: "UpgradeableComponent" 9
+[None, None, None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Enum { variants: [("Upgraded", Nested)] } })), None, Some(DynGeneratedFileAuxData(StarknetEventAuxData { event_data: Struct { members: [("class_hash", DataSerde)] } })), None, None, None]
+module_data: "Errors" 1
+[None]
+module_data: "snforge_std" 1
+[None]
+module_data: "cheatcodes" 3
+[None, None, None]
+module_data: "events" 4
+[None, None, None, None]
+module_data: "l1_handler" 2
+[None, None]
+module_data: "contract_class" 3
+[None, None, None]
+module_data: "fork" 3
+[None, None, None]
+module_data: "storage" 1
+[None]
+module_data: "execution_info" 6
+[None, None, None, None, None, None]
+module_data: "caller_address" 1
+[None]
+module_data: "block_number" 1
+[None]
+module_data: "block_timestamp" 1
+[None]
+module_data: "sequencer_address" 1
+[None]
+module_data: "version" 1
+[None]
+module_data: "max_fee" 1
+[None]
+module_data: "signature" 1
+[None]
+module_data: "transaction_hash" 1
+[None]
+module_data: "chain_id" 1
+[None]
+module_data: "nonce" 1
+[None]
+module_data: "resource_bounds" 1
+[None]
+module_data: "tip" 1
+[None]
+module_data: "paymaster_data" 1
+[None]
+module_data: "nonce_data_availability_mode" 1
+[None]
+module_data: "fee_data_availability_mode" 1
+[None]
+module_data: "account_deployment_data" 1
+[None]
+module_data: "account_contract_address" 1
+[None]
+module_data: "message_to_l1" 4
+[None, None, None, None]
+module_data: "generate_random_felt" 1
+[None]
+module_data: "fs" 1
+[None]
+module_data: "file_operations" 2
+[None, None]
+module_data: "env" 1
+[None]
+module_data: "env_vars" 1
+[None]
+module_data: "signature" 3
+[None, None, None]
+module_data: "secp256k1_curve" 1
+[None]
+module_data: "secp256r1_curve" 1
+[None]
+module_data: "stark_curve" 1
+[None]
+module_data: "trace" 8
+[None, None, None, None, None, None, None, None]
+module_data: "byte_array" 1
+[None]
+module_data: "_cheatcode" 1
+[None]
+module_data: "_config_types" 10
+[None, None, None, None, None, None, None, None, None, None]
+323

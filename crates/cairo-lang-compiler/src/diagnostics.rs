@@ -138,8 +138,15 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
-        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+    fn crates_of_interest(&self, _db: &dyn LoweringGroup) -> Vec<CrateId> {
+        vec![]
+        // let x = if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+        //     .into_iter()
+        //     .filter(|c| {
+        //         !c.name(db.upcast()).contains("open") && !c.name(db.upcast()).contains("forge")
+        //     })
+        //     .collect::<Vec<CrateId>>();
+        // x
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.

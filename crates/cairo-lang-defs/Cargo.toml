@@ -18,6 +18,8 @@ salsa.workspace = true
 serde = { workspace = true, default-features = true }
 typetag.workspace = true 
 smol_str.workspace = true
+bincode.workspace = true
+
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }

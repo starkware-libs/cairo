@@ -56,6 +56,7 @@ members = [
     "crates/cairo-lang-test-plugin",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
+    "crates/bin/cache-crate",
     "crates/bin/cairo-compile",
     "crates/bin/cairo-execute",
     "crates/bin/cairo-format",

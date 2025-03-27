@@ -70,6 +70,15 @@ impl SyntaxNode {
         Self(Arc::new(inner))
     }
 
+    pub fn new_with_inner(
+        green: GreenId,
+        offset: TextOffset,
+        parent: Option<SyntaxNode>,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Self {
+        Self(Arc::new(SyntaxNodeInner { green, offset, parent, stable_ptr }))
+    }
+
     pub fn offset(&self) -> TextOffset {
         self.0.offset
     }
