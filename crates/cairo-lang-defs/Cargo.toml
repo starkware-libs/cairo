@@ -15,6 +15,8 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.2" }
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
+serde = { workspace = true, default-features = true }
+typetag.workspace = true 
 smol_str.workspace = true
 
 [dev-dependencies]
