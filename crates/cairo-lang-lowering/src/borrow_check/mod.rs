@@ -65,7 +65,7 @@ pub enum DropPosition {
     Diverge(LocationId),
 }
 impl DropPosition {
-    fn as_note(self, db: &dyn LoweringGroup) -> DiagnosticNote {
+    fn enrich_as_notes(self, db: &dyn LoweringGroup, notes: &mut Vec<DiagnosticNote>) {
         let (text, location) = match self {
             Self::Panic(location) => {
                 ("the variable needs to be dropped due to the potential panic here", location)
@@ -74,10 +74,12 @@ impl DropPosition {
                 ("the variable needs to be dropped due to the divergence here", location)
             }
         };
-        DiagnosticNote::with_location(
+        let location = location.lookup_intern(db);
+        notes.push(DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
-        )
+            location.stable_location.diagnostic_location(db.upcast()),
+        ));
+        notes.extend(location.notes);
     }
 }
 
@@ -133,7 +135,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
 
         let mut location = var.location.lookup_intern(self.db);
         if let Some(drop_position) = opt_drop_position {
-            location = location.with_note(drop_position.as_note(self.db));
+            drop_position.enrich_as_notes(self.db, &mut location.notes);
         }
         let semantic_db = self.db.upcast();
         self.success = Err(self.diagnostics.report_by_location(
@@ -320,4 +322,34 @@ pub fn borrow_check(
 
     lowered.diagnostics = diagnostics.build();
     block_extra_calls
+}
+
+/// Borrow check the params of the function are panic destruct, as this function may have a gas
+/// withdrawal.
+pub fn borrow_check_possible_withdraw_gas(
+    db: &dyn LoweringGroup,
+    location_id: LocationId,
+    lowered: &FlatLowered,
+    diagnostics: &mut LoweringDiagnostics,
+) {
+    let info = db.core_info();
+    let destruct_fn = info.destruct_fn;
+    let panic_destruct_fn = info.panic_destruct_fn;
+    let mut checker = BorrowChecker {
+        db,
+        diagnostics,
+        lowered,
+        success: Ok(()),
+        potential_destruct_calls: Default::default(),
+        destruct_fn,
+        panic_destruct_fn,
+        is_panic_destruct_fn: false,
+    };
+    let position = (
+        Some(DropPosition::Panic(location_id.with_auto_generation_note(db, "withdraw_gas"))),
+        BlockId::root(),
+    );
+    for param in &lowered.parameters {
+        checker.drop_aux(position, *param, PanicState::EndsWithPanic);
+    }
 }
