@@ -721,7 +721,7 @@ impl HirDisplay for ExternFunctionId {
             Ok(signature) => signature,
             _ => {
                 return Err(SignatureError::FailedRetrievingSemanticData(
-                    extern_function_full_signature.full_path.clone(),
+                    extern_function_full_signature.full_path,
                 ));
             }
         };
@@ -1016,7 +1016,7 @@ fn write_syntactic_evaluation(
             green::GreenNodeDetails::Node { .. }
         ) {
             let mut is_after_evaluation_value = false;
-            for child in f.db.get_children(syntax_node.clone()).iter() {
+            for child in f.db.get_children(syntax_node).iter() {
                 let kind = child.kind(f.db.upcast());
                 if !matches!(kind, SyntaxKind::Trivia) {
                     if matches!(kind, SyntaxKind::TerminalSemicolon) {
@@ -1224,7 +1224,7 @@ fn get_module_item_info(
     let item_name = module_item_id.name(db.upcast());
 
     match <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
-        .module_item_info_by_name(parent_module, item_name.clone())
+        .module_item_info_by_name(parent_module, item_name)
     {
         Ok(module_item_info) => match module_item_info {
             Some(module_item_info) => Ok(module_item_info),
