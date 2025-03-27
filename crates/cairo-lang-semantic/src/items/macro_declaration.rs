@@ -15,7 +15,7 @@ use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::inference::InferenceId;
-use crate::resolve::{Resolver, ResolverData};
+use crate::resolve::{MACRO_DEF_SITE, Resolver, ResolverData};
 
 /// The semantic data for a macro declaration.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -240,8 +240,9 @@ fn expand_macro_rule_ex(
         let path_node = ExprPath::from_syntax_node(db, node.clone());
 
         if let ast::OptionTerminalDollar::TerminalDollar(_) = path_node.dollar(db) {
-            if path_node.segments(db).elements(db).len() == 1 {
-                let placeholder_name = path_node.identifier(db).to_string();
+            let placeholder_name = path_node.identifier(db).to_string();
+            if path_node.segments(db).elements(db).len() == 1 && placeholder_name != MACRO_DEF_SITE
+            {
                 if let Some(value) = captures.get(&placeholder_name) {
                     res_buffer.push_str(value);
                 } else {

@@ -1,12 +1,13 @@
 use std::iter::Peekable;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
     ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId, VariantId,
 };
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -70,6 +71,11 @@ pub const SUPER_KW: &str = "super";
 pub const CRATE_KW: &str = "crate";
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
+
+// Macro related keywords. Notice that the `$` is not included here as it is only a prefix and not a
+// part of the segment.
+/// The modifier for a macro definition site.
+pub const MACRO_DEF_SITE: &str = "defsite";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -205,6 +211,8 @@ impl ResolverData {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
+    /// The resolver data for resolving items from the definition site of a macro.
+    pub macro_defsite_data: Option<Arc<ResolverData>>,
     pub owning_crate_id: CrateId,
     pub settings: CrateSettings,
 }
@@ -286,7 +294,7 @@ impl<'db> Resolver<'db> {
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
-        Self { owning_crate_id, settings, db, data }
+        Self { owning_crate_id, settings, db, data, macro_defsite_data: None }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -334,13 +342,30 @@ impl<'db> Resolver<'db> {
                 &syntax::node::ast::PathSegment,
                 ResolvedItem,
             ),
+            impl FnOnce(
+                &mut Resolver<'_>,
+                &mut SemanticDiagnostics,
+                &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+                NotFoundItemType,
+                Option<&mut Environment>,
+            ) -> Maybe<ResolvedItem>,
         >,
     ) -> Maybe<ResolvedItem> {
         let db = self.db;
         let syntax_db = db.upcast();
+        let is_placeholder = path.is_placeholder(syntax_db);
+
         let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
-
+        if is_placeholder {
+            return (callbacks.resolve_placeholder)(
+                self,
+                diagnostics,
+                &mut segments,
+                item_type,
+                statement_env,
+            );
+        }
         // Find where the first segment lies in.
         let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
             self,
@@ -417,6 +442,14 @@ impl<'db> Resolver<'db> {
                 validate_segment: |_, _| Ok(()),
                 mark: |resolved_items, db, segment, item| {
                     resolved_items.mark_concrete(db, segment, item.clone());
+                },
+                resolve_placeholder: |resolver, diagnostics, segments, item_type, statement_env| {
+                    resolver.resolve_placeholder_concrete_path(
+                        diagnostics,
+                        segments,
+                        item_type,
+                        statement_env,
+                    )
                 },
             },
         )
@@ -643,6 +676,15 @@ impl<'db> Resolver<'db> {
                 validate_segment,
                 mark: |resolved_items, db, segment, item| {
                     resolved_items.mark_generic(db, segment, item.clone());
+                },
+                resolve_placeholder: |resolver, diagnostics, segments, item_type, statement_env| {
+                    resolver.resolve_placeholder_generic_path(
+                        diagnostics,
+                        segments,
+                        item_type,
+                        allow_generic_args,
+                        statement_env,
+                    )
                 },
             },
         )
@@ -1997,6 +2039,109 @@ impl<'db> Resolver<'db> {
         );
         specialized_item
     }
+
+    /// Resolves the path assuming the first segment is a valid resolver modifier (currently only
+    /// `$defsite`). If it's a valid modifier and there is a macro defsite resolver data in
+    /// context, returns the resolved item in the defsite context.
+    fn resolve_placeholder_path<ResolvedItem>(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        item_type: NotFoundItemType,
+        statement_env: Option<&mut Environment>,
+        resolve_inner: impl FnOnce(
+            &mut Resolver<'_>,
+            &mut SemanticDiagnostics,
+            Vec<ast::PathSegment>,
+            NotFoundItemType,
+            Option<&mut Environment>,
+        ) -> Maybe<ResolvedItem>,
+    ) -> Maybe<ResolvedItem> {
+        if segments.len() == 1 {
+            return Err(diagnostics
+                .report(segments.next().unwrap().stable_ptr(), EmptyPathAfterResolverModifier));
+        }
+        match segments.peek() {
+            Some(ast::PathSegment::Simple(path_segment_simple)) => {
+                let ident = path_segment_simple.ident(self.db.upcast());
+                let ident_text = ident.text(self.db.upcast());
+                if ident_text == MACRO_DEF_SITE {
+                    segments.next();
+                    if let Some(defsite_resolver_data) = self.macro_defsite_data.as_ref() {
+                        let mut macro_defsite_resolver = Resolver::with_data(
+                            self.db,
+                            defsite_resolver_data
+                                .clone_with_inference_id(self.db, self.inference_data.inference_id),
+                        );
+                        resolve_inner(
+                            &mut macro_defsite_resolver,
+                            diagnostics,
+                            segments.cloned().collect_vec(),
+                            item_type,
+                            statement_env,
+                        )
+                    } else {
+                        Err(diagnostics
+                            .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                    }
+                } else {
+                    Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
+                        modifier: ident_text,
+                    }))
+                }
+            }
+            _ => {
+                // Empty path segment after a `$`, diagnostic was added in the parser.
+                Err(skip_diagnostic())
+            }
+        }
+    }
+
+    /// Resolves the path assuming the first segment is a valid resolver modifier for concrete
+    /// paths.
+    fn resolve_placeholder_concrete_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        item_type: NotFoundItemType,
+        statement_env: Option<&mut Environment>,
+    ) -> Maybe<ResolvedConcreteItem> {
+        self.resolve_placeholder_path(
+            diagnostics,
+            segments,
+            item_type,
+            statement_env,
+            |resolver, diagnostics, segments, item_type, statement_env| {
+                resolver.resolve_concrete_path_ex(diagnostics, segments, item_type, statement_env)
+            },
+        )
+    }
+
+    /// Resolves the path assuming the first segment is a valid resolver modifier for generic paths.
+    fn resolve_placeholder_generic_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        item_type: NotFoundItemType,
+        allow_generic_args: bool,
+        statement_env: Option<&mut Environment>,
+    ) -> Maybe<ResolvedGenericItem> {
+        self.resolve_placeholder_path(
+            diagnostics,
+            segments,
+            item_type,
+            statement_env,
+            |resolver, diagnostics, segments, item_type, statement_env| {
+                resolver.resolve_generic_path_inner(
+                    diagnostics,
+                    segments,
+                    item_type,
+                    allow_generic_args,
+                    statement_env,
+                )
+            },
+        )
+    }
 }
 
 /// Resolves the segment if it's `Self`. Returns the Some(ResolvedConcreteItem) or Some(Err) if
@@ -2060,8 +2205,14 @@ enum ResolvedBase {
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
-struct ResolvePathInnerCallbacks<ResolvedItem, ResolveFirst, ResolveNext, Validate, Mark>
-where
+struct ResolvePathInnerCallbacks<
+    ResolvedItem,
+    ResolveFirst,
+    ResolveNext,
+    Validate,
+    Mark,
+    ResolvePlaceholder,
+> where
     ResolveFirst: FnMut(
         &mut Resolver<'_>,
         &mut SemanticDiagnostics,
@@ -2082,6 +2233,13 @@ where
         &syntax::node::ast::PathSegment,
         ResolvedItem,
     ),
+    ResolvePlaceholder: FnOnce(
+        &mut Resolver<'_>,
+        &mut SemanticDiagnostics,
+        &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        NotFoundItemType,
+        Option<&mut Environment>,
+    ) -> Maybe<ResolvedItem>,
 {
     /// Type for the resolved item pointed by the path segments.
     resolved_item_type: PhantomData<ResolvedItem>,
@@ -2093,4 +2251,6 @@ where
     /// fails.
     validate_segment: Validate,
     mark: Mark,
+    /// Resolves placeholder paths.
+    resolve_placeholder: ResolvePlaceholder,
 }
