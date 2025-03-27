@@ -16,12 +16,10 @@ use cairo_lang_utils::{LookupIntern, Upcast, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
-use crate::FlatLowered;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
-use crate::test_utils::LoweringDatabaseForTesting;
+use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -87,23 +85,14 @@ fn test_function_lowering(
     let combined_diagnostics =
         format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
-    let lowering_format = lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or(
-        "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
-            .to_string(),
-    );
     TestRunnerResult {
         outputs: OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), formatted_lowering_diagnostics),
-            ("lowering_flat".into(), lowering_format),
+            ("lowering_flat".into(), formatted_lowered(db, lowered.ok().as_deref())),
         ]),
         error,
     }
-}
-
-fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
-    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-    format!("{:?}", lowered.debug(&lowered_formatter))
 }
 
 #[test]

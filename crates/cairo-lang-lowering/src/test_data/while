@@ -269,15 +269,7 @@ error: Unsupported value in while-let. Currently, while-let on tuples only suppo
                                   ^^^^^^^^
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-  (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[41-110](v0)
-  (v2: core::felt252) <- 1
-  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
-End:
-  Return(v3)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -313,15 +305,7 @@ error: Numeric values are not supported in while-let conditions.
 |_____^
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-  (v0: core::felt252) <- 0
-  (v1: core::felt252) <- test::foo[41-87](v0)
-  (v2: core::felt252) <- 1
-  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
-End:
-  Return(v3)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -420,12 +404,4 @@ error: Unsupported type in while-let. Type: `test::MyStruct`.
                   ^
 
 //! > lowering_flat
-Parameters: v0: test::MyStruct
-blk0 (root):
-Statements:
-  (v1: core::felt252) <- 0
-  (v2: core::felt252) <- test::foo[52-99](v0, v1)
-  (v3: core::felt252) <- 1
-  (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
-End:
-  Return(v4)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

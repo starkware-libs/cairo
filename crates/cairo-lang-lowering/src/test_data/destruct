@@ -368,9 +368,3 @@ error: Cannot inline a function that might call itself.
 
 //! > lowering_flat
 Parameters:
-blk0 (root):
-Statements:
-  (v0: test::A) <- struct_construct()
-  () <- test::ADestruct::destruct(v0)
-End:
-  Return()

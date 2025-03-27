@@ -30,7 +30,7 @@ error: Unsupported match - numbers must be sequential starting from 0.
 |_____^
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -236,7 +236,7 @@ error: Unsupported match - numbers must be sequential starting from 0.
 |_____^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -271,7 +271,7 @@ error: Match is non exhaustive - match over a numerical value must have a wildca
 |_____^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -413,7 +413,7 @@ error: Missing match arm: `None` not covered.
     ^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -476,7 +476,7 @@ error: Missing match arm: `NonZero` not covered.
           ^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -585,44 +585,7 @@ error: Unreachable pattern arm.
         ^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters: v0: test::A
-blk0 (root):
-Statements:
-End:
-  Match(match_enum(v0) {
-    A::One(v1) => blk1,
-    A::Two(v2) => blk2,
-    A::Three(v3) => blk3,
-    A::Four(v4) => blk4,
-  })
-
-blk1:
-Statements:
-  (v5: core::felt252) <- 1
-End:
-  Return(v5)
-
-blk2:
-Statements:
-  (v6: core::felt252) <- 2
-End:
-  Return(v6)
-
-blk3:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-  (v7: core::felt252) <- 3
-End:
-  Return(v7)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -755,7 +718,7 @@ error: Unsupported matched value. Currently, match on tuples only supports enums
           ^
 
 //! > lowering_flat
-Parameters: v0: (core::felt252, core::felt252)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -786,7 +749,7 @@ error: Inner patterns are not allowed in this context.
              ^^^^^^^
 
 //! > lowering_flat
-Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -834,7 +797,7 @@ error: Missing match arm: `Four` not covered.
 |_____^
 
 //! > lowering_flat
-Parameters: v0: test::A
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -1279,7 +1242,7 @@ error: Missing match arm: `(Four, Two)` not covered.
           ^^^^^^
 
 //! > lowering_flat
-Parameters: v0: test::A, v1: test::A
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -1317,7 +1280,7 @@ error: Unsupported matched value. Currently, match on tuples only supports enums
           ^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters: v0: test::A, v1: test::A
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -1496,7 +1459,7 @@ error: Unsupported matched type. Type: `core::integer::u256`.
           ^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
