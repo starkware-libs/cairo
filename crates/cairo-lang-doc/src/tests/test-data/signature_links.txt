@@ -87,7 +87,7 @@ struct B<T, G, +ATrait> {
 }
 
 //! > Item linked items #7
-T, G, +ATrait
++ATrait
 
 //! > Item signature #8
 t: T
