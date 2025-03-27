@@ -1,5 +1,5 @@
 // Getting Started
 * Getting Started
-** xref:prerequisites.adoc[Prerequisites]
-** xref:compiling-and-running-cairo-files.adoc[Compiling & running Cairo files]
-** xref:compiling-starknet-contracts.adoc[Compiling Starknet contracts]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/getting_started/pages/prerequisites.adoc[Prerequisites]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/getting_started/pages/compiling-and-running-cairo-files.adoc[Compiling & running Cairo files]
+** link:https://github.com/starkware-libs/cairo/blob/main/docs/reference/src/components/cairo/modules/getting_started/pages/compiling-starknet-contracts.adoc[Compiling Starknet contracts]
