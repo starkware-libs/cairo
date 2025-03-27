@@ -170,7 +170,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children = self.db.get_children(*syntax_node);
+        let children = syntax_node.get_children(self.db);
         let num_children = children.len();
         let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
             " <ignored>".to_string()

@@ -117,8 +117,8 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in db.get_children(*node).iter() {
-            find_generics(db, module_file_id, child, output);
+        for child in node.get_children(db) {
+            find_generics(db, module_file_id, &child, output);
         }
     }
     find_generics(db, module_file_id, &node, &mut output);

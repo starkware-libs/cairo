@@ -987,7 +987,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children = self.db.get_children(*syntax_node).to_vec();
+        let mut children = syntax_node.get_children(self.db);
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1065,12 +1065,8 @@ impl<'a> FormatterImpl<'a> {
                 );
 
                 // Add merged children to the new_children list.
-                let children = self.db.get_children(merged_node).to_vec();
-                if !children.is_empty() {
-                    let grandchildren = self.db.get_children(children[0]).to_vec();
-                    for child in grandchildren {
-                        new_children.push(child);
-                    }
+                if let Some(child) = merged_node.get_children(self.db).pop() {
+                    new_children.extend(child.get_children(self.db));
                 }
             }
         }
@@ -1162,8 +1158,7 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let children = self.db.get_children(*syntax_node);
-        let mut children_iter = children.iter().cloned();
+        let mut children_iter = syntax_node.get_children(self.db).into_iter();
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
         let token = children_iter.next().unwrap();
         let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
