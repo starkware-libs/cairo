@@ -177,7 +177,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                         builder.add_node(decl.name(db).as_syntax_node());
                         builder.add_node(decl.generic_params(db).as_syntax_node());
                         builder.add_node(signature.lparen(db).as_syntax_node());
-                        for node in db.get_children(signature.parameters(db).node).iter().cloned() {
+                        for node in signature.parameters(db).node.get_children(db) {
                             if let Some(param) = ast::Param::cast(db, node) {
                                 for modifier in param.modifiers(db).elements(db) {
                                     // `mut` modifiers are only relevant for impls, not traits.
