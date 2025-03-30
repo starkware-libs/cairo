@@ -1062,6 +1062,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
                 "Type constraints syntax is not enabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
+                format!("Undefined macro placeholder: '{}'.", name)
+            }
         }
     }
 
@@ -1484,6 +1487,7 @@ pub enum SemanticDiagnosticKind {
         concrete_trait_type_id: ConcreteTraitTypeId,
     },
     TypeConstraintsSyntaxNotEnabled,
+    UndefinedMacroPlaceholder(String),
 }
 
 /// The kind of an expression with multiple possible return types.
