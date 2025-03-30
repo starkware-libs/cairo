@@ -5,6 +5,7 @@ use std::{fmt, fs};
 
 use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
@@ -280,10 +281,18 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
+        let Ok(lowered) = db.final_concrete_function_with_body_lowered(function_id) else {
+            // Run DiagnosticsReporter only in case of failure.
+            DiagnosticsReporter::default()
+                .with_crates(&main_crate_ids)
+                .ensure(db)
+                .with_context(|| "Failed to compile")?;
+            anyhow::bail!("Failed to get lowered function.")
+        };
+
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
         } else {
-            let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
             LoweredDisplay::new(db, &lowered).to_string()
         }
     } else {
