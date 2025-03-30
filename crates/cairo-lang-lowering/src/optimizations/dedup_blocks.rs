@@ -238,7 +238,7 @@ fn rebuild_block_and_inputs(
 }
 
 /// Deduplicates blocks by redirecting goto's and match arms to one of the duplicates.
-/// The duplicate blocks will be remove later by `reorganize_blocks`.
+/// The duplicate blocks will be removed later by `reorganize_blocks`.
 pub fn dedup_blocks(lowered: &mut FlatLowered) {
     if lowered.blocks.has_root().is_err() {
         return;
@@ -303,7 +303,7 @@ pub fn dedup_blocks(lowered: &mut FlatLowered) {
         new_block_id
     };
 
-    // Note that the loop below cant be merged with the loop above as a block might be marked as dup
+    // Note that the loop below can't be merged with the loop above as a block might be marked as dup
     // after we already visiting an arm that goes to it.
     for block in lowered.blocks.iter_mut() {
         match &mut block.end {
