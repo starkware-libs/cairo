@@ -2067,7 +2067,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a syntax in side a struct pattern. Example:
+    /// Returns a GreenId of a syntax inside a struct pattern. Example:
     /// `MyStruct { param0, param1: _, .. }`.
     fn try_parse_pattern_struct_param(&mut self) -> TryParseResult<PatternStructParamGreen> {
         Ok(match self.peek().kind {
