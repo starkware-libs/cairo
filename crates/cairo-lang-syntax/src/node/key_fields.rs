@@ -446,6 +446,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRepetition => {
             vec![]
         }
+        SyntaxKind::SeperatorMissing => {
+            vec![]
+        }
         SyntaxKind::ParamIdent => {
             vec![]
         }

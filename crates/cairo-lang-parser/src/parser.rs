@@ -691,16 +691,42 @@ impl<'a> Parser<'a> {
     fn try_parse_macro_rule_element(&mut self) -> TryParseResult<MacroRuleElementGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalDollar => {
-                let dollar = self.take::<TerminalDollar>();
-                let ident = self.parse_identifier();
-                let colon = self.parse_token::<TerminalColon>();
-                let kind = self.parse_macro_rule_param_kind();
-                let optional = if self.peek().kind == SyntaxKind::TerminalQuestionMark {
-                    self.take::<TerminalQuestionMark>()
-                } else {
-                    TerminalQuestionMark::missing(self.db)
-                };
-                Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind, optional).into())
+                let dollar: TerminalDollarGreen = self.take::<TerminalDollar>();
+                match self.peek().kind {
+                    SyntaxKind::TerminalLParen => {
+                        let lparen = self.take::<TerminalLParen>();
+                        let elements = self.expect_wrapped_macro_matcher();
+                        let rparen = self.parse_token::<TerminalRParen>();
+                        let separator = self.parse_token::<TerminalComma>();
+                        let operator = match self.peek().kind {
+                            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+                            _ => unreachable!(),
+                        };
+                        Ok(MacroRepetition::new_green(
+                            self.db,
+                            dollar,
+                            lparen,
+                            elements,
+                            rparen,
+                            separator.into(),
+                            operator,
+                        )
+                        .into())
+                    }
+                    _ => {
+                        let ident = self.parse_identifier();
+                        let colon = self.parse_token::<TerminalColon>();
+                        let kind = self.parse_macro_rule_param_kind();
+                        let optional = if self.peek().kind == SyntaxKind::TerminalQuestionMark {
+                            self.take::<TerminalQuestionMark>()
+                        } else {
+                            TerminalQuestionMark::missing(self.db)
+                        };
+                        Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind, optional)
+                            .into())
+                    }
+                }
             }
             SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrace
@@ -713,6 +739,28 @@ impl<'a> Parser<'a> {
                 Ok(token.into())
             }
         }
+    }
+
+    fn expect_wrapped_macro_matcher(&mut self) -> MacroRuleElementsGreen {
+        let mut elements: Vec<MacroRuleElementGreen> = vec![];
+        while !matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalEndOfFile
+        ) {
+            let element = self.try_parse_macro_rule_element();
+            match element {
+                Ok(element) => elements.push(element),
+                Err(TryParseFailure::SkipToken) => {
+                    let _ = self.skip_until(is_of_kind!(rparen, rbrace, rbrack));
+                    break;
+                }
+                Err(TryParseFailure::DoNothing) => break,
+            }
+        }
+        MacroRuleElements::new_green(self.db, elements)
     }
 
     fn parse_macro_elements(&mut self) -> MacroMatcherGreen {
@@ -751,26 +799,9 @@ impl<'a> Parser<'a> {
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
-        let mut elements: Vec<MacroRuleElementGreen> = vec![];
-        while !matches!(
-            self.peek().kind,
-            SyntaxKind::TerminalRParen
-                | SyntaxKind::TerminalRBrace
-                | SyntaxKind::TerminalRBrack
-                | SyntaxKind::TerminalEndOfFile
-        ) {
-            let element = self.try_parse_macro_rule_element();
-            match element {
-                Ok(element) => elements.push(element),
-                Err(TryParseFailure::SkipToken) => {
-                    let _ = self.skip_until(is_of_kind!(rparen, rbrace, rbrack));
-                    break;
-                }
-                Err(TryParseFailure::DoNothing) => break,
-            }
-        }
+        let elements = self.expect_wrapped_macro_matcher();
         let r_term = self.parse_token::<RTerminal>();
-        new_green(self.db, l_term, MacroRuleElements::new_green(self.db, elements), r_term)
+        new_green(self.db, l_term, elements, r_term)
     }
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
