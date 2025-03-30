@@ -10,15 +10,17 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with the generated file.
+#[typetag::serde]
 pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {
     fn as_any(&self) -> &dyn Any;
     fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DynGeneratedFileAuxData(pub Arc<dyn GeneratedFileAuxData>);
 impl DynGeneratedFileAuxData {
     pub fn new<T: GeneratedFileAuxData + 'static>(aux_data: T) -> Self {
