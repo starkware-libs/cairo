@@ -1165,6 +1165,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-size-profiler"
+version = "2.11.2"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-executable",
+ "cairo-lang-filesystem",
+ "cairo-lang-runnable-utils",
+ "cairo-lang-runner",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
+ "clap",
+ "itertools 0.14.0",
+]
+
+[[package]]
 name = "cairo-test"
 version = "2.11.2"
 dependencies = [
