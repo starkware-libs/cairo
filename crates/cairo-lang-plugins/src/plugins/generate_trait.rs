@@ -24,7 +24,18 @@ impl MacroPlugin for GenerateTraitPlugin {
     ) -> PluginResult {
         match item_ast {
             ast::ModuleItem::Impl(impl_ast) => generate_trait_for_impl(db, impl_ast),
-            _ => PluginResult::default(),
+            module_item => {
+                let mut diagnostics = vec![];
+
+                if let Some(attr) = module_item.find_attr(db, GENERATE_TRAIT_ATTR) {
+                    diagnostics.push(PluginDiagnostic::warning(
+                        attr.as_syntax_node().stable_ptr(),
+                        "`generate_trait` may only be applied to `impl`s".to_string(),
+                    ));
+                }
+
+                PluginResult { diagnostics, ..PluginResult::default() }
+            }
         }
     }
 
@@ -128,6 +139,16 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         ast::PathSegment::Simple(segment) => {
             builder.add_node(segment.ident(db).as_syntax_node());
             matches!(impl_generic_params, ast::OptionWrappedGenericParamList::Empty(_))
+        }
+        ast::PathSegment::Missing(_) => {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic::error(
+                    &trait_ast,
+                    "Generated trait can not have a missing path segment.".to_string(),
+                )],
+                remove_original_item: false,
+            };
         }
     };
     if !generic_params_match {

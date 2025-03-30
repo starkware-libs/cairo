@@ -182,6 +182,34 @@ fn test_iter_accum_product() {
 }
 
 #[test]
+fn test_iter_any() {
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(iter.any(|x| x == 2));
+    assert_eq!(iter.next(), Some(3));
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(!iter.any(|x| x == 5));
+    assert_eq!(iter.next(), None);
+
+    let mut iter = array![].into_iter();
+    assert!(!iter.any(|x| x == 1));
+}
+
+#[test]
+fn test_iter_all() {
+    let mut iter = array![1, 1, 1].into_iter();
+    assert!(iter.all(|x| x == 1));
+    assert_eq!(iter.next(), None);
+
+    let mut iter = array![1, 2, 3].into_iter();
+    assert!(!iter.all(|x| x == 1));
+    assert_eq!(iter.next(), Some(3));
+
+    let mut iter = array![].into_iter();
+    assert!(iter.all(|x| x == 1));
+}
+
+#[test]
 fn test_iter_find() {
     let mut iter = array![1, 2, 3].into_iter();
     assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
@@ -197,5 +225,33 @@ fn test_iter_adapter_filter() {
     let mut iter = array![0_u32, 1, 2].into_iter().filter(|x| *x > 0);
     assert_eq!(iter.next(), Option::Some(1));
     assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::None);
+}
+
+#[test]
+fn test_iterator_chain_different_types() {
+    let mut iter = array![7, 8, 9].into_iter().chain((0..5_u8));
+
+    assert_eq!(iter.next(), Option::Some(7));
+    assert_eq!(iter.next(), Option::Some(8));
+    assert_eq!(iter.next(), Option::Some(9));
+    assert_eq!(iter.next(), Option::Some(0));
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+    assert_eq!(iter.next(), Option::Some(4));
+    assert_eq!(iter.next(), Option::None);
+}
+
+#[test]
+fn test_iterator_chain_same_types() {
+    let mut iter = array![1, 2, 3].into_iter().chain(array![4, 5, 6]);
+
+    assert_eq!(iter.next(), Option::Some(1));
+    assert_eq!(iter.next(), Option::Some(2));
+    assert_eq!(iter.next(), Option::Some(3));
+    assert_eq!(iter.next(), Option::Some(4));
+    assert_eq!(iter.next(), Option::Some(5));
+    assert_eq!(iter.next(), Option::Some(6));
     assert_eq!(iter.next(), Option::None);
 }

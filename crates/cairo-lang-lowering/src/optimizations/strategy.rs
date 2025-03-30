@@ -1,6 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
+use super::dedup_blocks::dedup_blocks;
 use super::gas_redeposit::gas_redeposit;
 use super::validate::validate;
 use crate::FlatLowered;
@@ -25,6 +26,7 @@ pub enum OptimizationPhase {
     BranchInversion,
     CancelOps,
     ConstFolding,
+    DedupBlocks,
     OptimizeMatches,
     OptimizeRemappings,
     ReorderStatements,
@@ -54,11 +56,12 @@ impl OptimizationPhase {
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, lowered),
+            OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
-            OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
+            OptimizationPhase::ReturnOptimization => return_optimization(db, function, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
@@ -111,6 +114,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::BranchInversion,
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::CancelOps,
+        // Must be right before const folding.
+        OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ConstFolding,
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::SplitStructs,
@@ -120,6 +125,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::DedupBlocks,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
@@ -133,6 +140,10 @@ pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrate
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::DedupBlocks,
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)

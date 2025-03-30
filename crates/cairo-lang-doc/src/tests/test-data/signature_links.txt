@@ -1,0 +1,155 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+struct MemberStruct {
+    ty: MemberEnum,
+}
+
+enum MemberEnum {
+    Simple: felt252,
+    Complex: Span<MemberStruct>,
+}
+
+trait ATrait {}
+
+struct B<T, G, +ATrait> {
+    t: T,
+    g: G,
+}
+
+fn function_tuple(t: (MemberStruct, (MemberStruct, MemberEnum))) -> (MemberStruct, MemberEnum) {
+    return t;
+}
+
+enum AnotherEnum {
+    Simple: felt252,
+    Complex: (MemberStruct, MemberEnum),
+}
+
+fn incorrect_function(x: NotExistingType)
+
+enum IncorrectEnum {
+    INCORRECT_VARIANT: NotExistingType
+}
+
+struct IncorrectStruct {
+    incorrect_member: NotExistingType,
+}
+
+//! > Item signature #1
+struct MemberStruct {
+    ty: MemberEnum,
+}
+
+//! > Item linked items #1
+MemberEnum
+
+//! > Item signature #2
+ty: MemberEnum
+
+//! > Item linked items #2
+MemberEnum
+
+//! > Item signature #3
+enum MemberEnum {
+    Simple: felt252,
+    Complex: Span<MemberStruct>,
+}
+
+//! > Item linked items #3
+
+//! > Item signature #4
+Simple: felt252
+
+//! > Item linked items #4
+
+//! > Item signature #5
+Complex: Span<MemberStruct>
+
+//! > Item linked items #5
+
+//! > Item signature #6
+trait ATrait
+
+//! > Item linked items #6
+
+//! > Item signature #7
+struct B<T, G, +ATrait> {
+    t: T,
+    g: G,
+}
+
+//! > Item linked items #7
++ATrait
+
+//! > Item signature #8
+t: T
+
+//! > Item linked items #8
+
+//! > Item signature #9
+g: G
+
+//! > Item linked items #9
+
+//! > Item signature #10
+fn function_tuple(t: (MemberStruct, (MemberStruct, MemberEnum))) -> (MemberStruct, MemberEnum)
+
+//! > Item linked items #10
+MemberStruct, MemberStruct, MemberEnum, MemberStruct, MemberEnum
+
+//! > Item signature #11
+enum AnotherEnum {
+    Simple: felt252,
+    Complex: (MemberStruct, MemberEnum),
+}
+
+//! > Item linked items #11
+MemberStruct, MemberEnum
+
+//! > Item signature #12
+Simple: felt252
+
+//! > Item linked items #12
+
+//! > Item signature #13
+Complex: (MemberStruct, MemberEnum)
+
+//! > Item linked items #13
+MemberStruct, MemberEnum
+
+//! > Item signature #14
+fn incorrect_function(x: NotExistingType)
+
+//! > Item linked items #14
+
+//! > Item signature #15
+enum IncorrectEnum {
+    INCORRECT_VARIANT: <missing>,
+}
+
+//! > Item linked items #15
+
+//! > Item signature #16
+INCORRECT_VARIANT: <missing>
+
+//! > Item linked items #16
+
+//! > Item signature #17
+struct IncorrectStruct {
+    incorrect_member: <missing>,
+}
+
+//! > Item linked items #17
+
+//! > Item signature #18
+incorrect_member: <missing>
+
+//! > Item linked items #18

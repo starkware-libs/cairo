@@ -1,5 +1,5 @@
-use crate::integer::{downcast, upcast};
 use crate::RangeCheck;
+use crate::integer::{downcast, upcast};
 
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 

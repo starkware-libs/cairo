@@ -1,10 +1,11 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{BodyItems, IsDependentType, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
@@ -103,7 +104,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ));
                     continue;
                 };
-                if self_param.name(db).text(db) != "self" {
+                if self_param.name(db).text(db) != SELF_PARAM_KW {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr().untyped(),
                         "The first parameter must be named `self`.".to_string(),
@@ -142,7 +143,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     }
                     if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_dependent_type(db, &single_generic_param)
+                        .is_dependent_type(db, &[&single_generic_param])
                     {
                         skip_generation = true;
 

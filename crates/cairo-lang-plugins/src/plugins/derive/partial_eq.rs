@@ -2,30 +2,32 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
-use crate::plugins::derive::TypeVariantInfo;
+use super::PluginTypeInfo;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PartialEq` trait.
-pub fn handle_partial_eq(info: &DeriveInfo) -> Option<String> {
-    let header = info.format_impl_header("core::traits", "PartialEq", &["core::traits::PartialEq"]);
+pub fn handle_partial_eq(info: &PluginTypeInfo) -> String {
+    const PARTIAL_EQ_TRAIT: &str = "core::traits::PartialEq";
+    let header = info.impl_header(PARTIAL_EQ_TRAIT, &[PARTIAL_EQ_TRAIT]);
     let full_typename = info.full_typename();
     let body = indent_by(
         8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
+        match &info.type_variant {
+            TypeVariant::Enum => {
                 let ty = &info.name;
                 formatdoc! {"
                         match lhs {{
                             {}
                         }}",
-                variants.iter().map(|lhs_variant| {
+                    info.members_info.iter().map(|lhs_variant| {
                     indent_by(4, formatdoc! {"
                         {ty}::{lhs_variant}(x) => match rhs {{
                             {}
                         }},",
-                        variants.iter().map(|rhs_variant|{
+                        info.members_info.iter().map(|rhs_variant|{
                             if lhs_variant.name == rhs_variant.name {
-                                format!("{ty}::{}(y) => x == y,", rhs_variant.name)
+                                format!("{ty}::{}(y) => {}::eq(x, y),", rhs_variant.name,
+                                rhs_variant.impl_name(PARTIAL_EQ_TRAIT))
                             } else {
                                 format!("{ty}::{}(_y) => false,", rhs_variant.name)
                             }
@@ -34,23 +36,29 @@ pub fn handle_partial_eq(info: &DeriveInfo) -> Option<String> {
                     })
                 }).join("\n    ")}
             }
-            TypeVariantInfo::Struct(members) => {
-                if members.is_empty() {
+            TypeVariant::Struct => {
+                if info.members_info.is_empty() {
                     "true".to_string()
                 } else {
-                    members
+                    info.members_info
                         .iter()
-                        .map(|member| format!("lhs.{member} == rhs.{member}", member = member.name))
+                        .map(|member| {
+                            format!(
+                                "{imp}::eq(lhs.{member}, rhs.{member})",
+                                member = member.name,
+                                imp = member.impl_name(PARTIAL_EQ_TRAIT),
+                            )
+                        })
                         .join(" && ")
                 }
             }
         },
     );
-    Some(formatdoc! {"
+    formatdoc! {"
         {header} {{
             fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
                 {body}
             }}
         }}
-    "})
+    "}
 }

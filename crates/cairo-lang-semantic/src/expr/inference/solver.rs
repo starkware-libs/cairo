@@ -245,7 +245,7 @@ impl CandidateSolver {
     ) -> InferenceResult<CandidateSolver> {
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
-        inference.data.impl_type_bounds = impl_type_bounds.clone();
+        inference.data.impl_type_bounds = impl_type_bounds;
         let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
 
         // If the closure params are not var free, we cannot infer the negative impl.

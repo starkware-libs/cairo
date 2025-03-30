@@ -535,7 +535,7 @@ impl CasmContractClass {
 
         let as_casm_entry_points = |contract_entry_points: Vec<ContractEntryPoint>| {
             let mut entry_points = vec![];
-            for contract_entry_point in contract_entry_points.into_iter() {
+            for contract_entry_point in contract_entry_points {
                 entry_points.push(as_casm_entry_point(contract_entry_point)?);
             }
             Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)

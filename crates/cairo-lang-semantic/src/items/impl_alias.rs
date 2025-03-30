@@ -53,7 +53,7 @@ pub fn priv_impl_alias_semantic_data(
     }
 }
 
-/// An helper function to compute the semantic data of an impl-alias item.
+/// A helper function to compute the semantic data of an impl-alias item.
 pub fn impl_alias_semantic_data_helper(
     db: &(dyn SemanticGroup),
     impl_alias_ast: &ast::ItemImplAlias,
@@ -88,7 +88,7 @@ pub fn impl_alias_semantic_data_helper(
     inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
-    let generic_params = inference.rewrite(generic_params_data.generic_params.clone()).no_err();
+    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
 
     let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -111,7 +111,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
     priv_impl_alias_semantic_data(db, *impl_alias_id, true)
 }
 
-/// An helper function to compute the semantic data of an impl-alias item when a cycle is detected.
+/// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
 pub fn impl_alias_semantic_data_cycle_helper(
     db: &(dyn SemanticGroup),
     impl_alias_ast: &ast::ItemImplAlias,
@@ -268,7 +268,6 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
         &mut diagnostics,
         &impl_path_syntax,
         NotFoundItemType::Impl,
-        None,
     ) {
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),

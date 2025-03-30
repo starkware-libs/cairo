@@ -320,7 +320,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -403,7 +403,7 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
         Event::OwnableEvent(self)
     }
 }
-impl CounterIncreasedDrop of core::traits::Drop::<CounterIncreased>;
+impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
         self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -419,7 +419,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
         Option::Some(CounterIncreased {amount, })
     }
 }
-impl CounterDecreasedDrop of core::traits::Drop::<CounterDecreased>;
+impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
         self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -435,10 +435,10 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
@@ -647,26 +647,27 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     }
 
 }
-impl ICounterContractDispatcherCopy of core::traits::Copy::<ICounterContractDispatcher>;
-impl ICounterContractDispatcherDrop of core::traits::Drop::<ICounterContractDispatcher>;
-impl ICounterContractDispatcherSerde of core::serde::Serde::<ICounterContractDispatcher> {
+impl ICounterContractDispatcherCopy<> of core::traits::Copy::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherDrop<> of core::traits::Drop::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherSerde<> of core::serde::Serde::<ICounterContractDispatcher> {
     fn serialize(self: @ICounterContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispatcher> {
+impl ICounterContractDispatcherStore<> of starknet::Store::<ICounterContractDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             ICounterContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -676,17 +677,18 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         let ICounterContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             ICounterContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -698,7 +700,8 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
         let ICounterContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -747,26 +750,27 @@ impl ICounterContractDispatcherSubPointersMutImpl of starknet::storage::SubPoint
         }
     }
 }
-impl ICounterContractLibraryDispatcherCopy of core::traits::Copy::<ICounterContractLibraryDispatcher>;
-impl ICounterContractLibraryDispatcherDrop of core::traits::Drop::<ICounterContractLibraryDispatcher>;
-impl ICounterContractLibraryDispatcherSerde of core::serde::Serde::<ICounterContractLibraryDispatcher> {
+impl ICounterContractLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractLibraryDispatcher> {
     fn serialize(self: @ICounterContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContractLibraryDispatcher> {
+impl ICounterContractLibraryDispatcherStore<> of starknet::Store::<ICounterContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             ICounterContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -776,17 +780,18 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         let ICounterContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             ICounterContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -798,7 +803,8 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         let ICounterContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -847,26 +853,27 @@ impl ICounterContractLibraryDispatcherSubPointersMutImpl of starknet::storage::S
         }
     }
 }
-impl ICounterContractSafeLibraryDispatcherCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
-impl ICounterContractSafeLibraryDispatcherDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
-impl ICounterContractSafeLibraryDispatcherSerde of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
+impl ICounterContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
     fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterContractSafeLibraryDispatcher> {
+impl ICounterContractSafeLibraryDispatcherStore<> of starknet::Store::<ICounterContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             ICounterContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -876,17 +883,18 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         let ICounterContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             ICounterContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -898,7 +906,8 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
         let ICounterContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -947,26 +956,27 @@ impl ICounterContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storag
         }
     }
 }
-impl ICounterContractSafeDispatcherCopy of core::traits::Copy::<ICounterContractSafeDispatcher>;
-impl ICounterContractSafeDispatcherDrop of core::traits::Drop::<ICounterContractSafeDispatcher>;
-impl ICounterContractSafeDispatcherSerde of core::serde::Serde::<ICounterContractSafeDispatcher> {
+impl ICounterContractSafeDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeDispatcher> {
     fn serialize(self: @ICounterContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSafeDispatcher> {
+impl ICounterContractSafeDispatcherStore<> of starknet::Store::<ICounterContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             ICounterContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -976,17 +986,18 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         let ICounterContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             ICounterContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -998,7 +1009,8 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         let ICounterContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1047,22 +1059,22 @@ impl ICounterContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubP
         }
     }
 }
-impl ICounterContractDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
-impl ICounterContractDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
-impl ICounterContractDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractDispatcherSubPointersMut>;
-impl ICounterContractDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractDispatcherSubPointersMut>;
-impl ICounterContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
-impl ICounterContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
-impl ICounterContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointersMut>;
-impl ICounterContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointersMut>;
-impl ICounterContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
-impl ICounterContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
-impl ICounterContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
-impl ICounterContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
-impl ICounterContractSafeDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
-impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
-impl ICounterContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
-impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
+impl ICounterContractDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointersMut>;
+impl ICounterContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointersMut>;
+impl ICounterContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointersMut>;
+impl ICounterContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
+impl ICounterContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
@@ -1368,7 +1380,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
         ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1451,7 +1463,7 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
         Event::OwnableEvent(self)
     }
 }
-impl CounterIncreasedDrop of core::traits::Drop::<CounterIncreased>;
+impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
         self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1467,7 +1479,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
         Option::Some(CounterIncreased {amount, })
     }
 }
-impl CounterDecreasedDrop of core::traits::Drop::<CounterDecreased>;
+impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
         self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1483,9 +1495,9 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

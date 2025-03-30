@@ -18,8 +18,8 @@ use crate::cell_expression::{CellExpression, CellOperator};
 use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
-    AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
-    JnzInstruction, JumpInstruction, RetInstruction,
+    AddApInstruction, AssertEqInstruction, Blake2sCompressInstruction, CallInstruction,
+    Instruction, InstructionBody, JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 
@@ -30,6 +30,14 @@ mod test;
 /// Variables for casm builder, representing a `CellExpression`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Var(usize);
+
+/// The kind of an assert_eq action.
+///
+/// To be used in `assert_vars_eq`.
+pub enum AssertEqKind {
+    Felt252,
+    QM31,
+}
 
 /// The state of the variables at some line.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -294,7 +302,7 @@ impl CasmBuilder {
 
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
-    pub fn assert_vars_eq(&mut self, dst: Var, res: Var) {
+    pub fn assert_vars_eq(&mut self, dst: Var, res: Var, kind: AssertEqKind) {
         let a = self.as_cell_ref(dst, true);
         let b = self.get_value(res, true);
         let (a, b) = match b {
@@ -316,8 +324,14 @@ impl CasmBuilder {
                 }
             },
         };
-        let instruction =
-            self.next_instruction(InstructionBody::AssertEq(AssertEqInstruction { a, b }), true);
+        let inner = AssertEqInstruction { a, b };
+        let instruction = self.next_instruction(
+            match kind {
+                AssertEqKind::Felt252 => InstructionBody::AssertEq(inner),
+                AssertEqKind::QM31 => InstructionBody::QM31AssertEq(inner),
+            },
+            true,
+        );
         self.statements.push(Statement::Final(instruction));
     }
 
@@ -328,7 +342,7 @@ impl CasmBuilder {
     pub fn buffer_write_and_inc(&mut self, buffer: Var, value: Var) {
         let (cell, offset) = self.buffer_get_and_inc(buffer);
         let location = self.add_var(CellExpression::DoubleDeref(cell, offset));
-        self.assert_vars_eq(value, location);
+        self.assert_vars_eq(value, location, AssertEqKind::Felt252);
     }
 
     /// Writes `var` as a new tempvar and returns it as a variable, unless its value is already
@@ -349,7 +363,7 @@ impl CasmBuilder {
             } if imm.value.is_one() => a,
             _ => {
                 let temp = self.alloc_var(false);
-                self.assert_vars_eq(temp, var);
+                self.assert_vars_eq(temp, var, AssertEqKind::Felt252);
                 return temp;
             }
         }))
@@ -486,6 +500,32 @@ impl CasmBuilder {
         );
         self.statements.push(Statement::Jump(label.clone(), instruction));
         self.set_or_test_label_state(label, self.main_state.clone());
+    }
+
+    /// Add a statement performing Blake2s compression.
+    ///
+    /// `state` must be a cell reference to a pointer to `[u32; 8]` as the hash state.
+    /// `byte_count` must be a cell reference to the number of bytes in the message.
+    /// `message` must be a cell reference to a pointer to `[u32; 16]` as the message.
+    /// `finalize` should be `true` if this is the final compression.
+    ///
+    /// Additionally the pointer to the output hash state should be on the top of the stack.
+    pub fn blake2s_compress(&mut self, state: Var, byte_count: Var, message: Var, finalize: bool) {
+        let instruction = self.next_instruction(
+            InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
+                state: self.as_cell_ref(state, true),
+                byte_count: self.as_cell_ref(byte_count, true),
+                message: self.as_cell_ref(message, true),
+                finalize,
+            }),
+            true,
+        );
+        assert!(instruction.inc_ap);
+        assert_eq!(
+            self.main_state.allocated as usize, self.main_state.ap_change,
+            "Output var must be top of stack"
+        );
+        self.statements.push(Statement::Final(instruction));
     }
 
     /// Adds a label here named `name`.
@@ -726,48 +766,48 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $res:ident; $($tok:tt)*) => {
-        $builder.assert_vars_eq($dst, $res);
+        $builder.assert_vars_eq($dst, $res, $crate::builder::AssertEqKind::Felt252);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
             let __sum = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
-            $builder.assert_vars_eq($dst, __sum);
+            $builder.assert_vars_eq($dst, __sum, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
             let __product = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
-            $builder.assert_vars_eq($dst, __product);
+            $builder.assert_vars_eq($dst, __product, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         {
             let __diff = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
-            $builder.assert_vars_eq($dst, __diff);
+            $builder.assert_vars_eq($dst, __diff, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         {
             let __division = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
-            $builder.assert_vars_eq($dst, __division);
+            $builder.assert_vars_eq($dst, __division, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, $offset);
-            $builder.assert_vars_eq($dst, __deref);
+            $builder.assert_vars_eq($dst, __deref, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, 0);
-            $builder.assert_vars_eq($dst, __deref);
+            $builder.assert_vars_eq($dst, __deref, $crate::builder::AssertEqKind::Felt252);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };

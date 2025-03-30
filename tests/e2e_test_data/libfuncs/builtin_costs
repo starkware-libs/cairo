@@ -29,10 +29,11 @@ libfunc get_builtin_costs = get_builtin_costs;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 
-get_builtin_costs() -> ([0]); // 0
-get_builtin_costs() -> ([1]); // 1
-drop<BuiltinCosts>([1]) -> (); // 2
-store_temp<BuiltinCosts>([0]) -> ([0]); // 3
-return([0]); // 4
+F0:
+get_builtin_costs() -> ([0]);
+get_builtin_costs() -> ([1]);
+drop<BuiltinCosts>([1]) -> ();
+store_temp<BuiltinCosts>([0]) -> ([0]);
+return([0]);
 
-test::foo@0() -> (BuiltinCosts);
+test::foo@F0() -> (BuiltinCosts);

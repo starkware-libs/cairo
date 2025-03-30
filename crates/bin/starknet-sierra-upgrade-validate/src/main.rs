@@ -28,12 +28,12 @@ const NUM_OF_PROCESSORS: usize = 32;
 /// 2. If class_info_output_file is not provided, it returns the report of the runs over the
 ///    processes of the classes.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Cli {
     /// The input files with declared classes info.
     #[arg(
         required_unless_present = "fullnode_url",
-        conflicts_with_all = ["fullnode_url", "FullnodeArgs"],
+        conflicts_with_all = ["fullnode_url", "fullnode_args"]
     )]
     input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
@@ -52,12 +52,12 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_all = &["FullnodeArgs"], 
+        requires_ifs = [("fullnode_url", "fullnode_args")], 
         required_unless_present = "input_files", 
         conflicts_with = "input_files"
     )]
     fullnode_url: Option<String>,
-    #[clap(flatten)]
+    #[command(flatten)]
     fullnode_args: Option<FullnodeArgs>,
     /// The output file to write the Sierra classes into.
     #[arg(long)]

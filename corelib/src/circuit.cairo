@@ -674,7 +674,7 @@ impl CircuitOutputsImpl<
     }
 }
 
-/// A type that contain that is used to guarantee that the circuit evaluation has failed.
+/// A type that is used to guarantee that the circuit evaluation has failed.
 ///
 /// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
 /// destruct this type. This way, one can trust that the guarantee holds although it has not yet
@@ -764,8 +764,8 @@ extern fn get_circuit_output<C, Output>(
 /// Helper module to convert into `u384`.
 mod conversions {
     use crate::integer::{downcast, upcast};
-    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
     use crate::internal::bounded_int;
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
     use super::{u384, u96};
 
     const POW128: felt252 = 0x100000000000000000000000000000000;

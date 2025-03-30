@@ -22,6 +22,12 @@ impl AnalyzerPlugin for AnalyzerPluginLongId {
     fn declared_allows(&self) -> Vec<String> {
         self.0.declared_allows()
     }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `AnalyzerPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
 }
 
 // `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,

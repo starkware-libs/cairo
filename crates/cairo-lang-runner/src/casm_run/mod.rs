@@ -13,7 +13,6 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
-use cairo_vm::hint_processor::builtin_hint_processor::blake2s_hash::blake2s_compress;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
@@ -38,7 +37,7 @@ use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
-use num_traits::{One, Signed, ToPrimitive, Zero};
+use num_traits::{Signed, ToPrimitive, Zero};
 use rand::Rng;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
@@ -105,6 +104,8 @@ pub struct CairoHintProcessor<'a> {
     pub no_temporary_segments: bool,
     /// A set of markers created by the run.
     pub markers: Vec<Vec<Felt252>>,
+    /// The traceback set by a panic trace hint call.
+    pub panic_traceback: Vec<(Relocatable, Relocatable)>,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -422,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
@@ -1319,7 +1320,12 @@ impl CairoHintProcessor<'_> {
         match core_hint {
             ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
-                extract_relocatable(vm, dst)?,
+                // The following is needed for when the `extensive_hints` feature is used in the
+                // VM, in which case `dst_ptr` is a `MaybeRelocatable` type.
+                #[allow(clippy::useless_conversion)]
+                {
+                    extract_relocatable(vm, dst)?.into()
+                },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
@@ -1346,53 +1352,48 @@ impl CairoHintProcessor<'_> {
             ExternalHint::AddMarker { start, end } => {
                 self.markers.push(read_felts(vm, start, end)?);
             }
-            ExternalHint::Blake2sCompress { state, byte_count, message, output, finalize } => {
-                let state = extract_relocatable(vm, state)?;
-                let byte_count = get_val(vm, byte_count)?;
-                let message = extract_relocatable(vm, message)?;
-                let felt_to_u32 = |value: Felt252| value.to_le_digits()[0].try_into().ok();
+            ExternalHint::AddTrace { flag } => {
+                let flag = get_val(vm, flag)?;
+                // Setting the panic backtrace if the given flag is panic.
+                if flag == 0x70616e6963u64.into() {
+                    let mut fp = vm.get_fp();
+                    self.panic_traceback = vec![(vm.get_pc(), fp)];
+                    // Fetch the fp and pc traceback entries
+                    loop {
+                        let ptr_at_offset = |offset: usize| {
+                            (fp - offset).ok().and_then(|r| vm.get_relocatable(r).ok())
+                        };
+                        // Get return pc.
+                        let Some(ret_pc) = ptr_at_offset(1) else {
+                            break;
+                        };
+                        println!("ret_pc: {ret_pc}");
+                        // Get fp traceback.
+                        let Some(ret_fp) = ptr_at_offset(2) else {
+                            break;
+                        };
+                        println!("ret_fp: {ret_fp}");
+                        if ret_fp == fp {
+                            break;
+                        }
+                        fp = ret_fp;
 
-                let finalize = get_val(vm, finalize)?.is_one();
-
-                let into_u32 = |opt: Option<Cow<'_, _>>| match opt {
-                    Some(val) => {
-                        if let MaybeRelocatable::Int(value) = *val {
-                            value.to_le_digits()[0].try_into().ok()
+                        let call_instruction = |offset: usize| -> Option<Relocatable> {
+                            let ptr = (ret_pc - offset).ok()?;
+                            println!("ptr: {ptr}");
+                            let inst = vm.get_integer(ptr).ok()?;
+                            println!("inst: {inst}");
+                            let inst_short = inst.to_u64()?;
+                            (inst_short & 0x7000_0000_0000_0000 == 0x1000_0000_0000_0000)
+                                .then_some(ptr)
+                        };
+                        if let Some(call_pc) = call_instruction(1).or_else(|| call_instruction(2)) {
+                            self.panic_traceback.push((call_pc, fp));
                         } else {
-                            None
+                            break;
                         }
                     }
-                    None => None,
-                };
-
-                let state = vm
-                    .get_range(state, 8)
-                    .into_iter()
-                    .map(into_u32)
-                    .collect::<Option<Vec<u32>>>()
-                    .unwrap();
-                let state: [u32; 8] = state[0..8].try_into().unwrap();
-
-                let message = vm
-                    .get_range(message, 16)
-                    .into_iter()
-                    .map(into_u32)
-                    .collect::<Option<Vec<u32>>>()
-                    .unwrap();
-
-                let new_state = blake2s_compress(
-                    &state,
-                    &message.try_into().unwrap(),
-                    felt_to_u32(byte_count).unwrap(),
-                    0,
-                    if finalize { 0xffffffff } else { 0x00 },
-                    0,
-                );
-
-                let output = extract_relocatable(vm, output)?;
-
-                for (i, &val) in new_state.iter().enumerate() {
-                    vm.insert_value((output + i)?, MaybeRelocatable::Int(Felt252::from(val)))?;
+                    self.panic_traceback.reverse();
                 }
             }
         }
@@ -2332,9 +2333,20 @@ pub fn build_cairo_runner(
         None,
     )
     .map_err(CairoRunError::from)?;
-    CairoRunner::new(&program, LayoutName::all_cairo, false, true)
-        .map_err(CairoRunError::from)
-        .map_err(Box::new)
+    let dynamic_layout_params = None;
+    let proof_mode = false;
+    let trace_enabled = true;
+    let disable_trace_padding = false;
+    CairoRunner::new(
+        &program,
+        LayoutName::all_cairo,
+        dynamic_layout_params,
+        proof_mode,
+        trace_enabled,
+        disable_trace_padding,
+    )
+    .map_err(CairoRunError::from)
+    .map_err(Box::new)
 }
 
 /// The result of [run_function].

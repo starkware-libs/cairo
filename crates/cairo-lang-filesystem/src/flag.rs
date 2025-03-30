@@ -7,4 +7,8 @@ pub enum Flag {
     /// Additionally controls addition of `redeposit_gas` which happens on default.
     AddWithdrawGas(bool),
     NumericMatchOptimizationMinArmsThreshold(usize),
+    /// Whether to add panic backtrace handling to the generated code.
+    ///
+    /// Default is false - do not add, as it won't be used in production.
+    PanicBacktrace(bool),
 }

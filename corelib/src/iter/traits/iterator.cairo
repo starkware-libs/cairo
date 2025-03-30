@@ -1,9 +1,9 @@
-use core::metaprogramming::TypeEqual;
 use crate::iter::adapters::{
-    Enumerate, Filter, Map, Peekable, Take, Zip, enumerated_iterator, filter_iterator,
-    mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
+    Chain, Enumerate, Filter, Map, Peekable, Take, Zip, chained_iterator, enumerated_iterator,
+    filter_iterator, mapped_iterator, peekable_iterator, take_iterator, zipped_iterator,
 };
 use crate::iter::traits::{Product, Sum};
+use crate::metaprogramming::TypeEqual;
 
 /// A trait for dealing with iterators.
 ///
@@ -382,6 +382,76 @@ pub trait Iterator<T> {
         }
     }
 
+    /// Tests if any element of the iterator matches a predicate.
+    ///
+    /// `any()` takes a closure that returns `true` or `false`. It applies this closure to each
+    /// element of the iterator, and if any of them return `true`, then so does `any()`. If they all
+    /// return `false`, it returns `false`.
+    ///
+    /// `any()` is short-circuiting; in other words, it will stop processing as soon as it finds a
+    /// `true`, given that no matter what else happens, the result will also be `true`.
+    ///
+    /// An empty iterator returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// assert!(array![1, 2, 3].into_iter().any(|x| x == 2));
+    ///
+    /// assert!(!array![1, 2, 3].into_iter().any(|x| x > 5));
+    /// ```
+    fn any<
+        P,
+        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        ref self: T, predicate: P,
+    ) -> bool {
+        match Self::next(ref self) {
+            None => false,
+            Some(x) => predicate(x) || Self::any(ref self, predicate),
+        }
+    }
+
+    /// Tests if every element of the iterator matches a predicate.
+    ///
+    /// `all()` takes a closure that returns `true` or `false`. It applies this closure to each
+    /// element of the iterator, and if all of them return `true`, then so does `all()`. If any
+    /// of them return `false`, it returns `false`.
+    ///
+    /// `all()` is short-circuiting; in other words, it will stop processing as soon as it finds a
+    /// `false`, given that no matter what else happens, the result will also be `false`.
+    ///
+    /// An empty iterator returns `true`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// assert!(array![1, 2, 3].into_iter().all(|x| x > 0));
+    ///
+    /// assert!(!array![1, 2, 3].into_iter().all(|x| x > 2));
+    /// ```
+    fn all<
+        P,
+        +core::ops::Fn<P, (Self::Item,)>[Output: bool],
+        +Destruct<P>,
+        +Destruct<T>,
+        +Destruct<Self::Item>,
+    >(
+        ref self: T, predicate: P,
+    ) -> bool {
+        match Self::next(ref self) {
+            None => true,
+            Some(x) => predicate(x) && Self::all(ref self, predicate),
+        }
+    }
+
     /// Searches for an element of an iterator that satisfies a predicate.
     ///
     /// `find()` takes a closure that returns `true` or `false`. It applies
@@ -707,5 +777,69 @@ pub trait Iterator<T> {
         self: T,
     ) -> Self::Item {
         Product::<Self::Item>::product::<T, Self>(self)
+    }
+
+    /// Takes two iterators and creates a new iterator over both in sequence.
+    ///
+    /// `chain()` will return a new iterator which will first iterate over
+    /// values from the first iterator and then over values from the second
+    /// iterator.
+    ///
+    /// In other words, it links two iterators together, in a chain. 🔗
+    ///
+    /// Arguments do not have to be of the same type as long as the underlying iterated
+    /// over items are.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use core::ops::Range;
+    ///
+    /// let a: Array<u8> = array![7, 8, 9];
+    /// let b: Range<u8> = 0..5;
+    ///
+    /// let mut iter = a.into_iter().chain(b.into_iter());
+    ///
+    /// assert_eq!(iter.next(), Option::Some(7));
+    /// assert_eq!(iter.next(), Option::Some(8));
+    /// assert_eq!(iter.next(), Option::Some(9));
+    /// assert_eq!(iter.next(), Option::Some(0));
+    /// assert_eq!(iter.next(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(2));
+    /// assert_eq!(iter.next(), Option::Some(3));
+    /// assert_eq!(iter.next(), Option::Some(4));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    ///
+    /// Since the argument to `chain()` uses [`IntoIterator`], we can pass
+    /// anything that can be converted into an [`Iterator`], not just an
+    /// [`Iterator`] itself. For example, arrays implement
+    /// [`IntoIterator`], and so can be passed to `chain()` directly:
+    ///
+    /// ```
+    /// let a = array![1, 2, 3];
+    /// let b = array![4, 5, 6];
+    ///
+    /// let mut iter = a.into_iter().chain(b);
+    ///
+    /// assert_eq!(iter.next(), Option::Some(1));
+    /// assert_eq!(iter.next(), Option::Some(2));
+    /// assert_eq!(iter.next(), Option::Some(3));
+    /// assert_eq!(iter.next(), Option::Some(4));
+    /// assert_eq!(iter.next(), Option::Some(5));
+    /// assert_eq!(iter.next(), Option::Some(6));
+    /// assert_eq!(iter.next(), Option::None);
+    /// ```
+    fn chain<
+        U,
+        impl IntoIterU: IntoIterator<U>,
+        +TypeEqual<Self::Item, IntoIterU::Iterator::Item>,
+        +Destruct<T>,
+    >(
+        self: T, other: U,
+    ) -> Chain<T, IntoIterU::IntoIter> {
+        chained_iterator(self, other.into_iter())
     }
 }

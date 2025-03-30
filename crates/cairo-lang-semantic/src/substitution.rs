@@ -70,7 +70,7 @@ impl GenericSubstitution {
         }
     }
     pub fn concat(mut self, other: GenericSubstitution) -> Self {
-        for (key, value) in other.param_to_arg.into_iter() {
+        for (key, value) in other.param_to_arg {
             self.param_to_arg.insert(key, value);
         }
         if let Some(self_impl) = other.self_impl {

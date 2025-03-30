@@ -340,9 +340,7 @@ pub fn priv_generic_param_data(
     );
 
     let mut opt_generic_param_syntax = None;
-    for param_syntax in
-        generic_params_syntax.generic_params(syntax_db).elements(syntax_db).into_iter()
-    {
+    for param_syntax in generic_params_syntax.generic_params(syntax_db).elements(syntax_db) {
         let cur_generic_param_id =
             GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
@@ -390,7 +388,7 @@ pub fn generic_params_type_constraints(
 ) -> Vec<(TypeId, TypeId)> {
     let mut constraints = vec![];
     for param in &generic_params {
-        let GenericParam::Impl(imp) = db.generic_param_semantic(*param).unwrap() else {
+        let Ok(GenericParam::Impl(imp)) = db.generic_param_semantic(*param) else {
             continue;
         };
         let Ok(concrete_trait_id) = imp.concrete_trait else {
@@ -596,13 +594,13 @@ fn impl_generic_param_semantic(
             for constraint in
                 constraints.associated_item_constraints(db.upcast()).elements(db.upcast())
             {
-                let Some(trait_type_id) = db
-                    .trait_type_by_name(
-                        concrete_trait_id.trait_id(db),
-                        constraint.item(db.upcast()).text(db.upcast()),
-                    )
-                    .unwrap()
-                else {
+                let Ok(trait_type_id_opt) = db.trait_type_by_name(
+                    concrete_trait_id.trait_id(db),
+                    constraint.item(db.upcast()).text(db.upcast()),
+                ) else {
+                    continue;
+                };
+                let Some(trait_type_id) = trait_type_id_opt else {
                     diagnostics.report(
                         constraint.stable_ptr(),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {

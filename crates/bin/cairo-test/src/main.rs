@@ -30,7 +30,7 @@ impl From<RunProfilerConfigArg> for RunProfilerConfig {
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The Cairo project path to compile and run its tests.
     path: PathBuf,
@@ -54,7 +54,7 @@ struct Args {
     starknet: bool,
     /// Whether to run the profiler, and what results to produce. See
     /// [cairo_lang_test_runner::RunProfilerConfig]
-    #[clap(short, long, default_value_t, value_enum)]
+    #[arg(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
     /// Should disable gas calculation.
     #[arg(long)]

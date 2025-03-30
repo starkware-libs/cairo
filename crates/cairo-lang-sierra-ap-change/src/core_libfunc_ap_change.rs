@@ -35,6 +35,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::qm31::QM31Concrete;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
@@ -258,7 +259,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
                 vec![ApChange::Known(0)]
             }
-            Sint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Sint128Concrete::Operation(_) => {
                 vec![ApChange::Known(3), ApChange::Known(4), ApChange::Known(4)]
             }
@@ -437,6 +437,15 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(1)]
             }
         },
+        Trace(_) => vec![ApChange::Known(0)],
+        QM31(libfunc) => match libfunc {
+            QM31Concrete::Const(_) => vec![ApChange::Known(0)],
+            QM31Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            QM31Concrete::BinaryOperation(_) => vec![ApChange::Known(1)],
+            QM31Concrete::Pack(_) => vec![ApChange::Known(6)],
+            QM31Concrete::Unpack(_) => vec![ApChange::Known(13)],
+            QM31Concrete::FromM31(_) => vec![ApChange::Known(0)],
+        },
     }
 }
 
@@ -465,14 +474,13 @@ fn uint_ap_change<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits>(
 }
 
 /// Returns the ap changes for s8/s16/s32/s64 libfuncs.
-fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
+fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits>(
     libfunc: &SintConcrete<TSintTraits>,
 ) -> Vec<ApChange> {
     match libfunc {
         SintConcrete::Const(_) | SintConcrete::ToFelt252(_) => vec![ApChange::Known(0)],
         SintConcrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         SintConcrete::FromFelt252(_) => vec![ApChange::Known(3), ApChange::Known(7)],
-        SintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         SintConcrete::WideMul(_) => vec![ApChange::Known(0)],
         SintConcrete::Operation(_) => {
             vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]

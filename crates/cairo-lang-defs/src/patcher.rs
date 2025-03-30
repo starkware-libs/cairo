@@ -55,7 +55,7 @@ impl RewriteNode {
         RewriteNode::Copied(node.as_syntax_node())
     }
 
-    /// Creates a rewrite node from an AST object - with .
+    /// Creates a rewrite node from an AST object with trimming.
     pub fn from_ast_trimmed(node: &impl TypedSyntaxNode) -> Self {
         Self::new_trimmed(node.as_syntax_node())
     }

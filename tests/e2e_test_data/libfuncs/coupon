@@ -26,10 +26,11 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 
 libfunc drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
 
-drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([0]) -> (); // 0
-return(); // 1
+F0:
+drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([0]) -> ();
+return();
 
-test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> ();
+test::foo@F0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> ();
 
 //! > ==========================================================================
 
@@ -95,26 +96,29 @@ libfunc drop<u8> = drop<u8>;
 libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-function_call<user@test::buy_coupons>() -> ([0]); // 0
-struct_deconstruct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0]) -> ([1], [2]); // 1
-drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([2]) -> (); // 2
-const_as_immediate<Const<u8, 0>>() -> ([3]); // 3
-store_temp<u8>([3]) -> ([3]); // 4
-coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([3], [1]) -> ([4]); // 5
-drop<felt252>([4]) -> (); // 6
-return(); // 7
-coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([0]); // 8
-coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([1]); // 9
-struct_construct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0], [1]) -> ([2]); // 10
-return([2]); // 11
-drop<u8>([0]) -> (); // 12
-const_as_immediate<Const<felt252, 10>>() -> ([1]); // 13
-store_temp<felt252>([1]) -> ([1]); // 14
-return([1]); // 15
+F0:
+function_call<user@test::buy_coupons>() -> ([0]);
+struct_deconstruct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0]) -> ([1], [2]);
+drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([2]) -> ();
+const_as_immediate<Const<u8, 0>>() -> ([3]);
+store_temp<u8>([3]) -> ([3]);
+coupon_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([3], [1]) -> ([4]);
+drop<felt252>([4]) -> ();
+return();
+F1:
+coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([0]);
+coupon_buy<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>() -> ([1]);
+struct_construct<Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>>([0], [1]) -> ([2]);
+return([2]);
+F2:
+drop<u8>([0]) -> ();
+const_as_immediate<Const<felt252, 10>>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
-test::foo@0() -> ();
-test::buy_coupons@8() -> (Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>);
-test::bar::<core::integer::u8, core::integer::u8Drop>@12([0]: u8) -> (felt252);
+test::foo@F0() -> ();
+test::buy_coupons@F1() -> (Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>);
+test::bar::<core::integer::u8, core::integer::u8Drop>@F2([0]: u8) -> (felt252);
 
 //! > ==========================================================================
 
@@ -165,19 +169,21 @@ libfunc drop<u8> = drop<u8>;
 libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-coupon_refund<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([0]) -> (); // 0
-const_as_immediate<Const<u8, 0>>() -> ([1]); // 1
-store_temp<u8>([1]) -> ([1]); // 2
-function_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([1]) -> ([2]); // 3
-drop<felt252>([2]) -> (); // 4
-return(); // 5
-drop<u8>([0]) -> (); // 6
-const_as_immediate<Const<felt252, 10>>() -> ([1]); // 7
-store_temp<felt252>([1]) -> ([1]); // 8
-return([1]); // 9
+F0:
+coupon_refund<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>([0]) -> ();
+const_as_immediate<Const<u8, 0>>() -> ([1]);
+store_temp<u8>([1]) -> ([1]);
+function_call<user@test::bar::<core::integer::u8, core::integer::u8Drop>>([1]) -> ([2]);
+drop<felt252>([2]) -> ();
+return();
+F1:
+drop<u8>([0]) -> ();
+const_as_immediate<Const<felt252, 10>>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> ();
-test::bar::<core::integer::u8, core::integer::u8Drop>@6([0]: u8) -> (felt252);
+test::foo@F0([0]: Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>) -> ();
+test::bar::<core::integer::u8, core::integer::u8Drop>@F1([0]: u8) -> (felt252);
 
 //! > ==========================================================================
 
@@ -256,34 +262,36 @@ libfunc struct_construct<test::NonDroppable> = struct_construct<test::NonDroppab
 libfunc drop<test::NonDroppable> = drop<test::NonDroppable>;
 libfunc drop<Uninitialized<test::NonDroppable>> = drop<Uninitialized<test::NonDroppable>>;
 
-alloc_local<test::NonDroppable>() -> ([3]); // 0
-finalize_locals() -> (); // 1
-disable_ap_tracking() -> (); // 2
-array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([1]) { fallthrough([4], [5]) 22() }; // 3
-branch_align() -> (); // 4
-unbox<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([5]) -> ([6]); // 5
-struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([6]) -> ([2], [7]); // 6
-store_temp<Bitwise>([0]) -> ([0]); // 7
-store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([4]) -> ([4]); // 8
-store_local<test::NonDroppable>([3], [2]) -> ([2]); // 9
-coupon_call<user@test::destruct>([0], [4], [7]) -> ([8]); // 10
-struct_deconstruct<test::NonDroppable>([2]) -> ([9]); // 11
-dup<u64>([9]) -> ([9], [10]); // 12
-dup<u64>([9]) -> ([9], [11]); // 13
-u64_bitwise([8], [10], [11]) -> ([12], [13], [14], [15]); // 14
-drop<u64>([13]) -> (); // 15
-drop<u64>([14]) -> (); // 16
-drop<u64>([15]) -> (); // 17
-struct_construct<test::NonDroppable>([9]) -> ([16]); // 18
-drop<test::NonDroppable>([16]) -> (); // 19
-store_temp<Bitwise>([12]) -> ([12]); // 20
-return([12]); // 21
-branch_align() -> (); // 22
-drop<Uninitialized<test::NonDroppable>>([3]) -> (); // 23
-store_temp<Bitwise>([0]) -> ([0]); // 24
-return([0]); // 25
+F0:
+alloc_local<test::NonDroppable>() -> ([3]);
+finalize_locals() -> ();
+disable_ap_tracking() -> ();
+array_pop_front_consume<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([1]) { fallthrough([4], [5]) F0_B0() };
+branch_align() -> ();
+unbox<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([5]) -> ([6]);
+struct_deconstruct<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>([6]) -> ([2], [7]);
+store_temp<Bitwise>([0]) -> ([0]);
+store_temp<Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>>([4]) -> ([4]);
+store_local<test::NonDroppable>([3], [2]) -> ([2]);
+coupon_call<user@test::destruct>([0], [4], [7]) -> ([8]);
+struct_deconstruct<test::NonDroppable>([2]) -> ([9]);
+dup<u64>([9]) -> ([9], [10]);
+dup<u64>([9]) -> ([9], [11]);
+u64_bitwise([8], [10], [11]) -> ([12], [13], [14], [15]);
+drop<u64>([13]) -> ();
+drop<u64>([14]) -> ();
+drop<u64>([15]) -> ();
+struct_construct<test::NonDroppable>([9]) -> ([16]);
+drop<test::NonDroppable>([16]) -> ();
+store_temp<Bitwise>([12]) -> ([12]);
+return([12]);
+F0_B0:
+branch_align() -> ();
+drop<Uninitialized<test::NonDroppable>>([3]) -> ();
+store_temp<Bitwise>([0]) -> ([0]);
+return([0]);
 
-test::destruct@0([0]: Bitwise, [1]: Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>) -> (Bitwise);
+test::destruct@F0([0]: Bitwise, [1]: Array<Tuple<test::NonDroppable, Coupon<user@test::destruct>>>) -> (Bitwise);
 
 //! > ==========================================================================
 
@@ -320,38 +328,35 @@ call rel 19;
 jmp rel 7 if [ap + -3] != 0;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
-call rel 49;
+call rel 45;
 ret;
-ap += 8;
-[ap + 0] = [ap + -13], ap++;
-[ap + 0] = [ap + -13] + 990, ap++;
+ap += 12;
+[ap + 0] = [ap + -17], ap++;
+[ap + 0] = [ap + -17] + 1350, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -13], ap++;
-[ap + 0] = [ap + -13], ap++;
+[ap + 0] = [ap + -17], ap++;
+[ap + 0] = [ap + -17], ap++;
 ret;
-%{ memory[ap + 0] = 990 <= memory[fp + -3] %}
+%{ memory[ap + 0] = 1030 <= memory[fp + -3] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -3] + 340282366920938463463374607431768210466, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768210426, ap++;
 [ap + -1] = [[fp + -4] + 0];
 jmp rel 17;
-[fp + -3] = [ap + 0] + 990, ap++;
+[fp + -3] = [ap + 0] + 1030, ap++;
 [ap + -1] = [[fp + -4] + 0];
-ap += 2;
+ap += 6;
 [ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -8], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 375233589013918064796019, ap++;
-[ap + -1] = [[ap + -2] + 0];
+call rel 43;
 [ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -6] + 1, ap++;
+[ap + 0] = [ap + -5], ap++;
 ret;
 %{ memory[ap + 0] = 0 <= memory[fp + -3] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
@@ -360,31 +365,37 @@ jmp rel 7 if [ap + 0] != 0, ap++;
 jmp rel 18;
 [fp + -3] = [ap + 0] + 0, ap++;
 [ap + -1] = [[fp + -4] + 0];
-ap += 2;
+ap += 6;
 [ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = [ap + -4] + 780, ap++;
+[ap + 0] = [ap + -8] + 1140, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
+ret;
+call rel 10;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
 ret;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;
 [ap + 0] = 375233589013918064796019, ap++;
 [ap + -1] = [[ap + -2] + 0];
-[ap + 0] = [fp + -4] + 1, ap++;
-[ap + 0] = [fp + -3], ap++;
-[ap + 0] = 1, ap++;
-[ap + 0] = [ap + -5], ap++;
-[ap + 0] = [ap + -6] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -3] + 1, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3440})
-test::recursive_buy::<core::integer::u8>: OrderedHashMap({Const: 1270})
-test::recursive_refund::<core::integer::u8>: OrderedHashMap({Const: 1270})
+test::foo: OrderedHashMap({Const: 4240})
+test::recursive_buy::<core::integer::u8>: OrderedHashMap({Const: 1670})
+test::recursive_refund::<core::integer::u8>: OrderedHashMap({Const: 1670})
+core::panic_with_const_felt252::<375233589013918064796019>: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -414,84 +425,92 @@ libfunc drop<Coupon<user@test::recursive_buy::<core::integer::u8>>> = drop<Coupo
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
+libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
+libfunc coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>> = coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>>;
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
-libfunc coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>> = coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>>;
+libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
 
-store_temp<RangeCheck>([0]) -> ([0]); // 0
-store_temp<GasBuiltin>([1]) -> ([1]); // 1
-function_call<user@test::recursive_buy::<core::integer::u8>>([0], [1]) -> ([3], [4], [5]); // 2
-enum_match<core::panics::PanicResult::<((),)>>([5]) { fallthrough([6]) 11([7]) }; // 3
-branch_align() -> (); // 4
-drop<Tuple<Unit>>([6]) -> (); // 5
-redeposit_gas([4]) -> ([8]); // 6
-store_temp<RangeCheck>([3]) -> ([3]); // 7
-store_temp<GasBuiltin>([8]) -> ([8]); // 8
-function_call<user@test::recursive_refund::<core::integer::u8>>([3], [8], [2]) -> ([9], [10], [11]); // 9
-return([9], [10], [11]); // 10
-branch_align() -> (); // 11
-drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> (); // 12
-redeposit_gas([4]) -> ([12]); // 13
-enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([13]); // 14
-store_temp<RangeCheck>([3]) -> ([3]); // 15
-store_temp<GasBuiltin>([12]) -> ([12]); // 16
-store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]); // 17
-return([3], [12], [13]); // 18
-withdraw_gas([0], [1]) { fallthrough([2], [3]) 31([4], [5]) }; // 19
-branch_align() -> (); // 20
-redeposit_gas([3]) -> ([6]); // 21
-coupon_buy<Coupon<user@test::recursive_buy::<core::integer::u8>>>() -> ([7]); // 22
-drop<Coupon<user@test::recursive_buy::<core::integer::u8>>>([7]) -> (); // 23
-struct_construct<Unit>() -> ([8]); // 24
-struct_construct<Tuple<Unit>>([8]) -> ([9]); // 25
-enum_init<core::panics::PanicResult::<((),)>, 0>([9]) -> ([10]); // 26
-store_temp<RangeCheck>([2]) -> ([2]); // 27
-store_temp<GasBuiltin>([6]) -> ([6]); // 28
-store_temp<core::panics::PanicResult::<((),)>>([10]) -> ([10]); // 29
-return([2], [6], [10]); // 30
-branch_align() -> (); // 31
-redeposit_gas([5]) -> ([11]); // 32
-array_new<felt252>() -> ([12]); // 33
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([13]); // 34
-store_temp<felt252>([13]) -> ([13]); // 35
-array_append<felt252>([12], [13]) -> ([14]); // 36
-struct_construct<core::panics::Panic>() -> ([15]); // 37
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([15], [14]) -> ([16]); // 38
-enum_init<core::panics::PanicResult::<((),)>, 1>([16]) -> ([17]); // 39
-store_temp<RangeCheck>([4]) -> ([4]); // 40
-store_temp<GasBuiltin>([11]) -> ([11]); // 41
-store_temp<core::panics::PanicResult::<((),)>>([17]) -> ([17]); // 42
-return([4], [11], [17]); // 43
-withdraw_gas([0], [1]) { fallthrough([3], [4]) 55([5], [6]) }; // 44
-branch_align() -> (); // 45
-redeposit_gas([4]) -> ([7]); // 46
-coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> (); // 47
-struct_construct<Unit>() -> ([8]); // 48
-struct_construct<Tuple<Unit>>([8]) -> ([9]); // 49
-enum_init<core::panics::PanicResult::<((),)>, 0>([9]) -> ([10]); // 50
-store_temp<RangeCheck>([3]) -> ([3]); // 51
-store_temp<GasBuiltin>([7]) -> ([7]); // 52
-store_temp<core::panics::PanicResult::<((),)>>([10]) -> ([10]); // 53
-return([3], [7], [10]); // 54
-branch_align() -> (); // 55
-drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> (); // 56
-redeposit_gas([6]) -> ([11]); // 57
-array_new<felt252>() -> ([12]); // 58
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([13]); // 59
-store_temp<felt252>([13]) -> ([13]); // 60
-array_append<felt252>([12], [13]) -> ([14]); // 61
-struct_construct<core::panics::Panic>() -> ([15]); // 62
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([15], [14]) -> ([16]); // 63
-enum_init<core::panics::PanicResult::<((),)>, 1>([16]) -> ([17]); // 64
-store_temp<RangeCheck>([5]) -> ([5]); // 65
-store_temp<GasBuiltin>([11]) -> ([11]); // 66
-store_temp<core::panics::PanicResult::<((),)>>([17]) -> ([17]); // 67
-return([5], [11], [17]); // 68
+F0:
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<GasBuiltin>([1]) -> ([1]);
+function_call<user@test::recursive_buy::<core::integer::u8>>([0], [1]) -> ([3], [4], [5]);
+enum_match<core::panics::PanicResult::<((),)>>([5]) { fallthrough([6]) F0_B0([7]) };
+branch_align() -> ();
+drop<Tuple<Unit>>([6]) -> ();
+redeposit_gas([4]) -> ([8]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<GasBuiltin>([8]) -> ([8]);
+function_call<user@test::recursive_refund::<core::integer::u8>>([3], [8], [2]) -> ([9], [10], [11]);
+return([9], [10], [11]);
+F0_B0:
+branch_align() -> ();
+drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> ();
+redeposit_gas([4]) -> ([12]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([13]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<GasBuiltin>([12]) -> ([12]);
+store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
+return([3], [12], [13]);
+F1:
+withdraw_gas([0], [1]) { fallthrough([2], [3]) F1_B0([4], [5]) };
+branch_align() -> ();
+redeposit_gas([3]) -> ([6]);
+coupon_buy<Coupon<user@test::recursive_buy::<core::integer::u8>>>() -> ([7]);
+drop<Coupon<user@test::recursive_buy::<core::integer::u8>>>([7]) -> ();
+struct_construct<Unit>() -> ([8]);
+struct_construct<Tuple<Unit>>([8]) -> ([9]);
+enum_init<core::panics::PanicResult::<((),)>, 0>([9]) -> ([10]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<GasBuiltin>([6]) -> ([6]);
+store_temp<core::panics::PanicResult::<((),)>>([10]) -> ([10]);
+return([2], [6], [10]);
+F1_B0:
+branch_align() -> ();
+redeposit_gas([5]) -> ([11]);
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([12]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<GasBuiltin>([11]) -> ([11]);
+store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
+return([4], [11], [13]);
+F2:
+withdraw_gas([0], [1]) { fallthrough([3], [4]) F2_B0([5], [6]) };
+branch_align() -> ();
+redeposit_gas([4]) -> ([7]);
+coupon_refund<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> ();
+struct_construct<Unit>() -> ([8]);
+struct_construct<Tuple<Unit>>([8]) -> ([9]);
+enum_init<core::panics::PanicResult::<((),)>, 0>([9]) -> ([10]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<GasBuiltin>([7]) -> ([7]);
+store_temp<core::panics::PanicResult::<((),)>>([10]) -> ([10]);
+return([3], [7], [10]);
+F2_B0:
+branch_align() -> ();
+drop<Coupon<user@test::recursive_refund::<core::integer::u8>>>([2]) -> ();
+redeposit_gas([6]) -> ([11]);
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([12]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<GasBuiltin>([11]) -> ([11]);
+store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]);
+return([5], [11], [13]);
+F3:
+array_new<felt252>() -> ([0]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+array_append<felt252>([0], [1]) -> ([2]);
+struct_construct<core::panics::Panic>() -> ([3]);
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
+store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
+return([4]);
 
-test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Coupon<user@test::recursive_refund::<core::integer::u8>>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
-test::recursive_buy::<core::integer::u8>@19([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
-test::recursive_refund::<core::integer::u8>@44([0]: RangeCheck, [1]: GasBuiltin, [2]: Coupon<user@test::recursive_refund::<core::integer::u8>>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
+test::foo@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: Coupon<user@test::recursive_refund::<core::integer::u8>>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
+test::recursive_buy::<core::integer::u8>@F1([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
+test::recursive_refund::<core::integer::u8>@F2([0]: RangeCheck, [1]: GasBuiltin, [2]: Coupon<user@test::recursive_refund::<core::integer::u8>>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
+core::panic_with_const_felt252::<375233589013918064796019>@F3() -> (Tuple<core::panics::Panic, Array<felt252>>);

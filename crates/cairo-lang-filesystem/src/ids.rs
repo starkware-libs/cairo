@@ -173,7 +173,7 @@ impl FileId {
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(_) => FileKind::Module,
-            FileLongId::Virtual(vf) => vf.kind.clone(),
+            FileLongId::Virtual(vf) => vf.kind,
             FileLongId::External(_) => FileKind::Module,
         }
     }
@@ -192,7 +192,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
         match self {
-            Directory::Real(path) => FileId::new(db, path.join(&name)),
+            Directory::Real(path) => FileId::new(db, path.join(name.as_str())),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
                 .copied()
@@ -204,7 +204,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, name: SmolStr) -> Directory {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(&name)),
+            Directory::Real(path) => Directory::Real(path.join(name.as_str())),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()

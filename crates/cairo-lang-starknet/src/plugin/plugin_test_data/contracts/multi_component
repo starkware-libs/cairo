@@ -372,7 +372,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
         ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -467,10 +467,10 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
@@ -577,26 +577,27 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
-impl GetSupplyDispatcherCopy of core::traits::Copy::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherDrop of core::traits::Drop::<GetSupplyDispatcher>;
-impl GetSupplyDispatcherSerde of core::serde::Serde::<GetSupplyDispatcher> {
+impl GetSupplyDispatcherCopy<> of core::traits::Copy::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherDrop<> of core::traits::Drop::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherSerde<> of core::serde::Serde::<GetSupplyDispatcher> {
     fn serialize(self: @GetSupplyDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
+impl GetSupplyDispatcherStore<> of starknet::Store::<GetSupplyDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -606,17 +607,18 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         let GetSupplyDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             GetSupplyDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -628,7 +630,8 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         let GetSupplyDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -677,26 +680,27 @@ impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
         }
     }
 }
-impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
-impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
+impl GetSupplyLibraryDispatcherCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplyLibraryDispatcher> {
     fn serialize(self: @GetSupplyLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispatcher> {
+impl GetSupplyLibraryDispatcherStore<> of starknet::Store::<GetSupplyLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -706,17 +710,18 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         let GetSupplyLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             GetSupplyLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -728,7 +733,8 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         let GetSupplyLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -777,26 +783,27 @@ impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
         }
     }
 }
-impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
-impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
+impl GetSupplySafeLibraryDispatcherCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
     fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
-impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibraryDispatcher> {
+impl GetSupplySafeLibraryDispatcherStore<> of starknet::Store::<GetSupplySafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -806,17 +813,18 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         let GetSupplySafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             GetSupplySafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -828,7 +836,8 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
         let GetSupplySafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -877,26 +886,27 @@ impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
         }
     }
 }
-impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherDrop of core::traits::Drop::<GetSupplySafeDispatcher>;
-impl GetSupplySafeDispatcherSerde of core::serde::Serde::<GetSupplySafeDispatcher> {
+impl GetSupplySafeDispatcherCopy<> of core::traits::Copy::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherDrop<> of core::traits::Drop::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherSerde<> of core::serde::Serde::<GetSupplySafeDispatcher> {
     fn serialize(self: @GetSupplySafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
-impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> {
+impl GetSupplySafeDispatcherStore<> of starknet::Store::<GetSupplySafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -906,17 +916,18 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         let GetSupplySafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             GetSupplySafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -928,7 +939,8 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
         let GetSupplySafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -977,22 +989,22 @@ impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
-impl GetSupplyDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
-impl GetSupplyDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
-impl GetSupplyDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyDispatcherSubPointersMut>;
-impl GetSupplyDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyDispatcherSubPointersMut>;
-impl GetSupplyLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
-impl GetSupplyLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
-impl GetSupplyLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointersMut>;
-impl GetSupplyLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
-impl GetSupplySafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
-impl GetSupplySafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointersMut>;
-impl GetSupplySafeDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
-impl GetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
-impl GetSupplySafeDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
-impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
+impl GetSupplyDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
 
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
@@ -1352,7 +1364,7 @@ impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractS
         ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
     }
 }
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -1447,9 +1459,9 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

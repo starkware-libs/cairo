@@ -5,7 +5,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitImplId, UseId,
+    TraitImplId, TraitItemId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -844,9 +844,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
                 "Can only break with a value inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
-                "`return` not allowed inside a `loop`.".into()
-            }
             SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop => {
                 "`?` not allowed inside a `loop`.".into()
             }
@@ -1058,7 +1055,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedImport { .. }
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
-            | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1393,7 +1391,6 @@ pub enum SemanticDiagnosticKind {
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     BreakWithValueOnlyAllowedInsideALoop,
-    ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
@@ -1518,17 +1515,19 @@ impl From<&ResolvedConcreteItem> for ElementKind {
 impl From<&ResolvedGenericItem> for ElementKind {
     fn from(val: &ResolvedGenericItem) -> Self {
         match val {
-            ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
+            ResolvedGenericItem::GenericConstant(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Constant(_)) => ElementKind::Constant,
             ResolvedGenericItem::Module(_) => ElementKind::Module,
-            ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
-            ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
-                ElementKind::Type
-            }
+            ResolvedGenericItem::GenericFunction(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Function(_)) => ElementKind::Function,
+            ResolvedGenericItem::GenericType(_)
+            | ResolvedGenericItem::GenericTypeAlias(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Type(_)) => ElementKind::Type,
             ResolvedGenericItem::Variant(_) => ElementKind::Variant,
             ResolvedGenericItem::Trait(_) => ElementKind::Trait,
-            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
-                ElementKind::Impl
-            }
+            ResolvedGenericItem::Impl(_)
+            | ResolvedGenericItem::GenericImplAlias(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Impl(_)) => ElementKind::Impl,
             ResolvedGenericItem::Variable(_) => ElementKind::Variable,
         }
     }

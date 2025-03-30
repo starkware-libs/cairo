@@ -358,16 +358,9 @@ pub enum ExternalHint {
     /// Stores an array marker in the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     AddMarker { start: ResOperand, end: ResOperand },
-    // TODO(ilya): Remove once the blake2s opecode is supported by the VM.
-    /// Compresses a message using the Blake2s algorithm.
+    /// Adds a trace call with the given flag to the HintProcessor. Useful for debugging.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
-    Blake2sCompress {
-        state: ResOperand,
-        byte_count: ResOperand,
-        message: ResOperand,
-        output: ResOperand,
-        finalize: ResOperand,
-    },
+    AddTrace { flag: ResOperand },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -868,20 +861,8 @@ impl PythonicHint for ExternalHint {
                 let [start, end] = [start, end].map(ResOperandAsAddressFormatter);
                 format!("AddMarker {{ start: {start}, end: {end} }}")
             }
-            Self::Blake2sCompress { state, byte_count, message, output, finalize } => {
-                let [state, byte_count, message, output] =
-                    [state, byte_count, message, output].map(ResOperandAsAddressFormatter);
-                let finalize = ResOperandAsIntegerFormatter(finalize);
-                formatdoc! {"
-                    
-                    Blake2sCompress {{
-                        state: {state},
-                        byte_count: {byte_count},
-                        message: {message},
-                        output: {output},
-                        finalize: {finalize}
-                    }}
-                "}
+            Self::AddTrace { flag } => {
+                format!("AddTrace {{ flag: {} }}", ResOperandAsIntegerFormatter(flag))
             }
         }
     }

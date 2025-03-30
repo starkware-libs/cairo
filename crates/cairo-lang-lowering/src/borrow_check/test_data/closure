@@ -57,7 +57,7 @@ foo
 //! > module_code
 struct PanicDestructable {}
 
-impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
+impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
         let PanicDestructable { } = self;
     }
@@ -282,7 +282,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test using captured snapshoted variable after closure.
+//! > Test using captured snapshotted variable after closure.
 
 //! > test_runner_name
 test_borrow_check
@@ -422,7 +422,7 @@ foo
 //! > module_code
 struct Destructable {}
 
-impl MyDesruct of Destruct<Destructable> {
+impl MyDestruct of Destruct<Destructable> {
     fn destruct(self: Destructable) nopanic {
         let Destructable { } = self;
     }

@@ -68,10 +68,7 @@ impl ComponentsGenerationData {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-            let component_name = match component_path.elements(db).last().unwrap() {
-                ast::PathSegment::WithGenericArgs(x) => x.ident(db),
-                ast::PathSegment::Simple(x) => x.ident(db),
-            };
+            let component_name = component_path.elements(db).last().unwrap().identifier_ast(db);
 
             let has_component_impl = RewriteNode::interpolate_patched(
                 &formatdoc!(
@@ -139,8 +136,7 @@ impl ComponentsGenerationData {
                      `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
                      path::to::component::{STORAGE_STRUCT_NAME},\n````",
                     storage_name_syntax_node.get_text_without_trivia(db)
-                )
-                .to_string(),
+                ),
             ));
             is_valid = false;
         }
@@ -156,8 +152,7 @@ impl ComponentsGenerationData {
                      path::to::component::{EVENT_TYPE_NAME},\n```\nNote: currently with \
                      components, only an enum {EVENT_TYPE_NAME} directly in the contract is \
                      supported.",
-                )
-                .to_string(),
+                ),
             ));
             is_valid = false;
         }
@@ -585,9 +580,9 @@ pub fn handle_component_inline_macro(
     };
 
     data.components_data.components.push(NestedComponent {
-        component_path: component_path.clone(),
-        storage_name: storage_name.clone(),
-        event_name: event_name.clone(),
+        component_path,
+        storage_name,
+        event_name,
         node: component_macro_ast.clone(),
     });
 }

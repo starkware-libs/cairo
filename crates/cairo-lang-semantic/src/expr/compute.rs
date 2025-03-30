@@ -71,14 +71,15 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
-    EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
+    EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
+    ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
-    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
-    resolve_type_with_environment, verify_fixed_size_array_size, wrap_in_snapshots,
+    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
+    verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
@@ -124,7 +125,16 @@ pub enum ContextFunction {
 
 /// Context inside loops or closures.
 #[derive(Debug, Clone)]
-enum InnerContext {
+struct InnerContext {
+    /// The return type in the current context.
+    return_type: TypeId,
+    /// The kind of inner context.
+    kind: InnerContextKind,
+}
+
+/// Kinds of inner context.
+#[derive(Debug, Clone)]
+enum InnerContextKind {
     /// Context inside a `loop`
     Loop { type_merger: FlowMergeTypeHelper },
     /// Context inside a `while` loop
@@ -132,7 +142,7 @@ enum InnerContext {
     /// Context inside a `for` loop
     For,
     /// Context inside a `closure`
-    Closure { return_type: TypeId },
+    Closure,
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -230,17 +240,17 @@ impl<'ctx> ComputationContext<'ctx> {
         }
     }
 
-    /// Returns [Self::signature] if it exists. Otherwise, reports a diagnostic and returns `Err`.
-    fn get_signature(
-        &mut self,
-        stable_ptr: SyntaxStablePtrId,
-        feature_name: UnsupportedOutsideOfFunctionFeatureName,
-    ) -> Maybe<&'ctx Signature> {
-        if let Some(signature) = self.signature {
-            return Ok(signature);
+    /// Returns the return type in the current context if available.
+    fn get_return_type(&mut self) -> Option<TypeId> {
+        if let Some(inner_ctx) = &self.inner_ctx {
+            return Some(inner_ctx.return_type);
         }
 
-        Err(self.diagnostics.report(stable_ptr, UnsupportedOutsideOfFunction(feature_name)))
+        if let Some(signature) = self.signature {
+            return Some(signature.return_type);
+        }
+
+        None
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
@@ -272,9 +282,13 @@ impl<'ctx> ComputationContext<'ctx> {
     }
     /// Returns whether the current context is inside a loop.
     fn is_inside_loop(&self) -> bool {
-        match self.inner_ctx {
-            None | Some(InnerContext::Closure { .. }) => false,
-            Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => true,
+        let Some(inner_ctx) = &self.inner_ctx else {
+            return false;
+        };
+
+        match inner_ctx.kind {
+            InnerContextKind::Closure => false,
+            InnerContextKind::Loop { .. } | InnerContextKind::While | InnerContextKind::For => true,
         }
     }
 }
@@ -926,7 +940,7 @@ fn compute_expr_function_call_semantic(
         ctx.diagnostics,
         &path,
         NotFoundItemType::Function,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     )?;
 
     match item {
@@ -1335,7 +1349,9 @@ fn compute_arm_semantic(
             let ast::Expr::Block(arm_expr_syntax) = arm_expr_syntax else {
                 unreachable!("Expected a block expression for a loop arm.");
             };
-            let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContext::While);
+
+            let (id, _) =
+                compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContextKind::While);
             let expr = new_ctx.arenas.exprs[id].clone();
             ExprAndId { expr, id }
         } else {
@@ -1471,14 +1487,17 @@ fn compute_expr_loop_semantic(
     let (body, inner_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        InnerContext::Loop { type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop) },
+        InnerContextKind::Loop {
+            type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop),
+        },
     );
+
+    let InnerContext { kind: InnerContextKind::Loop { type_merger, .. }, .. } = inner_ctx else {
+        unreachable!("Expected loop context");
+    };
     Ok(Expr::Loop(ExprLoop {
         body,
-        ty: match inner_ctx {
-            InnerContext::Loop { type_merger, .. } => type_merger.get_final_type(),
-            _ => unreachable!("Expected loop context"),
-        },
+        ty: type_merger.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -1510,7 +1529,7 @@ fn compute_expr_while_semantic(
         }
         ast::Condition::Expr(expr) => {
             let (body, _inner_ctx) =
-                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContext::While);
+                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContextKind::While);
             (
                 Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
                 body,
@@ -1630,7 +1649,7 @@ fn compute_expr_for_semantic(
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
         let (body, _inner_ctx) =
-            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContext::For);
+            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContextKind::For);
         (body, new_ctx.arenas.patterns.alloc(inner_pattern.pattern))
     });
     Ok(Expr::For(ExprFor {
@@ -1649,13 +1668,14 @@ fn compute_expr_for_semantic(
 fn compute_loop_body_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::ExprBlock,
-    inner_ctx: InnerContext,
+    kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
-        let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
+        let return_type = new_ctx.get_return_type().unwrap();
+        let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
@@ -1735,19 +1755,21 @@ fn compute_expr_closure_semantic(
             .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
 
         let return_type = match syntax.ret_ty(syntax_db) {
-            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_with_environment(
+            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
                 new_ctx.db,
                 new_ctx.diagnostics,
                 &mut new_ctx.resolver,
                 &ty_syntax.ty(syntax_db),
-                Some(&mut new_ctx.environment),
+                ResolutionContext::Statement(&mut new_ctx.environment),
             ),
             OptionReturnTypeClause::Empty(missing) => {
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
             }
         };
-        let old_inner_ctx =
-            std::mem::replace(&mut new_ctx.inner_ctx, Some(InnerContext::Closure { return_type }));
+
+        let old_inner_ctx = new_ctx
+            .inner_ctx
+            .replace(InnerContext { return_type, kind: InnerContextKind::Closure });
         let body = match syntax.expr(syntax_db) {
             ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
             _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
@@ -1860,16 +1882,12 @@ fn compute_expr_error_propagate_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
-    let return_type = match ctx.inner_ctx {
-        Some(InnerContext::Closure { return_type }) => return_type,
-        None | Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => {
-            ctx.get_signature(
-                syntax.into(),
-                UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
-            )?
-            .return_type
-        }
-    };
+    let return_type = ctx.get_return_type().ok_or_else(|| {
+        ctx.diagnostics.report(
+            syntax,
+            UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate),
+        )
+    })?;
 
     let func_err_prop_ty = unwrap_error_propagation_type(ctx.db, return_type)
         .ok_or_else(|| ctx.diagnostics.report(syntax, ReturnTypeNotErrorPropagateType))?;
@@ -1885,6 +1903,8 @@ fn compute_expr_error_propagate_semantic(
     };
     let func_err_variant = func_err_prop_ty.err_variant();
 
+    // Runs solver to get as much info as possible about the return type.
+    ctx.resolver.inference().solve().ok();
     let inner_expr_ty = ctx.reduce_ty(inner_expr.ty());
     inner_expr_ty.check_not_missing(ctx.db)?;
     let inner_expr_err_prop_ty =
@@ -1892,11 +1912,6 @@ fn compute_expr_error_propagate_semantic(
             ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType(inner_expr_ty))
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
-
-    // Disallow error propagation inside a loop.
-    if ctx.is_inside_loop() {
-        ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
-    }
 
     let conformed_err_variant_ty =
         ctx.resolver.inference().conform_ty(func_err_variant.ty, inner_expr_err_variant.ty);
@@ -2181,7 +2196,7 @@ fn maybe_compute_pattern_semantic(
                 ctx.diagnostics,
                 &path,
                 NotFoundItemType::Identifier,
-                Some(&mut ctx.environment),
+                ResolutionContext::Statement(&mut ctx.environment),
             )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
@@ -2227,7 +2242,7 @@ fn maybe_compute_pattern_semantic(
                 &mut Default::default(),
                 path,
                 NotFoundItemType::Identifier,
-                Some(&mut ctx.environment),
+                ResolutionContext::Statement(&mut ctx.environment),
             );
             if let Ok(item) = item_result {
                 if let Some(generic_variant) =
@@ -2284,7 +2299,7 @@ fn maybe_compute_pattern_semantic(
                     ctx.diagnostics,
                     &pattern_struct.path(syntax_db),
                     NotFoundItemType::Type,
-                    Some(&mut ctx.environment)
+                    ResolutionContext::Statement(&mut ctx.environment)
                 )?,
                 ResolvedConcreteItem::Type
             )
@@ -2623,12 +2638,12 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty = resolve_type_with_environment(
+    let ty = resolve_type_ex(
         db,
         ctx.diagnostics,
         &mut ctx.resolver,
         &ast::Expr::Path(path.clone()),
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     );
     ty.check_not_missing(db)?;
 
@@ -3309,7 +3324,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         ctx.diagnostics,
         path,
         NotFoundItemType::Identifier,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     )?;
 
     match resolved_item {
@@ -3409,16 +3424,16 @@ fn expr_function_call(
     for (NamedArg(arg, _name, mutability), param) in
         named_args.into_iter().zip(signature.params.iter())
     {
-        let arg_typ = arg.ty();
-        let param_typ = param.ty;
+        let arg_ty = arg.ty();
+        let param_ty = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        if !arg_typ.is_missing(ctx.db) {
+        if !arg_ty.is_missing(ctx.db) {
             let inference = &mut ctx.resolver.inference();
             let _ = inference.conform_ty_for_diag(
-                arg_typ,
-                param_typ,
+                arg_ty,
+                param_ty,
                 ctx.diagnostics,
                 || arg.stable_ptr().untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
@@ -3477,11 +3492,11 @@ fn maybe_pop_coupon_argument(
         if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
-            let arg_typ = arg.ty();
-            if !arg_typ.is_missing(ctx.db) {
+            let arg_ty = arg.ty();
+            if !arg_ty.is_missing(ctx.db) {
                 let inference = &mut ctx.resolver.inference();
                 let _ = inference.conform_ty_for_diag(
-                    arg_typ,
+                    arg_ty,
                     expected_ty,
                     ctx.diagnostics,
                     || arg.stable_ptr().untyped(),
@@ -3577,12 +3592,12 @@ pub fn compute_statement_semantic(
                 }
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
-                    let explicit_type = resolve_type_with_environment(
+                    let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         &var_type_path,
-                        Some(&mut ctx.environment),
+                        ResolutionContext::Statement(&mut ctx.environment),
                     );
 
                     let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
@@ -3676,10 +3691,6 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            if ctx.is_inside_loop() {
-                return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
-            }
-
             let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(empty_clause) => {
                     (None, unit_ty(db), empty_clause.stable_ptr().untyped())
@@ -3690,16 +3701,16 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
                 }
             };
-            let expected_ty = match ctx.inner_ctx {
-                None => {
-                    ctx.get_signature(
-                        return_syntax.into(),
-                        UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                    )?
-                    .return_type
-                }
-                Some(InnerContext::Closure { return_type }) => return_type,
-                _ => unreachable!("Return statement inside a loop"),
+            let expected_ty = match &ctx.inner_ctx {
+                None => ctx.get_return_type().ok_or_else(|| {
+                    ctx.diagnostics.report(
+                        return_syntax,
+                        UnsupportedOutsideOfFunction(
+                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                        ),
+                    )
+                })?,
+                Some(ctx) => ctx.return_type,
             };
 
             let expected_ty = ctx.reduce_ty(expected_ty);
@@ -3732,25 +3743,32 @@ pub fn compute_statement_semantic(
                 }
             };
             let ty = ctx.reduce_ty(ty);
-            match &mut ctx.inner_ctx {
-                None | Some(InnerContext::Closure { .. }) => {
-                    return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+
+            if !ctx.is_inside_loop() {
+                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+            }
+
+            if let Some(inner_ctx) = &mut ctx.inner_ctx {
+                match &mut inner_ctx.kind {
+                    InnerContextKind::Loop { type_merger, .. } => {
+                        type_merger.try_merge_types(
+                            ctx.db,
+                            ctx.diagnostics,
+                            &mut ctx.resolver.inference(),
+                            ty,
+                            stable_ptr,
+                        );
+                    }
+                    InnerContextKind::While | InnerContextKind::For => {
+                        if expr_option.is_some() {
+                            ctx.diagnostics
+                                .report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
+                        };
+                    }
+                    InnerContextKind::Closure => unreachable!("Not inside a loop."),
                 }
-                Some(InnerContext::Loop { type_merger, .. }) => {
-                    type_merger.try_merge_types(
-                        ctx.db,
-                        ctx.diagnostics,
-                        &mut ctx.resolver.inference(),
-                        ty,
-                        stable_ptr,
-                    );
-                }
-                Some(InnerContext::While | InnerContext::For) => {
-                    if expr_option.is_some() {
-                        ctx.diagnostics.report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
-                    };
-                }
-            };
+            }
+
             semantic::Statement::Break(semantic::StatementBreak {
                 expr_option,
                 stable_ptr: syntax.stable_ptr(),
@@ -3763,12 +3781,12 @@ pub fn compute_statement_semantic(
                     let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
                     let rhs = const_syntax.value(db.upcast());
                     let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type_with_environment(
+                    let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
                         &mut ctx.resolver,
                         &lhs,
-                        Some(&mut ctx.environment),
+                        ResolutionContext::Statement(&mut ctx.environment),
                     );
                     let rhs_resolved_expr = resolve_const_expr_and_evaluate(
                         db,
@@ -3801,7 +3819,7 @@ pub fn compute_statement_semantic(
                             ctx.diagnostics,
                             segments,
                             NotFoundItemType::Identifier,
-                            Some(&mut ctx.environment),
+                            ResolutionContext::Statement(&mut ctx.environment),
                         )?;
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
@@ -3833,7 +3851,8 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Variant(_)
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::Variable(_) => {
+                            | ResolvedGenericItem::Variable(_)
+                            | ResolvedGenericItem::TraitItem(_) => {
                                 return Err(ctx
                                     .diagnostics
                                     .report(stable_ptr, UnsupportedUseItemInStatement));

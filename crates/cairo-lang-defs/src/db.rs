@@ -150,7 +150,7 @@ pub trait DefsGroup:
     fn declared_phantom_type_attributes(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
 
     /// Checks whether the submodule is defined as inline.
-    fn is_submodule_inline(&self, submodule_id: SubmoduleId) -> Maybe<bool>;
+    fn is_submodule_inline(&self, submodule_id: SubmoduleId) -> bool;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -371,12 +371,10 @@ fn declared_phantom_type_attributes(
     )))
 }
 
-fn is_submodule_inline(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> Maybe<bool> {
-    let parent = submodule_id.parent_module(db);
-    let item_module_ast = &db.priv_module_data(parent)?.submodules[&submodule_id];
-    match item_module_ast.body(db.upcast()) {
-        MaybeModuleBody::Some(_) => Ok(true),
-        MaybeModuleBody::None(_) => Ok(false),
+fn is_submodule_inline(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> bool {
+    match submodule_id.stable_ptr(db).lookup(db.upcast()).body(db.upcast()) {
+        MaybeModuleBody::Some(_) => true,
+        MaybeModuleBody::None(_) => false,
     }
 }
 
@@ -387,7 +385,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            if db.is_submodule_inline(submodule_id)? {
+            if db.is_submodule_inline(submodule_id) {
                 // This is an inline module, we return the file where the inline module was
                 // defined. It can be either the file of the parent module
                 // or a plugin-generated virtual file.

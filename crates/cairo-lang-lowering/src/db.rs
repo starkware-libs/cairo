@@ -18,7 +18,9 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::borrow_check::{PotentialDestructCalls, borrow_check};
+use crate::borrow_check::{
+    PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
+};
 use crate::cache::load_cached_crate_functions;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
@@ -451,8 +453,9 @@ fn priv_concrete_function_with_body_lowered_flat(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_db = db.upcast();
-    let mut lowered =
-        (*db.function_with_body_lowering(function.function_with_body_id(db))?).clone();
+    let generic_function_id = function.function_with_body_id(db);
+    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
+    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }
@@ -467,7 +470,7 @@ fn concrete_function_with_body_postpanic_lowered(
     let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
-    lowered = lower_panics(db, function, &lowered)?;
+    lower_panics(db, function, &mut lowered)?;
     add_destructs(db, function, &mut lowered);
     scrub_units(db, &mut lowered);
 
@@ -696,16 +699,16 @@ fn function_with_body_lowering_diagnostics(
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
         diagnostics.extend(lowered.diagnostics.clone());
-        if flag_add_withdraw_gas(db)
-            && !lowered.signature.panicable
-            && db.in_cycle(function_id, DependencyType::Cost)?
-        {
+        if flag_add_withdraw_gas(db) && db.in_cycle(function_id, DependencyType::Cost)? {
             let location =
                 Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));
-            diagnostics.add(LoweringDiagnostic {
-                location,
-                kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
-            });
+            if !lowered.signature.panicable {
+                diagnostics.add(LoweringDiagnostic {
+                    location: location.clone(),
+                    kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
+                });
+            }
+            borrow_check_possible_withdraw_gas(db, location.intern(db), &lowered, &mut diagnostics)
         }
     }
 

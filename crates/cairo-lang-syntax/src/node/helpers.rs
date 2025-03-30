@@ -98,11 +98,12 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
+            ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
     fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::GenericArg>> {
         match self {
-            ast::PathSegment::Simple(_) => None,
+            ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
                 Some(segment.generic_args(db).generic_args(db).elements(db))
             }
@@ -660,6 +661,92 @@ impl UsePathLeaf {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => self.ident(db).stable_ptr().untyped(),
             ast::OptionAliasClause::AliasClause(alias) => alias.alias(db).stable_ptr().untyped(),
+        }
+    }
+}
+
+/// Helper trait for check syntactically if a type is dependent on a given identifier.
+pub trait IsDependentType {
+    /// Returns true if `self` is dependent on `identifier` in an internal type.
+    /// For example given identifier `T` will return true for:
+    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
+    /// Does not resolve paths, type aliases or named generics.
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool;
+}
+
+impl IsDependentType for ast::ExprPath {
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+        let segments = self.elements(db);
+        if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
+            identifiers.contains(&arg_segment.ident(db).text(db).as_str())
+        } else {
+            segments.into_iter().any(|segment| {
+                let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
+                    return false;
+                };
+                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
+                    let generic_arg_value = match arg {
+                        ast::GenericArg::Named(named) => named.value(db),
+                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
+                    };
+                    match generic_arg_value {
+                        ast::GenericArgValue::Expr(arg_expr) => {
+                            arg_expr.expr(db).is_dependent_type(db, identifiers)
+                        }
+                        ast::GenericArgValue::Underscore(_) => false,
+                    }
+                })
+            })
+        }
+    }
+}
+
+impl IsDependentType for ast::Expr {
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+        match self {
+            ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifiers),
+            ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifiers),
+            ast::Expr::Binary(binary) => {
+                binary.lhs(db).is_dependent_type(db, identifiers)
+                    || binary.rhs(db).is_dependent_type(db, identifiers)
+            }
+            ast::Expr::Tuple(tuple) => tuple
+                .expressions(db)
+                .elements(db)
+                .iter()
+                .any(|expr| expr.is_dependent_type(db, identifiers)),
+            ast::Expr::FixedSizeArray(arr) => {
+                arr.exprs(db)
+                    .elements(db)
+                    .iter()
+                    .any(|expr| expr.is_dependent_type(db, identifiers))
+                    || match arr.size(db) {
+                        ast::OptionFixedSizeArraySize::Empty(_) => false,
+                        ast::OptionFixedSizeArraySize::FixedSizeArraySize(size) => {
+                            size.size(db).is_dependent_type(db, identifiers)
+                        }
+                    }
+            }
+            ast::Expr::Literal(_)
+            | ast::Expr::ShortString(_)
+            | ast::Expr::String(_)
+            | ast::Expr::False(_)
+            | ast::Expr::True(_)
+            | ast::Expr::Parenthesized(_)
+            | ast::Expr::FunctionCall(_)
+            | ast::Expr::StructCtorCall(_)
+            | ast::Expr::Block(_)
+            | ast::Expr::Match(_)
+            | ast::Expr::If(_)
+            | ast::Expr::Loop(_)
+            | ast::Expr::While(_)
+            | ast::Expr::For(_)
+            | ast::Expr::Closure(_)
+            | ast::Expr::ErrorPropagate(_)
+            | ast::Expr::FieldInitShorthand(_)
+            | ast::Expr::Indexed(_)
+            | ast::Expr::InlineMacro(_)
+            | ast::Expr::Missing(_) => false,
         }
     }
 }

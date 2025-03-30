@@ -25,7 +25,6 @@ pub mod iter;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
-pub mod utils;
 pub mod with_db;
 
 #[cfg(test)]
@@ -300,6 +299,81 @@ impl SyntaxNode {
             WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
             _ => None,
         })
+    }
+
+    /// Mirror of [`TypedSyntaxNode::cast`].
+    pub fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T> {
+        T::cast(db, self)
+    }
+
+    /// Creates an iterator that yields ancestors of this syntax node.
+    pub fn ancestors(&self) -> impl Iterator<Item = SyntaxNode> {
+        // We aren't reusing `ancestors_with_self` here to avoid cloning this node.
+        std::iter::successors(self.parent(), SyntaxNode::parent)
+    }
+
+    /// Creates an iterator that yields this syntax node and walks up its ancestors.
+    pub fn ancestors_with_self(&self) -> impl Iterator<Item = SyntaxNode> {
+        std::iter::successors(Some(self.clone()), SyntaxNode::parent)
+    }
+
+    /// Checks whether this syntax node is strictly above the given syntax node in the syntax tree.
+    pub fn is_ancestor(&self, node: &SyntaxNode) -> bool {
+        node.ancestors().any(|n| n == *self)
+    }
+
+    /// Checks whether this syntax node is strictly under the given syntax node in the syntax tree.
+    pub fn is_descendant(&self, node: &SyntaxNode) -> bool {
+        node.is_ancestor(self)
+    }
+
+    /// Checks whether this syntax node is or is above the given syntax node in the syntax tree.
+    pub fn is_ancestor_or_self(&self, node: &SyntaxNode) -> bool {
+        node.ancestors_with_self().any(|n| n == *self)
+    }
+
+    /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
+    pub fn is_descendant_or_self(&self, node: &SyntaxNode) -> bool {
+        node.is_ancestor_or_self(self)
+    }
+
+    /// Finds the first ancestor of a given kind.
+    pub fn ancestor_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+        self.ancestors().find(|node| node.kind(db) == kind)
+    }
+
+    /// Finds the first ancestor of a given kind and returns it in typed form.
+    pub fn ancestor_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+        self.ancestors().find_map(|node| T::cast(db, node))
+    }
+
+    /// Finds the parent of a given kind.
+    pub fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+        self.parent().filter(|node| node.kind(db) == kind)
+    }
+
+    /// Finds the parent of a given kind and returns it in typed form.
+    pub fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+        self.parent().and_then(|node| T::cast(db, node))
+    }
+
+    /// Finds the first parent of one of the kinds.
+    pub fn ancestor_of_kinds(
+        &self,
+        db: &dyn SyntaxGroup,
+        kinds: &[SyntaxKind],
+    ) -> Option<SyntaxNode> {
+        self.ancestors().find(|node| kinds.contains(&node.kind(db)))
+    }
+
+    /// Gets the kind of the given node's parent if it exists.
+    pub fn parent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+        Some(self.parent()?.kind(db))
+    }
+
+    /// Gets the kind of the given node's grandparent if it exists.
+    pub fn grandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+        Some(self.parent()?.parent()?.kind(db))
     }
 }
 

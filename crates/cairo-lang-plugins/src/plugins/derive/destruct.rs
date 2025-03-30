@@ -2,39 +2,42 @@ use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
-use crate::plugins::derive::TypeVariantInfo;
+use super::PluginTypeInfo;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Destruct` trait.
-pub fn handle_destruct(info: &DeriveInfo) -> Option<String> {
+pub fn handle_destruct(info: &PluginTypeInfo) -> String {
+    const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();
     let ty = &info.name;
-    let header = info.format_impl_header("core::traits", "Destruct", &["core::traits::Destruct"]);
+    let header = info.impl_header(DESTRUCT_TRAIT, &[DESTRUCT_TRAIT]);
     let body = indent_by(
         8,
-        match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
+        match &info.type_variant {
+            TypeVariant::Enum => {
                 formatdoc! {"
                     match self {{
                         {}
                     }}",
-                    variants.iter().map(|variant| {
+                    info.members_info.iter().map(|variant| {
                         format!(
-                            "{ty}::{}(x) => core::traits::Destruct::destruct(x),",
+                            "{ty}::{}(x) => {imp}::destruct(x),",
                             variant.name,
+                            imp=variant.impl_name(DESTRUCT_TRAIT),
                         )
                     }).join("\n    ")
                 }
             }
-            TypeVariantInfo::Struct(members) => {
+            TypeVariant::Struct => {
                 format!(
                     "let {ty} {{ {} }} = self;{}",
-                    members.iter().map(|member| &member.name).join(", "),
-                    members
+                    info.members_info.iter().map(|member| &member.name).join(", "),
+                    info.members_info
                         .iter()
                         .map(|member| format!(
-                            "\ncore::traits::Destruct::destruct({});",
-                            member.name
+                            "\n{imp}::destruct({});",
+                            member.name,
+                            imp = member.impl_name(DESTRUCT_TRAIT),
                         ))
                         .join(""),
                 )
@@ -42,11 +45,11 @@ pub fn handle_destruct(info: &DeriveInfo) -> Option<String> {
         },
     );
 
-    Some(formatdoc! {"
+    formatdoc! {"
         {header} {{
             fn destruct(self: {full_typename}) nopanic {{
                 {body}
             }}
         }}
-    "})
+    "}
 }

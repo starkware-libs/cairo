@@ -83,7 +83,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
     let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
     let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
-    const MISSING_THRESHOLD: usize = 10;
+    const MISSING_THRESHOLD: usize = 5;
     if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
         println!("Missing {} libfuncs:", missing_libfuncs.len());
         for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {
@@ -100,7 +100,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
 /// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
 /// constant that was computed by other implementations.
-#[test_case("account__account", "232bc404b83f288ef906e63777535a944d5e429354d9f16d835cca30823eb24")]
+#[test_case("account__account", "90e75bbe39a0b07e7e90fa543880ee01bb5deaf88b9b169285409a8f825058")]
 fn test_compiled_class_hash(name: &str, expected_hash: &str) {
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());

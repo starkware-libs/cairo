@@ -199,15 +199,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -218,14 +219,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
+impl IContractDispatcherStore<> of starknet::Store::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -235,17 +236,18 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -257,7 +259,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -313,15 +316,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -332,14 +336,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherStore<> of starknet::Store::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -349,17 +353,18 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -371,7 +376,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -427,15 +433,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -446,14 +453,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherStore<> of starknet::Store::<IContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -463,17 +470,18 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -485,7 +493,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -541,15 +550,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -560,14 +570,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherStore<> of starknet::Store::<IContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -577,17 +587,18 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -599,7 +610,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -655,8 +667,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -664,8 +676,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -673,8 +685,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -682,8 +694,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -691,8 +703,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -700,8 +712,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -709,8 +721,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -718,8 +730,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > expected_diagnostics
 
@@ -802,15 +814,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -821,14 +834,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
+impl IContractDispatcherStore<> of starknet::Store::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -838,17 +851,18 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -860,7 +874,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -916,15 +931,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -935,14 +951,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherStore<> of starknet::Store::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -952,17 +968,18 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -974,7 +991,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1030,15 +1048,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1049,14 +1068,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherStore<> of starknet::Store::<IContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1066,17 +1085,18 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1088,7 +1108,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1144,15 +1165,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1163,14 +1185,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherStore<> of starknet::Store::<IContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1180,17 +1202,18 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1202,7 +1225,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1258,8 +1282,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1267,8 +1291,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1276,8 +1300,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1285,8 +1309,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1294,8 +1318,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1303,8 +1327,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1312,8 +1336,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1321,8 +1345,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
@@ -1485,15 +1509,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherCopy of core::traits::Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of core::traits::Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of core::serde::Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy<> of core::traits::Copy::<IContractDispatcher>;
+impl IContractDispatcherDrop<> of core::traits::Drop::<IContractDispatcher>;
+impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1504,14 +1529,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
+impl IContractDispatcherStore<> of starknet::Store::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1521,17 +1546,18 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1543,7 +1569,8 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
         let IContractDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1599,15 +1626,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherCopy of core::traits::Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of core::traits::Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of core::serde::Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy<> of core::traits::Copy::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop<> of core::traits::Drop::<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1618,14 +1646,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherStore<> of starknet::Store::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1635,17 +1663,18 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1657,7 +1686,8 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
         let IContractLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1713,15 +1743,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of core::traits::Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of core::traits::Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of core::serde::Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1732,14 +1763,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherStore<> of starknet::Store::<IContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1749,17 +1780,18 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
@@ -1771,7 +1803,8 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         let IContractSafeLibraryDispatcher {
             class_hash,
         } = value;
-        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash)?;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1827,15 +1860,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherCopy of core::traits::Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of core::traits::Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of core::serde::Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy<> of core::traits::Copy::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop<> of core::traits::Drop::<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1846,14 +1880,14 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherStore<> of starknet::Store::<IContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1863,17 +1897,18 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             IContractSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
@@ -1885,7 +1920,8 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         let IContractSafeDispatcher {
             contract_address,
         } = value;
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address)?;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1941,8 +1977,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersDrop of core::traits::Drop::<IContractDispatcherSubPointers>;
-impl IContractDispatcherSubPointersCopy of core::traits::Copy::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersDrop<> of core::traits::Drop::<IContractDispatcherSubPointers>;
+impl IContractDispatcherSubPointersCopy<> of core::traits::Copy::<IContractDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1950,8 +1986,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractDispatcherSubPointersMutDrop of core::traits::Drop::<IContractDispatcherSubPointersMut>;
-impl IContractDispatcherSubPointersMutCopy of core::traits::Copy::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractDispatcherSubPointersMut>;
+impl IContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1959,8 +1995,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
-impl IContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointers>;
+impl IContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1968,8 +2004,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
-impl IContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractLibraryDispatcherSubPointersMut>;
+impl IContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1977,8 +2013,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
-impl IContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointers>;
+impl IContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -1986,8 +2022,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
-impl IContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeLibraryDispatcherSubPointersMut>;
+impl IContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -1995,8 +2031,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersDrop of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
-impl IContractSafeDispatcherSubPointersCopy of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointers>;
+impl IContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -2004,5 +2040,5 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl IContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
-impl IContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContractSafeDispatcherSubPointersMut>;
+impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;

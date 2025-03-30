@@ -62,11 +62,7 @@ error: The value does not fit within the range of type core::internal::bounded_i
                                                              ^
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Return()
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > semantic_diagnostics
 
@@ -124,11 +120,7 @@ error: The value does not fit within the range of type core::felt252.
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Return()
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > semantic_diagnostics
 

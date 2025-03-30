@@ -42,6 +42,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
+use super::qm31::{QM31Libfunc, QM31Type};
 use super::range::{IntRangeLibfunc, IntRangeType};
 use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
@@ -50,6 +51,7 @@ use super::span::SpanType;
 use super::squashed_felt252_dict::{SquashedFelt252DictLibfunc, SquashedFelt252DictType};
 use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
+use super::trace::TraceLibfunc;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -98,6 +100,7 @@ define_type_hierarchy! {
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
         BoundedInt(BoundedIntType),
+        QM31(QM31Type),
     }, CoreTypeConcrete
 }
 
@@ -149,5 +152,7 @@ define_libfunc_hierarchy! {
         SnapshotTake(SnapshotTakeLibfunc),
         Bytes31(Bytes31Libfunc),
         BoundedInt(BoundedIntLibfunc),
+        Trace(TraceLibfunc),
+        QM31(QM31Libfunc),
     }, CoreConcreteLibfunc
 }

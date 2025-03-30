@@ -61,8 +61,8 @@ fn test_library_dispatcher_serialization() {
 }
 
 
-// Calls `withdraw_gas` the than return the available gas.
-// This is useful in test as the `withdraw_gas` allows the gas wallet to be ~0 at the call site.
+// Calls `withdraw_gas` and then returns the available gas.
+// This is useful in a test as the `withdraw_gas` allows the gas wallet to be ~0 at the call site.
 // Note that this function must be `inline(always)`.
 #[inline(always)]
 pub fn withdraw_and_get_available_gas() -> u128 {
@@ -110,9 +110,9 @@ fn test_validate_gas_cost() {
     let serialization_gas_usage = post_call_building_gas - post_serialization_gas;
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
-        call_building_gas_usage == 3250
-            && serialization_gas_usage == 42670
-            && entry_point_gas_usage == 143000,
+        call_building_gas_usage == 3650
+            && serialization_gas_usage == 42270
+            && entry_point_gas_usage == 135840,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.

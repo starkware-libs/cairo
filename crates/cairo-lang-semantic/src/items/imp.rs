@@ -68,7 +68,7 @@ use crate::expr::compute::{ComputationContext, ContextFunction, Environment, com
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context_with_ty};
+use crate::expr::inference::solver::{Ambiguity, SolutionSet, enrich_lookup_context_with_ty};
 use crate::expr::inference::{
     ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId,
 };
@@ -1434,7 +1434,7 @@ pub fn priv_impl_definition_data(
     })
 }
 
-/// An helper function to report diagnostics of items in an impl (used in
+/// A helper function to report diagnostics of items in an impl (used in
 /// priv_impl_definition_data).
 fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
     syntax_db: &dyn SyntaxGroup,
@@ -1462,23 +1462,35 @@ fn check_special_impls(
 
     if trait_id == copy {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if let Some(inference_error) = tys
+        for inference_error in tys
             .into_iter()
             .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
             .flat_map(|info| info.copyable.err())
-            .next()
         {
+            if matches!(
+                inference_error,
+                InferenceError::Ambiguity(Ambiguity::MultipleImplsFound { .. })
+            ) {
+                // Having multiple drop implementations for a member is not an actual error.
+                continue;
+            }
             return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl(inference_error)));
         }
     }
     if trait_id == drop {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if let Some(inference_error) = tys
+        for inference_error in tys
             .into_iter()
             .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
             .flat_map(|info| info.droppable.err())
-            .next()
         {
+            if matches!(
+                inference_error,
+                InferenceError::Ambiguity(Ambiguity::MultipleImplsFound { .. })
+            ) {
+                // Having multiple drop implementations for a member is not an actual error.
+                continue;
+            }
             return Err(diagnostics.report(stable_ptr, InvalidDropTraitImpl(inference_error)));
         }
     }

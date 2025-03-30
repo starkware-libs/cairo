@@ -19,16 +19,7 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{
-Blake2sCompress {
-    state: memory[fp + -5],
-    byte_count: memory[fp + -4],
-    message: memory[fp + -3],
-    output: memory[ap + 0],
-    finalize: 0
-}
-%}
-ap += 1;
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=false] => [ap + 0], ap++;
 ret;
 
 //! > function_costs
@@ -43,10 +34,11 @@ type Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32,
 
 libfunc blake2s_compress = blake2s_compress;
 
-blake2s_compress([0], [1], [2]) -> ([3]); // 0
-return([3]); // 1
+F0:
+blake2s_compress([0], [1], [2]) -> ([3]);
+return([3]);
 
-test::foo@0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
+test::foo@F0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
 
 //! > ==========================================================================
 
@@ -71,16 +63,7 @@ if '__boxed_segment' not in globals():
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 8
 %}
-%{
-Blake2sCompress {
-    state: memory[fp + -5],
-    byte_count: memory[fp + -4],
-    message: memory[fp + -3],
-    output: memory[ap + 0],
-    finalize: 1
-}
-%}
-ap += 1;
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=true] => [ap + 0], ap++;
 ret;
 
 //! > function_costs
@@ -95,7 +78,8 @@ type Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32,
 
 libfunc blake2s_finalize = blake2s_finalize;
 
-blake2s_finalize([0], [1], [2]) -> ([3]); // 0
-return([3]); // 1
+F0:
+blake2s_finalize([0], [1], [2]) -> ([3]);
+return([3]);
 
-test::foo@0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
+test::foo@F0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);

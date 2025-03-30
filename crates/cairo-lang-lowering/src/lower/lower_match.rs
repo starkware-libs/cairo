@@ -48,7 +48,7 @@ struct ExtractedEnumDetails {
     n_snapshots: usize,
 }
 
-/// MatchArm wrapper that allow for optional expression clause.
+/// MatchArm wrapper that allows for optional expression clause.
 /// Used in the case of if-let with missing else clause.
 pub struct MatchArmWrapper {
     pub patterns: Vec<PatternId>,
@@ -477,7 +477,7 @@ fn lower_tuple_match_arm(
     leaves_builders.push(MatchLeafBuilder {
         builder,
         arm_index: pattern_path.arm_index,
-        lowerin_result: lowering_inner_pattern_result,
+        lowering_result: lowering_inner_pattern_result,
     });
     Ok(())
 }
@@ -816,7 +816,7 @@ pub(crate) fn lower_concrete_enum_match(
             };
             Ok(MatchLeafBuilder {
                 arm_index: *arm_index,
-                lowerin_result: lowering_inner_pattern_result,
+                lowering_result: lowering_inner_pattern_result,
                 builder: subscope,
             })
         })
@@ -950,7 +950,7 @@ pub(crate) fn lower_optimized_extern_match(
             };
             Ok(MatchLeafBuilder {
                 arm_index: *arm_index,
-                lowerin_result: lowering_inner_pattern_result,
+                lowering_result: lowering_inner_pattern_result,
                 builder: subscope,
             })
         })
@@ -990,7 +990,7 @@ pub(crate) fn lower_optimized_extern_match(
 /// Represents a leaf in match tree, with the arm index it belongs to.
 struct MatchLeafBuilder {
     arm_index: usize,
-    lowerin_result: LoweringResult<()>,
+    lowering_result: LoweringResult<()>,
     builder: BlockBuilder,
 }
 /// Groups match arms of different variants to their corresponding arms blocks and lowers
@@ -1011,7 +1011,7 @@ fn group_match_arms(
         .map(|(arm_index, group)| {
             let arm = &arms[arm_index];
             let mut lowering_inner_pattern_results_and_subscopes = group
-                .map(|MatchLeafBuilder { lowerin_result, builder, .. }| (lowerin_result, builder))
+                .map(|MatchLeafBuilder { lowering_result, builder, .. }| (lowering_result, builder))
                 .collect::<Vec<_>>();
 
             // If the arm has only one pattern, there is no need to create a parent scope.
@@ -1233,14 +1233,14 @@ fn lower_expr_felt252_arm(
     });
     branches_block_builders.push(MatchLeafBuilder {
         arm_index,
-        lowerin_result: Ok(()),
+        lowering_result: Ok(()),
         builder: main_block,
     });
     if pattern_index + 1 == expr.arms[arm_index].patterns.len() && arm_index == expr.arms.len() - 2
     {
         branches_block_builders.push(MatchLeafBuilder {
             arm_index: arm_index + 1,
-            lowerin_result: Ok(()),
+            lowering_result: Ok(()),
             builder: else_block,
         });
     } else {
@@ -1290,7 +1290,7 @@ fn lower_expr_match_index_enum(
         // Lower the arm expression.
         branches_block_builders.push(MatchLeafBuilder {
             arm_index,
-            lowerin_result: Ok(()),
+            lowering_result: Ok(()),
             builder: subscope,
         });
     }
@@ -1471,7 +1471,7 @@ fn lower_expr_match_felt252(
 
     arms_vec.push(MatchLeafBuilder {
         arm_index: expr.arms.len() - 1,
-        lowerin_result: Ok(()),
+        lowering_result: Ok(()),
         builder: otherwise_block,
     });
 
