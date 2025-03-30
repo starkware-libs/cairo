@@ -465,15 +465,20 @@ fn compute_expr_inline_macro_semantic(
         user_defined_macro
     {
         let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-        let expanded_code = macro_rules.iter().find_map(|rule| {
-            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                .map(|captures| expand_macro_rule(ctx.db.upcast(), rule, &captures))
-        });
-        let Some(expanded_code) = expanded_code else {
-            return Err(ctx
-                .diagnostics
-                .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
-        };
+        let expanded_code = macro_rules
+            .iter()
+            .find_map(|rule| {
+                is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
+                    .map(|captures| (rule, captures))
+            })
+            .map_or_else(
+                || {
+                    Err(ctx
+                        .diagnostics
+                        .report(syntax, InlineMacroNoMatchingRule(macro_name.clone().into())))
+                },
+                |(rule, captures)| expand_macro_rule(ctx.db.upcast(), rule, &captures),
+            )?;
         let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
         ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
         (expanded_code, macro_name.into(), vec![])
