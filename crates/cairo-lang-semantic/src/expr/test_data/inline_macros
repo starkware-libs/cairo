@@ -1077,3 +1077,31 @@ error: Empty path after `$defsite` is not allowed.
  --> lib.cairo[a_macro]:2:10
         $defsite
          ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test undefined macro placeholder
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:ident) => {
+        let y = $undefined;
+    };
+}
+
+//! > expected_diagnostics
+error: Undefined macro placeholder: 'undefined'.
+ --> lib.cairo:3:17
+        let y = $undefined;
+                ^^^^^^^^^^

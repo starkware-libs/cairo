@@ -474,6 +474,7 @@ fn compute_expr_inline_macro_semantic(
                 .diagnostics
                 .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
         };
+        let expanded_code = expanded_code?;
         let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
         ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
         (expanded_code, macro_name.into(), vec![])
