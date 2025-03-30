@@ -533,7 +533,6 @@ impl FlatLoweredCached {
             blocks.alloc(block.embed(ctx));
         }
         FlatLowered {
-            diagnostics: Default::default(),
             signature: self.signature.embed(ctx),
             variables,
             blocks: blocks.build().unwrap(),

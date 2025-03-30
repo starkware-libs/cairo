@@ -164,7 +164,6 @@ pub fn lower_function(
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
     Ok(FlatLowered {
-        diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
         signature: ctx.signature.clone(),
@@ -508,7 +507,6 @@ pub fn lower_loop_function(
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
     Ok(FlatLowered {
-        diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
         signature: ctx.signature.clone(),
@@ -1954,7 +1952,6 @@ fn get_destruct_lowering(
     .add(&mut ctx, &mut builder.statements);
     builder.ret(&mut ctx, var_usage, location_id)?;
     let lowered_impl = FlatLowered {
-        diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks: ctx.blocks.build().unwrap(),
         signature: ctx.signature,
@@ -2090,7 +2087,6 @@ fn add_closure_call_function(
         .unwrap_or_else(FlatBlocks::new_errored);
 
     let lowered = FlatLowered {
-        diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
         signature: ctx.signature.clone(),

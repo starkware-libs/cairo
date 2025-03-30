@@ -8,7 +8,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
+use cairo_lang_diagnostics::DiagnosticNote;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeInfo;
@@ -26,7 +26,6 @@ use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
-use crate::diagnostic::LoweringDiagnostic;
 use crate::ids::{FunctionId, LocationId, Signature};
 
 /// The Location struct represents the source location of a lowered object. It is used to store the
@@ -135,8 +134,6 @@ pub struct VarUsage {
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatLowered {
-    /// Diagnostics produced while lowering.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Function signature.
     pub signature: Signature,
     /// Arena of allocated lowered variables.

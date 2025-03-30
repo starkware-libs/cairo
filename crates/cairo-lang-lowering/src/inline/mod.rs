@@ -268,7 +268,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
             .unwrap_or_else(FlatBlocks::new_errored);
 
         Ok(FlatLowered {
-            diagnostics: flat_lower.diagnostics.clone(),
             variables: rewriter.variables.variables,
             blocks,
             parameters: flat_lower.parameters.clone(),

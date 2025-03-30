@@ -19,9 +19,7 @@ use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::blocks::Blocks;
-use crate::borrow_check::{
-    PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
-};
+use crate::borrow_check::{BorrowCheckResult, borrow_check, borrow_check_possible_withdraw_gas};
 use crate::cache::load_cached_crate_functions;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
@@ -86,7 +84,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_lowering_with_borrow_check(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)>;
+    ) -> Maybe<(Arc<FlatLowered>, Arc<BorrowCheckResult>)>;
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowering(
@@ -434,7 +432,7 @@ fn priv_function_with_body_lowering(
 fn function_with_body_lowering_with_borrow_check(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
+) -> Maybe<(Arc<FlatLowered>, Arc<BorrowCheckResult>)> {
     let lowered = db.priv_function_with_body_lowering(function_id)?;
     let borrow_check_result =
         borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &lowered);
@@ -442,7 +440,6 @@ fn function_with_body_lowering_with_borrow_check(
     let lowered = match borrow_check_result.diagnostics.check_error_free() {
         Ok(_) => lowered,
         Err(diag_added) => Arc::new(FlatLowered {
-            diagnostics: borrow_check_result.diagnostics,
             signature: lowered.signature.clone(),
             variables: lowered.variables.clone(),
             blocks: Blocks::new_errored(diag_added),
@@ -450,7 +447,7 @@ fn function_with_body_lowering_with_borrow_check(
         }),
     };
 
-    Ok((lowered, Arc::new(borrow_check_result.block_extra_calls)))
+    Ok((lowered, Arc::new(borrow_check_result)))
 }
 
 fn function_with_body_lowering(
@@ -710,8 +707,10 @@ fn function_with_body_lowering_diagnostics(
 ) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
-    if let Ok(lowered) = db.function_with_body_lowering(function_id) {
-        diagnostics.extend(lowered.diagnostics.clone());
+    if let Ok((lowered, borrow_check_result)) =
+        db.function_with_body_lowering_with_borrow_check(function_id)
+    {
+        diagnostics.extend(borrow_check_result.diagnostics.clone());
         if flag_add_withdraw_gas(db) && db.in_cycle(function_id, DependencyType::Cost)? {
             let location =
                 Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));

@@ -151,7 +151,7 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.copyable.clone() {
-          self.diagnostics.report_by_location(
+            self.diagnostics.report_by_location(
                 next_usage_position
                     .lookup_intern(self.db)
                     .add_note_with_location(self.db, "variable was previously used here", position)
@@ -278,9 +278,9 @@ impl Analyzer<'_> for BorrowChecker<'_> {
 pub type PotentialDestructCalls = UnorderedHashMap<BlockId, Vec<FunctionId>>;
 
 #[derive(Eq, PartialEq, Debug, Default)]
-pub struct BorrowCheckResult  {
+pub struct BorrowCheckResult {
     pub block_extra_calls: PotentialDestructCalls,
-    pub diagnostics:  Diagnostics<LoweringDiagnostic>
+    pub diagnostics: Diagnostics<LoweringDiagnostic>,
 }
 
 /// Report borrow checking diagnostics.
@@ -317,10 +317,7 @@ pub fn borrow_check(
     let block_extra_calls = analysis.analyzer.potential_destruct_calls;
     assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
-    BorrowCheckResult {
-        block_extra_calls,
-        diagnostics: diagnostics.build(),
-    }
+    BorrowCheckResult { block_extra_calls, diagnostics: diagnostics.build() }
 }
 
 /// Borrow check the params of the function are panic destruct, as this function may have a gas
