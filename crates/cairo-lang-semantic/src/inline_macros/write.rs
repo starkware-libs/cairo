@@ -529,7 +529,7 @@ fn extract_placeholder_argument(
     } else if let Ok(position) = parameter_name.parse::<usize>() {
         PlaceholderArgumentSource::Positional(position)
     } else if parameter_name.starts_with(|c: char| c.is_ascii_digit()) {
-        return Err("Invalid parameter name: cannot start with a digit");
+        return Err("Invalid parameter name");
     } else {
         PlaceholderArgumentSource::Named(parameter_name)
     };
