@@ -201,6 +201,8 @@ fn is_macro_rule_match_ex(
                         }
                     }
                     ast::TokenTree::Subtree(_) => return None,
+                    ast::TokenTree::Repetition(_) => return None,
+                    ast::TokenTree::Param(_) => return None,
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
@@ -224,6 +226,8 @@ fn is_macro_rule_match_ex(
                                 }
                             }
                             ast::TokenTree::Subtree(_) => return None,
+                            ast::TokenTree::Repetition(_) => return None,
+                            ast::TokenTree::Param(_) => return None,
                             ast::TokenTree::Missing(_) => unreachable!(),
                         }
                     }
@@ -249,6 +253,12 @@ fn is_macro_rule_match_ex(
                                 ast::TokenTree::Subtree(token_subtree) => {
                                     token_subtree.as_syntax_node().get_text(db.upcast())
                                 }
+                                ast::TokenTree::Repetition(token_repetition) => {
+                                    token_repetition.as_syntax_node().get_text(db.upcast())
+                                }
+                                ast::TokenTree::Param(token_param) => {
+                                    token_param.as_syntax_node().get_text(db.upcast())
+                                }
                                 ast::TokenTree::Missing(_) => unreachable!(),
                             };
                             current_length += token_text.len();
@@ -271,6 +281,8 @@ fn is_macro_rule_match_ex(
                         )?;
                     }
                     ast::TokenTree::Token(_) => return None,
+                    ast::TokenTree::Repetition(_) => return None,
+                    ast::TokenTree::Param(_) => return None,
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
