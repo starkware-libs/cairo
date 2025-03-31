@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// A compilation flag.
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 pub enum Flag {
     /// Whether automatically add `withdraw_gas` calls in code cycles.
     /// Default is true - automatically add.
