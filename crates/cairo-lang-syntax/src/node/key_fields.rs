@@ -412,6 +412,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::TokenTreeNode => {
             vec![]
         }
+        SyntaxKind::TokenTreeRepetition => {
+            vec![]
+        }
         SyntaxKind::TokenTreeMissing => {
             vec![]
         }
@@ -447,9 +450,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::OptionTerminalCommaEmpty => {
-            vec![]
-        }
-        SyntaxKind::SeparatorMissing => {
             vec![]
         }
         SyntaxKind::ParamIdent => {
