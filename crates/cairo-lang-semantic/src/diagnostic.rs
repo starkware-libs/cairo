@@ -574,6 +574,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                         .join(", ")
                 )
             }
+            SemanticDiagnosticKind::UseSelfNonMulti => {
+                "`self` in `use` items is not allowed not in multi.".into()
+            }
+            SemanticDiagnosticKind::UseSelfEmptyPath => {
+                "`self` in `use` items is not allowed for empty path.".into()
+            }
             SemanticDiagnosticKind::UseStarEmptyPath => {
                 "`*` in `use` items is not allowed for empty path.".into()
             }
@@ -1299,6 +1305,8 @@ pub enum SemanticDiagnosticKind {
     InvalidPath,
     PathNotFound(NotFoundItemType),
     AmbiguousPath(Vec<ModuleItemId>),
+    UseSelfNonMulti,
+    UseSelfEmptyPath,
     UseStarEmptyPath,
     GlobalUsesNotSupportedInEdition(Edition),
     TraitInTraitMustBeExplicit,
