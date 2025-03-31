@@ -1955,9 +1955,11 @@ fn compute_expr_indexed_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let index_expr_syntax = &syntax.index_expr(syntax_db);
     let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
-    // Make sure the maximal amount of types is known when trying to access. Ignoring the returned
-    // value, as any errors will be reported later.
-    ctx.resolver.inference().solve().ok();
+    if !ctx.reduce_ty(expr.ty()).is_var_free(ctx.db) {
+        // Make sure the maximal amount of types is known when trying to access. Ignoring the
+        // returned value, as any errors will be reported later.
+        ctx.resolver.inference().solve().ok();
+    }
     let info = ctx.db.core_info();
     let candidate_traits = [info.index_trt, info.index_view_trt];
     let (function_id, _, fixed_expr, mutability) = compute_method_function_call_data(
@@ -2965,8 +2967,13 @@ fn method_call_expr(
     };
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
-    // Save some work. ignore the result. The error, if any, will be reported later.
-    ctx.resolver.inference().solve().ok();
+
+    if !ctx.reduce_ty(lexpr.ty()).is_var_free(ctx.db) {
+        // Run solver to get as much info on the type as possible.
+        // Ignore the result of the `solve()` call - the error, if any, will be
+        // reported later.
+        ctx.resolver.inference().solve().ok();
+    }
 
     let mut candidate_traits = traits_in_context(ctx)?;
 
@@ -3169,11 +3176,14 @@ fn get_enriched_type_member_access(
     stable_ptr: ast::ExprPtr,
     accessed_member_name: &str,
 ) -> Maybe<Option<EnrichedTypeMemberAccess>> {
-    // Run solver to get as much info on the type as possible.
-    // Ignore the result of the `solve()` call - the error, if any, will be
-    // reported later.
-    ctx.resolver.inference().solve().ok();
-    let ty = ctx.reduce_ty(expr.ty());
+    let mut ty = ctx.reduce_ty(expr.ty());
+    if !ty.is_var_free(ctx.db) {
+        // Run solver to get as much info on the type as possible.
+        // Ignore the result of the `solve()` call - the error, if any, will be
+        // reported later.
+        ctx.resolver.inference().solve().ok();
+        ty = ctx.reduce_ty(ty);
+    }
     let base_var = match &expr.expr {
         Expr::Var(expr_var) => Some(expr_var.var),
         Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
