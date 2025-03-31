@@ -3,6 +3,7 @@ use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
 use super::dedup_blocks::dedup_blocks;
 use super::gas_redeposit::gas_redeposit;
+use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
 use crate::FlatLowered;
 use crate::db::LoweringGroup;
@@ -33,6 +34,7 @@ pub enum OptimizationPhase {
     ReorganizeBlocks,
     ReturnOptimization,
     SplitStructs,
+    TrimUnreachable,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
@@ -63,6 +65,7 @@ impl OptimizationPhase {
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
             OptimizationPhase::ReturnOptimization => return_optimization(db, function, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
+            OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered)
