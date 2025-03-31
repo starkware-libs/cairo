@@ -3047,7 +3047,7 @@ impl PluginGeneratedFileCached {
         Self {
             module_id: ModuleIdCached::new(long_id.module_id, ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(long_id.stable_ptr, ctx),
-            name: long_id.name.clone(),
+            name: long_id.name,
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> PluginGeneratedFileId {
