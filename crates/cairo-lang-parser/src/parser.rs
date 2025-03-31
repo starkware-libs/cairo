@@ -1633,6 +1633,37 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrack => self.parse_token_tree_node().into(),
+            SyntaxKind::TerminalDollar => {
+                let dollar: TerminalDollarGreen = self.take::<TerminalDollar>();
+                match self.peek().kind {
+                    SyntaxKind::TerminalLParen => {
+                        let lparen = self.take::<TerminalLParen>();
+                        let elements = TokenList::new_green(self.db, self.parse_token_list());
+                        let rparen = self.parse_token::<TerminalRParen>();
+                        let separator: OptionTerminalCommaGreen = match self.peek().kind {
+                            SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
+                            _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
+                        };
+                        let operator = match self.peek().kind {
+                            SyntaxKind::TerminalQuestionMark => {
+                                self.take::<TerminalQuestionMark>().into()
+                            }
+                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+                            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                            _ => unreachable!(),
+                        };
+                        TokenTreeRepetition::new_green(
+                            self.db, dollar, lparen, elements, rparen, separator, operator,
+                        )
+                        .into()
+                    }
+                    SyntaxKind::TerminalIdentifier => {
+                        let identifier = self.take::<TerminalIdentifier>();
+                        TokenTreeParam::new_green(self.db, dollar, identifier).into()
+                    }
+                    _ => self.parse_token_tree_leaf().into(),
+                }
+            }
             _ => self.parse_token_tree_leaf().into(),
         }
     }
@@ -1682,6 +1713,12 @@ impl<'a> Parser<'a> {
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
+        let tokens = self.parse_token_list();
+        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
+        new_green(self.db, l_term, TokenList::new_green(self.db, tokens), r_term)
+    }
+
+    fn parse_token_list(&mut self) -> Vec<TokenTreeGreen> {
         let mut tokens: Vec<TokenTreeGreen> = vec![];
         while !matches!(
             self.peek().kind,
@@ -1690,11 +1727,9 @@ impl<'a> Parser<'a> {
                 | SyntaxKind::TerminalRBrack
                 | SyntaxKind::TerminalEndOfFile
         ) {
-            let token_tree = self.parse_token_tree();
-            tokens.push(token_tree);
+            tokens.push(self.parse_token_tree());
         }
-        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
-        new_green(self.db, l_term, TokenList::new_green(self.db, tokens), r_term)
+        tokens
     }
 
     /// Takes a TokenNode according to the current SyntaxKind.
