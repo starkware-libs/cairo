@@ -181,7 +181,7 @@ impl MatchError {
                 "Unreachable else clause.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
-                unreachable!("While-let is does not have two arms.")
+                unreachable!("While-let does not have two arms.")
             }
             (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::Match) => {
                 unreachable!("Numeric values are supported in match conditions.")
