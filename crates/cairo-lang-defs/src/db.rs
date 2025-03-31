@@ -399,7 +399,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
 }
 
 fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[FileId]>> {
-    Ok(db.priv_module_data(module_id)?.files.into())
+    Ok(db.priv_module_data(module_id)?.files)
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
@@ -481,10 +481,10 @@ pub struct ModuleData {
     extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
     global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
 
-    files: Vec<FileId>,
+    files: Arc<[FileId]>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
-    generated_file_aux_data: Vec<Option<DynGeneratedFileAuxData>>,
-    plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
+    generated_file_aux_data: Arc<[Option<DynGeneratedFileAuxData>]>,
+    plugin_diagnostics: Arc<[(ModuleFileId, PluginDiagnostic)]>,
     /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
     /// [`FileId`].
     /// Diagnostic notes are added with `note: ` prefix at the end of diagnostic display.
@@ -521,11 +521,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 
             // If this is an inline module, copy its generation file info from the parent
             // module, from the file where this submodule was defined.
-            parent_module_data
-                .generated_file_aux_data
-                .into_iter()
-                .nth(submodule_id.file_index(db).0)
-                .unwrap()
+            parent_module_data.generated_file_aux_data[submodule_id.file_index(db).0].clone()
         } else {
             None
         }
@@ -670,9 +666,9 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         extern_types: extern_types.into(),
         extern_functions: extern_functions.into(),
         global_uses: global_uses.into(),
-        files,
-        generated_file_aux_data: aux_data,
-        plugin_diagnostics,
+        files: files.into(),
+        generated_file_aux_data: aux_data.into(),
+        plugin_diagnostics: plugin_diagnostics.into(),
         diagnostics_notes,
     };
     Ok(res)
@@ -1222,7 +1218,7 @@ pub fn module_generated_file_aux_data(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<[Option<DynGeneratedFileAuxData>]>> {
-    Ok(db.priv_module_data(module_id)?.generated_file_aux_data.into())
+    Ok(db.priv_module_data(module_id)?.generated_file_aux_data)
 }
 
 /// Returns all the plugin diagnostics of the given module.
@@ -1230,7 +1226,7 @@ pub fn module_plugin_diagnostics(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<[(ModuleFileId, PluginDiagnostic)]>> {
-    Ok(db.priv_module_data(module_id)?.plugin_diagnostics.into())
+    Ok(db.priv_module_data(module_id)?.plugin_diagnostics)
 }
 
 /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
