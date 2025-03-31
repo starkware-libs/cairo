@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::plugin::{
-    MacroPlugin, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
@@ -168,5 +168,104 @@ fn test_mapping_translate_consecutive_spans() {
             ^^^^^^
 
     "#}
+    );
+}
+
+#[derive(Debug, Default)]
+struct CustomSpanTestPlugin;
+impl MacroPlugin for CustomSpanTestPlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
+        // Only run plugin in the test file.
+        let ptr = item_ast.stable_ptr();
+        let file = ptr.0.file_id(db);
+        let path = file.full_path(db.upcast());
+        if path != "lib.cairo" {
+            return PluginResult::default();
+        }
+
+        // Find the first function in the file
+        if let ast::ModuleItem::FreeFunction(function) = &item_ast {
+            // Get function body statements
+            let elements = function.body(db).statements(db).elements(db);
+            if elements.is_empty() {
+                return PluginResult::default();
+            }
+
+            // Look for a variable declaration with a string literal containing '{}'
+            for statement in elements {
+                if let ast::Statement::Let(let_stmt) = statement {
+                    if let ast::Expr::String(string_expr) = let_stmt.rhs(db) {
+                        let string_text = string_expr.as_syntax_node().get_text(db);
+                        if let Some(brace_pos) = string_text.find("{}") {
+                            let string_span = string_expr.as_syntax_node().span(db);
+                            let placeholder_span = TextSpan {
+                                start: string_span
+                                    .start
+                                    .add_width(TextWidth::new_for_testing(brace_pos as u32)),
+                                end: string_span
+                                    .start
+                                    .add_width(TextWidth::new_for_testing(brace_pos as u32 + 2)),
+                            };
+
+                            let diagnostic = PluginDiagnostic::error(
+                                string_expr.as_syntax_node().stable_ptr(),
+                                "Missing format argument for placeholder".into(),
+                            )
+                            .with_span(placeholder_span);
+
+                            return PluginResult {
+                                code: None,
+                                diagnostics: vec![diagnostic],
+                                remove_original_item: false,
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        PluginResult::default()
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+#[test]
+fn test_diagnostic_with_custom_span() {
+    // Setup db with the test plugin.
+    let mut suite = get_default_plugin_suite();
+    suite.add_plugin::<CustomSpanTestPlugin>();
+    let mut db_val = SemanticDatabaseForTesting::with_plugin_suite(suite);
+
+    // Create test file with a format string missing a value
+    let content = indoc! {r#"
+        fn test_format() -> felt252 {
+            let _x: ByteArray = "hello {}";
+            0
+        }
+    "#};
+    let (test_module, _diagnostics) = setup_test_module(&db_val, content).split();
+    let module_id = test_module.module_id;
+
+    // Read semantic diagnostics.
+    let db = &mut db_val;
+    let diags = db.module_semantic_diagnostics(module_id).unwrap();
+    let diags = diags.format(db);
+    assert_eq!(
+        diags,
+        indoc! {r#"
+        error: Plugin diagnostic: Missing format argument for placeholder
+         --> lib.cairo:2:32
+            let _x: ByteArray = "hello {}";
+                                       ^^
+
+        "#}
     );
 }
