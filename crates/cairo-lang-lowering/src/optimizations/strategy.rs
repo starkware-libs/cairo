@@ -139,6 +139,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
 pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
+        // Apply `TrimUnreachable` after GasRedeposit to remove unreachable `redeposit_gas` calls.
+        OptimizationPhase::TrimUnreachable,
         OptimizationPhase::LowerImplicits,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
