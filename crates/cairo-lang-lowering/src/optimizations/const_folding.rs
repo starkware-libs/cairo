@@ -7,6 +7,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::functions::GenericFunctionWithBodyId;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -20,7 +21,7 @@ use num_integer::Integer;
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, SemanticFunctionIdEx};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -56,11 +57,22 @@ enum Reachability {
 
 /// Performs constant folding on the lowered program.
 /// The optimization only works when the blocks are topologically sorted.
-pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn const_folding(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+    lowered: &mut FlatLowered,
+) {
     if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
     }
     let libfunc_info = priv_const_folding_info(db);
+    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
+    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
+    if function_id.base_semantic_function(db).generic_function(db.upcast())
+        == libfunc_info.panic_with_const_felt252
+    {
+        return;
+    }
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
     let mut ctx = ConstFoldingContext {
@@ -638,6 +650,8 @@ pub struct ConstFoldingLibfuncInfo {
     storage_base_address_from_felt252: ExternFunctionId,
     /// The `core::panic_with_felt252` function.
     panic_with_felt252: FunctionId,
+    /// The `core::panic_with_const_felt252` function.
+    panic_with_const_felt252: GenericFunctionWithBodyId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
@@ -750,6 +764,9 @@ impl ConstFoldingLibfuncInfo {
             storage_access_module: storage_access_module.id,
             storage_base_address_from_felt252,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]).lowered(db),
+            panic_with_const_felt252: GenericFunctionWithBodyId::Free(
+                core.free_function_id("panic_with_const_felt252"),
+            ),
             type_value_ranges,
         }
     }

@@ -57,7 +57,7 @@ impl OptimizationPhase {
             OptimizationPhase::ApplyInlining => apply_inlining(db, function, lowered)?,
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
-            OptimizationPhase::ConstFolding => const_folding(db, lowered),
+            OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),

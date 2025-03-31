@@ -1,7 +1,7 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type core::never = Enum<ut@[861862558883858441923225458096625907389649264301951688694211998892186616580]> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> = Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595> [storable: false, drop: false, dup: false, zero_sized: false];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -43,11 +43,12 @@ libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core
 libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
 libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
 libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
-libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 
 F0:
 revoke_ap_tracking() -> ();
@@ -111,19 +112,18 @@ store_temp<System>([2]) -> ([2]);
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([34]) -> ([34]);
 return([30], [31], [2], [34]);
 F1:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F2:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F3:
+array_new<felt252>() -> ([1]);
+array_append<felt252>([1], [0]) -> ([2]);
 struct_construct<core::panics::Panic>() -> ([3]);
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
 store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
@@ -132,3 +132,4 @@ return([4]);
 cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 core::panic_with_const_felt252::<7733229381460288120802334208475838166080759535023995805565484692595>@F1() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

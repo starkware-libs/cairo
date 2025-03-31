@@ -93,11 +93,12 @@ libfunc drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u32
 libfunc struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::integer::u32>> = struct_deconstruct<core::starknet::storage::StoragePointer0Offset::<core::integer::u32>>;
 libfunc array_append<felt252> = array_append<felt252>;
 libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
-libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
 libfunc const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>> = const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>;
 libfunc const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>> = const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
+libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
 
 F0:
 revoke_ap_tracking() -> ();
@@ -421,46 +422,33 @@ store_temp<System>([2]) -> ([2]);
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([66]) -> ([66]);
 return([62], [63], [2], [66]);
 F2:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F3:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F4:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 7269940625183576940180048306939577043858226>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F5:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F6:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F7:
+array_new<felt252>() -> ([1]);
+array_append<felt252>([1], [0]) -> ([2]);
 struct_construct<core::panics::Panic>() -> ([3]);
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
 store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
@@ -473,3 +461,4 @@ core::panic_with_const_felt252::<155785504323917466144735657540098748279>@F3() -
 core::panic_with_const_felt252::<7269940625183576940180048306939577043858226>@F4() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>@F5() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<375233589013918064796019>@F6() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F7([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

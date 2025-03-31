@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -37,6 +37,16 @@ impl<'a> ModuleHelper<'a> {
     pub fn trait_id(&self, name: impl Into<SmolStr>) -> TraitId {
         let name = name.into();
         let Ok(Some(ModuleItemId::Trait(id))) = self.db.module_item_by_name(self.id, name.clone())
+        else {
+            panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db.upcast()));
+        };
+        id
+    }
+    /// Returns the id of a free function named `name` in the current module.
+    pub fn free_function_id(&self, name: impl Into<SmolStr>) -> FreeFunctionId {
+        let name = name.into();
+        let Ok(Some(ModuleItemId::FreeFunction(id))) =
+            self.db.module_item_by_name(self.id, name.clone())
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db.upcast()));
         };
