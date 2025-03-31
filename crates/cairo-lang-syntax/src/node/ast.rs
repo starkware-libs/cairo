@@ -23325,6 +23325,430 @@ impl From<&MacroRuleParam> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MacroRepetition {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl MacroRepetition {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_ELEMENTS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_SEPARATOR: usize = 4;
+    pub const INDEX_OPERATOR: usize = 5;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        lparen: TerminalLParenGreen,
+        elements: MacroRuleElementsGreen,
+        rparen: TerminalRParenGreen,
+        separator: SeparatorGreen,
+        operator: MacroRepetitionOperatorGreen,
+    ) -> MacroRepetitionGreen {
+        let children: Vec<GreenId> =
+            vec![dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        MacroRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRepetition,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl MacroRepetition {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> MacroRuleElements {
+        MacroRuleElements::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> Separator {
+        Separator::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.children[5].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionPtr(pub SyntaxStablePtrId);
+impl MacroRepetitionPtr {}
+impl TypedStablePtr for MacroRepetitionPtr {
+    type SyntaxNode = MacroRepetition;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRepetition {
+        MacroRepetition::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRepetitionPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRepetitionPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRepetition {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetition);
+    type StablePtr = MacroRepetitionPtr;
+    type Green = MacroRepetitionGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MacroRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::MacroRepetition,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        MacroRuleElements::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                        Separator::missing(db).0,
+                        MacroRepetitionOperator::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRepetition,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRepetition
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRepetition {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRepetitionPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&MacroRepetition> for SyntaxStablePtrId {
+    fn from(node: &MacroRepetition) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum Separator {
+    Comma(TerminalComma),
+    Missing(SeparatorMissing),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SeparatorPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for SeparatorPtr {
+    type SyntaxNode = Separator;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> Separator {
+        Separator::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<SeparatorPtr> for SyntaxStablePtrId {
+    fn from(ptr: SeparatorPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalCommaPtr> for SeparatorPtr {
+    fn from(value: TerminalCommaPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<SeparatorMissingPtr> for SeparatorPtr {
+    fn from(value: SeparatorMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalCommaGreen> for SeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<SeparatorMissingGreen> for SeparatorGreen {
+    fn from(value: SeparatorMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SeparatorGreen(pub GreenId);
+impl TypedSyntaxNode for Separator {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = SeparatorPtr;
+    type Green = SeparatorGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        SeparatorGreen(SeparatorMissing::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalComma => {
+                Separator::Comma(TerminalComma::from_syntax_node(db, node))
+            }
+            SyntaxKind::SeparatorMissing => {
+                Separator::Missing(SeparatorMissing::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Separator"),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalComma => {
+                Some(Separator::Comma(TerminalComma::from_syntax_node(db, node)))
+            }
+            SyntaxKind::SeparatorMissing => {
+                Some(Separator::Missing(SeparatorMissing::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            Separator::Comma(x) => x.as_syntax_node(),
+            Separator::Missing(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SeparatorPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&Separator> for SyntaxStablePtrId {
+    fn from(node: &Separator) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl Separator {
+    /// Checks if a kind of a variant of [Separator].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::TerminalComma | SyntaxKind::SeparatorMissing)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct SeparatorMissing {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl SeparatorMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> SeparatorMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        SeparatorMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::SeparatorMissing,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl SeparatorMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SeparatorMissingPtr(pub SyntaxStablePtrId);
+impl SeparatorMissingPtr {}
+impl TypedStablePtr for SeparatorMissingPtr {
+    type SyntaxNode = SeparatorMissing;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> SeparatorMissing {
+        SeparatorMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<SeparatorMissingPtr> for SyntaxStablePtrId {
+    fn from(ptr: SeparatorMissingPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SeparatorMissingGreen(pub GreenId);
+impl TypedSyntaxNode for SeparatorMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::SeparatorMissing);
+    type StablePtr = SeparatorMissingPtr;
+    type Green = SeparatorMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        SeparatorMissingGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::SeparatorMissing,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::SeparatorMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::SeparatorMissing
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::SeparatorMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SeparatorMissingPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&SeparatorMissing> for SyntaxStablePtrId {
+    fn from(node: &SeparatorMissing) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MacroRepetitionOperator {
+    ZeroOrOne(TerminalQuestionMark),
+    OneOrMore(TerminalPlus),
+    ZeroOrMore(TerminalMul),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionOperatorPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for MacroRepetitionOperatorPtr {
+    type SyntaxNode = MacroRepetitionOperator;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<MacroRepetitionOperatorPtr> for SyntaxStablePtrId {
+    fn from(ptr: MacroRepetitionOperatorPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalQuestionMarkPtr> for MacroRepetitionOperatorPtr {
+    fn from(value: TerminalQuestionMarkPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusPtr> for MacroRepetitionOperatorPtr {
+    fn from(value: TerminalPlusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulPtr> for MacroRepetitionOperatorPtr {
+    fn from(value: TerminalMulPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalQuestionMarkGreen> for MacroRepetitionOperatorGreen {
+    fn from(value: TerminalQuestionMarkGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusGreen> for MacroRepetitionOperatorGreen {
+    fn from(value: TerminalPlusGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulGreen> for MacroRepetitionOperatorGreen {
+    fn from(value: TerminalMulGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MacroRepetitionOperatorGreen(pub GreenId);
+impl TypedSyntaxNode for MacroRepetitionOperator {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MacroRepetitionOperatorPtr;
+    type Green = MacroRepetitionOperatorGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalQuestionMark => {
+                MacroRepetitionOperator::ZeroOrOne(TerminalQuestionMark::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalPlus => {
+                MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMul => {
+                MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "MacroRepetitionOperator"
+            ),
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalQuestionMark => Some(MacroRepetitionOperator::ZeroOrOne(
+                TerminalQuestionMark::from_syntax_node(db, node),
+            )),
+            SyntaxKind::TerminalPlus => {
+                Some(MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TerminalMul => {
+                Some(MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MacroRepetitionOperator::ZeroOrOne(x) => x.as_syntax_node(),
+            MacroRepetitionOperator::OneOrMore(x) => x.as_syntax_node(),
+            MacroRepetitionOperator::ZeroOrMore(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MacroRepetitionOperatorPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&MacroRepetitionOperator> for SyntaxStablePtrId {
+    fn from(node: &MacroRepetitionOperator) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl MacroRepetitionOperator {
+    /// Checks if a kind of a variant of [MacroRepetitionOperator].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::TerminalQuestionMark | SyntaxKind::TerminalPlus | SyntaxKind::TerminalMul
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamIdent {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -23705,6 +24129,7 @@ pub enum MacroRuleElement {
     Token(TokenTreeLeaf),
     Param(MacroRuleParam),
     Subtree(MacroMatcherwrapper),
+    Repetition(MacroRepetition),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MacroRuleElementPtr(pub SyntaxStablePtrId);
@@ -23737,6 +24162,11 @@ impl From<MacroMatcherwrapperPtr> for MacroRuleElementPtr {
         Self(value.0)
     }
 }
+impl From<MacroRepetitionPtr> for MacroRuleElementPtr {
+    fn from(value: MacroRepetitionPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenTreeLeafGreen> for MacroRuleElementGreen {
     fn from(value: TokenTreeLeafGreen) -> Self {
         Self(value.0)
@@ -23749,6 +24179,11 @@ impl From<MacroRuleParamGreen> for MacroRuleElementGreen {
 }
 impl From<MacroMatcherwrapperGreen> for MacroRuleElementGreen {
     fn from(value: MacroMatcherwrapperGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<MacroRepetitionGreen> for MacroRuleElementGreen {
+    fn from(value: MacroRepetitionGreen) -> Self {
         Self(value.0)
     }
 }
@@ -23773,6 +24208,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroMatcherwrapper => {
                 MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node))
             }
+            SyntaxKind::MacroRepetition => {
+                MacroRuleElement::Repetition(MacroRepetition::from_syntax_node(db, node))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MacroRuleElement"
@@ -23791,6 +24229,9 @@ impl TypedSyntaxNode for MacroRuleElement {
             SyntaxKind::MacroMatcherwrapper => {
                 Some(MacroRuleElement::Subtree(MacroMatcherwrapper::from_syntax_node(db, node)))
             }
+            SyntaxKind::MacroRepetition => {
+                Some(MacroRuleElement::Repetition(MacroRepetition::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -23799,6 +24240,7 @@ impl TypedSyntaxNode for MacroRuleElement {
             MacroRuleElement::Token(x) => x.as_syntax_node(),
             MacroRuleElement::Param(x) => x.as_syntax_node(),
             MacroRuleElement::Subtree(x) => x.as_syntax_node(),
+            MacroRuleElement::Repetition(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -23818,6 +24260,7 @@ impl MacroRuleElement {
             SyntaxKind::TokenTreeLeaf
                 | SyntaxKind::MacroRuleParam
                 | SyntaxKind::MacroMatcherwrapper
+                | SyntaxKind::MacroRepetition
         )
     }
 }
