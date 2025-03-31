@@ -164,6 +164,8 @@ pub enum SyntaxKind {
     MacroRulesList,
     MacroRule,
     MacroRuleParam,
+    MacroRepetition,
+    SeparatorMissing,
     ParamIdent,
     ParamExpr,
     MacroRuleParamKindMissing,
