@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
+use cairo_lang_filesystem::db::CrateSettings;
+use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
 };
@@ -34,6 +36,49 @@ use crate::ids::{
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 
+/// Metadata for a cached crate.
+#[derive(Serialize, Deserialize)]
+pub struct CachedCrateMetadata {
+    /// The settings the crate was compiles with.
+    settings: Option<CrateSettings>,
+    /// The version of the compiler that compiled the crate.
+    compiler_version: String,
+    /// The global flags the crate was compiled with.
+    global_flags: OrderedHashMap<SmolStr, Flag>,
+}
+
+impl CachedCrateMetadata {
+    /// Creates a new [CachedCrateMetadata] from the input crate with the current settings.
+    pub fn new(crate_id: CrateId, db: &dyn DefsGroup) -> Self {
+        let settings = db.crate_config(crate_id).map(|config| config.settings);
+        let compiler_version = env!("CARGO_PKG_VERSION").to_string();
+        let global_flags = db
+            .flags()
+            .iter()
+            .map(|(flag_id, flag)| (flag_id.lookup_intern(db).0, (**flag).clone()))
+            .collect();
+        Self { settings, compiler_version, global_flags }
+    }
+}
+
+/// Validates that the metadata of the cached crate is valid.
+fn validate_metadata(crate_id: CrateId, metadata: &CachedCrateMetadata, db: &dyn DefsGroup) {
+    let current_metadata = CachedCrateMetadata::new(crate_id, db);
+
+    if current_metadata.compiler_version != metadata.compiler_version {
+        panic!("Cached crate was compiled with a different compiler version.");
+    }
+    if current_metadata.settings != metadata.settings {
+        panic!("Cached crate was compiled with different settings.");
+    }
+
+    if !current_metadata.global_flags.eq_unordered(&metadata.global_flags) {
+        panic!("Cached crate was compiled with different global flags.");
+    }
+}
+
+type DefCache = (CachedCrateMetadata, Vec<(ModuleIdCached, ModuleDataCached)>, DefCacheLookups);
+
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules(
     db: &dyn DefsGroup,
@@ -48,8 +93,13 @@ pub fn load_cached_crate_modules(
 
     let content = &content[8..size + 8];
 
-    let (module_data, defs_lookups): (Vec<(ModuleIdCached, ModuleDataCached)>, DefCacheLookups) =
-        bincode::deserialize(content).unwrap_or_default();
+    let Ok((metadata, module_data, defs_lookups)): Result<DefCache, _> =
+        bincode::deserialize(content)
+    else {
+        return Default::default();
+    };
+    validate_metadata(crate_id, &metadata, db);
+
     let mut ctx = DefCacheLoadingContext::new(db, defs_lookups, crate_id);
     Some((
         module_data
