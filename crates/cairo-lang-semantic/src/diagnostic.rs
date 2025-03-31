@@ -1033,6 +1033,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        if let SemanticDiagnosticKind::PluginDiagnostic(diag) = &self.kind {
+            if let Some(span) = diag.span {
+                let file_id = self.stable_location.file_id(db.upcast());
+                return DiagnosticLocation { file_id, span };
+            }
+        }
+
         let mut location = self.stable_location.diagnostic_location(db.upcast());
         if self.after {
             location = location.after();
