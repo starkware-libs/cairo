@@ -361,7 +361,7 @@ pub fn panic_with_felt252(err_code: felt252) -> never {
 /// ```
 #[inline(never)]
 pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
-    panic(array![ERR_CODE])
+    panic_with_felt252(ERR_CODE)
 }
 
 /// Panics if `cond` is false with the given `felt252` as error message.
