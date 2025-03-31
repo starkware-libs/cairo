@@ -443,6 +443,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRuleParam => {
             vec![]
         }
+        SyntaxKind::MacroRepetition => {
+            vec![]
+        }
+        SyntaxKind::SeparatorMissing => {
+            vec![]
+        }
         SyntaxKind::ParamIdent => {
             vec![]
         }
