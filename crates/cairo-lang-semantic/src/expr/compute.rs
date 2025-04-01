@@ -465,9 +465,13 @@ fn compute_expr_inline_macro_semantic(
         user_defined_macro
     {
         let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
+        // TODO(Dean): Change this! It's wrong and must be changed in the upcoming expansion PR.
         let expanded_code = macro_rules.iter().find_map(|rule| {
-            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                .map(|captures| expand_macro_rule(ctx.db.upcast(), rule, &captures))
+            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db)).map(|captures| {
+                let ordered_captures: cairo_lang_utils::ordered_hash_map::OrderedHashMap<_, _> =
+                    captures.0.into_iter().map(|(k, v)| (k, v.join(""))).collect();
+                expand_macro_rule(ctx.db.upcast(), rule, &ordered_captures)
+            })
         });
         let Some(expanded_code) = expanded_code else {
             return Err(ctx
