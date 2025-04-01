@@ -127,9 +127,11 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
+        OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::DedupBlocks,
+        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
@@ -140,13 +142,6 @@ pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrate
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
         OptimizationPhase::LowerImplicits,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::DedupBlocks,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
