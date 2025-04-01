@@ -397,19 +397,15 @@ End:
 
 blk1:
 Statements:
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
 End:
-  Goto(blk3, {v3 -> v6, v2 -> v7})
+  Return(v2, v6)
 
 blk2:
 Statements:
+  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
 End:
-  Goto(blk3, {v5 -> v6, v4 -> v7})
-
-blk3:
-Statements:
-  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-End:
-  Return(v7, v8)
+  Return(v4, v7)
 
 //! > ==========================================================================
 
