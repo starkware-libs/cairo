@@ -56,6 +56,16 @@ impl StableLocation {
         let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
         DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
     }
+
+    /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation] with precise span
+    /// that might not exactly match the span of the syntax node.
+    pub fn diagnostic_location_with_span(
+        &self,
+        db: &dyn DefsGroup,
+        span: TextSpan,
+    ) -> DiagnosticLocation {
+        DiagnosticLocation { file_id: self.file_id(db), span }
+    }
 }
 
 impl DebugWithDb<dyn DefsGroup> for StableLocation {
