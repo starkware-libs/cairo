@@ -11,4 +11,8 @@ pub enum Flag {
     ///
     /// Default is false - do not add, as it won't be used in production.
     PanicBacktrace(bool),
+    /// Whether to use unsafe_panic in the generated code.
+    ///
+    /// Default is false as it make panic unprovable.
+    UnsafePanic(bool),
 }
