@@ -1035,8 +1035,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
         if let SemanticDiagnosticKind::PluginDiagnostic(diag) = &self.kind {
             if let Some(span) = diag.span {
-                let file_id = self.stable_location.file_id(db.upcast());
-                return DiagnosticLocation { file_id, span };
+                return self.stable_location.diagnostic_location_with_span(db.upcast(), span);
             }
         }
 
