@@ -127,9 +127,11 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::DedupBlocks,
+        // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
+        OptimizationPhase::ReturnOptimization,
+        OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
@@ -142,13 +144,6 @@ pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrate
         // Apply `TrimUnreachable` after GasRedeposit to remove unreachable `redeposit_gas` calls.
         OptimizationPhase::TrimUnreachable,
         OptimizationPhase::LowerImplicits,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::DedupBlocks,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
     ])
     .intern(db)
