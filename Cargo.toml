@@ -60,6 +60,7 @@ members = [
     "crates/bin/cairo-execute",
     "crates/bin/cairo-format",
     "crates/bin/cairo-run",
+    "crates/bin/cairo-size-profiler",
     "crates/bin/cairo-test",
     "crates/bin/generate-syntax",
     "crates/bin/sierra-compile",
