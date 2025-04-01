@@ -2113,7 +2113,7 @@ fn lower_expr_closure(
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
 
     let usage = ctx.usages.usages[&expr_id].clone();
-    let capture_var_usage = builder.capture(ctx, usage.clone(), expr);
+    let capture_var_usage = builder.capture(ctx, usage, expr);
     let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
     let closure_ty = extract_matches!(expr.ty.lookup_intern(ctx.db), TypeLongId::Closure);
     let _ = add_capture_destruct_impl(

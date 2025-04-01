@@ -517,6 +517,7 @@ dependencies = [
 name = "cairo-lang-defs"
 version = "2.11.2"
 dependencies = [
+ "bincode 1.3.3",
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -688,7 +689,6 @@ dependencies = [
  "pretty_assertions",
  "rust-analyzer-salsa",
  "serde",
- "smol_str",
  "test-log",
 ]
 
@@ -1162,6 +1162,27 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-utils",
  "clap",
+]
+
+[[package]]
+name = "cairo-size-profiler"
+version = "2.11.2"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-executable",
+ "cairo-lang-filesystem",
+ "cairo-lang-runnable-utils",
+ "cairo-lang-runner",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-utils",
+ "clap",
+ "itertools 0.14.0",
 ]
 
 [[package]]

@@ -3,25 +3,23 @@
 mod test;
 
 use std::ops::{Deref, DerefMut};
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::cache::{
+    DefCacheLoadingData, DefCacheSavingContext, GenericParamCached, ImplDefIdCached,
+    LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
+};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionLongId,
-    FunctionWithBodyId, GenericParamId, GenericParamLongId, ImplDefId, ImplDefLongId,
-    ImplFunctionLongId, LanguageElementId, LocalVarId, LocalVarLongId, MemberLongId, ModuleFileId,
-    ModuleId, ParamLongId, PluginGeneratedFileId, PluginGeneratedFileLongId, StatementConstLongId,
-    StatementItemId, StatementUseLongId, StructLongId, SubmoduleId, SubmoduleLongId,
-    TraitConstantId, TraitConstantLongId, TraitFunctionLongId, TraitImplId, TraitImplLongId,
-    TraitLongId, TraitTypeId, TraitTypeLongId, VariantLongId,
+    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId, FunctionWithBodyId,
+    ImplFunctionLongId, LocalVarId, LocalVarLongId, MemberLongId, ParamLongId,
+    StatementConstLongId, StatementItemId, StatementUseLongId, StructLongId, TraitConstantId,
+    TraitConstantLongId, TraitFunctionLongId, TraitImplId, TraitImplLongId, TraitLongId,
+    TraitTypeId, TraitTypeLongId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile,
-};
-use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::constant::{ConstValue, ImplConstantId};
@@ -44,22 +42,16 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::{
-    ExprPtr, FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr,
-    ItemExternFunctionPtr, ItemExternTypePtr, ItemImplPtr, ItemModulePtr, ItemStructPtr,
-    ItemTraitPtr, MemberPtr, ParamPtr, TerminalIdentifierPtr, TraitItemConstantPtr,
-    TraitItemFunctionPtr, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr, VariantPtr,
+    ExprPtr, FunctionWithBodyPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
+    ItemExternTypePtr, ItemStructPtr, ItemTraitPtr, MemberPtr, ParamPtr, TerminalIdentifierPtr,
+    TraitItemConstantPtr, TraitItemFunctionPtr, TraitItemImplPtr, TraitItemTypePtr, UsePathLeafPtr,
+    VariantPtr,
 };
-use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
-use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use id_arena::Arena;
 use num_bigint::BigInt;
-use salsa::InternKey;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::blocks::FlatBlocksBuilder;
@@ -67,7 +59,7 @@ use crate::db::LoweringGroup;
 use crate::ids::{
     FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
 };
-use crate::lower::MultiLowering;
+use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::objects::{
     BlockId, MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
     VariableId,
@@ -87,13 +79,25 @@ pub fn load_cached_crate_functions(
     let Some(content) = db.blob_content(blob_id) else {
         return Default::default();
     };
+
+    let def_size = usize::from_be_bytes(content[..8].try_into().unwrap()); // def_size is the first 8 bytes of the blob.
+
+    let content = &content[16 + def_size..]; // 16 bytes for both sizes.
+
     let (lookups, semantic_lookups, lowerings): (
         CacheLookups,
         SemanticCacheLookups,
         Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>,
-    ) = bincode::deserialize(&content).unwrap_or_default();
+    ) = bincode::deserialize(content).unwrap_or_default();
+
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
-    let mut ctx = CacheLoadingContext::new(db, lookups, semantic_lookups, crate_id);
+
+    let mut ctx = CacheLoadingContext::new(
+        db,
+        lookups,
+        semantic_lookups,
+        db.cached_crate_modules(crate_id)?.1,
+    );
 
     Some(
         lowerings
@@ -130,14 +134,23 @@ pub fn generate_crate_cache(
                 function_ids.push(FunctionWithBodyId::Trait(*trait_func));
             }
         }
+        for trait_id in db.module_traits_ids(*module_id)?.iter() {
+            for trait_func in db.trait_functions(*trait_id)?.values() {
+                function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+            }
+        }
     }
 
     let mut ctx = CacheSavingContext::new(db, crate_id);
+
+    let def_cache =
+        generate_crate_def_cache(db.upcast(), crate_id, &mut ctx.semantic_ctx.defs_ctx)?;
+
     let cached = function_ids
         .iter()
         .filter_map(|id| {
             db.function_body(*id).ok()?;
-            let multi = match db.priv_function_with_body_multi_lowering(*id) {
+            let multi = match lower_semantic_function(db.upcast(), *id).map(Arc::new) {
                 Ok(multi) => multi,
                 Err(err) => return Some(Err(err)),
             };
@@ -149,13 +162,17 @@ pub fn generate_crate_cache(
         })
         .collect::<Maybe<Vec<_>>>()?;
 
-    let artifact = if let Ok(lowered) =
-        bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, cached))
-    {
-        lowered
-    } else {
-        "".into()
-    };
+    let mut artifact = Vec::<u8>::new();
+
+    if let Ok(def) = bincode::serialize(&(def_cache, &ctx.semantic_ctx.defs_ctx.lookups)) {
+        artifact.extend(def.len().to_be_bytes());
+        artifact.extend(def);
+    }
+
+    if let Ok(lowered) = bincode::serialize(&(&ctx.lookups, &ctx.semantic_ctx.lookups, cached)) {
+        artifact.extend(lowered.len().to_be_bytes());
+        artifact.extend(lowered);
+    }
     Ok(Arc::from(artifact.as_slice()))
 }
 
@@ -176,7 +193,7 @@ impl<'db> CacheLoadingContext<'db> {
         db: &'db dyn LoweringGroup,
         lookups: CacheLookups,
         semantic_lookups: SemanticCacheLookups,
-        self_crate_id: CrateId,
+        defs_loading_data: Arc<DefCacheLoadingData>,
     ) -> Self {
         Self {
             flat_lowered_variables_id: Vec::new(),
@@ -188,7 +205,8 @@ impl<'db> CacheLoadingContext<'db> {
             },
             semantic_ctx: SemanticCacheLoadingContext::<'db> {
                 db: db.upcast(),
-                data: SemanticCacheLoadingData::new(semantic_lookups, self_crate_id),
+                data: SemanticCacheLoadingData::new(semantic_lookups),
+                defs_loading_data,
             },
         }
     }
@@ -252,7 +270,7 @@ impl<'db> CacheSavingContext<'db> {
             semantic_ctx: SemanticCacheSavingContext {
                 db: db.upcast(),
                 data: SemanticCacheSavingData::default(),
-                self_crate_id,
+                defs_ctx: DefCacheSavingContext::new(db.upcast(), self_crate_id),
             },
         }
     }
@@ -289,6 +307,7 @@ struct CacheLookups {
 struct SemanticCacheLoadingContext<'db> {
     db: &'db dyn SemanticGroup,
     data: SemanticCacheLoadingData,
+    defs_loading_data: Arc<DefCacheLoadingData>,
 }
 
 impl Deref for SemanticCacheLoadingContext<'_> {
@@ -309,27 +328,15 @@ struct SemanticCacheLoadingData {
     function_ids: OrderedHashMap<SemanticFunctionIdCached, semantic::FunctionId>,
     type_ids: OrderedHashMap<TypeIdCached, TypeId>,
     impl_ids: OrderedHashMap<ImplIdCached, ImplId>,
-    green_ids: OrderedHashMap<GreenIdCached, GreenId>,
-    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrIdCached, SyntaxStablePtrId>,
-    crate_ids: OrderedHashMap<CrateIdCached, CrateId>,
-    submodule_ids: OrderedHashMap<SubmoduleIdCached, SubmoduleId>,
-    file_ids: OrderedHashMap<FileIdCached, FileId>,
-    self_crate_id: CrateId,
     lookups: SemanticCacheLookups,
 }
 
 impl SemanticCacheLoadingData {
-    fn new(lookups: SemanticCacheLookups, self_crate_id: CrateId) -> Self {
+    fn new(lookups: SemanticCacheLookups) -> Self {
         Self {
             function_ids: OrderedHashMap::default(),
             type_ids: OrderedHashMap::default(),
             impl_ids: OrderedHashMap::default(),
-            green_ids: OrderedHashMap::default(),
-            syntax_stable_ptr_ids: OrderedHashMap::default(),
-            crate_ids: OrderedHashMap::default(),
-            submodule_ids: OrderedHashMap::default(),
-            file_ids: OrderedHashMap::default(),
-            self_crate_id,
             lookups,
         }
     }
@@ -352,7 +359,7 @@ impl DerefMut for SemanticCacheLoadingData {
 struct SemanticCacheSavingContext<'db> {
     db: &'db dyn SemanticGroup,
     data: SemanticCacheSavingData,
-    self_crate_id: CrateId,
+    defs_ctx: DefCacheSavingContext<'db>,
 }
 impl Deref for SemanticCacheSavingContext<'_> {
     type Target = SemanticCacheSavingData;
@@ -376,13 +383,6 @@ struct SemanticCacheSavingData {
 
     impl_ids: OrderedHashMap<ImplId, ImplIdCached>,
 
-    green_ids: OrderedHashMap<GreenId, GreenIdCached>,
-    crate_ids: OrderedHashMap<CrateId, CrateIdCached>,
-    submodule_ids: OrderedHashMap<SubmoduleId, SubmoduleIdCached>,
-
-    syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId, SyntaxStablePtrIdCached>,
-    file_ids: OrderedHashMap<FileId, FileIdCached>,
-
     lookups: SemanticCacheLookups,
 }
 
@@ -405,11 +405,6 @@ struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
     impl_ids_lookup: Vec<ImplCached>,
-    green_ids_lookup: Vec<GreenNodeCached>,
-    crate_ids_lookup: Vec<CrateCached>,
-    syntax_stable_ptr_ids_lookup: Vec<SyntaxStablePtrCached>,
-    submodule_ids_lookup: Vec<SubmoduleCached>,
-    file_ids_lookup: Vec<FileCached>,
 }
 
 /// Cached version of [defs::ids::FunctionWithBodyId]
@@ -423,36 +418,36 @@ enum DefsFunctionWithBodyIdCached {
 impl DefsFunctionWithBodyIdCached {
     fn new(id: defs::ids::FunctionWithBodyId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         match id {
-            defs::ids::FunctionWithBodyId::Free(id) => {
-                DefsFunctionWithBodyIdCached::Free(LanguageElementCached::new(id, ctx))
-            }
-            defs::ids::FunctionWithBodyId::Impl(id) => {
-                DefsFunctionWithBodyIdCached::Impl(LanguageElementCached::new(id, ctx))
-            }
-            defs::ids::FunctionWithBodyId::Trait(id) => {
-                DefsFunctionWithBodyIdCached::Trait(LanguageElementCached::new(id, ctx))
-            }
+            defs::ids::FunctionWithBodyId::Free(id) => DefsFunctionWithBodyIdCached::Free(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
+            defs::ids::FunctionWithBodyId::Impl(id) => DefsFunctionWithBodyIdCached::Impl(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
+            defs::ids::FunctionWithBodyId::Trait(id) => DefsFunctionWithBodyIdCached::Trait(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
         }
     }
 
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> defs::ids::FunctionWithBodyId {
         match self {
             DefsFunctionWithBodyIdCached::Free(id) => {
-                let (module_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 defs::ids::FunctionWithBodyId::Free(
                     FreeFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(ctx.db),
                 )
             }
             DefsFunctionWithBodyIdCached::Impl(id) => {
-                let (module_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 defs::ids::FunctionWithBodyId::Impl(
                     ImplFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(ctx.db),
                 )
             }
             DefsFunctionWithBodyIdCached::Trait(id) => {
-                let (module_file_id, function_stable_ptr) = id.embed(ctx);
+                let (module_file_id, function_stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 defs::ids::FunctionWithBodyId::Trait(
                     TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(function_stable_ptr))
                         .intern(ctx.db),
@@ -636,9 +631,9 @@ impl ExprVarMemberPathCached {
                 ty,
             } => ExprVarMemberPathCached::Member {
                 parent: Box::new(ExprVarMemberPathCached::new(*parent, ctx)),
-                member_id: LanguageElementCached::new(member_id, ctx),
+                member_id: LanguageElementCached::new(member_id, &mut ctx.defs_ctx),
                 concrete_struct_id: ConcreteStructCached::new(concrete_struct_id, ctx),
-                stable_ptr: SyntaxStablePtrIdCached::new(stable_ptr.untyped(), ctx),
+                stable_ptr: SyntaxStablePtrIdCached::new(stable_ptr.untyped(), &mut ctx.defs_ctx),
                 ty: TypeIdCached::new(ty, ctx),
             },
         }
@@ -654,14 +649,15 @@ impl ExprVarMemberPathCached {
                 ty,
             } => {
                 let parent = Box::new(parent.embed(ctx));
-                let (module_file_id, member_stable_ptr) = member_id.embed(ctx);
+                let (module_file_id, member_stable_ptr) =
+                    member_id.get_embedded(&ctx.defs_loading_data);
                 let member_id =
                     MemberLongId(module_file_id, MemberPtr(member_stable_ptr)).intern(ctx.db);
                 semantic::ExprVarMemberPath::Member {
                     parent,
                     member_id,
                     concrete_struct_id: concrete_struct_id.embed(ctx),
-                    stable_ptr: ExprPtr(stable_ptr.embed(ctx)),
+                    stable_ptr: ExprPtr(stable_ptr.get_embedded(&ctx.defs_loading_data)),
                     ty: ty.embed(ctx),
                 }
             }
@@ -681,14 +677,17 @@ impl ExprVarCached {
         Self {
             var: SemanticVarIdCached::new(expr_var.var, ctx),
             ty: TypeIdCached::new(expr_var.ty, ctx),
-            stable_ptr: SyntaxStablePtrIdCached::new(expr_var.stable_ptr.untyped(), ctx),
+            stable_ptr: SyntaxStablePtrIdCached::new(
+                expr_var.stable_ptr.untyped(),
+                &mut ctx.defs_ctx,
+            ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ExprVar {
         semantic::ExprVar {
             var: self.var.embed(ctx),
             ty: self.ty.embed(ctx),
-            stable_ptr: ExprPtr(self.stable_ptr.embed(ctx)),
+            stable_ptr: ExprPtr(self.stable_ptr.get_embedded(&ctx.defs_loading_data)),
         }
     }
 }
@@ -728,10 +727,10 @@ struct SemanticParamIdCached {
 }
 impl SemanticParamIdCached {
     fn new(param_id: semantic::ParamId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(param_id, ctx) }
+        Self { language_element: LanguageElementCached::new(param_id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ParamId {
-        let (module_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
         ParamLongId(module_id, ParamPtr(stable_ptr)).intern(ctx.db)
     }
 }
@@ -742,10 +741,10 @@ struct SemanticLocalVarIdCached {
 }
 impl SemanticLocalVarIdCached {
     fn new(local_var_id: LocalVarId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(local_var_id, ctx) }
+        Self { language_element: LanguageElementCached::new(local_var_id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> LocalVarId {
-        let (module_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
         LocalVarLongId(module_id, TerminalIdentifierPtr(stable_ptr)).intern(ctx.db)
     }
 }
@@ -759,24 +758,24 @@ enum SemanticStatementItemIdCached {
 impl SemanticStatementItemIdCached {
     fn new(item_id: StatementItemId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         match item_id {
-            StatementItemId::Constant(id) => {
-                SemanticStatementItemIdCached::Constant(LanguageElementCached::new(id, ctx))
-            }
-            StatementItemId::Use(id) => {
-                SemanticStatementItemIdCached::Use(LanguageElementCached::new(id, ctx))
-            }
+            StatementItemId::Constant(id) => SemanticStatementItemIdCached::Constant(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
+            StatementItemId::Use(id) => SemanticStatementItemIdCached::Use(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> StatementItemId {
         match self {
             SemanticStatementItemIdCached::Constant(id) => {
-                let (module_id, stable_ptr) = id.embed(ctx);
+                let (module_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 StatementItemId::Constant(
                     StatementConstLongId(module_id, ItemConstantPtr(stable_ptr)).intern(ctx.db),
                 )
             }
             SemanticStatementItemIdCached::Use(id) => {
-                let (module_id, stable_ptr) = id.embed(ctx);
+                let (module_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 StatementItemId::Use(
                     StatementUseLongId(module_id, UsePathLeafPtr(stable_ptr)).intern(ctx.db),
                 )
@@ -1268,7 +1267,7 @@ impl ConstValueCached {
                 ConstValueCached::Boxed(Box::new(ConstValueCached::new(*value, ctx)))
             }
             ConstValue::Generic(generic_param) => {
-                ConstValueCached::Generic(GenericParamCached::new(generic_param, ctx))
+                ConstValueCached::Generic(GenericParamCached::new(generic_param, &mut ctx.defs_ctx))
             }
             ConstValue::ImplConstant(impl_constant_id) => {
                 ConstValueCached::ImplConstant(ImplConstantCached::new(impl_constant_id, ctx))
@@ -1293,9 +1292,9 @@ impl ConstValueCached {
             }
             ConstValueCached::NonZero(value) => ConstValue::NonZero(Box::new(value.embed(ctx))),
             ConstValueCached::Boxed(value) => ConstValue::Boxed(Box::new(value.embed(ctx))),
-            ConstValueCached::Generic(generic_param) => {
-                ConstValue::Generic(generic_param.embed(ctx))
-            }
+            ConstValueCached::Generic(generic_param) => ConstValue::Generic(
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
+            ),
             ConstValueCached::ImplConstant(impl_constant_id) => {
                 ConstValue::ImplConstant(impl_constant_id.embed(ctx))
             }
@@ -1326,10 +1325,10 @@ struct TraitConstantCached {
 }
 impl TraitConstantCached {
     fn new(trait_constant_id: TraitConstantId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(trait_constant_id, ctx) }
+        Self { language_element: LanguageElementCached::new(trait_constant_id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> TraitConstantId {
-        let (module_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
         TraitConstantLongId(module_id, TraitItemConstantPtr(stable_ptr)).intern(ctx.db)
     }
 }
@@ -1500,34 +1499,34 @@ impl GenericFunctionCached {
     fn new(generic_function: GenericFunctionId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         match generic_function {
             GenericFunctionId::Free(id) => {
-                GenericFunctionCached::Free(LanguageElementCached::new(id, ctx))
+                GenericFunctionCached::Free(LanguageElementCached::new(id, &mut ctx.defs_ctx))
             }
             GenericFunctionId::Extern(id) => {
-                GenericFunctionCached::Extern(LanguageElementCached::new(id, ctx))
+                GenericFunctionCached::Extern(LanguageElementCached::new(id, &mut ctx.defs_ctx))
             }
             GenericFunctionId::Impl(id) => GenericFunctionCached::Impl(
                 ImplIdCached::new(id.impl_id, ctx),
-                LanguageElementCached::new(id.function, ctx),
+                LanguageElementCached::new(id.function, &mut ctx.defs_ctx),
             ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericFunctionId {
         match self {
             GenericFunctionCached::Free(id) => {
-                let (module_id, stable_ptr) = id.embed(ctx);
+                let (module_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 let id =
                     FreeFunctionLongId(module_id, FunctionWithBodyPtr(stable_ptr)).intern(ctx.db);
                 GenericFunctionId::Free(id)
             }
             GenericFunctionCached::Extern(id) => {
-                let (module_id, stable_ptr) = id.embed(ctx);
+                let (module_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 let id = ExternFunctionLongId(module_id, ItemExternFunctionPtr(stable_ptr))
                     .intern(ctx.db);
                 GenericFunctionId::Extern(id)
             }
             GenericFunctionCached::Impl(id, name) => {
                 let impl_id = id.embed(ctx);
-                let (module_file_id, stable_ptr) = name.embed(ctx);
+                let (module_file_id, stable_ptr) = name.get_embedded(&ctx.defs_loading_data);
                 let trait_function_id =
                     TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
                         .intern(ctx.db);
@@ -1609,23 +1608,23 @@ impl GenericFunctionWithBodyCached {
         ctx: &mut SemanticCacheSavingContext<'_>,
     ) -> Self {
         match generic_function {
-            GenericFunctionWithBodyId::Free(id) => {
-                GenericFunctionWithBodyCached::Free(LanguageElementCached::new(id, ctx))
-            }
+            GenericFunctionWithBodyId::Free(id) => GenericFunctionWithBodyCached::Free(
+                LanguageElementCached::new(id, &mut ctx.defs_ctx),
+            ),
             GenericFunctionWithBodyId::Impl(id) => GenericFunctionWithBodyCached::Impl(
                 ConcreteImplCached::new(id.concrete_impl_id, ctx),
                 ImplFunctionBodyCached::new(id.function_body, ctx),
             ),
             GenericFunctionWithBodyId::Trait(id) => GenericFunctionWithBodyCached::Trait(
                 ConcreteTraitCached::new(id.concrete_trait(ctx.db), ctx),
-                LanguageElementCached::new(id.trait_function(ctx.db), ctx),
+                LanguageElementCached::new(id.trait_function(ctx.db), &mut ctx.defs_ctx),
             ),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericFunctionWithBodyId {
         match self {
             GenericFunctionWithBodyCached::Free(id) => {
-                let (module_id, stable_ptr) = id.embed(ctx);
+                let (module_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 let id =
                     FreeFunctionLongId(module_id, FunctionWithBodyPtr(stable_ptr)).intern(ctx.db);
                 GenericFunctionWithBodyId::Free(id)
@@ -1639,7 +1638,7 @@ impl GenericFunctionWithBodyCached {
             }
             GenericFunctionWithBodyCached::Trait(id, name) => {
                 let concrete_trait_id = id.embed(ctx);
-                let (module_file_id, stable_ptr) = name.embed(ctx);
+                let (module_file_id, stable_ptr) = name.get_embedded(&ctx.defs_loading_data);
                 let trait_function_id =
                     TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
                         .intern(ctx.db);
@@ -1668,24 +1667,24 @@ impl ImplFunctionBodyCached {
     fn new(function_body: ImplFunctionBodyId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         match function_body {
             ImplFunctionBodyId::Impl(id) => {
-                ImplFunctionBodyCached::Impl(LanguageElementCached::new(id, ctx))
+                ImplFunctionBodyCached::Impl(LanguageElementCached::new(id, &mut ctx.defs_ctx))
             }
             ImplFunctionBodyId::Trait(id) => {
-                ImplFunctionBodyCached::Trait(LanguageElementCached::new(id, ctx))
+                ImplFunctionBodyCached::Trait(LanguageElementCached::new(id, &mut ctx.defs_ctx))
             }
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ImplFunctionBodyId {
         match self {
             ImplFunctionBodyCached::Impl(id) => {
-                let (module_file_id, stable_ptr) = id.embed(ctx);
+                let (module_file_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 ImplFunctionBodyId::Impl(
                     ImplFunctionLongId(module_file_id, FunctionWithBodyPtr(stable_ptr))
                         .intern(ctx.db),
                 )
             }
             ImplFunctionBodyCached::Trait(id) => {
-                let (module_file_id, stable_ptr) = id.embed(ctx);
+                let (module_file_id, stable_ptr) = id.get_embedded(&ctx.defs_loading_data);
                 ImplFunctionBodyId::Trait(
                     TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
                         .intern(ctx.db),
@@ -1705,14 +1704,14 @@ impl GeneratedFunctionKeyCached {
     fn new(key: GeneratedFunctionKey, ctx: &mut CacheSavingContext<'_>) -> Self {
         match key {
             GeneratedFunctionKey::Loop(id) => GeneratedFunctionKeyCached::Loop(
-                SyntaxStablePtrIdCached::new(id.untyped(), &mut ctx.semantic_ctx),
+                SyntaxStablePtrIdCached::new(id.untyped(), &mut ctx.semantic_ctx.defs_ctx),
             ),
             GeneratedFunctionKey::TraitFunc(id, stable_location) => {
                 GeneratedFunctionKeyCached::TraitFunc(
-                    LanguageElementCached::new(id, &mut ctx.semantic_ctx),
+                    LanguageElementCached::new(id, &mut ctx.semantic_ctx.defs_ctx),
                     SyntaxStablePtrIdCached::new(
                         stable_location.stable_ptr(),
-                        &mut ctx.semantic_ctx,
+                        &mut ctx.semantic_ctx.defs_ctx,
                     ),
                 )
             }
@@ -1720,15 +1719,18 @@ impl GeneratedFunctionKeyCached {
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> GeneratedFunctionKey {
         match self {
-            GeneratedFunctionKeyCached::Loop(id) => {
-                GeneratedFunctionKey::Loop(ExprPtr(id.embed(&mut ctx.semantic_ctx)))
-            }
+            GeneratedFunctionKeyCached::Loop(id) => GeneratedFunctionKey::Loop(ExprPtr(
+                id.get_embedded(&ctx.semantic_ctx.defs_loading_data),
+            )),
             GeneratedFunctionKeyCached::TraitFunc(id, stable_location) => {
-                let (module_file_id, stable_ptr) = id.embed(&mut ctx.semantic_ctx);
+                let (module_file_id, stable_ptr) =
+                    id.get_embedded(&ctx.semantic_ctx.defs_loading_data);
                 GeneratedFunctionKey::TraitFunc(
                     TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
                         .intern(ctx.db),
-                    StableLocation::new(stable_location.embed(&mut ctx.semantic_ctx)),
+                    StableLocation::new(
+                        stable_location.get_embedded(&ctx.semantic_ctx.defs_loading_data),
+                    ),
                 )
             }
         }
@@ -1914,7 +1916,10 @@ impl TypeCached {
                 TypeCached::Snapshot(Box::new(TypeIdCached::new(type_id, ctx)))
             }
             semantic::TypeLongId::GenericParameter(generic_param_id) => {
-                TypeCached::GenericParameter(GenericParamCached::new(generic_param_id, ctx))
+                TypeCached::GenericParameter(GenericParamCached::new(
+                    generic_param_id,
+                    &mut ctx.defs_ctx,
+                ))
             }
             semantic::TypeLongId::ImplType(impl_type_id) => {
                 TypeCached::ImplType(ImplTypeCached::new(impl_type_id, ctx))
@@ -1941,9 +1946,9 @@ impl TypeCached {
                 TypeLongId::Tuple(vec.into_iter().map(|ty| ty.embed(ctx)).collect())
             }
             TypeCached::Snapshot(type_id) => TypeLongId::Snapshot(type_id.embed(ctx)),
-            TypeCached::GenericParameter(generic_param) => {
-                TypeLongId::GenericParameter(generic_param.embed(ctx))
-            }
+            TypeCached::GenericParameter(generic_param) => TypeLongId::GenericParameter(
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
+            ),
             TypeCached::ImplType(impl_type) => TypeLongId::ImplType(impl_type.embed(ctx)),
             TypeCached::FixedSizeArray(type_id, size) => TypeLongId::FixedSizeArray {
                 type_id: type_id.embed(ctx),
@@ -2060,7 +2065,7 @@ impl ClosureTypeCached {
             ),
             wrapper_location: SyntaxStablePtrIdCached::new(
                 closure_type_id.wrapper_location.stable_ptr(),
-                ctx,
+                &mut ctx.defs_ctx,
             ),
         }
     }
@@ -2070,7 +2075,9 @@ impl ClosureTypeCached {
             ret_ty: self.ret_ty.embed(ctx),
             captured_types: self.captured_types.into_iter().map(|ty| ty.embed(ctx)).collect(),
             parent_function: Ok(self.parent_function.embed(ctx)),
-            wrapper_location: StableLocation::new(self.wrapper_location.embed(ctx)),
+            wrapper_location: StableLocation::new(
+                self.wrapper_location.get_embedded(&ctx.defs_loading_data),
+            ),
         }
     }
 }
@@ -2081,10 +2088,11 @@ struct TraitTypeCached {
 }
 impl TraitTypeCached {
     fn new(trait_type_id: TraitTypeId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(trait_type_id, ctx) }
+        Self { language_element: LanguageElementCached::new(trait_type_id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> TraitTypeId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_file_id, stable_ptr) =
+            self.language_element.get_embedded(&ctx.defs_loading_data);
         TraitTypeLongId(module_file_id, TraitItemTypePtr(stable_ptr)).intern(ctx.db)
     }
 }
@@ -2103,9 +2111,9 @@ impl ImplCached {
             ImplLongId::Concrete(concrete_impl) => {
                 ImplCached::Concrete(ConcreteImplCached::new(concrete_impl, ctx))
             }
-            ImplLongId::GenericParameter(generic_param_id) => {
-                ImplCached::GenericParameter(GenericParamCached::new(generic_param_id, ctx))
-            }
+            ImplLongId::GenericParameter(generic_param_id) => ImplCached::GenericParameter(
+                GenericParamCached::new(generic_param_id, &mut ctx.defs_ctx),
+            ),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 ImplCached::GeneratedImpl(GeneratedImplCached::new(generated_impl, ctx))
             }
@@ -2126,10 +2134,10 @@ impl ImplCached {
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ImplLongId {
         match self {
             ImplCached::Concrete(concrete_impl) => ImplLongId::Concrete(concrete_impl.embed(ctx)),
-            ImplCached::GenericParameter(generic_param) => {
-                ImplLongId::GenericParameter(generic_param.embed(ctx))
-            }
             ImplCached::ImplImpl(impl_impl) => ImplLongId::ImplImpl(impl_impl.embed(ctx)),
+            ImplCached::GenericParameter(generic_param) => ImplLongId::GenericParameter(
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
+            ),
             ImplCached::GeneratedImpl(generated_impl) => {
                 ImplLongId::GeneratedImpl(generated_impl.embed(ctx))
             }
@@ -2175,7 +2183,7 @@ impl ConcreteImplCached {
     ) -> Self {
         let long_id = concrete_impl.lookup_intern(ctx.db);
         Self {
-            impl_def_id: ImplDefIdCached::new(long_id.impl_def_id, ctx),
+            impl_def_id: ImplDefIdCached::new(long_id.impl_def_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
                 .into_iter()
@@ -2184,7 +2192,7 @@ impl ConcreteImplCached {
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteImplId {
-        let impl_def_id = self.impl_def_id.embed(ctx);
+        let impl_def_id = self.impl_def_id.get_embedded(&ctx.defs_loading_data);
         let long_id = ConcreteImplLongId {
             impl_def_id,
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
@@ -2218,10 +2226,11 @@ struct TraitImplCached {
 }
 impl TraitImplCached {
     fn new(trait_impl_id: TraitImplId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(trait_impl_id, ctx) }
+        Self { language_element: LanguageElementCached::new(trait_impl_id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> TraitImplId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_file_id, stable_ptr) =
+            self.language_element.get_embedded(&ctx.defs_loading_data);
         TraitImplLongId(module_file_id, TraitItemImplPtr(stable_ptr)).intern(ctx.db)
     }
 }
@@ -2313,10 +2322,10 @@ struct GenericParamTypeCached {
 
 impl GenericParamTypeCached {
     fn new(generic_param: GenericParamType, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { id: GenericParamCached::new(generic_param.id, ctx) }
+        Self { id: GenericParamCached::new(generic_param.id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamType {
-        GenericParamType { id: self.id.embed(ctx) }
+        GenericParamType { id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()) }
     }
 }
 
@@ -2329,12 +2338,15 @@ struct GenericParamConstCached {
 impl GenericParamConstCached {
     fn new(generic_param: GenericParamConst, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         Self {
-            id: GenericParamCached::new(generic_param.id, ctx),
+            id: GenericParamCached::new(generic_param.id, &mut ctx.defs_ctx),
             ty: TypeIdCached::new(generic_param.ty, ctx),
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamConst {
-        GenericParamConst { id: self.id.embed(ctx), ty: self.ty.embed(ctx) }
+        GenericParamConst {
+            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
+            ty: self.ty.embed(ctx),
+        }
     }
 }
 
@@ -2348,7 +2360,7 @@ struct GenericParamImplCached {
 impl GenericParamImplCached {
     fn new(generic_param: GenericParamImpl, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
         Self {
-            id: GenericParamCached::new(generic_param.id, ctx),
+            id: GenericParamCached::new(generic_param.id, &mut ctx.defs_ctx),
             concrete_trait: ConcreteTraitCached::new(generic_param.concrete_trait.unwrap(), ctx),
 
             type_constraints: generic_param
@@ -2360,7 +2372,7 @@ impl GenericParamImplCached {
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamImpl {
         GenericParamImpl {
-            id: self.id.embed(ctx),
+            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
             concrete_trait: Ok(self.concrete_trait.embed(ctx)),
             type_constraints: self
                 .type_constraints
@@ -2368,34 +2380,6 @@ impl GenericParamImplCached {
                 .map(|(k, v)| (k.embed(ctx), v.embed(ctx)))
                 .collect(),
         }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct ImplDefIdCached {
-    language_element: LanguageElementCached,
-}
-impl ImplDefIdCached {
-    fn new(impl_def_id: ImplDefId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(impl_def_id, ctx) }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ImplDefId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
-        ImplDefLongId(module_file_id, ItemImplPtr(stable_ptr)).intern(ctx.db)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct GenericParamCached {
-    language_element: LanguageElementCached,
-}
-impl GenericParamCached {
-    fn new(generic_param_id: GenericParamId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(generic_param_id, ctx) }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
-        GenericParamLongId(module_file_id, GenericParamPtr(stable_ptr)).intern(ctx.db)
     }
 }
 
@@ -2414,7 +2398,7 @@ impl ConcreteVariantCached {
     ) -> Self {
         Self {
             concrete_enum_id: ConcreteEnumCached::new(concrete_variant.concrete_enum_id, ctx),
-            id: LanguageElementCached::new(concrete_variant.id, ctx),
+            id: LanguageElementCached::new(concrete_variant.id, &mut ctx.defs_ctx),
             ty: TypeIdCached::new(concrete_variant.ty, ctx),
             idx: concrete_variant.idx,
         }
@@ -2422,7 +2406,7 @@ impl ConcreteVariantCached {
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteVariant {
         let concrete_enum_id = self.concrete_enum_id.embed(ctx);
         let ty = self.ty.embed(ctx);
-        let (module_file_id, stable_ptr) = self.id.embed(ctx);
+        let (module_file_id, stable_ptr) = self.id.get_embedded(&ctx.defs_loading_data);
 
         let id = VariantLongId(module_file_id, VariantPtr(stable_ptr)).intern(ctx.db);
         semantic::ConcreteVariant { concrete_enum_id, id, ty, idx: self.idx }
@@ -2442,7 +2426,7 @@ impl ConcreteEnumCached {
     ) -> Self {
         let long_id = concrete_enum.lookup_intern(ctx.db);
         Self {
-            enum_id: LanguageElementCached::new(long_id.enum_id, ctx),
+            enum_id: LanguageElementCached::new(long_id.enum_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
                 .into_iter()
@@ -2451,7 +2435,7 @@ impl ConcreteEnumCached {
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteEnumId {
-        let (module_file_id, stable_ptr) = self.enum_id.embed(ctx);
+        let (module_file_id, stable_ptr) = self.enum_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteEnumLongId {
             enum_id: EnumLongId(module_file_id, ItemEnumPtr(stable_ptr)).intern(ctx.db),
@@ -2473,7 +2457,7 @@ impl ConcreteStructCached {
     ) -> Self {
         let long_id = concrete_struct.lookup_intern(ctx.db);
         Self {
-            struct_id: LanguageElementCached::new(long_id.struct_id, ctx),
+            struct_id: LanguageElementCached::new(long_id.struct_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
                 .into_iter()
@@ -2482,7 +2466,7 @@ impl ConcreteStructCached {
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteStructId {
-        let (module_file_id, stable_ptr) = self.struct_id.embed(ctx);
+        let (module_file_id, stable_ptr) = self.struct_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteStructLongId {
             struct_id: StructLongId(module_file_id, ItemStructPtr(stable_ptr)).intern(ctx.db),
@@ -2504,7 +2488,7 @@ impl ConcreteExternTypeCached {
     ) -> Self {
         let long_id = concrete_extern_type.lookup_intern(ctx.db);
         Self {
-            language_element: LanguageElementCached::new(long_id.extern_type_id, ctx),
+            language_element: LanguageElementCached::new(long_id.extern_type_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
                 .into_iter()
@@ -2513,7 +2497,8 @@ impl ConcreteExternTypeCached {
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteExternTypeId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_file_id, stable_ptr) =
+            self.language_element.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteExternTypeLongId {
             extern_type_id: ExternTypeLongId(module_file_id, ItemExternTypePtr(stable_ptr))
@@ -2537,7 +2522,7 @@ impl ConcreteTraitCached {
     ) -> Self {
         let long_id = concrete_trait.lookup_intern(ctx.db);
         Self {
-            trait_id: LanguageElementCached::new(long_id.trait_id, ctx),
+            trait_id: LanguageElementCached::new(long_id.trait_id, &mut ctx.defs_ctx),
             generic_args: long_id
                 .generic_args
                 .into_iter()
@@ -2546,181 +2531,13 @@ impl ConcreteTraitCached {
         }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> semantic::ConcreteTraitId {
-        let (module_file_id, stable_ptr) = self.trait_id.embed(ctx);
+        let (module_file_id, stable_ptr) = self.trait_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteTraitLongId {
             trait_id: TraitLongId(module_file_id, ItemTraitPtr(stable_ptr)).intern(ctx.db),
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
         long_id.intern(ctx.db)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-struct ModuleFileCached {
-    module: ModuleIdCached,
-    file_index: usize,
-}
-impl ModuleFileCached {
-    fn new(module_file_id: ModuleFileId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { module: ModuleIdCached::new(module_file_id.0, ctx), file_index: module_file_id.1.0 }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ModuleFileId {
-        ModuleFileId(self.module.embed(ctx), FileIndex(self.file_index))
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-enum ModuleIdCached {
-    CrateRoot(CrateIdCached),
-    Submodule(SubmoduleIdCached),
-}
-impl ModuleIdCached {
-    fn new(module_id: ModuleId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        match module_id {
-            ModuleId::CrateRoot(crate_id) => {
-                ModuleIdCached::CrateRoot(CrateIdCached::new(crate_id, ctx))
-            }
-            ModuleId::Submodule(submodule_id) => {
-                ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
-            }
-        }
-    }
-    fn embed(&self, ctx: &mut SemanticCacheLoadingContext<'_>) -> ModuleId {
-        match self {
-            ModuleIdCached::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id.embed(ctx)),
-            ModuleIdCached::Submodule(submodule_id) => ModuleId::Submodule(submodule_id.embed(ctx)),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-enum CrateCached {
-    Real { name: SmolStr, discriminator: Option<SmolStr> },
-    Virtual { name: SmolStr, file_id: FileIdCached, settings: String },
-}
-impl CrateCached {
-    fn new(crate_id: CrateLongId, _ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        match crate_id {
-            CrateLongId::Real { name, discriminator } => CrateCached::Real { name, discriminator },
-            CrateLongId::Virtual { name, file_id, settings, cache_file: _ } => {
-                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, _ctx), settings }
-            }
-        }
-    }
-    fn embed(self, _ctx: &mut SemanticCacheLoadingContext<'_>) -> CrateLongId {
-        match self {
-            CrateCached::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
-            CrateCached::Virtual { name, file_id, settings } => {
-                CrateLongId::Virtual {
-                    name,
-                    file_id: file_id.embed(_ctx),
-                    settings,
-                    cache_file: None, // todo  if two virtual crates are supported
-                }
-            }
-        }
-    }
-}
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
-enum CrateIdCached {
-    SelfCrate,
-    Other(usize),
-}
-impl CrateIdCached {
-    fn new(crate_id: CrateId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        if crate_id == ctx.self_crate_id {
-            return CrateIdCached::SelfCrate;
-        }
-        if let Some(id) = ctx.crate_ids.get(&crate_id) {
-            return *id;
-        }
-        let crate_long_id = CrateCached::new(crate_id.lookup_intern(ctx.db), ctx);
-        let id = CrateIdCached::Other(ctx.crate_ids_lookup.len());
-        ctx.crate_ids_lookup.push(crate_long_id);
-        ctx.crate_ids.insert(crate_id, id);
-        id
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> CrateId {
-        let CrateIdCached::Other(id) = self else {
-            return ctx.self_crate_id;
-        };
-
-        if let Some(crate_id) = ctx.crate_ids.get(&self) {
-            return *crate_id;
-        }
-        let crate_long_id = ctx.crate_ids_lookup[id].clone();
-        let crate_id = crate_long_id.embed(ctx).intern(ctx.db);
-        ctx.crate_ids.insert(self, crate_id);
-        crate_id
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct SubmoduleCached {
-    language_element: LanguageElementCached,
-}
-impl SubmoduleCached {
-    fn new(submodule_id: SubmoduleLongId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self { language_element: LanguageElementCached::new(submodule_id.intern(ctx.db), ctx) }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> SubmoduleLongId {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
-
-        SubmoduleLongId(module_file_id, ItemModulePtr(stable_ptr))
-    }
-}
-
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
-struct SubmoduleIdCached(usize);
-
-impl SubmoduleIdCached {
-    fn new(submodule_id: SubmoduleId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        if let Some(id) = ctx.submodule_ids.get(&submodule_id) {
-            return *id;
-        }
-        let submodule = SubmoduleCached::new(submodule_id.lookup_intern(ctx.db), ctx);
-        let id = SubmoduleIdCached(ctx.submodule_ids_lookup.len());
-        ctx.submodule_ids_lookup.push(submodule);
-        ctx.submodule_ids.insert(submodule_id, id);
-        id
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> SubmoduleId {
-        if let Some(submodule_id) = ctx.submodule_ids.get(&self) {
-            return *submodule_id;
-        }
-        let submodule = ctx.submodule_ids_lookup[self.0].clone();
-        let submodule = submodule.embed(ctx).intern(ctx.db);
-        ctx.submodule_ids.insert(self, submodule);
-        submodule
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-struct LanguageElementCached {
-    module_file_id: ModuleFileCached,
-    stable_ptr: SyntaxStablePtrIdCached,
-}
-impl LanguageElementCached {
-    fn new<T: LanguageElementId>(
-        language_element: T,
-        ctx: &mut SemanticCacheSavingContext<'_>,
-    ) -> Self {
-        Self {
-            module_file_id: ModuleFileCached::new(
-                language_element.module_file_id(ctx.db.upcast()),
-                ctx,
-            ),
-            stable_ptr: SyntaxStablePtrIdCached::new(
-                language_element.untyped_stable_ptr(ctx.db.upcast()),
-                ctx,
-            ),
-        }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> (ModuleFileId, SyntaxStablePtrId) {
-        let module_file_id = self.module_file_id.embed(ctx);
-        let stable_ptr = self.stable_ptr.embed(ctx);
-        (module_file_id, stable_ptr)
     }
 }
 
@@ -2736,22 +2553,28 @@ impl LocationCached {
         Self {
             stable_location: SyntaxStablePtrIdCached::new(
                 location.stable_location.stable_ptr(),
-                &mut ctx.semantic_ctx,
+                &mut ctx.semantic_ctx.defs_ctx,
             ),
             inline_locations: location
                 .inline_locations
                 .iter()
-                .map(|loc| SyntaxStablePtrIdCached::new(loc.stable_ptr(), &mut ctx.semantic_ctx))
+                .map(|loc| {
+                    SyntaxStablePtrIdCached::new(loc.stable_ptr(), &mut ctx.semantic_ctx.defs_ctx)
+                })
                 .collect(),
         }
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> Location {
         Location {
-            stable_location: StableLocation::new(self.stable_location.embed(&mut ctx.semantic_ctx)),
+            stable_location: StableLocation::new(
+                self.stable_location.get_embedded(&ctx.semantic_ctx.defs_loading_data),
+            ),
             inline_locations: self
                 .inline_locations
                 .into_iter()
-                .map(|loc| StableLocation::new(loc.embed(&mut ctx.semantic_ctx)))
+                .map(|loc| {
+                    StableLocation::new(loc.get_embedded(&ctx.semantic_ctx.defs_loading_data))
+                })
                 .collect(),
             notes: Default::default(),
         }
@@ -2780,280 +2603,5 @@ impl LocationIdCached {
         let location = location.embed(ctx).intern(ctx.db);
         ctx.location_ids.insert(self, location);
         location
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-enum SyntaxStablePtrCached {
-    /// The root node of the tree.
-    Root(FileIdCached, GreenIdCached),
-    /// A child node.
-    Child {
-        /// The parent of the node.
-        parent: SyntaxStablePtrIdCached,
-        /// The SyntaxKind of the node.
-        kind: SyntaxKind,
-        /// A list of field values for this node, to index by.
-        /// Which fields are used is determined by each SyntaxKind.
-        /// For example, a function item might use the name of the function.
-        key_fields: Vec<GreenIdCached>,
-        /// Chronological index among all nodes with the same (parent, kind, key_fields).
-        index: usize,
-    },
-}
-
-impl SyntaxStablePtrCached {
-    fn new(syntax_stable_ptr: SyntaxStablePtr, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        match syntax_stable_ptr {
-            SyntaxStablePtr::Root(root, green_id) => SyntaxStablePtrCached::Root(
-                FileIdCached::new(root, ctx),
-                GreenIdCached::new(green_id, ctx),
-            ),
-            SyntaxStablePtr::Child { parent, kind, key_fields, index } => {
-                SyntaxStablePtrCached::Child {
-                    parent: SyntaxStablePtrIdCached::new(parent, ctx),
-                    kind,
-                    key_fields: key_fields
-                        .into_iter()
-                        .map(|field| GreenIdCached::new(field, ctx))
-                        .collect(),
-                    index,
-                }
-            }
-        }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> SyntaxStablePtr {
-        match self {
-            SyntaxStablePtrCached::Root(file, green_id) => {
-                SyntaxStablePtr::Root(file.embed(ctx), green_id.embed(ctx))
-            }
-            SyntaxStablePtrCached::Child { parent, kind, key_fields, index } => {
-                SyntaxStablePtr::Child {
-                    parent: parent.embed(ctx),
-                    kind,
-                    key_fields: key_fields.into_iter().map(|field| field.embed(ctx)).collect(),
-                    index,
-                }
-            }
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
-struct SyntaxStablePtrIdCached(usize);
-impl SyntaxStablePtrIdCached {
-    fn new(
-        syntax_stable_ptr_id: SyntaxStablePtrId,
-        ctx: &mut SemanticCacheSavingContext<'_>,
-    ) -> Self {
-        if let Some(id) = ctx.syntax_stable_ptr_ids.get(&syntax_stable_ptr_id) {
-            return *id;
-        }
-        let stable_ptr =
-            SyntaxStablePtrCached::new(syntax_stable_ptr_id.lookup_intern(ctx.db), ctx);
-        let id = SyntaxStablePtrIdCached(ctx.syntax_stable_ptr_ids_lookup.len());
-        ctx.syntax_stable_ptr_ids_lookup.push(stable_ptr);
-        ctx.syntax_stable_ptr_ids.insert(syntax_stable_ptr_id, id);
-        id
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> SyntaxStablePtrId {
-        if let Some(syntax_stable_ptr_id) = ctx.syntax_stable_ptr_ids.get(&self) {
-            return *syntax_stable_ptr_id;
-        }
-        let stable_ptr = ctx.syntax_stable_ptr_ids_lookup[self.0].clone();
-        let stable_ptr = stable_ptr.embed(ctx);
-        let stable_ptr_id = stable_ptr.intern(ctx.db);
-        ctx.syntax_stable_ptr_ids.insert(self, stable_ptr_id);
-        stable_ptr_id
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-enum GreenNodeDetailsCached {
-    Token(SmolStr),
-    Node { children: Vec<GreenIdCached>, width: TextWidth },
-}
-
-impl GreenNodeDetailsCached {
-    fn new(
-        green_node_details: &GreenNodeDetails,
-        ctx: &mut SemanticCacheSavingContext<'_>,
-    ) -> GreenNodeDetailsCached {
-        match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token(token.clone()),
-            GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
-                children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
-                width: *width,
-            },
-        }
-    }
-    fn embed(&self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GreenNodeDetails {
-        match self {
-            GreenNodeDetailsCached::Token(token) => GreenNodeDetails::Token(token.clone()),
-            GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
-                children: children.iter().map(|child| child.embed(ctx)).collect(),
-                width: *width,
-            },
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct GreenNodeCached {
-    kind: SyntaxKind,
-    details: GreenNodeDetailsCached,
-}
-impl GreenNodeCached {
-    fn new(green_node: &GreenNode, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self {
-            kind: green_node.kind,
-            details: GreenNodeDetailsCached::new(&green_node.details, ctx),
-        }
-    }
-    fn embed(&self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GreenNode {
-        GreenNode { kind: self.kind, details: self.details.embed(ctx) }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq)]
-struct GreenIdCached(usize);
-
-impl GreenIdCached {
-    fn new(green_id: GreenId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        if let Some(id) = ctx.green_ids.get(&green_id) {
-            return *id;
-        }
-        let green_node = GreenNodeCached::new(green_id.lookup_intern(ctx.db).as_ref(), ctx);
-        let id = GreenIdCached(ctx.green_ids_lookup.len());
-        ctx.green_ids_lookup.push(green_node);
-        ctx.green_ids.insert(green_id, id);
-        id
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GreenId {
-        if let Some(green_id) = ctx.green_ids.get(&self) {
-            return *green_id;
-        }
-        let green_node = ctx.green_ids_lookup[self.0].clone();
-        let green_node = Arc::new(green_node.embed(ctx));
-        let green_id = green_node.intern(ctx.db);
-        ctx.green_ids.insert(self, green_id);
-        green_id
-    }
-}
-#[derive(Serialize, Deserialize, Clone)]
-enum FileCached {
-    OnDisk(PathBuf),
-    Virtual(VirtualFileCached),
-    External(PluginGeneratedFileCached),
-}
-
-impl FileCached {
-    fn new(file: &FileLongId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        match file {
-            FileLongId::OnDisk(path) => FileCached::OnDisk(path.clone()),
-            FileLongId::Virtual(virtual_file) => {
-                FileCached::Virtual(VirtualFileCached::new(virtual_file, ctx))
-            }
-            FileLongId::External(external_file) => {
-                FileCached::External(PluginGeneratedFileCached::new(
-                    PluginGeneratedFileId::from_intern_id(*external_file),
-                    ctx,
-                ))
-            }
-        }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> FileLongId {
-        match self {
-            FileCached::OnDisk(path) => FileLongId::OnDisk(path),
-            FileCached::Virtual(virtual_file) => FileLongId::Virtual(virtual_file.embed(ctx)),
-            FileCached::External(external_file) => {
-                FileLongId::External(external_file.embed(ctx).as_intern_id())
-            }
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq)]
-struct FileIdCached(usize);
-impl FileIdCached {
-    fn new(file_id: FileId, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        if let Some(id) = ctx.file_ids.get(&file_id) {
-            return *id;
-        }
-        let file = FileCached::new(&file_id.lookup_intern(ctx.db), ctx);
-        let id = FileIdCached(ctx.file_ids_lookup.len());
-        ctx.file_ids_lookup.push(file);
-        ctx.file_ids.insert(file_id, id);
-        id
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> FileId {
-        if let Some(file_id) = ctx.file_ids.get(&self) {
-            return *file_id;
-        }
-        let file = ctx.file_ids_lookup[self.0].clone();
-        let file = file.embed(ctx);
-        let file_id = file.intern(ctx.db);
-        ctx.file_ids.insert(self, file_id);
-        file_id
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct VirtualFileCached {
-    parent: Option<FileIdCached>,
-    name: SmolStr,
-    content: String,
-    code_mappings: Vec<CodeMapping>,
-    kind: FileKind,
-}
-
-impl VirtualFileCached {
-    fn new(virtual_file: &VirtualFile, ctx: &mut SemanticCacheSavingContext<'_>) -> Self {
-        Self {
-            parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
-            name: virtual_file.name.clone(),
-            content: String::from(&*(virtual_file.content)),
-            code_mappings: virtual_file.code_mappings.to_vec(),
-            kind: virtual_file.kind.clone(),
-        }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> VirtualFile {
-        VirtualFile {
-            parent: self.parent.map(|parent| parent.embed(ctx)),
-            name: self.name,
-            content: self.content.into(),
-            code_mappings: self.code_mappings.into(),
-            kind: self.kind,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct PluginGeneratedFileCached {
-    /// The module that the file was generated from.
-    module_id: ModuleIdCached,
-    /// The stable pointer the file was generated from being ran on.
-    stable_ptr: SyntaxStablePtrIdCached,
-    /// The name of the generated file to differentiate between different generated files.
-    name: SmolStr,
-}
-
-impl PluginGeneratedFileCached {
-    fn new(
-        plugin_generated_file: PluginGeneratedFileId,
-        ctx: &mut SemanticCacheSavingContext<'_>,
-    ) -> Self {
-        let long_id = plugin_generated_file.lookup_intern(ctx.db);
-        Self {
-            module_id: ModuleIdCached::new(long_id.module_id, ctx),
-            stable_ptr: SyntaxStablePtrIdCached::new(long_id.stable_ptr, ctx),
-            name: long_id.name.clone(),
-        }
-    }
-    fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> PluginGeneratedFileId {
-        let module_id = self.module_id.embed(ctx);
-        let stable_ptr = self.stable_ptr.embed(ctx);
-        let long_id = PluginGeneratedFileLongId { module_id, stable_ptr, name: self.name };
-        long_id.intern(ctx.db)
     }
 }
