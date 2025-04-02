@@ -272,7 +272,7 @@ pub struct MatchOptimizerContext {
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,
-    /// Blocks that can be reach from the current block.
+    /// Blocks that can be reached from the current block.
     reachable_blocks: OrderedHashSet<BlockId>,
 }
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
