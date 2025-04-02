@@ -3,6 +3,7 @@ pub mod cancel_ops;
 pub mod config;
 pub mod const_folding;
 pub mod dedup_blocks;
+pub mod early_unsafe_panic;
 pub mod gas_redeposit;
 pub mod match_optimizer;
 pub mod remappings;

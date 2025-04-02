@@ -1,3 +1,6 @@
+use crate::db::FilesGroup;
+use crate::ids::FlagId;
+
 /// A compilation flag.
 #[derive(PartialEq, Eq, Debug)]
 pub enum Flag {
@@ -15,4 +18,11 @@ pub enum Flag {
     ///
     /// Default is false as it make panic unprovable.
     UnsafePanic(bool),
+}
+
+/// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
+pub fn flag_unsafe_panic(db: &dyn FilesGroup) -> bool {
+    db.get_flag(FlagId::new(db, "unsafe_panic"))
+        .map(|flag| *flag == Flag::UnsafePanic(true))
+        .unwrap_or(false)
 }
