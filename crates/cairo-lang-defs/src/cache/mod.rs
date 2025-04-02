@@ -78,7 +78,7 @@ pub fn generate_crate_def_cache(
         .iter()
         .map(|id| {
             let module_data = db.priv_module_data(*id)?;
-            Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(module_data.clone(), ctx)))
+            Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(module_data, ctx)))
         })
         .collect::<Maybe<Vec<_>>>()?;
 
@@ -1585,7 +1585,7 @@ impl FileCached {
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> FileLongId {
         match self {
-            FileCached::OnDisk(path) => FileLongId::OnDisk(path.clone()),
+            FileCached::OnDisk(path) => FileLongId::OnDisk(path),
             FileCached::Virtual(virtual_file) => FileLongId::Virtual(virtual_file.embed(ctx)),
             FileCached::External(external_file) => {
                 FileLongId::External(external_file.embed(ctx).as_intern_id())
@@ -1665,7 +1665,7 @@ impl PluginGeneratedFileCached {
         Self {
             module_id: ModuleIdCached::new(long_id.module_id, ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(long_id.stable_ptr, ctx),
-            name: long_id.name.clone(),
+            name: long_id.name,
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginGeneratedFileId {
