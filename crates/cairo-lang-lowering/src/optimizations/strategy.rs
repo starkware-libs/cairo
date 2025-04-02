@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
 use super::dedup_blocks::dedup_blocks;
+use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
@@ -28,6 +29,7 @@ pub enum OptimizationPhase {
     CancelOps,
     ConstFolding,
     DedupBlocks,
+    EarlyUnsafePanic,
     OptimizeMatches,
     OptimizeRemappings,
     ReorderStatements,
@@ -58,6 +60,7 @@ impl OptimizationPhase {
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, lowered),
+            OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
