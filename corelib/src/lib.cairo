@@ -332,7 +332,7 @@ use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 pub mod panics;
 #[allow(unused_imports)]
-use panics::{Panic, PanicResult, panic, unsafe_panic};
+use panics::{Panic, PanicResult, panic};
 
 pub enum never {}
 
