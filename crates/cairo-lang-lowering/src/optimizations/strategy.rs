@@ -142,6 +142,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
 pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
         OptimizationPhase::GasRedeposit,
+        OptimizationPhase::EarlyUnsafePanic,
+        OptimizationPhase::TrimUnreachable,
         OptimizationPhase::LowerImplicits,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
