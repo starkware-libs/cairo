@@ -1872,6 +1872,7 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
 
+#[feature("bounded-int-utils")]
 mod bounded_int {
     use crate::internal::bounded_int;
     use crate::internal::bounded_int::{

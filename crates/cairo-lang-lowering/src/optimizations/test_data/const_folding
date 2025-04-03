@@ -3360,6 +3360,7 @@ End:
 test_match_optimizer
 
 //! > function
+#[feature("bounded-int-utils")]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(-5) {
         Ok(v) => Ok(BoxTrait::new(v)),
@@ -3371,6 +3372,7 @@ fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0
 foo
 
 //! > module_code
+#[feature("bounded-int-utils")]
 use core::internal::bounded_int::BoundedInt;
 
 //! > semantic_diagnostics
@@ -3443,6 +3445,7 @@ End:
 test_match_optimizer
 
 //! > function
+#[feature("bounded-int-utils")]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(5) {
         Ok(v) => Ok(BoxTrait::new(v)),
@@ -3454,6 +3457,7 @@ fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0
 foo
 
 //! > module_code
+#[feature("bounded-int-utils")]
 use core::internal::bounded_int::BoundedInt;
 
 //! > semantic_diagnostics
