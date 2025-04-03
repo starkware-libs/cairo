@@ -102,7 +102,7 @@ pub fn free_function_generic_params_data(
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -166,12 +166,12 @@ pub fn priv_free_function_declaration_data(
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     let (implicit_precedence, _) =
-        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
 
-    inference.finalize(&mut diagnostics, declaration.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, declaration.stable_ptr(syntax_db).untyped());
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
 

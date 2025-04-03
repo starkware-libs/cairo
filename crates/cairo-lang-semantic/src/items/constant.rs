@@ -311,7 +311,7 @@ pub fn constant_semantic_data_helper(
         db,
         &mut ctx,
         &value,
-        constant_ast.stable_ptr().untyped(),
+        constant_ast.stable_ptr(syntax_db).untyped(),
         constant_type,
         true,
     )
@@ -353,7 +353,8 @@ pub fn constant_semantic_data_cycle_helper(
 
     let resolver_data = Arc::new(resolver.data);
 
-    let diagnostic_added = diagnostics.report(constant_ast, SemanticDiagnosticKind::ConstCycle);
+    let diagnostic_added = diagnostics
+        .report(constant_ast.stable_ptr(db.upcast()), SemanticDiagnosticKind::ConstCycle);
     Ok(ConstantData {
         constant: Err(diagnostic_added),
         const_value: ConstValue::Missing(diagnostic_added).intern(db),

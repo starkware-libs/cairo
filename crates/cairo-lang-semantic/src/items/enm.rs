@@ -66,7 +66,7 @@ pub fn priv_enum_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -117,7 +117,7 @@ pub fn enum_generic_params_data(
         &enum_ast.generic_params(db.upcast()),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -217,7 +217,7 @@ pub fn priv_enum_definition_data(
             .data
             .feature_config
             .override_with(extract_item_feature_config(db, crate_id, &variant, &mut diagnostics));
-        let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
+        let id = VariantLongId(module_file_id, variant.stable_ptr(syntax_db)).intern(db);
         let ty = match variant.type_clause(syntax_db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
             ast::OptionTypeClause::TypeClause(type_clause) => {
@@ -226,7 +226,10 @@ pub fn priv_enum_definition_data(
         };
         let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
-            diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });
+            diagnostics.report(
+                variant.stable_ptr(syntax_db),
+                EnumVariantRedefinition { enum_id, variant_name },
+            );
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
         resolver.data.feature_config.restore(feature_restore);
@@ -234,7 +237,7 @@ pub fn priv_enum_definition_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(syntax_db).untyped());
 
     for (_, variant) in variant_semantic.iter_mut() {
         variant.ty = inference.rewrite(variant.ty).no_err();

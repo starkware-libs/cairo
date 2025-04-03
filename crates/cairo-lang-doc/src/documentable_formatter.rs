@@ -915,10 +915,9 @@ fn write_function_signature(
 
 /// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
 fn get_type_clause(syntax_node: SyntaxNode, db: &dyn DocGroup) -> Option<String> {
-    let children = db.get_children(syntax_node);
-    for child in children.iter() {
+    for child in syntax_node.get_children(db.upcast()) {
         if child.kind(db.upcast()) == SyntaxKind::TypeClause {
-            return Some(child.clone().get_text_without_all_comment_trivia(db.upcast()));
+            return Some(child.get_text_without_all_comment_trivia(db.upcast()));
         }
     }
     Some(String::from(MISSING))
@@ -992,10 +991,8 @@ fn write_struct_attributes_syntax(
 ) -> Result<(), fmt::Error> {
     for attribute in attributes {
         let syntax_node = attribute.stable_ptr.lookup(f.db.upcast()).as_syntax_node();
-        let children =
-            <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(f.db).get_children(syntax_node);
-        for child in children.iter() {
-            let to_text = child.clone().get_text_without_all_comment_trivia(f.db.upcast());
+        for child in syntax_node.get_children(f.db.upcast()) {
+            let to_text = child.get_text_without_all_comment_trivia(f.db.upcast());
             let cleaned_text = to_text.replace("\n", "");
             f.write_str(&cleaned_text)?;
         }
@@ -1016,7 +1013,7 @@ fn write_syntactic_evaluation(
             green::GreenNodeDetails::Node { .. }
         ) {
             let mut is_after_evaluation_value = false;
-            for child in f.db.get_children(syntax_node).iter() {
+            for child in syntax_node.get_children(f.db.upcast()) {
                 let kind = child.kind(f.db.upcast());
                 if !matches!(kind, SyntaxKind::Trivia) {
                     if matches!(kind, SyntaxKind::TerminalSemicolon) {
@@ -1025,7 +1022,7 @@ fn write_syntactic_evaluation(
                     }
                     if is_after_evaluation_value {
                         f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
-                            child,
+                            &child,
                             f.db.upcast(),
                         ))?;
                     };

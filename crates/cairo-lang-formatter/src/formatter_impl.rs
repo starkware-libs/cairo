@@ -987,7 +987,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children = self.db.get_children(syntax_node.clone()).to_vec();
+        let mut children = syntax_node.get_children(self.db);
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1036,11 +1036,11 @@ impl<'a> FormatterImpl<'a> {
 
             for node in section_nodes {
                 if !self.has_only_whitespace_trivia(node) {
-                    new_children.push(node.clone());
+                    new_children.push(*node);
                     continue;
                 }
 
-                let use_item = ast::ItemUse::from_syntax_node(self.db, node.clone());
+                let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
 
                 let decorations = chain!(
                     use_item
@@ -1065,12 +1065,8 @@ impl<'a> FormatterImpl<'a> {
                 );
 
                 // Add merged children to the new_children list.
-                let children = self.db.get_children(merged_node.clone()).to_vec();
-                if !children.is_empty() {
-                    let grandchildren = self.db.get_children(children[0].clone()).to_vec();
-                    for child in grandchildren {
-                        new_children.push(child.clone());
-                    }
+                if let Some(child) = merged_node.get_children(self.db).into_iter().nth(0) {
+                    new_children.extend(child.get_children(self.db));
                 }
             }
         }
@@ -1132,7 +1128,7 @@ impl<'a> FormatterImpl<'a> {
                     // Sort `Module` items alphabetically by their name.
                     let mut sorted_section = section_nodes.to_vec();
                     sorted_section.sort_by_key(|node| {
-                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                        ast::ItemModule::from_syntax_node(self.db, *node)
                             .name(self.db)
                             .text(self.db)
                     });
@@ -1143,8 +1139,8 @@ impl<'a> FormatterImpl<'a> {
                     let mut sorted_section = section_nodes.to_vec();
                     sorted_section.sort_by(|a, b| {
                         compare_use_paths(
-                            &ast::ItemUse::from_syntax_node(self.db, a.clone()).use_path(self.db),
-                            &ast::ItemUse::from_syntax_node(self.db, b.clone()).use_path(self.db),
+                            &ast::ItemUse::from_syntax_node(self.db, *a).use_path(self.db),
+                            &ast::ItemUse::from_syntax_node(self.db, *b).use_path(self.db),
                             self.db,
                         )
                     });
@@ -1162,8 +1158,7 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let children = self.db.get_children(syntax_node.clone());
-        let mut children_iter = children.iter().cloned();
+        let mut children_iter = syntax_node.get_children(self.db).into_iter();
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
         let token = children_iter.next().unwrap();
         let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
@@ -1321,16 +1316,16 @@ fn compare_names(a: &str, b: &str) -> Ordering {
 fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UsePath> {
     match node.kind(db) {
         SyntaxKind::UsePathLeaf => {
-            Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathSingle => {
-            Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathMulti => {
-            Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathStar => {
-            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, *node)))
         }
         _ => None,
     }

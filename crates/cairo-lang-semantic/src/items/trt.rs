@@ -392,7 +392,7 @@ pub fn trait_generic_params_data(
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -447,7 +447,7 @@ pub fn priv_trait_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, trait_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, trait_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -720,7 +720,7 @@ pub fn priv_trait_definition_data(
             match item {
                 ast::TraitItem::Function(func) => {
                     let trait_func_id =
-                        TraitFunctionLongId(module_file_id, func.stable_ptr()).intern(db);
+                        TraitFunctionLongId(module_file_id, func.stable_ptr(syntax_db)).intern(db);
                     let name_node = func.declaration(syntax_db).name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let attributes = func.attributes(syntax_db);
@@ -737,14 +737,15 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
                     function_asts.insert(trait_func_id, func);
                 }
                 ast::TraitItem::Type(ty) => {
-                    let trait_type_id = TraitTypeLongId(module_file_id, ty.stable_ptr()).intern(db);
+                    let trait_type_id =
+                        TraitTypeLongId(module_file_id, ty.stable_ptr(syntax_db)).intern(db);
                     let name_node = ty.name(syntax_db);
                     let name = name_node.text(syntax_db);
                     let attributes = ty.attributes(syntax_db);
@@ -758,7 +759,7 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
@@ -766,7 +767,8 @@ pub fn priv_trait_definition_data(
                 }
                 ast::TraitItem::Constant(constant) => {
                     let trait_constant =
-                        TraitConstantLongId(module_file_id, constant.stable_ptr()).intern(db);
+                        TraitConstantLongId(module_file_id, constant.stable_ptr(syntax_db))
+                            .intern(db);
 
                     let name_node = constant.name(syntax_db);
                     let name = name_node.text(syntax_db);
@@ -784,14 +786,15 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
                     item_constant_asts.insert(trait_constant, constant);
                 }
                 ast::TraitItem::Impl(imp) => {
-                    let trait_impl = TraitImplLongId(module_file_id, imp.stable_ptr()).intern(db);
+                    let trait_impl =
+                        TraitImplLongId(module_file_id, imp.stable_ptr(syntax_db)).intern(db);
 
                     let name_node = imp.name(syntax_db);
                     let name = name_node.text(syntax_db);
@@ -806,7 +809,7 @@ pub fn priv_trait_definition_data(
                         .is_some()
                     {
                         diagnostics.report(
-                            &name_node,
+                            name_node.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
                         );
                     }
@@ -907,7 +910,7 @@ pub fn priv_trait_type_generic_params_data(
     // Generic parameters are not yet supported, make sure there are none.
     if !generic_params_node.is_empty(syntax_db) {
         diagnostics.report(
-            &generic_params_node,
+            generic_params_node.stable_ptr(syntax_db),
             GenericsNotSupportedInItem { scope: "Trait".into(), item_kind: "type".into() },
         );
     }
@@ -1110,7 +1113,8 @@ pub fn priv_trait_impl_data(
         .resolve_concrete_path(&mut diagnostics, &trait_path, NotFoundItemType::Trait)
         .and_then(|resolved_item: crate::resolve::ResolvedConcreteItem| match resolved_item {
             ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
-            _ => Err(diagnostics.report(&trait_path, SemanticDiagnosticKind::UnknownTrait)),
+            _ => Err(diagnostics
+                .report(trait_path.stable_ptr(syntax_db), SemanticDiagnosticKind::UnknownTrait)),
         });
     let attributes = impl_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -1280,7 +1284,7 @@ pub fn priv_trait_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, function_syntax.stable_ptr(syntax_db).untyped());
     let signature = inference.rewrite(signature).no_err();
     let function_generic_params = inference.rewrite(function_generic_params).no_err();
 
@@ -1297,7 +1301,7 @@ pub fn priv_trait_function_declaration_data(
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
     let (implicit_precedence, _) =
-        get_implicit_precedence(&mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
     let resolver_data = Arc::new(resolver.data);
 
     Ok(FunctionDeclarationData {
@@ -1324,7 +1328,9 @@ fn validate_trait_function_signature(
     for (idx, param) in sig.params.iter().enumerate() {
         if param.mutability == Mutability::Mutable {
             diagnostics.report(
-                &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx].modifiers(syntax_db),
+                sig_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                    .modifiers(syntax_db)
+                    .stable_ptr(syntax_db),
                 crate::diagnostic::SemanticDiagnosticKind::TraitParamMutable {
                     trait_id,
                     function_id,

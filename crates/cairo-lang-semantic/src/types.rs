@@ -7,6 +7,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
@@ -585,7 +586,7 @@ fn maybe_resolve_type(
             )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
-                    return Err(diagnostics.report(path, NotAType));
+                    return Err(diagnostics.report(path.stable_ptr(syntax_db), NotAType));
                 }
             }
         }
@@ -630,25 +631,27 @@ fn maybe_resolve_type(
             {
                 desnapped_ty
             } else {
-                return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
+                return Err(diagnostics.report(ty_syntax.stable_ptr(syntax_db), DesnapNonSnapshot));
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
             let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
-                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+                return Err(diagnostics
+                    .report(ty_syntax.stable_ptr(syntax_db), FixedSizeArrayTypeNonSingleType));
             };
             let ty = resolve_type_ex(db, diagnostics, resolver, ty, ctx);
             let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
             {
                 Some(size) => size,
                 None => {
-                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
+                    return Err(diagnostics
+                        .report(ty_syntax.stable_ptr(syntax_db), FixedSizeArrayTypeEmptySize));
                 }
             };
             TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {
-            return Err(diagnostics.report(ty_syntax, UnknownType));
+            return Err(diagnostics.report(ty_syntax.stable_ptr(syntax_db), UnknownType));
         }
     })
 }
@@ -683,14 +686,14 @@ pub fn extract_fixed_size_array_size(
                 db,
                 &mut ctx,
                 &size,
-                size_expr_syntax.stable_ptr().untyped(),
+                size_expr_syntax.stable_ptr(syntax_db).untyped(),
                 get_usize_ty(db),
                 false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
             } else {
-                Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize))
+                Err(diagnostics.report(syntax.stable_ptr(syntax_db), FixedSizeArrayNonNumericSize))
             }
         }
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
@@ -699,12 +702,13 @@ pub fn extract_fixed_size_array_size(
 
 /// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
 pub fn verify_fixed_size_array_size(
+    db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     size: &BigInt,
     syntax: &ast::ExprFixedSizeArray,
 ) -> Maybe<()> {
     if size > &BigInt::from(i16::MAX) {
-        return Err(diagnostics.report(syntax, FixedSizeArraySizeTooBig));
+        return Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArraySizeTooBig));
     }
     Ok(())
 }

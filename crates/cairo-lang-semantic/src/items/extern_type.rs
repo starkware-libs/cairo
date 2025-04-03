@@ -78,7 +78,7 @@ pub fn extern_type_declaration_generic_params_data(
         );
     }
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -109,7 +109,7 @@ pub fn priv_extern_type_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 

@@ -65,16 +65,12 @@ impl RewriteNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    db.get_children(syntax_node.clone())
-                        .iter()
-                        .cloned()
-                        .map(RewriteNode::Copied)
-                        .collect(),
+                    syntax_node.get_children(db).into_iter().map(RewriteNode::Copied).collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Trimmed { node, trim_left, trim_right } => {
-                let children = db.get_children(node.clone());
+                let children = node.get_children(db);
                 let num_children = children.len();
                 let mut new_children = Vec::new();
 
@@ -97,28 +93,27 @@ impl RewriteNode {
 
                 // The number of children between the first and last nonempty nodes.
                 let num_middle = right_idx - left_idx + 1;
-                let children = db.get_children(node.clone());
                 let mut children_iter = children.iter().skip(left_idx);
                 match num_middle {
                     1 => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: *trim_left,
                             trim_right: *trim_right,
                         });
                     }
                     _ => {
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: *trim_left,
                             trim_right: false,
                         });
                         for _ in 0..(num_middle - 2) {
-                            let child = children_iter.next().unwrap().clone();
+                            let child = *children_iter.next().unwrap();
                             new_children.push(RewriteNode::Copied(child));
                         }
                         new_children.push(RewriteNode::Trimmed {
-                            node: children_iter.next().unwrap().clone(),
+                            node: *children_iter.next().unwrap(),
                             trim_left: false,
                             trim_right: *trim_right,
                         });

@@ -133,8 +133,10 @@ impl SyntaxNodeFormat for SyntaxNode {
 
             SyntaxKind::ExprPath
                 if matches!(self.parent_kind(db), Some(SyntaxKind::PatternEnum))
-                    && db
-                        .get_children(self.parent().unwrap())
+                    && self
+                        .parent(db)
+                        .unwrap()
+                        .get_children(db)
                         .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
             {
@@ -338,7 +340,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 _ => None,
             },
             Some(SyntaxKind::StatementLet) => {
-                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let let_statement =
+                    ast::StatementLet::from_syntax_node(db, self.parent(db).unwrap());
                 let pattern = let_statement.pattern(db).as_syntax_node();
 
                 if pattern.kind(db) == SyntaxKind::PatternStruct {
@@ -467,7 +470,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     11,
                     BreakLinePointIndentation::NotIndented,
-                    is_statement_list_break_point_optional(db, &self.parent().unwrap()),
+                    is_statement_list_break_point_optional(db, &self.parent(db).unwrap()),
                     false,
                 ))
             }
@@ -518,7 +521,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
-                    if db.get_children(self.clone()).len() > 2 {
+                    if self.get_children(db).len() > 2 {
                         trailing_break_point.set_comma_if_broken();
                     }
                     BreakLinePointsPositions::Both {
@@ -933,8 +936,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 )
             )
         {
-            let parent_node = self.parent().unwrap();
-            let children = db.get_children(parent_node);
+            let parent_node = self.parent(db).unwrap();
+            let children = parent_node.get_children(db);
             // Check if it's an ExprList or PatternList with len > 2, or any other list type.
             let is_expr_or_pattern_list = matches!(
                 self.parent_kind(db),
@@ -953,12 +956,12 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalSemicolon
             && self.parent_kind(db) == Some(SyntaxKind::StatementExpr)
         {
-            let statement_node = self.parent().unwrap();
-            let statements_node = statement_node.parent().unwrap();
+            let statement_node = self.parent(db).unwrap();
+            let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let not_last = !is_last(&statement_node, &db.get_children(statements_node));
-            let children = db.get_children(statement_node);
+            let not_last = !is_last(&statement_node, &statements_node.get_children(db));
+            let children = statement_node.get_children(db);
             if not_last
                 && matches!(
                     children[1].kind(db),
@@ -976,9 +979,9 @@ impl SyntaxNodeFormat for SyntaxNode {
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && self.parent_kind(db) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
-            let path_segment_node = self.parent().unwrap();
-            let path_node = path_segment_node.parent().unwrap();
-            if !is_last(&path_segment_node, &db.get_children(path_node.clone())) {
+            let path_segment_node = self.parent(db).unwrap();
+            let path_node = path_segment_node.parent(db).unwrap();
+            if !is_last(&path_segment_node, &path_node.get_children(db)) {
                 false
             } else {
                 matches!(
@@ -1002,7 +1005,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind {
         match self.kind(db) {
             SyntaxKind::ItemModule => {
-                let item_module = ast::ItemModule::from_syntax_node(db, self.clone());
+                let item_module = ast::ItemModule::from_syntax_node(db, *self);
                 if matches!(item_module.body(db), MaybeModuleBody::None(_)) {
                     SortKind::Module
                 } else {
@@ -1022,7 +1025,7 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
     matches!(
         node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgValueExpr)
-    ) && db.get_children(node.clone()).len() == 1
+    ) && node.get_children(db).len() == 1
         && node.descendants(db).all(|d| {
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)
