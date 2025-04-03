@@ -638,7 +638,7 @@ Parameters: v0: core::integer::u128
 blk0 (root):
 Statements:
   (v1: core::integer::u64) <- 1
-  (v2: core::integer::u128) <- core::integer::upcast::<core::integer::u64, core::integer::u128>(v1)
+  (v2: core::integer::u128) <- core::internal::bounded_int::upcast::<core::integer::u64, core::integer::u128>(v1)
 End:
   Match(match core::integer::u128_is_zero(v2) {
     IsZeroResult::Zero => blk1,
@@ -752,7 +752,7 @@ blk0 (root):
 Statements:
   (v1: core::integer::u128) <- 1
 End:
-  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v1) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u128, core::integer::u64>(v1) {
     Option::Some(v2) => blk1,
     Option::None => blk2,
   })
@@ -979,7 +979,7 @@ blk0 (root):
 Statements:
   (v1: core::integer::u16) <- 300
 End:
-  Match(match core::integer::downcast::<core::integer::u16, core::integer::u8>(v1) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u16, core::integer::u8>(v1) {
     Option::Some(v2) => blk1,
     Option::None => blk2,
   })
@@ -1738,7 +1738,7 @@ Statements:
   (v1: core::integer::u8) <- 3
   (v2: core::integer::u16) <- core::integer::u8_wide_mul(v0, v1)
 End:
-  Match(match core::integer::downcast::<core::integer::u16, core::integer::u8>(v2) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u16, core::integer::u8>(v2) {
     Option::Some(v3) => blk1,
     Option::None => blk2,
   })
@@ -3161,7 +3161,7 @@ blk1:
 Statements:
   (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
-  (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
+  (v5: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::True(v6)
   (v8: (core::integer::u8, core::bool)) <- struct_construct(v5, v7)
@@ -3170,7 +3170,7 @@ End:
 
 blk2:
 Statements:
-  (v10: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
+  (v10: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
   (v11: ()) <- struct_construct()
   (v12: core::bool) <- bool::False(v11)
   (v13: (core::integer::u8, core::bool)) <- struct_construct(v10, v12)
@@ -3195,7 +3195,7 @@ blk1:
 Statements:
   (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
-  (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
+  (v5: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::True(v6)
   (v8: (core::integer::u8, core::bool)) <- struct_construct(v5, v7)
@@ -3252,7 +3252,7 @@ blk1:
 Statements:
   (v3: core::internal::bounded_int::BoundedInt::<-1, -1>) <- -1
   (v4: core::internal::bounded_int::BoundedInt::<1, 128>) <- core::internal::bounded_int::bounded_int_mul::<core::internal::bounded_int::BoundedInt::<-128, -1>, core::internal::bounded_int::BoundedInt::<-1, -1>, core::internal::bounded_int::MulMinus1::<-128, -1, core::internal::bounded_int::neg_felt252::Impl::<-128, 128>, core::internal::bounded_int::neg_felt252::Impl::<-1, 1>>>(v1, v3)
-  (v5: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
+  (v5: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 128>, core::integer::u8>(v4)
   (v6: ()) <- struct_construct()
   (v7: core::bool) <- bool::True(v6)
   (v8: (core::integer::u8, core::bool)) <- struct_construct(v5, v7)
@@ -3261,7 +3261,7 @@ End:
 
 blk2:
 Statements:
-  (v10: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
+  (v10: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
   (v11: ()) <- struct_construct()
   (v12: core::bool) <- bool::False(v11)
   (v13: (core::integer::u8, core::bool)) <- struct_construct(v10, v12)
@@ -3295,7 +3295,7 @@ End:
 
 blk2:
 Statements:
-  (v10: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
+  (v10: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<0, 127>, core::integer::u8>(v2)
   (v11: ()) <- struct_construct()
   (v12: core::bool) <- bool::False(v11)
   (v13: (core::integer::u8, core::bool)) <- struct_construct(v10, v12)
@@ -3335,7 +3335,7 @@ Statements:
   (v0: core::integer::u8) <- 5
   (v1: core::internal::bounded_int::BoundedInt::<255, 255>) <- 255
   (v2: core::internal::bounded_int::BoundedInt::<0, 255>) <- core::internal::bounded_int::bounded_int_sub::<core::internal::bounded_int::BoundedInt::<255, 255>, core::integer::u8, core::integer::bitnot_impls::SubHelperImpl::<core::integer::u8, 255>>(v1, v0)
-  (v3: core::integer::u8) <- core::integer::upcast::<core::internal::bounded_int::BoundedInt::<0, 255>, core::integer::u8>(v2)
+  (v3: core::integer::u8) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<0, 255>, core::integer::u8>(v2)
 End:
   Return(v3)
 
@@ -3704,7 +3704,7 @@ Statements:
   (v1: core::integer::u8) <- 0
   (v2: core::integer::u16) <- core::integer::u8_wide_mul(v0, v1)
 End:
-  Match(match core::integer::downcast::<core::integer::u16, core::integer::u8>(v2) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u16, core::integer::u8>(v2) {
     Option::Some(v3) => blk1,
     Option::None => blk2,
   })

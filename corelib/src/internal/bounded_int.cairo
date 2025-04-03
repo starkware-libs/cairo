@@ -1,5 +1,4 @@
 use crate::RangeCheck;
-use crate::integer::{downcast, upcast};
 
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
@@ -9,6 +8,18 @@ impl BoundedIntDrop<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<M
 impl NumericLiteralBoundedInt<
     const MIN: felt252, const MAX: felt252,
 > of crate::integer::NumericLiteral<BoundedInt<MIN, MAX>>;
+
+/// Upcasts `FromType` to `ToType` - for types where conversion is always legal.
+///
+/// If done for wrong types would cause a compiler panic at the Sierra stage.
+pub extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
+
+/// Downcasts `FromType` to `ToType` - for types where conversion may fail.
+///
+/// If done for wrong types would cause a compiler panic at the Sierra stage.
+pub extern const fn downcast<FromType, ToType>(
+    x: FromType,
+) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 impl BoundedIntIntoFelt252<
     const MIN: felt252, const MAX: felt252,
