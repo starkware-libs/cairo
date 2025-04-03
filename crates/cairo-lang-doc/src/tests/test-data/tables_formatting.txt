@@ -25,6 +25,7 @@ hello = "src"
 //! | [`or`]  | `Ok(x)`  | (ignored) | `Ok(x)`  |
 
 //! > Item signature #1
+
 //! > Item documentation #1
 simple table with alignment
 
