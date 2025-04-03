@@ -42,7 +42,21 @@ impl GetIdentifier for ast::UsePathLeafPtr {
                 .identifier(db);
         }
         let ident_green = self.ident_green(db);
-        ident_green.identifier(db)
+        let ident = ident_green.identifier(db);
+        if ident != "self" {
+            return ident;
+        }
+        let mut node = self.0.lookup(db);
+        loop {
+            node = if let Some(parent) = node.parent() {
+                parent
+            } else {
+                return ident;
+            };
+            if matches!(node.kind(db), SyntaxKind::UsePathSingle) {
+                return ast::UsePathSingle::from_syntax_node(db, node).ident(db).identifier(db);
+            }
+        }
     }
 }
 impl GetIdentifier for ast::PathSegmentGreen {
@@ -658,10 +672,7 @@ impl UsePathEx for ast::UsePath {
 impl UsePathLeaf {
     /// Retrieves the stable pointer of the name of the leaf.
     pub fn name_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
-        match self.alias_clause(db) {
-            ast::OptionAliasClause::Empty(_) => self.ident(db).stable_ptr().untyped(),
-            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db).stable_ptr().untyped(),
-        }
+        self.name(db).stable_ptr().untyped()
     }
 }
 
