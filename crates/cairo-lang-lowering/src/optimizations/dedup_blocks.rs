@@ -238,7 +238,7 @@ fn rebuild_block_and_inputs(
 }
 
 /// Deduplicates blocks by redirecting goto's and match arms to one of the duplicates.
-/// The duplicate blocks will be remove later by `reorganize_blocks`.
+/// The duplicate blocks will be removed later by `reorganize_blocks`.
 pub fn dedup_blocks(lowered: &mut FlatLowered) {
     if lowered.blocks.has_root().is_err() {
         return;
