@@ -49,6 +49,7 @@ pub mod trace;
 pub mod try_from_felt252;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod unsafe_panic;
 pub mod utils;
 
 /// Helper for Unit type def.

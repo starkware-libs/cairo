@@ -624,6 +624,7 @@ pub fn core_libfunc_cost(
             }
             QM31Concrete::FromM31(_) => vec![ConstCost::default().into()],
         },
+        UnSafePanic(_) => vec![],
     }
 }
 

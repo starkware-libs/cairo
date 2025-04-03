@@ -446,6 +446,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             QM31Concrete::Unpack(_) => vec![ApChange::Known(13)],
             QM31Concrete::FromM31(_) => vec![ApChange::Known(0)],
         },
+        UnSafePanic(_) => vec![],
     }
 }
 

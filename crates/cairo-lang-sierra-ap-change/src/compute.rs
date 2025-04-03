@@ -50,6 +50,12 @@ struct ApTrackingInfo {
     ap_change: usize,
 }
 
+#[derive(Clone, Debug)]
+enum ChangeToReturn {
+    Known(usize),
+    Unreachable,
+}
+
 /// Helper for calculating the ap-changes of a program.
 struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize> {
     /// The program.
@@ -63,9 +69,9 @@ struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> us
     /// The size of allocated locals until the statement.
     locals_size: UnorderedHashMap<StatementIdx, usize>,
     /// The lower bound of an ap-change to the furthest return per statement.
-    known_ap_change_to_return: UnorderedHashMap<StatementIdx, usize>,
+    known_ap_change_to_return: UnorderedHashMap<StatementIdx, ChangeToReturn>,
     /// The ap_change of functions with known ap changes.
-    function_ap_change: OrderedHashMap<FunctionId, usize>,
+    function_ap_change: OrderedHashMap<FunctionId, ChangeToReturn>,
     /// The ap tracking information per statement.
     tracking_info: UnorderedHashMap<StatementIdx, ApTrackingInfo>,
     /// The effective ap change from the statement's base.
@@ -145,19 +151,40 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         &mut self,
         idx: StatementIdx,
     ) -> Result<(), ApChangeError> {
-        let mut max_change = 0;
+        let mut max_change = ChangeToReturn::Unreachable;
+
+        if let Statement::Return(_) = self.program.get_statement(&idx).unwrap() {
+            self.known_ap_change_to_return.insert(idx, ChangeToReturn::Known(0));
+            return Ok(());
+        }
+
         for (ap_change, target) in self.get_branches(idx)? {
-            let Some(target_ap_change) = self.known_ap_change_to_return.get(&target) else {
+            let Some(target_ap_change_to_return) = self.known_ap_change_to_return.get(&target)
+            else {
                 return Ok(());
             };
+            let ChangeToReturn::Known(target_ap_change) = target_ap_change_to_return else {
+                // Return is unreachable through this arm, we can skip it.
+                continue;
+            };
+
             if let Some(ap_change) = self.branch_ap_change(idx, &ap_change, |id| {
                 self.known_ap_change_to_return.get(&self.func_entry_point(id).ok()?).cloned()
             }) {
-                max_change = max_change.max(target_ap_change + ap_change);
+                max_change = match (max_change, ap_change) {
+                    (ChangeToReturn::Known(max), ChangeToReturn::Known(change)) => {
+                        ChangeToReturn::Known(max.max(target_ap_change + change))
+                    }
+                    (ChangeToReturn::Unreachable, ChangeToReturn::Known(change)) => {
+                        ChangeToReturn::Known(target_ap_change + change)
+                    }
+                    (max_change, ChangeToReturn::Unreachable) => max_change,
+                };
             } else {
                 return Ok(());
             };
         }
+
         self.known_ap_change_to_return.insert(idx, max_change);
         Ok(())
     }
@@ -232,8 +259,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             let Some(mut base_info) = self.tracking_info.get(&idx).cloned() else {
                 continue;
             };
-            if let Some(ap_change) = self
-                .branch_ap_change(idx, &ap_change, |id| self.function_ap_change.get(id).cloned())
+            if let Some(ChangeToReturn::Known(ap_change)) =
+                self.branch_ap_change(idx, &ap_change, |id| {
+                    self.function_ap_change.get(id).cloned()
+                })
             {
                 base_info.ap_change += ap_change;
             } else {
@@ -261,7 +290,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         };
         if matches!(self.program.get_statement(&idx), Some(Statement::Return(_))) {
             if let ApTrackingBase::FunctionStart(id) = base_info.base {
-                if let Some(func_change) = self.function_ap_change.get(&id) {
+                if let Some(ChangeToReturn::Known(func_change)) = self.function_ap_change.get(&id) {
                     self.effective_ap_change_from_base.insert(idx, *func_change);
                 }
             }
@@ -273,8 +302,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             if matches!(ap_change, ApChange::EnableApTracking) {
                 continue;
             }
-            let Some(change) = self
-                .branch_ap_change(idx, &ap_change, |id| self.function_ap_change.get(id).cloned())
+            let Some(ChangeToReturn::Known(change)) =
+                self.branch_ap_change(idx, &ap_change, |id| {
+                    self.function_ap_change.get(id).cloned()
+                })
             else {
                 source_ap_change = Some(base_info.ap_change);
                 continue;
@@ -306,16 +337,19 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         &self,
         idx: StatementIdx,
         ap_change: &ApChange,
-        func_ap_change: impl Fn(&FunctionId) -> Option<usize>,
-    ) -> Option<usize> {
+        func_ap_change: impl Fn(&FunctionId) -> Option<ChangeToReturn>,
+    ) -> Option<ChangeToReturn> {
         match ap_change {
             ApChange::Unknown | ApChange::DisableApTracking => None,
-            ApChange::Known(x) => Some(*x),
+            ApChange::Known(x) => Some(ChangeToReturn::Known(*x)),
             ApChange::FromMetadata
             | ApChange::AtLocalsFinalization(_)
-            | ApChange::EnableApTracking => Some(0),
-            ApChange::FinalizeLocals => Some(self.get_statement_locals(idx)),
-            ApChange::FunctionCall(id) => func_ap_change(id).map(|x| 2 + x),
+            | ApChange::EnableApTracking => Some(ChangeToReturn::Known(0)),
+            ApChange::FinalizeLocals => Some(ChangeToReturn::Known(self.get_statement_locals(idx))),
+            ApChange::FunctionCall(id) => func_ap_change(id).map(|x| match x {
+                ChangeToReturn::Known(x) => ChangeToReturn::Known(2 + x),
+                ChangeToReturn::Unreachable => ChangeToReturn::Unreachable,
+            }),
         }
     }
 
@@ -378,6 +412,18 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     }
     Ok(ApChangeInfo {
         variable_values: helper.variable_values,
-        function_ap_change: helper.function_ap_change,
+        function_ap_change: helper
+            .function_ap_change
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.clone(),
+                    match v {
+                        ChangeToReturn::Known(x) => *x,
+                        ChangeToReturn::Unreachable => 0,
+                    },
+                )
+            })
+            .collect(),
     })
 }
