@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
@@ -202,21 +202,19 @@ impl MacroPlugin for CustomSpanTestPlugin {
                     if let ast::Expr::String(string_expr) = let_stmt.rhs(db) {
                         let string_text = string_expr.as_syntax_node().get_text(db);
                         if let Some(brace_pos) = string_text.find("{}") {
-                            let string_span = string_expr.as_syntax_node().span(db);
-                            let placeholder_span = TextSpan {
-                                start: string_span
-                                    .start
-                                    .add_width(TextWidth::new_for_testing(brace_pos as u32)),
-                                end: string_span
-                                    .start
-                                    .add_width(TextWidth::new_for_testing(brace_pos as u32 + 2)),
+                            let start_offset = brace_pos as u32;
+                            let end_offset = start_offset + 2;
+                            let relative_span = TextSpan {
+                                start: TextOffset::default()
+                                    .add_width(TextWidth::new_for_testing(start_offset)),
+                                end: TextOffset::default()
+                                    .add_width(TextWidth::new_for_testing(end_offset)),
                             };
-
                             let diagnostic = PluginDiagnostic::error(
                                 string_expr.as_syntax_node().stable_ptr(),
                                 "Missing format argument for placeholder".into(),
                             )
-                            .with_span(placeholder_span);
+                            .with_relative_span(relative_span);
 
                             return PluginResult {
                                 code: None,
