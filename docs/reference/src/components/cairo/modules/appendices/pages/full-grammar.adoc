@@ -1,6 +1,318 @@
 = Full Grammar
 
-This section is a work in progress.
+== Introduction
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+This section presents the complete grammar of the Cairo language, describing its syntactic constructs. The grammar uses the same notation described in the xref:language_constructs:notation.adoc[Notation] section.
+
+[NOTE]
+====
+This section is a work in progress. You are welcome to contribute by submitting a pull request.
+====
+
+== Basic Syntax Elements
+
+=== Literals
+
+[source]
+----
+literal ::= BOOLEAN_LIT | NUMERIC_LIT | SHORT_STRING_LIT | STRING_LIT
+
+BOOLEAN_LIT ::= "true" | "false"
+
+NUMERIC_LIT ::= DECIMAL_LIT | HEX_LIT | BINARY_LIT
+
+DECIMAL_LIT ::= [0-9]+ ["_" IDENTIFIER]?
+HEX_LIT ::= "0x" [0-9a-fA-F]+ ["_" IDENTIFIER]?
+BINARY_LIT ::= "0b" [0-1]+ ["_" IDENTIFIER]?
+
+SHORT_STRING_LIT ::= "'" [^'\n]* "'" ["_" IDENTIFIER]?
+STRING_LIT ::= "\"" [^"\n]* "\""
+----
+
+=== Identifiers and Paths
+
+[source]
+----
+IDENTIFIER ::= [a-zA-Z_][a-zA-Z0-9_]*
+
+path ::= path_segment ("::" path_segment)*
+
+path_segment ::= IDENTIFIER ["::" generic_args]?
+
+generic_args ::= "<" generic_arg ("," generic_arg)* [","]? ">"
+
+generic_arg ::= type | expr
+----
+
+=== Expressions
+
+[source]
+----
+expr ::= literal
+       | path
+       | array_expression
+       | tuple_expression
+       | struct_expression
+       | block_expression
+       | parenthesized_expression
+       | if_expression
+       | match_expression
+       | loop_expression
+       | while_expression
+       | for_expression
+       | unary_expression
+       | binary_expression
+       | field_expression
+       | indexed_expression
+       | function_call
+       | method_call
+       | error_propagation_expression
+
+parenthesized_expression ::= "(" expr ")"
+
+unary_expression ::= unary_operator expr
+
+unary_operator ::= "!" | "~" | "-" | "@"
+
+binary_expression ::= expr binary_operator expr
+
+binary_operator ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" 
+                  | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
+                  | "." | ".." | "+=" | "-=" | "*=" | "/=" | "%="
+
+block_expression ::= "{" statement* expr? "}"
+
+field_expression ::= expr "." IDENTIFIER
+
+indexed_expression ::= expr "[" expr "]"
+
+tuple_expression ::= "(" [expr ("," expr)* [","]]? ")"
+
+function_call ::= expr "(" [arguments]? ")"
+
+arguments ::= expr ("," expr)* [","]?
+
+error_propagation_expression ::= expr "?"
+----
+
+=== Statements
+
+[source]
+----
+statement ::= ";" 
+           | item 
+           | let_statement
+           | expression_statement
+           | return_statement
+           | break_statement
+           | continue_statement
+
+let_statement ::= [attributes]? "let" pattern [type_annotation]? "=" expr ";"
+
+expression_statement ::= expr ";"?
+
+return_statement ::= "return" expr? ";"
+
+break_statement ::= "break" expr? ";"
+
+continue_statement ::= "continue" ";"
+----
+
+=== Conditional Expressions
+
+[source]
+----
+if_expression ::= "if" condition block_expression ("else" (block_expression | if_expression))?
+
+condition ::= expr | let_condition
+
+let_condition ::= "let" pattern "=" expr
+----
+
+=== Match Expressions
+
+[source]
+----
+match_expression ::= "match" expr "{" match_arm* "}"
+
+match_arm ::= pattern_list "=>" expr ","?
+
+pattern_list ::= pattern ("|" pattern)*
+----
+
+=== Loops
+
+[source]
+----
+loop_expression ::= "loop" block_expression
+
+while_expression ::= "while" condition block_expression
+
+for_expression ::= "for" pattern "in" expr block_expression
+----
+
+== Items
+
+[source]
+----
+item ::= [attributes]? [visibility]? item_kind
+
+visibility ::= "pub"
+
+item_kind ::= module_item 
+            | function_item
+            | struct_item 
+            | enum_item
+            | trait_item 
+            | impl_item
+            | type_alias_item
+            | constant_item
+            | use_item
+
+module_item ::= "mod" IDENTIFIER ";"?
+              | "mod" IDENTIFIER "{" item* "}"
+
+function_item ::= "fn" IDENTIFIER generic_params? "(" params? ")" ["->" type]? block_expression
+
+params ::= param ("," param)* [","]?
+
+param ::= [modifier_list]? IDENTIFIER [type_annotation]?
+
+modifier_list ::= modifier*
+
+modifier ::= "ref" | "mut"
+
+type_annotation ::= ":" type
+
+struct_item ::= "struct" IDENTIFIER generic_params? "{" struct_field* "}"
+
+struct_field ::= [attributes]? [visibility]? IDENTIFIER type_annotation ","?
+
+enum_item ::= "enum" IDENTIFIER generic_params? "{" enum_variant* "}"
+
+enum_variant ::= [attributes]? IDENTIFIER enum_variant_data? ","?
+
+enum_variant_data ::= "(" type ("," type)* [","]? ")"
+                    | "{" struct_field* "}"
+
+trait_item ::= "trait" IDENTIFIER generic_params? "{" trait_member* "}"
+
+trait_member ::= function_signature ";"
+               | type_alias_item ";"
+
+function_signature ::= "fn" IDENTIFIER generic_params? "(" params? ")" ["->" type]?
+
+impl_item ::= "impl" generic_params? type "for" type "{" impl_member* "}"
+            | "impl" generic_params? type "{" impl_member* "}"
+
+impl_member ::= function_item
+
+type_alias_item ::= "type" IDENTIFIER generic_params? "=" type ";"
+
+constant_item ::= "const" IDENTIFIER ":" type "=" expr ";"
+----
+
+=== Generics
+
+[source]
+----
+generic_params ::= "<" generic_param ("," generic_param)* [","]? ">"
+
+generic_param ::= IDENTIFIER [trait_bound]?
+
+trait_bound ::= ":" trait_bound_inner
+
+trait_bound_inner ::= path ("+" path)*
+----
+
+=== Patterns
+
+[source]
+----
+pattern ::= literal_pattern
+          | identifier_pattern
+          | wildcard_pattern
+          | tuple_pattern
+          | struct_pattern
+          | enum_variant_pattern
+
+literal_pattern ::= literal
+
+identifier_pattern ::= ["ref"] ["mut"] IDENTIFIER
+
+wildcard_pattern ::= "_"
+
+tuple_pattern ::= "(" [pattern ("," pattern)* [","]]? ")"
+
+struct_pattern ::= path "{" struct_pattern_field ("," struct_pattern_field)* [","]? "}"
+
+struct_pattern_field ::= IDENTIFIER [":" pattern]?
+
+enum_variant_pattern ::= path ["(" pattern ("," pattern)* [","]? ")"]?
+----
+
+=== Types
+
+[source]
+----
+type ::= path
+       | tuple_type
+       | array_type
+       | reference_type
+
+tuple_type ::= "(" [type ("," type)* [","]]? ")"
+
+array_type ::= "[" type ";" expr "]"
+
+reference_type ::= "&" ["mut"]? type
+----
+
+=== Attributes
+
+[source]
+----
+attributes ::= attribute+
+
+attribute ::= "#" "[" path [attribute_arguments]? "]"
+
+attribute_arguments ::= "(" [expr ("," expr)* [","]]? ")"
+----
+
+== Syntax Examples
+
+=== Function and Basic Expressions Example
+
+[source,cairo]
+----
+fn calculate_sum(a: u32, b: u32) -> u32 {
+    let result = a + b;
+    if result > 100 {
+        return result - 100;
+    }
+    result
+}
+----
+
+=== Match Expression Example
+
+[source,cairo]
+----
+match my_enum {
+    MyEnum::Variant1(x) => x + 1,
+    MyEnum::Variant2 { field } => field * 2,
+    _ => 0,
+}
+----
+
+== Additional Resources
+
+For more detailed information about Cairo syntax, see the following sections:
+
+* xref:language_constructs:expressions.adoc[Expressions]
+* xref:language_constructs:statements.adoc[Statements]
+* xref:language_constructs:items.adoc[Items]
+* xref:language_constructs:type-system.adoc[Type System]
+* xref:language_constructs:patterns.adoc[Patterns]
+
+You are very welcome to contribute to this documentation by submitting improvements through a
+link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[pull request].
