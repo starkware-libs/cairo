@@ -90,30 +90,35 @@ pub(crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
 impl Bytes31Serde = crate::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
+    #[feature("bounded-int-utils")]
     const fn into(self: u8) -> bytes31 {
         crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U16IntoBytes31 of Into<u16, bytes31> {
+    #[feature("bounded-int-utils")]
     const fn into(self: u16) -> bytes31 {
         crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U32IntoBytes31 of Into<u32, bytes31> {
+    #[feature("bounded-int-utils")]
     const fn into(self: u32) -> bytes31 {
         crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U64IntoBytes31 of Into<u64, bytes31> {
+    #[feature("bounded-int-utils")]
     const fn into(self: u64) -> bytes31 {
         crate::internal::bounded_int::upcast(self)
     }
 }
 
 pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
+    #[feature("bounded-int-utils")]
     const fn into(self: u128) -> bytes31 {
         crate::internal::bounded_int::upcast(self)
     }
@@ -234,6 +239,7 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
+    #[feature("bounded-int-utils")]
     use core::internal::bounded_int::{BoundedInt, DivRemHelper, UnitInt, div_rem, upcast};
 
     impl DivRemU128By256 of DivRemHelper<u128, UnitInt<256>> {

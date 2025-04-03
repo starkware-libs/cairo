@@ -84,6 +84,7 @@ impl WideSquareU256 of WideSquare<u256> {
     }
 }
 
+#[feature("bounded-int-utils")]
 mod inner {
     use crate::integer::{u128_add_with_bounded_int_carry, u512};
     use crate::internal::bounded_int;
