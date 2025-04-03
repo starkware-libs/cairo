@@ -73,7 +73,8 @@ pub struct PluginResult {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
-    pub span: Option<TextSpan>,
+    /// Span relative to the start of the `stable_ptr`
+    pub relative_span: Option<TextSpan>,
     pub message: String,
     pub severity: Severity,
 }
@@ -81,7 +82,7 @@ impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-            span: None,
+            relative_span: None,
             message,
             severity: Severity::Error,
         }
@@ -89,14 +90,14 @@ impl PluginDiagnostic {
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-            span: None,
+            relative_span: None,
             message,
             severity: Severity::Warning,
         }
     }
 
-    pub fn with_span(mut self, span: TextSpan) -> Self {
-        self.span = Some(span);
+    pub fn with_relative_span(mut self, span: TextSpan) -> Self {
+        self.relative_span = Some(span);
         self
     }
 }

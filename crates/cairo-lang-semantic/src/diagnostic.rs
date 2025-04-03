@@ -1034,8 +1034,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
         if let SemanticDiagnosticKind::PluginDiagnostic(diag) = &self.kind {
-            if let Some(span) = diag.span {
-                return self.stable_location.diagnostic_location_with_span(db.upcast(), span);
+            if let Some(relative_span) = diag.relative_span {
+                return self.stable_location.diagnostic_location_with_offsets(
+                    db.upcast(),
+                    relative_span.start.as_u32(),
+                    relative_span.end.as_u32(),
+                );
             }
         }
 
