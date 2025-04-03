@@ -141,7 +141,7 @@ macro some_macro {
     };
 
     ($($x:ident) +) => {
-        1
+        $x
     };
 
     ($($x:expr), *) => {
@@ -277,7 +277,11 @@ fn use_macro() {
     │   │   │   │   │   ├── statements (kind: StatementList)
     │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
     │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
-    │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   │       ├── expr (kind: ExprPath)
+    │   │   │   │   │   │       │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │   └── segments (kind: ExprPathInner)
+    │   │   │   │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'

@@ -68,7 +68,7 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
-use crate::items::macro_declaration::{expand_macro_rule, is_macro_rule_match};
+use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -465,21 +465,17 @@ fn compute_expr_inline_macro_semantic(
         user_defined_macro
     {
         let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-        // TODO(Dean): Change this! It's wrong and must be changed in the upcoming expansion PR.
-        let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
-            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                .map(|captures| (rule, captures))
+        let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
+            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db)).map(|res| (rule, res))
         }) else {
             return Err(ctx
                 .diagnostics
                 .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
         };
-        let captures_transformed: cairo_lang_utils::ordered_hash_map::OrderedHashMap<
-            String,
-            String,
-        > = captures.0.iter().map(|(key, value)| (key.clone(), value.join(""))).collect();
-        let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures_transformed)?;
-
+        let mut matcher_ctx =
+            MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
+        let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &mut matcher_ctx);
+        let expanded_code = expanded_code?;
         let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
         ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
         (expanded_code, macro_name.into(), vec![])
