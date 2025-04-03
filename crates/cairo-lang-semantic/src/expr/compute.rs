@@ -465,6 +465,7 @@ fn compute_expr_inline_macro_semantic(
         user_defined_macro
     {
         let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
+        // TODO(Dean): Change this! It's wrong and must be changed in the upcoming expansion PR.
         let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
             is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
                 .map(|captures| (rule, captures))
@@ -473,7 +474,11 @@ fn compute_expr_inline_macro_semantic(
                 .diagnostics
                 .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
         };
-        let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
+        let captures_transformed: cairo_lang_utils::ordered_hash_map::OrderedHashMap<
+            String,
+            String,
+        > = captures.0.iter().map(|(key, value)| (key.clone(), value.join(""))).collect();
+        let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures_transformed)?;
 
         let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
         ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
