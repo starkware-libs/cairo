@@ -274,6 +274,7 @@ fn is_macro_rule_match_ex(
                     ast::TokenTree::Missing(_) => unreachable!(),
                 }
             }
+            ast::MacroRuleElement::Repetition(_) => todo!(),
         }
     }
     if input_iter.next().is_some() {
