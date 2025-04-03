@@ -57,9 +57,8 @@ impl StableLocation {
         DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
     }
 
-    /// Returns the [DiagnosticLocation] corresponding to a span defined by offsets relative to the
-    /// start of the syntax node, allowing partial highlighting of the node with character-level
-    /// precision.
+    /// Returns the [DiagnosticLocation] corresponding to a subrange of the [StableLocation],
+    /// defined by character offsets relative to the start of the syntax node.
     pub fn diagnostic_location_with_offsets(
         &self,
         db: &dyn DefsGroup,
