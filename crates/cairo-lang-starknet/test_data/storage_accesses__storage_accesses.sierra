@@ -225,7 +225,7 @@ libfunc function_call<user@core::panic_with_const_felt252::<48574846148423057179
 libfunc function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492916>> = function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492916>>;
 libfunc function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492915>> = function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492915>>;
 libfunc const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>> = const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>;
-libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>> = const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>>;
 libfunc const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>> = const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>;
@@ -349,6 +349,7 @@ libfunc function_call<user@core::panic_with_const_felt252::<60864210420322954849
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492917>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492917>>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492916>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492916>>;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>;
+libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>> = const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>>;
 libfunc const_as_immediate<Const<felt252, 39879774624085075084607933104993585622903>> = const_as_immediate<Const<felt252, 39879774624085075084607933104993585622903>>;
 libfunc const_as_immediate<Const<felt252, 7300388948442106731950660484798539862217172507820428101544021685107>> = const_as_immediate<Const<felt252, 7300388948442106731950660484798539862217172507820428101544021685107>>;
@@ -2347,41 +2348,25 @@ store_temp<System>([3]) -> ([3]);
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([169]) -> ([169]);
 return([0], [139], [140], [3], [169]);
 F11:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F12:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F13:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F14:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F15:
 drop<cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState>([4]) -> ();
 const_as_immediate<Const<felt252, 612510166678094512797239002588845244700546940508717813382500307597622065467>>() -> ([6]);
@@ -2521,14 +2506,10 @@ store_temp<System>([50]) -> ([50]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([91]) -> ([91]);
 return([35], [88], [33], [50], [91]);
 F16:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F17:
 drop<cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState>([4]) -> ();
 const_as_immediate<Const<felt252, 612510166678094512797239002588845244700546940508717813382500307597622065467>>() -> ([7]);
@@ -2671,14 +2652,10 @@ store_temp<System>([54]) -> ([54]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([95]) -> ([95]);
 return([39], [92], [37], [54], [95]);
 F18:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F19:
 get_execution_info_v2_syscall([1], [3]) { fallthrough([7], [8], [9]) F19_B12([10], [11], [12]) };
 branch_align() -> ();
@@ -4056,33 +4033,28 @@ store_temp<System>([17]) -> ([17]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>([169]) -> ([169]);
 return([0], [166], [2], [17], [169]);
 F25:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492917>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492917>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F26:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492916>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492916>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F27:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
+const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F28:
+array_new<felt252>() -> ([1]);
+array_append<felt252>([1], [0]) -> ([2]);
 struct_construct<core::panics::Panic>() -> ([3]);
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
 store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
-F28:
+F29:
 const_as_immediate<Const<felt252, 612510166678094512797239002588845244700546940508717813382500307597622065467>>() -> ([8]);
 struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::contracts::storage_accesses::TransactionInfo>>>([8]) -> ([9]);
 snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<cairo_level_tests::contracts::storage_accesses::TransactionInfo>>>([9]) -> ([10], [11]);
@@ -4126,7 +4098,7 @@ dup<u32>([47]) -> ([47], [48]);
 store_temp<u32>([48]) -> ([48]);
 store_temp<Pedersen>([38]) -> ([38]);
 store_temp<RangeCheck>([40]) -> ([40]);
-storage_write_syscall([1], [3], [48], [46], [44]) { fallthrough([49], [50]) F28_B1([51], [52], [53]) };
+storage_write_syscall([1], [3], [48], [46], [44]) { fallthrough([49], [50]) F29_B1([51], [52], [53]) };
 branch_align() -> ();
 store_temp<GasBuiltin>([49]) -> ([49]);
 redeposit_gas([49]) -> ([54]);
@@ -4136,7 +4108,7 @@ storage_address_from_base_and_offset([41], [56]) -> ([57]);
 store_temp<GasBuiltin>([54]) -> ([54]);
 store_temp<u32>([47]) -> ([47]);
 store_temp<StorageAddress>([57]) -> ([57]);
-storage_write_syscall([54], [50], [47], [57], [55]) { fallthrough([58], [59]) F28_B0([60], [61], [62]) };
+storage_write_syscall([54], [50], [47], [57], [55]) { fallthrough([58], [59]) F29_B0([60], [61], [62]) };
 branch_align() -> ();
 store_temp<GasBuiltin>([58]) -> ([58]);
 redeposit_gas([58]) -> ([63]);
@@ -4149,7 +4121,7 @@ store_temp<Pedersen>([38]) -> ([38]);
 store_temp<System>([59]) -> ([59]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>([66]) -> ([66]);
 return([40], [63], [38], [59], [66]);
-F28_B0:
+F29_B0:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState>([4]) -> ();
 store_temp<GasBuiltin>([60]) -> ([60]);
@@ -4163,7 +4135,7 @@ store_temp<Pedersen>([38]) -> ([38]);
 store_temp<System>([61]) -> ([61]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>([70]) -> ([70]);
 return([40], [67], [38], [61], [70]);
-F28_B1:
+F29_B1:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState>([4]) -> ();
 drop<StorageBaseAddress>([41]) -> ();
@@ -4180,42 +4152,26 @@ store_temp<Pedersen>([38]) -> ([38]);
 store_temp<System>([52]) -> ([52]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>([74]) -> ([74]);
 return([40], [71], [38], [52], [74]);
-F29:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
 F30:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 39879774624085075084607933104993585622903>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F31:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 7300388948442106731950660484798539862217172507820428101544021685107>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 39879774624085075084607933104993585622903>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 F32:
-array_new<felt252>() -> ([0]);
-const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([1]);
-store_temp<felt252>([1]) -> ([1]);
-array_append<felt252>([0], [1]) -> ([2]);
-struct_construct<core::panics::Panic>() -> ([3]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
-store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
-return([4]);
+const_as_immediate<Const<felt252, 7300388948442106731950660484798539862217172507820428101544021685107>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F33:
+const_as_immediate<Const<felt252, 608642104203229548495787928534675319>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
 
 cairo_level_tests::contracts::storage_accesses::storage_accesses::__wrapper__IERC20Impl__get_name@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::storage_accesses::storage_accesses::__wrapper__IERC20Impl__get_symbol@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
@@ -4245,8 +4201,9 @@ cairo_level_tests::contracts::storage_accesses::storage_accesses::constructor@F2
 core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492917>@F25() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492916>@F26() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492915>@F27() -> (Tuple<core::panics::Panic, Array<felt252>>);
-cairo_level_tests::contracts::storage_accesses::storage_accesses::StorageImpl::set_transaction_info@F28([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
-core::panic_with_const_felt252::<39879774624079483812136948410799859986295>@F29() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<39879774624085075084607933104993585622903>@F30() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<7300388948442106731950660484798539862217172507820428101544021685107>@F31() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<608642104203229548495787928534675319>@F32() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F28([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
+cairo_level_tests::contracts::storage_accesses::storage_accesses::StorageImpl::set_transaction_info@F29([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>);
+core::panic_with_const_felt252::<39879774624079483812136948410799859986295>@F30() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<39879774624085075084607933104993585622903>@F31() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<7300388948442106731950660484798539862217172507820428101544021685107>@F32() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<608642104203229548495787928534675319>@F33() -> (Tuple<core::panics::Panic, Array<felt252>>);
