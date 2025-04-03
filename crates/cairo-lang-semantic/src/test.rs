@@ -181,7 +181,7 @@ impl MacroPlugin for CustomSpanTestPlugin {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         // Only run plugin in the test file.
-        let ptr = item_ast.stable_ptr();
+        let ptr = item_ast.stable_ptr(db);
         let file = ptr.0.file_id(db);
         let path = file.full_path(db.upcast());
         if path != "lib.cairo" {
@@ -200,8 +200,8 @@ impl MacroPlugin for CustomSpanTestPlugin {
             for statement in elements {
                 if let ast::Statement::Let(let_stmt) = statement {
                     if let ast::Expr::String(string_expr) = let_stmt.rhs(db) {
-                        let string_text = string_expr.as_syntax_node().get_text(db);
-                        if let Some(brace_pos) = string_text.find("{}") {
+                        let node = string_expr.as_syntax_node();
+                        if let Some(brace_pos) = node.get_text(db).find("{}") {
                             let start_offset = brace_pos as u32;
                             let end_offset = start_offset + 2;
                             let relative_span = TextSpan {
@@ -211,7 +211,7 @@ impl MacroPlugin for CustomSpanTestPlugin {
                                     .add_width(TextWidth::new_for_testing(end_offset)),
                             };
                             let diagnostic = PluginDiagnostic::error(
-                                string_expr.as_syntax_node().stable_ptr(),
+                                node.stable_ptr(db),
                                 "Missing format argument for placeholder".into(),
                             )
                             .with_relative_span(relative_span);
