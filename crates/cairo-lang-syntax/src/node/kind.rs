@@ -153,6 +153,7 @@ pub enum SyntaxKind {
     TokenList,
     TokenTreeLeaf,
     TokenTreeNode,
+    TokenTreeRepetition,
     TokenTreeMissing,
     WrappedTokenTreeMissing,
     ParenthesizedTokenTree,

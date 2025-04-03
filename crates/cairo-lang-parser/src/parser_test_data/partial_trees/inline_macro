@@ -143,6 +143,10 @@ macro some_macro {
     ($($x:ident) +) => {
         1
     };
+
+    ($($x:expr), *) => {
+        foo!($(x), *)
+    };
 }
 
 fn use_macro() {
@@ -249,7 +253,35 @@ fn use_macro() {
     │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │   │   └── child #3 (kind: MacroRule)
+    │   │   │   ├── child #3 (kind: MacroRule)
+    │   │   │   │   ├── lhs (kind: ParenthesizedMacroMatcher)
+    │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   ├── elements (kind: MacroRuleElements)
+    │   │   │   │   │   │   └── child #0 (kind: MacroRepetition)
+    │   │   │   │   │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │   │   │   │       ├── elements (kind: MacroRuleElements)
+    │   │   │   │   │   │       │   └── child #0 (kind: MacroRuleParam)
+    │   │   │   │   │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │   │   │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │   │   │   │   │   │       │       ├── colon (kind: TokenColon): ':'
+    │   │   │   │   │   │       │       └── kind (kind: ParamIdent)
+    │   │   │   │   │   │       │           └── ident (kind: TokenIdentifier): 'ident'
+    │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │   │   │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │   │   │   │   │   │       └── operator (kind: TokenPlus): '+'
+    │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │   │   │   │   ├── rhs (kind: ExprBlock)
+    │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   │   │   ├── statements (kind: StatementList)
+    │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
+    │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │   │   └── child #4 (kind: MacroRule)
     │   │   │       ├── lhs (kind: ParenthesizedMacroMatcher)
     │   │   │       │   ├── lparen (kind: TokenLParen): '('
     │   │   │       │   ├── elements (kind: MacroRuleElements)
@@ -261,11 +293,11 @@ fn use_macro() {
     │   │   │       │   │       │       ├── dollar (kind: TokenDollar): '$'
     │   │   │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
     │   │   │       │   │       │       ├── colon (kind: TokenColon): ':'
-    │   │   │       │   │       │       └── kind (kind: ParamIdent)
-    │   │   │       │   │       │           └── ident (kind: TokenIdentifier): 'ident'
+    │   │   │       │   │       │       └── kind (kind: ParamExpr)
+    │   │   │       │   │       │           └── expr (kind: TokenIdentifier): 'expr'
     │   │   │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │       │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
-    │   │   │       │   │       └── operator (kind: TokenPlus): '+'
+    │   │   │       │   │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │       └── operator (kind: TokenMul): '*'
     │   │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │   │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
     │   │   │       ├── rhs (kind: ExprBlock)
@@ -273,7 +305,27 @@ fn use_macro() {
     │   │   │       │   ├── statements (kind: StatementList)
     │   │   │       │   │   └── child #0 (kind: StatementExpr)
     │   │   │       │   │       ├── attributes (kind: AttributeList) []
-    │   │   │       │   │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │   │       │   │       ├── expr (kind: ExprInlineMacro)
+    │   │   │       │   │       │   ├── path (kind: ExprPath)
+    │   │   │       │   │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │   │       │   │   └── segments (kind: ExprPathInner)
+    │   │   │       │   │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │   │       │   │           └── ident (kind: TokenIdentifier): 'foo'
+    │   │   │       │   │       │   ├── bang (kind: TokenNot): '!'
+    │   │   │       │   │       │   └── arguments (kind: TokenTreeNode)
+    │   │   │       │   │       │       └── subtree (kind: ParenthesizedTokenTree)
+    │   │   │       │   │       │           ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   │       │           ├── tokens (kind: TokenList)
+    │   │   │       │   │       │           │   └── child #0 (kind: TokenTreeRepetition)
+    │   │   │       │   │       │           │       ├── dollar (kind: TokenDollar): '$'
+    │   │   │       │   │       │           │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       │   │       │           │       ├── elements (kind: TokenList)
+    │   │   │       │   │       │           │       │   └── child #0 (kind: TokenTreeLeaf)
+    │   │   │       │   │       │           │       │       └── leaf (kind: TokenIdentifier): 'x'
+    │   │   │       │   │       │           │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       │   │       │           │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │       │           │       └── operator (kind: TokenMul): '*'
+    │   │   │       │   │       │           └── rparen (kind: TokenRParen): ')'
     │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
     │   │   │       └── semicolon (kind: TokenSemicolon): ';'
