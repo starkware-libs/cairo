@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
-    DefCacheLoadingData, DefCacheSavingContext, GenericParamCached, ImplDefIdCached,
-    LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
+    CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
+    ImplDefIdCached, LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
 };
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -80,6 +80,8 @@ pub fn load_cached_crate_functions(
         return Default::default();
     };
 
+    let def_loading_data = db.cached_crate_modules(crate_id)?.1;
+
     let def_size = usize::from_be_bytes(content[..8].try_into().unwrap()); // def_size is the first 8 bytes of the blob.
 
     let content = &content[16 + def_size..]; // 16 bytes for both sizes.
@@ -92,12 +94,7 @@ pub fn load_cached_crate_functions(
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
-    let mut ctx = CacheLoadingContext::new(
-        db,
-        lookups,
-        semantic_lookups,
-        db.cached_crate_modules(crate_id)?.1,
-    );
+    let mut ctx = CacheLoadingContext::new(db, lookups, semantic_lookups, def_loading_data);
 
     Some(
         lowerings
@@ -164,7 +161,11 @@ pub fn generate_crate_cache(
 
     let mut artifact = Vec::<u8>::new();
 
-    if let Ok(def) = bincode::serialize(&(def_cache, &ctx.semantic_ctx.defs_ctx.lookups)) {
+    if let Ok(def) = bincode::serialize(&(
+        CachedCrateMetadata::new(crate_id, db.upcast()),
+        def_cache,
+        &ctx.semantic_ctx.defs_ctx.lookups,
+    )) {
         artifact.extend(def.len().to_be_bytes());
         artifact.extend(def);
     }
