@@ -428,7 +428,7 @@ pub fn lower_loop_function(
     let loop_expr_id = loop_ctx.loop_expr_id;
     let mut ctx =
         LoweringContext::new(encapsulating_ctx, function_id, loop_signature, return_type)?;
-    let old_loop_ctx = std::mem::replace(&mut ctx.current_loop_ctx, Some(loop_ctx));
+    let old_loop_ctx = ctx.current_loop_ctx.replace(loop_ctx);
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
