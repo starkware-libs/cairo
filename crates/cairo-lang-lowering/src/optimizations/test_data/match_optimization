@@ -1771,23 +1771,21 @@ End:
 
 blk1:
 Statements:
-  (v5: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v3)
 End:
-  Goto(blk3, {v2 -> v6, v5 -> v7})
+  Goto(blk4, {v3 -> v11, v2 -> v38})
 
 blk2:
 Statements:
   (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v8)
 End:
-  Goto(blk3, {v4 -> v6, v9 -> v7})
+  Goto(blk5, {v8 -> v12, v4 -> v36})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v7) {
-    Option::Some(v11) => blk4,
-    Option::None(v12) => blk5,
+    Option::Some(v39) => blk17,
+    Option::None(v37) => blk16,
   })
 
 blk4:
@@ -1864,5 +1862,15 @@ blk15:
 Statements:
 End:
   Goto(blk7, {v35 -> v18})
+
+blk16:
+Statements:
+End:
+  Goto(blk5, {v37 -> v12, v6 -> v36})
+
+blk17:
+Statements:
+End:
+  Goto(blk4, {v39 -> v11, v6 -> v38})
 
 //! > lowering_diagnostics

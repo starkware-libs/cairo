@@ -210,7 +210,9 @@ fn statement_can_be_optimized_out(
                 .map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
         );
     }
+
     info.demand = demand;
+    info.reachable_blocks = std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]);
 
     Some(FixInfo {
         statement_location,
@@ -218,7 +220,7 @@ fn statement_can_be_optimized_out(
         arm_idx,
         target_block: arm.block_id,
         remapping,
-        reachable_blocks: std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]),
+        reachable_blocks: info.reachable_blocks.clone(),
         additional_remapping: candidate.additional_remappings.unwrap_or_default(),
     })
 }
