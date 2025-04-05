@@ -91,31 +91,31 @@ impl Bytes31Serde = crate::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
     const fn into(self: u8) -> bytes31 {
-        crate::integer::upcast(self)
+        crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U16IntoBytes31 of Into<u16, bytes31> {
     const fn into(self: u16) -> bytes31 {
-        crate::integer::upcast(self)
+        crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U32IntoBytes31 of Into<u32, bytes31> {
     const fn into(self: u32) -> bytes31 {
-        crate::integer::upcast(self)
+        crate::internal::bounded_int::upcast(self)
     }
 }
 
 impl U64IntoBytes31 of Into<u64, bytes31> {
     const fn into(self: u64) -> bytes31 {
-        crate::integer::upcast(self)
+        crate::internal::bounded_int::upcast(self)
     }
 }
 
 pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     const fn into(self: u128) -> bytes31 {
-        crate::integer::upcast(self)
+        crate::internal::bounded_int::upcast(self)
     }
 }
 
@@ -234,7 +234,7 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{BoundedInt, DivRemHelper, UnitInt, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, UnitInt, div_rem, upcast};
 
     impl DivRemU128By256 of DivRemHelper<u128, UnitInt<256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;
@@ -244,7 +244,7 @@ mod helpers {
     /// Returns the least significant byte of the given u128.
     pub fn get_lsb(value: u128) -> u8 {
         let (_, res) = div_rem::<_, UnitInt<256>>(value, 256);
-        core::integer::upcast(res)
+        upcast(res)
     }
 }
 

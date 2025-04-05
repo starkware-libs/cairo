@@ -41,7 +41,7 @@ End:
 blk1:
 Statements:
 End:
-  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v0, v2) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u128, core::integer::u64>(v0, v2) {
     Option::Some(v5, v6) => blk2,
     Option::None(v7) => blk3,
   })

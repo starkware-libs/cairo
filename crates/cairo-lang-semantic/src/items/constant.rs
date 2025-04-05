@@ -1207,6 +1207,7 @@ impl ConstCalcInfo {
         let core_info = db.core_info();
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         let core = ModuleHelper::core(db);
+        let bounded_int = core.submodule("internal").submodule("bounded_int");
         let integer = core.submodule("integer");
         let starknet = core.submodule("starknet");
         let class_hash_module = starknet.submodule("class_hash");
@@ -1232,7 +1233,7 @@ impl ConstCalcInfo {
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
             upcast_fns: FromIterator::from_iter([
-                integer.extern_function_id("upcast"),
+                bounded_int.extern_function_id("upcast"),
                 integer.extern_function_id("u8_to_felt252"),
                 integer.extern_function_id("u16_to_felt252"),
                 integer.extern_function_id("u32_to_felt252"),
@@ -1247,7 +1248,7 @@ impl ConstCalcInfo {
                 contract_address_module.extern_function_id("contract_address_to_felt252"),
             ]),
             downcast_fns: FromIterator::from_iter([
-                integer.extern_function_id("downcast"),
+                bounded_int.extern_function_id("downcast"),
                 integer.extern_function_id("u8_try_from_felt252"),
                 integer.extern_function_id("u16_try_from_felt252"),
                 integer.extern_function_id("u32_try_from_felt252"),

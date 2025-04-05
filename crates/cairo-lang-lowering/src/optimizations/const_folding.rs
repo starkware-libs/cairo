@@ -663,8 +663,8 @@ impl ConstFoldingLibfuncInfo {
         let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
-        let upcast = integer_module.extern_function_id("upcast");
-        let downcast = integer_module.extern_function_id("downcast");
+        let upcast = bounded_int_module.extern_function_id("upcast");
+        let downcast = bounded_int_module.extern_function_id("downcast");
         let array_module = core.submodule("array");
         let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");

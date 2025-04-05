@@ -1496,7 +1496,7 @@ Parameters: v0: core::RangeCheck, v1: core::integer::u32
 blk0 (root):
 Statements:
 End:
-  Match(match core::integer::downcast::<core::integer::u32, core::internal::bounded_int::BoundedInt::<0, 6>>(v0, v1) {
+  Match(match core::internal::bounded_int::downcast::<core::integer::u32, core::internal::bounded_int::BoundedInt::<0, 6>>(v0, v1) {
     Option::Some(v2, v3) => blk1,
     Option::None(v4) => blk9,
   })
