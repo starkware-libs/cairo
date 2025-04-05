@@ -353,7 +353,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn final_optimization_strategy(&self) -> OptimizationStrategyId;
 
     /// Returns the baseline optimization strategy.
-    /// This strategy is used for inlining decistion and as a starting point for the final lowering.
+    /// This strategy is used for inlining decision and as a starting point for the final lowering.
     #[salsa::invoke(crate::optimizations::strategy::baseline_optimization_strategy)]
     fn baseline_optimization_strategy(&self) -> OptimizationStrategyId;
 
