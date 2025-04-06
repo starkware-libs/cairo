@@ -68,6 +68,7 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
+#[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
@@ -1184,6 +1185,7 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
 }
 
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
+#[feature("bounded-int-utils")]
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
@@ -1206,6 +1208,7 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
+#[feature("bounded-int-utils")]
 pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128,
 ) -> (u128, crate::internal::bounded_int::BoundedInt<0, 1>) nopanic {
@@ -2336,6 +2339,7 @@ impl I128Neg of Neg<i128> {
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
+        #[feature("bounded-int-utils")]
         let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
@@ -2366,6 +2370,7 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 mod signed_div_rem {
+    #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
         BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, NegateHelper, UnitInt, constrain,
         div_rem, downcast, is_zero, upcast,
@@ -3310,8 +3315,8 @@ impl U128SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TS
 impl U256SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
 
 mod bitnot_impls {
-    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt};
-    use super::upcast;
+    #[feature("bounded-int-utils")]
+    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt, sub, upcast};
 
     impl SubHelperImpl<T, const MAX: felt252> of SubHelper<UnitInt<MAX>, T> {
         type Result = BoundedInt<0, MAX>;
@@ -3319,7 +3324,7 @@ mod bitnot_impls {
 
     pub impl Impl<T, const MAX: felt252, const MAX_TYPED: UnitInt<MAX>> of core::traits::BitNot<T> {
         fn bitnot(a: T) -> T {
-            upcast::<BoundedInt<0, MAX>, T>(core::internal::bounded_int::sub(MAX_TYPED, a))
+            upcast::<BoundedInt<0, MAX>, T>(sub(MAX_TYPED, a))
         }
     }
 }
@@ -3341,6 +3346,7 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 }
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i8) -> (u8, bool) {
         match core::internal::bounded_int::constrain::<i8, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3350,6 +3356,7 @@ impl I8ToU8 of AbsAndSign<i8, u8> {
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i16) -> (u16, bool) {
         match core::internal::bounded_int::constrain::<i16, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3359,6 +3366,7 @@ impl I16ToU16 of AbsAndSign<i16, u16> {
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i32) -> (u32, bool) {
         match core::internal::bounded_int::constrain::<i32, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3368,6 +3376,7 @@ impl I32ToU32 of AbsAndSign<i32, u32> {
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i64) -> (u64, bool) {
         match core::internal::bounded_int::constrain::<i64, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3377,6 +3386,7 @@ impl I64ToU64 of AbsAndSign<i64, u64> {
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i128) -> (u128, bool) {
         match core::internal::bounded_int::constrain::<i128, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
