@@ -72,18 +72,17 @@ fn handle_self_path(
     mut segments: Vec<ast::PathSegment>,
     use_path: ast::UsePath,
 ) -> Maybe<Vec<ast::PathSegment>> {
+    let db = db.upcast();
     if let Some(last) = segments.last() {
-        if last.identifier(db.upcast()) == SELF_PARAM_KW {
-            if use_path.as_syntax_node().parent(db).unwrap().kind(db.upcast())
-                != SyntaxKind::UsePathList
-            {
-                diagnostics.report(use_path.stable_ptr(db.upcast()), UseSelfNonMulti);
+        if last.identifier(db) == SELF_PARAM_KW {
+            if use_path.as_syntax_node().parent(db).unwrap().kind(db) != SyntaxKind::UsePathList {
+                diagnostics.report(use_path.stable_ptr(db), UseSelfNonMulti);
             }
             segments.pop();
         }
     }
     if segments.is_empty() {
-        Err(diagnostics.report(use_path.stable_ptr(db.upcast()), UseSelfEmptyPath))
+        Err(diagnostics.report(use_path.stable_ptr(db), UseSelfEmptyPath))
     } else {
         Ok(segments)
     }
