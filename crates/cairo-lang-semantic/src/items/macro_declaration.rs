@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::ExprPath;
@@ -52,6 +54,13 @@ impl From<ast::MacroRuleParamKind> for PlaceholderKind {
             ),
         }
     }
+}
+
+/// Information about a captured value in a macro.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CapturedValue {
+    pub text: String,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
@@ -160,7 +169,7 @@ pub fn is_macro_rule_match(
     db: &dyn SemanticGroup,
     rule: &MacroRuleData,
     input: &ast::TokenTreeNode,
-) -> Option<OrderedHashMap<String, String>> {
+) -> Option<OrderedHashMap<String, CapturedValue>> {
     let mut captures = OrderedHashMap::default();
     is_macro_rule_match_ex(db, rule.pattern.clone(), input, &mut captures)?;
     Some(captures)
@@ -173,7 +182,7 @@ fn is_macro_rule_match_ex(
     db: &dyn SemanticGroup,
     pattern: ast::MacroMatcher,
     input: &ast::TokenTreeNode,
-    captures: &mut OrderedHashMap<String, String>,
+    captures: &mut OrderedHashMap<String, CapturedValue>,
 ) -> Option<()> {
     let matcher_elements = get_pattern_elements(db.upcast(), pattern);
 
@@ -187,7 +196,7 @@ fn is_macro_rule_match_ex(
         }
     }
     .elements(db.upcast());
-    let mut input_iter = input_elements.iter();
+    let mut input_iter = input_elements.iter().peekable();
     for matcher_element in matcher_elements.elements(db.upcast()) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
@@ -215,10 +224,10 @@ fn is_macro_rule_match_ex(
                             ast::TokenTree::Token(token_tree_leaf) => {
                                 match token_tree_leaf.leaf(db.upcast()) {
                                     ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                        captures.insert(
-                                            placeholder_name,
-                                            terminal_identifier.text(db.upcast()).to_string(),
-                                        );
+                                        captures.insert(placeholder_name, CapturedValue {
+                                            text: terminal_identifier.text(db.upcast()).to_string(),
+                                            stable_ptr: terminal_identifier.stable_ptr().untyped(),
+                                        });
                                     }
                                     _ => return None,
                                 }
@@ -234,7 +243,10 @@ fn is_macro_rule_match_ex(
                             db.upcast(),
                         )?;
                         let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
-                        captures.insert(placeholder_name, expr_text.to_string());
+                        captures.insert(placeholder_name, CapturedValue {
+                            text: expr_text.to_string(),
+                            stable_ptr: input_iter.peek().unwrap().stable_ptr().untyped(),
+                        });
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
 
@@ -282,6 +294,30 @@ fn is_macro_rule_match_ex(
     Some(())
 }
 
+/// The result of expanding a macro rule.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroExpansionResult {
+    /// The expanded text.
+    pub text: String,
+    /// Information about placeholder expansions in this macro expansion.
+    /// Must be kept ordered by span.start to enable binary search in get_placeholder_at.
+    pub code_mappings: Vec<CodeMapping>,
+}
+
+impl MacroExpansionResult {
+    /// Returns the placeholder that was expanded at the given offset, if any.
+    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
+        // Binary search to find a code mapping containing the offset
+        match self.code_mappings.binary_search_by_key(&offset, |p| p.span.start) {
+            Ok(i) => Some(&self.code_mappings[i]),
+            Err(i) if i > 0 && self.code_mappings[i - 1].span.end > offset => {
+                Some(&self.code_mappings[i - 1])
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Traverse the macro expansion and replace the placeholders with the provided values, creates a
 /// string representation of the expanded macro.
 ///
@@ -290,12 +326,13 @@ fn is_macro_rule_match_ex(
 pub fn expand_macro_rule(
     db: &dyn SyntaxGroup,
     rule: &MacroRuleData,
-    captures: &OrderedHashMap<String, String>,
-) -> Maybe<String> {
+    captures: &OrderedHashMap<String, CapturedValue>,
+) -> Maybe<MacroExpansionResult> {
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
-    expand_macro_rule_ex(db, node, captures, &mut res_buffer)?;
-    Ok(res_buffer)
+    let mut code_mappings = Vec::new();
+    expand_macro_rule_ex(db, node, captures, &mut res_buffer, &mut code_mappings)?;
+    Ok(MacroExpansionResult { text: res_buffer, code_mappings })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
@@ -306,15 +343,27 @@ pub fn expand_macro_rule(
 fn expand_macro_rule_ex(
     db: &dyn SyntaxGroup,
     node: SyntaxNode,
-    captures: &OrderedHashMap<String, String>,
+    captures: &OrderedHashMap<String, CapturedValue>,
     res_buffer: &mut String,
+    code_mappings: &mut Vec<CodeMapping>,
 ) -> Maybe<()> {
     if node.kind(db) == SyntaxKind::ExprPath {
         let path_node = ExprPath::from_syntax_node(db, node.clone());
         if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
             match captures.get(&placeholder_name) {
                 Some(value) => {
-                    res_buffer.push_str(value);
+                    let start_offset = TextWidth::from_str(res_buffer).as_offset();
+                    res_buffer.push_str(&value.text);
+                    let end_offset = TextWidth::from_str(res_buffer).as_offset();
+
+                    let value_stable_ptr = value.stable_ptr.lookup(db);
+                    code_mappings.push(CodeMapping {
+                        span: TextSpan { start: start_offset, end: end_offset },
+                        origin: CodeOrigin::Span(TextSpan {
+                            start: value_stable_ptr.span_start_without_trivia(db),
+                            end: value_stable_ptr.span_end_without_trivia(db),
+                        }),
+                    });
                     return Ok(());
                 }
                 None => return Err(skip_diagnostic()),
@@ -326,7 +375,7 @@ fn expand_macro_rule_ex(
         return Ok(());
     }
     for child in db.get_children(node).iter() {
-        expand_macro_rule_ex(db, child.clone(), captures, res_buffer)?;
+        expand_macro_rule_ex(db, child.clone(), captures, res_buffer, code_mappings)?;
     }
     Ok(())
 }
