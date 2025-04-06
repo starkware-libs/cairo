@@ -480,9 +480,8 @@ impl<'a> AbiBuilder<'a> {
         };
         require(first_param.name == SELF_PARAM_KW).ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
-        let expected_storage_ty = is_ref
-            .then_some(storage_type)
-            .unwrap_or_else(|| TypeLongId::Snapshot(storage_type).intern(self.db));
+        let expected_storage_ty =
+            if is_ref { storage_type } else { TypeLongId::Snapshot(storage_type).intern(self.db) };
         require(first_param.ty == expected_storage_ty).ok_or(ABIError::UnexpectedType)?;
         let state_mutability =
             if is_ref { StateMutability::External } else { StateMutability::View };
