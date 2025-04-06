@@ -63,27 +63,20 @@ impl UseTree {
     }
 
     /// Merge and organize the `use` paths in a hierarchical structure.
-    pub fn create_merged_use_items(
-        self,
-        allow_duplicate_uses: bool,
-        top_level: bool,
-    ) -> Vec<String> {
+    pub fn create_merged_use_items(self, allow_duplicate_uses: bool) -> Vec<String> {
         let mut leaf_paths: Vec<String> = self
             .leaves
             .into_iter()
-            .map(|leaf| {
-                if let Some(alias) = leaf.alias {
-                    format!("{} as {alias}", leaf.name)
-                } else {
-                    leaf.name
-                }
-            })
+            .map(
+                |Leaf { name, alias }| {
+                    if let Some(alias) = alias { format!("{name} as {alias}") } else { name }
+                },
+            )
             .collect();
 
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
-            let subtree_merged_use_items =
-                subtree.create_merged_use_items(allow_duplicate_uses, false);
+            let subtree_merged_use_items = subtree.create_merged_use_items(allow_duplicate_uses);
             nested_paths.extend(
                 subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}")),
             );
@@ -98,22 +91,37 @@ impl UseTree {
             0 => {}
             1 if nested_paths.is_empty() => return leaf_paths,
             1 => nested_paths.extend(leaf_paths),
-            _ if top_level => nested_paths.extend(leaf_paths),
             _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
         }
 
         nested_paths
     }
 
+    /// Making sure `self` imports do not remain by themselves.
+    fn organize_self_imports(&mut self) {
+        // First canonizing existing `self` to a direct module.
+        for (segment, child) in self.children.iter_mut() {
+            // Calling recursively to make sure all children are organized.
+            child.organize_self_imports();
+            // If the expected imports are only of `self` pushing them to parent.
+            if child.leaves.iter().all(|leaf| leaf.name == "self") {
+                for leaf in std::mem::take(&mut child.leaves) {
+                    self.leaves.push(Leaf { name: segment.clone(), alias: leaf.alias });
+                }
+            }
+        }
+    }
+
     /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
     pub fn generate_syntax_node_from_use(
-        self,
+        mut self,
         db: &dyn SyntaxGroup,
         allow_duplicate_uses: bool,
         decorations: String,
     ) -> SyntaxNode {
         let mut formatted_use_items = String::new();
-        for statement in self.create_merged_use_items(allow_duplicate_uses, false) {
+        self.organize_self_imports();
+        for statement in self.create_merged_use_items(allow_duplicate_uses) {
             formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
         }
 
@@ -920,7 +928,6 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
-    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -932,7 +939,6 @@ impl<'a> FormatterImpl<'a> {
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
             is_last_element_comment: false,
-            is_merging_use_items: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -943,11 +949,6 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
-        if self.is_merging_use_items {
-            // When merging, only format this node once and return to avoid recursion.
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
-            return;
-        }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -1035,7 +1036,7 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                if !self.has_only_whitespace_trivia(node) {
+                if !self.has_only_whitespace_trivia(node) || self.should_ignore_node_format(node) {
                     new_children.push(*node);
                     continue;
                 }
@@ -1306,8 +1307,8 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
         ("super" | "crate", "super" | "crate") => a.cmp(b),
-        ("super" | "crate", _) => Ordering::Greater,
-        (_, "super" | "crate") => Ordering::Less,
+        ("super" | "crate", _) | (_, "self") => Ordering::Greater,
+        (_, "super" | "crate") | ("self", _) => Ordering::Less,
         _ => a.cmp(b),
     }
 }

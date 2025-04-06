@@ -124,7 +124,7 @@ mod a {
         mod c {}
     }
 }
-use a::b::{c, self};
+use a::b::{self, c};
 use b::c as again;
 
 //! > expected_diagnostics
@@ -148,11 +148,12 @@ mod a {
         mod c {}
     }
 }
+#[cairofmt::skip]
 use a::b::self;
 
 //! > expected_diagnostics
 error: `self` in `use` items is not allowed not in multi.
- --> lib.cairo:6:11
+ --> lib.cairo:7:11
 use a::b::self;
           ^^^^
 
