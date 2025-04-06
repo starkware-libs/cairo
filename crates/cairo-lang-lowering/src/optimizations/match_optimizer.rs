@@ -20,6 +20,16 @@ use crate::{
 
 pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
+impl MatchOptimizerDemand {
+    fn update(&mut self, statement: &Statement) {
+        self.variables_introduced(&mut EmptyDemandReporter {}, statement.outputs(), ());
+        self.variables_used(
+            &mut EmptyDemandReporter {},
+            statement.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
+    }
+}
+
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
 ///
@@ -219,11 +229,7 @@ fn statement_can_be_optimized_out(
     }
 
     for stmt in candidate.statement_rev.iter().rev() {
-        demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
-        demand.variables_used(
-            &mut EmptyDemandReporter {},
-            stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
-        );
+        demand.update(stmt);
     }
     info.demand = demand;
     info.reachable_blocks = std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]);
@@ -301,6 +307,7 @@ pub struct AnalysisInfo<'a> {
     /// Blocks that can be reached from the current block.
     reachable_blocks: OrderedHashSet<BlockId>,
 }
+
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
 
@@ -326,11 +333,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             info.candidate = Some(candidate);
         }
 
-        info.demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
-        info.demand.variables_used(
-            &mut EmptyDemandReporter {},
-            stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
-        );
+        info.demand.update(stmt);
     }
 
     fn visit_goto(
