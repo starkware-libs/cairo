@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, UsePathEx};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
@@ -22,6 +22,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
+use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -45,16 +46,47 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db.upcast());
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
-    let segments = get_use_path_segments(db.upcast(), use_ast)?;
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        segments,
-        NotFoundItemType::Identifier,
-        ResolutionContext::ModuleItem(module_item_id),
-    );
+    let segments = get_use_path_segments(db.upcast(), use_ast.clone())?;
+    let resolved_item = match handle_self_path(db, &mut diagnostics, segments, use_ast) {
+        Err(diag_added) => Err(diag_added),
+        Ok(segments) => resolver.resolve_generic_path(
+            &mut diagnostics,
+            segments,
+            NotFoundItemType::Identifier,
+            ResolutionContext::ModuleItem(module_item_id),
+        ),
+    };
     let resolver_data: Arc<ResolverData> = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
+}
+
+/// Processes a `self` path in a `use` statement.
+///
+/// This function checks if the `self` keyword is used correctly in a `use`
+/// statement and modifies the path segments accordingly. It also reports
+/// diagnostics for invalid usage of `self`.
+fn handle_self_path(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    mut segments: Vec<ast::PathSegment>,
+    use_path: ast::UsePath,
+) -> Maybe<Vec<ast::PathSegment>> {
+    if let Some(last) = segments.last() {
+        if last.identifier(db.upcast()) == SELF_PARAM_KW {
+            if use_path.as_syntax_node().parent(db).unwrap().kind(db.upcast())
+                != SyntaxKind::UsePathList
+            {
+                diagnostics.report(use_path.stable_ptr(db.upcast()), UseSelfNonMulti);
+            }
+            segments.pop();
+        }
+    }
+    if segments.is_empty() {
+        Err(diagnostics.report(use_path.stable_ptr(db.upcast()), UseSelfEmptyPath))
+    } else {
+        Ok(segments)
+    }
 }
 
 /// Returns the segments that are the parts of the use path.
