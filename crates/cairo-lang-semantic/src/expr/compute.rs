@@ -476,7 +476,7 @@ fn compute_expr_inline_macro_semantic(
         };
         let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
         ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
-        (expanded_code, macro_name.into(), vec![])
+        (expanded_code.text, macro_name.into(), expanded_code.code_mappings)
     } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
         let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
             cfg_set: &ctx.cfg_set,

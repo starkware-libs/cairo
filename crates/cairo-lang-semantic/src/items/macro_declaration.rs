@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::ExprPath;
@@ -215,17 +217,42 @@ fn is_macro_rule_match_ex(
     Some(())
 }
 
+/// The result of expanding a macro rule.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroExpansionResult {
+    /// The expanded text.
+    pub text: String,
+    /// Information about placeholder expansions in this macro expansion.
+    /// Must be kept ordered by span.start to enable binary search in get_placeholder_at.
+    pub code_mappings: Vec<CodeMapping>,
+}
+
+impl MacroExpansionResult {
+    /// Returns the placeholder that was expanded at the given offset, if any.
+    pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
+        // Binary search to find a code mapping containing the offset
+        match self.code_mappings.binary_search_by_key(&offset, |p| p.span.start) {
+            Ok(i) => Some(&self.code_mappings[i]),
+            Err(i) if i > 0 && self.code_mappings[i - 1].span.end > offset => {
+                Some(&self.code_mappings[i - 1])
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Traverse the macro expansion and replace the placeholders with the provided values, creates a
 /// string representation of the expanded macro.
 pub fn expand_macro_rule(
     db: &dyn SyntaxGroup,
     rule: &MacroRuleData,
     captures: &OrderedHashMap<String, String>,
-) -> String {
+) -> MacroExpansionResult {
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
-    expand_macro_rule_ex(db, node, captures, &mut res_buffer);
-    res_buffer
+    let mut code_mappings = Vec::new();
+    expand_macro_rule_ex(db, node, captures, &mut res_buffer, &mut code_mappings);
+    MacroExpansionResult { text: res_buffer, code_mappings }
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
@@ -235,6 +262,7 @@ fn expand_macro_rule_ex(
     node: SyntaxNode,
     captures: &OrderedHashMap<String, String>,
     res_buffer: &mut String,
+    code_mappings: &mut Vec<CodeMapping>,
 ) {
     if node.kind(db) == SyntaxKind::ExprPath {
         let path_node = ExprPath::from_syntax_node(db, node.clone());
@@ -244,7 +272,17 @@ fn expand_macro_rule_ex(
             if path_node.segments(db).elements(db).len() == 1 && placeholder_name != MACRO_DEF_SITE
             {
                 if let Some(value) = captures.get(&placeholder_name) {
+                    let start_offset = TextWidth::from_str(res_buffer).as_offset();
                     res_buffer.push_str(value);
+                    let end_offset = TextWidth::from_str(res_buffer).as_offset();
+
+                    code_mappings.push(CodeMapping {
+                        span: TextSpan { start: start_offset, end: end_offset },
+                        origin: CodeOrigin::Span(TextSpan {
+                            start: node.span_start_without_trivia(db),
+                            end: node.span_end_without_trivia(db),
+                        }),
+                    });
                 } else {
                     // TODO(Gil): verify in the declaration that all the used placeholders in the
                     // expansion are present in the captures.
@@ -259,7 +297,7 @@ fn expand_macro_rule_ex(
         return;
     }
     for child in db.get_children(node).iter() {
-        expand_macro_rule_ex(db, child.clone(), captures, res_buffer);
+        expand_macro_rule_ex(db, child.clone(), captures, res_buffer, code_mappings);
     }
 }
 
