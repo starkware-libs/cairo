@@ -185,11 +185,6 @@ fn statement_can_be_optimized_out(
         return None;
     }
 
-    if candidate.statements_block_id != statement_location.0 {
-        // statements are not in the same block as the enum construct.
-        return None;
-    }
-
     let (arm_idx, arm) = candidate
         .match_arms
         .iter()
@@ -293,11 +288,6 @@ struct OptimizationCandidate<'a> {
 
     /// The statements before the match in reverse order.
     statement_rev: Vec<&'a Statement>,
-
-    /// The block_id where the statements are located
-    /// The optimization is only possible if the statements are in the same block as the enum
-    /// construct statement.
-    statements_block_id: BlockId,
 }
 
 pub struct MatchOptimizerContext {
@@ -346,7 +336,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        statement_location: StatementLocation,
+        _statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
@@ -364,7 +354,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             info.candidate = None;
             return;
         }
-        candidate.statements_block_id = statement_location.0;
 
         let orig_match_variable = candidate.match_variable;
 
@@ -450,7 +439,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     arm_reachable_blocks,
                     additional_remappings: None,
                     statement_rev: vec![],
-                    statements_block_id: block_id,
                 })
             }
             _ => None,
