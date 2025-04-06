@@ -33,7 +33,7 @@ struct Cli {
     /// The input files with declared classes info.
     #[arg(
         required_unless_present = "fullnode_url",
-        conflicts_with_all = ["fullnode_url", "fullnode_args"]
+        conflicts_with_all = ["fullnode_url", "FullnodeArgs"]
     )]
     input_files: Vec<String>,
     /// The allowed libfuncs list to use (default: most recent audited list).
@@ -52,7 +52,7 @@ struct Cli {
     /// files should be provided.
     #[arg(
         long,
-        requires_ifs = [("fullnode_url", "fullnode_args")], 
+        requires_ifs = [("fullnode_url", "FullnodeArgs")], 
         required_unless_present = "input_files", 
         conflicts_with = "input_files"
     )]
