@@ -21909,9 +21909,240 @@ impl From<&TokenTreeNode> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTreeRepetition {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl TokenTreeRepetition {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_ELEMENTS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_SEPARATOR: usize = 4;
+    pub const INDEX_OPERATOR: usize = 5;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        lparen: TerminalLParenGreen,
+        elements: TokenListGreen,
+        rparen: TerminalRParenGreen,
+        separator: OptionTerminalCommaGreen,
+        operator: MacroRepetitionOperatorGreen,
+    ) -> TokenTreeRepetitionGreen {
+        let children: Vec<GreenId> =
+            vec![dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TokenTreeRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeRepetition,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl TokenTreeRepetition {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> TokenList {
+        TokenList::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalComma {
+        OptionTerminalComma::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.children[5].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeRepetitionPtr(pub SyntaxStablePtrId);
+impl TokenTreeRepetitionPtr {}
+impl TypedStablePtr for TokenTreeRepetitionPtr {
+    type SyntaxNode = TokenTreeRepetition;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTreeRepetition {
+        TokenTreeRepetition::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreeRepetitionPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreeRepetitionPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeRepetitionGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTreeRepetition {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeRepetition);
+    type StablePtr = TokenTreeRepetitionPtr;
+    type Green = TokenTreeRepetitionGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeRepetitionGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeRepetition,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        TokenList::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                        OptionTerminalComma::missing(db).0,
+                        MacroRepetitionOperator::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeRepetition,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeRepetition
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeRepetition {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreeRepetitionPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenTreeRepetition> for SyntaxStablePtrId {
+    fn from(node: &TokenTreeRepetition) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTreeParam {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl TokenTreeParam {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        name: TerminalIdentifierGreen,
+    ) -> TokenTreeParamGreen {
+        let children: Vec<GreenId> = vec![dollar.0, name.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TokenTreeParamGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeParam,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl TokenTreeParam {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeParamPtr(pub SyntaxStablePtrId);
+impl TokenTreeParamPtr {}
+impl TypedStablePtr for TokenTreeParamPtr {
+    type SyntaxNode = TokenTreeParam;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenTreeParam {
+        TokenTreeParam::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenTreeParamPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenTreeParamPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeParamGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTreeParam {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeParam);
+    type StablePtr = TokenTreeParamPtr;
+    type Green = TokenTreeParamGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeParamGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenTreeParam,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalIdentifier::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeParam,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeParam
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeParam {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreeParamPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenTreeParam> for SyntaxStablePtrId {
+    fn from(node: &TokenTreeParam) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TokenTree {
     Token(TokenTreeLeaf),
     Subtree(TokenTreeNode),
+    Repetition(TokenTreeRepetition),
+    Param(TokenTreeParam),
     Missing(TokenTreeMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -21940,6 +22171,16 @@ impl From<TokenTreeNodePtr> for TokenTreePtr {
         Self(value.0)
     }
 }
+impl From<TokenTreeRepetitionPtr> for TokenTreePtr {
+    fn from(value: TokenTreeRepetitionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeParamPtr> for TokenTreePtr {
+    fn from(value: TokenTreeParamPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenTreeMissingPtr> for TokenTreePtr {
     fn from(value: TokenTreeMissingPtr) -> Self {
         Self(value.0)
@@ -21952,6 +22193,16 @@ impl From<TokenTreeLeafGreen> for TokenTreeGreen {
 }
 impl From<TokenTreeNodeGreen> for TokenTreeGreen {
     fn from(value: TokenTreeNodeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeRepetitionGreen> for TokenTreeGreen {
+    fn from(value: TokenTreeRepetitionGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenTreeParamGreen> for TokenTreeGreen {
+    fn from(value: TokenTreeParamGreen) -> Self {
         Self(value.0)
     }
 }
@@ -21978,6 +22229,12 @@ impl TypedSyntaxNode for TokenTree {
             SyntaxKind::TokenTreeNode => {
                 TokenTree::Subtree(TokenTreeNode::from_syntax_node(db, node))
             }
+            SyntaxKind::TokenTreeRepetition => {
+                TokenTree::Repetition(TokenTreeRepetition::from_syntax_node(db, node))
+            }
+            SyntaxKind::TokenTreeParam => {
+                TokenTree::Param(TokenTreeParam::from_syntax_node(db, node))
+            }
             SyntaxKind::TokenTreeMissing => {
                 TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node))
             }
@@ -21993,6 +22250,12 @@ impl TypedSyntaxNode for TokenTree {
             SyntaxKind::TokenTreeNode => {
                 Some(TokenTree::Subtree(TokenTreeNode::from_syntax_node(db, node)))
             }
+            SyntaxKind::TokenTreeRepetition => {
+                Some(TokenTree::Repetition(TokenTreeRepetition::from_syntax_node(db, node)))
+            }
+            SyntaxKind::TokenTreeParam => {
+                Some(TokenTree::Param(TokenTreeParam::from_syntax_node(db, node)))
+            }
             SyntaxKind::TokenTreeMissing => {
                 Some(TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node)))
             }
@@ -22003,6 +22266,8 @@ impl TypedSyntaxNode for TokenTree {
         match self {
             TokenTree::Token(x) => x.as_syntax_node(),
             TokenTree::Subtree(x) => x.as_syntax_node(),
+            TokenTree::Repetition(x) => x.as_syntax_node(),
+            TokenTree::Param(x) => x.as_syntax_node(),
             TokenTree::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -22020,7 +22285,11 @@ impl TokenTree {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TokenTreeLeaf | SyntaxKind::TokenTreeNode | SyntaxKind::TokenTreeMissing
+            SyntaxKind::TokenTreeLeaf
+                | SyntaxKind::TokenTreeNode
+                | SyntaxKind::TokenTreeRepetition
+                | SyntaxKind::TokenTreeParam
+                | SyntaxKind::TokenTreeMissing
         )
     }
 }
