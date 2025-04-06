@@ -98,7 +98,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         target_block,
         remapping,
         reachable_blocks,
-        additional_remapping,
+        additional_remappings,
         n_statement,
         remove_enum_construct,
     } in ctx.fixes
@@ -107,7 +107,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         // above).
         let mut new_remapping = remapping.clone();
         let mut renamed_vars = OrderedHashMap::<VariableId, VariableId>::default();
-        for (var, dst) in additional_remapping.iter() {
+        for (var, dst) in additional_remappings.iter() {
             // Allocate a new variable, if it was not allocated before.
             let new_var = *var_renaming
                 .entry((*var, arm_idx))
@@ -134,7 +134,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         if statement_location.0 == match_block {
             // The match was removed (by the assignment of `block.end` above), no need to fix it.
             // Sanity check: there should be no additional remapping in this case.
-            assert!(additional_remapping.remapping.is_empty());
+            assert!(additional_remappings.remapping.is_empty());
             continue;
         }
 
@@ -219,14 +219,27 @@ fn statement_can_be_optimized_out(
     demand
         .apply_remapping(&mut EmptyDemandReporter {}, [(var_id, (&input.var_id, ()))].into_iter());
 
-    if let Some(additional_remappings) = &candidate.additional_remappings {
-        demand.apply_remapping(
-            &mut EmptyDemandReporter {},
-            additional_remappings
-                .iter()
-                .map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
-        );
+    let additional_remappings = match candidate.remapping {
+        Some(remappings) => {
+            // Filter the additional remappings to only include those that are used in relevant arm.
+            VarRemapping {
+                remapping: OrderedHashMap::from_iter(remappings.iter().filter_map(|(dst, src)| {
+                    if demand.vars.contains_key(dst) { Some((*dst, *src)) } else { None }
+                })),
+            }
+        }
+        None => VarRemapping::default(),
+    };
+
+    if !additional_remappings.is_empty() && candidate.future_merge {
+        // If there are additional_remappings and a future merge we cannot apply the optimization.
+        return None;
     }
+
+    demand.apply_remapping(
+        &mut EmptyDemandReporter {},
+        additional_remappings.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
+    );
 
     for stmt in candidate.statement_rev.iter().rev() {
         demand.update(stmt);
@@ -241,8 +254,7 @@ fn statement_can_be_optimized_out(
         target_block: arm.block_id,
         remapping,
         reachable_blocks: info.reachable_blocks.clone(),
-        additional_remapping: std::mem::take(&mut candidate.additional_remappings)
-            .unwrap_or_default(),
+        additional_remappings,
         n_statement: candidate.statement_rev.len(),
         remove_enum_construct: !info.demand.vars.contains_key(output),
     })
@@ -257,12 +269,12 @@ pub struct FixInfo {
     arm_idx: usize,
     /// The target block to jump to.
     target_block: BlockId,
-    /// The variable remapping that should be applied.
+    /// Remaps the input of the enum construct to the variable that is introduced by the match arm.
     remapping: VarRemapping,
     /// The blocks that can be reached from the relevant arm of the match.
     reachable_blocks: OrderedHashSet<BlockId>,
     /// Additional remappings that appeared in a `Goto` leading to the match.
-    additional_remapping: VarRemapping,
+    additional_remappings: VarRemapping,
     /// The number of statement between the enum construct and the match.
     n_statement: usize,
     /// Indicated that the enum construct statement can be removed.
@@ -289,8 +301,11 @@ struct OptimizationCandidate<'a> {
     /// The blocks that can be reached from each of the arms.
     arm_reachable_blocks: Vec<OrderedHashSet<BlockId>>,
 
-    /// Additional remappings that appeared in a `Goto` leading to the match.
-    additional_remappings: Option<VarRemapping>,
+    /// A remappings that appeared in a `Goto` leading to the match.
+    /// Only one such remapping is allowed as this is typically the case
+    /// after running `optimize_remapping` and `reorder_statements` and it simplifies the
+    /// optimization.
+    remapping: Option<&'a VarRemapping>,
 
     /// The statements before the match in reverse order.
     statement_rev: Vec<&'a Statement>,
@@ -341,8 +356,12 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         info: &mut Self::Info,
         _statement_location: StatementLocation,
         _target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &'a VarRemapping,
     ) {
+        if remapping.is_empty() {
+            return;
+        }
+
         info.demand.apply_remapping(
             &mut EmptyDemandReporter {},
             remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))),
@@ -352,13 +371,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             return;
         };
 
-        if !candidate.statement_rev.is_empty() {
-            // Revoke the candidate if we passed over any statement in the target block.
+        if candidate.remapping.is_some() || !candidate.statement_rev.is_empty() {
+            // If we already have a remapping or if we have passed over any statement in the
+            // target block, revoke the candidate.
+
             info.candidate = None;
             return;
         }
-
-        let orig_match_variable = candidate.match_variable;
 
         // The term 'additional_remappings' refers to remappings for variables other than the match
         // variable.
@@ -370,25 +389,11 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 !remapping.is_empty()
             };
 
-        if goto_has_additional_remappings {
-            // here, we have remappings for variables other than the match variable.
+        // Store the goto's remapping.
+        candidate.remapping = Some(remapping);
 
-            if candidate.future_merge || candidate.additional_remappings.is_some() {
-                // TODO(ilya): Support multiple remappings with future merges.
-
-                // Revoke the candidate.
-                info.candidate = None;
-            } else {
-                // Store the goto's remapping, except for the match variable.
-                candidate.additional_remappings = Some(VarRemapping {
-                    remapping: remapping
-                        .iter()
-                        .filter_map(|(var, dst)| {
-                            if *var != orig_match_variable { Some((*var, *dst)) } else { None }
-                        })
-                        .collect(),
-                });
-            }
+        if goto_has_additional_remappings && candidate.future_merge {
+            info.candidate = None;
         }
     }
 
@@ -439,7 +444,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     arm_demands,
                     future_merge: found_collision,
                     arm_reachable_blocks,
-                    additional_remappings: None,
+                    remapping: None,
                     statement_rev: vec![],
                 })
             }

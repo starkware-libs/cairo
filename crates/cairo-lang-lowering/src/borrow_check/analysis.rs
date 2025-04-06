@@ -27,7 +27,7 @@ pub trait Analyzer<'a> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &'a VarRemapping,
     ) {
     }
     fn merge_match(

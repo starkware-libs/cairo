@@ -1772,20 +1772,20 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v3 -> v11, v2 -> v38})
+  Goto(blk4, {v3 -> v11})
 
 blk2:
 Statements:
   (v8: ()) <- struct_construct()
 End:
-  Goto(blk5, {v8 -> v12, v4 -> v36})
+  Goto(blk5, {v8 -> v12})
 
 blk3:
 Statements:
 End:
   Match(match_enum(v7) {
-    Option::Some(v39) => blk17,
-    Option::None(v37) => blk16,
+    Option::Some(v37) => blk17,
+    Option::None(v36) => blk16,
   })
 
 blk4:
@@ -1866,12 +1866,12 @@ End:
 blk16:
 Statements:
 End:
-  Goto(blk5, {v37 -> v12, v6 -> v36})
+  Goto(blk5, {v36 -> v12})
 
 blk17:
 Statements:
 End:
-  Goto(blk4, {v39 -> v11, v6 -> v38})
+  Goto(blk4, {v37 -> v11})
 
 //! > lowering_diagnostics
 
