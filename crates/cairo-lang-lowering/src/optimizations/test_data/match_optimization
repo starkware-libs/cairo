@@ -1874,3 +1874,208 @@ End:
   Goto(blk4, {v39 -> v11, v6 -> v38})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test enum variable is used in a struct.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> MyStruct {
+    let v = Some(1);
+    let res = MyStruct { v };
+    if let Some(_) = v {
+        return res;
+    }
+    res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    v: Option<u32>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 1
+  (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+  (v2: test::MyStruct) <- struct_construct(v1)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v2)
+
+blk2:
+Statements:
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 1
+  (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+  (v2: test::MyStruct) <- struct_construct(v1)
+End:
+  Goto(blk1, {v0 -> v3})
+
+blk1:
+Statements:
+End:
+  Return(v2)
+
+blk2:
+Statements:
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Match optimization with struct construct before merge.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > test_comments
+Optioization not applicable.
+
+//! > function
+fn foo(ref input: Span<felt252>) -> felt252 {
+    let res: Option<@Box<[felt252; 4]>> = input.multi_pop_front();
+
+    if let Some(_) = res {
+        1
+    } else {
+        2
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::array::array_snapshot_multi_pop_front;
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_multi_pop_front::<[core::felt252; 4], core::array::FixedSizedArrayInfoImpl::<core::felt252, 4>>(v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::Some(v3)
+  (v6: core::array::Span::<core::felt252>) <- struct_construct(v2)
+End:
+  Goto(blk3, {v6 -> v7, v5 -> v8})
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::None(v9)
+  (v11: core::array::Span::<core::felt252>) <- struct_construct(v4)
+End:
+  Goto(blk3, {v11 -> v7, v10 -> v8})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v8) {
+    Option::Some(v12) => blk4,
+    Option::None(v13) => blk5,
+  })
+
+blk4:
+Statements:
+  (v14: core::felt252) <- 1
+End:
+  Goto(blk6, {v14 -> v15})
+
+blk5:
+Statements:
+  (v16: core::felt252) <- 2
+End:
+  Goto(blk6, {v16 -> v15})
+
+blk6:
+Statements:
+End:
+  Return(v7, v15)
+
+//! > after
+Parameters: v0: core::array::Span::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match core::array::array_snapshot_multi_pop_front::<[core::felt252; 4], core::array::FixedSizedArrayInfoImpl::<core::felt252, 4>>(v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::Some(v3)
+  (v6: core::array::Span::<core::felt252>) <- struct_construct(v2)
+End:
+  Goto(blk3, {v6 -> v7, v5 -> v8})
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::None(v9)
+  (v11: core::array::Span::<core::felt252>) <- struct_construct(v4)
+End:
+  Goto(blk3, {v11 -> v7, v10 -> v8})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v8) {
+    Option::Some(v12) => blk4,
+    Option::None(v13) => blk5,
+  })
+
+blk4:
+Statements:
+  (v14: core::felt252) <- 1
+End:
+  Goto(blk6, {v14 -> v15})
+
+blk5:
+Statements:
+  (v16: core::felt252) <- 2
+End:
+  Goto(blk6, {v16 -> v15})
+
+blk6:
+Statements:
+End:
+  Return(v7, v15)
+
+//! > lowering_diagnostics
