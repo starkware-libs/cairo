@@ -68,6 +68,7 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
+use crate::internal::bounded_int::{downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
@@ -1429,16 +1430,6 @@ pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
     }
 }
 
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
-
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn downcast<FromType, ToType>(
-    x: FromType,
-) -> Option<ToType> implicits(RangeCheck) nopanic;
-
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
 trait Upcastable<FromType, ToType>;
@@ -2377,9 +2368,8 @@ impl I128PartialOrd of PartialOrd<i128> {
 mod signed_div_rem {
     use crate::internal::bounded_int::{
         BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, NegateHelper, UnitInt, constrain,
-        div_rem, is_zero,
+        div_rem, downcast, is_zero, upcast,
     };
-    use super::{downcast, upcast};
 
     impl DivRemImpl<
         T,

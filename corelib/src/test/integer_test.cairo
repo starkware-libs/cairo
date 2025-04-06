@@ -1873,14 +1873,11 @@ fn test_signed_int_diff() {
 }
 
 mod bounded_int {
-    use crate::RangeCheck;
     use crate::internal::bounded_int;
     use crate::internal::bounded_int::{
         AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        downcast, upcast,
     };
-
-    extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
-    extern fn upcast<T, S>(index: T) -> S nopanic;
 
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
     const U128_MAX: felt252 = U128_UPPER - 1;
