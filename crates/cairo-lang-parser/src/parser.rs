@@ -3076,7 +3076,7 @@ impl<'a> Parser<'a> {
         // comment), return None and do not change the next terminal leading trivia.
         let mut has_header_doc = false;
         let mut split_index = 0;
-        for trivium in self.next_terminal.leading_trivia.iter() {
+        for trivium in &self.next_terminal.leading_trivia {
             match trivium.0.lookup_intern(self.db).kind {
                 SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
                     has_header_doc = true;
