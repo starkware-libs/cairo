@@ -223,7 +223,7 @@ pub extern fn sha256_process_block_syscall(
 ///
 /// NOTE: This syscall should only be used to allow support for old version-0 bound accounts,
 /// and should not be used for other purposes.
-extern fn meta_tx_v0_syscall(
+pub extern fn meta_tx_v0_syscall(
     address: ContractAddress,
     entry_point_selector: felt252,
     calldata: Span<felt252>,
