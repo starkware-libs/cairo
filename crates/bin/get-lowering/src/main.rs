@@ -9,6 +9,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
+use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::FlatLowered;
@@ -78,6 +79,10 @@ struct Args {
     /// Disables gas handling.
     #[arg(short, long)]
     no_gas: bool,
+
+    /// Use the executable plugin suite instead of the starknet suite
+    #[arg(short, long)]
+    executable: bool,
 
     /// The index of the generated function to output.
     #[arg(long)]
@@ -235,7 +240,11 @@ fn main() -> anyhow::Result<()> {
             .skip_auto_withdraw_gas()
             .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]));
     }
-    db_builder.detect_corelib().with_default_plugin_suite(starknet_plugin_suite());
+
+    let plugin_suite =
+        if args.executable { executable_plugin_suite() } else { starknet_plugin_suite() };
+
+    db_builder.detect_corelib().with_default_plugin_suite(plugin_suite);
 
     let mut db_val = db_builder.build()?;
 
