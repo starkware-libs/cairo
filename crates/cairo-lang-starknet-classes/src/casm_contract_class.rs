@@ -490,7 +490,7 @@ impl CasmContractClass {
             require(type_resolver.is_valid_entry_point_return_type(panic_result))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            for type_id in input_builtins.iter() {
+            for type_id in input_builtins {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),

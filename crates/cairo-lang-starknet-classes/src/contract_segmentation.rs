@@ -162,7 +162,7 @@ impl FunctionInfo {
     ) -> Result<(), SegmentationError> {
         match statement {
             Statement::Invocation(invocation) => {
-                for branch in invocation.branches.iter() {
+                for branch in &invocation.branches {
                     let next_statement_idx = StatementIdx(idx).next(&branch.target).0;
                     if next_statement_idx < self.entry_point {
                         return Err(SegmentationError::JumpOutsideFunction(StatementIdx(idx)));
