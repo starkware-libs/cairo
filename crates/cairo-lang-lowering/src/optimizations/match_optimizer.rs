@@ -382,21 +382,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             return;
         }
 
-        // The term 'additional_remappings' refers to remappings for variables other than the match
-        // variable.
-        let goto_has_additional_remappings =
-            if let Some(var_usage) = remapping.get(&candidate.match_variable) {
-                candidate.match_variable = var_usage.var_id;
-                remapping.len() > 1
-            } else {
-                !remapping.is_empty()
-            };
-
         // Store the goto's remapping.
         candidate.remapping = Some(remapping);
-
-        if goto_has_additional_remappings && candidate.future_merge {
-            info.candidate = None;
+        if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+            candidate.match_variable = var_usage.var_id;
         }
     }
 
