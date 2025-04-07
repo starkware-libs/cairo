@@ -180,21 +180,15 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     }
 }
 
-/// Returns true if the statement can be optimized out and false otherwise.
-/// If the statement can be optimized, returns a [FixInfo] object.
-fn statement_can_be_optimized_out(
-    stmt: &Statement,
+/// Try to apply the optimization at the given statement.
+/// If the optimization can be applied, return the fix information and updates the analysis info
+/// accordingly.
+fn try_get_fix_info(
+    StatementEnumConstruct { variant, input, output }: &StatementEnumConstruct,
     info: &mut AnalysisInfo<'_>,
     candidate: &mut OptimizationCandidate<'_>,
     statement_location: (BlockId, usize),
 ) -> Option<FixInfo> {
-    let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
-        return None;
-    };
-    if *output != candidate.match_variable {
-        return None;
-    }
-
     let (arm_idx, arm) = candidate
         .match_arms
         .iter()
@@ -337,15 +331,29 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         stmt: &'a Statement,
     ) {
         if let Some(mut candidate) = std::mem::take(&mut info.candidate) {
-            if let Some(fix_info) =
-                statement_can_be_optimized_out(stmt, info, &mut candidate, statement_location)
-            {
-                self.fixes.push(fix_info);
-                return;
-            }
+            match stmt {
+                Statement::EnumConstruct(enum_construct_stmt)
+                    if enum_construct_stmt.output == candidate.match_variable =>
+                {
+                    if let Some(fix_info) = try_get_fix_info(
+                        enum_construct_stmt,
+                        info,
+                        &mut candidate,
+                        statement_location,
+                    ) {
+                        self.fixes.push(fix_info);
+                        return;
+                    }
 
-            candidate.statement_rev.push(stmt);
-            info.candidate = Some(candidate);
+                    // Since `candidate.match_variable` was introduced, the candidate is no longer
+                    // applicable.
+                    info.candidate = None;
+                }
+                _ => {
+                    candidate.statement_rev.push(stmt);
+                    info.candidate = Some(candidate);
+                }
+            }
         }
 
         info.demand.update(stmt);
