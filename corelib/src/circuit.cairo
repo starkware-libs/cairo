@@ -768,9 +768,8 @@ extern fn get_circuit_output<C, Output>(
 /// Helper module to convert into `u384`.
 #[feature("bounded-int-utils")]
 mod conversions {
-    use crate::internal::bounded_int;
     use crate::internal::bounded_int::{
-        AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt, downcast, upcast,
+        self, AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt, downcast, upcast,
     };
     use super::{u384, u96};
 

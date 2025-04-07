@@ -13,18 +13,16 @@ pub use crate::integer::{Bitwise, i128, i16, i32, i64, i8, u128, u16, u256, u32,
 pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 pub use crate::nullable::{Nullable, NullableTrait};
 pub use crate::ops::Deref;
-pub use crate::option::Option::{None, Some};
-pub use crate::option::{Option, OptionTrait};
+pub use crate::option::Option::{self, None, Some};
+pub use crate::option::OptionTrait;
 pub use crate::panics::{Panic, PanicResult, panic};
 pub use crate::pedersen::Pedersen;
 pub use crate::poseidon::Poseidon;
-pub use crate::result::Result::{Err, Ok};
-pub use crate::result::{Result, ResultTrait};
+pub use crate::result::Result::{self, Err, Ok};
+pub use crate::result::ResultTrait;
 pub use crate::serde::Serde;
 #[feature("corelib-internal-use")]
-pub use crate::starknet;
-#[feature("corelib-internal-use")]
-pub use crate::starknet::System;
+pub use crate::starknet::{self, System};
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]
