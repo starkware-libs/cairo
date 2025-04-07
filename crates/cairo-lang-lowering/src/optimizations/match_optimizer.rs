@@ -367,8 +367,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 candidate.match_variable = var_usage.var_id;
                 remapping.len() > 1
             } else {
-                // Note that remapping.is_empty() is false here.
-                true
+                !remapping.is_empty()
             };
 
         if goto_has_additional_remappings {
