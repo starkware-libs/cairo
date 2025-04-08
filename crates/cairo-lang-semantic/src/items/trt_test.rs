@@ -11,13 +11,16 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 fn test_trait() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc::indoc! {"
+    let test_module = setup_test_module(
+        db,
+        indoc::indoc! {"
             // `inline` is used just to have an allowed attribute.
             #[inline]
             trait MyContract {
                 fn foo(a: felt252);
             }
-        "})
+        "},
+    )
     .unwrap();
 
     let trait_id = extract_matches!(

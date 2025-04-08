@@ -7,6 +7,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::functions::GenericFunctionWithBodyId;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -20,7 +21,7 @@ use num_integer::Integer;
 use num_traits::Zero;
 
 use crate::db::LoweringGroup;
-use crate::ids::{FunctionId, SemanticFunctionIdEx};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -42,13 +43,36 @@ enum VarInfo {
     Struct(Vec<Option<VarInfo>>),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Reachability {
+    /// The block is not reachable from the function start after const-folding.
+    Unreachable,
+    /// The block is reachable from the function start only through the goto at the end of the given
+    /// block.
+    FromSingleGoto(BlockId),
+    /// The block is reachable from the function start after const-folding - just does not fit
+    /// `FromSingleGoto`.
+    Any,
+}
+
 /// Performs constant folding on the lowered program.
-/// The optimization works better when the blocks are topologically sorted.
-pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+/// The optimization only works when the blocks are topologically sorted.
+pub fn const_folding(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+    lowered: &mut FlatLowered,
+) {
     if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
     }
     let libfunc_info = priv_const_folding_info(db);
+    // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
+    // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
+    if function_id.base_semantic_function(db).generic_function(db.upcast())
+        == libfunc_info.panic_with_const_felt252
+    {
+        return;
+    }
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
     let mut ctx = ConstFoldingContext {
@@ -57,15 +81,24 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         variables: &mut lowered.variables,
         libfunc_info: &libfunc_info,
     };
-    let mut stack = vec![BlockId::root()];
-    let mut visited = vec![false; lowered.blocks.len()];
-    while let Some(block_id) = stack.pop() {
-        if visited[block_id.0] {
-            continue;
+    let mut reachability = vec![Reachability::Unreachable; lowered.blocks.len()];
+    reachability[0] = Reachability::Any;
+    for block_id in 0..lowered.blocks.len() {
+        match reachability[block_id] {
+            Reachability::Unreachable => continue,
+            Reachability::Any => {}
+            Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
+                FlatBlockEnd::Goto(_, remapping) => {
+                    for (dst, src) in remapping.iter() {
+                        if let Some(v) = ctx.as_const(src.var_id) {
+                            ctx.var_info.insert(*dst, VarInfo::Const(v.clone()));
+                        }
+                    }
+                }
+                _ => unreachable!("Expected a goto end"),
+            },
         }
-        visited[block_id.0] = true;
-
-        let block = &mut lowered.blocks[block_id];
+        let block = &mut lowered.blocks[BlockId(block_id)];
         let mut additional_consts = vec![];
         for stmt in block.statements.iter_mut() {
             ctx.maybe_replace_inputs(stmt.inputs_mut());
@@ -172,14 +205,12 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         block.statements.splice(0..0, additional_consts.into_iter().map(Statement::Const));
 
         match &mut block.end {
-            FlatBlockEnd::Goto(block_id, remappings) => {
-                stack.push(*block_id);
+            FlatBlockEnd::Goto(_, remappings) => {
                 for (_, v) in remappings.iter_mut() {
                     ctx.maybe_replace_input(v);
                 }
             }
             FlatBlockEnd::Match { info } => {
-                stack.extend(info.arms().iter().map(|arm| arm.block_id));
                 ctx.maybe_replace_inputs(info.inputs_mut());
                 match info {
                     MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
@@ -204,6 +235,21 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             }
             FlatBlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
             FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+        }
+        match &block.end {
+            FlatBlockEnd::Goto(dst_block_id, _) => {
+                reachability[dst_block_id.0] = match reachability[dst_block_id.0] {
+                    Reachability::Unreachable => Reachability::FromSingleGoto(BlockId(block_id)),
+                    Reachability::FromSingleGoto(_) | Reachability::Any => Reachability::Any,
+                }
+            }
+            FlatBlockEnd::Match { info } => {
+                for arm in info.arms() {
+                    assert_eq!(reachability[arm.block_id.0], Reachability::Unreachable);
+                    reachability[arm.block_id.0] = Reachability::Any;
+                }
+            }
+            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(..) => {}
         }
     }
 }
@@ -232,6 +278,17 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
+        if stmt.function == self.panic_with_felt252 {
+            let val = self.as_const(stmt.inputs[0].var_id)?;
+            stmt.inputs.clear();
+            stmt.function = ModuleHelper::core(self.db.upcast())
+                .function_id(
+                    "panic_with_const_felt252",
+                    vec![GenericArgumentId::Constant(val.clone().intern(self.db))],
+                )
+                .lowered(self.db);
+            return None;
+        }
         let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
@@ -278,11 +335,12 @@ impl ConstFoldingContext<'_> {
                 stmt.inputs.clear();
                 stmt.function =
                     ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
-                        .function_id("storage_base_address_const", vec![
-                            GenericArgumentId::Constant(
+                        .function_id(
+                            "storage_base_address_const",
+                            vec![GenericArgumentId::Constant(
                                 ConstValue::Int(val.clone(), *ty).intern(self.db),
-                            ),
-                        ])
+                            )],
+                        )
                         .lowered(self.db);
             }
             None
@@ -374,29 +432,32 @@ impl ConstFoldingContext<'_> {
                     var.location,
                 );
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
-                return Some((None, FlatBlockEnd::Match {
-                    info: MatchInfo::Extern(MatchExternInfo {
-                        function,
-                        inputs: vec![nz_input],
-                        arms: vec![
-                            MatchArm {
-                                arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_zero_variant(db, var.ty),
-                                ),
-                                block_id: info.arms[1].block_id,
-                                var_ids: vec![],
-                            },
-                            MatchArm {
-                                arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_nonzero_variant(db, var.ty),
-                                ),
-                                block_id: info.arms[0].block_id,
-                                var_ids: vec![unused_nz_var],
-                            },
-                        ],
-                        location: info.location,
-                    }),
-                }));
+                return Some((
+                    None,
+                    FlatBlockEnd::Match {
+                        info: MatchInfo::Extern(MatchExternInfo {
+                            function,
+                            inputs: vec![nz_input],
+                            arms: vec![
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_zero_variant(db, var.ty),
+                                    ),
+                                    block_id: info.arms[1].block_id,
+                                    var_ids: vec![],
+                                },
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_nonzero_variant(db, var.ty),
+                                    ),
+                                    block_id: info.arms[0].block_id,
+                                    var_ids: vec![unused_nz_var],
+                                },
+                            ],
+                            location: info.location,
+                        }),
+                    },
+                ));
             }
             Some((
                 None,
@@ -587,6 +648,10 @@ pub struct ConstFoldingLibfuncInfo {
     storage_access_module: ModuleId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: ExternFunctionId,
+    /// The `core::panic_with_felt252` function.
+    panic_with_felt252: FunctionId,
+    /// The `core::panic_with_const_felt252` function.
+    panic_with_const_felt252: GenericFunctionWithBodyId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
@@ -598,8 +663,8 @@ impl ConstFoldingLibfuncInfo {
         let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
-        let upcast = integer_module.extern_function_id("upcast");
-        let downcast = integer_module.extern_function_id("downcast");
+        let upcast = bounded_int_module.extern_function_id("upcast");
+        let downcast = bounded_int_module.extern_function_id("downcast");
         let array_module = core.submodule("array");
         let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
@@ -611,7 +676,7 @@ impl ConstFoldingLibfuncInfo {
                 core.extern_function_id("felt252_is_zero"),
                 bounded_int_module.extern_function_id("bounded_int_is_zero")
             ],
-            ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
+            ["u8", "u16", "u32", "u64", "u128", "u256"]
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_is_zero")))
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
@@ -650,28 +715,32 @@ impl ConstFoldingLibfuncInfo {
         let bounded_int_constrain = bounded_int_module.extern_function_id("bounded_int_constrain");
         let type_value_ranges = OrderedHashMap::from_iter(
             [
-                ("u8", BigInt::ZERO, u8::MAX.into()),
-                ("u16", BigInt::ZERO, u16::MAX.into()),
-                ("u32", BigInt::ZERO, u32::MAX.into()),
-                ("u64", BigInt::ZERO, u64::MAX.into()),
-                ("u128", BigInt::ZERO, u128::MAX.into()),
-                ("u256", BigInt::ZERO, BigInt::from(1) << 256),
-                ("i8", i8::MIN.into(), i8::MAX.into()),
-                ("i16", i16::MIN.into(), i16::MAX.into()),
-                ("i32", i32::MIN.into(), i32::MAX.into()),
-                ("i64", i64::MIN.into(), i64::MAX.into()),
-                ("i128", i128::MIN.into(), i128::MAX.into()),
+                ("u8", BigInt::ZERO, u8::MAX.into(), false),
+                ("u16", BigInt::ZERO, u16::MAX.into(), false),
+                ("u32", BigInt::ZERO, u32::MAX.into(), false),
+                ("u64", BigInt::ZERO, u64::MAX.into(), false),
+                ("u128", BigInt::ZERO, u128::MAX.into(), false),
+                ("u256", BigInt::ZERO, BigInt::from(1) << 256, false),
+                ("i8", i8::MIN.into(), i8::MAX.into(), true),
+                ("i16", i16::MIN.into(), i16::MAX.into(), true),
+                ("i32", i32::MIN.into(), i32::MAX.into(), true),
+                ("i64", i64::MIN.into(), i64::MAX.into(), true),
+                ("i128", i128::MIN.into(), i128::MAX.into(), true),
             ]
-            .map(|(ty, min, max): (&str, BigInt, BigInt)| {
-                let info = TypeInfo {
-                    min,
-                    max,
-                    is_zero: integer_module
-                        .function_id(format!("{ty}_is_zero"), vec![])
-                        .lowered(db),
-                };
-                (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), info)
-            }),
+            .map(
+                |(ty_name, min, max, as_bounded_int): (&str, BigInt, BigInt, bool)| {
+                    let ty = corelib::get_core_ty_by_name(db.upcast(), ty_name.into(), vec![]);
+                    let is_zero = if as_bounded_int {
+                        bounded_int_module
+                            .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
+                    } else {
+                        integer_module.function_id(format!("{ty_name}_is_zero"), vec![])
+                    }
+                    .lowered(db);
+                    let info = TypeInfo { min, max, is_zero };
+                    (ty, info)
+                },
+            ),
         );
         Self {
             felt_sub,
@@ -694,6 +763,10 @@ impl ConstFoldingLibfuncInfo {
             array_get,
             storage_access_module: storage_access_module.id,
             storage_base_address_from_felt252,
+            panic_with_felt252: core.function_id("panic_with_felt252", vec![]).lowered(db),
+            panic_with_const_felt252: GenericFunctionWithBodyId::Free(
+                core.free_function_id("panic_with_const_felt252"),
+            ),
             type_value_ranges,
         }
     }

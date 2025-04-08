@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 #[path = "expr_test.rs"]
 mod test;
 
-/// An linear expression of variables.
+/// A linear expression of variables.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expr<Var: Clone + Debug + PartialEq + Eq + Hash> {
     /// The constant term of the expression.

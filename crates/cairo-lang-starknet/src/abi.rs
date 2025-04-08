@@ -10,6 +10,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId, get_impl_at_context};
 use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
@@ -298,14 +299,14 @@ impl<'a> AbiBuilder<'a> {
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let f = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_entry_point(function.name(self.db.upcast()).into(), EntryPointInfo {
-                source,
-                inputs: f.inputs.clone(),
-            })?;
+            self.add_entry_point(
+                function.name(self.db.upcast()).into(),
+                EntryPointInfo { source, inputs: f.inputs.clone() },
+            )?;
             items.push(Item::Function(f));
         }
 
-        let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
+        let interface_item = Item::Interface(Interface { name: interface_path, items });
         self.add_abi_item(interface_item, true, source)?;
 
         Ok(())
@@ -477,11 +478,10 @@ impl<'a> AbiBuilder<'a> {
         let Some(first_param) = params.next() else {
             return Err(ABIError::EntrypointMustHaveSelf);
         };
-        require(first_param.name == "self").ok_or(ABIError::EntrypointMustHaveSelf)?;
+        require(first_param.name == SELF_PARAM_KW).ok_or(ABIError::EntrypointMustHaveSelf)?;
         let is_ref = first_param.mutability == Mutability::Reference;
-        let expected_storage_ty = is_ref
-            .then_some(storage_type)
-            .unwrap_or_else(|| TypeLongId::Snapshot(storage_type).intern(self.db));
+        let expected_storage_ty =
+            if is_ref { storage_type } else { TypeLongId::Snapshot(storage_type).intern(self.db) };
         require(first_param.ty == expected_storage_ty).ok_or(ABIError::UnexpectedType)?;
         let state_mutability =
             if is_ref { StateMutability::External } else { StateMutability::View };
@@ -900,7 +900,9 @@ impl ABIError {
         // TODO(orizi): Add more error locations.
         match self {
             ABIError::SemanticError => None,
-            ABIError::EventFlatVariantMustBeEnum(attr) => Some(attr.stable_ptr().untyped()),
+            ABIError::EventFlatVariantMustBeEnum(attr) => {
+                Some(attr.stable_ptr(db.upcast()).untyped())
+            }
             ABIError::NoStorage => None,
             ABIError::UnexpectedType => None,
             ABIError::EntrypointMustHaveSelf => None,

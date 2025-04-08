@@ -22,6 +22,7 @@ mod num_test;
 mod option_test;
 mod plugins_test;
 mod print_test;
+mod qm31_test;
 mod range_test;
 mod result_test;
 mod secp256k1_test;
@@ -37,6 +38,7 @@ mod language_features {
     mod closure_test;
     mod const_folding_test;
     mod const_test;
+    mod early_return_test;
     mod for_test;
     mod glob_use_test;
     mod macro_test;

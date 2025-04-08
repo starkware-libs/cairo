@@ -177,7 +177,7 @@ fn test_get_block_info() {
     assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
     starknet::testing::set_block_number(1_u64);
     starknet::testing::set_block_timestamp(2_u64);
-    starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
+    starknet::testing::set_sequencer_address(3_felt252.try_into().unwrap());
     let info = starknet::get_block_info().unbox();
     assert_eq!(info.block_number, 1_u64);
     assert_eq!(info.block_timestamp, 2_u64);
@@ -187,14 +187,14 @@ fn test_get_block_info() {
 #[test]
 fn test_get_caller_address() {
     assert(starknet::get_caller_address().is_zero(), 'non default value');
-    starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_caller_address(1_felt252.try_into().unwrap());
     assert_eq!(starknet::get_caller_address().into(), 1);
 }
 
 #[test]
 fn test_get_contract_address() {
     assert(starknet::get_contract_address().is_zero(), 'non default value');
-    starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_contract_address(1_felt252.try_into().unwrap());
     assert_eq!(starknet::get_contract_address().into(), 1);
 }
 
@@ -208,7 +208,7 @@ fn test_get_version() {
 #[test]
 fn test_get_account_contract_address() {
     assert(starknet::get_tx_info().unbox().account_contract_address.is_zero(), 'non default value');
-    starknet::testing::set_account_contract_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_account_contract_address(1_felt252.try_into().unwrap());
     assert_eq!(starknet::get_tx_info().unbox().account_contract_address.into(), 1);
 }
 
@@ -265,15 +265,13 @@ fn test_get_block_hash() {
 #[test]
 #[should_panic]
 fn test_pop_log_empty_logs() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::pop_log_raw(contract_address).unwrap();
+    starknet::testing::pop_log_raw(0x1234_felt252.try_into().unwrap()).unwrap();
 }
 
 #[test]
 #[should_panic]
 fn test_pop_l2_to_l1_message_empty_messages() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
+    starknet::testing::pop_l2_to_l1_message(0x1234_felt252.try_into().unwrap()).unwrap();
 }
 
 #[test]
@@ -335,38 +333,29 @@ fn test_event_serde() {
 #[test]
 fn test_dispatcher_serde() {
     // Contract Dispatcher
-    let contract_address = starknet::contract_address_const::<123>();
-    let contract0 = ITestContractDispatcher { contract_address };
+    const CONTRACT_ADDRESS: starknet::ContractAddress = 0x1234_felt252.try_into().unwrap();
+    let contract0 = ITestContractDispatcher { contract_address: CONTRACT_ADDRESS };
 
     // Serialize
     let mut calldata = Default::default();
     Serde::serialize(@contract0, ref calldata);
-    let mut calldata_span = calldata.span();
-    assert(
-        calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == contract_address.into(),
-        'Serialize to 0',
-    );
+    assert!(calldata == array![CONTRACT_ADDRESS.into()]);
 
     // Deserialize
     let mut serialized = calldata.span();
     let contract0: ITestContractDispatcher = Serde::deserialize(ref serialized).unwrap();
-    assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
+    assert(contract0.contract_address == CONTRACT_ADDRESS, 'Deserialize to Dispatcher');
 
     // Library Dispatcher
-    let class_hash = test_contract::TEST_CLASS_HASH.try_into().unwrap();
-    let contract1 = ITestContractLibraryDispatcher { class_hash };
+    let contract1 = ITestContractLibraryDispatcher { class_hash: test_contract::TEST_CLASS_HASH };
 
     // Serialize
     let mut calldata = Default::default();
     Serde::serialize(@contract1, ref calldata);
-    let mut calldata_span = calldata.span();
-    assert(
-        calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == class_hash.into(),
-        'Serialize to class_hash',
-    );
+    assert!(calldata == array![test_contract::TEST_CLASS_HASH.into()]);
 
     // Deserialize
     let mut serialized = calldata.span();
     let contract1: ITestContractLibraryDispatcher = Serde::deserialize(ref serialized).unwrap();
-    assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
+    assert!(contract1.class_hash == test_contract::TEST_CLASS_HASH);
 }

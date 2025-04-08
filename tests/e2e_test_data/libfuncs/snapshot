@@ -5,14 +5,13 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
-fn foo(a: Array::<felt252>) -> Array::<felt252> {
+//! > cairo_code
+fn foo(a: Array<felt252>) -> Array<felt252> {
     bar(@a);
     a
 }
 #[inline(never)]
-fn bar(a: @Array::<felt252>) {
-}
+fn bar(a: @Array::<felt252>) {}
 
 //! > casm
 [ap + 0] = [fp + -4], ap++;
@@ -39,16 +38,18 @@ libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 
-snapshot_take<Array<felt252>>([0]) -> ([1], [2]); // 0
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 1
-function_call<user@test::bar>([2]) -> (); // 2
-store_temp<Array<felt252>>([1]) -> ([1]); // 3
-return([1]); // 4
-drop<Snapshot<Array<felt252>>>([0]) -> (); // 5
-return(); // 6
+F0:
+snapshot_take<Array<felt252>>([0]) -> ([1], [2]);
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]);
+function_call<user@test::bar>([2]) -> ();
+store_temp<Array<felt252>>([1]) -> ([1]);
+return([1]);
+F1:
+drop<Snapshot<Array<felt252>>>([0]) -> ();
+return();
 
-test::foo@0([0]: Array<felt252>) -> (Array<felt252>);
-test::bar@5([0]: Snapshot<Array<felt252>>) -> ();
+test::foo@F0([0]: Array<felt252>) -> (Array<felt252>);
+test::bar@F1([0]: Snapshot<Array<felt252>>) -> ();
 
 //! > ==========================================================================
 
@@ -59,20 +60,19 @@ test::bar@5([0]: Snapshot<Array<felt252>>) -> ();
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 struct A {
-    a: Array::<felt252>,
+    a: Array<felt252>,
     b: felt252,
 }
-fn foo(orig: @A) -> @A{
+fn foo(orig: @A) -> @A {
     bar(orig.a, orig.b);
-    let A {a, b} = orig;
+    let A { a, b } = orig;
     bar(a, b);
     orig
 }
 #[inline(never)]
-fn bar(a: @Array::<felt252>, b: @felt252) {
-}
+fn bar(a: @Array::<felt252>, b: @felt252) {}
 
 //! > casm
 [ap + 0] = [fp + -5], ap++;
@@ -110,28 +110,30 @@ libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 
-dup<Snapshot<test::A>>([0]) -> ([0], [1]); // 0
-struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3]); // 1
-drop<felt252>([3]) -> (); // 2
-dup<Snapshot<test::A>>([0]) -> ([0], [4]); // 3
-struct_snapshot_deconstruct<test::A>([4]) -> ([5], [6]); // 4
-drop<Snapshot<Array<felt252>>>([5]) -> (); // 5
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 6
-store_temp<felt252>([6]) -> ([6]); // 7
-function_call<user@test::bar>([2], [6]) -> (); // 8
-dup<Snapshot<test::A>>([0]) -> ([0], [7]); // 9
-struct_snapshot_deconstruct<test::A>([7]) -> ([8], [9]); // 10
-store_temp<Snapshot<Array<felt252>>>([8]) -> ([8]); // 11
-store_temp<felt252>([9]) -> ([9]); // 12
-function_call<user@test::bar>([8], [9]) -> (); // 13
-store_temp<Snapshot<test::A>>([0]) -> ([0]); // 14
-return([0]); // 15
-drop<Snapshot<Array<felt252>>>([0]) -> (); // 16
-drop<felt252>([1]) -> (); // 17
-return(); // 18
+F0:
+dup<Snapshot<test::A>>([0]) -> ([0], [1]);
+struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3]);
+drop<felt252>([3]) -> ();
+dup<Snapshot<test::A>>([0]) -> ([0], [4]);
+struct_snapshot_deconstruct<test::A>([4]) -> ([5], [6]);
+drop<Snapshot<Array<felt252>>>([5]) -> ();
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]);
+store_temp<felt252>([6]) -> ([6]);
+function_call<user@test::bar>([2], [6]) -> ();
+dup<Snapshot<test::A>>([0]) -> ([0], [7]);
+struct_snapshot_deconstruct<test::A>([7]) -> ([8], [9]);
+store_temp<Snapshot<Array<felt252>>>([8]) -> ([8]);
+store_temp<felt252>([9]) -> ([9]);
+function_call<user@test::bar>([8], [9]) -> ();
+store_temp<Snapshot<test::A>>([0]) -> ([0]);
+return([0]);
+F1:
+drop<Snapshot<Array<felt252>>>([0]) -> ();
+drop<felt252>([1]) -> ();
+return();
 
-test::foo@0([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
-test::bar@16([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
+test::foo@F0([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
+test::bar@F1([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
 
 //! > ==========================================================================
 
@@ -142,24 +144,22 @@ test::bar@16([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 enum A {
-    A: Array::<felt252>,
+    A: Array<felt252>,
     B: felt252,
 }
 #[inline(never)]
-fn bar0(a: @Array::<felt252>) {
-}
+fn bar0(a: @Array::<felt252>) {}
 #[inline(never)]
-fn bar1(b: @felt252) {
-}
+fn bar1(b: @felt252) {}
 fn foo(orig: @A) -> @A {
     match orig {
-      A::A(a) => bar0(a),
-      A::B(b) => bar1(b),
+        A::A(a) => bar0(a),
+        A::B(b) => bar1(b),
     }
     orig
-  }
+}
 
 //! > casm
 ret;
@@ -204,23 +204,27 @@ libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar1> = function_call<user@test::bar1>;
 
-drop<Snapshot<Array<felt252>>>([0]) -> (); // 0
-return(); // 1
-drop<felt252>([0]) -> (); // 2
-return(); // 3
-dup<Snapshot<test::A>>([0]) -> ([0], [1]); // 4
-enum_snapshot_match<test::A>([1]) { fallthrough([2]) 11([3]) }; // 5
-branch_align() -> (); // 6
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 7
-function_call<user@test::bar0>([2]) -> (); // 8
-store_temp<Snapshot<test::A>>([0]) -> ([0]); // 9
-return([0]); // 10
-branch_align() -> (); // 11
-store_temp<felt252>([3]) -> ([3]); // 12
-function_call<user@test::bar1>([3]) -> (); // 13
-store_temp<Snapshot<test::A>>([0]) -> ([0]); // 14
-return([0]); // 15
+F0:
+drop<Snapshot<Array<felt252>>>([0]) -> ();
+return();
+F1:
+drop<felt252>([0]) -> ();
+return();
+F2:
+dup<Snapshot<test::A>>([0]) -> ([0], [1]);
+enum_snapshot_match<test::A>([1]) { fallthrough([2]) F2_B0([3]) };
+branch_align() -> ();
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]);
+function_call<user@test::bar0>([2]) -> ();
+store_temp<Snapshot<test::A>>([0]) -> ([0]);
+return([0]);
+F2_B0:
+branch_align() -> ();
+store_temp<felt252>([3]) -> ([3]);
+function_call<user@test::bar1>([3]) -> ();
+store_temp<Snapshot<test::A>>([0]) -> ([0]);
+return([0]);
 
-test::bar0@0([0]: Snapshot<Array<felt252>>) -> ();
-test::bar1@2([0]: felt252) -> ();
-test::foo@4([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
+test::bar0@F0([0]: Snapshot<Array<felt252>>) -> ();
+test::bar1@F1([0]: felt252) -> ();
+test::foo@F2([0]: Snapshot<test::A>) -> (Snapshot<test::A>);

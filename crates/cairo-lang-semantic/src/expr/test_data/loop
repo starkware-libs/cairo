@@ -105,31 +105,6 @@ error: `break` only allowed inside a `loop`.
 
 //! > ==========================================================================
 
-//! > Return inside a loop
-
-//! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
-
-//! > function
-fn foo() -> bool {
-    loop {
-        return true;
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: `return` not allowed inside a `loop`.
- --> lib.cairo:3:9
-        return true;
-        ^^^^^^^^^^^^
-
-//! > ==========================================================================
-
 //! > Valid loop
 
 //! > test_runner_name
@@ -211,10 +186,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: `return` not allowed inside a `loop`.
- --> lib.cairo:3:9
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:3:15
         return;
-        ^^^^^^^
+              ^
 
 //! > ==========================================================================
 
@@ -290,7 +265,7 @@ error: `break` only allowed inside a `loop`.
 //! > Error propagation inside a loop.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<bool> {
@@ -309,10 +284,6 @@ foo
 use option::Option;
 
 //! > expected_diagnostics
-error: `?` not allowed inside a `loop`.
- --> lib.cairo:5:9
-        res?;
-        ^^^^
 
 //! > ==========================================================================
 

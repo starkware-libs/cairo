@@ -5,7 +5,7 @@ use crate::option::OptionTrait;
 use crate::test::test_utils::assert_eq;
 
 #[test]
-fn test_secp256k1_point_serde() {
+fn test_secp256r1_point_serde() {
     let (x, y): (u256, u256) = (
         0x04aaec73635726f213fb8a9e64da3b8632e41495a944d0045b522eba7240fad5,
         0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d,

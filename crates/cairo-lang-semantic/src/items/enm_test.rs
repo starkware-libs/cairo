@@ -12,7 +12,9 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 fn test_enum() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
+    let (test_module, diagnostics) = setup_test_module(
+        db,
+        indoc::indoc! {"
             enum A {
                 a: felt252,
                 b: (felt252, felt252),
@@ -24,9 +26,12 @@ fn test_enum() {
             fn foo(a: A) {
                 5;
             }
-        "})
+        "},
+    )
     .split();
-    assert_eq!(diagnostics, indoc! {r#"
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
         error: Redefinition of variant "a" on enum "test::A".
          --> lib.cairo:5:5
             a: (),
@@ -37,7 +42,8 @@ fn test_enum() {
             a: ()
             ^^^^^
 
-        "#});
+        "#}
+    );
     let module_id = test_module.module_id;
 
     let enum_id = extract_matches!(
@@ -57,8 +63,11 @@ fn test_enum() {
         })
         .collect::<Vec<_>>()
         .join(",\n");
-    assert_eq!(actual, indoc! {"
+    assert_eq!(
+        actual,
+        indoc! {"
             a: VariantId(test::a), ty: (),
             b: VariantId(test::b), ty: (core::felt252, core::felt252),
-            c: VariantId(test::c), ty: ()"});
+            c: VariantId(test::c), ty: ()"}
+    );
 }

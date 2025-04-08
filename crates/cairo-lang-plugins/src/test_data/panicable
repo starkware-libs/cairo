@@ -44,62 +44,32 @@ fn possibly_panic() -> Result<felt252, Err> {
 }
 fn foo_improved(a: felt252, ref b: other) -> () {
     match foo(a, ref b) {
-        Option::Some (v) => {
-            v
-        },
-        Option::None (_v) => {
-            let mut data = core::array::ArrayTrait::<felt252>::new();
-            core::array::ArrayTrait::<felt252>::append(ref data, '1');
-            panic(data)
-        },
+        Option::Some(v) => v,
+        Option::None(_) => core::panic_with_const_felt252::<'1'>(),
     }
 }
 fn bar_changed() -> felt252 {
     match bar() {
-        Result::Ok (v) => {
-            v
-        },
-        Result::Err (_v) => {
-            let mut data = core::array::ArrayTrait::<felt252>::new();
-            core::array::ArrayTrait::<felt252>::append(ref data, '2');
-            panic(data)
-        },
+        Result::Ok(v) => v,
+        Result::Err(_) => core::panic_with_const_felt252::<'2'>(),
     }
 }
 fn non_extern_stuff(_a: some_type) -> (felt252, other) {
     match non_extern(_a) {
-        Option::Some (v) => {
-            v
-        },
-        Option::None (_v) => {
-            let mut data = core::array::ArrayTrait::<felt252>::new();
-            core::array::ArrayTrait::<felt252>::append(ref data, '3');
-            panic(data)
-        },
+        Option::Some(v) => v,
+        Option::None(_) => core::panic_with_const_felt252::<'3'>(),
     }
 }
 fn generic_panic<T>(t: T, v: felt252) -> T {
     match generic(t, v) {
-        Result::Ok (v) => {
-            v
-        },
-        Result::Err (_v) => {
-            let mut data = core::array::ArrayTrait::<felt252>::new();
-            core::array::ArrayTrait::<felt252>::append(ref data, '4');
-            panic(data)
-        },
+        Result::Ok(v) => v,
+        Result::Err(_) => core::panic_with_const_felt252::<'4'>(),
     }
 }
 fn wrapped_possibly_panic() -> felt252 {
     match possibly_panic() {
-        Result::Ok (v) => {
-            v
-        },
-        Result::Err (_v) => {
-            let mut data = core::array::ArrayTrait::<felt252>::new();
-            core::array::ArrayTrait::<felt252>::append(ref data, '5');
-            panic(data)
-        },
+        Result::Ok(v) => v,
+        Result::Err(_) => core::panic_with_const_felt252::<'5'>(),
     }
 }
 

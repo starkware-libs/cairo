@@ -204,12 +204,12 @@ error: Skipped tokens. Expected: '{'.
     let expensive_closure =  || -> u32 3;
                                        ^^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> dummy_file.cairo:2:42
     let expensive_closure =  || -> u32 3;
                                          ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:2:42
     let expensive_closure =  || -> u32 3;
                                          ^
@@ -250,12 +250,12 @@ error: Skipped tokens. Expected: '{'.
     let expensive_closure =  || nopanic 3;
                                         ^^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> dummy_file.cairo:2:43
     let expensive_closure =  || nopanic 3;
                                           ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:2:43
     let expensive_closure =  || nopanic 3;
                                           ^

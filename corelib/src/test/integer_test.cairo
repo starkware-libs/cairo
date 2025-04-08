@@ -1,7 +1,6 @@
-use crate::integer::{u512, u512_safe_div_rem_by_u256};
+use crate::integer::{self, u512, u512_safe_div_rem_by_u256};
 use crate::num::traits::{Bounded, Pow, Sqrt, WideMul, WideSquare, WrappingSub};
 use crate::test::test_utils::{assert_eq, assert_ge, assert_gt, assert_le, assert_lt, assert_ne};
-use crate::integer;
 
 #[test]
 fn test_u8_operators() {
@@ -1872,17 +1871,13 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
 
+#[feature("bounded-int-utils")]
 mod bounded_int {
     use crate::internal::bounded_int::{
-        AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper,
+        self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        downcast, upcast,
     };
-    use crate::internal::bounded_int;
-    use crate::RangeCheck;
 
-    extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
-    extern fn upcast<T, S>(index: T) -> S nopanic;
-
-    type SingleInt<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
     const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
     const U128_MAX: felt252 = U128_UPPER - 1;
 
@@ -1899,36 +1894,24 @@ mod bounded_int {
         is_some_of(downcast::<felt252, T>(value), value)
     }
 
-    /// Is `value` the equivalent value (as `felt252`) of `expected` in `T` type.
-    fn downcast_invalid<T, S>(value: T) -> bool {
-        match downcast::<T, S>(value) {
-            Some(v) => {
-                // Just as a drop for `v`.
-                upcast::<_, felt252>(v);
-                false
-            },
-            None => true,
-        }
-    }
-
     #[test]
     fn test_felt252_downcasts() {
-        assert!(downcast_invalid::<felt252, SingleInt<0>>(1));
-        assert!(felt252_downcast_valid::<SingleInt<0>>(0));
-        assert!(downcast_invalid::<felt252, SingleInt<0>>(-1));
-        assert!(downcast_invalid::<felt252, SingleInt<-1>>(-2));
-        assert!(felt252_downcast_valid::<SingleInt<-1>>(-1));
-        assert!(downcast_invalid::<felt252, SingleInt<-1>>(0));
-        assert!(downcast_invalid::<felt252, BoundedInt<120, 180>>(119));
+        assert!(!felt252_downcast_valid::<UnitInt<0>>(1));
+        assert!(felt252_downcast_valid::<UnitInt<0>>(0));
+        assert!(!felt252_downcast_valid::<UnitInt<0>>(-1));
+        assert!(!felt252_downcast_valid::<UnitInt<-1>>(-2));
+        assert!(felt252_downcast_valid::<UnitInt<-1>>(-1));
+        assert!(!felt252_downcast_valid::<UnitInt<-1>>(0));
+        assert!(!felt252_downcast_valid::<BoundedInt<120, 180>>(119));
         assert!(felt252_downcast_valid::<BoundedInt<120, 180>>(120));
         assert!(felt252_downcast_valid::<BoundedInt<120, 180>>(180));
-        assert!(downcast_invalid::<felt252, BoundedInt<120, 180>>(181));
-        assert!(downcast_invalid::<felt252, SingleInt<U128_MAX>>(U128_MAX - 1));
-        assert!(felt252_downcast_valid::<SingleInt<U128_MAX>>(U128_MAX));
-        assert!(downcast_invalid::<felt252, SingleInt<U128_MAX>>(U128_MAX + 1));
-        assert!(downcast_invalid::<felt252, SingleInt<U128_UPPER>>(U128_UPPER - 1));
-        assert!(felt252_downcast_valid::<SingleInt<U128_UPPER>>(U128_UPPER));
-        assert!(downcast_invalid::<felt252, SingleInt<U128_UPPER>>(U128_UPPER + 1));
+        assert!(!felt252_downcast_valid::<BoundedInt<120, 180>>(181));
+        assert!(!felt252_downcast_valid::<UnitInt<U128_MAX>>(U128_MAX - 1));
+        assert!(felt252_downcast_valid::<UnitInt<U128_MAX>>(U128_MAX));
+        assert!(!felt252_downcast_valid::<UnitInt<U128_MAX>>(U128_MAX + 1));
+        assert!(!felt252_downcast_valid::<UnitInt<U128_UPPER>>(U128_UPPER - 1));
+        assert!(felt252_downcast_valid::<UnitInt<U128_UPPER>>(U128_UPPER));
+        assert!(!felt252_downcast_valid::<UnitInt<U128_UPPER>>(U128_UPPER + 1));
     }
 
     const ONE_MINUS_P: felt252 = -0x800000000000011000000000000000000000000000000000000000000000000;
@@ -1936,7 +1919,7 @@ mod bounded_int {
     // Full prime range, but where the max element is 0.
     type OneMinusPToZero = BoundedInt<ONE_MINUS_P, 0>;
 
-    fn bi_const<const V: felt252>() -> SingleInt<V> {
+    fn bi_const<const V: felt252>() -> UnitInt<V> {
         downcast(V).unwrap()
     }
 
@@ -2057,7 +2040,7 @@ mod bounded_int {
     mod helpers {
         pub impl DivRemHelperImpl<
             const A: felt252, const B: felt252, const MAX_Q: felt252, const MAX_R: felt252,
-        > of super::DivRemHelper<super::BoundedInt<0, A>, super::BoundedInt<B, B>> {
+        > of super::DivRemHelper<super::BoundedInt<0, A>, super::UnitInt<B>> {
             type DivT = super::BoundedInt<0, MAX_Q>;
             type RemT = super::BoundedInt<0, MAX_R>;
         }
@@ -2067,9 +2050,9 @@ mod bounded_int {
         const A_MAX: felt252,
         const B: felt252,
         const A: felt252,
-        +DivRemHelper<BoundedInt<0, A_MAX>, BoundedInt<B, B>>,
+        +DivRemHelper<BoundedInt<0, A_MAX>, UnitInt<B>>,
     >(
-        a: BoundedInt<A, A>,
+        a: UnitInt<A>,
     ) -> (felt252, felt252) {
         bounded_int_div_rem_unwrapped::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>())
     }

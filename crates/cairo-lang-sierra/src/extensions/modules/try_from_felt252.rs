@@ -42,10 +42,13 @@ impl<TTryFromFelt252: TryFromFelt252> NoGenericArgsGenericLibfunc
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: context.get_concrete_type(TTryFromFelt252::GENERIC_TYPE_ID, &[])?,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(TTryFromFelt252::GENERIC_TYPE_ID, &[])?,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.

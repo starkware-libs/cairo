@@ -11,9 +11,12 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 fn test_extern_function() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc::indoc! {"
+    let test_module = setup_test_module(
+        db,
+        indoc::indoc! {"
             extern fn foo<A, B>() nopanic;
-        "})
+        "},
+    )
     .unwrap();
     let module_id = test_module.module_id;
 

@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 use integer::u512;
 fn foo(a: u512, b: NonZero<u256>) -> (u512, u256) {
     integer::u512_safe_div_rem_by_u256(a, b)
@@ -242,15 +242,16 @@ libfunc struct_construct<Tuple<core::integer::u512, core::integer::u256>> = stru
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<core::integer::u512, core::integer::u256>> = store_temp<Tuple<core::integer::u512, core::integer::u256>>;
 
-u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]); // 0
-u128_mul_guarantee_verify([3], [10]) -> ([11]); // 1
-u128_mul_guarantee_verify([11], [9]) -> ([12]); // 2
-u128_mul_guarantee_verify([12], [8]) -> ([13]); // 3
-u128_mul_guarantee_verify([13], [7]) -> ([14]); // 4
-u128_mul_guarantee_verify([14], [6]) -> ([15]); // 5
-struct_construct<Tuple<core::integer::u512, core::integer::u256>>([4], [5]) -> ([16]); // 6
-store_temp<RangeCheck>([15]) -> ([15]); // 7
-store_temp<Tuple<core::integer::u512, core::integer::u256>>([16]) -> ([16]); // 8
-return([15], [16]); // 9
+F0:
+u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]);
+u128_mul_guarantee_verify([3], [10]) -> ([11]);
+u128_mul_guarantee_verify([11], [9]) -> ([12]);
+u128_mul_guarantee_verify([12], [8]) -> ([13]);
+u128_mul_guarantee_verify([13], [7]) -> ([14]);
+u128_mul_guarantee_verify([14], [6]) -> ([15]);
+struct_construct<Tuple<core::integer::u512, core::integer::u256>>([4], [5]) -> ([16]);
+store_temp<RangeCheck>([15]) -> ([15]);
+store_temp<Tuple<core::integer::u512, core::integer::u256>>([16]) -> ([16]);
+return([15], [16]);
 
-test::foo@0([0]: RangeCheck, [1]: core::integer::u512, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u512, core::integer::u256>);
+test::foo@F0([0]: RangeCheck, [1]: core::integer::u512, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u512, core::integer::u256>);

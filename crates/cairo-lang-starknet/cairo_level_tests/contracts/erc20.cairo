@@ -26,7 +26,7 @@ pub mod erc_20 {
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, contract_address_const, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address};
 
     #[storage]
     struct Storage {
@@ -75,9 +75,7 @@ pub mod erc_20 {
         self
             .emit(
                 Event::Transfer(
-                    Transfer {
-                        from: contract_address_const::<0>(), to: recipient, value: initial_supply,
-                    },
+                    Transfer { from: Zero::zero(), to: recipient, value: initial_supply },
                 ),
             );
     }

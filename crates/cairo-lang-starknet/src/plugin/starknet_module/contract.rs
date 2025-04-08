@@ -74,6 +74,7 @@ impl ComponentsGenerationData {
             let component_name = match component_path.segments(db).elements(db).last().unwrap() {
                 ast::PathSegment::WithGenericArgs(x) => x.ident(db),
                 ast::PathSegment::Simple(x) => x.ident(db),
+                ast::PathSegment::Missing(x) => x.ident(db),
             };
 
             let has_component_impl = RewriteNode::interpolate_patched(
@@ -137,7 +138,7 @@ impl ComponentsGenerationData {
         if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 storage_name.as_syntax_node(),
                 format!(
                     "`{0}` is not a substorage member in the contract's \
@@ -145,8 +146,7 @@ impl ComponentsGenerationData {
                      `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
                      path::to::component::{STORAGE_STRUCT_NAME},\n````",
                     storage_name_syntax_node.get_text_without_trivia(db)
-                )
-                .to_string(),
+                ),
             ));
             is_valid = false;
         }
@@ -155,7 +155,7 @@ impl ComponentsGenerationData {
         if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 event_name.as_syntax_node(),
                 format!(
                     "`{event_name_str}` is not a nested event in the contract's \
@@ -164,8 +164,7 @@ impl ComponentsGenerationData {
                      path::to::component::{EVENT_TYPE_NAME},\n```\nNote: currently with \
                      components, only an enum {EVENT_TYPE_NAME} directly in the contract is \
                      supported.",
-                )
-                .to_string(),
+                ),
             ));
             is_valid = false;
         }
@@ -291,7 +290,7 @@ fn handle_contract_item(
                 );
             } else {
                 diagnostics.push(PluginDiagnostic::error(
-                    alias_ast.stable_ptr().untyped(),
+                    alias_ast.stable_ptr(db),
                     format!(
                         "The '{ABI_ATTR}' attribute for impl aliases only supports the \
                          '{ABI_ATTR_EMBED_V0_ARG}' argument.",
@@ -331,7 +330,7 @@ pub(super) fn generate_contract_specific_code(
 
     generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
         "#[cfg(target: 'test')]
-            pub const TEST_CLASS_HASH: felt252 = {test_class_hash};
+            pub const TEST_CLASS_HASH: starknet::ClassHash = {test_class_hash}.try_into().unwrap();
 "
     ));
 
@@ -477,7 +476,7 @@ fn impl_abi_config(
             ImplAbiConfig::Embed
         } else {
             diagnostics.push(PluginDiagnostic::error(
-                abi_attr.stable_ptr().untyped(),
+                abi_attr.stable_ptr(db),
                 format!(
                     "The '{ABI_ATTR}' attribute for impls only supports the \
                      '{ABI_ATTR_PER_ITEM_ARG}' or '{ABI_ATTR_EMBED_V0_ARG}' argument.",
@@ -512,7 +511,7 @@ fn handle_embed_impl_alias(
     };
     if has_generic_params {
         diagnostics.push(PluginDiagnostic::error(
-            alias_ast.stable_ptr().untyped(),
+            alias_ast.stable_ptr(db),
             format!(
                 "Generic parameters are not supported in impl aliases with \
                  `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]`."
@@ -527,7 +526,7 @@ fn handle_embed_impl_alias(
 
     if !is_first_generic_arg_contract_state(db, impl_final_part) {
         diagnostics.push(PluginDiagnostic::error(
-            alias_ast.stable_ptr().untyped(),
+            alias_ast.stable_ptr(db),
             format!(
                 "First generic argument of impl alias with \
                  `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]` must be `{CONTRACT_STATE_NAME}`."
@@ -572,20 +571,19 @@ pub fn handle_component_inline_macro(
     data: &mut ContractSpecificGenerationData,
 ) {
     let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
-        diagnostics
-            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr()));
+        diagnostics.push(not_legacy_macro_diagnostic(component_macro_ast.stable_ptr(db).untyped()));
         return;
     };
     let macro_args = match legacy_component_macro_ast.arguments(db) {
         ast::WrappedArgList::ParenthesizedArgList(args) => args.arguments(db),
         _ => {
-            diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
+            diagnostics.push(invalid_macro_diagnostic(db, component_macro_ast));
             return;
         }
     };
     let arguments = macro_args.elements(db);
     let [path_arg, storage_arg, event_arg] = arguments.as_slice() else {
-        diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
+        diagnostics.push(invalid_macro_diagnostic(db, component_macro_ast));
         return;
     };
 
@@ -596,7 +594,7 @@ pub fn handle_component_inline_macro(
             path_arg,
             "path",
             false,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -604,7 +602,7 @@ pub fn handle_component_inline_macro(
             storage_arg,
             "storage",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -612,24 +610,27 @@ pub fn handle_component_inline_macro(
             event_arg,
             "event",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
     ) else {
         return;
     };
 
     data.components_data.components.push(NestedComponent {
-        component_path: component_path.clone(),
-        storage_name: storage_name.clone(),
-        event_name: event_name.clone(),
+        component_path,
+        storage_name,
+        event_name,
         node: component_macro_ast.clone(),
     });
 }
 
 /// Returns an invalid `component` macro diagnostic.
-fn invalid_macro_diagnostic(component_macro_ast: &ast::ItemInlineMacro) -> PluginDiagnostic {
+fn invalid_macro_diagnostic(
+    db: &dyn SyntaxGroup,
+    component_macro_ast: &ast::ItemInlineMacro,
+) -> PluginDiagnostic {
     PluginDiagnostic::error(
-        component_macro_ast.stable_ptr().untyped(),
+        component_macro_ast.stable_ptr(db),
         format!(
             "Invalid component macro, expected `{COMPONENT_INLINE_MACRO}!(name: \
              \"<component_name>\", storage: \"<storage_name>\", event: \"<event_name>\");`"

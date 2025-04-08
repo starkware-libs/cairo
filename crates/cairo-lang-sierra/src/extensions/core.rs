@@ -1,6 +1,7 @@
 use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::BitwiseType;
+use super::blake::{Blake2sState, BlakeLibfunc};
 use super::boolean::BoolLibfunc;
 use super::bounded_int::{BoundedIntLibfunc, BoundedIntType};
 use super::branch_align::BranchAlignLibfunc;
@@ -41,14 +42,16 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
+use super::qm31::{QM31Libfunc, QM31Type};
 use super::range::{IntRangeLibfunc, IntRangeType};
 use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
-use super::squashed_felt252_dict::SquashedFelt252DictType;
+use super::squashed_felt252_dict::{SquashedFelt252DictLibfunc, SquashedFelt252DictType};
 use super::starknet::{StarknetLibfunc, StarknetType};
 use super::structure::{StructLibfunc, StructType};
+use super::trace::TraceLibfunc;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -57,6 +60,7 @@ define_type_hierarchy! {
         Array(ArrayType),
         Coupon(CouponType),
         Bitwise(BitwiseType),
+        Blake(Blake2sState),
         Box(BoxType),
         Circuit(CircuitType),
         Const(ConstType),
@@ -96,6 +100,7 @@ define_type_hierarchy! {
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
         BoundedInt(BoundedIntType),
+        QM31(QM31Type),
     }, CoreTypeConcrete
 }
 
@@ -104,6 +109,7 @@ define_libfunc_hierarchy! {
         ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
         BranchAlign(BranchAlignLibfunc),
+        Blake(BlakeLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
@@ -138,6 +144,7 @@ define_libfunc_hierarchy! {
         Struct(StructLibfunc),
         Felt252Dict(Felt252DictLibfunc),
         Felt252DictEntry(Felt252DictEntryLibfunc),
+        Felt252SquashedDict(SquashedFelt252DictLibfunc),
         Pedersen(PedersenLibfunc),
         Poseidon(PoseidonLibfunc),
         Starknet(StarknetLibfunc),
@@ -145,5 +152,7 @@ define_libfunc_hierarchy! {
         SnapshotTake(SnapshotTakeLibfunc),
         Bytes31(Bytes31Libfunc),
         BoundedInt(BoundedIntLibfunc),
+        Trace(TraceLibfunc),
+        QM31(QM31Libfunc),
     }, CoreConcreteLibfunc
 }

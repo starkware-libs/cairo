@@ -104,8 +104,11 @@ fn get_function_code(
     // Revoking ap tracking as the first non-local command for unknown ap-change function, to allow
     // proper ap-equation solving. TODO(orizi): Fix the solver to not require this constraint.
     if !known_ap_change && context.get_ap_tracking() {
-        context
-            .push_statement(simple_basic_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
+        context.push_statement(simple_basic_statement(
+            disable_ap_tracking_libfunc_id(db),
+            &[],
+            &[],
+        ));
         context.set_ap_tracking(false);
     }
 

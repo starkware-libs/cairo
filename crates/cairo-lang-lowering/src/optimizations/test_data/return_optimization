@@ -52,9 +52,9 @@ End:
 
 blk1:
 Statements:
-  (v4: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
 End:
-  Return(v0, v4)
+  Return(v0, v7)
 
 blk2:
 Statements:
@@ -126,10 +126,10 @@ End:
 
 blk1:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
 End:
-  Return(v4, v5)
+  Return(v8, v9)
 
 blk2:
 Statements:
@@ -199,9 +199,9 @@ End:
 
 blk1:
 Statements:
-  (v3: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
+  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Return(v3)
+  Return(v7)
 
 blk2:
 Statements:
@@ -276,11 +276,9 @@ End:
 
 blk1:
 Statements:
-  (v3: core::integer::u16) <- struct_destructure(v1)
-  (v4: (core::integer::u16,)) <- struct_construct(v3)
-  (v5: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v4)
+  (v8: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v1)
 End:
-  Return(v5)
+  Return(v8)
 
 blk2:
 Statements:
@@ -359,10 +357,10 @@ End:
 
 blk1:
 Statements:
-  (v4: test::MyStruct) <- struct_construct()
-  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+  (v10: test::MyStruct) <- struct_construct()
+  (v11: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
 End:
-  Return(v4, v5)
+  Return(v10, v11)
 
 blk2:
 Statements:
@@ -443,12 +441,9 @@ End:
 
 blk1:
 Statements:
-  (v3: core::integer::u16, v4: ()) <- struct_destructure(v1)
-  (v5: ()) <- struct_construct()
-  (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
-  (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
+  (v12: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v1)
 End:
-  Return(v7)
+  Return(v12)
 
 blk2:
 Statements:
@@ -518,9 +513,9 @@ End:
 
 blk1:
 Statements:
-  (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
+  (v4: test::MyEnum) <- MyEnum::MyVariant(v2)
 End:
-  Return(v2, v3)
+  Return(v2, v4)
 
 //! > ==========================================================================
 
@@ -586,15 +581,15 @@ End:
 
 blk1:
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v2)
+  (v8: test::MyEnum) <- MyEnum::A(v2)
 End:
-  Return(v0, v4)
+  Return(v0, v8)
 
 blk2:
 Statements:
-  (v6: test::MyEnum) <- MyEnum::B(v3)
+  (v7: test::MyEnum) <- MyEnum::B(v3)
 End:
-  Return(v0, v6)
+  Return(v0, v7)
 
 blk3:
 Statements:
@@ -766,9 +761,9 @@ End:
 blk3:
 Statements:
   (v3: core::felt252) <- struct_destructure(v1)
-  (v4: test::FeltWrap) <- struct_construct(v3)
+  (v5: test::FeltWrap) <- struct_construct(v3)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > ==========================================================================
 

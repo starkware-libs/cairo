@@ -144,7 +144,7 @@ pub fn enrich_lookup_context(
 }
 
 /// Adds the defining module of the type to the lookup context.
-fn enrich_lookup_context_with_ty(
+pub fn enrich_lookup_context_with_ty(
     db: &dyn SemanticGroup,
     ty: TypeId,
     lookup_context: &mut ImplLookupContext,
@@ -245,7 +245,7 @@ impl CandidateSolver {
     ) -> InferenceResult<CandidateSolver> {
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
-        inference.data.impl_type_bounds = impl_type_bounds.clone();
+        inference.data.impl_type_bounds = impl_type_bounds;
         let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
 
         // If the closure params are not var free, we cannot infer the negative impl.

@@ -81,7 +81,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:2:16
     if let x {}
                ^
@@ -91,7 +91,7 @@ error: A trailing `|` is not allowed in an or-pattern.
 }
 ^
 
-error: Missing token TerminalEq.
+error: Missing token '='.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -101,12 +101,12 @@ error: Missing tokens. Expected an expression.
 }
  ^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -131,12 +131,12 @@ fn f(a:felt252 b:felt252) {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalComma.
+error: Missing token ','.
  --> dummy_file.cairo:1:15
 fn f(a:felt252 b:felt252) {
               ^
 
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:2:13
     if let x == y {}
             ^
@@ -146,7 +146,7 @@ error: Skipped tokens. Expected: pattern.
     if let x == y {}
              ^^
 
-error: Missing token TerminalOr.
+error: Missing token '|'.
  --> dummy_file.cairo:2:21
     if let x == y {}
                     ^
@@ -156,7 +156,7 @@ error: A trailing `|` is not allowed in an or-pattern.
 }
 ^
 
-error: Missing token TerminalEq.
+error: Missing token '='.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -166,12 +166,12 @@ error: Missing tokens. Expected an expression.
 }
  ^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^

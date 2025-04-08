@@ -11,10 +11,11 @@ use indoc::formatdoc;
 /// Compiles a Sierra file to CASM.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The path of the file to compile.
     file: String,
+    /// The output file path.
     output: String,
 }
 

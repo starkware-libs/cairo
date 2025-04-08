@@ -12,8 +12,14 @@ use crate::{
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum InliningStrategy {
     /// Do not override inlining strategy.
+    ///
+    /// Note: equivalent to `InlineSmallFunctions(DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD)`.
     #[default]
     Default,
+    /// Should inline small functions up to the given weight.
+    ///
+    /// Note: the weight exact definition is subject to change.
+    InlineSmallFunctions(usize),
     /// Inline only in the case of an `inline(always)` annotation.
     Avoid,
 }
@@ -85,7 +91,7 @@ pub trait RebuilderEx: Rebuilder {
         statement
     }
 
-    /// Apply map_var_id to all the variable in the `remapping`.
+    /// Apply map_var_id to all the variables in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
         let mut remapping = VarRemapping {
             remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {

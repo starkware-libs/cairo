@@ -277,7 +277,7 @@ fn build_enum_match_short(
 /// branch index 0 (where n is the number of variants of this enum), 1 for branch index 1, 3 for
 /// branch index 2 and so on: (2 * k - 1) for branch index k).
 ///
-/// Assumes that self.invocation.branches.len() == output_expressions.len() > 2.
+/// Assumes that builder.invocation.branches.len() == output_expressions.len() > 2.
 fn build_enum_match_long(
     builder: CompiledInvocationBuilder<'_>,
     variant_selector: CellRef,

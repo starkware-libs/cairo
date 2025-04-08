@@ -53,7 +53,7 @@ error: Not a variant. Use the full name Enum::Variant.
     for A(x) in arr {
         ^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:7:9
         x;
         ^

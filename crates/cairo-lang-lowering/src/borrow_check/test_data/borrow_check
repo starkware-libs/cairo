@@ -957,3 +957,71 @@ Statements:
   () <- test::consume(v2{`x.b`})
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test drop params on loop.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(x: NonDrop) {
+    if let Some(x) = maybe_consume(x) {
+        foo(x)
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonDrop;
+
+extern fn maybe_consume(x: NonDrop) -> Option<NonDrop> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: test::NonDrop
+blk0 (root):
+Statements:
+End:
+  Match(match test::maybe_consume(v0{`x`}) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: ()) <- test::foo(v1{`x`})
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: ()) <- struct_construct()
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+error: Variable not dropped.
+ --> lib.cairo:4:8
+fn foo(x: NonDrop) {
+       ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:4:1-8:1
+  fn foo(x: NonDrop) {
+ _^
+| ...
+| }
+|_^
+note: this error originates in auto-generated withdraw_gas logic.
+note: Trait has no implementation in context: core::traits::Drop::<test::NonDrop>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::NonDrop>.
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonDrop>.

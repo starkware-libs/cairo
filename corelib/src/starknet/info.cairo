@@ -7,7 +7,7 @@
 //! # Examples
 //!
 //! ```
-//! use core::starknet::{get_block_info, get_caller_address, get_contract_address};
+//! use starknet::{get_block_info, get_caller_address, get_contract_address};
 //!
 //! // Get block information
 //! let block_info = get_block_info().unbox();
@@ -83,7 +83,7 @@ pub struct TxInfo {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_execution_info;
+/// use starknet::get_execution_info;
 ///
 /// let execution_info = get_execution_info().unbox();
 ///
@@ -101,7 +101,7 @@ pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_caller_address;
+/// use starknet::get_caller_address;
 ///
 /// let caller = get_caller_address();
 /// ```
@@ -114,7 +114,7 @@ pub fn get_caller_address() -> ContractAddress {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_contract_address;
+/// use starknet::get_contract_address;
 ///
 /// let contract_address = get_contract_address();
 /// ```
@@ -127,7 +127,7 @@ pub fn get_contract_address() -> ContractAddress {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_block_info;
+/// use starknet::get_block_info;
 ///
 /// let block_info = get_block_info().unbox();
 ///
@@ -144,7 +144,7 @@ pub fn get_block_info() -> Box<BlockInfo> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_tx_info;
+/// use starknet::get_tx_info;
 ///
 /// let tx_info = get_tx_info().unbox();
 ///
@@ -165,7 +165,7 @@ pub fn get_tx_info() -> Box<v2::TxInfo> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_block_timestamp;
+/// use starknet::get_block_timestamp;
 ///
 /// let block_timestamp = get_block_timestamp();
 /// ```
@@ -178,7 +178,7 @@ pub fn get_block_timestamp() -> u64 {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::get_block_number;
+/// use starknet::get_block_number;
 ///
 /// let block_number = get_block_number();
 /// ```

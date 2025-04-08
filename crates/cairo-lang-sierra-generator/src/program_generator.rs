@@ -188,7 +188,6 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        let sierra_program = DebugReplacer { db }.apply(&self.program);
         let mut funcs = sierra_program.funcs.iter().peekable();
         while let Some(func) = funcs.next() {
             let start = func.entry_point.0;

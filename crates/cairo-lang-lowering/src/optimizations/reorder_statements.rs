@@ -38,7 +38,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let mut changes_by_block =
         OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
 
-    for (src, opt_dst) in ctx.statement_to_move.into_iter() {
+    for (src, opt_dst) in ctx.statement_to_move {
         changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
 
         if let Some(dst) = opt_dst {
@@ -47,7 +47,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         }
     }
 
-    for (block_id, block_changes) in changes_by_block.into_iter() {
+    for (block_id, block_changes) in changes_by_block {
         let statements = &mut lowered.blocks[block_id].statements;
         let block_len = statements.len();
 

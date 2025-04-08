@@ -1,63 +1,64 @@
-use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{DeriveInfo, unsupported_for_extern_diagnostic};
-use crate::plugins::derive::TypeVariantInfo;
+use super::PluginTypeInfo;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PartialEq` trait.
-pub fn handle_partial_eq(
-    info: &DeriveInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<String> {
-    let header = info.format_impl_header("core::traits", "PartialEq", &["core::traits::PartialEq"]);
+pub fn handle_partial_eq(info: &PluginTypeInfo) -> String {
+    const PARTIAL_EQ_TRAIT: &str = "core::traits::PartialEq";
+    let header = info.impl_header(PARTIAL_EQ_TRAIT, &[PARTIAL_EQ_TRAIT]);
     let full_typename = info.full_typename();
-    let body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
-            let ty = &info.name;
-            formatdoc! {"
+    let body = indent_by(
+        8,
+        match &info.type_variant {
+            TypeVariant::Enum => {
+                let ty = &info.name;
+                formatdoc! {"
                         match lhs {{
                             {}
                         }}",
-            variants.iter().map(|lhs_variant| {
-                indent_by(4, formatdoc! {"
+                    info.members_info.iter().map(|lhs_variant| {
+                    indent_by(4, formatdoc! {"
                         {ty}::{lhs_variant}(x) => match rhs {{
                             {}
                         }},",
-                    variants.iter().map(|rhs_variant|{
-                        if lhs_variant.name == rhs_variant.name {
-                            format!("{ty}::{}(y) => x == y,", rhs_variant.name)
-                        } else {
-                            format!("{ty}::{}(_y) => false,", rhs_variant.name)
-                        }
-                    }).join("\n    "),
-                lhs_variant=lhs_variant.name,
-                })
-            }).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            if members.is_empty() {
-                "true".to_string()
-            } else {
-                members
-                    .iter()
-                    .map(|member| format!("lhs.{member} == rhs.{member}", member = member.name))
-                    .join(" && ")
+                        info.members_info.iter().map(|rhs_variant|{
+                            if lhs_variant.name == rhs_variant.name {
+                                format!("{ty}::{}(y) => {}::eq(x, y),", rhs_variant.name,
+                                rhs_variant.impl_name(PARTIAL_EQ_TRAIT))
+                            } else {
+                                format!("{ty}::{}(_y) => false,", rhs_variant.name)
+                            }
+                        }).join("\n    "),
+                    lhs_variant=lhs_variant.name,
+                    })
+                }).join("\n    ")}
             }
-        }
-        TypeVariantInfo::Extern => {
-            diagnostics.push(unsupported_for_extern_diagnostic(derived));
-            return None;
-        }
-    });
-    Some(formatdoc! {"
+            TypeVariant::Struct => {
+                if info.members_info.is_empty() {
+                    "true".to_string()
+                } else {
+                    info.members_info
+                        .iter()
+                        .map(|member| {
+                            format!(
+                                "{imp}::eq(lhs.{member}, rhs.{member})",
+                                member = member.name,
+                                imp = member.impl_name(PARTIAL_EQ_TRAIT),
+                            )
+                        })
+                        .join(" && ")
+                }
+            }
+        },
+    );
+    formatdoc! {"
         {header} {{
             fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
                 {body}
             }}
         }}
-    "})
+    "}
 }

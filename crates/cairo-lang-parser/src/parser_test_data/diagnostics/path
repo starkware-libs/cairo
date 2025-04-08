@@ -1,0 +1,43 @@
+//! > Missing segment at the end of a path.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo () {
+    let x = a::;
+}
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a path segment.
+ --> dummy_file.cairo:2:16
+    let x = a::;
+               ^
+
+//! > ==========================================================================
+
+//! > Missing segment at the middle of a path.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo () {
+    let x = a::::c;
+}
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a path segment.
+ --> dummy_file.cairo:2:16
+    let x = a::::c;
+               ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:2:16
+    let x = a::::c;
+               ^
+
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:2:16
+    let x = a::::c;
+               ^^

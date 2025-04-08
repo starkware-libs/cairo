@@ -124,8 +124,10 @@ use felt_252::{Felt252One, Felt252Zero};
 /// a very large prime number currently equal to 2^251 + 17⋅2^192 + 1.
 ///
 /// Any operation that uses `felt252` will be computed modulo P.
-#[derive(Copy, Drop)]
 pub extern type felt252;
+
+impl felt252Copy of Copy<felt252>;
+impl felt252Drop of Drop<felt252>;
 
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
@@ -262,6 +264,8 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
+pub mod blake;
+
 pub mod box;
 #[allow(unused_imports)]
 use box::{Box, BoxTrait};
@@ -341,9 +345,23 @@ pub enum never {}
 ///
 /// panic_with_felt252('error message');
 /// ```
-#[inline]
+#[inline(never)]
 pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
+}
+
+/// Panics with the given const argument `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// use core::panic_with_const_felt252;
+///
+/// panic_with_const_felt252::<'error message'>();
+/// ```
+#[inline(never)]
+pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
+    panic_with_felt252(ERR_CODE)
 }
 
 /// Panics if `cond` is false with the given `felt252` as error message.
@@ -366,6 +384,8 @@ pub mod keccak;
 
 pub mod pedersen;
 
+pub mod qm31;
+
 pub mod serde;
 
 pub mod sha256;
@@ -381,8 +401,10 @@ pub mod debug;
 pub mod fmt;
 
 #[feature("corelib-internal-use")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `starknet` directly")]
 pub mod starknet;
 #[allow(unused_imports)]
+#[feature("corelib-internal-use")]
 use starknet::System;
 
 pub mod internal;

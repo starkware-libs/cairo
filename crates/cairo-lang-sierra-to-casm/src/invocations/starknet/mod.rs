@@ -84,6 +84,9 @@ pub fn build(
         StarknetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
+        StarknetConcreteLibfunc::MetaTxV0(_) => {
+            build_syscalls(builder, "MetaTxV0", [1, 1, 2, 2], [2])
+        }
         StarknetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
         StarknetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
     }
@@ -175,10 +178,11 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
             ("Fallthrough", &success_vars, None),
             (
                 "Failure",
-                &[&updated_gas_builtin, &failure_final_system[..], &[
-                    response_vars[0],
-                    response_vars[1],
-                ]],
+                &[
+                    &updated_gas_builtin,
+                    &failure_final_system[..],
+                    &[response_vars[0], response_vars[1]],
+                ],
                 Some(failure_handle_statement_id),
             ),
         ],

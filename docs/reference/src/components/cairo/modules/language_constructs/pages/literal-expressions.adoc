@@ -20,8 +20,8 @@ let b = false;
 
 Cairo supports the following numeric literals:
 1. A decimal literal that consists of only decimal digits.
-2. A hexadecimal literal that start with the character sequence `0x` and continues with hex digits.
-3. A binary literal that start with the character sequence `0b` and continues with binary digits.
+2. A hexadecimal literal that starts with the character sequence `0x` and continues with hex digits.
+3. A binary literal that starts with the character sequence `0b` and continues with binary digits.
 
 
 A numeric literal may be followed (immediately, without any spaces) by an underscore character (`_`)

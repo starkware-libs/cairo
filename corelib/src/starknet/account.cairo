@@ -35,13 +35,13 @@ pub struct Call {
 pub trait AccountContract<TContractState> {
     /// An entry point that is called to check if the account is willing to pay for the declaration
     /// of the class with the given hash.
-    /// The entry point should return `core::starknet::VALIDATED` if the account is willing to pay
+    /// The entry point should return `starknet::VALIDATED` if the account is willing to pay
     /// for the declaration.
     fn __validate_declare__(self: @TContractState, class_hash: felt252) -> felt252;
 
     /// An entry point that is called to check if the account is willing to pay for
     /// executing a given set of calls.
-    /// The entry point should return `core::starknet::VALIDATED` if the account is willing to pay
+    /// The entry point should return `starknet::VALIDATED` if the account is willing to pay
     /// for the execution, in which case `__execute__` will be called on the same set of calls.
     fn __validate__(ref self: TContractState, calls: Array<Call>) -> felt252;
 

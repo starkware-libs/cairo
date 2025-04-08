@@ -8,40 +8,42 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 fn main() {}
 
 //! > result
-# builtins: output
-# header #
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+// builtins: output
+// header
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+call rel 7;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 13;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
-[ap + -1] = [[ap + -2] + 0];
+jmp rel 9;
+call rel 14;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
-ap += 2;
+ap += 8;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-# footer #
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -60,72 +62,74 @@ fn main(a: felt252, b: felt252) -> felt252 {
 }
 
 //! > result
-# builtins: output
-# header #
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+// builtins: output
+// header
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+call rel 7;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 54;
+jmp rel 46;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [[fp + -6] + 0], ap++;
 [ap + -2] = [ap + 0] + [ap + -3], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 32;
+jmp rel 28;
 [ap + 0] = [ap + -4] + 1, ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [[ap + -6] + 0], ap++;
 [ap + -2] = [ap + 0] + [ap + -3], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 13;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
-[ap + -1] = [[ap + -2] + 0];
+jmp rel 9;
+call rel 35;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
-ap += 1;
-[ap + 0] = [ap + -7] + [ap + -3], ap++;
+ap += 7;
+[ap + 0] = [ap + -13] + [ap + -9], ap++;
 [ap + -1] = [[fp + -3] + 0];
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3] + 1, ap++;
 ret;
 ap += 4;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
-[ap + -1] = [[ap + -2] + 0];
+call rel 21;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
 ap += 8;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
-[ap + -1] = [[ap + -2] + 0];
+call rel 17;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
-# footer #
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 13;
+ret;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
+call rel 8;
+ret;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -148,25 +152,21 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 }
 
 //! > result
-# builtins: output, range_check
-# header #
+// builtins: output, range_check
+// header
 [ap + 0] = [fp + -3], ap++;
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -4] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -4], ap++;
+[ap + 2] = [fp + -4], ap++;
 ap += 2;
-call rel 13;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -4] + 1;
-[ap + -4] = [[fp + -4] + 0];
-[ap + 0] = [ap + -1], ap++;
+call rel 8;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -6], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 10;
@@ -179,7 +179,7 @@ jmp rel 8;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 199 if [ap + -2] != 0;
+jmp rel 187 if [ap + -2] != 0;
 [ap + 0] = [[ap + -1] + 0], ap++;
 %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
 jmp rel 22 if [ap + 0] != 0, ap++;
@@ -194,7 +194,7 @@ jmp rel 6 if [ap + -4] != 0;
 jmp rel 4;
 [ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
 [ap + -3] = [[fp + -7] + 2];
-jmp rel 174 if [ap + -2] != 0;
+jmp rel 162 if [ap + -2] != 0;
 [fp + -1] = [fp + -1] + 1;
 [ap + -2] = [[fp + -7] + 0];
 [ap + 0] = [fp + -7] + 1, ap++;
@@ -210,7 +210,7 @@ jmp rel 8;
 [ap + 0] = [ap + -8], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 135 if [ap + -2] != 0;
+jmp rel 127 if [ap + -2] != 0;
 [ap + 0] = [[ap + -1] + 0], ap++;
 %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
 jmp rel 22 if [ap + 0] != 0, ap++;
@@ -225,7 +225,7 @@ jmp rel 6 if [ap + -4] != 0;
 jmp rel 4;
 [ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
 [ap + -3] = [[ap + -13] + 2];
-jmp rel 110 if [ap + -2] != 0;
+jmp rel 102 if [ap + -2] != 0;
 [fp + -1] = [fp + -1] + 1;
 [ap + -2] = [[ap + -8] + 0];
 [ap + 0] = [ap + -8] + 1, ap++;
@@ -241,7 +241,7 @@ jmp rel 8;
 [ap + 0] = [ap + -8], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 71 if [ap + -2] != 0;
+jmp rel 67 if [ap + -2] != 0;
 [ap + 0] = [[ap + -1] + 0], ap++;
 %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
 jmp rel 22 if [ap + 0] != 0, ap++;
@@ -256,27 +256,24 @@ jmp rel 6 if [ap + -4] != 0;
 jmp rel 4;
 [ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
 [ap + -3] = [[ap + -13] + 2];
-jmp rel 46 if [ap + -2] != 0;
+jmp rel 42 if [ap + -2] != 0;
 [fp + -1] = [fp + -1] + 1;
 [ap + -2] = [[ap + -8] + 0];
 [ap + 0] = [ap + -8] + 1, ap++;
 [ap + -6] = [ap + 0] + [ap + -7], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 14;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
-[ap + -1] = [[ap + -2] + 0];
-[ap + 0] = [ap + -4], ap++;
+jmp rel 10;
+call rel 69;
+[ap + 0] = [ap + -10], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
 ret;
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [ap + -21], ap++;
 [ap + 0] = [ap + -14], ap++;
 [ap + 0] = [ap + -7], ap++;
-call rel 69;
+call rel 62;
 jmp rel 10 if [ap + -3] != 0;
 [ap + -1] = [[fp + -3] + 0];
 [ap + 0] = [ap + -4], ap++;
@@ -292,38 +289,32 @@ ret;
 [ap + 0] = [ap + -13] + 3, ap++;
 jmp rel 3;
 [ap + 0] = [ap + -6], ap++;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492914, ap++;
-[ap + -1] = [[ap + -2] + 0];
-[ap + 0] = [ap + -3], ap++;
+call rel 94;
+[ap + 0] = [ap + -9], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
 ret;
 [ap + 0] = [ap + -13] + 3, ap++;
 jmp rel 3;
 [ap + 0] = [ap + -6], ap++;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
-[ap + -1] = [[ap + -2] + 0];
-[ap + 0] = [ap + -3], ap++;
+call rel 86;
+[ap + 0] = [ap + -9], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
 ret;
 [ap + 0] = [fp + -7] + 3, ap++;
 jmp rel 3;
 [ap + 0] = [fp + -7], ap++;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
-[ap + -1] = [[ap + -2] + 0];
-[ap + 0] = [ap + -3], ap++;
+call rel 78;
+[ap + 0] = [ap + -9], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 73;
 ret;
 jmp rel 9 if [fp + -3] != 0;
 [ap + 0] = [fp + -6], ap++;
@@ -336,7 +327,7 @@ ret;
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + -1] = [ap + 0] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -6] + 0];
-jmp rel 35;
+jmp rel 31;
 [ap + -1] = [[fp + -6] + 0];
 [ap + 0] = 1, ap++;
 [fp + -3] = [ap + 1] + [ap + -1], ap++;
@@ -352,25 +343,40 @@ jmp rel 11;
 [ap + 0] = [ap + -4], ap++;
 call rel -34;
 ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 39878429859763533771555484554338820190071, ap++;
-[ap + -1] = [[ap + -2] + 0];
+call rel 40;
 [ap + 0] = [fp + -6] + 2, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
 ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 39878429859757942499084499860145094553463, ap++;
-[ap + -1] = [[ap + -2] + 0];
+call rel 36;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
-[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
 ret;
-# footer #
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492914, ap++;
+call rel 13;
+ret;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
+call rel 8;
+ret;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+[ap + 0] = 39878429859763533771555484554338820190071, ap++;
+call rel -9;
+ret;
+[ap + 0] = 39878429859757942499084499860145094553463, ap++;
+call rel -14;
+ret;
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -387,22 +393,20 @@ CompileExecutableTestRunner(expect_diagnostics: false)
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 
 //! > result
-# builtins: output
-# header #
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+// builtins: output
+// header
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 7;
-[ap + 0] = 0, ap++;
-[ap + -1] = [[fp + -3] + 0];
-[ap + 0] = [ap + -2], ap++;
+call rel 4;
+[ap + 0] = [ap + -1], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 ret;
-# footer #
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -424,42 +428,44 @@ fn require_gas() -> felt252 {
 }
 
 //! > result
-# builtins: output
-# header #
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -3] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+// builtins: output
+// header
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -3], ap++;
+[ap + 2] = [fp + -3], ap++;
 ap += 2;
-call rel 12;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -3] + 1;
-[ap + -4] = [[fp + -3] + 0];
-[ap + 0] = [ap + -1], ap++;
+call rel 7;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 13;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
-[ap + -1] = [[ap + -2] + 0];
+jmp rel 9;
+call rel 18;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
-ap += 1;
+ap += 7;
 [ap + 0] = 1, ap++;
 [ap + -1] = [[fp + -3] + 0];
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3] + 1, ap++;
 ret;
-# footer #
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
 ret;
 
 //! > expected_diagnostics
@@ -478,8 +484,8 @@ fn use_dict() {
 }
 
 //! > result
-# builtins: output, range_check
-# header #
+// builtins: output, range_check
+// header
 ap += 2;
 %{ memory[ap + 0] = segments.add() %}
 %{ memory[ap + 1] = segments.add() %}
@@ -490,20 +496,16 @@ ap += 2;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -4] + 3, ap++;
 [ap + 0] = 9223372036854775807, ap++;
-%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-[ap + 2] = [fp + -4] + 1, ap++;
-[ap + 2] = [ap + 1], ap++;
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -4], ap++;
+[ap + 2] = [fp + -4], ap++;
 ap += 2;
-call rel 39;
-jmp rel 5 if [ap + -3] != 0, ap++;
-[ap + -1] = [ap + -2];
-jmp rel 4;
-%{ raise NotImplementedError("marker = memory[ap + -3]") %}
-%{ raise NotImplementedError("marker = memory[ap + -2]") %}
-[ap + -1] = [fp + -4] + 1;
-[ap + -4] = [[fp + -4] + 0];
+call rel 34;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
 [fp + 0] = [ap + -7];
-[fp + 1] = [ap + -1];
+[fp + 1] = [ap + -2];
 [ap + 0] = [[ap + -6] + -2], ap++;
 [ap + 0] = [[ap + -7] + -1], ap++;
 [ap + -2] = [ap + -1];
@@ -523,20 +525,17 @@ jmp rel -12;
 [ap + 0] = [fp + 1], ap++;
 [ap + 0] = [fp + 0], ap++;
 ret;
-# sierra based code #
+// sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
 jmp rel 4 if [ap + -1] != 0;
-jmp rel 16;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
-[ap + -1] = [[ap + -2] + 0];
+jmp rel 12;
+call rel 36;
 [ap + 0] = [fp + -9], ap++;
 [ap + 0] = [fp + -8], ap++;
 [ap + 0] = [fp + -7], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -7] + 1, ap++;
+[ap + 0] = [ap + -6], ap++;
 ret;
 %{
 if '__dict_manager' not in globals():
@@ -577,13 +576,16 @@ memory[memory[memory[fp + -8] - 3] + index * 3] = segment_start
 [ap + 0] = [fp + -8] + 3, ap++;
 [ap + 0] = [fp + -7], ap++;
 [ap + 0] = [[ap + -4] + 0], ap++;
-call rel 10;
+call rel 15;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 193;
 ret;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = [fp + -4], ap++;
@@ -788,7 +790,13 @@ ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 ret;
-# footer #
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
 ret;
 
 //! > expected_diagnostics

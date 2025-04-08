@@ -18,9 +18,7 @@ use crate::lower::lower_match::{
     MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
     lower_optimized_extern_match,
 };
-use crate::lower::{
-    create_subscope_with_bound_refs, lower_block, lower_expr, lower_expr_to_var_usage,
-};
+use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
 /// Lowers an expression of type [semantic::ExprIf].
@@ -53,7 +51,7 @@ pub fn lower_expr_if_bool(
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
-    let subscope_main = create_subscope_with_bound_refs(ctx, builder);
+    let subscope_main = create_subscope(ctx, builder);
     let block_main_id = subscope_main.block_id;
     let main_block =
         extract_matches!(&ctx.function_body.arenas.exprs[expr.if_block], semantic::Expr::Block)
@@ -66,7 +64,7 @@ pub fn lower_expr_if_bool(
         lower_block(ctx, subscope_main, &main_block).map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let subscope_else = create_subscope_with_bound_refs(ctx, builder);
+    let subscope_else = create_subscope(ctx, builder);
     let block_else_id = subscope_else.block_id;
 
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: if_location });
@@ -108,7 +106,7 @@ pub fn lower_expr_if_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_felt252_ty()
+    if ty == ctx.db.core_info().felt252
         || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(

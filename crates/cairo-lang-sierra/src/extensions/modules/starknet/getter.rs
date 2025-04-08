@@ -67,19 +67,22 @@ fn get_execution_info_type(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::starknet::info::ExecutionInfo")),
-        // block_info
-        GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
-        // tx_info
-        GenericArg::Type(box_ty(context, get_tx_info_type(context)?)?),
-        // caller_address
-        GenericArg::Type(contract_address_ty.clone()),
-        // contract_address
-        GenericArg::Type(contract_address_ty),
-        // entry_point_selector
-        GenericArg::Type(felt252_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::ExecutionInfo")),
+            // block_info
+            GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
+            // tx_info
+            GenericArg::Type(box_ty(context, get_tx_info_type(context)?)?),
+            // caller_address
+            GenericArg::Type(contract_address_ty.clone()),
+            // contract_address
+            GenericArg::Type(contract_address_ty),
+            // entry_point_selector
+            GenericArg::Type(felt252_ty),
+        ],
+    )
 }
 
 /// Helper for v2::ExecutionInfo type.
@@ -88,19 +91,24 @@ fn get_execution_info_v2_type(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::starknet::info::v2::ExecutionInfo")),
-        // block_info
-        GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
-        // tx_info
-        GenericArg::Type(box_ty(context, get_tx_info_v2_type(context)?)?),
-        // caller_address
-        GenericArg::Type(contract_address_ty.clone()),
-        // contract_address
-        GenericArg::Type(contract_address_ty),
-        // entry_point_selector
-        GenericArg::Type(felt252_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(
+                "core::starknet::info::v2::ExecutionInfo",
+            )),
+            // block_info
+            GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
+            // tx_info
+            GenericArg::Type(box_ty(context, get_tx_info_v2_type(context)?)?),
+            // caller_address
+            GenericArg::Type(contract_address_ty.clone()),
+            // contract_address
+            GenericArg::Type(contract_address_ty),
+            // entry_point_selector
+            GenericArg::Type(felt252_ty),
+        ],
+    )
 }
 
 /// Helper for BlockInfo type.
@@ -109,15 +117,18 @@ fn get_block_info_type(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     let u64_ty = context.get_concrete_type(Uint64Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::starknet::info::BlockInfo")),
-        // block_number
-        GenericArg::Type(u64_ty.clone()),
-        // block_timestamp
-        GenericArg::Type(u64_ty),
-        // sequencer_address
-        GenericArg::Type(contract_address_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::BlockInfo")),
+            // block_number
+            GenericArg::Type(u64_ty.clone()),
+            // block_timestamp
+            GenericArg::Type(u64_ty),
+            // sequencer_address
+            GenericArg::Type(contract_address_ty),
+        ],
+    )
 }
 
 /// Helper for TxInfo type.
@@ -127,23 +138,26 @@ fn get_tx_info_type(
     let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::starknet::info::TxInfo")),
-        // version
-        GenericArg::Type(felt252_ty.clone()),
-        // account_contract_address
-        GenericArg::Type(contract_address_ty),
-        // max_fee
-        GenericArg::Type(u128_ty),
-        // signature
-        GenericArg::Type(felt252_span_ty(context)?),
-        // transaction_hash
-        GenericArg::Type(felt252_ty.clone()),
-        // chain_id
-        GenericArg::Type(felt252_ty.clone()),
-        // nonce
-        GenericArg::Type(felt252_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::TxInfo")),
+            // version
+            GenericArg::Type(felt252_ty.clone()),
+            // account_contract_address
+            GenericArg::Type(contract_address_ty),
+            // max_fee
+            GenericArg::Type(u128_ty),
+            // signature
+            GenericArg::Type(felt252_span_ty(context)?),
+            // transaction_hash
+            GenericArg::Type(felt252_ty.clone()),
+            // chain_id
+            GenericArg::Type(felt252_ty.clone()),
+            // nonce
+            GenericArg::Type(felt252_ty),
+        ],
+    )
 }
 
 /// Cairo level user type name for `ResourceBounds`.
@@ -163,15 +177,18 @@ fn get_resource_bounds_type(
     let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let u64_ty = context.get_concrete_type(Uint64Type::id(), &[])?;
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string(RESOURCE_BOUNDS_USER_TYPE_ID)),
-        // resource
-        GenericArg::Type(felt252_ty),
-        // max_amount
-        GenericArg::Type(u64_ty),
-        // max_price_per_unit
-        GenericArg::Type(u128_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(RESOURCE_BOUNDS_USER_TYPE_ID)),
+            // resource
+            GenericArg::Type(felt252_ty),
+            // max_amount
+            GenericArg::Type(u64_ty),
+            // max_price_per_unit
+            GenericArg::Type(u128_ty),
+        ],
+    )
 }
 
 /// Helper for v2::TxInfo type.
@@ -183,35 +200,38 @@ fn get_tx_info_v2_type(
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    context.get_concrete_type(StructType::id(), &[
-        GenericArg::UserType(UserTypeId::from_string("core::starknet::info::v2::TxInfo")),
-        // version
-        GenericArg::Type(felt252_ty.clone()),
-        // account_contract_address
-        GenericArg::Type(contract_address_ty),
-        // max_fee
-        GenericArg::Type(u128_ty.clone()),
-        // signature
-        GenericArg::Type(felt252_span_ty.clone()),
-        // transaction_hash
-        GenericArg::Type(felt252_ty.clone()),
-        // chain_id
-        GenericArg::Type(felt252_ty.clone()),
-        // nonce
-        GenericArg::Type(felt252_ty),
-        // resource_bounds
-        GenericArg::Type(resource_bounds_span_ty(context)?),
-        // tip
-        GenericArg::Type(u128_ty),
-        // paymaster_data
-        GenericArg::Type(felt252_span_ty.clone()),
-        // nonce_data_availability_mode
-        GenericArg::Type(u32_ty.clone()),
-        // fee_data_availability_mode
-        GenericArg::Type(u32_ty),
-        // account_deployment_data
-        GenericArg::Type(felt252_span_ty),
-    ])
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::v2::TxInfo")),
+            // version
+            GenericArg::Type(felt252_ty.clone()),
+            // account_contract_address
+            GenericArg::Type(contract_address_ty),
+            // max_fee
+            GenericArg::Type(u128_ty.clone()),
+            // signature
+            GenericArg::Type(felt252_span_ty.clone()),
+            // transaction_hash
+            GenericArg::Type(felt252_ty.clone()),
+            // chain_id
+            GenericArg::Type(felt252_ty.clone()),
+            // nonce
+            GenericArg::Type(felt252_ty),
+            // resource_bounds
+            GenericArg::Type(resource_bounds_span_ty(context)?),
+            // tip
+            GenericArg::Type(u128_ty),
+            // paymaster_data
+            GenericArg::Type(felt252_span_ty.clone()),
+            // nonce_data_availability_mode
+            GenericArg::Type(u32_ty.clone()),
+            // fee_data_availability_mode
+            GenericArg::Type(u32_ty),
+            // account_deployment_data
+            GenericArg::Type(felt252_span_ty),
+        ],
+    )
 }
 
 #[derive(Default)]

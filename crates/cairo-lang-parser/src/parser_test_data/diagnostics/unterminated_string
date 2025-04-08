@@ -16,12 +16,12 @@ error: Unterminated short string literal.
 | }
 |_^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -46,12 +46,12 @@ error: Unterminated string literal.
 | }
 |_^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^

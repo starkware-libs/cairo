@@ -1,6 +1,6 @@
-use crate::dict::{Felt252Dict, Felt252DictEntryTrait};
-use crate::test::test_utils::assert_eq;
+use crate::dict::{Felt252Dict, Felt252DictEntryTrait, SquashedFelt252DictImpl};
 use crate::nullable;
+use crate::test::test_utils::assert_eq;
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
@@ -150,6 +150,18 @@ fn test_array_dict() {
 
 #[test]
 fn test_dict_from_iterator() {
+    let iter = (0..5_u32).into_iter().map(|x| (x.into(), x));
+    let mut dict: Felt252Dict<u32> = FromIterator::from_iter(iter);
+
+    assert_eq!(dict[0], 0);
+    assert_eq!(dict[1], 1);
+    assert_eq!(dict[2], 2);
+    assert_eq!(dict[3], 3);
+    assert_eq!(dict[4], 4);
+}
+
+#[test]
+fn test_dict_from_collect() {
     let mut dict: Felt252Dict<u32> = (0..5_u32).into_iter().map(|x| (x.into(), x)).collect();
 
     assert_eq!(dict[0], 0);
@@ -160,7 +172,15 @@ fn test_dict_from_iterator() {
 }
 
 #[test]
-fn test_dict_from_iterator_with_duplicate_keys() {
+fn test_dict_from_collect_with_duplicate_keys() {
     let mut dict = array![(0, 1_u32), (0, 2_u32)].into_iter().collect::<Felt252Dict<_>>();
     assert_eq!(dict[0], 2);
+}
+
+#[test]
+fn test_array_from_squash_dict() {
+    let mut dict: Felt252Dict<u32> = (0..5_u32).into_iter().map(|x| (x.into(), x)).collect();
+    assert_eq!(
+        dict.squash().into_entries(), array![(0, 0, 0), (1, 0, 1), (2, 0, 2), (3, 0, 3), (4, 0, 4)],
+    );
 }

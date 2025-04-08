@@ -1,5 +1,5 @@
-use crate::option::OptionTrait;
 use crate::math;
+use crate::option::OptionTrait;
 
 #[test]
 fn test_egcd() {

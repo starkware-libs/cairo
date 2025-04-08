@@ -2,8 +2,8 @@
 //!
 //! Provides extended GCD, modular inverse, and modular arithmetic operations.
 
-use crate::integer::{U128MulGuarantee, u256_wide_mul, u512_safe_div_rem_by_u256};
 use crate::RangeCheck;
+use crate::integer::{U128MulGuarantee, u256_wide_mul, u512_safe_div_rem_by_u256};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 #[allow(unused_imports)]

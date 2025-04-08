@@ -35,7 +35,7 @@ the parameters and the return type.
 fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
 ----
 
-In the example above, the signature is `fn inc_n<T, const N>(x: T) \-> T`.
+In the example above, the signature is `fn inc_n<T, const N>(x: T) -> T`.
 
 === Function name
 
@@ -75,12 +75,12 @@ it also affects its value in the caller function. For example:
 === Return type
 
 The return type defines the type of the value that is returned by the function when it is called.
-It is the type that appears in the signature after the `\->`.
+It is the type that appears in the signature after the `->`.
 
 Note that in Cairo, functions always return a value.
 When the function has no particular value it should return, it is common to return
 the xref:unit-type.adoc[unit type] (`()`).
-In this case, the return type can be omitted (including the `\->`).
+In this case, the return type can be omitted (including the `->`).
 
 In the example above, the return type is of type `T`.
 

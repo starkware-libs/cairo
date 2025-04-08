@@ -86,7 +86,7 @@ pub fn function_identifier_relative_to_file_module(
                 let function_name =
                     cairo_lang_syntax::node::ast::FunctionWithBody::from_syntax_node(
                         syntax_db,
-                        syntax_node.clone(),
+                        syntax_node,
                     )
                     .declaration(syntax_db)
                     .name(syntax_db)
@@ -101,7 +101,7 @@ pub fn function_identifier_relative_to_file_module(
             cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
                 let impl_name = cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(
                     syntax_db,
-                    syntax_node.clone(),
+                    syntax_node,
                 )
                 .name(syntax_db)
                 .text(syntax_db);
@@ -110,7 +110,7 @@ pub fn function_identifier_relative_to_file_module(
             cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
                 let module_name = cairo_lang_syntax::node::ast::ItemModule::from_syntax_node(
                     syntax_db,
-                    syntax_node.clone(),
+                    syntax_node,
                 )
                 .name(syntax_db)
                 .text(syntax_db);
@@ -118,7 +118,7 @@ pub fn function_identifier_relative_to_file_module(
             }
             _ => {}
         }
-        if let Some(parent) = syntax_node.parent() {
+        if let Some(parent) = syntax_node.parent(syntax_db) {
             syntax_node = parent;
         } else {
             break;
@@ -141,12 +141,17 @@ pub fn function_identifier_relative_to_file_module(
 }
 
 /// Returns a location in the user file corresponding to the given [StableLocation].
-/// It consists of a full path to the file and a text span in the file.
+/// It consists of a full path to the file, a text span in the file and a boolean indicating
+/// if the location is a part of a macro expansion.
 pub fn maybe_code_location(
     db: &dyn DefsGroup,
     location: StableLocation,
-) -> Option<(SourceFileFullPath, SourceCodeSpan)> {
-    let location = location.diagnostic_location(db.upcast()).user_location(db.upcast());
+) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
+    let is_macro = matches!(
+        location.file_id(db).lookup_intern(db),
+        FileLongId::Virtual(_) | FileLongId::External(_)
+    );
+    let location = location.diagnostic_location(db).user_location(db.upcast());
     let file_full_path = location.file_id.full_path(db.upcast());
     let position = location.span.position_in_file(db.upcast(), location.file_id)?;
     let source_location = SourceCodeSpan {
@@ -154,7 +159,7 @@ pub fn maybe_code_location(
         end: SourceCodeLocation { col: position.end.col, line: position.end.line },
     };
 
-    Some((SourceFileFullPath(file_full_path), source_location))
+    Some((SourceFileFullPath(file_full_path), source_location, is_macro))
 }
 
 /// This function returns a fully qualified path to the file module.

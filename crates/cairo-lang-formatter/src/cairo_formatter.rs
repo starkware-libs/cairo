@@ -89,7 +89,7 @@ impl FormatOutcome {
 /// An error thrown while trying to format Cairo code.
 #[derive(Debug, Error)]
 pub enum FormattingError {
-    /// An parsing error has occurred. See diagnostics for context.
+    /// A parsing error has occurred. See diagnostics for context.
     #[error(transparent)]
     ParsingError(ParsingError),
     /// All other errors.

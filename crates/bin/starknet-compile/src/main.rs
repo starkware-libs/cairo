@@ -12,7 +12,7 @@ use clap::Parser;
 /// Compiles the specified contract from a Cairo project, into a contract class file.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The path of the crate to compile.
     path: PathBuf,

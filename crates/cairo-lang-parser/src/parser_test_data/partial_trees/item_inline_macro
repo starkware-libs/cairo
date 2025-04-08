@@ -430,7 +430,7 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:17
 identifier!(1,2)
                 ^
@@ -479,7 +479,7 @@ Did you mean to write `identifier!(...)'?
 identifier(x)
 ^^^^^^^^^^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:14
 identifier(x)
              ^

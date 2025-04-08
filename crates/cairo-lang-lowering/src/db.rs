@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -7,6 +8,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -16,7 +18,10 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::borrow_check::{PotentialDestructCalls, borrow_check};
+use crate::borrow_check::{
+    PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
+};
+use crate::cache::load_cached_crate_functions;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
@@ -61,6 +66,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Arc<MultiLowering>>;
+
+    /// Returns a mapping from function ids to their multi-lowerings for the given loaded from a
+    /// cache for the given crate.
+    fn cached_multi_lowerings(
+        &self,
+        crate_id: cairo_lang_filesystem::ids::CrateId,
+    ) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>>;
 
     /// Computes the lowered representation of a function with a body before borrow checking.
     fn priv_function_with_body_lowering(
@@ -341,7 +353,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn final_optimization_strategy(&self) -> OptimizationStrategyId;
 
     /// Returns the baseline optimization strategy.
-    /// This strategy is used for inlining decistion and as a starting point for the final lowering.
+    /// This strategy is used for inlining decision and as a starting point for the final lowering.
     #[salsa::invoke(crate::optimizations::strategy::baseline_optimization_strategy)]
     fn baseline_optimization_strategy(&self) -> OptimizationStrategyId;
 
@@ -382,8 +394,24 @@ fn priv_function_with_body_multi_lowering(
     db: &dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<Arc<MultiLowering>> {
+    let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
+    if let Some(map) = db.cached_multi_lowerings(crate_id) {
+        if let Some(multi_lowering) = map.get(&function_id) {
+            return Ok(Arc::new(multi_lowering.clone()));
+        } else {
+            panic!("function not found in cached lowering {:?}", function_id.debug(db));
+        }
+    };
+
     let multi_lowering = lower_semantic_function(db.upcast(), function_id)?;
     Ok(Arc::new(multi_lowering))
+}
+
+fn cached_multi_lowerings(
+    db: &dyn LoweringGroup,
+    crate_id: cairo_lang_filesystem::ids::CrateId,
+) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId, MultiLowering>>> {
+    load_cached_crate_functions(db, crate_id)
 }
 
 // * Borrow checking.
@@ -425,8 +453,9 @@ fn priv_concrete_function_with_body_lowered_flat(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_db = db.upcast();
-    let mut lowered =
-        (*db.function_with_body_lowering(function.function_with_body_id(db))?).clone();
+    let generic_function_id = function.function_with_body_id(db);
+    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
+    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }
@@ -441,7 +470,7 @@ fn concrete_function_with_body_postpanic_lowered(
     let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
     add_withdraw_gas(db, function, &mut lowered)?;
-    lowered = lower_panics(db, function, &lowered)?;
+    lower_panics(db, function, &mut lowered)?;
     add_destructs(db, function, &mut lowered);
     scrub_units(db, &mut lowered);
 
@@ -670,16 +699,16 @@ fn function_with_body_lowering_diagnostics(
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
         diagnostics.extend(lowered.diagnostics.clone());
-        if flag_add_withdraw_gas(db)
-            && !lowered.signature.panicable
-            && db.in_cycle(function_id, DependencyType::Cost)?
-        {
+        if flag_add_withdraw_gas(db) && db.in_cycle(function_id, DependencyType::Cost)? {
             let location =
                 Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));
-            diagnostics.add(LoweringDiagnostic {
-                location,
-                kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
-            });
+            if !lowered.signature.panicable {
+                diagnostics.add(LoweringDiagnostic {
+                    location: location.clone(),
+                    kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
+                });
+            }
+            borrow_check_possible_withdraw_gas(db, location.intern(db), &lowered, &mut diagnostics)
         }
     }
 

@@ -1,0 +1,117 @@
+//! > Test duplicated storage node diags.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+#[starknet::storage_node]
+struct A {
+    a: felt252,
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Multiple storage node attributes are not allowed.
+ --> lib.cairo:2:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test storage node attr on enum.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+enum Options {
+    Opt1: felt252,
+    Opt2: felt252,
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Can only be applied to structs.
+ --> lib.cairo:1:1
+#[starknet::storage_node]
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate sub pointers attrs.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::sub_pointers(OptionsVariants)]
+#[starknet::sub_pointers(OptionsVariants2)]
+enum Options {
+    Opt1: felt252,
+    Opt2: felt252,
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Multiple sub pointers attributes are not allowed.
+ --> lib.cairo:2:1
+#[starknet::sub_pointers(OptionsVariants2)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test sub pointers bad args.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::sub_pointers()]
+enum Options1 {
+    Opt1: felt252,
+    Opt2: felt252,
+}
+#[starknet::sub_pointers]
+enum Options2 {
+    Opt1: felt252,
+    Opt2: felt252,
+}
+#[starknet::sub_pointers(A, B)]
+enum Options3 {
+    Opt1: felt252,
+    Opt2: felt252,
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+ --> lib.cairo:1:25
+#[starknet::sub_pointers()]
+                        ^^
+
+error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+ --> lib.cairo:6:25
+#[starknet::sub_pointers]
+                        ^
+
+error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+ --> lib.cairo:11:25
+#[starknet::sub_pointers(A, B)]
+                        ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test storage node attr on struct.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::sub_pointers(OptionsVariants)]
+struct A {
+    a: felt252,
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Can only be applied to enums.
+ --> lib.cairo:1:1
+#[starknet::sub_pointers(OptionsVariants)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -44,16 +44,17 @@ pub fn type_alias_generic_params_data_helper(
         None => Resolver::new(db, module_file_id, inference_id),
     };
     resolver.set_feature_config(&lookup_item_id, type_alias_ast, &mut diagnostics);
+    let syntax_db = db.upcast();
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &type_alias_ast.generic_params(db.upcast()),
+        &type_alias_ast.generic_params(syntax_db),
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, type_alias_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -80,7 +81,7 @@ pub fn type_alias_semantic_data_helper(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(diagnostics, type_alias_ast.stable_ptr().untyped());
+    inference.finalize(diagnostics, type_alias_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
     let ty = inference.rewrite(ty).no_err();
@@ -99,7 +100,9 @@ pub fn type_alias_semantic_data_cycle_helper(
 ) -> Maybe<TypeAliasData> {
     let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
-    let err = Err(diagnostics.report(&type_alias_ast.name(syntax_db), TypeAliasCycle));
+    let err =
+        Err(diagnostics
+            .report(type_alias_ast.name(syntax_db).stable_ptr(syntax_db), TypeAliasCycle));
 
     let resolver = Resolver::with_data(
         db,

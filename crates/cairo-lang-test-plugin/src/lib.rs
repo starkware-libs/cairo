@@ -130,7 +130,7 @@ pub fn compile_test_prepared_db(
         db,
         tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
     );
-    let all_tests = find_all_tests(db, test_crate_ids.clone());
+    let all_tests = find_all_tests(db, test_crate_ids);
 
     let func_ids = chain!(
         executable_functions.clone().into_keys(),

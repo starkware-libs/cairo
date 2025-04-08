@@ -161,22 +161,25 @@ pub fn build_function_parameters_refs(
             .get(&param.ty)
             .ok_or_else(|| ReferencesError::UnknownType(param.ty.clone()))?;
         if refs
-            .insert(param.id.clone(), ReferenceValue {
-                expression: ReferenceExpression {
-                    cells: ((offset - size + 1)..(offset + 1))
-                        .map(|i| {
-                            CellExpression::Deref(CellRef { register: Register::FP, offset: i })
-                        })
-                        .collect(),
+            .insert(
+                param.id.clone(),
+                ReferenceValue {
+                    expression: ReferenceExpression {
+                        cells: ((offset - size + 1)..(offset + 1))
+                            .map(|i| {
+                                CellExpression::Deref(CellRef { register: Register::FP, offset: i })
+                            })
+                            .collect(),
+                    },
+                    ty: param.ty.clone(),
+                    stack_idx: None,
+                    introduction_point: IntroductionPoint {
+                        source_statement_idx: None,
+                        destination_statement_idx: func.entry_point,
+                        output_idx: param_idx,
+                    },
                 },
-                ty: param.ty.clone(),
-                stack_idx: None,
-                introduction_point: IntroductionPoint {
-                    source_statement_idx: None,
-                    destination_statement_idx: func.entry_point,
-                    output_idx: param_idx,
-                },
-            })
+            )
             .is_some()
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));

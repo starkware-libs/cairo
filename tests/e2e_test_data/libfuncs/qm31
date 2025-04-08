@@ -1,0 +1,484 @@
+//! > qm31_add
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::qm31;
+
+fn foo(a: qm31, b: qm31) -> qm31 {
+    a + b
+}
+
+//! > casm
+{QM31} [ap + 0] = [fp + -4] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_add = qm31_add;
+
+F0:
+qm31_add([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
+
+//! > ==========================================================================
+
+//! > qm31_sub
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::qm31;
+
+fn foo(a: qm31, b: qm31) -> qm31 {
+    a - b
+}
+
+//! > casm
+{QM31} [fp + -4] = [ap + 0] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_sub = qm31_sub;
+
+F0:
+qm31_sub([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
+
+//! > ==========================================================================
+
+//! > qm31_mul
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::qm31;
+
+fn foo(a: qm31, b: qm31) -> qm31 {
+    a * b
+}
+
+//! > casm
+{QM31} [ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_mul = qm31_mul;
+
+F0:
+qm31_mul([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: qm31, [1]: qm31) -> (qm31);
+
+//! > ==========================================================================
+
+//! > qm31_div
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::qm31;
+
+extern fn qm31_div(a: qm31, b: NonZero<qm31>) -> qm31 nopanic;
+fn foo(a: qm31, b: NonZero<qm31>) -> qm31 {
+    qm31_div(a, b)
+}
+
+//! > casm
+{QM31} [fp + -4] = [ap + 0] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<qm31> = NonZero<qm31> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_div = qm31_div;
+
+F0:
+qm31_div([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: qm31, [1]: NonZero<qm31>) -> (qm31);
+
+//! > ==========================================================================
+
+//! > qm31_const
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::{qm31, qm31_const};
+fn foo() -> qm31 {
+    qm31_const::<1, 2, 3, 4>()
+}
+
+//! > casm
+[ap + 0] = 1298074214647874006581370456899585, ap++;
+ret;
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_const<1, 2, 3, 4> = qm31_const<1, 2, 3, 4>;
+libfunc store_temp<qm31> = store_temp<qm31>;
+
+F0:
+qm31_const<1, 2, 3, 4>() -> ([0]);
+store_temp<qm31>([0]) -> ([0]);
+return([0]);
+
+test::foo@F0() -> (qm31);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > qm31_is_zero
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::internal::OptionRev;
+use core::qm31::qm31;
+
+extern fn qm31_is_zero(a: qm31) -> OptionRev<NonZero<qm31>> nopanic;
+fn foo(a: qm31) -> OptionRev<NonZero<qm31>> {
+    qm31_is_zero(a)
+}
+
+//! > casm
+jmp rel 7 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type NonZero<qm31> = NonZero<qm31> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>> = Enum<ut@core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, Unit, NonZero<qm31>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_is_zero = qm31_is_zero;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>> = store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>;
+libfunc enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1> = enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>;
+
+F0:
+qm31_is_zero([0]) { fallthrough() F0_B0([1]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 0>([2]) -> ([3]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>, 1>([1]) -> ([4]);
+store_temp<core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>>([4]) -> ([4]);
+return([4]);
+
+test::foo@F0([0]: qm31) -> (core::internal::OptionRev::<core::zeroable::NonZero::<core::qm31::qm31>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > qm31_pack
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::{QM31Trait, m31, qm31};
+
+fn foo(w0: m31, w1: m31, w2: m31, w3: m31) -> qm31 {
+    QM31Trait::new(w0, w1, w2, w3)
+}
+
+//! > casm
+[ap + 0] = [fp + -3] * 68719476736, ap++;
+[ap + 0] = [ap + -1] + [fp + -4], ap++;
+[ap + 0] = [ap + -1] * 68719476736, ap++;
+[ap + 0] = [ap + -1] + [fp + -5], ap++;
+[ap + 0] = [ap + -1] * 68719476736, ap++;
+[ap + 0] = [ap + -1] + [fp + -6], ap++;
+[ap + 0] = [ap + -1], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_pack = qm31_pack;
+libfunc store_temp<qm31> = store_temp<qm31>;
+
+F0:
+qm31_pack([0], [1], [2], [3]) -> ([4]);
+store_temp<qm31>([4]) -> ([4]);
+return([4]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>, [2]: BoundedInt<0, 2147483646>, [3]: BoundedInt<0, 2147483646>) -> (qm31);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 700})
+
+//! > ==========================================================================
+
+//! > qm31_unpack
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::{QM31Trait, m31, qm31};
+
+fn foo(a: qm31) -> [m31; 4] {
+    a.unpack()
+}
+
+//! > casm
+%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -3], 68719476736) %}
+%{ (memory[ap + 3], memory[ap + 2]) = divmod(memory[ap + 1], 68719476736) %}
+%{ (memory[ap + 5], memory[ap + 4]) = divmod(memory[ap + 3], 68719476736) %}
+[ap + 6] = [ap + 5] * 68719476736, ap++;
+[ap + 2] = [ap + 5] + [ap + 3], ap++;
+[ap + 5] = [ap + 1] * 68719476736, ap++;
+[ap + -2] = [ap + 4] + [ap + -1], ap++;
+[ap + 4] = [ap + -3] * 68719476736, ap++;
+[fp + -3] = [ap + 3] + [ap + -5], ap++;
+[ap + -6] = [[fp + -4] + 0], ap++;
+[ap + -5] = [[fp + -4] + 1], ap++;
+[ap + -4] = [[fp + -4] + 2], ap++;
+[ap + -4] = [[fp + -4] + 3];
+[ap + 0] = [ap + -9] + [ap + -7], ap++;
+[ap + 0] = [ap + -6] + [ap + -5], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607363048734719, ap++;
+[ap + -1] = [[fp + -4] + 4];
+[ap + 0] = [fp + -4] + 5, ap++;
+[ap + 0] = [ap + -14], ap++;
+[ap + 0] = [ap + -13], ap++;
+[ap + 0] = [ap + -12], ap++;
+[ap + 0] = [ap + -12], ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>> = Struct<ut@Tuple, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>> [storable: true, drop: true, dup: true, zero_sized: false];
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_unpack = qm31_unpack;
+libfunc struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>> = struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>> = store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>;
+
+F0:
+qm31_unpack([0], [1]) -> ([2], [3], [4], [5], [6]);
+struct_construct<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([3], [4], [5], [6]) -> ([7]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>>([7]) -> ([7]);
+return([2], [7]);
+
+test::foo@F0([0]: RangeCheck, [1]: qm31) -> (RangeCheck, Tuple<BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>, BoundedInt<0, 2147483646>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 2350})
+
+//! > ==========================================================================
+
+//! > qm31_from_m31
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::{m31, qm31};
+
+fn foo(a: m31) -> qm31 {
+    a.into()
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type qm31 = qm31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc qm31_from_m31 = qm31_from_m31;
+libfunc store_temp<qm31> = store_temp<qm31>;
+
+F0:
+qm31_from_m31([0]) -> ([1]);
+store_temp<qm31>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>) -> (qm31);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > m31_add
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::m31;
+
+fn foo(a: m31, b: m31) -> m31 {
+    core::qm31::m31_ops::add(a, b)
+}
+
+//! > casm
+{QM31} [ap + 0] = [fp + -4] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc m31_add = m31_add;
+
+F0:
+m31_add([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>) -> (BoundedInt<0, 2147483646>);
+
+//! > ==========================================================================
+
+//! > m31_sub
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::m31;
+
+fn foo(a: m31, b: m31) -> m31 {
+    core::qm31::m31_ops::sub(a, b)
+}
+
+//! > casm
+{QM31} [fp + -4] = [ap + 0] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc m31_sub = m31_sub;
+
+F0:
+m31_sub([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>) -> (BoundedInt<0, 2147483646>);
+
+//! > ==========================================================================
+
+//! > m31_mul
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::m31;
+
+fn foo(a: m31, b: m31) -> m31 {
+    core::qm31::m31_ops::mul(a, b)
+}
+
+//! > casm
+{QM31} [ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc m31_mul = m31_mul;
+
+F0:
+m31_mul([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: BoundedInt<0, 2147483646>) -> (BoundedInt<0, 2147483646>);
+
+//! > ==========================================================================
+
+//! > m31_div
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::qm31::m31;
+
+fn foo(a: m31, b: NonZero<m31>) -> m31 {
+    core::qm31::m31_ops::div(a, b)
+}
+
+//! > casm
+{QM31} [fp + -4] = [ap + 0] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<BoundedInt<0, 2147483646>> = NonZero<BoundedInt<0, 2147483646>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc m31_div = m31_div;
+
+F0:
+m31_div([0], [1]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: BoundedInt<0, 2147483646>, [1]: NonZero<BoundedInt<0, 2147483646>>) -> (BoundedInt<0, 2147483646>);

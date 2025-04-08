@@ -22,7 +22,7 @@ use clap::Parser;
 /// Compiles a Cairo project and runs the function `main`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,
@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    let mut reporter = DiagnosticsReporter::stderr();
+    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
     if args.allow_warnings {
         reporter = reporter.allow_warnings();
     }

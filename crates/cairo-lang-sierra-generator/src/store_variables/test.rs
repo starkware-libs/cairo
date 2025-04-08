@@ -29,11 +29,13 @@ use crate::test_utils::{
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = libfunc.lookup_intern(db);
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     let array_ty = db
-        .get_concrete_type_id(get_core_ty_by_name(db.upcast(), "Array".into(), vec![
-            GenericArgumentId::Type(db.core_felt252_ty()),
-        ]))
+        .get_concrete_type_id(get_core_ty_by_name(
+            db.upcast(),
+            "Array".into(),
+            vec![GenericArgumentId::Type(db.core_info().felt252)],
+        ))
         .expect("Can't find core::Array<core::felt252>.");
     let name = libfunc_long_id.generic_id.0;
     match name.as_str() {
@@ -226,7 +228,7 @@ fn test_add_store_statements(
     params: &[&str],
 ) -> Vec<String> {
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     add_store_statements(
         db,
         statements,
@@ -258,9 +260,12 @@ fn store_temp_simple() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "3", "5", "6"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "3", "5", "6"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -471,9 +476,12 @@ fn store_temp_push_values() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "3", "4", "6", "8", "9", "10"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "3", "4", "6", "8", "9", "10"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -499,12 +507,15 @@ fn store_temp_push_values_with_dup() {
     let statements: Vec<pre_sierra::StatementWithLocation> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_push_values_ex(&db, &[
-            // Deferred with dup.
-            ("2", "102", true),
-            // Temporary variable with dup.
-            ("3", "100", true),
-        ]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                // Deferred with dup.
+                ("2", "102", true),
+                // Temporary variable with dup.
+                ("3", "100", true),
+            ],
+        ),
         dummy_return_statement(&[]),
     ];
 
@@ -533,14 +544,17 @@ fn push_values_optimization() {
         dummy_return_statement(&["0"]),
     ];
 
-    assert_eq!(test_add_store_statements(&db, statements, LocalVariables::default(), &[]), vec![
-        "function_call4() -> (0, 1, 2, 3)",
-        "rename<felt252>(2) -> (102)",
-        "rename<felt252>(3) -> (103)",
-        "store_temp<felt252>(0) -> (100)",
-        "store_temp<felt252>(102) -> (202)",
-        "return(0)",
-    ]);
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default(), &[]),
+        vec![
+            "function_call4() -> (0, 1, 2, 3)",
+            "rename<felt252>(2) -> (102)",
+            "rename<felt252>(3) -> (103)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(102) -> (202)",
+            "return(0)",
+        ]
+    );
 }
 
 /// Tests that the known stack is cleared after change to ap.
@@ -581,11 +595,10 @@ fn push_values_temp_not_on_top() {
         dummy_return_statement(&["0"]),
     ];
 
-    assert_eq!(test_add_store_statements(&db, statements, LocalVariables::default(), &[]), vec![
-        "temp_not_on_top() -> (0)",
-        "store_temp<felt252>(0) -> (100)",
-        "return(0)",
-    ]);
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default(), &[]),
+        vec!["temp_not_on_top() -> (0)", "store_temp<felt252>(0) -> (100)", "return(0)",]
+    );
 }
 
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
@@ -594,21 +607,27 @@ fn consecutive_push_values() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::StatementWithLocation> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
-        dummy_push_values_ex(&db, &[
-            ("100", "200", false),
-            ("101", "201", true),
-            ("2", "202", false),
-            ("3", "203", false),
-        ]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                ("100", "200", false),
+                ("101", "201", true),
+                ("2", "202", false),
+                ("3", "203", false),
+            ],
+        ),
         dummy_push_values(&db, &[("101", "301"), ("202", "302"), ("203", "303"), ("4", "304")]),
         dummy_push_values(&db, &[("304", "404")]),
         dummy_return_statement(&["0"]),
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "2", "3", "4"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "2", "3", "4"]
+        ),
         vec![
             // First statement. Push [0] and [1].
             "store_temp<felt252>(0) -> (100)",
@@ -647,9 +666,12 @@ fn push_values_after_branch_merge() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "2", "3"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "2", "3"]
+        ),
         vec![
             "branch() { label_test::test::0() fallthrough() }",
             // Push [0], [1] and [2].
@@ -688,9 +710,12 @@ fn push_values_early_return() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "2", "3"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "2", "3"]
+        ),
         vec![
             // Push [0] and [1].
             "store_temp<felt252>(0) -> (100)",
@@ -729,9 +754,12 @@ fn consecutive_const_additions() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "5", "6"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "5", "6"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "store_temp<felt252>(2) -> (2)",
@@ -800,9 +828,12 @@ fn consecutive_appends_with_branch() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &[
-            "0", "1", "3", "5"
-        ]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "3", "5"]
+        ),
         vec![
             "array_append(0, 1) -> (2)",
             "array_append(2, 3) -> (4)",

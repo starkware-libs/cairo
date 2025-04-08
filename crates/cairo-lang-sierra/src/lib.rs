@@ -17,7 +17,7 @@ pub mod edit_state;
 pub mod extensions;
 pub mod fmt;
 pub mod ids;
-mod pre_statement;
+mod labeled_statement;
 pub mod program;
 pub mod program_registry;
 pub mod simulation;

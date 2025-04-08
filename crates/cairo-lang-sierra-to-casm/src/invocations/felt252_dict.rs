@@ -188,12 +188,16 @@ fn build_felt252_dict_squash(
         )
     };
 
-    let (squash_dict_inner_args, fixed_steps_) =
-        build_squash_dict(&mut casm_builder, dict_access_size, one, SquashDictArgs {
+    let (squash_dict_inner_args, fixed_steps_) = build_squash_dict(
+        &mut casm_builder,
+        dict_access_size,
+        one,
+        SquashDictArgs {
             squash_dict_arg_range_check_ptr: dict_squash_arg_range_check_ptr,
             squash_dict_arg_dict_accesses_start: dict_squash_arg_dict_accesses_start,
             squash_dict_arg_dict_accesses_end: dict_squash_arg_dict_accesses_end,
-        });
+        },
+    );
     fixed_steps += fixed_steps_;
 
     let (fixed_steps_, unique_key_steps_, repeated_access_steps_) =
@@ -453,15 +457,18 @@ fn build_squash_dict_inner(
         // This guarantees that all the entries were visited exactly once.
         jump SquashDictInnerSkipLoop if should_skip_loop != 0;
     }
-    repeated_access_steps +=
-        build_squash_dict_inner_loop(casm_builder, args, SquashDictInnerLoopArgs {
+    repeated_access_steps += build_squash_dict_inner_loop(
+        casm_builder,
+        args,
+        SquashDictInnerLoopArgs {
             prev_loop_locals_range_check_ptr,
             prev_loop_locals_access_ptr,
             prev_loop_locals_value,
             dict_diff,
             next_key,
             new_remaining_accesses,
-        });
+        },
+    );
     casm_build_extend! {casm_builder,
         SquashDictInnerSkipLoop:
         let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;

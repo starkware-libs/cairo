@@ -6,7 +6,6 @@ use super::{
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::NamedType;
-use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::ids::GenericTypeId;
 
 /// Type for i128.
@@ -20,7 +19,6 @@ define_libfunc_hierarchy! {
         FromFelt252(IntFromFelt252Libfunc<Sint128Traits>),
         Operation(SintOperationLibfunc<Sint128Traits>),
         Diff(SintDiffLibfunc<Sint128Traits>),
-        IsZero(IsZeroLibfunc<Sint128Traits>),
     }, Sint128Concrete
 }
 
@@ -42,9 +40,4 @@ impl IntTraits for Sint128Traits {
     const EQUAL: &'static str = "i128_eq";
     const TO_FELT252: &'static str = "i128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "i128_try_from_felt252";
-}
-
-impl IsZeroTraits for Sint128Traits {
-    const IS_ZERO: &'static str = "i128_is_zero";
-    const GENERIC_TYPE_ID: GenericTypeId = <Sint128Type as NamedType>::ID;
 }

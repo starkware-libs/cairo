@@ -28,7 +28,7 @@ error: Skipped tokens. Expected: parameter.
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
     return x;
              ^
@@ -972,7 +972,7 @@ error: Skipped tokens. Expected: parameter.
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
-error: Missing token TerminalRBrace.
+error: Missing token '}'.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
     return x;
              ^

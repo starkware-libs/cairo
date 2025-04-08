@@ -12,7 +12,6 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        Sint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Sint128Concrete::Const(libfunc) => build_const(libfunc, builder),
         Sint128Concrete::FromFelt252(_) => build_sint_from_felt252(builder, i128::MIN, i128::MAX),
         Sint128Concrete::ToFelt252(_) => misc::build_identity(builder),

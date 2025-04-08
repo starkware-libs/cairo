@@ -153,6 +153,7 @@ cairo_lang_test_utils::test_file_test!(
         illegal_string_escapes: "illegal_string_escapes",
         match_: "match",
         module_diagnostics: "module_diagnostics",
+        path: "path",
         pattern: "pattern",
         question_mark: "question_mark",
         reserved_identifier: "reserved_identifier",

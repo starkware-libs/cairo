@@ -1,58 +1,60 @@
-use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
-use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{DeriveInfo, unsupported_for_extern_diagnostic};
-use crate::plugins::derive::TypeVariantInfo;
+use super::PluginTypeInfo;
+use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Clone` trait.
-pub fn handle_clone(
-    info: &DeriveInfo,
-    derived: &ast::ExprPath,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<String> {
-    let header =
-        info.format_impl_header("core::clone", "Clone", &["core::clone::Clone", "Destruct"]);
+pub fn handle_clone(info: &PluginTypeInfo) -> String {
+    const CLONE_TRAIT: &str = "core::clone::Clone";
+    const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();
     let name = &info.name;
-    let body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
+    match &info.type_variant {
+        TypeVariant::Enum => {
+            let header = info.impl_header(CLONE_TRAIT, &[CLONE_TRAIT]);
             formatdoc! {"
-                match self {{
-                    {}
-                }}",
-            variants.iter().map(|variant|
-                format!(
-                    "{ty}::{variant}(x) => {ty}::{variant}(core::clone::Clone::clone(x)),",
-                    ty=info.name,
-                    variant=variant.name,
-                )).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            formatdoc! {"
-                {name} {{
-                    {}
-                }}",
-                indent_by(4, members.iter().map(|member| {
+                {header} {{
+                    fn clone(self: @{full_typename}) -> {full_typename} {{
+                        match self {{
+                            {}
+                        }}
+                    }}
+                }}
+                ",
+                info.members_info.iter().map(|variant|
                     format!(
-                        "{member}: core::clone::Clone::clone(self.{member}),",
-                        member=member.name,
-                    )
-                }).join("\n"))
+                        "{ty}::{variant}(x) => {ty}::{variant}({imp}::clone(x)),",
+                        ty=info.name,
+                        variant=variant.name,
+                        imp=variant.impl_name(CLONE_TRAIT),
+                    )).join("\n    "),
             }
         }
-        TypeVariantInfo::Extern => {
-            diagnostics.push(unsupported_for_extern_diagnostic(derived));
-            return None;
+        TypeVariant::Struct => {
+            let header = info.impl_header(CLONE_TRAIT, &[CLONE_TRAIT, DESTRUCT_TRAIT]);
+            formatdoc! {"
+                {header} {{
+                    fn clone(self: @{full_typename}) -> {full_typename} {{
+                        {}
+                        {name} {{
+                            {}
+                        }}
+                    }}
+                }}
+                ",
+                info.members_info.iter().map(|member| {
+                    format!(
+                        "let {member} = {destruct_with} {{ value: {imp}::clone(self.{member}) }};",
+                        member=member.name,
+                        destruct_with=member.destruct_with(),
+                        imp=member.impl_name(CLONE_TRAIT),
+                    )
+                }).join("\n        "),
+                info.members_info.iter().map(|member| {
+                    format!("{member}: {member}.value,", member=member.name)
+                }).join("\n            "),
+            }
         }
-    });
-    Some(formatdoc! {"
-        {header} {{
-            fn clone(self: @{full_typename}) -> {full_typename} {{
-                {body}
-            }}
-        }}
-    "})
+    }
 }

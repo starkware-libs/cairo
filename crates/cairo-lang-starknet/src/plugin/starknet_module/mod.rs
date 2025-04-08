@@ -104,7 +104,7 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                &module_ast,
+                module_ast.stable_ptr(db),
                 format!(
                     "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
                      `{CONTRACT_ATTR}` instead.",
@@ -130,7 +130,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                &module_ast,
+                module_ast.stable_ptr(db),
                 format!("{module_kind_str}s without body are not supported."),
             )],
             remove_original_item: false,
@@ -142,7 +142,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                 &module_ast,
+                 module_ast.stable_ptr(db),
                  format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
             )],
             remove_original_item: false,
@@ -153,7 +153,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                &storage_struct_ast,
+                storage_struct_ast.stable_ptr(db),
                 format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
             )],
             remove_original_item: false,
@@ -242,7 +242,7 @@ fn grand_grand_parent_starknet_module(
 ) -> Option<(ast::ItemModule, StarknetModuleKind, ast::Attribute)> {
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.
-    let module_node = item_node.parent()?.parent()?.parent()?;
+    let module_node = item_node.parent(db)?.parent(db)?.parent(db)?;
     let module_ast = ast::ItemModule::cast(db, module_node)?;
     let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;
     Some((module_ast, module_kind, attr))

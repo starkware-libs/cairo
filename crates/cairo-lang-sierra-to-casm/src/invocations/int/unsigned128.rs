@@ -353,7 +353,7 @@ pub fn build_u128_byte_reverse(
     // Next, we divide by 2 ** (8 + 16 + 32) and get [b7, b6, b5, b4, b3, b2, b1, b0].
     let mut temp = input;
     let mut shift = BigInt::from(1 << 16);
-    for mask_imm in masks.into_iter() {
+    for mask_imm in masks {
         let shift_imm = &shift - BigInt::one();
         casm_build_extend! {casm_builder,
             assert temp = *(bitwise++);

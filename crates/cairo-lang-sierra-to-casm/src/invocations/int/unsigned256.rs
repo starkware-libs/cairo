@@ -166,9 +166,12 @@ fn build_u256_divmod(
         casm_builder,
         [(
             "Fallthrough",
-            &[&[range_check], &[quotient0, quotient1], &[remainder0, remainder1], &[
-                quotient0, divisor0, q0d0_high, q0d0_low,
-            ]],
+            &[
+                &[range_check],
+                &[quotient0, quotient1],
+                &[remainder0, remainder1],
+                &[quotient0, divisor0, q0d0_high, q0d0_low],
+            ],
             None,
         )],
         CostValidationInfo {

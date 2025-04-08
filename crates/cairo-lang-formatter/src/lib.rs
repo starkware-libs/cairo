@@ -82,15 +82,20 @@ impl From<bool> for CollectionsBreakingBehavior {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BreakingBehaviorConfig {
+    pub tuple: CollectionsBreakingBehavior,
+    pub fixed_array: CollectionsBreakingBehavior,
+    pub macro_call: CollectionsBreakingBehavior,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
-    tab_size: usize,
-    max_line_length: usize,
-    sort_module_level_items: bool,
-    tuple_breaking_behavior: CollectionsBreakingBehavior,
-    fixed_array_breaking_behavior: CollectionsBreakingBehavior,
-    merge_use_items: bool,
-    allow_duplicate_uses: bool,
+    pub tab_size: usize,
+    pub max_line_length: usize,
+    pub sort_module_level_items: bool,
+    pub breaking_behavior: BreakingBehaviorConfig,
+    pub merge_use_items: bool,
+    pub allow_duplicate_uses: bool,
 }
 
 // Config params
@@ -103,8 +108,7 @@ impl FormatterConfig {
         tab_size: usize,
         max_line_length: usize,
         sort_module_level_items: bool,
-        tuple_breaking_behavior: CollectionsBreakingBehavior,
-        fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+        breaking_behavior: BreakingBehaviorConfig,
         merge_use_items: bool,
         allow_duplicate_uses: bool,
     ) -> Self {
@@ -112,8 +116,7 @@ impl FormatterConfig {
             tab_size,
             max_line_length,
             sort_module_level_items,
-            tuple_breaking_behavior,
-            fixed_array_breaking_behavior,
+            breaking_behavior,
             merge_use_items,
             allow_duplicate_uses,
         }
@@ -131,7 +134,7 @@ impl FormatterConfig {
         behavior: Option<CollectionsBreakingBehavior>,
     ) -> Self {
         if let Some(behavior) = behavior {
-            self.tuple_breaking_behavior = behavior;
+            self.breaking_behavior.tuple = behavior;
         }
         self
     }
@@ -141,7 +144,17 @@ impl FormatterConfig {
         behavior: Option<CollectionsBreakingBehavior>,
     ) -> Self {
         if let Some(behavior) = behavior {
-            self.fixed_array_breaking_behavior = behavior;
+            self.breaking_behavior.fixed_array = behavior;
+        }
+        self
+    }
+
+    pub fn macro_call_breaking_behavior(
+        mut self,
+        behavior: Option<CollectionsBreakingBehavior>,
+    ) -> Self {
+        if let Some(behavior) = behavior {
+            self.breaking_behavior.macro_call = behavior;
         }
         self
     }
@@ -164,8 +177,11 @@ impl Default for FormatterConfig {
             tab_size: TAB_SIZE,
             max_line_length: MAX_LINE_LENGTH,
             sort_module_level_items: true,
-            tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
-            fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+            breaking_behavior: BreakingBehaviorConfig {
+                tuple: CollectionsBreakingBehavior::LineByLine,
+                fixed_array: CollectionsBreakingBehavior::SingleBreakPoint,
+                macro_call: CollectionsBreakingBehavior::SingleBreakPoint,
+            },
             merge_use_items: true,
             allow_duplicate_uses: false,
         }

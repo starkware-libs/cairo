@@ -41,7 +41,7 @@ pub extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;
 /// Returns the amount of gas available in the `GasBuiltin`, as well as the amount of gas unused in
 /// the local wallet.
 ///
-/// Useful for asserting that a certain amount of gas used.
+/// Useful for asserting that a certain amount of gas was used.
 /// Note: This function call costs exactly `2300` gas, so this may be ignored in calculations.
 /// # Examples
 ///

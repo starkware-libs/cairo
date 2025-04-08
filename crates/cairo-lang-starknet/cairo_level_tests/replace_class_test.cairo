@@ -1,5 +1,4 @@
-use starknet::class_hash::{ClassHash, class_hash_const};
-use starknet::contract_address::contract_address_const;
+use starknet::class_hash::ClassHash;
 use starknet::syscalls::{deploy_syscall, get_class_hash_at_syscall};
 
 #[starknet::interface]
@@ -54,7 +53,7 @@ mod contract_b {
 fn test_replace_flow() {
     // Deploy ContractA with 100 in the storage.
     let (address0, _) = deploy_syscall(
-        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
+        class_hash: contract_a::TEST_CLASS_HASH,
         contract_address_salt: 0,
         calldata: [100].span(),
         deploy_from_zero: false,
@@ -63,7 +62,7 @@ fn test_replace_flow() {
 
     // Replace its class hash to Class B.
     let mut contract0 = IWithReplaceDispatcher { contract_address: address0 };
-    contract0.replace(contract_b::TEST_CLASS_HASH.try_into().unwrap());
+    contract0.replace(contract_b::TEST_CLASS_HASH);
 
     // Read the previously stored value.
     let mut contract1 = IWithFooDispatcher { contract_address: address0 };
@@ -76,7 +75,7 @@ fn test_replace_flow() {
 fn test_cannot_replace_with_non_existing_class_hash() {
     // Deploy ContractA with 100 in the storage.
     let (address0, _) = deploy_syscall(
-        class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
+        class_hash: contract_a::TEST_CLASS_HASH,
         contract_address_salt: 0,
         calldata: [100].span(),
         deploy_from_zero: false,
@@ -90,26 +89,25 @@ fn test_cannot_replace_with_non_existing_class_hash() {
 
 #[test]
 fn test_class_hash_at_syscall() {
-    let a_class_hash = class_hash_const::<contract_a::TEST_CLASS_HASH>();
     // Deploy ContractA with 100 in the storage.
     let (address0, _) = deploy_syscall(
-        class_hash: a_class_hash,
+        class_hash: contract_a::TEST_CLASS_HASH,
         contract_address_salt: 0,
         calldata: [100].span(),
         deploy_from_zero: false,
     )
         .unwrap();
 
-    assert_eq!(get_class_hash_at_syscall(address0), Ok(a_class_hash));
+    assert_eq!(get_class_hash_at_syscall(address0), Ok(contract_a::TEST_CLASS_HASH));
     // Replace its class hash to Class B.
-    let b_class_hash = class_hash_const::<contract_b::TEST_CLASS_HASH>();
-    IWithReplaceDispatcher { contract_address: address0 }.replace(b_class_hash);
-    assert_eq!(get_class_hash_at_syscall(address0), Ok(b_class_hash));
+    IWithReplaceDispatcher { contract_address: address0 }.replace(contract_b::TEST_CLASS_HASH);
+    assert_eq!(get_class_hash_at_syscall(address0), Ok(contract_b::TEST_CLASS_HASH));
 }
 
 #[test]
 fn test_class_hash_at_syscall_undeployed_contract() {
     assert_eq!(
-        get_class_hash_at_syscall(contract_address_const::<123456>()), Ok(class_hash_const::<0>()),
+        get_class_hash_at_syscall('undeployed'.try_into().unwrap()),
+        Ok(core::num::traits::Zero::zero()),
     );
 }

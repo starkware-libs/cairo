@@ -6,7 +6,7 @@ use semantic::MatchArmSelector;
 use super::block_builder::BlockBuilder;
 use super::context::{LoweredExpr, LoweringContext, LoweringResult, VarRequest};
 use super::generators::{self, StructConstruct};
-use super::{create_subscope_with_bound_refs, lower_expr_to_var_usage};
+use super::{create_subscope, lower_expr_to_var_usage};
 use crate::ids::LocationId;
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
@@ -38,7 +38,7 @@ pub fn lower_logical_op(
     let unit_ty = corelib::unit_ty(semantic_db);
     let lhs = lower_expr_to_var_usage(ctx, builder, expr.lhs)?;
 
-    let mut subscope_lhs_true = create_subscope_with_bound_refs(ctx, builder);
+    let mut subscope_lhs_true = create_subscope(ctx, builder);
     let lhs_true_block_id = subscope_lhs_true.block_id;
 
     let (sealed_block_lhs_true, lhs_false_block_id, sealed_block_lhs_false) = match expr.op {
@@ -47,7 +47,7 @@ pub fn lower_logical_op(
             let rhs_var = lower_expr_to_var_usage(ctx, &mut subscope_lhs_true, expr.rhs)?;
 
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(rhs_var));
-            let mut subscope_lhs_false = create_subscope_with_bound_refs(ctx, builder);
+            let mut subscope_lhs_false = create_subscope(ctx, builder);
             let lhs_false_block_id = subscope_lhs_false.block_id;
             let false_var = create_bool(
                 ctx,
@@ -68,7 +68,7 @@ pub fn lower_logical_op(
                 location,
             );
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(true_var));
-            let mut subscope_lhs_false = create_subscope_with_bound_refs(ctx, builder);
+            let mut subscope_lhs_false = create_subscope(ctx, builder);
             let lhs_false_block_id = subscope_lhs_false.block_id;
             let rhs_var = lower_expr_to_var_usage(ctx, &mut subscope_lhs_false, expr.rhs)?;
 

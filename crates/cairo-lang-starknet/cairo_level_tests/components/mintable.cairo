@@ -9,11 +9,11 @@ pub trait MintTrait<TContractState> {
 pub mod mintable {
     use core::num::traits::Zero;
     use ownable_comp::OwnableHelperImpl;
+    use starknet::ContractAddress;
     use starknet::storage::{
         StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, contract_address_const};
     use crate::components::erc20::erc20 as erc20_comp;
     use crate::components::ownable::ownable as ownable_comp;
 
@@ -38,11 +38,7 @@ pub mod mintable {
                 .balances
                 .write(account, erc20_component.balances.read(account) + amount);
             erc20_component
-                .emit(
-                    erc20_comp::TransferEvent {
-                        from: contract_address_const::<0>(), to: account, value: amount,
-                    },
-                );
+                .emit(erc20_comp::TransferEvent { from: Zero::zero(), to: account, value: amount });
         }
     }
 }

@@ -48,7 +48,7 @@ Advantages of the suggestion:
 Disadvantages:
 * Straying away from rust.
 * Unfamiliar syntax for most users.
-* Tuple types need an extra parenthesis. On `Variant0: (A, B)`, construction is using
+* Tuple types need an extra parentheses. On `Variant0: (A, B)`, construction is using
   `Variant0((a, b))`.
 
 ## Open questions

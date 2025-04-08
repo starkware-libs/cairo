@@ -82,7 +82,7 @@ impl MockTokenStream {
     /// Create whole [MockTokenStream] based upon the [SyntaxNode].
     pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let leaves = node.tokens(db);
-        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node.clone())).collect();
+        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node)).collect();
         Self::new(tokens)
     }
 }

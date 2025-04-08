@@ -102,7 +102,7 @@ impl NamedLibfunc for CouponCallLibfunc {
         let signature = context.get_function_signature(&function_id)?;
         let ap_change = context.get_function_ap_change(&function_id)?;
 
-        let coupon_ty = coupon_ty(context, function_id.clone())?;
+        let coupon_ty = coupon_ty(context, function_id)?;
         Ok(LibfuncSignature::new_non_branch(
             chain!(signature.param_types.iter().cloned(), [coupon_ty]).collect(),
             get_output_var_infos(context, signature)?,

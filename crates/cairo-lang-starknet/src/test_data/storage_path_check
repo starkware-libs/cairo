@@ -1,7 +1,7 @@
 //! > Test flat storage path check.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -23,8 +23,6 @@ struct Storage {
     pub has_a: HasA,
 }
 
-//! > expected_diagnostics
-
 //! > diagnostics
 warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:10:5
@@ -41,7 +39,7 @@ warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. 
 //! > Test contract flat path check.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -72,8 +70,6 @@ mod contract_with_and_without_ignored {
     }
 }
 
-//! > expected_diagnostics
-
 //! > diagnostics
 warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
@@ -85,7 +81,7 @@ warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.
 //! > Test component flat path check.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -112,8 +108,6 @@ mod component_with_and_without_ignored {
     }
 }
 
-//! > expected_diagnostics
-
 //! > diagnostics
 warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:19:13
@@ -130,7 +124,7 @@ warning: Plugin diagnostic: The path `has_has_a.has_a.a` collides with existing 
 //! > Test contract and component flat path check.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -171,8 +165,6 @@ mod contract_with_component {
     }
 }
 
-//! > expected_diagnostics
-
 //! > diagnostics
 warning: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
@@ -189,7 +181,7 @@ warning: Plugin diagnostic: The path `member.y.ignored_member.member0` collides 
 //! > Test ignored colliding paths check.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: false)
+test_plugin_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -231,7 +223,7 @@ struct IgnoredCollision3 {
 //! > Test collision by renames.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::storage_node]
@@ -252,10 +244,10 @@ warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or
 //! > Test that only structs implementing `ValidStorageTypeTrait` can be stored.
 
 //! > test_runner_name
-test_storage_path_check(expect_diagnostics: true)
+test_plugin_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
-use core::starknet::storage::{Map, Vec};
+use starknet::storage::{Map, Vec};
 #[starknet::storage_node]
 struct ValidStorageStruct {
     pub valid_field: felt252,
@@ -288,20 +280,87 @@ struct InvalidMapStorage {
     pub invalid_map: Map<felt252, InvalidStorageStruct>,
 }
 
-//! > expected_diagnostics
-
 //! > diagnostics
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::array::Array::<core::felt252>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::array::Array::<core::felt252>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:10:24
     pub invalid_array: Array<felt252>,
                        ^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::vec::Vec::<test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::vec::Vec::<test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:21:22
     pub invalid_vec: Vec<InvalidStorageStruct>,
                      ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::map::Map::<core::felt252, test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]` or use valid args for `Vec` or `Map` library types.
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::map::Map::<core::felt252, test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:31:22
     pub invalid_map: Map<felt252, InvalidStorageStruct>,
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allowing invalid storage members.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+use starknet::storage::{Map, Vec};
+struct InvalidStorageStruct {}
+#[starknet::storage_node]
+#[allow(starknet::invalid_storage_member_types)]
+struct FullyIgnoredStorage {
+    pub ignored_array: Array<felt252>,
+    pub ignored_vec: Vec<InvalidStorageStruct>,
+    pub ignored_map: Map<felt252, InvalidStorageStruct>,
+}
+
+#[starknet::storage_node]
+struct PartiallyIgnoredStorage {
+    #[allow(starknet::invalid_storage_member_types)]
+    pub invalid_array: Array<felt252>,
+    #[allow(starknet::invalid_storage_member_types)]
+    pub invalid_vec: Vec<InvalidStorageStruct>,
+    #[allow(starknet::invalid_storage_member_types)]
+    pub invalid_map: Map<felt252, InvalidStorageStruct>,
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test mixing of allowing storage warnings.
+
+//! > test_runner_name
+test_plugin_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+use starknet::storage::{Map, Vec};
+
+struct InvalidStorageStruct {}
+
+#[starknet::storage_node]
+#[allow(starknet::invalid_storage_member_types)]
+struct IgnoreInvalidStorageMemberTypes {
+    pub a: InvalidStorageStruct,
+    #[rename("a")]
+    pub b: felt252,
+}
+
+#[starknet::storage_node]
+#[allow(starknet::colliding_storage_paths)]
+struct IgnoreCollidingPaths {
+    pub a: InvalidStorageStruct,
+    #[rename("a")]
+    pub b: felt252,
+}
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+ --> lib.cairo:10:9
+    pub b: felt252,
+        ^
+
+warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<test::InvalidStorageStruct>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+ --> lib.cairo:16:12
+    pub a: InvalidStorageStruct,
+           ^^^^^^^^^^^^^^^^^^^^

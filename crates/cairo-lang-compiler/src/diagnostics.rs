@@ -35,13 +35,13 @@ impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
     }
 }
 
-/// Collects compilation diagnostics and presents them in preconfigured way.
+/// Collects compilation diagnostics and presents them in a preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
     // Ignore all warnings, the `ignore_warnings_crate_ids` field is irrelevant in this case.
     ignore_all_warnings: bool,
-    /// Ignore warnings in specific crates. This should be subset of `crate_ids`.
-    /// Adding ids that are not in `crate_ids` have no effect.
+    /// Ignore warnings in specific crates. This should be a subset of `crate_ids`.
+    /// Adding ids that are not in `crate_ids` has no effect.
     ignore_warnings_crate_ids: Vec<CrateId>,
     /// Check diagnostics for these crates only.
     /// If empty, check all crates in the db.

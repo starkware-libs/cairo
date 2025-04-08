@@ -126,7 +126,7 @@ note: variable was previously used here:
 note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
 
 //! > lowering_flat
-Parameters: v0: test::bar::Coupon
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 

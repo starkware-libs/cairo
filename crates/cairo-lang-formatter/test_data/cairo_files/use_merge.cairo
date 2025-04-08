@@ -58,3 +58,7 @@ use crate::b;
 use b;
 use super::v;
 use crate::bl;
+// Testing handling of `self`.
+mod zz;
+use a::b::self;
+use a::x::{d, self};

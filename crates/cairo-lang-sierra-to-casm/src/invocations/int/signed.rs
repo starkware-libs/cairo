@@ -3,7 +3,6 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
-use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::utils::Range;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use num_bigint::BigInt;
@@ -131,7 +130,7 @@ pub fn build_sint_overflowing_operation(
 
 /// Builds instructions for Sierra i8/i16/i32/i64 operations.
 pub fn build_sint<
-    TSintTraits: SintTraits + IntMulTraits + IsZeroTraits,
+    TSintTraits: SintTraits + IntMulTraits,
     const MIN_VALUE: i128,
     const MAX_VALUE: i128,
 >(
@@ -143,7 +142,6 @@ pub fn build_sint<
         SintConcrete::Equal(_) => misc::build_cell_eq(builder),
         SintConcrete::ToFelt252(_) => misc::build_identity(builder),
         SintConcrete::FromFelt252(_) => build_sint_from_felt252(builder, MIN_VALUE, MAX_VALUE),
-        SintConcrete::IsZero(_) => misc::build_is_zero(builder),
         SintConcrete::WideMul(_) => build_small_wide_mul(builder),
         SintConcrete::Operation(libfunc) => {
             build_sint_overflowing_operation(builder, MIN_VALUE, MAX_VALUE, libfunc.operator)

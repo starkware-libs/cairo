@@ -6,7 +6,6 @@ use crate::test::test_utils::assert_eq;
 #[test]
 fn test_min_u8() {
     assert_eq(@min(0_u8, 1_u8), @0_u8, '0 < 1');
-    assert_eq(@min(0_u8, 1_u8), @0_u8, '0 < 1');
     assert_eq(@min(5_u8, 7_u8), @5_u8, '5 < 7');
     assert_eq(@min(255_u8, 128_u8), @128_u8, '128 < 255');
     assert_eq(@min(10_u8, 10_u8), @10_u8, '10 == 10');

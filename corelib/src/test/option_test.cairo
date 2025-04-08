@@ -280,3 +280,25 @@ fn test_option_filter() {
     assert!(Some(3).filter(is_even) == None);
     assert!(Some(4).filter(is_even) == Some(4));
 }
+
+#[test]
+fn test_option_flatten() {
+    let x: Option<Option<u32>> = Some(Some(6));
+    assert_eq!(Some(6), x.flatten());
+
+    let x: Option<Option<u32>> = Some(None);
+    assert_eq!(None, x.flatten());
+
+    let x: Option<Option<u32>> = None;
+    assert_eq!(None, x.flatten());
+
+    let x: Option<Option<Option<u32>>> = Some(Some(Some(6)));
+    assert_eq!(Some(Some(6)), x.flatten());
+    assert_eq!(Some(6), x.flatten().flatten());
+}
+
+#[test]
+fn test_option_into() {
+    let o: Option<u8> = 67_u8.into();
+    assert_eq!(Some(67), o);
+}

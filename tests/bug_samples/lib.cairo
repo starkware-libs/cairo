@@ -1,3 +1,4 @@
+mod builtin_usage_before_unreachable;
 mod ecdsa_completeness;
 mod generic_cycles;
 mod inconsistent_gas;
@@ -60,8 +61,12 @@ mod issue7071;
 mod issue7083;
 mod issue7095;
 mod issue7155;
+mod issue7233;
+mod issue7234;
+mod issue7544;
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;
 mod revoked_locals;
+mod self_ref_non_derived;
 mod zero_sized_locals;

@@ -1,4 +1,4 @@
-use core::starknet::SyscallResultTrait;
+use starknet::SyscallResultTrait;
 
 #[test]
 fn test_store_opt_and_result_at_offset() {

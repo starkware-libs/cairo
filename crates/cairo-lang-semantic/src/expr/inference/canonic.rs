@@ -55,10 +55,11 @@ impl CanonicalTrait {
         trait_id: ConcreteTraitId,
         impl_var_mappings: ImplVarTraitItemMappings,
     ) -> (Self, CanonicalMapping) {
-        Canonicalizer::canonicalize(db, source_inference_id, Self {
-            id: trait_id,
-            mappings: impl_var_mappings,
-        })
+        Canonicalizer::canonicalize(
+            db,
+            source_inference_id,
+            Self { id: trait_id, mappings: impl_var_mappings },
+        )
     }
     /// Embeds a canonical trait into an [Inference].
     pub fn embed(&self, inference: &mut Inference<'_>) -> (CanonicalTrait, CanonicalMapping) {

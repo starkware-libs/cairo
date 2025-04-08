@@ -39,10 +39,10 @@ pub fn handle_finalize_locals(
     match frame_state {
         FrameState::BeforeAllocation => {
             // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-            if matches!(ap_tracking, ApTracking::Enabled {
-                ap_change: _,
-                base: ApTrackingBase::FunctionStart
-            }) {
+            if matches!(
+                ap_tracking,
+                ApTracking::Enabled { ap_change: _, base: ApTrackingBase::FunctionStart }
+            ) {
                 Ok((0, FrameState::Finalized { allocated: 0 }))
             } else {
                 Err(FrameStateError::InvalidFinalizeLocals(frame_state))
@@ -74,10 +74,13 @@ pub fn handle_alloc_local(
             if let ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart } =
                 ap_tracking
             {
-                Ok((ap_change, FrameState::Allocating {
-                    allocated: allocation_size,
-                    locals_start_ap_offset: ap_change,
-                }))
+                Ok((
+                    ap_change,
+                    FrameState::Allocating {
+                        allocated: allocation_size,
+                        locals_start_ap_offset: ap_change,
+                    },
+                ))
             } else {
                 Err(FrameStateError::InvalidAllocLocal(frame_state))
             }
@@ -88,10 +91,13 @@ pub fn handle_alloc_local(
                 ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
                 if ap_change == locals_start_ap_offset
             ) {
-                Ok((locals_start_ap_offset + allocated, FrameState::Allocating {
-                    allocated: allocated + allocation_size,
-                    locals_start_ap_offset,
-                }))
+                Ok((
+                    locals_start_ap_offset + allocated,
+                    FrameState::Allocating {
+                        allocated: allocated + allocation_size,
+                        locals_start_ap_offset,
+                    },
+                ))
             } else {
                 Err(FrameStateError::InvalidAllocLocal(frame_state))
             }

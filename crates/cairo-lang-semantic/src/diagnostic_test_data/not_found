@@ -15,12 +15,12 @@ fn foo() -> UnknownType {
 //! > function_body
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:13
 fn foo() -> UnknownType {
             ^^^^^^^^^^^
 
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:2:5
     bar();
     ^^^
@@ -63,7 +63,7 @@ fn foo() {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:23
 #[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
                       ^^^^^^^^^^^^^^^

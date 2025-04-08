@@ -25,7 +25,7 @@ use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall};
 /// Due to the limitations above, the `reorder_statements` function should be called before this
 /// optimization and between this optimization and the match optimization.
 ///
-/// The first call to `reorder_statement`s moves the call to `bool_not_impl` into the block whose
+/// The first call to `reorder_statements` moves the call to `bool_not_impl` into the block whose
 /// match enum we want to optimize.
 /// The second call to `reorder_statements` removes the call to `bool_not_impl` if it is unused,
 /// allowing the match optimization to be applied to enum_init statements that appeared before the

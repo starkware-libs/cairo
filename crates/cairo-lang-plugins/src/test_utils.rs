@@ -53,13 +53,13 @@ pub fn expand_module_text(
             let mut use_item = use_id.stable_ptr(db).lookup(syntax_db).as_syntax_node();
             // Climb up the AST until the syntax kind is ItemUse. This is needed since the use item
             // points to the use leaf as one use statement can represent multiple use items.
-            while let Some(parent) = use_item.parent() {
+            while let Some(parent) = use_item.parent(syntax_db) {
                 use_item = parent;
                 if use_item.kind(syntax_db) == SyntaxKind::ItemUse {
                     break;
                 }
             }
-            if uses_list.insert(use_item.clone()) {
+            if uses_list.insert(use_item) {
                 output.push_str(&use_item.get_text(syntax_db));
             }
             continue;

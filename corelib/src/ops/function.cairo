@@ -68,7 +68,7 @@ impl FnOnceImpl<T, Args, +Destruct<T>, +Fn<T, Args>> of FnOnce<T, Args> {
 ///
 /// Instances of `Fn` can be called repeatedly.
 ///
-/// `Fn` is implemented automatically by closures which only whose captured variable are all `Copy`.
+/// `Fn` is implemented automatically by closures whose captured variables are all `Copy`.
 /// Additionally, for any type `F` that implements `Fn`, `@F` implements `Fn`, too.
 ///
 /// Since [`FnOnce`] is implemented for all implementers  of `Fn`, any instance of `Fn` can be used

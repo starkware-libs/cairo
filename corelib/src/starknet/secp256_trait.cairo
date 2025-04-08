@@ -7,9 +7,9 @@
 //! # Examples
 //!
 //! ```
-//! use core::starknet::SyscallResultTrait;
-/// use core::starknet::secp256r1::Secp256r1Point;
-/// use core::starknet::secp256_trait::{Secp256Trait, Signature, is_signature_entry_valid,
+//! use starknet::SyscallResultTrait;
+/// use starknet::secp256r1::Secp256r1Point;
+/// use starknet::secp256_trait::{Secp256Trait, Signature, is_signature_entry_valid,
 /// is_valid_signature, recover_public_key};
 ///
 /// assert!(
@@ -86,7 +86,7 @@ impl SignatureStorePacking of starknet::StorePacking<Signature, (u256, u256, boo
 /// # Examples
 ///
 /// ```
-/// use core::starknet::secp256_trait::signature_from_vrs;
+/// use starknet::secp256_trait::signature_from_vrs;
 ///
 /// let signature = signature_from_vrs(0,
 /// 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac,
@@ -104,9 +104,9 @@ pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::secp256k1::Secp256k1Point;
-/// use core::starknet::secp256_trait::Secp256Trait;
-/// use core::starknet::SyscallResultTrait;
+/// use starknet::secp256k1::Secp256k1Point;
+/// use starknet::secp256_trait::Secp256Trait;
+/// use starknet::SyscallResultTrait;
 ///
 /// assert!(
 ///     Secp256Trait::<
@@ -171,10 +171,10 @@ pub trait Secp256Trait<Secp256Point> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::SyscallResultTrait;
-/// use core::starknet::secp256k1::Secp256k1Point;
-/// use core::starknet::secp256_trait::Secp256PointTrait;
-/// use core::starknet::secp256_trait::Secp256Trait;
+/// use starknet::SyscallResultTrait;
+/// use starknet::secp256k1::Secp256k1Point;
+/// use starknet::secp256_trait::Secp256PointTrait;
+/// use starknet::secp256_trait::Secp256Trait;
 ///
 /// let generator = Secp256Trait::<Secp256k1Point>::get_generator_point();
 ///
@@ -220,8 +220,8 @@ pub trait Secp256PointTrait<Secp256Point> {
 /// # Examples
 ///
 /// ```
-/// use core::starknet::secp256r1::Secp256r1Point;
-/// use core::starknet::secp256_trait::is_signature_entry_valid;
+/// use starknet::secp256r1::Secp256r1Point;
+/// use starknet::secp256_trait::is_signature_entry_valid;
 ///
 /// assert!(!is_signature_entry_valid::<Secp256r1Point>(0));
 /// ```
@@ -238,9 +238,9 @@ pub fn is_signature_entry_valid<
 /// # Examples
 ///
 /// ```
-/// use core::starknet::SyscallResultTrait;
-/// use core::starknet::secp256r1::Secp256r1Point;
-/// use core::starknet::secp256_trait::{Secp256Trait, is_valid_signature};
+/// use starknet::SyscallResultTrait;
+/// use starknet::secp256r1::Secp256r1Point;
+/// use starknet::secp256_trait::{Secp256Trait, is_valid_signature};
 ///
 /// let msg_hash = 0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4d;
 /// let r = 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac;
@@ -288,8 +288,8 @@ pub fn is_valid_signature<
 /// # Examples
 ///
 /// ```
-/// use core::starknet::secp256r1::Secp256r1Point;
-/// use core::starknet::secp256_trait::{Signature, recover_public_key};
+/// use starknet::secp256r1::Secp256r1Point;
+/// use starknet::secp256_trait::{Signature, recover_public_key};
 ///
 /// let msg_hash = 0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4d;
 ///

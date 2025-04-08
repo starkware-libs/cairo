@@ -83,7 +83,7 @@ fn try_solve_equations_iteration<Var: Clone + Debug + PartialEq + Eq + Hash>(
 
     let mut problem = vars.minimise(target).using(default_solver);
     // Adding constraints for all equations.
-    for eq in equations.iter() {
+    for eq in equations {
         let as_solver_expr = |expr: &Expr<Var>| {
             Expression::from_other_affine(expr.const_term)
                 + expr

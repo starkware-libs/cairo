@@ -20,6 +20,16 @@ use crate::{
 
 pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
+impl MatchOptimizerDemand {
+    fn update(&mut self, statement: &Statement) {
+        self.variables_introduced(&mut EmptyDemandReporter {}, statement.outputs(), ());
+        self.variables_used(
+            &mut EmptyDemandReporter {},
+            statement.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
+    }
+}
+
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
 ///
@@ -89,6 +99,8 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         remapping,
         reachable_blocks,
         additional_remapping,
+        n_statement,
+        remove_enum_construct,
     } in ctx.fixes
     {
         // Choose new variables for each destination of the additional remappings (see comment
@@ -109,10 +121,14 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
             block.statements.len() - 1,
-            statement_location.1,
-            "The optimization can only be applied to the last statement in the block."
+            statement_location.1 + n_statement,
+            "Unexpected number of statements in block."
         );
-        block.statements.pop();
+
+        if remove_enum_construct {
+            block.statements.remove(statement_location.1);
+        }
+
         block.end = FlatBlockEnd::Goto(target_block, new_remapping);
 
         if statement_location.0 == match_block {
@@ -159,7 +175,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         }
     }
 
-    for block in new_blocks.into_iter() {
+    for block in new_blocks {
         lowered.blocks.push(block);
     }
 }
@@ -169,15 +185,16 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
 fn statement_can_be_optimized_out(
     stmt: &Statement,
     info: &mut AnalysisInfo<'_>,
+    candidate: &mut OptimizationCandidate<'_>,
     statement_location: (BlockId, usize),
 ) -> Option<FixInfo> {
     let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
         return None;
     };
-    let candidate = info.candidate.as_mut()?;
     if *output != candidate.match_variable {
         return None;
     }
+
     let (arm_idx, arm) = candidate
         .match_arms
         .iter()
@@ -198,7 +215,7 @@ fn statement_can_be_optimized_out(
     // Compute the demand based on the demand of the specific arm, rather than the current demand
     // (which contains the union of the demands from all the arms).
     // Apply the remapping of the input variable and the additional remappings if exist.
-    let mut demand = candidate.arm_demands[arm_idx].clone();
+    let mut demand = std::mem::take(&mut candidate.arm_demands[arm_idx]);
     demand
         .apply_remapping(&mut EmptyDemandReporter {}, [(var_id, (&input.var_id, ()))].into_iter());
 
@@ -210,7 +227,12 @@ fn statement_can_be_optimized_out(
                 .map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
         );
     }
+
+    for stmt in candidate.statement_rev.iter().rev() {
+        demand.update(stmt);
+    }
     info.demand = demand;
+    info.reachable_blocks = std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]);
 
     Some(FixInfo {
         statement_location,
@@ -218,8 +240,11 @@ fn statement_can_be_optimized_out(
         arm_idx,
         target_block: arm.block_id,
         remapping,
-        reachable_blocks: candidate.arm_reachable_blocks[arm_idx].clone(),
-        additional_remapping: candidate.additional_remappings.clone().unwrap_or_default(),
+        reachable_blocks: info.reachable_blocks.clone(),
+        additional_remapping: std::mem::take(&mut candidate.additional_remappings)
+            .unwrap_or_default(),
+        n_statement: candidate.statement_rev.len(),
+        remove_enum_construct: !info.demand.vars.contains_key(output),
     })
 }
 
@@ -238,6 +263,10 @@ pub struct FixInfo {
     reachable_blocks: OrderedHashSet<BlockId>,
     /// Additional remappings that appeared in a `Goto` leading to the match.
     additional_remapping: VarRemapping,
+    /// The number of statement between the enum construct and the match.
+    n_statement: usize,
+    /// Indicated that the enum construct statement can be removed.
+    remove_enum_construct: bool,
 }
 
 #[derive(Clone)]
@@ -262,6 +291,9 @@ struct OptimizationCandidate<'a> {
 
     /// Additional remappings that appeared in a `Goto` leading to the match.
     additional_remappings: Option<VarRemapping>,
+
+    /// The statements before the match in reverse order.
+    statement_rev: Vec<&'a Statement>,
 }
 
 pub struct MatchOptimizerContext {
@@ -272,9 +304,10 @@ pub struct MatchOptimizerContext {
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,
-    /// Blocks that can be reach from the current block.
+    /// Blocks that can be reached from the current block.
     reachable_blocks: OrderedHashSet<BlockId>,
 }
+
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
 
@@ -286,19 +319,21 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
-        stmt: &Statement,
+        stmt: &'a Statement,
     ) {
-        if let Some(fix_info) = statement_can_be_optimized_out(stmt, info, statement_location) {
-            self.fixes.push(fix_info);
-        } else {
-            info.demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
-            info.demand.variables_used(
-                &mut EmptyDemandReporter {},
-                stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
-            );
+        if let Some(mut candidate) = std::mem::take(&mut info.candidate) {
+            if let Some(fix_info) =
+                statement_can_be_optimized_out(stmt, info, &mut candidate, statement_location)
+            {
+                self.fixes.push(fix_info);
+                return;
+            }
+
+            candidate.statement_rev.push(stmt);
+            info.candidate = Some(candidate);
         }
 
-        info.candidate = None;
+        info.demand.update(stmt);
     }
 
     fn visit_goto(
@@ -308,11 +343,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        if remapping.is_empty() {
-            // Do nothing. Keep the candidate if exists.
-            return;
-        }
-
         info.demand.apply_remapping(
             &mut EmptyDemandReporter {},
             remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))),
@@ -321,6 +351,12 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let Some(ref mut candidate) = &mut info.candidate else {
             return;
         };
+
+        if !candidate.statement_rev.is_empty() {
+            // Revoke the candidate if we passed over any statement in the target block.
+            info.candidate = None;
+            return;
+        }
 
         let orig_match_variable = candidate.match_variable;
 
@@ -331,8 +367,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 candidate.match_variable = var_usage.var_id;
                 remapping.len() > 1
             } else {
-                // Note that remapping.is_empty() is false here.
-                true
+                !remapping.is_empty()
             };
 
         if goto_has_additional_remappings {
@@ -405,6 +440,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     future_merge: found_collision,
                     arm_reachable_blocks,
                     additional_remappings: None,
+                    statement_rev: vec![],
                 })
             }
             _ => None,

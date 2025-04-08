@@ -59,7 +59,7 @@ pub struct NameInfo {
 }
 impl NameInfo {
     fn from_ast(name: ast::TerminalIdentifier, db: &dyn SyntaxGroup) -> Self {
-        NameInfo { text: name.text(db), stable_ptr: name.stable_ptr() }
+        NameInfo { text: name.text(db), stable_ptr: name.stable_ptr(db) }
     }
 }
 
@@ -95,9 +95,9 @@ impl AttributeStructurize for ast::Attribute {
         let attr_args = self.arguments(db);
 
         Attribute {
-            stable_ptr: self.stable_ptr(),
+            stable_ptr: self.stable_ptr(db),
             id: attr_id.as_syntax_node().get_text_without_trivia(db).into(),
-            id_stable_ptr: attr_id.stable_ptr(),
+            id_stable_ptr: attr_id.stable_ptr(db),
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
                     attribute_args
@@ -109,7 +109,7 @@ impl AttributeStructurize for ast::Attribute {
                 }
                 ast::OptionArgListParenthesized::Empty(_) => vec![],
             },
-            args_stable_ptr: attr_args.stable_ptr(),
+            args_stable_ptr: attr_args.stable_ptr(db),
         }
     }
 }
@@ -169,7 +169,7 @@ impl Modifier {
     /// Build [`Modifier`] from [`ast::Modifier`].
     fn from(modifier: ast::Modifier, db: &dyn SyntaxGroup) -> Modifier {
         Modifier {
-            stable_ptr: modifier.stable_ptr(),
+            stable_ptr: modifier.stable_ptr(db),
             text: modifier.as_syntax_node().get_text(db).into(),
         }
     }

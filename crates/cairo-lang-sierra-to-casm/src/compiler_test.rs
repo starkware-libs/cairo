@@ -812,10 +812,11 @@ fn compiler_errors(
         .unwrap_or(usize::MAX);
 
     let error_str = match metadata {
-        Ok(metadata) => compile(&program, &metadata, SierraToCasmConfig {
-            gas_usage_check: false,
-            max_bytecode_size,
-        })
+        Ok(metadata) => compile(
+            &program,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: false, max_bytecode_size },
+        )
         .expect_err("Compilation is expected to fail.")
         .to_string(),
         Err(err) => err.to_string(),

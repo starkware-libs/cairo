@@ -86,6 +86,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:5
+    -1_u8;
+    ^^^^^
+
 error: Trait has no implementation in context: core::traits::Neg::<core::bool>.
  --> lib.cairo:2:5
     -(1 == 2);

@@ -5,13 +5,14 @@ use crate::RangeCheck;
 
 /// Type representing the table of the costs of the different builtin usages.
 #[cfg(not(gas: "disabled"))]
-#[derive(Copy, Drop)]
 pub extern type BuiltinCosts;
 
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
-#[derive(Copy, Drop)]
 pub struct BuiltinCosts {}
+
+impl BuiltinCostsCopy of Copy<BuiltinCosts>;
+impl BuiltinCostsDrop of Drop<BuiltinCosts>;
 
 /// The gas builtin.
 /// This type is used to handle gas in the Cairo code.
@@ -47,7 +48,7 @@ pub fn withdraw_gas() -> Option<()> nopanic {
 }
 
 /// Same as `withdraw_gas`, but directly receives `BuiltinCosts`, which enables optimizations
-/// by removing the need for repeated internal calls for fetching the table of consts that may
+/// by removing the need for repeated internal calls for fetching the table of constants that may
 /// internally happen in calls to `withdraw_gas`.
 /// Should be used with caution.
 #[cfg(not(gas: "disabled"))]

@@ -11,3 +11,4 @@ mod derive;
 mod external_attributes_validation;
 mod generate_trait;
 mod panicable;
+pub mod utils;

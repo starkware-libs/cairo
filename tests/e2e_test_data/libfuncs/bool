@@ -5,7 +5,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(mut a: bool, b: bool) -> bool {
     a ^ b
 }
@@ -25,11 +25,12 @@ type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, d
 libfunc bool_xor_impl = bool_xor_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
-bool_xor_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bool_xor_impl([0], [1]) -> ([2]);
+store_temp<core::bool>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+test::foo@F0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -40,7 +41,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool, b: bool) -> bool {
     a | b
 }
@@ -61,11 +62,12 @@ type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, d
 libfunc bool_or_impl = bool_or_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
-bool_or_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bool_or_impl([0], [1]) -> ([2]);
+store_temp<core::bool>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+test::foo@F0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -76,7 +78,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool, b: bool) -> bool {
     a & b
 }
@@ -95,11 +97,12 @@ type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, d
 libfunc bool_and_impl = bool_and_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
-bool_and_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+bool_and_impl([0], [1]) -> ([2]);
+store_temp<core::bool>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+test::foo@F0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -110,7 +113,7 @@ test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool) -> bool {
     // TODO(orizi): When inlining is supported move to calling `bool_not` directly.
     !a
@@ -131,11 +134,12 @@ type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, d
 libfunc bool_not_impl = bool_not_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
-bool_not_impl([0]) -> ([1]); // 0
-store_temp<core::bool>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+bool_not_impl([0]) -> ([1]);
+store_temp<core::bool>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: core::bool) -> (core::bool);
+test::foo@F0([0]: core::bool) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -147,7 +151,7 @@ test::foo@0([0]: core::bool) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: bool) -> felt252 {
     bool_to_felt252(a)
 }
@@ -167,8 +171,9 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc bool_to_felt252 = bool_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-bool_to_felt252([0]) -> ([1]); // 0
-store_temp<felt252>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+bool_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: core::bool) -> (felt252);
+test::foo@F0([0]: core::bool) -> (felt252);

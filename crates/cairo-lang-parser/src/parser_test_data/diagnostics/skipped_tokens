@@ -69,7 +69,7 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
 
 //! > ==========================================================================
 
-//! > Test consecutive skipped tokens diagnostic with trailing and leading trivia between them and good tokens tokens after them.
+//! > Test consecutive skipped tokens diagnostic with trailing and leading trivia between them and good tokens after them.
 
 //! > test_runner_name
 get_diagnostics

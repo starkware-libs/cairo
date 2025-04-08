@@ -23,7 +23,7 @@ error: Missing tokens. Expected an expression.
         if bla.
                ^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
@@ -467,7 +467,7 @@ error: Missing tokens. Expected an expression.
         if bla.
                ^
 
-error: Missing token TerminalLBrace.
+error: Missing token '{'.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
