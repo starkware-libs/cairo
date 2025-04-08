@@ -1143,10 +1143,9 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x = 1;
-    let y = 2;
-    let z = 3;
-    assuming_z_in_context!(x, (y + z));
+    let z = 1;
+    assuming_z_in_context!();
+    consume_z(z);
 }
 
 //! > function_name
@@ -1154,13 +1153,54 @@ foo
 
 //! > module_code
 macro assuming_z_in_context {
-    ($x:expr, $y:expr) => {
-        $x + $y + z
+    () => {
+        z
+    };
+}
+
+fn consume_z(_z: felt252) {}
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo[assuming_z_in_context]:2:9
+        z
+        ^
+
+//! > ==========================================================================
+
+//! > Test usage of a callsite variable defined in the macro callsite-callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let z = 1;
+    wrap_assuming_z_in_context!();
+    consume_z(z);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assuming_z_in_context {
+    () => {
+        $callsite::z
+    };
+}
+
+fn consume_z(_z: felt252) {}
+
+
+macro wrap_assuming_z_in_context {
+    () => {
+        $defsite::assuming_z_in_context!()
     };
 }
 
 //! > expected_diagnostics
-error: Identifier not found.
- --> lib.cairo[assuming_z_in_context]:2:13
-x+ (y + z)+ z
-            ^
+error: `$callsite` is not supported.
+ --> lib.cairo[wrap_assuming_z_in_context][assuming_z_in_context]:2:10
+        $callsite::z
+         ^^^^^^^^

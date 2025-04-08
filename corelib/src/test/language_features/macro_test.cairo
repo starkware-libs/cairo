@@ -193,3 +193,27 @@ fn test_accessing_expanded_placehoders() {
     let x = 1;
     assert_eq!(accessing_expanded_placehoders!(x), (1, 2));
 }
+macro assuming_z_in_context {
+    () => {
+        let z = 4;
+        ($callsite::z, z)
+    };
+}
+
+#[test]
+fn test_assuming_z_in_context() {
+    let z = 3;
+    assert_eq!(assuming_z_in_context!(), (3, 4));
+}
+
+macro macro_wrapped_assuming_z_in_context {
+    () => {
+        let z = 2;
+        $defsite::assuming_z_in_context!()
+    };
+}
+
+#[test]
+fn test_wrap_assuming_z_in_context() {
+    assert_eq!(macro_wrapped_assuming_z_in_context!(), (2, 4));
+}
