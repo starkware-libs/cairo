@@ -22,7 +22,7 @@ use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
-    PatternStructParam, UnaryOperator,
+    PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -77,7 +77,8 @@ use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{
-    EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
+    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem,
+    ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
@@ -915,12 +916,17 @@ fn compute_expr_function_call_semantic(
     let path = syntax.path(syntax_db);
     let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
     // Check if this is a variable.
-    let segments = path.segments(syntax_db).elements(syntax_db);
     let mut is_shadowed_by_variable = false;
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(syntax_db);
+    if let Some((identifier, is_callsite_prefixed)) =
+        try_extract_identifier_from_path(syntax_db, &path)
+    {
         let variable_name = identifier.text(ctx.db.upcast());
-        if let Some(var) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+        if let Some(var) = get_binded_expr_by_name(
+            ctx,
+            &variable_name,
+            is_callsite_prefixed,
+            path.stable_ptr().into(),
+        ) {
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
             if ctx.are_closures_in_context {
@@ -2867,6 +2873,25 @@ fn string_literal_to_semantic(
 
     new_string_literal_expr(ctx, value, stable_ptr.into())
 }
+/// Given path, if it's a single segment or a $callsite-prefixed segment,
+/// returns a tuple of (identifier, is_callsite_prefixed).
+/// Otherwise, returns None.
+fn try_extract_identifier_from_path(
+    syntax_db: &dyn SyntaxGroup,
+    path: &ast::ExprPath,
+) -> Option<(TerminalIdentifier, bool)> {
+    let segments = path.segments(syntax_db).elements(syntax_db);
+    match segments.as_slice() {
+        [PathSegment::Simple(ident_segment)] => Some((ident_segment.ident(syntax_db), false)),
+        [PathSegment::Simple(prefix), PathSegment::Simple(ident_segment)]
+            if prefix.ident(syntax_db).text(syntax_db) == "callsite"
+                && path.is_placeholder(syntax_db) =>
+        {
+            Some((ident_segment.ident(syntax_db), true))
+        }
+        _ => None,
+    }
+}
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
 /// error.
@@ -3309,10 +3334,16 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     }
 
     // Check if this is a variable.
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(syntax_db);
+    if let Some((identifier, is_callsite_prefixed)) =
+        try_extract_identifier_from_path(syntax_db, path)
+    {
         let variable_name = identifier.text(ctx.db.upcast());
-        if let Some(res) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+        if let Some(res) = get_binded_expr_by_name(
+            ctx,
+            &variable_name,
+            is_callsite_prefixed,
+            path.stable_ptr().into(),
+        ) {
             match res.clone() {
                 Expr::Var(expr_var) => {
                     let item = ResolvedGenericItem::Variable(expr_var.var);
@@ -3362,6 +3393,8 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
 }
 
 /// Resolves a variable given a context and a simple name.
+/// It is used where resolving a variable where only a single identifier is allowed, specifically
+/// named function call and struct constructor arguments.
 ///
 /// Reports a diagnostic if the variable was not found.
 pub fn resolve_variable_by_name(
@@ -3370,7 +3403,7 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_binded_expr_by_name(ctx, &variable_name, stable_ptr)
+    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr)
         .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
     ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
@@ -3381,10 +3414,12 @@ pub fn resolve_variable_by_name(
 pub fn get_binded_expr_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
+    is_callsite_prefixed: bool,
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
     let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset();
+    let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
@@ -3395,22 +3430,29 @@ pub fn get_binded_expr_by_name(
                 continue;
             }
         }
-        if let Some(var) = env.variables.get(variable_name) {
-            env.used_variables.insert(var.id());
-            return match var {
-                Binding::LocalItem(local_const) => match local_const.kind.clone() {
-                    crate::StatementItemKind::Constant(const_value_id, ty) => {
-                        Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
+        if !is_callsite_prefixed || found_callsite_scope {
+            if let Some(var) = env.variables.get(variable_name) {
+                env.used_variables.insert(var.id());
+                return match var {
+                    Binding::LocalItem(local_const) => match local_const.kind.clone() {
+                        crate::StatementItemKind::Constant(const_value_id, ty) => {
+                            Some(Expr::Constant(ExprConstant { const_value_id, ty, stable_ptr }))
+                        }
+                    },
+                    Binding::LocalVar(_) | Binding::Param(_) => {
+                        Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
                     }
-                },
-                Binding::LocalVar(_) | Binding::Param(_) => {
-                    Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
-                }
-            };
+                };
+            }
         }
+
         // Don't look inside a callsite environment unless explicitly stated.
         if env.macro_code_mappings.is_some() {
-            break;
+            if is_callsite_prefixed && !found_callsite_scope {
+                found_callsite_scope = true;
+            } else {
+                break;
+            }
         }
         maybe_env = env.parent.as_deref_mut();
     }
