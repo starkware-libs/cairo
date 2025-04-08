@@ -18,6 +18,7 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
+use crate::blocks::Blocks;
 use crate::borrow_check::{
     PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
 };
@@ -434,10 +435,22 @@ fn function_with_body_lowering_with_borrow_check(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
-    let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let block_extra_calls =
-        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &mut lowered);
-    Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
+    let lowered = db.priv_function_with_body_lowering(function_id)?;
+    let borrow_check_result =
+        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &lowered);
+
+    let lowered = match borrow_check_result.diagnostics.check_error_free() {
+        Ok(_) => lowered,
+        Err(diag_added) => Arc::new(FlatLowered {
+            diagnostics: borrow_check_result.diagnostics,
+            signature: lowered.signature.clone(),
+            variables: lowered.variables.clone(),
+            blocks: Blocks::new_errored(diag_added),
+            parameters: lowered.parameters.clone(),
+        }),
+    };
+
+    Ok((lowered, Arc::new(borrow_check_result.block_extra_calls)))
 }
 
 fn function_with_body_lowering(
