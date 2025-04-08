@@ -3,6 +3,7 @@
 mod test;
 
 use std::cmp::Reverse;
+use std::collections::HashSet;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
@@ -13,7 +14,8 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::ids::FunctionId;
 use crate::{
-    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+    BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping,
+    VarUsage, VariableId,
 };
 
 /// Reorder the statements in the lowering in order to move variable definitions closer to their
@@ -21,7 +23,7 @@ use crate::{
 ///
 /// The list of call statements that can be moved is currently hardcoded.
 ///
-/// Removing unnecessary remapping before this optimization will result in better code.
+/// Removes unnecessary remapping as it allows more statements to be removed.
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -30,20 +32,28 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         lowered: &*lowered,
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
+        unused_remapping_dsts: HashSet::new(),
     };
     let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
-    let ctx = analysis.analyzer;
+    let ReorderStatementsContext { statement_to_move, unused_remapping_dsts, .. } =
+        analysis.analyzer;
 
     let mut changes_by_block =
         OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
 
-    for (src, opt_dst) in ctx.statement_to_move {
+    for (src, opt_dst) in statement_to_move {
         changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
 
         if let Some(dst) = opt_dst {
             let statement = lowered.blocks[src.0].statements[src.1].clone();
             changes_by_block.entry(dst.0).or_insert_with(Vec::new).push((dst.1, Some(statement)));
+        }
+    }
+
+    for block in lowered.blocks.iter_mut() {
+        if let FlatBlockEnd::Goto(_, remappings) = &mut block.end {
+            remappings.retain(|dst, _| !unused_remapping_dsts.contains(dst));
         }
     }
 
@@ -85,6 +95,7 @@ pub struct ReorderStatementsContext<'a> {
     // A list of function that can be moved.
     moveable_functions: &'a UnorderedHashSet<FunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
+    unused_remapping_dsts: HashSet<VariableId>,
 }
 impl ReorderStatementsContext<'_> {
     fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
@@ -152,8 +163,12 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for VarUsage { var_id, .. } in remapping.values() {
-            info.next_use.insert(*var_id, statement_location);
+        for (dst, VarUsage { var_id: src, .. }) in remapping.iter() {
+            if info.next_use.get(dst).is_some() {
+                info.next_use.insert(*src, statement_location);
+            } else {
+                self.unused_remapping_dsts.insert(*dst);
+            }
         }
     }
 
