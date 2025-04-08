@@ -85,12 +85,12 @@ macro add_exprs {
         $x + $y
     };
 
-    ($x:expr $y:expr) => {
-        $x + 1
-    };
-
     (abc $x:expr $y:expr) => {
         $x + $y
+    };
+
+    ($x:expr $y:expr) => {
+        $x + 1
     };
 }
 #[test]
@@ -171,4 +171,52 @@ fn test_macro_add_ten() {
     assert_eq!(inner::add_ten!(x1), 11);
     assert_eq!(inner::add_ten!(x2), 12);
     assert_eq!(inner::add_ten!(x3), 13);
+}
+
+macro repetition_macro_matcher {
+    ($($x:expr), +) => {
+        123
+    };
+
+    ($($x:expr), *) => {
+        123
+    };
+
+    ($($x:ident) *) => {
+        123
+    };
+
+    ($($x:expr)?) => {
+        123
+    };
+}
+
+#[test]
+fn test_repetition_macro_matcher() {
+    let _x1 = 1;
+    assert_eq!(repetition_macro_matcher!(1), 123);
+    assert_eq!(repetition_macro_matcher!(1, 2), 123);
+    assert_eq!(repetition_macro_matcher!(x1), 123);
+    assert_eq!(repetition_macro_matcher!(), 123);
+}
+
+macro repetition_macro_expansion {
+    ($($x:ident), +) => {
+        array![$($x + 2), *]
+    };
+
+    ($($x:expr), *) => {
+        array![$($x + 1), *]
+    };
+}
+
+#[test]
+fn test_repetition_macro_expansion() {
+    let expected_expr = array![2, 3, 4];
+    let actual_expr = repetition_macro_expansion!(1, 2, 3);
+    assert_eq!(expected_expr, actual_expr);
+    let x = 1;
+    let expected_ident = array![3];
+    let actual_ident = repetition_macro_expansion!(x);
+    assert_eq!(expected_ident, actual_ident);
 }

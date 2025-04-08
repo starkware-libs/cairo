@@ -1130,6 +1130,6 @@ macro add_nums {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u16".
- --> lib.cairo:7:21
-    add_nums!(1_u8, 2_u16);
-                    ^^^^^
+ --> lib.cairo[add_nums]:2:7
+1_u8+ 2_u16    }
+      ^^^^^
