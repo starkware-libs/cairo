@@ -193,3 +193,36 @@ fn test_accessing_expanded_placehoders() {
     let x = 1;
     assert_eq!(accessing_expanded_placehoders!(x), 2);
 }
+
+
+macro assuming_z_in_context {
+    ($x:expr, $y:expr) => {
+        let _z = 4;
+        $x + $y + $callsite::_z
+    };
+}
+
+#[test]
+fn test_assuming_z_in_context() {
+    let x = 1;
+    let y = 2;
+    let _z = 3;
+    assert_eq!(assuming_z_in_context!(x, y), 6);
+}
+
+macro wrap_assuming_z_in_context {
+    ($x:expr, $y:expr) => {
+        // TODO(Dean): Use $x and $y directly in the macro call when supported.
+        let x = $x;
+        let y = $y;
+        let _z = 3;
+        $defsite::assuming_z_in_context!(x, y)
+    };
+}
+
+#[test]
+fn test_wrap_assuming_z_in_context() {
+    let x = 1;
+    let y = 2;
+    assert_eq!(wrap_assuming_z_in_context!(x, y), 6);
+}
