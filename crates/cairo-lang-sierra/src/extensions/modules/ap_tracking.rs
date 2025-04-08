@@ -40,9 +40,11 @@ impl NoGenericArgsGenericLibfunc for EnableApTrackingLibfunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known {
-            new_vars_only: true,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
 
@@ -58,8 +60,10 @@ impl NoGenericArgsGenericLibfunc for DisableApTrackingLibfunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known {
-            new_vars_only: true,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }

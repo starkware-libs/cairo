@@ -1,7 +1,6 @@
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 
 use crate::formatter_impl::{
@@ -23,58 +22,58 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenNot
                 if matches!(
-                    grandparent_kind(db, self),
+                    self.grandparent_kind(db),
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
                 ) =>
             {
                 true
             }
             SyntaxKind::TokenLParen
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature))
+                if matches!(self.grandparent_kind(db), Some(SyntaxKind::FunctionSignature))
                     | matches!(
-                        grandparent_kind(db, self),
+                        self.grandparent_kind(db),
                         Some(SyntaxKind::VisibilityPubArgumentClause)
                     ) =>
             {
                 true
             }
             SyntaxKind::TokenLBrace
-                if matches!(parent_kind(db, self), Some(SyntaxKind::UsePathList)) =>
+                if matches!(self.parent_kind(db), Some(SyntaxKind::UsePathList)) =>
             {
                 true
             }
             SyntaxKind::TokenOr => {
-                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+                matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::TokenOrOr => {
-                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
+                matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::TokenLBrack
                 if !matches!(
-                    grandparent_kind(db, self),
+                    self.grandparent_kind(db),
                     Some(SyntaxKind::ExprFixedSizeArray | SyntaxKind::PatternFixedSizeArray)
                 ) =>
             {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
+                if self.grandparent_kind(db) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
             {
                 true
             }
             SyntaxKind::TokenPlus
-                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::GenericParamImplAnonymous) =>
             {
                 true
             }
             SyntaxKind::TokenMinus
-                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::GenericParamNegativeImpl) =>
             {
                 true
             }
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
-                    grandparent_kind(db, self),
+                    self.grandparent_kind(db),
                     Some(
                         SyntaxKind::PathSegmentWithGenericArgs
                             | SyntaxKind::GenericArgs
@@ -85,7 +84,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::ParamList
-                if parent_kind(db, self) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
+                if self.parent_kind(db) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
             {
                 true
             }
@@ -105,23 +104,23 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenDollar => true,
             SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
-                if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
+                if matches!(self.parent_kind(db), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
             }
             SyntaxKind::TokenLBrace => !matches!(
-                grandparent_kind(db, self),
+                self.grandparent_kind(db),
                 Some(SyntaxKind::PatternStruct | SyntaxKind::ExprStructCtorCall)
             ),
             SyntaxKind::TokenOr => {
-                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprClosure))
+                matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::TokenOrOr => {
-                matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure))
+                matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure))
             }
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
-                    parent_kind(db, self),
+                    self.parent_kind(db),
                     Some(
                         SyntaxKind::FunctionWithBody
                             | SyntaxKind::ItemExternFunction
@@ -134,30 +133,32 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
 
             SyntaxKind::ExprPath
-                if matches!(parent_kind(db, self), Some(SyntaxKind::PatternEnum))
-                    && db
-                        .get_children(self.parent().unwrap())
+                if matches!(self.parent_kind(db), Some(SyntaxKind::PatternEnum))
+                    && self
+                        .parent(db)
+                        .unwrap()
+                        .get_children(db)
                         .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
             {
                 true
             }
             SyntaxKind::TokenMinus
-                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamNegativeImpl) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::GenericParamNegativeImpl) =>
             {
                 true
             }
             SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
-                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
+                matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenPlus
-                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::GenericParamImplAnonymous) =>
             {
                 true
             }
             SyntaxKind::TokenLT
                 if matches!(
-                    grandparent_kind(db, self),
+                    self.grandparent_kind(db),
                     Some(
                         SyntaxKind::PathSegmentWithGenericArgs
                             | SyntaxKind::GenericArgs
@@ -168,18 +169,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
-                    || grandparent_kind(db, self) == Some(SyntaxKind::MacroRuleParam) =>
+                if matches!(
+                    self.grandparent_kind(db),
+                    Some(SyntaxKind::ArgClauseFieldInitShorthand | SyntaxKind::MacroRuleParam)
+                ) =>
             {
                 true
             }
             SyntaxKind::TokenDotDot | SyntaxKind::TokenDotDotEq
-                if grandparent_kind(db, self) == Some(SyntaxKind::StructArgTail) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::StructArgTail) =>
             {
                 true
             }
             SyntaxKind::ParamList
-                if parent_kind(db, self) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
+                if self.parent_kind(db) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
             {
                 true
             }
@@ -199,7 +202,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
     // TODO(Gil): Add all protected zones and break points when the formatter is stable.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
-        match parent_kind(db, self) {
+        match self.parent_kind(db) {
             // TODO(Gil): protected zone preferences should be local for each syntax node.
             Some(
                 SyntaxKind::ModuleItemList
@@ -341,7 +344,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 _ => None,
             },
             Some(SyntaxKind::StatementLet) => {
-                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let let_statement =
+                    ast::StatementLet::from_syntax_node(db, self.parent(db).unwrap());
                 let pattern = let_statement.pattern(db).as_syntax_node();
 
                 if pattern.kind(db) == SyntaxKind::PatternStruct {
@@ -465,7 +469,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         db: &dyn SyntaxGroup,
     ) -> BreakLinePointsPositions {
         // TODO(Gil): Make it easier to order the break points precedence.
-        match parent_kind(db, self) {
+        match self.parent_kind(db) {
             Some(SyntaxKind::ModuleItemList) if self.kind(db) != SyntaxKind::ItemHeaderDoc => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     1,
@@ -478,11 +482,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     11,
                     BreakLinePointIndentation::NotIndented,
-                    is_statement_list_break_point_optional(db, &self.parent().unwrap()),
+                    is_statement_list_break_point_optional(db, &self.parent(db).unwrap()),
                     false,
                 ))
             }
-            Some(SyntaxKind::TraitItemList) | Some(SyntaxKind::ImplItemList) => {
+            Some(SyntaxKind::TraitItemList | SyntaxKind::ImplItemList) => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     13,
                     BreakLinePointIndentation::NotIndented,
@@ -537,7 +541,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
-                    if db.get_children(self.clone()).len() > 2 {
+                    if self.get_children(db).len() > 2 {
                         trailing_break_point.set_comma_if_broken();
                     }
                     BreakLinePointsPositions::Both {
@@ -690,7 +694,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
                 SyntaxKind::TerminalPlus
                     if !matches!(
-                        parent_kind(db, self),
+                        self.parent_kind(db),
                         Some(SyntaxKind::GenericParamImplAnonymous)
                     ) =>
                 {
@@ -703,7 +707,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
                 SyntaxKind::TerminalMinus
                     if !matches!(
-                        parent_kind(db, self),
+                        self.parent_kind(db),
                         Some(SyntaxKind::ExprUnary | SyntaxKind::GenericParamNegativeImpl)
                     ) =>
                 {
@@ -716,7 +720,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
                 SyntaxKind::TerminalMul
                     if !matches!(
-                        parent_kind(db, self),
+                        self.parent_kind(db),
                         Some(SyntaxKind::ExprUnary | SyntaxKind::UsePathStar)
                     ) =>
                 {
@@ -744,7 +748,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalOrOr
-                    if !matches!(parent_kind(db, self), Some(SyntaxKind::ExprClosure)) =>
+                    if !matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure)) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         12,
@@ -763,7 +767,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
                 SyntaxKind::TerminalOr
                     if !matches!(
-                        parent_kind(db, self),
+                        self.parent_kind(db),
                         Some(SyntaxKind::PatternListOr | SyntaxKind::ClosureParamWrapperNAry)
                     ) =>
                 {
@@ -783,7 +787,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
-                    if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
+                    if matches!(self.parent_kind(db), Some(SyntaxKind::ExprBinary)) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
@@ -829,8 +833,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::StructArgList
             | SyntaxKind::GenericArgList
             | SyntaxKind::GenericParamList
-            | SyntaxKind::ParamList
-            | SyntaxKind::ArgList => BreakLinePointsPositions::List {
+            | SyntaxKind::ParamList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
@@ -839,6 +842,30 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ),
                 breaking_frequency: 2,
             },
+            SyntaxKind::ArgList => {
+                let mut properties = BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                );
+                if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
+                    if matches!(self.grandparent_kind(db), None | Some(SyntaxKind::ExprInlineMacro))
+                    {
+                        match config.breaking_behavior.macro_call {
+                            CollectionsBreakingBehavior::SingleBreakPoint => {
+                                properties.set_single_breakpoint();
+                            }
+                            CollectionsBreakingBehavior::LineByLine => {
+                                properties.set_line_by_line();
+                            }
+                        }
+                    } else {
+                        properties.set_line_by_line();
+                    }
+                }
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+            }
             SyntaxKind::ExprList => {
                 let mut properties = BreakLinePointProperties::new(
                     5,
@@ -847,9 +874,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                     true,
                 );
 
-                if let Some(parent_kind) = parent_kind(db, self) {
+                if let Some(parent_kind) = self.parent_kind(db) {
                     match parent_kind {
-                        SyntaxKind::ExprListParenthesized => match config.tuple_breaking_behavior {
+                        SyntaxKind::ExprListParenthesized => match config.breaking_behavior.tuple {
                             CollectionsBreakingBehavior::SingleBreakPoint => {
                                 properties.set_single_breakpoint();
                             }
@@ -858,7 +885,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                             }
                         },
                         SyntaxKind::ExprFixedSizeArray => {
-                            match config.fixed_array_breaking_behavior {
+                            match config.breaking_behavior.fixed_array {
                                 CollectionsBreakingBehavior::SingleBreakPoint => {
                                     properties.set_single_breakpoint();
                                 }
@@ -905,7 +932,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         // Check for TerminalComma with specific conditions on list types and position.
         if self.kind(db) == SyntaxKind::TerminalComma
             && matches!(
-                parent_kind(db, self),
+                self.parent_kind(db),
                 Some(
                     SyntaxKind::ExprList
                         | SyntaxKind::PatternList
@@ -923,11 +950,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 )
             )
         {
-            let parent_node = self.parent().unwrap();
-            let children = db.get_children(parent_node);
+            let parent_node = self.parent(db).unwrap();
+            let children = parent_node.get_children(db);
             // Check if it's an ExprList or PatternList with len > 2, or any other list type.
             let is_expr_or_pattern_list = matches!(
-                parent_kind(db, self),
+                self.parent_kind(db),
                 Some(SyntaxKind::ExprList | SyntaxKind::PatternList)
             );
             if (!is_expr_or_pattern_list || children.len() > 2)
@@ -941,14 +968,14 @@ impl SyntaxNodeFormat for SyntaxNode {
             return true;
         }
         if self.kind(db) == SyntaxKind::TerminalSemicolon
-            && parent_kind(db, self) == Some(SyntaxKind::StatementExpr)
+            && self.parent_kind(db) == Some(SyntaxKind::StatementExpr)
         {
-            let statement_node = self.parent().unwrap();
-            let statements_node = statement_node.parent().unwrap();
+            let statement_node = self.parent(db).unwrap();
+            let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let not_last = !is_last(&statement_node, &db.get_children(statements_node));
-            let children = db.get_children(statement_node);
+            let not_last = !is_last(&statement_node, &statements_node.get_children(db));
+            let children = statement_node.get_children(db);
             if not_last
                 && matches!(
                     children[1].kind(db),
@@ -964,15 +991,15 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
         }
         if self.kind(db) == SyntaxKind::TerminalColonColon
-            && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
+            && self.parent_kind(db) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {
-            let path_segment_node = self.parent().unwrap();
-            let path_node = path_segment_node.parent().unwrap();
-            if !is_last(&path_segment_node, &db.get_children(path_node.clone())) {
+            let path_segment_node = self.parent(db).unwrap();
+            let path_node = path_segment_node.parent(db).unwrap();
+            if !is_last(&path_segment_node, &path_node.get_children(db)) {
                 false
             } else {
                 matches!(
-                    grandparent_kind(db, &path_node),
+                    path_node.grandparent_kind(db),
                     Some(
                         SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous
@@ -992,7 +1019,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind {
         match self.kind(db) {
             SyntaxKind::ItemModule => {
-                let item_module = ast::ItemModule::from_syntax_node(db, self.clone());
+                let item_module = ast::ItemModule::from_syntax_node(db, *self);
                 if matches!(item_module.body(db), MaybeModuleBody::None(_)) {
                     SortKind::Module
                 } else {
@@ -1010,9 +1037,9 @@ fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNod
     // Currently, we only want single line blocks for match arms or generic args, with a single
     // statement, with no single line comments.
     matches!(
-        grandparent_kind(db, node),
+        node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgValueExpr)
-    ) && db.get_children(node.clone()).len() == 1
+    ) && node.get_children(db).len() == 1
         && node.descendants(db).all(|d| {
             d.kind(db) != SyntaxKind::Trivia
                 || ast::Trivia::from_syntax_node(db, d)

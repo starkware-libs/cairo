@@ -24,33 +24,41 @@ fn test_serde() {
                 cfg_set: Default::default(),
             },
             override_map: [
-                ("crate1".into(), CrateSettings {
-                    name: None,
-                    edition: Edition::V2023_10,
-                    version: Default::default(),
-                    dependencies: Default::default(),
-                    experimental_features: ExperimentalFeaturesConfig::default(),
-                    cfg_set: Default::default(),
-                }),
-                ("crate3".into(), CrateSettings {
-                    name: None,
-                    edition: Default::default(),
-                    version: Default::default(),
-                    dependencies: Default::default(),
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: true,
-                        associated_item_constraints: false,
-                        coupons: false,
+                (
+                    "crate1".into(),
+                    CrateSettings {
+                        name: None,
+                        edition: Edition::V2023_10,
+                        version: Default::default(),
+                        dependencies: Default::default(),
+                        experimental_features: ExperimentalFeaturesConfig::default(),
+                        cfg_set: Default::default(),
                     },
-                    cfg_set: Default::default(),
-                }),
+                ),
+                (
+                    "crate3".into(),
+                    CrateSettings {
+                        name: None,
+                        edition: Default::default(),
+                        version: Default::default(),
+                        dependencies: Default::default(),
+                        experimental_features: ExperimentalFeaturesConfig {
+                            negative_impls: true,
+                            associated_item_constraints: false,
+                            coupons: false,
+                        },
+                        cfg_set: Default::default(),
+                    },
+                ),
             ]
             .into_iter()
             .collect(),
         },
     };
     let serialized = toml::to_string(&config).unwrap();
-    assert_eq!(serialized, indoc! { r#"
+    assert_eq!(
+        serialized,
+        indoc! { r#"
             [crate_roots]
             crate1 = "dir1"
             crate2 = "dir2"
@@ -85,7 +93,8 @@ fn test_serde() {
             negative_impls = true
             associated_item_constraints = false
             coupons = false
-        "# });
+        "# }
+    );
     assert_eq!(config, toml::from_str(&serialized).unwrap());
 }
 

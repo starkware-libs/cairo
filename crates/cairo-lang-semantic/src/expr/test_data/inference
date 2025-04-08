@@ -636,7 +636,7 @@ foo
 impl MyImpl of NonExistingTrait {}
 
 //! > expected_diagnostics
-error: Trait not found.
+error[E0006]: Trait not found.
  --> lib.cairo:1:16
 impl MyImpl of NonExistingTrait {}
                ^^^^^^^^^^^^^^^^
@@ -660,7 +660,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:3:17
     data_hash = unknown_return_unknown();
                 ^^^^^^^^^^^^^^^^^^^^^^

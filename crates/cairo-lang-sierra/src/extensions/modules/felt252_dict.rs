@@ -124,10 +124,13 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(segment_arena_ty.clone()).with_allow_add_const()],
-            vec![OutputVarInfo::new_builtin(segment_arena_ty, 0), OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-            }],
+            vec![
+                OutputVarInfo::new_builtin(segment_arena_ty, 0),
+                OutputVarInfo {
+                    ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

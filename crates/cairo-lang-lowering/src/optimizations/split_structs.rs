@@ -64,10 +64,13 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
             if let Statement::StructConstruct(stmt) = stmt {
                 assert!(
                     split
-                        .insert(stmt.output, SplitInfo {
-                            block_id,
-                            vars: stmt.inputs.iter().map(|input| input.var_id).collect_vec(),
-                        },)
+                        .insert(
+                            stmt.output,
+                            SplitInfo {
+                                block_id,
+                                vars: stmt.inputs.iter().map(|input| input.var_id).collect_vec(),
+                            },
+                        )
                         .is_none()
                 );
             }
@@ -162,7 +165,7 @@ fn rebuild_blocks(lowered: &mut FlatLowered, split: SplitMapping) {
         let old_statements = std::mem::take(&mut block.statements);
         let statements = &mut block.statements;
 
-        for mut stmt in old_statements.into_iter() {
+        for mut stmt in old_statements {
             match stmt {
                 Statement::StructDestructure(stmt) => {
                     if let Some(output_split) =
@@ -394,10 +397,10 @@ impl SplitStructsContext<'_> {
                         statements,
                         orig_src.location,
                     );
-                    new_remappings.insert(dst, VarUsage {
-                        var_id: reconstructed_src,
-                        location: orig_src.location,
-                    });
+                    new_remappings.insert(
+                        dst,
+                        VarUsage { var_id: reconstructed_src, location: orig_src.location },
+                    );
                 }
             }
         }

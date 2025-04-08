@@ -13,8 +13,8 @@
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
-use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
-use crate::{ec, math};
+use crate::ec::{self, EcPoint, EcPointTrait, EcStateTrait};
+use crate::math;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 #[allow(unused_imports)]

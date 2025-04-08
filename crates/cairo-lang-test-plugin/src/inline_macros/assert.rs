@@ -11,12 +11,25 @@ use cairo_lang_filesystem::cfg::Cfg;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::formatdoc;
+
+/// The type of value the comparison function expects to find.
+enum ArgType {
+    /// The type is a snapshot of the compared value.
+    Snapshot,
+    /// The type is the actual value.
+    Value,
+}
 
 /// A trait for compare assertion plugin.
 trait CompareAssertionPlugin: NamedPlugin {
+    /// The operator for the panic message.
     const OPERATOR: &'static str;
+    /// The actual comparison function.
+    const FUNCTION: &'static str;
+    /// The argument type for the comparison function.
+    const ARG_TYPE: ArgType;
 
     fn generate_code(
         &self,
@@ -26,20 +39,20 @@ trait CompareAssertionPlugin: NamedPlugin {
     ) -> InlinePluginResult {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                syntax.as_syntax_node().stable_ptr(),
+                syntax.stable_ptr(db).untyped(),
             ));
         };
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
             legacy_inline_macro.arguments(db)
         else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         if arguments.len() < 2 {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    &arguments_syntax.lparen(db),
+                    arguments_syntax.lparen(db).stable_ptr(db),
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
@@ -51,7 +64,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
                     db,
-                    syntax.stable_ptr(),
+                    syntax.stable_ptr(db),
                     lhs.as_syntax_node(),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
@@ -62,7 +75,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
                     db,
-                    syntax.stable_ptr(),
+                    syntax.stable_ptr(db),
                     rhs.as_syntax_node(),
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
@@ -71,19 +84,24 @@ trait CompareAssertionPlugin: NamedPlugin {
         let f = format!("__formatter_for_{}_macro_", Self::NAME);
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
+        let (wrap_start, wrap_end) = match Self::ARG_TYPE {
+            ArgType::Snapshot => ("@(", ")"),
+            ArgType::Value => ("", ""),
+        };
         let mut builder = PatchBuilder::new(db, syntax);
         let lhs_value =
             RewriteNode::mapped_text(format!("__lhs_value_for_{}_macro__", Self::NAME), db, &lhs);
         let rhs_value =
             RewriteNode::mapped_text(format!("__rhs_value_for_{}_macro__", Self::NAME), db, &rhs);
         let operator = Self::OPERATOR;
+        let function = Self::FUNCTION;
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                 {{
-                    let $lhs_value$ = $lhs$;
-                    let $rhs_value$ = $rhs$;
-                    if !($lhs_value$ {operator} $rhs_value$) {{
+                    let $lhs_value$ = {wrap_start}$lhs${wrap_end};
+                    let $rhs_value$ = {wrap_start}$rhs${wrap_end};
+                    if !{function}($lhs_value$, $rhs_value$) {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
                             write!({f}, "assertion `{lhs_escaped} {operator} {rhs_escaped}` failed")
@@ -135,16 +153,25 @@ trait CompareAssertionPlugin: NamedPlugin {
                 .into(),
             ));
         }
+        let fmt_arg = match Self::ARG_TYPE {
+            ArgType::Snapshot => "",
+            ArgType::Value => "@",
+        };
 
-        #[expect(clippy::literal_string_with_formatting_args)]
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
                     core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-                        writeln!({f}, "{lhs_escaped}: {{:?}}", $lhs_value$)
+                        write!({f}, "{lhs_escaped}: ")
                     );
                     core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-                        write!({f}, "{rhs_escaped}: {{:?}}", $rhs_value$)
+                        core::fmt::Debug::fmt({fmt_arg}$lhs_value$, ref {f})
+                    );
+                    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+                        write!({f}, "\n{rhs_escaped}: ")
+                    );
+                    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+                        core::fmt::Debug::fmt({fmt_arg}$rhs_value$, ref {f})
                     );
                 "#,
             },
@@ -163,7 +190,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             && !metadata.cfg_set.contains(&Cfg::name("test"))
         {
             diagnostics.push(PluginDiagnostic::error(
-                syntax.stable_ptr(),
+                syntax.stable_ptr(db),
                 format!("`{}` macro is only available in test mode.", Self::NAME),
             ));
         }
@@ -181,7 +208,7 @@ trait CompareAssertionPlugin: NamedPlugin {
 }
 
 macro_rules! define_compare_assert_macro {
-    ($(#[$attr:meta])* $ident:ident, $name:tt, $operator:tt) => {
+    ($(#[$attr:meta])* $ident:ident, $name:literal, $operator:literal, $function:literal, $arg_type:path) => {
         $(#[$attr])*
         #[derive(Default, Debug)]
         pub struct $ident;
@@ -191,6 +218,8 @@ macro_rules! define_compare_assert_macro {
 
         impl CompareAssertionPlugin for $ident {
             const OPERATOR: &'static str = $operator;
+            const FUNCTION: &'static str = $function;
+            const ARG_TYPE: ArgType = $arg_type;
         }
 
         impl InlineMacroExprPlugin for $ident {
@@ -210,40 +239,52 @@ define_compare_assert_macro!(
     /// Macro for equality assertion.
     AssertEqMacro,
     "assert_eq",
-    "=="
+    "==",
+    "core::traits::PartialEq::eq",
+    ArgType::Snapshot
 );
 
 define_compare_assert_macro!(
     /// Macro for not equality assertion.
     AssertNeMacro,
     "assert_ne",
-    "!="
+    "!=",
+    "core::traits::PartialEq::ne",
+    ArgType::Snapshot
 );
 
 define_compare_assert_macro!(
     /// Macro for less-than assertion.
     AssertLtMacro,
     "assert_lt",
-    "<"
+    "<",
+    "core::traits::PartialOrd::lt",
+    ArgType::Value
 );
 
 define_compare_assert_macro!(
     /// Macro for less-than-or-equal assertion.
     AssertLeMacro,
     "assert_le",
-    "<="
+    "<=",
+    "core::traits::PartialOrd::le",
+    ArgType::Value
 );
 
 define_compare_assert_macro!(
     /// Macro for greater-than assertion.
     AssertGtMacro,
     "assert_gt",
-    ">"
+    ">",
+    "core::traits::PartialOrd::gt",
+    ArgType::Value
 );
 
 define_compare_assert_macro!(
     /// Macro for greater-than-or-equal assertion.
     AssertGeMacro,
     "assert_ge",
-    ">="
+    ">=",
+    "core::traits::PartialOrd::ge",
+    ArgType::Value
 );

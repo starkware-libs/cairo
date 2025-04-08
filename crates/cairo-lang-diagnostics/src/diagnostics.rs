@@ -193,7 +193,7 @@ impl<T> ToMaybe<T> for Option<T> {
 
 /// Temporary trait to allow conversions from `Maybe<T>` to `Option<T>`.
 ///
-/// The behavior is identical to [Result::ok]. It is used to mark all the location where there
+/// The behavior is identical to [Result::ok]. It is used to mark all the locations where there
 /// is a conversion between the two mechanisms.
 // TODO(lior): Remove this trait after converting all the functions.
 pub trait ToOption<T> {

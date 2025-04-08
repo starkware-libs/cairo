@@ -22,8 +22,10 @@ use starknet::secp256_trait::{
 use starknet::{SyscallResult, SyscallResultTrait};
 
 /// A point on the secp256k1 curve.
-#[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
+
+impl Secp256k1PointCopy of Copy<Secp256k1Point>;
+impl Secp256k1PointDrop of Drop<Secp256k1Point>;
 
 pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.

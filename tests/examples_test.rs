@@ -282,7 +282,7 @@ fn run_function(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
-    &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen)),
+    &[3].map(Felt252::from), Some(100000), Some(10480 + 3 * token_gas_cost(CostTokenType::Pedersen)),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 fn run_function_test(

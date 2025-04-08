@@ -147,3 +147,30 @@ fn test_get_unspent_gas() {
         + 2300; // `get_unspent_gas()`.
     assert_eq!(prev - after, expected_cost);
 }
+
+#[derive(Drop, Debug, PartialEq)]
+struct NoCopy {
+    value: u8,
+}
+
+#[test]
+fn test_assert_macros_and_non_copy() {
+    let a = NoCopy { value: 0 };
+    let b = NoCopy { value: 1 };
+    assert_eq!(a, a);
+    assert_ne!(a, b);
+    assert_eq!(b, b);
+    assert_ne!(b, a);
+    assert_eq!(a.value, a.value);
+    assert_ne!(a.value, b.value);
+    assert_eq!(b.value, b.value);
+    assert_ne!(b.value, a.value);
+    assert_eq!(a, a);
+    assert_ne!(a, b);
+    assert_eq!(b, b);
+    assert_ne!(b, a);
+    assert_eq!(a.value, a.value);
+    assert_ne!(a.value, b.value);
+    assert_eq!(b.value, b.value);
+    assert_ne!(b.value, a.value);
+}

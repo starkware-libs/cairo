@@ -4,7 +4,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
@@ -108,7 +107,7 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: _,
                 key: GeneratedFunctionKey::TraitFunc(function, _),
-            }) => Ok(function == panic_destruct_trait_fn(db.upcast())),
+            }) => Ok(function == db.core_info().panic_destruct_fn),
             _ => Ok(false),
         }
     }
@@ -193,9 +192,7 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
-        let substitution = self.substitution(db)?;
-        SubstitutionRewriter { db: db.upcast(), substitution: &substitution }
-            .rewrite(generic_signature)
+        self.substitution(db)?.substitute(db.upcast(), generic_signature)
     }
     pub fn from_no_generics_free(
         db: &dyn LoweringGroup,
@@ -252,13 +249,13 @@ impl FunctionLongId {
                     if let ImplLongId::GeneratedImpl(imp) = db.lookup_intern_impl(impl_id) {
                         let semantic_db = db.upcast();
                         let concrete_trait = imp.concrete_trait(semantic_db);
-
+                        let info = db.core_info();
                         assert!(
                             [
-                                semantic::corelib::destruct_trait_fn(semantic_db),
-                                semantic::corelib::panic_destruct_trait_fn(semantic_db),
-                                semantic::corelib::fn_once_call_trait_fn(semantic_db),
-                                semantic::corelib::fn_call_trait_fn(semantic_db),
+                                info.destruct_fn,
+                                info.panic_destruct_fn,
+                                info.call_fn,
+                                info.call_once_fn
                             ]
                             .contains(&function)
                         );

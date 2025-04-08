@@ -21,13 +21,16 @@
 //
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
+
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
@@ -37,6 +40,7 @@ use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
+use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
@@ -55,9 +59,11 @@ pub trait LanguageElementId {
 
 pub trait NamedLanguageElementLongId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait NamedLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -109,10 +115,17 @@ macro_rules! define_named_language_element_id {
                 let terminal_green = self.1.name_green(syntax_db);
                 terminal_green.identifier(syntax_db)
             }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                let syntax_db = db.upcast();
+                self.1.lookup(syntax_db).name(syntax_db)
+            }
         }
         impl NamedLanguageElementId for $short_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                db.$lookup(*self).name_identifier(db)
             }
         }
     };
@@ -254,6 +267,13 @@ macro_rules! toplevel_enum {
                     )*
                 }
             }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.name_identifier(db),
+                    )*
+                }
+            }
         }
         impl TopLevelLanguageElementId for $enum_name {}
     }
@@ -321,6 +341,116 @@ define_short_id!(
     intern_plugin_generated_file
 );
 
+/// An ID allowing for interning the [`MacroPlugin`] into Salsa database.
+#[derive(Clone, Debug)]
+pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
+
+impl MacroPlugin for MacroPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::PluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        self.0.declared_attributes()
+    }
+
+    fn declared_derives(&self) -> Vec<String> {
+        self.0.declared_derives()
+    }
+
+    fn executable_attributes(&self) -> Vec<String> {
+        self.0.executable_attributes()
+    }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        self.0.phantom_type_attributes()
+    }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `MacroPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
+}
+
+// `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,
+// but pointer-based equality and hash semantics are enough in this case.
+impl PartialEq for MacroPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for MacroPluginLongId {}
+
+impl Hash for MacroPluginLongId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.0).hash(state)
+    }
+}
+
+define_short_id!(
+    MacroPluginId,
+    MacroPluginLongId,
+    DefsGroup,
+    lookup_intern_macro_plugin,
+    intern_macro_plugin
+);
+
+/// An ID allowing for interning the [`InlineMacroExprPlugin`] into Salsa database.
+#[derive(Clone, Debug)]
+pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
+
+impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: &ast::ExprInlineMacro,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::InlinePluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        self.0.documentation()
+    }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `InlineMacroExprPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
+}
+
+// `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,
+// but pointer-based equality and hash semantics are enough in this case.
+impl PartialEq for InlineMacroExprPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for InlineMacroExprPluginLongId {}
+
+impl Hash for InlineMacroExprPluginLongId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.0).hash(state)
+    }
+}
+
+define_short_id!(
+    InlineMacroExprPluginId,
+    InlineMacroExprPluginLongId,
+    DefsGroup,
+    lookup_intern_inline_macro_plugin,
+    intern_inline_macro_plugin
+);
+
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of a module.
@@ -340,6 +470,28 @@ define_language_element_id_as_enum! {
         MacroDeclaration(MacroDeclarationId),
     }
 }
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// Id for an item that can be brought into scope with a `use` statement.
+    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`].
+    pub enum ImportableId {
+        Constant(ConstantId),
+        Submodule(SubmoduleId),
+        FreeFunction(FreeFunctionId),
+        Struct(StructId),
+        Enum(EnumId),
+        Variant(VariantId),
+        TypeAlias(ModuleTypeAliasId),
+        ImplAlias(ImplAliasId),
+        Trait(TraitId),
+        Impl(ImplDefId),
+        ExternType(ExternTypeId),
+        ExternFunction(ExternFunctionId),
+        MacroDeclaration(MacroDeclarationId),
+    }
+}
+
 define_top_level_language_element_id!(
     SubmoduleId,
     SubmoduleLongId,
@@ -1132,12 +1284,17 @@ impl StatementItemId {
         }
     }
     pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+        let syntax_db = db.upcast();
         match self {
-            StatementItemId::Constant(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
-            }
+            StatementItemId::Constant(id) => id
+                .lookup_intern(db)
+                .1
+                .lookup(syntax_db)
+                .name(syntax_db)
+                .stable_ptr(syntax_db)
+                .untyped(),
             StatementItemId::Use(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name_stable_ptr(db.upcast())
+                id.lookup_intern(db).1.lookup(syntax_db).name_stable_ptr(syntax_db)
             }
         }
     }
@@ -1202,6 +1359,7 @@ impl ImplItemId {
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
     /// Semantic info lookups should be performed against these items.

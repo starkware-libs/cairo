@@ -103,7 +103,9 @@ pub struct CairoHintProcessor<'a> {
     /// Avoid allocating memory segments so finalization of segment arena may not occur.
     pub no_temporary_segments: bool,
     /// A set of markers created by the run.
-    pub markers: Vec<Relocatable>,
+    pub markers: Vec<Vec<Felt252>>,
+    /// The traceback set by a panic trace hint call.
+    pub panic_traceback: Vec<(Relocatable, Relocatable)>,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -421,7 +423,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hint = hint_data.downcast_ref::<Hint>().unwrap();
+        let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
@@ -825,6 +827,9 @@ impl CairoHintProcessor<'_> {
             }),
             "GetClassHashAt" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.get_class_hash_at(gas_counter, system_buffer.next_felt252()?.into_owned())
+            }),
+            "MetaTxV0" => execute_handle_helper(&mut |_system_buffer, _gas_counter| {
+                panic!("Meta transaction is not supported.")
             }),
             _ => panic!("Unknown selector for system call!"),
         }
@@ -1315,7 +1320,12 @@ impl CairoHintProcessor<'_> {
         match core_hint {
             ExternalHint::AddRelocationRule { src, dst } => vm.add_relocation_rule(
                 extract_relocatable(vm, src)?,
-                extract_relocatable(vm, dst)?,
+                // The following is needed for when the `extensive_hints` feature is used in the
+                // VM, in which case `dst_ptr` is a `MaybeRelocatable` type.
+                #[allow(clippy::useless_conversion)]
+                {
+                    extract_relocatable(vm, dst)?.into()
+                },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
                 let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
@@ -1339,8 +1349,52 @@ impl CairoHintProcessor<'_> {
                     }
                 }
             }
-            ExternalHint::SetMarker { marker } => {
-                self.markers.push(extract_relocatable(vm, marker)?);
+            ExternalHint::AddMarker { start, end } => {
+                self.markers.push(read_felts(vm, start, end)?);
+            }
+            ExternalHint::AddTrace { flag } => {
+                let flag = get_val(vm, flag)?;
+                // Setting the panic backtrace if the given flag is panic.
+                if flag == 0x70616e6963u64.into() {
+                    let mut fp = vm.get_fp();
+                    self.panic_traceback = vec![(vm.get_pc(), fp)];
+                    // Fetch the fp and pc traceback entries
+                    loop {
+                        let ptr_at_offset = |offset: usize| {
+                            (fp - offset).ok().and_then(|r| vm.get_relocatable(r).ok())
+                        };
+                        // Get return pc.
+                        let Some(ret_pc) = ptr_at_offset(1) else {
+                            break;
+                        };
+                        println!("ret_pc: {ret_pc}");
+                        // Get fp traceback.
+                        let Some(ret_fp) = ptr_at_offset(2) else {
+                            break;
+                        };
+                        println!("ret_fp: {ret_fp}");
+                        if ret_fp == fp {
+                            break;
+                        }
+                        fp = ret_fp;
+
+                        let call_instruction = |offset: usize| -> Option<Relocatable> {
+                            let ptr = (ret_pc - offset).ok()?;
+                            println!("ptr: {ptr}");
+                            let inst = vm.get_integer(ptr).ok()?;
+                            println!("inst: {inst}");
+                            let inst_short = inst.to_u64()?;
+                            (inst_short & 0x7000_0000_0000_0000 == 0x1000_0000_0000_0000)
+                                .then_some(ptr)
+                        };
+                        if let Some(call_pc) = call_instruction(1).or_else(|| call_instruction(2)) {
+                            self.panic_traceback.push((call_pc, fp));
+                        } else {
+                            break;
+                        }
+                    }
+                    self.panic_traceback.reverse();
+                }
             }
         }
         Ok(())
@@ -2279,9 +2333,20 @@ pub fn build_cairo_runner(
         None,
     )
     .map_err(CairoRunError::from)?;
-    CairoRunner::new(&program, LayoutName::all_cairo, false, true)
-        .map_err(CairoRunError::from)
-        .map_err(Box::new)
+    let dynamic_layout_params = None;
+    let proof_mode = false;
+    let trace_enabled = true;
+    let disable_trace_padding = false;
+    CairoRunner::new(
+        &program,
+        LayoutName::all_cairo,
+        dynamic_layout_params,
+        proof_mode,
+        trace_enabled,
+        disable_trace_padding,
+    )
+    .map_err(CairoRunError::from)
+    .map_err(Box::new)
 }
 
 /// The result of [run_function].

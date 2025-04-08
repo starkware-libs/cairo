@@ -65,14 +65,16 @@
 //! * [`TryInto`] for potentially fallible conversions
 //! * [`Into`] for infallible conversions to wider types
 
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
-#[allow(unused_imports)]
-use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::{downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
-use crate::RangeCheck;
+#[allow(unused_imports)]
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(spapini): Add method for const creation from Integer.
 pub trait NumericLiteral<T>;
@@ -82,8 +84,10 @@ impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 impl NumericLiteralNonZero<T, +NumericLiteral<T>> of NumericLiteral<NonZero<T>>;
 
 /// The 128-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u128;
+
+impl u128Copy of Copy<u128>;
+impl u128Drop of Drop<u128>;
 
 impl NumericLiteralu128 of NumericLiteral<u128>;
 
@@ -301,8 +305,10 @@ pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nop
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
 /// The 8-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u8;
+
+impl u8Copy of Copy<u8>;
+impl u8Drop of Drop<u8>;
 
 impl NumericLiteralu8 of NumericLiteral<u8>;
 
@@ -455,8 +461,10 @@ impl U8BitSize of crate::num::traits::BitSize<u8> {
 }
 
 /// The 16-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u16;
+
+impl u16Copy of Copy<u16>;
+impl u16Drop of Drop<u16>;
 
 impl NumericLiteralu16 of NumericLiteral<u16>;
 
@@ -615,8 +623,10 @@ impl U16BitSize of crate::num::traits::BitSize<u16> {
 }
 
 /// The 32-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u32;
+
+impl u32Copy of Copy<u32>;
+impl u32Drop of Drop<u32>;
 
 impl NumericLiteralu32 of NumericLiteral<u32>;
 
@@ -775,8 +785,10 @@ impl U32BitSize of crate::num::traits::BitSize<u32> {
 }
 
 /// The 64-bit unsigned integer type.
-#[derive(Copy, Drop)]
 pub extern type u64;
+
+impl u64Copy of Copy<u64>;
+impl u64Drop of Drop<u64>;
 
 impl NumericLiteralu64 of NumericLiteral<u64>;
 
@@ -1173,6 +1185,7 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
 }
 
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
+#[feature("bounded-int-utils")]
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
@@ -1195,6 +1208,7 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
+#[feature("bounded-int-utils")]
 pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128,
 ) -> (u128, crate::internal::bounded_int::BoundedInt<0, 1>) nopanic {
@@ -1418,16 +1432,6 @@ pub(crate) impl I128IntoFelt252 of Into<i128, felt252> {
         i128_to_felt252(self)
     }
 }
-
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
-
-// TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
-//   will not lead to Sierra errors.
-pub(crate) extern const fn downcast<FromType, ToType>(
-    x: FromType,
-) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
@@ -1924,15 +1928,16 @@ impl I128WrappingAdd = signed_int_impls::WrappingAddImpl<i128>;
 impl I128WrappingSub = signed_int_impls::WrappingSubImpl<i128>;
 
 /// The 8-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i8;
+
+impl i8Copy of Copy<i8>;
+impl i8Drop of Drop<i8>;
 
 impl NumericLiterali8 of NumericLiteral<i8>;
 
 extern const fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
 extern const fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
-extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
 
 impl I8Serde = crate::serde::into_felt252_based::SerdeImpl<i8>;
@@ -2009,15 +2014,16 @@ impl I8BitSize of crate::num::traits::BitSize<i8> {
 }
 
 /// The 16-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i16;
+
+impl i16Copy of Copy<i16>;
+impl i16Drop of Drop<i16>;
 
 impl NumericLiterali16 of NumericLiteral<i16>;
 
 extern const fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
 extern const fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
-extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
 
 impl I16Serde = crate::serde::into_felt252_based::SerdeImpl<i16>;
@@ -2095,15 +2101,16 @@ impl I16BitSize of crate::num::traits::BitSize<i16> {
 }
 
 /// The 32-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i32;
+
+impl i32Copy of Copy<i32>;
+impl i32Drop of Drop<i32>;
 
 impl NumericLiterali32 of NumericLiteral<i32>;
 
 extern const fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
 extern const fn i32_to_felt252(a: i32) -> felt252 nopanic;
 
-extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 
 impl I32Serde = crate::serde::into_felt252_based::SerdeImpl<i32>;
@@ -2181,15 +2188,16 @@ impl I32BitSize of crate::num::traits::BitSize<i32> {
 }
 
 /// The 64-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i64;
+
+impl i64Copy of Copy<i64>;
+impl i64Drop of Drop<i64>;
 
 impl NumericLiterali64 of NumericLiteral<i64>;
 
 extern const fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
 extern const fn i64_to_felt252(a: i64) -> felt252 nopanic;
 
-extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 
 impl I64Serde = crate::serde::into_felt252_based::SerdeImpl<i64>;
@@ -2267,15 +2275,16 @@ impl I64BitSize of crate::num::traits::BitSize<i64> {
 }
 
 /// The 128-bit signed integer type.
-#[derive(Copy, Drop)]
 pub extern type i128;
+
+impl i128Copy of Copy<i128>;
+impl i128Drop of Drop<i128>;
 
 impl NumericLiterali128 of NumericLiteral<i128>;
 
 extern const fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
 extern const fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
-extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
 
 impl I128Serde = crate::serde::into_felt252_based::SerdeImpl<i128>;
@@ -2330,6 +2339,7 @@ impl I128Neg of Neg<i128> {
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
+        #[feature("bounded-int-utils")]
         let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
@@ -2360,15 +2370,16 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 mod signed_div_rem {
+    #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
-        BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem, is_zero,
+        BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, NegateHelper, UnitInt, constrain,
+        div_rem, downcast, is_zero, upcast,
     };
-    use super::{downcast, upcast};
 
     impl DivRemImpl<
         T,
         impl CH: ConstrainHelper<T, 0>,
-        impl NH: NegateHelper<CH::LowT>,
+        impl NH: MulHelper<CH::LowT, UnitInt<-1>>,
         // Positive by Positive Div Rem (PPDR) Helper.
         impl PPDR: DivRemHelper<CH::HighT, CH::HighT>,
         // Negative by Positive Div Rem (NPDR) Helper.
@@ -2377,10 +2388,10 @@ mod signed_div_rem {
         impl PNDR: DivRemHelper<CH::HighT, NH::Result>,
         // Negative by Negative Div Rem (NNDR) Helper.
         impl NNDR: DivRemHelper<NH::Result, NH::Result>,
-        +NegateHelper<NNDR::RemT>,
-        +NegateHelper<NPDR::DivT>,
-        +NegateHelper<NPDR::RemT>,
-        +NegateHelper<PNDR::DivT>,
+        +MulHelper<NNDR::RemT, UnitInt<-1>>,
+        +MulHelper<NPDR::DivT, UnitInt<-1>>,
+        +MulHelper<NPDR::RemT, UnitInt<-1>>,
+        +MulHelper<PNDR::DivT, UnitInt<-1>>,
         +Drop<T>,
         +Drop<NH::Result>,
         +Drop<CH::LowT>,
@@ -2394,7 +2405,7 @@ mod signed_div_rem {
                 Ok(lhs_lt0) => {
                     match constrain::<NonZero<T>, 0>(rhs) {
                         Ok(rhs_lt0) => {
-                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_lt0.negate_nz());
+                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_lt0.negate());
                             (
                                 // Catching the case for division of `i{8,16,32,64,128}::MIN` by
                                 // `-1`, which overflows.
@@ -2411,7 +2422,7 @@ mod signed_div_rem {
                 Err(lhs_ge0) => {
                     match constrain::<NonZero<T>, 0>(rhs) {
                         Ok(rhs_lt0) => {
-                            let (q, r) = div_rem(lhs_ge0, rhs_lt0.negate_nz());
+                            let (q, r) = div_rem(lhs_ge0, rhs_lt0.negate());
                             (upcast(q.negate()), upcast(r))
                         },
                         Err(rhs_ge0) => {
@@ -3304,18 +3315,16 @@ impl U128SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TS
 impl U256SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
 
 mod bitnot_impls {
-    use core::internal::bounded_int::{BoundedInt, SubHelper};
-    use super::upcast;
+    #[feature("bounded-int-utils")]
+    use core::internal::bounded_int::{BoundedInt, SubHelper, UnitInt, sub, upcast};
 
-    impl SubHelperImpl<T, const MAX: felt252> of SubHelper<BoundedInt<MAX, MAX>, T> {
+    impl SubHelperImpl<T, const MAX: felt252> of SubHelper<UnitInt<MAX>, T> {
         type Result = BoundedInt<0, MAX>;
     }
 
-    pub impl Impl<
-        T, const MAX: felt252, const MAX_TYPED: BoundedInt<MAX, MAX>,
-    > of core::traits::BitNot<T> {
+    pub impl Impl<T, const MAX: felt252, const MAX_TYPED: UnitInt<MAX>> of core::traits::BitNot<T> {
         fn bitnot(a: T) -> T {
-            upcast::<BoundedInt<0, MAX>, T>(core::internal::bounded_int::sub(MAX_TYPED, a))
+            upcast::<BoundedInt<0, MAX>, T>(sub(MAX_TYPED, a))
         }
     }
 }
@@ -3337,6 +3346,7 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 }
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i8) -> (u8, bool) {
         match core::internal::bounded_int::constrain::<i8, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3346,6 +3356,7 @@ impl I8ToU8 of AbsAndSign<i8, u8> {
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i16) -> (u16, bool) {
         match core::internal::bounded_int::constrain::<i16, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3355,6 +3366,7 @@ impl I16ToU16 of AbsAndSign<i16, u16> {
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i32) -> (u32, bool) {
         match core::internal::bounded_int::constrain::<i32, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3364,6 +3376,7 @@ impl I32ToU32 of AbsAndSign<i32, u32> {
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i64) -> (u64, bool) {
         match core::internal::bounded_int::constrain::<i64, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
@@ -3373,6 +3386,7 @@ impl I64ToU64 of AbsAndSign<i64, u64> {
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
+    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i128) -> (u128, bool) {
         match core::internal::bounded_int::constrain::<i128, 0>(self) {
             Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),

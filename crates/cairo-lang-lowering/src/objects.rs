@@ -381,7 +381,7 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    outputs: [VariableId; 2],
+    pub outputs: [VariableId; 2],
 }
 impl StatementSnapshot {
     pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
@@ -485,6 +485,13 @@ impl MatchInfo {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,
             MatchInfo::Value(s) => &s.arms,
+        }
+    }
+    pub fn arms_mut(&mut self) -> &mut [MatchArm] {
+        match self {
+            MatchInfo::Enum(s) => &mut s.arms,
+            MatchInfo::Extern(s) => &mut s.arms,
+            MatchInfo::Value(s) => &mut s.arms,
         }
     }
     pub fn location(&self) -> &LocationId {

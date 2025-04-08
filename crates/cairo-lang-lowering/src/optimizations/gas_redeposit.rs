@@ -29,10 +29,9 @@ pub fn gas_redeposit(
     if lowered.blocks.is_empty() {
         return;
     }
-    if !matches!(
-        db.get_flag(FlagId::new(db.upcast(), "add_redeposit_gas")),
-        Some(flag) if matches!(*flag, Flag::AddRedepositGas(true))
-    ) {
+    if matches!(db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")),
+        Some(flag) if matches!(*flag, Flag::AddWithdrawGas(false)))
+    {
         return;
     }
     let gb_ty = corelib::get_core_ty_by_name(db.upcast(), "GasBuiltin".into(), vec![]);

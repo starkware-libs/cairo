@@ -133,10 +133,13 @@ impl NamedLibfunc for DowncastLibfunc {
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: to_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: to_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.

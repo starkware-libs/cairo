@@ -14,21 +14,24 @@ mod test;
 pub enum InstructionBody {
     AddAp(AddApInstruction),
     AssertEq(AssertEqInstruction),
+    QM31AssertEq(AssertEqInstruction),
     Call(CallInstruction),
     Jnz(JnzInstruction),
     Jump(JumpInstruction),
     Ret(RetInstruction),
+    Blake2sCompress(Blake2sCompressInstruction),
 }
 impl InstructionBody {
     pub fn op_size(&self) -> usize {
         // TODO(spapini): Make this correct.
         match self {
             InstructionBody::AddAp(insn) => insn.op_size(),
-            InstructionBody::AssertEq(insn) => insn.op_size(),
+            InstructionBody::AssertEq(insn) | InstructionBody::QM31AssertEq(insn) => insn.op_size(),
             InstructionBody::Call(insn) => insn.op_size(),
             InstructionBody::Jump(insn) => insn.op_size(),
             InstructionBody::Jnz(insn) => insn.op_size(),
             InstructionBody::Ret(insn) => insn.op_size(),
+            InstructionBody::Blake2sCompress(insn) => insn.op_size(),
         }
     }
 }
@@ -37,10 +40,12 @@ impl Display for InstructionBody {
         match self {
             InstructionBody::AddAp(insn) => write!(f, "{insn}",),
             InstructionBody::AssertEq(insn) => write!(f, "{insn}",),
+            InstructionBody::QM31AssertEq(insn) => write!(f, "{{QM31}} {insn}",),
             InstructionBody::Call(insn) => write!(f, "{insn}",),
             InstructionBody::Jnz(insn) => write!(f, "{insn}",),
             InstructionBody::Jump(insn) => write!(f, "{insn}",),
             InstructionBody::Ret(insn) => write!(f, "{insn}",),
+            InstructionBody::Blake2sCompress(insn) => write!(f, "{insn}",),
         }
     }
 }
@@ -196,5 +201,28 @@ impl AddApInstruction {
 impl Display for AddApInstruction {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "ap += {}", self.operand)
+    }
+}
+
+/// Represents a blake2s instruction, "blake2s".
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Blake2sCompressInstruction {
+    pub state: CellRef,
+    pub byte_count: CellRef,
+    pub message: CellRef,
+    pub finalize: bool,
+}
+impl Blake2sCompressInstruction {
+    pub fn op_size(&self) -> usize {
+        1
+    }
+}
+impl Display for Blake2sCompressInstruction {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "blake2s[state={}, message={}, byte_count={}, finalize={}] => [ap + 0]",
+            self.state, self.message, self.byte_count, self.finalize
+        )
     }
 }

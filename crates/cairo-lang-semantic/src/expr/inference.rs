@@ -23,7 +23,6 @@ use cairo_lang_utils::{
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::{CoreTraitContext, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -45,7 +44,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
 };
-use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeById, ImplTypeId,
@@ -216,8 +215,9 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound(concrete_trait_id) => {
+                let info = db.core_info();
                 let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == numeric_literal_trait(db) {
+                if trait_id == info.numeric_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -227,9 +227,7 @@ impl InferenceError {
                          literal.",
                         generic_type.debug(db)
                     );
-                } else if trait_id
-                    == get_core_trait(db, CoreTraitContext::TopLevel, "StringLiteral".into())
-                {
+                } else if trait_id == info.string_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -415,23 +413,26 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (*k, ImplVarTraitItemMappings {
-                        types: mappings
-                            .types
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        constants: mappings
-                            .constants
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                        impls: mappings
-                            .impls
-                            .iter()
-                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                            .collect(),
-                    })
+                    (
+                        *k,
+                        ImplVarTraitItemMappings {
+                            types: mappings
+                                .types
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            constants: mappings
+                                .constants
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                            impls: mappings
+                                .impls
+                                .iter()
+                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                                .collect(),
+                        },
+                    )
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
@@ -690,9 +691,9 @@ impl<'db> Inference<'db> {
             // TODO(yuval): consider adding error location to the set error.
             return Err((ErrorSet, None));
         }
-
-        let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = self.db.core_felt252_ty();
+        let info = self.db.core_info();
+        let numeric_trait_id = info.numeric_literal_trt;
+        let felt_ty = info.felt252;
 
         // Conform all uninferred numeric literals to felt252.
         loop {
@@ -1046,12 +1047,9 @@ impl<'db> Inference<'db> {
         }
         match canonical_impl.0.lookup_intern(self.db) {
             ImplLongId::Concrete(concrete_impl) => {
-                let mut rewriter = SubstitutionRewriter {
-                    db: self.db,
-                    substitution: &concrete_impl.substitution(self.db).map_err(|diag_added| {
-                        self.set_error(InferenceError::Reported(diag_added))
-                    })?,
-                };
+                let substitution = concrete_impl
+                    .substitution(self.db)
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
                 let generic_params = self
                     .db
                     .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
@@ -1062,8 +1060,8 @@ impl<'db> Inference<'db> {
                         try_extract_matches!(generic_param, GenericParam::NegImpl)
                     })
                     .map(|generic_param| {
-                        rewriter
-                            .rewrite(generic_param.clone())
+                        substitution
+                            .substitute(self.db, generic_param.clone())
                             .and_then(|generic_param| generic_param.concrete_trait)
                     });
                 validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)
@@ -1313,13 +1311,8 @@ impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_constant_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_constant_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_constant_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
                             ImplConstantId::new(impl_id, trait_constant, self.db),
@@ -1366,13 +1359,8 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::SelfImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_impl_id_rewrite_result,
-                    ImplLongId::ImplImpl(impl_impl) => {
-                        // The grand parent impl must be var free since we are rewriting the parent,
-                        // and the parent is not var.
-                        assert!(impl_impl.impl_id().is_var_free(self.db));
-                        impl_impl_id_rewrite_result
-                    }
+                    | ImplLongId::GeneratedImpl(_)
+                    | ImplLongId::ImplImpl(_) => impl_impl_id_rewrite_result,
                     ImplLongId::Concrete(_) => {
                         if let Ok(imp) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
                             *value = self.rewrite(imp).no_err().lookup_intern(self.db);

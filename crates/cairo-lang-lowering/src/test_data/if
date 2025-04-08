@@ -560,7 +560,7 @@ error: Unsupported value in if-let. Currently, if-let on tuples only supports en
                                ^^^^^^^^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -596,7 +596,7 @@ error: Numeric values are not supported in if-let conditions.
 |_____^
 
 //! > lowering_flat
-Parameters:
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -706,40 +706,7 @@ error: Unreachable else clause.
 |_____^
 
 //! > lowering_flat
-Parameters: v0: test::MyEnum
-blk0 (root):
-Statements:
-  (v1: core::felt252) <- 0
-End:
-  Match(match_enum(v0) {
-    MyEnum::A(v2) => blk1,
-    MyEnum::B(v3) => blk2,
-    MyEnum::C(v4) => blk3,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-  (v5: core::felt252) <- 5
-  (v6: core::felt252) <- core::felt252_add(v1, v5)
-  (v7: core::felt252) <- 1
-  (v8: core::felt252) <- core::felt252_add(v6, v7)
-End:
-  Return(v8)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -778,7 +745,7 @@ error: Unsupported type in if-let. Type: `test::MyStruct`.
                ^
 
 //! > lowering_flat
-Parameters: v0: test::MyStruct
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 

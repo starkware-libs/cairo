@@ -5,7 +5,7 @@ use cairo_lang_syntax::attribute::structured::{
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{QueryAttrs, is_single_arg_attr};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
@@ -52,11 +52,6 @@ pub trait AstPathExtract {
     /// Returns true if `self` matches `$name$<$generic_arg$>`.
     /// Does not resolve paths, type aliases or named generics.
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool;
-    /// Returns true if `self` is dependent on `identifier` in an internal type.
-    /// For example given identifier `T` will return true for:
-    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
-    /// Does not resolve paths, type aliases or named generics.
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool;
     /// Returns true if `self` is `felt252`.
     /// Does not resolve paths or type aliases.
     fn is_felt252(&self, db: &dyn SyntaxGroup) -> bool {
@@ -99,30 +94,6 @@ impl AstPathExtract for ast::ExprPath {
 
         arg_expr.expr(db).is_identifier(db, generic_arg)
     }
-
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
-        let segments = self.segments(db).elements(db);
-        let Some((last, head)) = segments.split_last() else { return false };
-        match last {
-            ast::PathSegment::Simple(arg_segment) => {
-                head.is_empty() && arg_segment.ident(db).text(db) == identifier
-            }
-            ast::PathSegment::WithGenericArgs(with_generics) => {
-                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
-                    let generic_arg_value = match arg {
-                        ast::GenericArg::Named(named) => named.value(db),
-                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
-                    };
-                    match generic_arg_value {
-                        ast::GenericArgValue::Expr(arg_expr) => {
-                            arg_expr.expr(db).is_dependent_type(db, identifier)
-                        }
-                        ast::GenericArgValue::Underscore(_) => false,
-                    }
-                })
-            }
-        }
-    }
 }
 impl AstPathExtract for ast::Expr {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
@@ -138,23 +109,6 @@ impl AstPathExtract for ast::Expr {
             type_path.is_name_with_arg(db, name, generic_arg)
         } else {
             false
-        }
-    }
-
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
-        match self {
-            ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifier),
-            ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifier),
-            ast::Expr::Binary(binary) => {
-                binary.lhs(db).is_dependent_type(db, identifier)
-                    || binary.rhs(db).is_dependent_type(db, identifier)
-            }
-            ast::Expr::Tuple(tuple) => tuple
-                .expressions(db)
-                .elements(db)
-                .iter()
-                .any(|expr| expr.is_dependent_type(db, identifier)),
-            _ => false,
         }
     }
 }
@@ -219,7 +173,7 @@ pub fn has_v0_attribute_ex(
     };
     validate_v0(db, diagnostics, &attr, attr_name);
     if let Some(deprecated) = deprecated() {
-        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr().untyped(), deprecated));
+        diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr(db), deprecated));
     }
     true
 }
@@ -233,7 +187,7 @@ pub fn validate_v0(
 ) {
     if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic::error(
-            attr.stable_ptr().untyped(),
+            attr.stable_ptr(db),
             format!("Only #[{name}(v0)] is supported."),
         ));
     }
@@ -261,7 +215,7 @@ pub fn forbid_attribute_in_impl(
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
         diagnostics.push(PluginDiagnostic::error(
-            attr.stable_ptr().untyped(),
+            attr.stable_ptr(db),
             format!(
                 "The `{attr_name}` attribute is not allowed inside an impl marked as \
                  `{embedded_impl_attr}`."

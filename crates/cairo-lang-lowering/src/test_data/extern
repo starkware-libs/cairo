@@ -398,12 +398,18 @@ End:
 blk1:
 Statements:
 End:
-  Return(v2, v3)
+  Goto(blk3, {v3 -> v6, v2 -> v7})
 
 blk2:
 Statements:
 End:
-  Return(v4, v5)
+  Goto(blk3, {v5 -> v6, v4 -> v7})
+
+blk3:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+End:
+  Return(v7, v8)
 
 //! > ==========================================================================
 
@@ -438,17 +444,19 @@ End:
 
 blk1:
 Statements:
-  (v6: ()) <- struct_construct()
-  (v7: core::option::Option::<()>) <- Option::Some(v6)
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v7: ()) <- struct_construct()
+  (v8: core::option::Option::<()>) <- Option::Some(v7)
 End:
-  Return(v2, v3, v7)
+  Return(v2, v6, v8)
 
 blk2:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<()>) <- Option::None(v8)
+  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v10: ()) <- struct_construct()
+  (v11: core::option::Option::<()>) <- Option::None(v10)
 End:
-  Return(v4, v5, v9)
+  Return(v4, v9, v11)
 
 //! > ==========================================================================
 
@@ -483,14 +491,16 @@ End:
 
 blk1:
 Statements:
-  (v6: ()) <- struct_construct()
-  (v7: core::option::Option::<()>) <- Option::Some(v6)
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v7: ()) <- struct_construct()
+  (v8: core::option::Option::<()>) <- Option::Some(v7)
 End:
-  Return(v2, v3, v7)
+  Return(v2, v6, v8)
 
 blk2:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: core::option::Option::<()>) <- Option::None(v8)
+  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v10: ()) <- struct_construct()
+  (v11: core::option::Option::<()>) <- Option::None(v10)
 End:
-  Return(v4, v5, v9)
+  Return(v4, v9, v11)

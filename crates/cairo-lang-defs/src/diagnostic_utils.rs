@@ -4,6 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
@@ -35,8 +36,8 @@ impl StableLocation {
         self.stable_ptr.file_id(db.upcast())
     }
 
-    pub fn from_ast<TNode: TypedSyntaxNode>(node: &TNode) -> Self {
-        Self::new(node.as_syntax_node().stable_ptr())
+    pub fn from_ast<TNode: TypedSyntaxNode>(db: &dyn SyntaxGroup, node: &TNode) -> Self {
+        Self::new(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
@@ -44,11 +45,16 @@ impl StableLocation {
         self.stable_ptr.lookup(db.upcast())
     }
 
+    /// Returns the [SyntaxStablePtrId] of the [StableLocation].
+    pub fn stable_ptr(&self) -> SyntaxStablePtrId {
+        self.stable_ptr
+    }
+
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
         match self.inner_span {
             Some((start, width)) => {
-                let start = self.syntax_node(db).offset().add_width(start);
+                let start = self.syntax_node(db).offset(db.upcast()).add_width(start);
                 let end = start.add_width(width);
                 DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
             }

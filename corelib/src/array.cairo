@@ -61,20 +61,21 @@
 //!
 //! [`append`]: ArrayTrait::append
 
-use crate::box::BoxTrait;
-use crate::iter::Iterator;
-use crate::metaprogramming::TypeEqual;
-use crate::serde::Serde;
 use crate::RangeCheck;
+use crate::box::BoxTrait;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
+use crate::iter::Iterator;
+use crate::metaprogramming::TypeEqual;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
+use crate::serde::Serde;
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
 /// A collection of elements of the same type contiguous in memory.
-#[derive(Drop)]
 pub extern type Array<T>;
+
+impl ArrayDrop<T, +Drop<T>> of Drop<Array<T>>;
 
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -403,7 +404,7 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// ```
     /// let span: Span<felt252> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
-    /// arr.serialize(ref output);
+    /// span.serialize(ref output);
     /// assert!(output == array![3, 1, 2, 3].span());
     /// ```
     fn serialize(self: @Span<felt252>, ref output: Array<felt252>) {
@@ -437,7 +438,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     /// ```
     /// let span: Span<u8> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
-    /// arr.serialize(ref output);
+    /// span.serialize(ref output);
     /// assert!(output == array![3, 1, 2, 3].span());
     /// ```
     fn serialize(self: @Span<T>, ref output: Array<felt252>) {
@@ -858,12 +859,36 @@ impl SnapshotArrayIntoIterator<T> of crate::iter::IntoIterator<@Array<T>> {
 }
 
 impl ArrayFromIterator<T, +Drop<T>> of crate::iter::FromIterator<Array<T>, T> {
-    fn from_iter<I, +Iterator<I>[Item: T], +Destruct<I>>(mut iter: I) -> Array<T> {
+    fn from_iter<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +core::metaprogramming::TypeEqual<IntoIter::Iterator::Item, T>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        iter: I,
+    ) -> Array<T> {
         let mut arr = array![];
         for elem in iter {
             arr.append(elem);
         }
         arr
+    }
+}
+
+impl ArrayExtend<T, +Drop<T>> of crate::iter::Extend<Array<T>, T> {
+    fn extend<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +TypeEqual<IntoIter::Iterator::Item, T>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        ref self: Array<T>, iter: I,
+    ) {
+        for elem in iter.into_iter() {
+            self.append(elem);
+        };
     }
 }
 

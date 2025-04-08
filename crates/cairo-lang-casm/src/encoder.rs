@@ -3,7 +3,9 @@ use alloc::{vec, vec::Vec};
 
 use num_bigint::BigInt;
 
-use crate::assembler::{ApUpdate, FpUpdate, InstructionRepr, Op1Addr, Opcode, PcUpdate, Res};
+use crate::assembler::{
+    ApUpdate, FpUpdate, InstructionRepr, Op1Addr, Opcode, OpcodeExtension, PcUpdate, Res,
+};
 use crate::operand::Register;
 
 #[cfg(test)]
@@ -27,6 +29,7 @@ const AP_ADD1_BIT: i32 = 11;
 const OPCODE_CALL_BIT: i32 = 12;
 const OPCODE_RET_BIT: i32 = 13;
 const OPCODE_ASSERT_EQ_BIT: i32 = 14;
+const OPCODE_EXT_OFFSET: u64 = 63;
 
 impl InstructionRepr {
     pub fn encode(&self) -> Vec<BigInt> {
@@ -113,7 +116,15 @@ impl InstructionRepr {
         encoding |= off1_enc << (OFFSET_BITS);
         encoding |= off0_enc;
 
-        let bigint_encoding = BigInt::from(encoding);
+        let mut bigint_encoding = BigInt::from(encoding);
+        match self.opcode_extension {
+            OpcodeExtension::Stone => {}
+            OpcodeExtension::Blake2s => bigint_encoding |= BigInt::from(1) << OPCODE_EXT_OFFSET,
+            OpcodeExtension::Blake2sFinalize => {
+                bigint_encoding |= BigInt::from(2) << OPCODE_EXT_OFFSET
+            }
+            OpcodeExtension::QM31 => bigint_encoding |= BigInt::from(3) << OPCODE_EXT_OFFSET,
+        };
         if let Some(imm) = self.imm.clone() {
             vec![bigint_encoding, imm]
         } else {

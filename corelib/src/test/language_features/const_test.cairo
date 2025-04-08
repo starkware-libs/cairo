@@ -165,6 +165,10 @@ mod const_starknet_consts {
     > nopanic;
 }
 
+const STARKNET_CONSTS: (starknet::ContractAddress, starknet::ClassHash) = (
+    1000.try_into().unwrap(), 1001.try_into().unwrap(),
+);
+
 #[test]
 fn test_starknet_consts() {
     assert!(
@@ -176,7 +180,7 @@ fn test_starknet_consts() {
             >,
             0,
         >()
-            .unbox() == (1000.try_into().unwrap(), 1001.try_into().unwrap()),
+            .unbox() == STARKNET_CONSTS,
     );
 }
 

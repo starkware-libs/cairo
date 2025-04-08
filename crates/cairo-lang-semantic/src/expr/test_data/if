@@ -90,7 +90,7 @@ error: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEn
     if let MyEnum::A(y) = x {
            ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:7:16
         return y == 9;
                ^
@@ -133,7 +133,7 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "core::option::Option
     if let Some(y) = x || true {
            ^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:4:16
         return y == 9;
                ^

@@ -182,8 +182,8 @@ impl Desnap {
 
 /// Generator for [StatementStructDestructure].
 ///
-/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the caller typically
-/// has a more accurate location then the one we have in the var requests.
+/// Note that we return `Vec<VariableId>` rather than `Vec<VarUsage>` as the caller typically
+/// has a more accurate location than the one we have in the var requests.
 pub struct StructDestructure {
     /// Variable that holds the struct value.
     pub input: VarUsage,

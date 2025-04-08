@@ -1,6 +1,6 @@
-use cairo_lang_syntax::node::Terminal;
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use smol_str::SmolStr;
 
 use crate::Mutability;
@@ -25,16 +25,22 @@ pub fn compute_mutability(
             }
             Mutability::Mutable | Mutability::Reference => match modifier {
                 Modifier::Ref(terminal) => {
-                    diagnostics.report(terminal, RedundantModifier {
-                        current_modifier: terminal.text(syntax_db),
-                        previous_modifier: get_relevant_modifier(&mutability),
-                    });
+                    diagnostics.report(
+                        terminal.stable_ptr(syntax_db),
+                        RedundantModifier {
+                            current_modifier: terminal.text(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability),
+                        },
+                    );
                 }
                 Modifier::Mut(terminal) => {
-                    diagnostics.report(terminal, RedundantModifier {
-                        current_modifier: terminal.text(syntax_db),
-                        previous_modifier: get_relevant_modifier(&mutability),
-                    });
+                    diagnostics.report(
+                        terminal.stable_ptr(syntax_db),
+                        RedundantModifier {
+                            current_modifier: terminal.text(syntax_db),
+                            previous_modifier: get_relevant_modifier(&mutability),
+                        },
+                    );
                 }
             },
         }
@@ -43,7 +49,7 @@ pub fn compute_mutability(
 }
 
 /// Gets the text of the modifier that causes a variable to have the given mutability status.
-fn get_relevant_modifier(mutability: &Mutability) -> SmolStr {
+pub fn get_relevant_modifier(mutability: &Mutability) -> SmolStr {
     match mutability {
         Mutability::Immutable => "",
         Mutability::Mutable => "mut",

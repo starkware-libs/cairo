@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
 
-/// Structure to hold the executable represenstation of a program.
+/// Structure to hold the executable representation of a program.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Executable {
     /// The bytecode of the program.

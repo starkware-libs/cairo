@@ -9,6 +9,10 @@ extern crate alloc;
 use alloc::boxed::Box;
 use core::fmt;
 
+/// Re-exporting the [`smol_str`] crate so that downstream projects can always use the same
+/// instance the compiler does.
+pub use ::smol_str;
+
 pub mod bigint;
 pub mod byte_array;
 pub mod casts;

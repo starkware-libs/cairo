@@ -35,7 +35,7 @@ mod mul_based {
         const fn mul(lhs: T, rhs: T) -> T;
     }
 
-    /// Square and multiply implementation for `Pow`.
+    /// Square-and-multiply implementation for `Pow`.
     pub impl PowByMul<T, impl H: ConstPowHelper<T>, +Copy<T>, +Drop<T>> of super::Pow<T, usize> {
         type Output = T;
 
