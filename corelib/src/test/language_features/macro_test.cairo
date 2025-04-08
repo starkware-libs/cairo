@@ -85,12 +85,12 @@ macro add_exprs {
         $x + $y
     };
 
-    ($x:expr $y:expr) => {
-        $x + 1
-    };
-
     (abc $x:expr $y:expr) => {
         $x + $y
+    };
+
+    ($x:expr $y:expr) => {
+        $x + 1
     };
 }
 #[test]
@@ -216,4 +216,76 @@ macro macro_wrapped_use_z_from_callsite {
 #[test]
 fn test_wrap_use_z_from_callsite() {
     assert_eq!(macro_wrapped_use_z_from_callsite!(), (2, 4));
+}
+
+mod repetition_macro_matcher {
+    macro matcher_plus {
+        ($($x:expr), +) => {
+            111
+        };
+    }
+
+    macro matcher_star {
+        ($($x:expr), *) => {
+            222
+        };
+    }
+
+    macro matcher_optional {
+        ($($x:expr)?) => {
+            333
+        };
+    }
+
+    macro matcher_ident_star {
+        ($($x:ident) *) => {
+            444
+        };
+    }
+
+    #[test]
+    fn repetition_macro_matcher() {
+        assert_eq!(matcher_plus!(1), 111);
+        assert_eq!(matcher_plus!(1, 2), 111);
+        #[cairofmt::skip]
+        assert_eq!(matcher_plus!(1, 2,), 111);
+        #[cairofmt::skip]
+        assert_eq!(matcher_plus!(1,), 111);
+
+        assert_eq!(matcher_star!(), 222);
+        assert_eq!(matcher_star!(3), 222);
+        assert_eq!(matcher_star!(4, 5), 222);
+        #[cairofmt::skip]
+        assert_eq!(matcher_star!(3,), 222);
+        #[cairofmt::skip]
+        assert_eq!(matcher_star!(4, 5,), 222);
+
+        assert_eq!(matcher_optional!(), 333);
+        assert_eq!(matcher_optional!(9), 333);
+
+        let _x1 = 42;
+        assert_eq!(matcher_ident_star!(_x1), 444);
+        assert_eq!(matcher_ident_star!(_x1 _x1 _x1), 444);
+    }
+}
+
+macro repetition_macro_expansion {
+    ($($x:ident), +) => {
+        array![$($x + 2), *]
+    };
+
+    ($($x:expr), *) => {
+        array![$($x + 1), *]
+    };
+}
+
+#[test]
+fn test_repetition_macro_expansion() {
+    let expected_expr = array![2, 3, 4];
+    let actual_expr = repetition_macro_expansion!(1, 2, 3);
+    assert_eq!(expected_expr, actual_expr);
+    let x = 1;
+    let expected_ident = array![3];
+    let actual_ident = repetition_macro_expansion!(x);
+    assert_eq!(expected_ident, actual_ident);
 }
