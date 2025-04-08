@@ -1130,6 +1130,62 @@ macro add_nums {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u16".
- --> lib.cairo:7:21
-    add_nums!(1_u8, 2_u16);
-                    ^^^^^
+ --> lib.cairo[add_nums]:2:7
+1_u8+ 2_u16    }
+      ^^^^^
+
+//! > ==========================================================================
+
+//! > Test repetition operator- optional
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!(1 2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr)?) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!(1 2);
+    ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test repetition operator- plus
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($($x:expr), +) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^

@@ -1,18 +1,18 @@
+use std::collections::{HashMap, HashMap as OrderedHashMap};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MacroDeclarationId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::ast::{ExprPath, TokenTreeParam};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use crate::SemanticDiagnostic;
@@ -20,6 +20,39 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::resolve::{MACRO_DEF_SITE, Resolver, ResolverData};
+
+/// A unique identifier for a repetition block inside a macro rule.
+/// Each `$( ... )` group in the macro pattern gets a new `RepetitionId`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct RepetitionId(usize);
+
+/// The captures collected during macro pattern matching.
+/// Each macro parameter name maps to a flat list of matched strings.
+/// For repetition parameters, the list will contain all values flattened.
+type Captures = OrderedHashMap<String, Vec<String>>;
+
+/// Context used during macro pattern matching.
+/// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
+#[derive(Default, Clone)]
+pub struct MatcherContext {
+    /// The captured values per macro parameter name.
+    /// These are flat lists, even for repeated placeholders.
+    pub captures: Captures,
+
+    /// Maps each placeholder to the `RepetitionId` of the repetition block
+    /// they are part of. This helps the expansion phase know which iterators to advance together.
+    pub placeholder_to_rep_id: HashMap<String, RepetitionId>,
+
+    /// Stack of currently active repetition blocks. Used to assign placeholders
+    /// to their correct `RepetitionId` while recursing into nested repetitions.
+    pub current_repetition_stack: Vec<RepetitionId>,
+
+    /// Counter for generating unique `RepetitionId`s.
+    pub next_repetition_id: usize,
+
+    /// Tracks the current index for each active repetition during expansion.
+    pub repetition_indices: HashMap<RepetitionId, usize>,
+}
 
 /// The semantic data for a macro declaration.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -141,6 +174,16 @@ fn extract_placeholder(db: &dyn SyntaxGroup, path_node: &ExprPath) -> Option<Str
     None
 }
 
+/// Extracts the placeholder name from a TokenTreeParam node, if it's a macro placeholder.
+/// Returns None if the token is not a placeholder.
+fn extract_placeholder_from_param(db: &dyn SyntaxGroup, param: &TokenTreeParam) -> Option<String> {
+    let placeholder_name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+    if placeholder_name != MACRO_DEF_SITE {
+        return Some(placeholder_name);
+    }
+    None
+}
+
 /// Helper function to collect all placeholder names used in a macro expansion.
 fn collect_expansion_placeholders(
     db: &dyn SyntaxGroup,
@@ -169,10 +212,20 @@ pub fn is_macro_rule_match(
     db: &dyn SemanticGroup,
     rule: &MacroRuleData,
     input: &ast::TokenTreeNode,
-) -> Option<OrderedHashMap<String, CapturedValue>> {
-    let mut captures = OrderedHashMap::default();
-    is_macro_rule_match_ex(db, rule.pattern.clone(), input, &mut captures)?;
-    Some(captures)
+) -> Option<(Captures, HashMap<String, RepetitionId>)> {
+    let mut ctx = MatcherContext::default();
+
+    let matcher_elements = get_pattern_elements(db.upcast(), rule.pattern.clone());
+    let input_elements = match input.subtree(db.upcast()) {
+        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db.upcast()),
+        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db.upcast()),
+        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db.upcast()),
+        ast::WrappedTokenTree::Missing(_) => unreachable!(),
+    }
+    .elements(db.upcast());
+    let mut input_iter = input_elements.iter().peekable();
+    is_macro_rule_match_ex(db, matcher_elements, &mut input_iter, &mut ctx, true)?;
+    Some((ctx.captures, ctx.placeholder_to_rep_id))
 }
 
 /// Helper function for [expand_macro_rule].
@@ -180,23 +233,11 @@ pub fn is_macro_rule_match(
 /// while collecting the result in `res_buffer`.
 fn is_macro_rule_match_ex(
     db: &dyn SemanticGroup,
-    pattern: ast::MacroMatcher,
-    input: &ast::TokenTreeNode,
-    captures: &mut OrderedHashMap<String, CapturedValue>,
+    matcher_elements: ast::MacroRuleElements,
+    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree>>,
+    ctx: &mut MatcherContext,
+    consume_all_input: bool,
 ) -> Option<()> {
-    let matcher_elements = get_pattern_elements(db.upcast(), pattern);
-
-    let input_elements = {
-        let db = db.upcast();
-        match input.subtree(db) {
-            ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
-            ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
-            ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
-            ast::WrappedTokenTree::Missing(_) => unreachable!(),
-        }
-    }
-    .elements(db.upcast());
-    let mut input_iter = input_elements.iter().peekable();
     for matcher_element in matcher_elements.elements(db.upcast()) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
@@ -208,6 +249,7 @@ fn is_macro_rule_match_ex(
                         {
                             return None;
                         }
+                        continue;
                     }
                     ast::TokenTree::Subtree(_) => return None,
                     ast::TokenTree::Repetition(_) => return None,
@@ -221,36 +263,43 @@ fn is_macro_rule_match_ex(
                     param.name(db.upcast()).as_syntax_node().get_text_without_trivia(db.upcast());
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
-                        let token_tree_leaf: &ast::TokenTree = input_iter.next()?;
-                        match token_tree_leaf {
+                        let input_token = input_iter.next()?;
+                        let captured_text = match input_token {
                             ast::TokenTree::Token(token_tree_leaf) => {
                                 match token_tree_leaf.leaf(db.upcast()) {
                                     ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                        captures.insert(placeholder_name, CapturedValue {
-                                            text: terminal_identifier.text(db.upcast()).to_string(),
-                                            stable_ptr: terminal_identifier.stable_ptr().untyped(),
-                                        });
+                                        terminal_identifier.text(db.upcast()).to_string()
                                     }
                                     _ => return None,
                                 }
                             }
-                            ast::TokenTree::Subtree(_) => return None,
-                            ast::TokenTree::Repetition(_) => return None,
-                            ast::TokenTree::Param(_) => return None,
-                            ast::TokenTree::Missing(_) => unreachable!(),
+                            _ => return None,
+                        };
+                        ctx.captures
+                            .entry(placeholder_name.clone())
+                            .or_default()
+                            .push(captured_text);
+                        if let Some(rep_id) = ctx.current_repetition_stack.last() {
+                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
                         }
+                        continue;
                     }
                     PlaceholderKind::Expr => {
+                        let peek_token = input_iter.peek()?;
+                        let file_id = peek_token.as_syntax_node().stable_ptr().file_id(db.upcast());
                         let expr_node = as_expr_macro_token_tree(
                             input_iter.clone().cloned(),
-                            input.stable_ptr().0.file_id(db.upcast()),
+                            file_id,
                             db.upcast(),
                         )?;
                         let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
-                        captures.insert(placeholder_name, CapturedValue {
-                            text: expr_text.to_string(),
-                            stable_ptr: input_iter.peek().unwrap().stable_ptr().untyped(),
-                        });
+                        ctx.captures
+                            .entry(placeholder_name.clone())
+                            .or_default()
+                            .push(expr_text.to_string());
+                        if let Some(rep_id) = ctx.current_repetition_stack.last() {
+                            ctx.placeholder_to_rep_id.insert(placeholder_name.clone(), *rep_id);
+                        }
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
 
@@ -278,30 +327,90 @@ fn is_macro_rule_match_ex(
                                 break;
                             }
                         }
+                        continue;
                     }
                 }
             }
             ast::MacroRuleElement::Subtree(matcher_subtree) => {
                 let input_token = input_iter.next()?;
-                match input_token {
-                    ast::TokenTree::Subtree(input_subtree) => {
-                        is_macro_rule_match_ex(
-                            db,
-                            matcher_subtree.subtree(db.upcast()),
-                            input_subtree,
-                            captures,
-                        )?;
+                if let ast::TokenTree::Subtree(input_subtree) = input_token {
+                    let inner_elements =
+                        get_pattern_elements(db.upcast(), matcher_subtree.subtree(db.upcast()));
+                    let inner_input_elements = match input_subtree.subtree(db.upcast()) {
+                        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db.upcast()),
+                        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db.upcast()),
+                        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db.upcast()),
+                        ast::WrappedTokenTree::Missing(_) => unreachable!(),
                     }
-                    ast::TokenTree::Token(_) => return None,
-                    ast::TokenTree::Repetition(_) => return None,
-                    ast::TokenTree::Param(_) => return None,
-                    ast::TokenTree::Missing(_) => unreachable!(),
+                    .elements(db.upcast());
+                    let mut inner_input_iter = inner_input_elements.iter().peekable();
+                    is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
+                    continue;
+                } else {
+                    return None;
                 }
             }
-            ast::MacroRuleElement::Repetition(_) => todo!(),
+            ast::MacroRuleElement::Repetition(repetition) => {
+                let rep_id = RepetitionId(ctx.next_repetition_id);
+                ctx.next_repetition_id += 1;
+                ctx.current_repetition_stack.push(rep_id);
+                let elements = repetition.elements(db.upcast());
+                let operator = repetition.operator(db.upcast());
+                let separator_token = repetition.separator(db.upcast());
+                let expected_separator = match separator_token {
+                    ast::OptionTerminalComma::TerminalComma(sep) => {
+                        Some(sep.as_syntax_node().get_text_without_trivia(db.upcast()))
+                    }
+                    ast::OptionTerminalComma::Empty(_) => None,
+                };
+                let mut match_count = 0;
+                loop {
+                    let mut inner_ctx = ctx.clone();
+                    let mut temp_iter = input_iter.clone();
+                    if is_macro_rule_match_ex(
+                        db,
+                        elements.clone(),
+                        &mut temp_iter,
+                        &mut inner_ctx,
+                        false,
+                    )
+                    .is_none()
+                    {
+                        break;
+                    }
+                    *ctx = inner_ctx;
+                    *input_iter = temp_iter;
+                    match_count += 1;
+                    if let Some(expected_sep) = &expected_separator {
+                        if let Some(ast::TokenTree::Token(token_leaf)) = input_iter.peek() {
+                            let actual =
+                                token_leaf.as_syntax_node().get_text_without_trivia(db.upcast());
+                            if actual == *expected_sep {
+                                input_iter.next();
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                let is_valid = match operator {
+                    ast::MacroRepetitionOperator::ZeroOrOne(_) => match_count <= 1,
+                    ast::MacroRepetitionOperator::OneOrMore(_) => match_count >= 1,
+                    ast::MacroRepetitionOperator::ZeroOrMore(_) => true,
+                };
+                if !is_valid {
+                    return None;
+                }
+
+                ctx.current_repetition_stack.pop();
+                continue;
+            }
         }
     }
-    if input_iter.next().is_some() {
+
+    if consume_all_input && input_iter.next().is_some() {
         return None;
     }
     Some(())
@@ -339,12 +448,12 @@ impl MacroExpansionResult {
 pub fn expand_macro_rule(
     db: &dyn SyntaxGroup,
     rule: &MacroRuleData,
-    captures: &OrderedHashMap<String, CapturedValue>,
+    matcher_ctx: &mut MatcherContext,
 ) -> Maybe<MacroExpansionResult> {
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
-    expand_macro_rule_ex(db, node, captures, &mut res_buffer, &mut code_mappings)?;
+    expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
     Ok(MacroExpansionResult { text: res_buffer, code_mappings })
 }
 
@@ -356,31 +465,100 @@ pub fn expand_macro_rule(
 fn expand_macro_rule_ex(
     db: &dyn SyntaxGroup,
     node: SyntaxNode,
-    captures: &OrderedHashMap<String, CapturedValue>,
+    matcher_ctx: &mut MatcherContext,
     res_buffer: &mut String,
-    code_mappings: &mut Vec<CodeMapping>,
+    _code_mappings: &mut Vec<CodeMapping>,
 ) -> Maybe<()> {
-    if node.kind(db) == SyntaxKind::ExprPath {
-        let path_node = ExprPath::from_syntax_node(db, node.clone());
-        if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
-            match captures.get(&placeholder_name) {
-                Some(value) => {
-                    let start_offset = TextWidth::from_str(res_buffer).as_offset();
-                    res_buffer.push_str(&value.text);
-                    let end_offset = TextWidth::from_str(res_buffer).as_offset();
+    match node.kind(db) {
+        SyntaxKind::ExprPath => {
+            let path_node = ExprPath::from_syntax_node(db, node.clone());
+            if let Some(name) = extract_placeholder(db, &path_node) {
+                let rep_index = matcher_ctx
+                    .placeholder_to_rep_id
+                    .get(&name)
+                    .and_then(|rep_id| matcher_ctx.repetition_indices.get(rep_id))
+                    .copied();
 
-                    let value_stable_ptr = value.stable_ptr.lookup(db);
-                    code_mappings.push(CodeMapping {
-                        span: TextSpan { start: start_offset, end: end_offset },
-                        origin: CodeOrigin::Span(TextSpan {
-                            start: value_stable_ptr.span_start_without_trivia(db),
-                            end: value_stable_ptr.span_end_without_trivia(db),
-                        }),
-                    });
-                    return Ok(());
-                }
-                None => return Err(skip_diagnostic()),
+                let value = matcher_ctx
+                    .captures
+                    .get(&name)
+                    .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
+                    .ok_or_else(skip_diagnostic)?;
+
+                res_buffer.push_str(value);
+                return Ok(());
             }
+        }
+        SyntaxKind::TokenTreeParam => {
+            let path_node = ast::TokenTreeParam::from_syntax_node(db, node.clone());
+            if let Some(name) = extract_placeholder_from_param(db, &path_node) {
+                let rep_index = matcher_ctx
+                    .placeholder_to_rep_id
+                    .get(&name)
+                    .and_then(|rep_id| matcher_ctx.repetition_indices.get(rep_id))
+                    .copied();
+
+                let value = matcher_ctx
+                    .captures
+                    .get(&name)
+                    .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
+                    .ok_or_else(skip_diagnostic)?;
+
+                res_buffer.push_str(value);
+                return Ok(());
+            }
+        }
+        SyntaxKind::TokenTreeRepetition => {
+            let repetition = ast::TokenTreeRepetition::from_syntax_node(db, node);
+            let elements = repetition.elements(db).elements(db);
+            let first_param = elements
+                .iter()
+                .find_map(|el| match el {
+                    ast::TokenTree::Param(param) => Some(param),
+                    _ => None,
+                })
+                .ok_or_else(skip_diagnostic)?;
+            let placeholder_name = first_param.name(db).text(db).to_string();
+            let rep_id = *matcher_ctx
+                .placeholder_to_rep_id
+                .get(&placeholder_name)
+                .ok_or_else(skip_diagnostic)?;
+            let repetition_len =
+                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
+            for i in 0..repetition_len {
+                matcher_ctx.repetition_indices.insert(rep_id, i);
+                for element in &elements {
+                    expand_macro_rule_ex(
+                        db,
+                        element.as_syntax_node(),
+                        matcher_ctx,
+                        res_buffer,
+                        _code_mappings,
+                    )?;
+                }
+
+                // TODO(Dean): Handle the separator addition more gracefully.
+                if i + 1 < repetition_len {
+                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
+                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
+                    }
+                }
+            }
+
+            matcher_ctx.repetition_indices.remove(&rep_id);
+            return Ok(());
+        }
+        _ => {
+            if node.kind(db).is_terminal() {
+                res_buffer.push_str(&node.get_text(db));
+                return Ok(());
+            }
+
+            for child in db.get_children(node).as_ref() {
+                expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, _code_mappings)?;
+            }
+
+            return Ok(());
         }
     }
     if node.kind(db).is_terminal() {
@@ -388,7 +566,7 @@ fn expand_macro_rule_ex(
         return Ok(());
     }
     for child in db.get_children(node).iter() {
-        expand_macro_rule_ex(db, child.clone(), captures, res_buffer, code_mappings)?;
+        expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, _code_mappings)?;
     }
     Ok(())
 }
