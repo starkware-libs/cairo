@@ -1133,3 +1133,34 @@ error: Unexpected argument type. Expected: "core::integer::u8", found: "core::in
  --> lib.cairo:7:21
     add_nums!(1_u8, 2_u16);
                     ^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of a variable defined in the macro callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x = 1;
+    let y = 2;
+    let z = 3;
+    assuming_z_in_context!(x, (y + z));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro assuming_z_in_context {
+    ($x:expr, $y:expr) => {
+        $x + $y + z
+    };
+}
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo[assuming_z_in_context]:2:13
+x+ (y + z)+ z
+            ^

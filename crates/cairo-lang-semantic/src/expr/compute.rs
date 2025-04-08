@@ -29,12 +29,13 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
+use cairo_lang_utils::{
+    self as utils, Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches,
+};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -68,7 +69,9 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
-use crate::items::macro_declaration::{expand_macro_rule, is_macro_rule_match};
+use crate::items::macro_declaration::{
+    MacroExpansionResult, expand_macro_rule, is_macro_rule_match,
+};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -185,15 +188,41 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
-    /// This environment holds no variable of its own, but points to the current environment as a
-    /// parent.
-    /// Used for block expressions.
+    /// This environment holds no variables of its own, but points to the current environment as a
+    /// parent. Used for blocks of code that introduce a new scope like function bodies, if
+    /// blocks, loops, etc.
     fn run_in_subscope<T, F>(&mut self, f: F) -> T
     where
         F: FnOnce(&mut Self) -> T,
     {
+        self.run_in_subscope_ex(f, None)
+    }
+
+    /// Similar to run_in_subscope, but for macro expanded code. It creates a new environment
+    /// that points to the current environment as a parent, and also contains the macro expansion
+    /// data. When looking up variables, we will get out of the macro expansion environment if
+    /// and only if the text was originated from expanding a placeholder.
+    fn run_in_macro_subscope<T, F>(&mut self, f: F, macro_expansion_data: MacroExpansionResult) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
+        self.run_in_subscope_ex(f, Some(macro_expansion_data))
+    }
+
+    /// Runs a function with a modified context, with a new environment for a subscope.
+    /// Shouldn't be called directly, use [Self::run_in_subscope] or [Self::run_in_macro_subscope]
+    /// instead.
+    fn run_in_subscope_ex<T, F>(
+        &mut self,
+        f: F,
+        macro_expansion_data: Option<MacroExpansionResult>,
+    ) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
         // Push an environment to the stack.
-        let new_environment = Box::new(Environment::empty());
+        let mut new_environment = Box::new(Environment::empty());
+        new_environment.macro_code_mappings = macro_expansion_data;
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 
@@ -305,6 +334,9 @@ pub struct Environment {
     used_variables: UnorderedHashSet<semantic::VarId>,
     use_items: EnvItems,
     used_use_items: UnorderedHashSet<SmolStr>,
+    /// The macro code mappings for the current environment, only exists if the environment is
+    /// created from expanding a macro.
+    macro_code_mappings: Option<MacroExpansionResult>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -335,6 +367,7 @@ impl Environment {
             used_variables: Default::default(),
             use_items: Default::default(),
             used_use_items: Default::default(),
+            macro_code_mappings: None,
         }
     }
 }
@@ -461,70 +494,81 @@ fn compute_expr_inline_macro_semantic(
         NotFoundItemType::Macro,
         Some(&mut ctx.environment),
     );
-    let (content, name, mappings) = if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) =
-        user_defined_macro
-    {
-        let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-        let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
-            is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                .map(|captures| (rule, captures))
-        }) else {
-            return Err(ctx
-                .diagnostics
-                .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
-        };
-        let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
+    let (content, name, mappings, is_macro_rule) =
+        if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
+            let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
+            let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
+                is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
+                    .map(|captures| (rule, captures))
+            }) else {
+                return Err(ctx
+                    .diagnostics
+                    .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+            };
 
-        let macro_resolver_data = ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
-        ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
-        (expanded_code.text, macro_name.into(), expanded_code.code_mappings)
-    } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
-        let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
-            cfg_set: &ctx.cfg_set,
-            declared_derives: &ctx.db.declared_derives(),
-            allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-            edition: ctx.resolver.settings.edition,
-        });
-        let mut diag_added = None;
-        for diagnostic in result.diagnostics {
-            diag_added = match diagnostic.inner_span {
-                None => Some(
-                    ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
-                ),
-                Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
-                    diagnostic.stable_ptr,
-                    (offset, width),
-                    PluginDiagnostic(diagnostic),
-                )),
+            let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
+            let macro_resolver_data =
+                ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
+            ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
+            (expanded_code.text, macro_name.into(), expanded_code.code_mappings, true)
+        } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
+            let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
+                cfg_set: &ctx.cfg_set,
+                declared_derives: &ctx.db.declared_derives(),
+                allowed_features: &ctx.resolver.data.feature_config.allowed_features,
+                edition: ctx.resolver.settings.edition,
+            });
+            let mut diag_added = None;
+            for diagnostic in result.diagnostics {
+                diag_added = match diagnostic.inner_span {
+                    None => Some(
+                        ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+                    ),
+                    Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
+                        diagnostic.stable_ptr,
+                        (offset, width),
+                        PluginDiagnostic(diagnostic),
+                    )),
+                }
             }
-        }
 
-        let Some(code) = result.code else {
-            return Err(diag_added.unwrap_or_else(|| {
-                ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into()))
-            }));
+            let Some(code) = result.code else {
+                return Err(diag_added.unwrap_or_else(|| {
+                    ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into()))
+                }));
+            };
+            (code.content, code.name, code.code_mappings, false)
+        } else {
+            return Err(ctx.diagnostics.report(
+                syntax,
+                InlineMacroNotFound(
+                    syntax
+                        .path(syntax_db)
+                        .as_syntax_node()
+                        .get_text_without_trivia(syntax_db)
+                        .into(),
+                ),
+            ));
         };
-        (code.content, code.name, code.code_mappings)
-    } else {
-        return Err(ctx.diagnostics.report(
-            syntax,
-            InlineMacroNotFound(
-                syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db).into(),
-            ),
-        ));
-    };
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
         name,
-        content: content.into(),
-        code_mappings: mappings.into(),
+        content: content.clone().into(),
+        code_mappings: mappings.clone().into(),
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
-    let expr = compute_expr_semantic(ctx, &expr_syntax);
+    let expr = if !is_macro_rule {
+        compute_expr_semantic(ctx, &expr_syntax)
+    } else {
+        ctx.run_in_macro_subscope(
+            |ctx| compute_expr_semantic(ctx, &expr_syntax),
+            MacroExpansionResult { text: content, code_mappings: mappings },
+        )
+    };
     ctx.resolver.macro_defsite_data = prev_macro_resolver_data;
     Ok(expr.expr)
 }
@@ -3340,7 +3384,17 @@ pub fn get_binded_expr_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
+    let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset();
     while let Some(env) = maybe_env {
+        // If a variable is from an expanded macro placeholder, we need to look for it in the parent
+        // env.
+        if let Some(macro_expansion) = &env.macro_code_mappings {
+            if let Some(placeholder_expansion) = macro_expansion.get_placeholder_at(cur_offset) {
+                maybe_env = env.parent.as_deref_mut();
+                cur_offset = placeholder_expansion.origin.as_span().unwrap().start;
+                continue;
+            }
+        }
         if let Some(var) = env.variables.get(variable_name) {
             env.used_variables.insert(var.id());
             return match var {
@@ -3353,6 +3407,10 @@ pub fn get_binded_expr_by_name(
                     Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
                 }
             };
+        }
+        // Don't look inside a callsite enviorment unless explicitly stated.
+        if env.macro_code_mappings.is_some() {
+            break;
         }
         maybe_env = env.parent.as_deref_mut();
     }

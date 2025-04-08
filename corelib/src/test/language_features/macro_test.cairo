@@ -172,3 +172,22 @@ fn test_macro_add_ten() {
     assert_eq!(inner::add_ten!(x2), 12);
     assert_eq!(inner::add_ten!(x3), 13);
 }
+
+macro accessing_expanded_placehoders {
+    ($x:expr, $y:expr) => {
+        $x + $y 
+    };
+    ($x:expr) => {
+        {
+        let z = 1;
+        let y = $x;
+        $defsite::accessing_expanded_placehoders!(y, z) 
+        }
+    };
+}
+
+#[test]
+fn test_accessing_expanded_placehoders() {
+    let x = 1;
+    assert_eq!(accessing_expanded_placehoders!(x), 2);
+}
