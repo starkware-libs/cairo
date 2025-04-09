@@ -56,6 +56,10 @@ pub struct ExecutableConfig {
     ///
     /// In general, syscalls are not allowed in executables, as they are currently not verified.
     pub allow_syscalls: bool,
+
+    // Replace the panic flow with an unprovable opcode, this reduces code size but migh hurt
+    // debuggability.
+    pub unsafe_panic: bool,
 }
 
 /// Compile the function given by path.
@@ -66,12 +70,17 @@ pub fn compile_executable(
     diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
-    let mut db = RootDatabase::builder()
+    let mut builder = RootDatabase::builder();
+    builder
         .skip_auto_withdraw_gas()
         .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
         .detect_corelib()
-        .with_default_plugin_suite(executable_plugin_suite())
-        .build()?;
+        .with_default_plugin_suite(executable_plugin_suite());
+    if config.unsafe_panic {
+        builder.with_unsafe_panic();
+    }
+
+    let mut db = builder.build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
     let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
