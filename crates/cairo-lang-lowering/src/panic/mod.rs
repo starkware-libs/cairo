@@ -3,10 +3,10 @@ use std::collections::VecDeque;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty, never_ty};
+use cairo_lang_semantic::corelib::{core_module, get_core_enum_concrete_variant, get_panic_ty, get_ty_by_name, never_ty};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{self as semantic, GenericArgumentId};
+use cairo_lang_semantic::{self as semantic, GenericArgumentId, TypeLongId};
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
@@ -47,18 +47,25 @@ pub fn lower_panics(
     // All types should be fully concrete at this point.
     assert!(signature.is_fully_concrete(db));
     let panic_info = PanicSignatureInfo::new(db, &signature);
+    let semantic_db = db.upcast();
     let mut ctx = PanicLoweringContext {
         variables,
         block_queue: VecDeque::from(lowered.blocks.get().clone()),
         flat_blocks: FlatBlocksBuilder::new(),
         panic_info,
+        panic_ty: get_ty_by_name(
+                                semantic_db,
+                                core_module(semantic_db),
+                                "Panic".into(),
+                                vec![],
+                            )
     };
 
     if matches!(
-        db.get_flag(FlagId::new(db.upcast(), "panic_backtrace")),
+        db.get_flag(FlagId::new(semantic_db, "panic_backtrace")),
         Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
     ) {
-        let trace_fn = ModuleHelper::core(db.upcast())
+        let trace_fn = ModuleHelper::core(semantic_db)
             .submodule("internal")
             .function_id(
                 "trace",
@@ -175,6 +182,7 @@ struct PanicLoweringContext<'a> {
     block_queue: VecDeque<FlatBlock>,
     flat_blocks: FlatBlocksBuilder,
     panic_info: PanicSignatureInfo,
+    panic_ty: TypeId,
 }
 impl PanicLoweringContext<'_> {
     pub fn db(&self) -> &dyn LoweringGroup {
@@ -336,17 +344,37 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
         let end = match end {
             FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
-            FlatBlockEnd::Panic(err_data) => {
+            FlatBlockEnd::Panic(data_var) => {
+                let location = data_var.location;
+                let panic_ty = self.ctx.panic_ty;
+                let panic_var = self.new_var(VarRequest { ty: panic_ty, location });
+                self.statements.push(Statement::StructConstruct(StatementStructConstruct {
+                    inputs: vec![data_var],
+                    output: panic_var,
+                }));
+                let err_instance = self.new_var(VarRequest {
+                    ty: TypeLongId::Tuple(vec![
+                        panic_ty,
+                        self.ctx.variables.variables[data_var.var_id].ty,
+                    ])
+                    .intern(self.db()),
+                    location: data_var.location,
+                });
+                self.statements.push(Statement::StructConstruct(StatementStructConstruct {
+                    inputs: vec![VarUsage { var_id: panic_var, location }, data_var],
+                    output: err_instance,
+                }));
+
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.actual_return_ty;
-                let location = err_data.location;
+
                 let output = if self.ctx.panic_info.always_panic {
-                    err_data.var_id
+                    err_instance
                 } else {
                     let output = self.new_var(VarRequest { ty, location });
                     self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                         variant: self.ctx.panic_info.err_variant.clone(),
-                        input: err_data,
+                        input: VarUsage { var_id: err_instance, location },
                         output,
                     }));
                     output
