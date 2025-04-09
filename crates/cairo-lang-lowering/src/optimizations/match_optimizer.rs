@@ -450,6 +450,15 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         // construct.
         candidate.n_same_block_statement = 0;
 
+        if candidate.future_merge
+            && candidate.statement_rev.iter().any(|stmt| !stmt.outputs().is_empty())
+        {
+            // If we have a future merge and a statement not in the same block as the enum construct
+            // has an output, we cannot apply the optimization.
+            info.candidate = None;
+            return;
+        }
+
         if remapping.is_empty() {
             return;
         }
