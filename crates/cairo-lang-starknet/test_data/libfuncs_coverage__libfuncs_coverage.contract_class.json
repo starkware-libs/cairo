@@ -11077,7 +11077,7 @@
       ],
       [
         152,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<[core::integer::u32; 8], core::traits::PanicDestructForDestruct::<[core::integer::u32; 8], core::traits::DestructFromDrop::<[core::integer::u32; 8], core::traits::FixedSizedArrayDrop::<core::integer::u32, core::integer::u32Drop, 8>>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<[core::integer::u32; 8], core::traits::PanicDestructForDestruct::<[core::integer::u32; 8], core::traits::DestructFromDrop::<[core::integer::u32; 8], core::fixed_size_array::FixedSizedArrayDrop::<core::integer::u32, core::integer::u32Drop, 8>>>>>"
       ],
       [
         153,
@@ -13089,7 +13089,7 @@
       ],
       [
         655,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<(), core::traits::PanicDestructForDestruct::<(), core::traits::DestructFromDrop::<(), core::traits::TupleSize0Drop>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<(), core::traits::PanicDestructForDestruct::<(), core::traits::DestructFromDrop::<(), core::tuple::TupleSize0Drop>>>>"
       ],
       [
         656,
@@ -13125,7 +13125,7 @@
       ],
       [
         664,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u128>, core::integer::u128)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::traits::TupleNextDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::metaprogramming::IsTupleTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::array::ArrayDrop::<core::integer::u128, core::integer::u128Drop>, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u128>, core::integer::u128)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::tuple::TupleNextDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::tuple::IsTupleTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::array::ArrayDrop::<core::integer::u128, core::integer::u128Drop>, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>>>>>"
       ],
       [
         665,
@@ -13317,7 +13317,7 @@
       ],
       [
         712,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u256>, core::integer::u256)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::traits::TupleNextDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::metaprogramming::TupleSplitTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::metaprogramming::IsTupleTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::array::ArrayDrop::<core::integer::u256, core::integer::u256Drop>, core::traits::TupleNextDrop::<(core::integer::u256,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u256>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u256>, core::integer::u256Drop, core::traits::TupleSize0Drop>>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u256>, core::integer::u256)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::tuple::TupleNextDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::tuple::TupleSplitTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::tuple::IsTupleTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::array::ArrayDrop::<core::integer::u256, core::integer::u256Drop>, core::tuple::TupleNextDrop::<(core::integer::u256,), core::tuple::TupleSplitTupleSize1::<core::integer::u256>, core::tuple::IsTupleTupleSize1::<core::integer::u256>, core::integer::u256Drop, core::tuple::TupleSize0Drop>>>>>"
       ],
       [
         713,
@@ -13937,7 +13937,7 @@
       ],
       [
         867,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::metaprogramming::IsTupleTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleNextDrop::<(core::array::Span::<core::felt252>,), core::metaprogramming::TupleSplitTupleSize1::<core::array::Span::<core::felt252>>, core::metaprogramming::IsTupleTupleSize1::<core::array::Span::<core::felt252>>, core::array::SpanDrop::<core::felt252>, core::traits::TupleSize0Drop>>, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::tuple::IsTupleTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleNextDrop::<(core::array::Span::<core::felt252>,), core::tuple::TupleSplitTupleSize1::<core::array::Span::<core::felt252>>, core::tuple::IsTupleTupleSize1::<core::array::Span::<core::felt252>>, core::array::SpanDrop::<core::felt252>, core::tuple::TupleSize0Drop>>, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>>"
       ],
       [
         868,
@@ -14033,7 +14033,7 @@
       ],
       [
         891,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(), core::array::Array::<core::felt252>, core::traits::TupleSize0Drop, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(), core::array::Array::<core::felt252>, core::tuple::TupleSize0Drop, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>>"
       ],
       [
         892,
@@ -16087,7 +16087,7 @@
       ],
       [
         28,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<[core::integer::u32; 8], core::traits::PanicDestructForDestruct::<[core::integer::u32; 8], core::traits::DestructFromDrop::<[core::integer::u32; 8], core::traits::FixedSizedArrayDrop::<core::integer::u32, core::integer::u32Drop, 8>>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<[core::integer::u32; 8], core::traits::PanicDestructForDestruct::<[core::integer::u32; 8], core::traits::DestructFromDrop::<[core::integer::u32; 8], core::fixed_size_array::FixedSizedArrayDrop::<core::integer::u32, core::integer::u32Drop, 8>>>>"
       ],
       [
         29,
@@ -16475,7 +16475,7 @@
       ],
       [
         125,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<(), core::traits::PanicDestructForDestruct::<(), core::traits::DestructFromDrop::<(), core::traits::TupleSize0Drop>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<(), core::traits::PanicDestructForDestruct::<(), core::traits::DestructFromDrop::<(), core::tuple::TupleSize0Drop>>>"
       ],
       [
         126,
@@ -16483,7 +16483,7 @@
       ],
       [
         127,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u128>, core::integer::u128)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::traits::TupleNextDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::metaprogramming::IsTupleTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::array::ArrayDrop::<core::integer::u128, core::integer::u128Drop>, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u128>, core::integer::u128)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::tuple::TupleNextDrop::<(core::array::Array::<core::integer::u128>, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::tuple::IsTupleTupleSize2::<core::array::Array::<core::integer::u128>, core::integer::u128>, core::array::ArrayDrop::<core::integer::u128, core::integer::u128Drop>, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>>>>"
       ],
       [
         128,
@@ -16515,7 +16515,7 @@
       ],
       [
         135,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u256>, core::integer::u256)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::traits::TupleNextDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::metaprogramming::TupleSplitTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::metaprogramming::IsTupleTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::array::ArrayDrop::<core::integer::u256, core::integer::u256Drop>, core::traits::TupleNextDrop::<(core::integer::u256,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u256>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u256>, core::integer::u256Drop, core::traits::TupleSize0Drop>>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic_drop::<core::option::Option::<(core::array::Array::<core::integer::u256>, core::integer::u256)>, core::option::OptionDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::tuple::TupleNextDrop::<(core::array::Array::<core::integer::u256>, core::integer::u256), core::tuple::TupleSplitTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::tuple::IsTupleTupleSize2::<core::array::Array::<core::integer::u256>, core::integer::u256>, core::array::ArrayDrop::<core::integer::u256, core::integer::u256Drop>, core::tuple::TupleNextDrop::<(core::integer::u256,), core::tuple::TupleSplitTupleSize1::<core::integer::u256>, core::tuple::IsTupleTupleSize1::<core::integer::u256>, core::integer::u256Drop, core::tuple::TupleSize0Drop>>>>"
       ],
       [
         136,
@@ -16571,7 +16571,7 @@
       ],
       [
         149,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::metaprogramming::IsTupleTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleNextDrop::<(core::array::Span::<core::felt252>,), core::metaprogramming::TupleSplitTupleSize1::<core::array::Span::<core::felt252>>, core::metaprogramming::IsTupleTupleSize1::<core::array::Span::<core::felt252>>, core::array::SpanDrop::<core::felt252>, core::traits::TupleSize0Drop>>, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::tuple::IsTupleTupleSize2::<core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleNextDrop::<(core::array::Span::<core::felt252>,), core::tuple::TupleSplitTupleSize1::<core::array::Span::<core::felt252>>, core::tuple::IsTupleTupleSize1::<core::array::Span::<core::felt252>>, core::array::SpanDrop::<core::felt252>, core::tuple::TupleSize0Drop>>, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>"
       ],
       [
         150,
@@ -16587,7 +16587,7 @@
       ],
       [
         153,
-        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(), core::array::Array::<core::felt252>, core::traits::TupleSize0Drop, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>"
+        "cairo_level_tests::contracts::libfuncs_coverage::use_and_panic::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::PanicDestructForDestruct::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::traits::DestructFromDrop::<core::result::Result::<(), core::array::Array::<core::felt252>>, core::result::ResultDrop::<(), core::array::Array::<core::felt252>, core::tuple::TupleSize0Drop, core::array::ArrayDrop::<core::felt252, core::felt252Drop>>>>>"
       ],
       [
         154,
