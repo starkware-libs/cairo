@@ -2028,6 +2028,7 @@ impl<'db> Resolver<'db> {
             Some(ast::PathSegment::Simple(path_segment_simple)) => {
                 let ident = path_segment_simple.ident(self.db.upcast());
                 let ident_text = ident.text(self.db.upcast());
+                // TODO(Gil): Add support for $callsite.
                 if ident_text == MACRO_DEF_SITE {
                     segments.next();
                     if let Some(defsite_resolver_data) = self.macro_defsite_data.as_ref() {
