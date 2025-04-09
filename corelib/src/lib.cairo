@@ -8,7 +8,7 @@ use serde::Serde;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
     Felt252DictValue, Index, IndexView, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq,
-    PartialOrd, Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop,
+    PartialOrd, Rem, RemEq, Sub, SubEq, TryInto,
 };
 
 /// `usize` is an alias for `u32` type.
@@ -441,3 +441,8 @@ mod test;
 pub mod testing;
 
 pub mod to_byte_array;
+
+pub mod tuple;
+use tuple::{ TupleSize0Copy, TupleSize0Drop,};
+
+pub mod fixed_size_array;
