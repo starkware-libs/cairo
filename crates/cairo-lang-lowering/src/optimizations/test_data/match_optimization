@@ -1902,10 +1902,10 @@ End:
 
 blk1:
 Statements:
-  (v5: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::Some(v3)
-  (v6: core::array::Span::<core::felt252>) <- struct_construct(v2)
+  (v5: core::array::Span::<core::felt252>) <- struct_construct(v2)
+  (v6: core::option::Option::<@core::box::Box::<[core::felt252; 4]>>) <- Option::Some(v3)
 End:
-  Goto(blk3, {v6 -> v7, v5 -> v8})
+  Goto(blk3, {v5 -> v7, v6 -> v8})
 
 blk2:
 Statements:
@@ -1948,9 +1948,9 @@ End:
 
 blk1:
 Statements:
-  (v6: core::array::Span::<core::felt252>) <- struct_construct(v2)
+  (v5: core::array::Span::<core::felt252>) <- struct_construct(v2)
 End:
-  Goto(blk4, {v3 -> v12, v6 -> v18})
+  Goto(blk4, {v3 -> v12, v5 -> v18})
 
 blk2:
 Statements:
