@@ -27,27 +27,15 @@
 
 use starknet::SyscallResultTrait;
 use crate::array::{ArrayTrait, Span, SpanTrait};
+use crate::num::traits::Split;
 
 const KECCAK_FULL_RATE_IN_U64S: NonZero<usize> = 17;
 
-
-fn u128_to_u64(input: u128) -> u64 {
-    input.try_into().unwrap()
-}
-
-fn u128_split(input: u128) -> (u64, u64) {
-    let (high, low) = crate::integer::u128_safe_divmod(
-        input, 0x10000000000000000_u128.try_into().unwrap(),
-    );
-
-    (u128_to_u64(high), u128_to_u64(low))
-}
-
 fn keccak_add_u256_le(ref keccak_input: Array<u64>, v: u256) {
-    let (high, low) = u128_split(v.low);
+    let (high, low) = v.low.split();
     keccak_input.append(low);
     keccak_input.append(high);
-    let (high, low) = u128_split(v.high);
+    let (high, low) = v.high.split();
     keccak_input.append(low);
     keccak_input.append(high);
 }
@@ -86,10 +74,10 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
 }
 
 fn keccak_add_u256_be(ref keccak_input: Array<u64>, v: u256) {
-    let (high, low) = u128_split(crate::integer::u128_byte_reverse(v.high));
+    let (high, low) = crate::integer::u128_byte_reverse(v.high).split();
     keccak_input.append(low);
     keccak_input.append(high);
-    let (high, low) = u128_split(crate::integer::u128_byte_reverse(v.low));
+    let (high, low) = crate::integer::u128_byte_reverse(v.low).split();
     keccak_input.append(low);
     keccak_input.append(high);
 }
