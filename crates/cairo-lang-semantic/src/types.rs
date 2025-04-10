@@ -19,7 +19,7 @@ use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty,
+    concrete_panic_destruct_trait, core_submodule, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -206,9 +206,9 @@ impl TypeLongId {
                 .module_file_id(db)
                 .map(|module_file_id| module_file_id.0),
             TypeLongId::Missing(_) => None,
-            TypeLongId::Tuple(_) => None,
+            TypeLongId::Tuple(_) => Some(core_submodule(db, "tuple")),
             TypeLongId::ImplType(_) => None,
-            TypeLongId::FixedSizeArray { .. } => None,
+            TypeLongId::FixedSizeArray { .. } => Some(core_submodule(db, "fixed_size_array")),
             TypeLongId::Closure(closure) => {
                 if let Ok(function_id) = closure.parent_function {
                     function_id
