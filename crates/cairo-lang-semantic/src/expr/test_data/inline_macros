@@ -1164,3 +1164,31 @@ error: Identifier not found.
  --> lib.cairo[assuming_z_in_context]:2:13
 x+ (y + z)+ z
             ^
+
+//! > ==========================================================================
+
+//! > Test empty expr in macro call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:expr) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: Invalid macro expression placeholder.
+ --> lib.cairo:7:16
+    test_macro!();
+               ^^

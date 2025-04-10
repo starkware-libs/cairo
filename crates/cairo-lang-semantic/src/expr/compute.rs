@@ -70,7 +70,7 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{
-    MacroExpansionResult, expand_macro_rule, is_macro_rule_match,
+    MacroExpansionResult, expand_macro_rule, is_macro_rule_match_ex,
 };
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
@@ -497,15 +497,34 @@ fn compute_expr_inline_macro_semantic(
     let (content, name, mappings, is_macro_rule) =
         if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
             let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-            let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
-                is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                    .map(|captures| (rule, captures))
-            }) else {
-                return Err(ctx
-                    .diagnostics
-                    .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+            let mut local_diagnostics = SemanticDiagnostics::default();
+            let mut result = None;
+            for rule in &macro_rules {
+                let mut captures = OrderedHashMap::default();
+                if is_macro_rule_match_ex(
+                    ctx.db,
+                    &mut local_diagnostics,
+                    rule.pattern.clone(),
+                    &syntax.arguments(syntax_db),
+                    &mut captures,
+                )
+                .is_some()
+                {
+                    result = Some((rule, captures));
+                    break;
+                }
+            }
+            let Some((rule, captures)) = result else {
+                let built_diagnostics = local_diagnostics.build();
+                if !built_diagnostics.is_empty() {
+                    ctx.diagnostics.extend(built_diagnostics);
+                    return Err(skip_diagnostic());
+                } else {
+                    return Err(ctx
+                        .diagnostics
+                        .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+                }
             };
-
             let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
             let macro_resolver_data =
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
