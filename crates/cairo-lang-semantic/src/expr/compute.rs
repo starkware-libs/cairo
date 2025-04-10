@@ -507,6 +507,7 @@ fn compute_expr_inline_macro_semantic(
             };
 
             let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
+
             let macro_resolver_data =
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
             ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
