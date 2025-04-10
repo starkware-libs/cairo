@@ -1,4 +1,4 @@
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::utils::Rebuilder;
 use crate::{BlockId, VariableId};
@@ -8,7 +8,7 @@ use crate::{BlockId, VariableId};
 /// to C.
 #[derive(Default)]
 pub struct VarRenamer {
-    pub renamed_vars: UnorderedHashMap<VariableId, VariableId>,
+    pub renamed_vars: OrderedHashMap<VariableId, VariableId>,
 }
 
 impl Rebuilder for VarRenamer {
