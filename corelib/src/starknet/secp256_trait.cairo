@@ -267,8 +267,14 @@ pub fn is_valid_signature<
         return false;
     }
 
-    let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let s_inv = u256_inv_mod(s.try_into().unwrap(), n_nz).unwrap().into();
+    let n_nz = match Secp256Impl::get_curve_size().try_into() {
+        Some(v) => v,
+        None => { return false; },
+    };
+    let s_inv = match u256_inv_mod(s, n_nz) {
+        Some(v) => v.into(),
+        None => { return false; },
+    };
     let u1 = u256_mul_mod_n(msg_hash, s_inv, n_nz);
     let u2 = u256_mul_mod_n(r, s_inv, n_nz);
 
