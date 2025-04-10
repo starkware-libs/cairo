@@ -409,8 +409,25 @@ impl<'a> Parser<'a> {
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
-            // TODO: Improve diagnostic to indicate semicolon or a body were expected.
-            _ => self.parse_token::<TerminalSemicolon>().into(),
+            SyntaxKind::TerminalSemicolon => {
+                self.take::<TerminalSemicolon>().into()
+            }
+            _ => {
+                // Report diagnostic showing that either ';' or '{' is expected after module name
+                let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
+                self.add_diagnostic(
+                    ParserDiagnosticKind::ExpectedSemicolonOrBody,
+                    TextSpan { start: next_offset, end: next_offset },
+                );
+
+                // Create a missing semicolon node as fallback and skip the current token
+                // to prevent cascading errors from invalid syntax
+                if self.peek().kind != SyntaxKind::TerminalEndOfFile {
+                    self.skip_token(ParserDiagnosticKind::ExpectedSemicolonOrBody);
+                }
+
+                TerminalSemicolon::missing(self.db).into()
+            }
         };
 
         ItemModule::new_green(self.db, attributes, visibility, module_kw, name, body)
