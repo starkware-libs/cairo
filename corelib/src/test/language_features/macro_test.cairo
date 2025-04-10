@@ -81,12 +81,8 @@ macro add_exprs {
         $x + 1
     };
 
-    ($x:expr + $y:expr) => {
-        $x + $y
-    };
-
     ($x:expr $y:expr) => {
-        $x + 1
+        $x + $y
     };
 
     (abc $x:expr $y:expr) => {
@@ -98,10 +94,11 @@ fn test_add_exprs() {
     assert_eq!(add_exprs!(3), 4);
     let x = 1;
     assert_eq!(add_exprs!(x 1), 2);
-    assert_eq!(add_exprs!(1 + 2), 3);
-    assert_eq!(add_exprs!(3 123), 4);
+    assert_eq!(add_exprs!(2 - 1), 2);
+    assert_eq!(add_exprs!(3 123), 126);
     assert_eq!(add_exprs!(abc 1 2), 3);
     assert_eq!(add_exprs!(0 2), 2);
+    assert_eq!(add_exprs!(0 + 2), 3);
 }
 
 
