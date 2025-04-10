@@ -21,6 +21,17 @@ use crate::{
 
 pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
+/// Describes merge kind for the given match arm.
+#[derive(Clone, PartialEq, Eq)]
+enum MergeKind {
+    /// The reachable blocks from the diffrent arms are disjoint.
+    Disjoint,
+    /// The arms merge through a single block and have the given intersection.
+    Simple(BlockId, Vec<BlockId>),
+    /// The merge is not simple.
+    Generic,
+}
+
 impl MatchOptimizerDemand {
     fn update(&mut self, statement: &Statement) {
         self.variables_introduced(&mut EmptyDemandReporter {}, statement.outputs(), ());
@@ -33,6 +44,7 @@ impl MatchOptimizerDemand {
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
+/// `lowered` should be topologically sorted.
 ///
 /// For example, given:
 ///
@@ -57,7 +69,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let ctx = MatchOptimizerContext { fixes: vec![] };
+    let ctx = MatchOptimizerContext { fixes: vec![], n_reachable_blocks: Default::default() };
     let mut analysis = BackAnalysis::new(lowered, ctx);
     analysis.get_root_info();
     let ctx = analysis.analyzer;
@@ -87,6 +99,8 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     // v2 is at blk1, we must map v1 to a new variable.
     //
     // If there is another fix for the same match arm, the same variable will be used.
+    // in the case where we have a simple merge we use arm_idx=usize::MAX to allocate new post-merge
+    // variables.
     let mut var_renaming = UnorderedHashMap::<(VariableId, usize), VariableId>::default();
 
     // Fixes were added in reverse order and need to be applied in that order.
@@ -140,6 +154,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         else {
             unreachable!("match block should end with a match.");
         };
+        let location = *location;
 
         let arm = arms.get_mut(fix.arm_idx).unwrap();
         if fix.target_block != arm.block_id {
@@ -154,9 +169,9 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         *arm_var = lowered.variables.alloc(lowered.variables[orig_var].clone());
         let mut new_block_remapping: VarRemapping = Default::default();
 
-        new_block_remapping.insert(orig_var, VarUsage { var_id: *arm_var, location: *location });
+        new_block_remapping.insert(orig_var, VarUsage { var_id: *arm_var, location });
         for (var, new_var) in renamed_vars.iter() {
-            new_block_remapping.insert(*new_var, VarUsage { var_id: *var, location: *location });
+            new_block_remapping.insert(*new_var, VarUsage { var_id: *var, location });
         }
 
         new_blocks.push(FlatBlock {
@@ -165,11 +180,61 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         });
         arm.block_id = next_block_id;
         next_block_id = next_block_id.next_block_id();
+        if renamed_vars.is_empty() {
+            continue;
+        }
 
-        let mut var_renamer = VarRenamer { renamed_vars: renamed_vars.into_iter().collect() };
+        let (merge_block_id, intersection, intersection_renames) = match fix.future_merge {
+            MergeKind::Disjoint => {
+                // There are no incoming gotos to the next_block_id so we can use it as the merge
+                // block.
+                let merge_block_id = next_block_id;
+
+                // The arms are disjoint, so we can use an empty intersection and
+                // intersection_renames.
+                (merge_block_id, vec![], Default::default())
+            }
+            MergeKind::Simple(merge_block_id, intersection) => (
+                merge_block_id,
+                intersection,
+                renamed_vars
+                    .keys()
+                    .map(|src| {
+                        (
+                            *src,
+                            *var_renaming.entry((*src, usize::MAX)).or_insert_with(|| {
+                                lowered.variables.alloc(lowered.variables[*src].clone())
+                            }),
+                        )
+                    })
+                    .collect(),
+            ),
+            MergeKind::Generic => {
+                unreachable!("`renamed_vars` should be empty in this case.");
+            }
+        };
+
+        let mut intersection_renamer = VarRenamer { renamed_vars: intersection_renames };
+        let mut var_renamer = VarRenamer { renamed_vars };
+
         // Apply the variable renaming to the reachable blocks.
         for block_id in fix.reachable_blocks {
             let block = &mut lowered.blocks[block_id];
+            if let FlatBlockEnd::Goto(target_block_id, remapping) = &mut block.end {
+                if *target_block_id == merge_block_id {
+                    for (src, dst) in zip_eq(
+                        var_renamer.renamed_vars.values(),
+                        intersection_renamer.renamed_vars.values(),
+                    ) {
+                        remapping.insert(*dst, VarUsage { var_id: *src, location });
+                    }
+                }
+            }
+
+            if intersection.contains(&block_id) {
+                *block = intersection_renamer.rebuild_block(block);
+            }
+
             *block = var_renamer.rebuild_block(block);
         }
     }
@@ -288,7 +353,7 @@ fn try_get_fix_info(
         None => VarRemapping::default(),
     };
 
-    if !additional_remappings.is_empty() && candidate.future_merge {
+    if !additional_remappings.is_empty() && candidate.future_merge == MergeKind::Generic {
         // If there are additional_remappings and a future merge we cannot apply the optimization.
         return None;
     }
@@ -315,6 +380,7 @@ fn try_get_fix_info(
         n_same_block_statement: candidate.n_same_block_statement,
         remove_enum_construct: !info.demand.vars.contains_key(output),
         additional_stmts,
+        future_merge: std::mem::replace(&mut candidate.future_merge, MergeKind::Disjoint),
     })
 }
 
@@ -340,6 +406,8 @@ pub struct FixInfo {
     /// Additional statement that appear before the match but not in the same block as the enum
     /// construct.
     additional_stmts: Vec<Statement>,
+    /// The kind of merge that follows the match.
+    future_merge: MergeKind,
 }
 
 #[derive(Clone)]
@@ -356,8 +424,8 @@ struct OptimizationCandidate<'a> {
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand>,
 
-    /// Whether there is a future merge between the match arms.
-    future_merge: bool,
+    /// The kind of merge that follows the match.
+    future_merge: MergeKind,
 
     /// The blocks that can be reached from each of the arms.
     arm_reachable_blocks: Vec<OrderedHashSet<BlockId>>,
@@ -377,8 +445,11 @@ struct OptimizationCandidate<'a> {
 
 pub struct MatchOptimizerContext {
     fixes: Vec<FixInfo>,
-}
 
+    /// Maps a goto target block to the number of blocks that can be reached from it (including
+    /// itself).
+    n_reachable_blocks: UnorderedHashMap<BlockId, usize>,
+}
 #[derive(Clone)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
@@ -411,6 +482,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                         &mut candidate,
                         statement_location,
                     ) {
+                        // `fix_info.target_block` is going to be a target of a goto.
+                        self.n_reachable_blocks
+                            .entry(fix_info.target_block)
+                            .or_insert_with(|| fix_info.reachable_blocks.len());
                         self.fixes.push(fix_info);
                         return;
                     }
@@ -434,9 +509,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
-        _target_block_id: BlockId,
+        target_block_id: BlockId,
         remapping: &'a VarRemapping,
     ) {
+        self.n_reachable_blocks
+            .entry(target_block_id)
+            .or_insert_with(|| info.reachable_blocks.len());
+
         info.demand.apply_remapping(
             &mut EmptyDemandReporter {},
             remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))),
@@ -450,11 +529,11 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         // construct.
         candidate.n_same_block_statement = 0;
 
-        if candidate.future_merge
+        if candidate.future_merge == MergeKind::Generic
             && candidate.statement_rev.iter().any(|stmt| !stmt.outputs().is_empty())
         {
-            // If we have a future merge and a statement not in the same block as the enum construct
-            // has an output, we cannot apply the optimization.
+            // If we have a complicated future merge and a statement not in the same block as the
+            // enum construct has an output, we cannot apply the optimization.
             info.candidate = None;
             return;
         }
@@ -500,14 +579,9 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
 
         // Union the reachable blocks for all the infos.
         let mut reachable_blocks = OrderedHashSet::default();
-        let mut max_possible_size = 0;
         for cur_reachable_blocks in &arm_reachable_blocks {
             reachable_blocks.extend(cur_reachable_blocks.iter().cloned());
-            max_possible_size += cur_reachable_blocks.len();
         }
-        // If the size of `reachable_blocks` is less than the sum of the sizes of the
-        // `arm_reachable_blocks`, then there was a collision.
-        let found_collision = reachable_blocks.len() < max_possible_size;
 
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
@@ -515,12 +589,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             MatchInfo::Enum(MatchEnumInfo { input, arms, .. })
                 if !demand.vars.contains_key(&input.var_id) =>
             {
+                let future_merge = self.identify_future_merge(&arm_reachable_blocks);
                 Some(OptimizationCandidate {
                     match_variable: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
+                    future_merge,
                     arm_demands,
-                    future_merge: found_collision,
                     arm_reachable_blocks,
                     remapping: None,
                     statement_rev: vec![],
@@ -549,5 +624,66 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())),
         );
         Self::Info { candidate: None, demand, reachable_blocks: Default::default() }
+    }
+}
+
+impl MatchOptimizerContext {
+    /// Find the merge kind for the given match arms.
+    fn identify_future_merge(
+        &mut self,
+        arm_reachable_blocks: &[OrderedHashSet<BlockId>],
+    ) -> MergeKind {
+        let [l, r] = &arm_reachable_blocks[..2] else {
+            unreachable!("Expected a window of size 2.");
+        };
+
+        // find the intersection of the first two arms.
+        let intersection = l.intersection(r).cloned().collect_vec();
+
+        // Assuming that the blocks are topologically sorted, if we have a simple merge it
+        // must be thorugh the block with the lowest id.
+        let merge_candidate = match intersection.iter().min_by_key(|block_id| block_id.0) {
+            Some(merge_candidate) => {
+                let reachable_from_merge = self
+                    .n_reachable_blocks
+                    .get(merge_candidate)
+                    .expect("The merge candidate should be a the target of a goto.");
+
+                if intersection.len() != *reachable_from_merge {
+                    // If not all the blocks are reachable from the merge candidate, we don't have a
+                    // simple merge.
+                    return MergeKind::Generic;
+                }
+
+                *merge_candidate
+            }
+            None => {
+                // Intersection is empty, use root block is the merge candidate.
+                BlockId::root()
+            }
+        };
+
+        // Make sure all the other consecutive arm pairs have the same intersection.
+        for window in arm_reachable_blocks[1..].windows(2) {
+            let [l, r] = window else {
+                unreachable!("Expected a window of size 2.");
+            };
+
+            let intersection_size = l.intersection(r).count();
+            if intersection_size != intersection.len() {
+                return MergeKind::Generic;
+            }
+            if intersection_size != 0 && !r.contains(&merge_candidate) {
+                // If the merge_candidate is not reachable from the right arm, than the merge is
+                // not simple.
+                return MergeKind::Generic;
+            }
+        }
+
+        if intersection.is_empty() {
+            return MergeKind::Disjoint;
+        };
+
+        MergeKind::Simple(merge_candidate, intersection)
     }
 }
