@@ -1068,11 +1068,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
         }
     }
 
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+    fn notes(&self, _db: &Self::DbType) -> Vec<DiagnosticNote> {
         if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
-            notes
+            notes.to_vec()
+        } else if let SemanticDiagnosticKind::PluginDiagnostic(PluginDiagnostic {
+            note: Some(note),
+            ..
+        }) = &self.kind
+        {
+            vec![DiagnosticNote::text_only(note.clone())]
         } else {
-            &[]
+            Vec::new()
         }
     }
 
