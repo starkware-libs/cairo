@@ -241,17 +241,18 @@ fn is_macro_rule_match_ex(
                         }
                     }
                     PlaceholderKind::Expr => {
+                        let file_id = input.stable_ptr().0.file_id(db.upcast());
                         let expr_node = as_expr_macro_token_tree(
                             input_iter.clone().cloned(),
-                            input.stable_ptr().0.file_id(db.upcast()),
+                            file_id,
                             db.upcast(),
                         )?;
                         let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
+                        let expr_length = expr_text.len();
                         captures.insert(placeholder_name, CapturedValue {
                             text: expr_text.to_string(),
                             stable_ptr: input_iter.peek().unwrap().stable_ptr().untyped(),
                         });
-                        let expr_length = expr_text.len();
                         let mut current_length = 0;
 
                         // TODO(Dean): Use the iterator directly in the parser and advance it while
