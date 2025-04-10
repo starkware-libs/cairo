@@ -120,10 +120,12 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         // Must be right before const folding.
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ConstFolding,
+        OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::SplitStructs,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::ReorderStatements,
+        OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::OptimizeMatches,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
