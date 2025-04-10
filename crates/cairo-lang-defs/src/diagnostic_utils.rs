@@ -3,7 +3,7 @@ use std::fmt;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -55,6 +55,32 @@ impl StableLocation {
         let start = self.0.lookup(syntax_db).span_start_without_trivia(syntax_db);
         let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
         DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
+    }
+
+    /// Returns the [DiagnosticLocation] corresponding to a subrange of the [StableLocation],
+    /// defined by character offsets relative to the start of the syntax node.
+    pub fn diagnostic_location_with_offsets(
+        &self,
+        db: &dyn DefsGroup,
+        start_offset: u32,
+        end_offset: u32,
+    ) -> DiagnosticLocation {
+        let syntax_db = db.upcast();
+        let syntax_node = self.0.lookup(syntax_db);
+        let node_span = syntax_node.span_without_trivia(syntax_db);
+
+        let span = TextSpan {
+            start: node_span
+                .start
+                .add_width(TextWidth::new_for_testing(start_offset))
+                .min(node_span.end),
+            end: node_span
+                .start
+                .add_width(TextWidth::new_for_testing(end_offset))
+                .min(node_span.end),
+        };
+
+        DiagnosticLocation { file_id: self.0.file_id(syntax_db), span }
     }
 }
 
