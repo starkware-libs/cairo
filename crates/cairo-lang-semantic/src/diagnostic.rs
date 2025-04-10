@@ -1065,6 +1065,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{}'.", name)
             }
+            SemanticDiagnosticKind::InvalidMacroExprPlaceholder => {
+                "Invalid macro expression placeholder.".into()
+            }
         }
     }
 
@@ -1488,6 +1491,7 @@ pub enum SemanticDiagnosticKind {
     },
     TypeConstraintsSyntaxNotEnabled,
     UndefinedMacroPlaceholder(String),
+    InvalidMacroExprPlaceholder,
 }
 
 /// The kind of an expression with multiple possible return types.
