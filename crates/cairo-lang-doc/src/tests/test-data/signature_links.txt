@@ -43,6 +43,8 @@ struct IncorrectStruct {
     incorrect_member: NotExistingType,
 }
 
+trait Test<impl T: Copy<felt252>> {}
+
 //! > Item signature #1
 struct MemberStruct {
     ty: MemberEnum,
@@ -153,3 +155,9 @@ struct IncorrectStruct {
 incorrect_member: <missing>
 
 //! > Item linked items #18
+
+//! > Item signature #19
+trait Test<impl T: Copy<felt252>>
+
+//! > Item linked items #19
+Copy
