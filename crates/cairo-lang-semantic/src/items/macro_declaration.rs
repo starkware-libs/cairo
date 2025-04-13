@@ -59,6 +59,17 @@ pub struct MatcherContext {
     pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator>,
 }
 
+impl MatcherContext {
+    /// Returns true if all captures for the given repetition ID have been exhausted.
+    fn is_repetition_done(&self, rep_id: RepetitionId) -> bool {
+        let index = *self.repetition_indices.get(&rep_id).unwrap_or(&0);
+        self.placeholder_to_rep_id
+            .iter()
+            .filter(|(_, &r)| r == rep_id)
+            .all(|(name, _)| self.captures.get(name).map(|v| index >= v.len()).unwrap_or(true))
+    }
+}
+
 /// The semantic data for a macro declaration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroDeclarationData {
@@ -414,7 +425,7 @@ fn is_macro_rule_match_ex(
     Some(())
 }
 
-pub fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
+fn validate_repetition_operator_constraints(ctx: &MatcherContext) -> bool {
     for (rep_id, count) in ctx.repetition_match_counts.clone() {
         match ctx.repetition_operators.get(&rep_id) {
             Some(ast::MacroRepetitionOperator::ZeroOrOne(_)) if count > 1 => return false,
@@ -533,10 +544,12 @@ fn expand_macro_rule_ex(
                 .placeholder_to_rep_id
                 .get(&placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
-            let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
-            for i in 0..repetition_len {
-                matcher_ctx.repetition_indices.insert(rep_id, i);
+            let mut index = 0;
+            loop {
+                matcher_ctx.repetition_indices.insert(rep_id, index);
+                if matcher_ctx.is_repetition_done(rep_id) {
+                    break;
+                }
                 for element in &elements {
                     expand_macro_rule_ex(
                         db,
@@ -546,13 +559,13 @@ fn expand_macro_rule_ex(
                         _code_mappings,
                     )?;
                 }
-
-                // TODO(Dean): Handle the separator addition more gracefully.
-                if i + 1 < repetition_len {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
+                if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
+                    if !matcher_ctx.is_repetition_done(rep_id) {
+                        matcher_ctx.repetition_indices.insert(rep_id, index + 1);
                         res_buffer.push_str(&sep.as_syntax_node().get_text(db));
                     }
                 }
+                index += 1;
             }
 
             matcher_ctx.repetition_indices.swap_remove(&rep_id);

@@ -1136,7 +1136,7 @@ error: Unexpected argument type. Expected: "core::integer::u8", found: "core::in
 
 //! > ==========================================================================
 
-//! > Test optional repetition operator- optional
+//! > Test optional repetition operator
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -1164,7 +1164,7 @@ error: No matching rule found in inline macro `test_macro`.
 
 //! > ==========================================================================
 
-//! > Test repetition operator- plus
+//! > Test repetition operator - plus
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
