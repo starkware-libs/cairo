@@ -24,8 +24,8 @@ use super::context::{
     lowering_flow_error_to_sealed_block,
 };
 use super::{
-    alloc_empty_block, call_loop_func, generators, lower_expr_block, lower_expr_literal,
-    lower_tail_expr, lowered_expr_to_block_scope_end,
+    alloc_empty_block, generators, lower_expr_block, lower_expr_literal, lower_tail_expr,
+    lowered_expr_to_block_scope_end, recursively_call_loop_func,
 };
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
@@ -1034,11 +1034,8 @@ fn group_match_arms(
                                 };
                                 let block_expr = (|| {
                                     lower_expr_block(ctx, &mut subscope, &expr)?;
-                                    // Add recursive call.
-                                    let signature = ctx.signature.clone();
-                                    call_loop_func(
+                                    recursively_call_loop_func(
                                         ctx,
-                                        signature,
                                         &mut subscope,
                                         loop_expr_id,
                                         stable_ptr,
@@ -1108,11 +1105,8 @@ fn group_match_arms(
                     };
                     let block_expr = (|| {
                         lower_expr_block(ctx, &mut outer_subscope, &expr)?;
-                        // Add recursive call.
-                        let signature = ctx.signature.clone();
-                        call_loop_func(
+                        recursively_call_loop_func(
                             ctx,
-                            signature,
                             &mut outer_subscope,
                             loop_expr_id,
                             stable_ptr,
