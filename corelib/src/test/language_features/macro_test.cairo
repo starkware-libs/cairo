@@ -193,3 +193,27 @@ fn test_accessing_expanded_placehoders() {
     let x = 1;
     assert_eq!(accessing_expanded_placehoders!(x), (1, 2));
 }
+macro use_z_from_callsite {
+    () => {
+        let z = 4;
+        ($callsite::z, z)
+    };
+}
+
+#[test]
+fn test_use_z_from_callsite() {
+    let z = 3;
+    assert_eq!(use_z_from_callsite!(), (3, 4));
+}
+
+macro macro_wrapped_use_z_from_callsite {
+    () => {
+        let z = 2;
+        $defsite::use_z_from_callsite!()
+    };
+}
+
+#[test]
+fn test_wrap_use_z_from_callsite() {
+    assert_eq!(macro_wrapped_use_z_from_callsite!(), (2, 4));
+}
