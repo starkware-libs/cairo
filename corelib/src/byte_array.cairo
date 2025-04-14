@@ -353,8 +353,11 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             }
         }
     }
+}
 
-    // === Helpers ===
+/// Internal functions associated with the `ByteArray` type.
+#[generate_trait]
+impl InternalImpl of InternalTrait {
 
     /// Appends a single word of `len` bytes to the end of the `ByteArray`, assuming there
     /// is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
@@ -438,10 +441,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.append_bytes31(complete_full_word + self.pending_word * shift_value);
         self.pending_word = new_pending;
     }
-}
-/// Internal functions associated with the `ByteArray` type.
-#[generate_trait]
-impl InternalImpl of InternalTrait {
+
     /// Appends a `felt252` value assumed to be `bytes31`.
     ///
     /// Will append an error value in cases of invalid usage in order to avoid panic code.
