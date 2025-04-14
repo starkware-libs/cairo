@@ -223,17 +223,12 @@ pub fn lower_for_loop(
         Ok(_) => {
             let block_expr = (|| {
                 lower_expr_block(ctx, &mut some_subscope, &some_block)?;
-                // Add recursive call.
-                let signature = ctx.signature.clone();
-                let loop_res = call_loop_func(
+                recursively_call_loop_func(
                     ctx,
-                    signature,
                     &mut some_subscope,
                     loop_expr_id,
                     loop_expr.stable_ptr.untyped(),
-                )?
-                .as_var_usage(ctx, &mut some_subscope)?;
-                Err(LoweringFlowError::Return(loop_res, for_location))
+                )
             })();
             lowered_expr_to_block_scope_end(ctx, some_subscope, block_expr)
         }
@@ -312,17 +307,12 @@ pub fn lower_while_loop(
 
     let block_expr = (|| {
         lower_expr_block(ctx, &mut subscope_main, &main_block)?;
-        // Add recursive call.
-        let signature = ctx.signature.clone();
-        let loop_res = call_loop_func(
+        recursively_call_loop_func(
             ctx,
-            signature,
             &mut subscope_main,
             loop_expr_id,
             loop_expr.stable_ptr.untyped(),
-        )?
-        .as_var_usage(ctx, &mut subscope_main)?;
-        Err(LoweringFlowError::Return(loop_res, while_location))
+        )
     })();
     let block_main = lowered_expr_to_block_scope_end(ctx, subscope_main, block_expr)
         .map_err(LoweringFlowError::Failed)?;
@@ -462,11 +452,8 @@ pub fn lower_loop_function(
 
                 let block_expr = (|| {
                     lower_expr_block(&mut ctx, &mut builder, &semantic_block)?;
-                    // Add recursive call.
-                    let signature = ctx.signature.clone();
-                    call_loop_func(
+                    recursively_call_loop_func(
                         &mut ctx,
-                        signature,
                         &mut builder,
                         loop_expr_id,
                         stable_ptr.untyped(),
@@ -697,15 +684,13 @@ pub fn lower_statement(
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
             log::trace!("Lowering a continue statement.");
-            let lowered_expr = call_loop_func(
+            recursively_call_loop_func(
                 ctx,
-                ctx.signature.clone(),
                 builder,
                 ctx.current_loop_ctx.as_ref().unwrap().loop_expr_id,
                 stable_ptr.untyped(),
             )?;
-            let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
-            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
+            return Ok(());
         }
         semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
         | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
@@ -1632,21 +1617,22 @@ fn lower_expr_loop(
 }
 
 /// Adds a call to an inner loop-generated function from the loop function itself.
-fn call_loop_func(
+fn recursively_call_loop_func(
     ctx: &mut LoweringContext<'_, '_>,
-    loop_signature: Signature,
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId,
 ) -> LoweringResult<LoweredExpr> {
-    call_loop_func_ex(
+    let loop_res = call_loop_func_ex(
         ctx,
-        loop_signature,
+        ctx.signature.clone(),
         builder,
         loop_expr_id,
         stable_ptr,
         |ctx, builder, param| builder.get_snap_ref(ctx, param),
-    )
+    )?
+    .as_var_usage(ctx, builder)?;
+    Err(LoweringFlowError::Return(loop_res, ctx.get_location(stable_ptr)))
 }
 
 /// Adds a call to an inner loop-generated function.

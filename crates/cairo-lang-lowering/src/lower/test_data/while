@@ -367,7 +367,7 @@ Statements:
   (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
   (v4: core::felt252, v3: ()) <- test::foo[41-100](v2)
 End:
-  Goto(blk6, {v4 -> v6, v3 -> v5})
+  Return(v4, v3)
 
 blk2:
 Statements:
@@ -387,14 +387,14 @@ End:
 
 blk5:
 Statements:
-  (v7: ()) <- struct_construct()
 End:
-  Goto(blk6, {v0 -> v6, v7 -> v5})
+  Goto(blk6, {})
 
 blk6:
 Statements:
+  (v5: ()) <- struct_construct()
 End:
-  Return(v6, v5)
+  Return(v0, v5)
 
 
 Final lowering:
