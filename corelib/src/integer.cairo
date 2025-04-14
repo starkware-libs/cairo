@@ -3137,37 +3137,29 @@ impl U256OverflowingSub of crate::num::traits::OverflowingSub<u256> {
 // OverflowingMul implementations
 impl U8OverflowingMul of crate::num::traits::OverflowingMul<u8> {
     fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
-        let wide_result = u8_wide_mul(self, v);
-        let MASK: u16 = crate::num::traits::Bounded::<u8>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u8_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U16OverflowingMul of crate::num::traits::OverflowingMul<u16> {
     fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
-        let wide_result = u16_wide_mul(self, v);
-        let MASK: u32 = crate::num::traits::Bounded::<u16>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u16_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U32OverflowingMul of crate::num::traits::OverflowingMul<u32> {
     fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
-        let wide_result = u32_wide_mul(self, v);
-        let MASK: u64 = crate::num::traits::Bounded::<u32>::MAX.into();
-        let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u32_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
 impl U64OverflowingMul of crate::num::traits::OverflowingMul<u64> {
     fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
-        let wide_result = u64_wide_mul(self, v);
-        let MASK: u128 = crate::num::traits::Bounded::<u64>::MAX.into();
-        let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
-        (v_low.try_into().unwrap(), v_with_low_masked != MASK)
+        let (high, low) = crate::num::traits::Split::split(u64_wide_mul(self, v));
+        (low, high != 0)
     }
 }
 
