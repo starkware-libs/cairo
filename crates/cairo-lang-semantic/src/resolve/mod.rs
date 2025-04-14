@@ -1912,7 +1912,7 @@ impl<'db> Resolver<'db> {
     }
 
     /// Checks if an item is visible from the current module.
-    fn is_item_visible(
+    pub fn is_item_visible(
         &self,
         containing_module_id: ModuleId,
         item_info: &ModuleItemInfo,
