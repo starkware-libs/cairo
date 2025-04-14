@@ -1649,7 +1649,7 @@ pub trait SemanticGroup:
         module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<ImportableId, String>>>;
     /// Returns all visible importables in a module, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible. If
+    /// `user_module_file_id` is the module from which the importables should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     #[salsa::invoke(lsp_helpers::visible_importables_in_module)]
     fn visible_importables_in_module(
@@ -1659,7 +1659,7 @@ pub trait SemanticGroup:
         include_parent: bool,
     ) -> Arc<[(ImportableId, String)]>;
     /// Returns all visible importables in a crate, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible.
+    /// `user_module_file_id` is the module from which the importables should be visible.
     #[salsa::invoke(lsp_helpers::visible_importables_in_crate)]
     fn visible_importables_in_crate(
         &self,

@@ -148,7 +148,15 @@ fn visible_importables_in_module_ex(
         }
         let resolved_item = db.use_resolved_item(use_id).ok()?;
         let (resolved_item, name) = match resolved_item {
-            ResolvedGenericItem::Module(ModuleId::CrateRoot(_)) => continue,
+            ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
+                result.extend_from_slice(
+                    &db.visible_importables_in_crate(
+                        crate_id,
+                        ModuleFileId(module_id, FileIndex(0)),
+                    )[..],
+                );
+                continue;
+            }
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
 
@@ -163,7 +171,6 @@ fn visible_importables_in_module_ex(
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(item_id)) => {
                 (ImportableId::ExternFunction(item_id), item_id.name(db.upcast()))
             }
-            ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_item_id)) => continue,
             ResolvedGenericItem::GenericType(GenericTypeId::Struct(item_id)) => {
                 (ImportableId::Struct(item_id), item_id.name(db.upcast()))
             }
@@ -188,7 +195,9 @@ fn visible_importables_in_module_ex(
             ResolvedGenericItem::Impl(item_id) => {
                 (ImportableId::Impl(item_id), item_id.name(db.upcast()))
             }
-            ResolvedGenericItem::Variable(_) | ResolvedGenericItem::TraitItem(_) => continue,
+            ResolvedGenericItem::Variable(_)
+            | ResolvedGenericItem::TraitItem(_)
+            | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
         };
 
         result.push((resolved_item, name.to_string()));
@@ -197,6 +206,7 @@ fn visible_importables_in_module_ex(
         if !is_visible(submodule_id.name(db.upcast()))? {
             continue;
         }
+        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
 
@@ -281,14 +291,8 @@ pub fn visible_importables_from_module(
     module_file_id: ModuleFileId,
 ) -> Option<Arc<OrderedHashMap<ImportableId, String>>> {
     let module_id = module_file_id.0;
-    let mut current_top_module = module_id;
-    while let ModuleId::Submodule(submodule_id) = current_top_module {
-        current_top_module = submodule_id.parent_module(db.upcast());
-    }
-    let current_crate_id = match current_top_module {
-        ModuleId::CrateRoot(crate_id) => crate_id,
-        ModuleId::Submodule(_) => unreachable!("current module is not a top-level module"),
-    };
+
+    let current_crate_id = module_id.owning_crate(db);
     let edition = db.crate_config(current_crate_id)?.settings.edition;
     let prelude_submodule_name = edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
@@ -300,7 +304,7 @@ pub fn visible_importables_from_module(
     module_visible_importables.extend_from_slice(
         &db.visible_importables_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
-    // Collect importables from all visible crates, including the current crate.
+    // Collect importables from all dependency crates, including the current crate and corelib.
     let settings = db.crate_config(current_crate_id).map(|c| c.settings).unwrap_or_default();
     for crate_id in chain!(
         [current_crate_id],
@@ -322,7 +326,7 @@ pub fn visible_importables_from_module(
         .extend_from_slice(&db.visible_importables_in_module(module_id, module_file_id, true)[..]);
 
     // Deduplicate importables, preferring shorter paths.
-    // This is the reason for searching in the crates before the current module- to prioritize
+    // This is the reason for searching in the crates before the current module - to prioritize
     // shorter, canonical paths prefixed with `crate::` over paths using `super::` or local
     // imports.
     let mut result: OrderedHashMap<ImportableId, String> = OrderedHashMap::default();
