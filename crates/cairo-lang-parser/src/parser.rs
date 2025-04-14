@@ -420,10 +420,10 @@ impl<'a> Parser<'a> {
                     TextSpan { start: next_offset, end: next_offset },
                 );
 
-                // Create a missing semicolon node as fallback and skip the current token
-                // to prevent cascading errors from invalid syntax
+                // Skip the current token if it's not EOF, but don't generate another diagnostic
                 if self.peek().kind != SyntaxKind::TerminalEndOfFile {
-                    self.skip_token(ParserDiagnosticKind::ExpectedSemicolonOrBody);
+                    // Use take_raw instead of skip_token to avoid generating another diagnostic
+                    self.take_raw();
                 }
 
                 TerminalSemicolon::missing(self.db).into()
