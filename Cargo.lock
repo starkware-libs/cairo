@@ -613,7 +613,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-execute-utils"
-version = "2.11.2"
+version = "2.11.4"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -1167,7 +1167,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-size-profiler"
-version = "2.11.2"
+version = "2.11.4"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
