@@ -420,9 +420,8 @@ impl<'a> Parser<'a> {
                     TextSpan { start: next_offset, end: next_offset },
                 );
 
-                // Skip the current token if it's not EOF, but don't generate another diagnostic
+                // Directly use take_raw() to advance the parser without generating another diagnostic
                 if self.peek().kind != SyntaxKind::TerminalEndOfFile {
-                    // Use take_raw instead of skip_token to avoid generating another diagnostic
                     self.take_raw();
                 }
 
