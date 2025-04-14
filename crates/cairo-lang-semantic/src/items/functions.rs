@@ -880,7 +880,7 @@ fn update_env_with_ast_params(
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
-    for ast_param in ast_params.iter() {
+    for ast_param in ast_params {
         let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
 
         if env
