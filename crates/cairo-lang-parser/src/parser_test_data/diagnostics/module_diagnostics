@@ -13,22 +13,6 @@ error: Expected either ';' or '{' after module name. Use ';' for an external mod
 mod my_mod
           ^
 
-error: Expected a '!' after the identifier 'foo' to start an inline macro.
-Did you mean to write `foo!(...)'?
- --> dummy_file.cairo:2:4
-fn foo() {}
-   ^^^
-
-error: Missing token ';'.
- --> dummy_file.cairo:2:9
-fn foo() {}
-        ^
-
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:2:10
-fn foo() {}
-         ^^
-
 //! > ==========================================================================
 
 //! > Missing lbrace.
@@ -44,6 +28,11 @@ error: Expected either ';' or '{' after module name. Use ';' for an external mod
  --> dummy_file.cairo:1:11
 mod my_mod }
           ^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:12
+mod my_mod }
+           ^
 
 //! > ==========================================================================
 
@@ -78,7 +67,7 @@ error: Expected either ';' or '{' after module name. Use ';' for an external mod
 mod my_mod const X = 5;
           ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:18
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:1:19
 mod my_mod const X = 5;
-                 ^^^^^^
+                  ^
