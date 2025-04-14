@@ -161,36 +161,17 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
         // `other`, as for each word, this is the number of bytes left for the next word.
         if self.pending_word_len == BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => { self.append_split_index_16((*current_word).into()); },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_16((*word).into());
             }
         } else if self.pending_word_len < BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_lt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_lt_16((*word).into(), self.pending_word_len);
             }
         } else {
             // self.pending_word_len > BYTES_IN_U128
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_gt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_gt_16((*word).into(), self.pending_word_len);
             }
         }
 
@@ -302,13 +283,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         result.append_word_rev(*self.pending_word, *self.pending_word_len);
 
         let mut data = self.data.span();
-        loop {
-            match data.pop_back() {
-                Some(current_word) => {
-                    result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
-                },
-                None => { break; },
-            }
+        while let Some(current_word) = data.pop_back() {
+            result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
         }
         result
     }
@@ -354,11 +330,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
     }
 }
-
 /// Internal functions associated with the `ByteArray` type.
 #[generate_trait]
 impl InternalImpl of InternalTrait {
-
     /// Appends a single word of `len` bytes to the end of the `ByteArray`, assuming there
     /// is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
     ///
