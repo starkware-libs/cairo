@@ -199,10 +199,10 @@ pub(crate) fn split_u128(value: u128, n_bytes: usize) -> u256 {
 /// Returns the `u8` at `index` if you look at `value` as an array of 32 `u8`s.
 pub(crate) fn u8_at_u256(value: u256, index: usize) -> u8 {
     get_lsb(
-        if index < BYTES_IN_U128 {
-            split_u128(value.low, index).high
+        if let Some(rev_index) = crate::num::traits::CheckedSub::checked_sub(index, BYTES_IN_U128) {
+            split_u128(value.high, rev_index).high
         } else {
-            split_u128(value.high, index - BYTES_IN_U128).high
+            split_u128(value.low, index).high
         },
     )
 }

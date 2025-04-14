@@ -112,27 +112,23 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
         let total_pending_bytes = self.pending_word_len + len;
 
-        if total_pending_bytes < BYTES_IN_BYTES31 {
+        // The split index is the number of bytes left for the next word (new pending_word of the
+        // modified ByteArray).
+        let split_index = if let Some(split_index) =
+            crate::num::traits::CheckedSub::checked_sub(total_pending_bytes, BYTES_IN_BYTES31) {
+            split_index
+        } else {
             self.append_word_fits_into_pending(word, len);
             return;
-        }
+        };
 
-        if total_pending_bytes == BYTES_IN_BYTES31 {
-            self
-                .data
-                .append(
-                    (word + self.pending_word * one_shift_left_bytes_felt252(len))
-                        .try_into()
-                        .unwrap(),
-                );
+        if split_index == 0 {
+            self.append_bytes31(word + self.pending_word * one_shift_left_bytes_felt252(len));
             self.pending_word = 0;
             self.pending_word_len = 0;
             return;
         }
 
-        // The split index is the number of bytes left for the next word (new pending_word of the
-        // modified ByteArray).
-        let split_index = total_pending_bytes - BYTES_IN_BYTES31;
         if split_index == BYTES_IN_U128 {
             self.append_split_index_16(word);
         } else if split_index < BYTES_IN_U128 {
@@ -244,7 +240,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
 
         // self.pending_word_len == 30
-        self.data.append(new_pending.try_into().unwrap());
+        self.append_bytes31(new_pending);
         self.pending_word = 0;
         self.pending_word_len = 0;
     }
@@ -438,11 +434,20 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// responsibility.
     #[inline]
     fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
-        let to_append = complete_full_word
-            + self.pending_word
-                * one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len);
-        self.data.append(to_append.try_into().unwrap());
+        let shift_value = one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len);
+        self.append_bytes31(complete_full_word + self.pending_word * shift_value);
         self.pending_word = new_pending;
+    }
+}
+/// Internal functions associated with the `ByteArray` type.
+#[generate_trait]
+impl InternalImpl of InternalTrait {
+    /// Appends a `felt252` value assumed to be `bytes31`.
+    ///
+    /// Will append an error value in cases of invalid usage in order to avoid panic code.
+    fn append_bytes31(ref self: ByteArray, value: felt252) {
+        const ON_ERR: bytes31 = 'BA_ILLEGAL_USAGE'_u128.into();
+        self.data.append(value.try_into().unwrap_or(ON_ERR));
     }
 }
 
