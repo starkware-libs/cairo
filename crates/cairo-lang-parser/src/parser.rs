@@ -419,12 +419,6 @@ impl<'a> Parser<'a> {
                     ParserDiagnosticKind::ExpectedSemicolonOrBody,
                     TextSpan { start: next_offset, end: next_offset },
                 );
-
-                // Directly use take_raw() to advance the parser without generating another diagnostic
-                if self.peek().kind != SyntaxKind::TerminalEndOfFile {
-                    self.take_raw();
-                }
-
                 TerminalSemicolon::missing(self.db).into()
             }
         };
