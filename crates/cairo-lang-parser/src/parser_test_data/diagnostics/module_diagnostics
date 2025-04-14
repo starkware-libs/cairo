@@ -19,11 +19,6 @@ Did you mean to write `foo!(...)'?
 fn foo() {}
    ^^^
 
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
- --> dummy_file.cairo:2:1
-fn foo() {}
-^^
-
 error: Missing token ';'.
  --> dummy_file.cairo:2:9
 fn foo() {}
@@ -49,11 +44,6 @@ error: Expected either ';' or '{' after module name. Use ';' for an external mod
  --> dummy_file.cairo:1:11
 mod my_mod }
           ^
-
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
- --> dummy_file.cairo:1:12
-mod my_mod }
-           ^
 
 //! > ==========================================================================
 
@@ -87,11 +77,6 @@ error: Expected either ';' or '{' after module name. Use ';' for an external mod
  --> dummy_file.cairo:1:11
 mod my_mod const X = 5;
           ^
-
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
- --> dummy_file.cairo:1:12
-mod my_mod const X = 5;
-           ^^^^^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:18
