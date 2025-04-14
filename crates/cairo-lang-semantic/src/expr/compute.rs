@@ -261,7 +261,7 @@ impl<'ctx> ComputationContext<'ctx> {
     /// errors on types from the final expressions.
     pub fn apply_inference_rewriter_to_exprs(&mut self) {
         let mut analyzed_types = UnorderedHashSet::<_>::default();
-        for (_id, expr) in self.arenas.exprs.iter_mut() {
+        for (_id, expr) in &mut self.arenas.exprs {
             self.resolver.inference().internal_rewrite(expr).no_err();
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
@@ -273,10 +273,10 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Applies inference rewriter to all the rewritable things in the computation context.
     fn apply_inference_rewriter(&mut self) {
         self.apply_inference_rewriter_to_exprs();
-        for (_id, pattern) in self.arenas.patterns.iter_mut() {
+        for (_id, pattern) in &mut self.arenas.patterns {
             self.resolver.inference().internal_rewrite(pattern).no_err();
         }
-        for (_id, stmt) in self.arenas.statements.iter_mut() {
+        for (_id, stmt) in &mut self.arenas.statements {
             self.resolver.inference().internal_rewrite(stmt).no_err();
         }
     }
@@ -1435,7 +1435,7 @@ fn compute_expr_match_semantic(
         .collect();
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
-    for (_, expr) in patterns_and_exprs.iter() {
+    for (_, expr) in &patterns_and_exprs {
         let expr_ty = ctx.reduce_ty(expr.ty());
         if !helper.try_merge_types(
             ctx.db,

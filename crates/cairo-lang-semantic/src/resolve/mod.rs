@@ -1628,7 +1628,7 @@ impl<'db> Resolver<'db> {
         let arg_syntax_per_param =
             self.get_arg_syntax_per_param(diagnostics, generic_params, generic_args_syntax)?;
 
-        for generic_param in generic_params.iter() {
+        for generic_param in generic_params {
             let generic_param = substitution.substitute(self.db, generic_param.clone())?;
             let generic_arg = self.resolve_generic_arg(
                 &generic_param,
