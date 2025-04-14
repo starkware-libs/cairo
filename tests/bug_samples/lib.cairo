@@ -63,8 +63,13 @@ mod issue7095;
 mod issue7155;
 mod issue7233;
 mod issue7234;
+<<<<<<< HEAD
 mod issue7544;
 mod issue7640;
+||||||| 69807a18e
+=======
+mod issue7544;
+>>>>>>> origin/dev-v2.11.4
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;

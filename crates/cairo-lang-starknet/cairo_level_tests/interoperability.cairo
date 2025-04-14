@@ -78,10 +78,24 @@ fn test_flow_safe_dispatcher() {
     assert_eq!(library.foo(300), Ok(0));
 }
 
+<<<<<<< HEAD
 // If the test is failing due to gas usage changes, update the gas limit by taking `test_flow` test
 // gas usage and add about 96000.
+||||||| 69807a18e
+// If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
+// gas usage and add about 110000.
+=======
+// If the test is failing due to gas usage changes, update the gas limit by taking `test_flow` test
+// gas usage and add about 98000.
+>>>>>>> origin/dev-v2.11.4
 #[test]
+<<<<<<< HEAD
 #[available_gas(805080)]
+||||||| 69807a18e
+#[available_gas(826400)]
+=======
+#[available_gas(810570)]
+>>>>>>> origin/dev-v2.11.4
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED'))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.
