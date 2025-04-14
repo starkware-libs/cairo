@@ -905,6 +905,9 @@ impl ConstantEvaluateContext<'_> {
             if self.upcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 return Some(ConstValue::Int(value.clone(), expr_ty));
+            } else if self.unwrap_non_zero == extern_fn {
+                let [ConstValue::NonZero(value)] = args else { return None };
+                return Some(value.as_ref().clone());
             } else if self.downcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
@@ -1186,10 +1189,12 @@ pub struct ConstCalcInfo {
     false_const: ConstValue,
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
-    /// The integer `upcast` function.
+    /// The integer `upcast` style functions.
     upcast_fns: UnorderedHashSet<ExternFunctionId>,
-    /// The integer `downcast` function.
+    /// The integer `downcast` style functions.
     downcast_fns: UnorderedHashSet<ExternFunctionId>,
+    /// The `unwrap_non_zero` function.
+    unwrap_non_zero: ExternFunctionId,
 
     core_info: Arc<CoreInfo>,
 }
@@ -1209,6 +1214,7 @@ impl ConstCalcInfo {
         let core = ModuleHelper::core(db);
         let bounded_int = core.submodule("internal").submodule("bounded_int");
         let integer = core.submodule("integer");
+        let zeroable = core.submodule("zeroable");
         let starknet = core.submodule("starknet");
         let class_hash_module = starknet.submodule("class_hash");
         let contract_address_module = starknet.submodule("contract_address");
@@ -1261,6 +1267,7 @@ impl ConstCalcInfo {
                 class_hash_module.extern_function_id("class_hash_try_from_felt252"),
                 contract_address_module.extern_function_id("contract_address_try_from_felt252"),
             ]),
+            unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
             core_info,
         }
     }
