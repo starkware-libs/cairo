@@ -668,13 +668,13 @@ impl LineBuilder {
         let highest_precedence = self
             .get_highest_protected_zone_precedence()
             .expect("Tried to unprotect a line builder with no protected zones.");
-        for child in self.children.iter() {
+        for child in &self.children {
             match child {
                 LineComponent::ProtectedZone { builder: sub_tree, precedence }
                     if *precedence == highest_precedence && !first_protected_zone_found =>
                 {
                     first_protected_zone_found = true;
-                    for sub_child in sub_tree.children.iter() {
+                    for sub_child in &sub_tree.children {
                         unprotected_builder.push_child(sub_child.clone());
                     }
                 }
