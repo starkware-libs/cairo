@@ -29,6 +29,7 @@ use cairo_lang_semantic::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_starknet::starknet_plugin_suite;
+use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
@@ -235,16 +236,19 @@ fn main() -> anyhow::Result<()> {
     check_compiler_path(args.single_file, &args.path)?;
 
     let mut db_builder = RootDatabase::builder();
+    let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
     if args.no_gas {
-        db_builder
-            .skip_auto_withdraw_gas()
-            .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]));
+        cfg.insert(Cfg::kv("gas", "disabled"));
+        db_builder.skip_auto_withdraw_gas();
     }
 
+    db_builder.with_cfg(cfg);
+    db_builder.detect_corelib();
+    db_builder.with_default_plugin_suite(test_plugin_suite());
     let plugin_suite =
         if args.executable { executable_plugin_suite() } else { starknet_plugin_suite() };
 
-    db_builder.detect_corelib().with_default_plugin_suite(plugin_suite);
+    db_builder.with_default_plugin_suite(plugin_suite);
 
     let mut db_val = db_builder.build()?;
 

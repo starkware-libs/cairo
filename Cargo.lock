@@ -1814,6 +1814,7 @@ dependencies = [
  "cairo-lang-lowering",
  "cairo-lang-semantic",
  "cairo-lang-starknet",
+ "cairo-lang-test-plugin",
  "cairo-lang-utils",
  "clap",
  "convert_case",
