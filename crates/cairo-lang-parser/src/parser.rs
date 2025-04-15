@@ -409,14 +409,12 @@ impl<'a> Parser<'a> {
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
-            SyntaxKind::TerminalSemicolon => {
-                self.take::<TerminalSemicolon>().into()
-            }
-            _ => {
-                self.create_and_report_missing::<TerminalSemicolon>(
-                    ParserDiagnosticKind::ExpectedSemicolonOrBody
-                ).into()
-            }
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
+            _ => self
+                .create_and_report_missing::<TerminalSemicolon>(
+                    ParserDiagnosticKind::ExpectedSemicolonOrBody,
+                )
+                .into(),
         };
 
         ItemModule::new_green(self.db, attributes, visibility, module_kw, name, body)
