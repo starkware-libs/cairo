@@ -359,9 +359,7 @@ pub fn lower_expr_while_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_info().felt252
-        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db, ty).is_some()
-    {
+    if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
             loop_expr.stable_ptr.untyped(),
             LoweringDiagnosticKind::MatchError(MatchError {

@@ -197,6 +197,15 @@ impl GenericFunctionId {
             }
         }
     }
+    /// Returns the concrete function of this generic function with the given generic args.
+    pub fn concretize(
+        &self,
+        db: &dyn SemanticGroup,
+        generic_args: Vec<semantic::GenericArgumentId>,
+    ) -> FunctionId {
+        FunctionLongId { function: ConcreteFunction { generic_function: *self, generic_args } }
+            .intern(db)
+    }
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
