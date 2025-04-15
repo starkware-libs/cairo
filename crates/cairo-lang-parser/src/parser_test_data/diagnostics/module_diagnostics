@@ -8,26 +8,10 @@ mod my_mod
 fn foo() {}
 
 //! > expected_diagnostics
-error: Expected a '!' after the identifier 'foo' to start an inline macro.
-Did you mean to write `foo!(...)'?
- --> dummy_file.cairo:2:4
-fn foo() {}
-   ^^^
-
 error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
- --> dummy_file.cairo:2:1
-fn foo() {}
-^^
-
-error: Missing token ';'.
- --> dummy_file.cairo:2:9
-fn foo() {}
-        ^
-
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:2:10
-fn foo() {}
-         ^^
+ --> dummy_file.cairo:1:11
+mod my_mod
+          ^
 
 //! > ==========================================================================
 
@@ -41,6 +25,11 @@ mod my_mod }
 
 //! > expected_diagnostics
 error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
+ --> dummy_file.cairo:1:11
+mod my_mod }
+          ^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:12
 mod my_mod }
            ^
@@ -74,11 +63,6 @@ mod my_mod const X: felt252 = 5;
 
 //! > expected_diagnostics
 error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
- --> dummy_file.cairo:1:12
+ --> dummy_file.cairo:1:11
 mod my_mod const X: felt252 = 5;
-           ^^^^^
-
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:18
-mod my_mod const X: felt252 = 5;
-                 ^^^^^^^^^^^^^^^
+          ^
