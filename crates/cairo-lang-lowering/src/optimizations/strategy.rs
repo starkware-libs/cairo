@@ -114,11 +114,8 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::ApplyInlining,
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
-        // The call to `reorder_statements` before and after `branch_inversion` is intentional.
-        // See description of `branch_inversion` for more details.
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::BranchInversion,
-        OptimizationPhase::ReorderStatements,
         OptimizationPhase::CancelOps,
         // Must be right before const folding.
         OptimizationPhase::ReorganizeBlocks,
