@@ -999,7 +999,7 @@ macro add_one {
 //! > Test user defined macro overwriting plugin macro.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: warnings_only)
 
 //! > function
 fn foo() {
@@ -1015,12 +1015,16 @@ foo
 macro assert_eq {
     ($x:ident, $y:ident) => {
         if $x != $y {
-            panic!("Panic!");
+            $defsite::panic!("Panic!");
         }
     };
 }
 
 //! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[assert_eq]:3:13
+            $defsite::panic!("Panic!");
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1161,6 +1165,11 @@ macro bas_use_z_from_callsite {
 fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[bas_use_z_from_callsite]:2:9
+        z
+        ^
+
 error: Identifier not found.
  --> lib.cairo[bas_use_z_from_callsite]:2:9
         z
@@ -1200,7 +1209,37 @@ macro wrap_bas_use_z_from_callsite {
 }
 
 //! > expected_diagnostics
-error: `$callsite` is not supported.
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
  --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:10
         $callsite::z
          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test usage of a callsite function with no callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {
+    call_bar!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro call_bar {
+    () => {
+        bar()
+    };
+}
+
+fn bar() {}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[call_bar]:2:9
+        bar()
+        ^^^

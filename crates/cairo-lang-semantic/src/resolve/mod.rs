@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
@@ -47,6 +48,7 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
 };
+use crate::items::macro_declaration::MacroExpansionResult;
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
@@ -76,6 +78,7 @@ const STARKNET_CRATE_NAME: &str = "starknet";
 // part of the segment.
 /// The modifier for a macro definition site.
 pub const MACRO_DEF_SITE: &str = "defsite";
+pub const MACRO_CALL_SITE: &str = "callsite";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -207,12 +210,20 @@ impl ResolverData {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ResolverMacroData {
+    pub defsite_data: Arc<ResolverData>,
+    pub callsite_data: Arc<ResolverData>,
+    pub expansion_result: Arc<MacroExpansionResult>,
+    pub parent_macro_call_data: Option<Box<ResolverMacroData>>,
+}
+
 /// Resolves paths semantically.
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
     /// The resolver data for resolving items from the definition site of a macro.
-    pub macro_defsite_data: Option<Arc<ResolverData>>,
+    pub macro_call_data: Option<ResolverMacroData>,
     pub owning_crate_id: CrateId,
     pub settings: CrateSettings,
 }
@@ -259,6 +270,8 @@ pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
     /// Is the path prefixed with a `$`, indicating a resolver site modifier.
     fn is_placeholder(&self, db: &dyn SyntaxGroup) -> bool;
+    /// The offset of the path in the file.
+    fn offset(&self) -> Option<TextOffset>;
 }
 impl AsSegments for &ast::ExprPath {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
@@ -270,6 +283,10 @@ impl AsSegments for &ast::ExprPath {
             ast::OptionTerminalDollar::TerminalDollar(_) => true,
         }
     }
+
+    fn offset(&self) -> Option<TextOffset> {
+        Some(self.as_syntax_node().offset())
+    }
 }
 impl AsSegments for Vec<ast::PathSegment> {
     fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
@@ -279,6 +296,9 @@ impl AsSegments for Vec<ast::PathSegment> {
         // A dollar can prefix only the first segment of a path, thus irrelevant to a list of
         // segments.
         false
+    }
+    fn offset(&self) -> Option<TextOffset> {
+        self.first().map(|segment| segment.as_syntax_node().offset())
     }
 }
 
@@ -294,7 +314,7 @@ impl<'db> Resolver<'db> {
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
-        Self { owning_crate_id, settings, db, data, macro_defsite_data: None }
+        Self { owning_crate_id, settings, db, data, macro_call_data: None }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -347,12 +367,28 @@ impl<'db> Resolver<'db> {
         let db = self.db;
         let syntax_db = db.upcast();
         let is_placeholder = path.is_placeholder(syntax_db);
-
+        let mut cur_offset = path.offset().expect("Trying to resolve an empty path.");
         let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
+        let segments_stable_ptr =
+            segments.peek().expect("Trying to resolve an empty path.").stable_ptr();
+        let mut cur_macro_call_data = self.macro_call_data.clone();
+        while let Some(macro_call_data) = cur_macro_call_data.clone() {
+            if let Some(placeholder_expansion) =
+                macro_call_data.expansion_result.get_placeholder_at(cur_offset)
+            {
+                cur_macro_call_data = macro_call_data.parent_macro_call_data.map(|x| (*x).clone());
+                cur_offset = placeholder_expansion.origin.as_span().unwrap().start;
+                continue;
+            }
+            break;
+        }
         let active_resolver = if is_placeholder {
-            &mut self.resolve_placeholder(diagnostics, &mut segments)?
+            &mut self.resolve_placeholder(diagnostics, &mut segments, cur_macro_call_data)?
         } else {
+            if cur_macro_call_data.is_some() {
+                diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
+            }
             self
         };
         // Find where the first segment lies in.
@@ -2019,6 +2055,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        macro_call_data: Option<ResolverMacroData>,
     ) -> Maybe<Resolver<'db>> {
         if segments.len() == 1 {
             return Err(diagnostics
@@ -2028,23 +2065,30 @@ impl<'db> Resolver<'db> {
             Some(ast::PathSegment::Simple(path_segment_simple)) => {
                 let ident = path_segment_simple.ident(self.db.upcast());
                 let ident_text = ident.text(self.db.upcast());
-                // TODO(Gil): Add support for $callsite.
-                if ident_text == MACRO_DEF_SITE {
-                    segments.next();
-                    if let Some(defsite_resolver_data) = self.macro_defsite_data.as_ref() {
-                        Ok(Resolver::with_data(
-                            self.db,
-                            defsite_resolver_data
-                                .clone_with_inference_id(self.db, self.inference_data.inference_id),
-                        ))
-                    } else {
-                        Err(diagnostics
-                            .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                match ident_text.as_str() {
+                    MACRO_DEF_SITE | MACRO_CALL_SITE => {
+                        segments.next();
+                        if let Some(macro_call_data) = macro_call_data {
+                            let resolver_data = if ident_text.as_str() == MACRO_DEF_SITE {
+                                macro_call_data.defsite_data
+                            } else {
+                                macro_call_data.callsite_data
+                            };
+                            Ok(Resolver::with_data(
+                                self.db,
+                                resolver_data.clone_with_inference_id(
+                                    self.db,
+                                    self.inference_data.inference_id,
+                                ),
+                            ))
+                        } else {
+                            Err(diagnostics
+                                .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                        }
                     }
-                } else {
-                    Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
+                    _ => Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
                         modifier: ident_text,
-                    }))
+                    })),
                 }
             }
             _ => {

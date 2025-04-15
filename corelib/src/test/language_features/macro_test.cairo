@@ -54,11 +54,14 @@ mod test_assert_eq {
     macro assert_eq {
         ($left:ident, $right:ident) => {
             if $left != $right {
-                panic!("PANIC!");
+                // TODO(Gil): Call `panic!` directly when $callsite is supported inside plugins.
+                $callsite::panic();
             }
         };
     }
-
+    fn panic() {
+        panic!("PANIC!");
+    }
     #[test]
     #[should_panic(expected: ("PANIC!",))]
     fn test_user_defined_assert_eq() {
@@ -216,4 +219,28 @@ macro macro_wrapped_use_z_from_callsite {
 #[test]
 fn test_wrap_use_z_from_callsite() {
     assert_eq!(macro_wrapped_use_z_from_callsite!(), (2, 4));
+}
+
+mod callsite_test {
+    fn foo(x: felt252) -> felt252 {
+        x + 100
+    }
+
+    mod inner {
+        fn foo(x: felt252) -> felt252 {
+            x + 200
+        }
+
+        pub macro call_foo {
+            ($x:expr) => {
+                $callsite::foo($x) 
+            };
+        }
+    }
+
+    #[test]
+    fn test_callsite_resolution() {
+        assert_eq!(inner::call_foo!(5), 105);  
+        assert_eq!(inner::call_foo!((foo(5))), 205); 
+    }
 }
