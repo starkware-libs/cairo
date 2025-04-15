@@ -1015,9 +1015,13 @@ foo
 macro assert_eq {
     ($x:ident, $y:ident) => {
         if $x != $y {
-            panic!("Panic!");
+            $defsite::panic();
         }
     };
+}
+
+fn panic() {
+    panic!("Panic!");
 }
 
 //! > expected_diagnostics
@@ -1161,6 +1165,11 @@ macro bas_use_z_from_callsite {
 fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[bas_use_z_from_callsite]:2:9
+        z
+        ^
+
 error[E0006]: Identifier not found.
  --> lib.cairo[bas_use_z_from_callsite]:2:9
         z
@@ -1200,10 +1209,40 @@ macro wrap_bas_use_z_from_callsite {
 }
 
 //! > expected_diagnostics
-error: `$callsite` is not supported.
- --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:10
+error[E0006]: Identifier not found.
+ --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:20
         $callsite::z
-         ^^^^^^^^
+                   ^
+
+//! > ==========================================================================
+
+//! > Test usage of a callsite function with no callsite.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {
+    call_bar!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro call_bar {
+    () => {
+        bar()
+    };
+}
+
+fn bar() {}
+
+//! > expected_diagnostics
+warning: Path in a macro without a resolver modifier ($callsite or $defsite) - currently resolving as $callsite but this will not be supported in future versions.
+ --> lib.cairo[call_bar]:2:9
+        bar()
+        ^^^
 
 //! > ==========================================================================
 
@@ -1216,7 +1255,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() {
     test_macro!();
 }
-
+    
 //! > function_name
 foo
 
@@ -1228,6 +1267,11 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
+error: Missing token '}'.
+ --> lib.cairo:7:19
+    test_macro!();
+                  ^
+
 error: No matching rule found in inline macro `test_macro`.
  --> lib.cairo:7:5
     test_macro!();
