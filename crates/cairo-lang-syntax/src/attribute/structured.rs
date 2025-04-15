@@ -75,7 +75,7 @@ impl<'a> DebugWithDb<dyn SyntaxGroup + 'a> for Attribute {
         write!(f, r#"Attribute {{ id: "{}""#, self.id)?;
         if !self.args.is_empty() {
             write!(f, ", args: [")?;
-            for arg in self.args.iter() {
+            for arg in &self.args {
                 write!(f, "{:?}, ", arg.arg.as_syntax_node().get_text(db))?;
             }
             write!(f, "]")?;
