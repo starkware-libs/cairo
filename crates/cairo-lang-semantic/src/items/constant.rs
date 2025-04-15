@@ -1189,9 +1189,9 @@ pub struct ConstCalcInfo {
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
     /// The integer `upcast` style functions.
-    upcast_fns: UnorderedHashSet<ExternFunctionId>,
+    pub upcast_fns: UnorderedHashSet<ExternFunctionId>,
     /// The integer `downcast` style functions.
-    downcast_fns: UnorderedHashSet<ExternFunctionId>,
+    pub downcast_fns: UnorderedHashSet<ExternFunctionId>,
     /// The `unwrap_non_zero` function.
     unwrap_non_zero: ExternFunctionId,
 
