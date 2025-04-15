@@ -76,7 +76,7 @@ use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
     AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
-    ResolvedGenericItem, Resolver,
+    ResolvedGenericItem, Resolver, ResolverMacroData,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
@@ -481,7 +481,6 @@ fn compute_expr_inline_macro_semantic(
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let macro_name = syntax.path(db).identifier(ctx.db).to_string();
-    let prev_macro_resolver_data = ctx.resolver.macro_defsite_data.clone();
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(db).any(|node| {
@@ -507,6 +506,9 @@ fn compute_expr_inline_macro_semantic(
         NotFoundItemType::Macro,
         ResolutionContext::Statement(&mut ctx.environment),
     );
+    let inference_id = ctx.resolver.inference().inference_id;
+    let prev_macro_resolver_data = ctx.resolver.macro_call_data.clone();
+    let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
     let (content, name, mappings, is_macro_rule) =
         if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
             let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
@@ -523,9 +525,18 @@ fn compute_expr_inline_macro_semantic(
             let mut matcher_ctx =
                 MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
             let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
-            let macro_resolver_data =
+
+            let macro_defsite_resolver_data =
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
-            ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
+            let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
+            ctx.resolver.macro_call_data = Some(ResolverMacroData {
+                defsite_data: macro_defsite_resolver_data,
+                callsite_data: callsite_resolver
+                    .clone_with_inference_id(ctx.db, inference_id)
+                    .into(),
+                expansion_result: expanded_code.clone().into(),
+                parent_macro_call_data: parent_macro_call_data.map(|data| data.into()),
+            });
             (expanded_code.text, macro_name.into(), expanded_code.code_mappings, true)
         } else if let Some(macro_plugin_id) =
             ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
@@ -589,7 +600,7 @@ fn compute_expr_inline_macro_semantic(
     } else {
         compute_expr_semantic(ctx, &expr_syntax)
     };
-    ctx.resolver.macro_defsite_data = prev_macro_resolver_data;
+    ctx.resolver.macro_call_data = prev_macro_resolver_data;
     Ok(expr.expr)
 }
 

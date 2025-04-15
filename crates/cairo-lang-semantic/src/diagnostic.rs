@@ -970,6 +970,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
                 "Empty path after `$defsite` is not allowed.".into()
             }
+            SemanticDiagnosticKind::PathInMacroWithoutModifier => {
+                "Path in a macro without a resolver modifier ($callsite or $defsite) - currently \
+                 resolving as $callsite but this will not be supported in future versions."
+                    .into()
+            }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
@@ -1099,7 +1104,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
-            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments
+            | SemanticDiagnosticKind::PathInMacroWithoutModifier => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1471,6 +1477,7 @@ pub enum SemanticDiagnosticKind {
         modifier: SmolStr,
     },
     EmptyPathAfterResolverModifier,
+    PathInMacroWithoutModifier,
     DerefCycle {
         deref_chain: String,
     },
