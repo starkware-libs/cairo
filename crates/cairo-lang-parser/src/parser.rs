@@ -413,7 +413,7 @@ impl<'a> Parser<'a> {
                 self.take::<TerminalSemicolon>().into()
             }
             _ => {
-                self.skip_token_and_return_missing::<TerminalSemicolon>(
+                self.create_and_report_missing::<TerminalSemicolon>(
                     ParserDiagnosticKind::ExpectedSemicolonOrBody
                 ).into()
             }
