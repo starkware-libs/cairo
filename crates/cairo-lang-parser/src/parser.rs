@@ -413,13 +413,9 @@ impl<'a> Parser<'a> {
                 self.take::<TerminalSemicolon>().into()
             }
             _ => {
-                // Report diagnostic showing that either ';' or '{' is expected after module name
-                let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
-                self.add_diagnostic(
-                    ParserDiagnosticKind::ExpectedSemicolonOrBody,
-                    TextSpan { start: next_offset, end: next_offset },
-                );
-                TerminalSemicolon::missing(self.db).into()
+                self.skip_token_and_return_missing::<TerminalSemicolon>(
+                    ParserDiagnosticKind::ExpectedSemicolonOrBody
+                ).into()
             }
         };
 
