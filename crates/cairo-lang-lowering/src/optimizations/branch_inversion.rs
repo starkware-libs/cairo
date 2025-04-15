@@ -21,15 +21,6 @@ use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall};
 ///
 /// The call to `bool_not_impl` is not deleted as we don't know if its output
 /// is used by other statements (or block ending).
-///
-/// Due to the limitations above, the `reorder_statements` function should be called before this
-/// optimization and between this optimization and the match optimization.
-///
-/// The first call to `reorder_statements` moves the call to `bool_not_impl` into the block whose
-/// match enum we want to optimize.
-/// The second call to `reorder_statements` removes the call to `bool_not_impl` if it is unused,
-/// allowing the match optimization to be applied to enum_init statements that appeared before the
-/// `bool_not_impl`.
 pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
