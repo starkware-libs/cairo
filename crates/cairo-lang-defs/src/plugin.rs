@@ -73,7 +73,9 @@ pub struct PluginResult {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
-    /// Span relative to the start of the `stable_ptr`
+    /// Span relative to the start of the `stable_ptr`.
+    /// No assertion is made that the span is fully contained within the node pointed to by `stable_ptr`.
+    /// When printing diagnostics, any part of the span that falls outside the referenced node will be silently ignored.
     pub relative_span: Option<TextSpan>,
     pub message: String,
     pub severity: Severity,
