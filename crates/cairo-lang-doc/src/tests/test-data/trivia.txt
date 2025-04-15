@@ -48,6 +48,12 @@ pub enum TestEnum {
 // yup
 pub extern type S<T>;
 
+/// ensure the indentation is not preserved
+pub mod nested {
+    #[derive(Drop)]
+    struct XYZ {}
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -96,8 +102,8 @@ second field
 Content("second field")
 
 //! > Item signature #6
-#[derive(Clone)] 
-#[derive(Drop)] 
+#[derive(Clone)]
+#[derive(Drop)]
 struct Pair2<T, U> {
     pub first: T,
     second: U,
@@ -166,3 +172,19 @@ extern type comment
 
 //! > Item documentation tokens #12
 Content("extern type comment")
+
+//! > Item signature #13
+
+//! > Item documentation #13
+ensure the indentation is not preserved
+
+//! > Item documentation tokens #13
+Content("ensure the indentation is not preserved")
+
+//! > Item signature #14
+#[derive(Drop)]
+struct XYZ {}
+
+//! > Item documentation #14
+
+//! > Item documentation tokens #14
