@@ -8,7 +8,7 @@ type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true,
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<u128> = dup<u128>;
-libfunc u128_to_felt252 = u128_to_felt252;
+libfunc upcast<u128, felt252> = upcast<u128, felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<u128> = drop<u128>;
@@ -28,7 +28,7 @@ libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<co
 F0:
 disable_ap_tracking() -> ();
 dup<u128>([3]) -> ([3], [4]);
-u128_to_felt252([4]) -> ([5]);
+upcast<u128, felt252>([4]) -> ([5]);
 felt252_is_zero([5]) { fallthrough() F0_B0([6]) };
 branch_align() -> ();
 drop<u128>([2]) -> ();
