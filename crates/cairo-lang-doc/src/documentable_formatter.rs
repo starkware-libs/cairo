@@ -975,7 +975,7 @@ fn write_generic_args(
     if !generic_args.is_empty() {
         f.write_str("<")?;
     }
-    for arg in generic_args.iter() {
+    for arg in &generic_args {
         let documentable_id = resolve_generic_arg(*arg, f.db);
         let _ = f.write_link(extract_and_format(&arg.format(f.db.upcast())), documentable_id);
         let _ = f.write_str(if count == 1 { ">" } else { ", " });
