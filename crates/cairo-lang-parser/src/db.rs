@@ -15,7 +15,9 @@ mod db_test;
 
 // Salsa database interface.
 #[salsa::query_group(ParserDatabase)]
-pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
+pub trait ParserGroup:
+    SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup + Upcast<dyn FilesGroup>
+{
     /// Should only be used internally.
     /// Parses a file and returns the result and the generated [ParserDiagnostic].
     fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;

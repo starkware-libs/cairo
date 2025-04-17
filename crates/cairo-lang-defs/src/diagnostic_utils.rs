@@ -51,10 +51,9 @@ impl StableLocation {
         db: &dyn DefsGroup,
         until_stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticLocation {
-        let syntax_db = db.upcast();
-        let start = self.0.lookup(syntax_db).span_start_without_trivia(syntax_db);
-        let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
-        DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
+        let start = self.0.lookup(db).span_start_without_trivia(db);
+        let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
+        DiagnosticLocation { file_id: self.0.file_id(db), span: TextSpan { start, end } }
     }
 
     /// Returns the [DiagnosticLocation] corresponding to a subrange of the [StableLocation],
@@ -65,9 +64,8 @@ impl StableLocation {
         start_offset: u32,
         end_offset: u32,
     ) -> DiagnosticLocation {
-        let syntax_db = db.upcast();
-        let syntax_node = self.0.lookup(syntax_db);
-        let node_span = syntax_node.span_without_trivia(syntax_db);
+        let syntax_node = self.0.lookup(db);
+        let node_span = syntax_node.span_without_trivia(db);
 
         let span = TextSpan {
             start: node_span
@@ -80,13 +78,13 @@ impl StableLocation {
                 .min(node_span.end),
         };
 
-        DiagnosticLocation { file_id: self.0.file_id(syntax_db), span }
+        DiagnosticLocation { file_id: self.0.file_id(db), span }
     }
 }
 
 impl DebugWithDb<dyn DefsGroup> for StableLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DefsGroup) -> fmt::Result {
         let diag_location = self.diagnostic_location(db);
-        diag_location.fmt_location(f, db.upcast())
+        diag_location.fmt_location(f, db)
     }
 }

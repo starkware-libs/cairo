@@ -111,13 +111,11 @@ macro_rules! define_named_language_element_id {
         }
         impl NamedLanguageElementLongId for $long_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-                let syntax_db = db.upcast();
-                let terminal_green = self.1.name_green(syntax_db);
-                terminal_green.identifier(syntax_db)
+                let terminal_green = self.1.name_green(db);
+                terminal_green.identifier(db)
             }
             fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
-                let syntax_db = db.upcast();
-                self.1.lookup(syntax_db).name(syntax_db)
+                self.1.lookup(db).name(db)
             }
         }
         impl NamedLanguageElementId for $short_id {
@@ -918,17 +916,16 @@ impl GenericParamId {
             unreachable!()
         };
 
-        let syntax_db = db.upcast();
         if matches!(
             kind,
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
         ) {
             // For anonymous impls print the declaration.
-            return self.stable_location(db).syntax_node(db).get_text_without_trivia(syntax_db);
+            return self.stable_location(db).syntax_node(db).get_text_without_trivia(db);
         }
 
         let name_green = TerminalIdentifierGreen(key_fields[0]);
-        name_green.identifier(syntax_db).into()
+        name_green.identifier(db).into()
     }
 
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
@@ -1134,9 +1131,8 @@ define_language_element_id_basic!(
 );
 impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
-        let text = ptr.lookup(syntax_db).text(syntax_db);
+        let text = ptr.lookup(db).text(db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }
 }
@@ -1273,18 +1269,11 @@ impl StatementItemId {
         }
     }
     pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
-        let syntax_db = db.upcast();
         match self {
-            StatementItemId::Constant(id) => id
-                .lookup_intern(db)
-                .1
-                .lookup(syntax_db)
-                .name(syntax_db)
-                .stable_ptr(syntax_db)
-                .untyped(),
-            StatementItemId::Use(id) => {
-                id.lookup_intern(db).1.lookup(syntax_db).name_stable_ptr(syntax_db)
+            StatementItemId::Constant(id) => {
+                id.lookup_intern(db).1.lookup(db).name(db).stable_ptr(db).untyped()
             }
+            StatementItemId::Use(id) => id.lookup_intern(db).1.lookup(db).name_stable_ptr(db),
         }
     }
 }

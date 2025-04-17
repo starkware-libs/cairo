@@ -1398,11 +1398,11 @@ struct SyntaxNodeInnerCached {
 
 impl SyntaxNodeCached {
     fn new(syntax_node: SyntaxNode, ctx: &mut DefCacheSavingContext<'_>) -> Self {
-        let syntax_db = ctx.db.upcast();
-        let green = GreenIdCached::new(syntax_node.green_node(syntax_db).intern(ctx.db), ctx);
-        let parent = syntax_node.parent(syntax_db).map(|it| Self::new(it, ctx));
-        let stable_ptr = SyntaxStablePtrIdCached::new(syntax_node.stable_ptr(syntax_db), ctx);
-        let offset = syntax_node.offset(syntax_db);
+        let db = ctx.db;
+        let green = GreenIdCached::new(syntax_node.green_node(db).intern(db), ctx);
+        let parent = syntax_node.parent(db).map(|it| Self::new(it, ctx));
+        let stable_ptr = SyntaxStablePtrIdCached::new(syntax_node.stable_ptr(db), ctx);
+        let offset = syntax_node.offset(db);
         let inner = SyntaxNodeInnerCached { green, offset, parent, stable_ptr };
         SyntaxNodeCached(Box::new(inner))
     }

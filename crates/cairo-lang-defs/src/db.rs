@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -19,7 +18,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{Itertools, chain};
 use salsa::InternKey;
 
@@ -31,9 +30,7 @@ use crate::plugin_utils::try_extract_unnamed_arg;
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
-pub trait DefsGroup:
-    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
-{
+pub trait DefsGroup: ParserGroup {
     #[salsa::interned]
     fn intern_constant(&self, id: ConstantLongId) -> ConstantId;
     #[salsa::interned]
@@ -523,12 +520,11 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         }
     };
 
-    let syntax_db = db.upcast();
     let module_file = db.module_main_file(module_id)?;
     let main_file_aux_data = if let ModuleId::Submodule(submodule_id) = module_id {
         let parent_module_data = db.priv_module_data(submodule_id.parent_module(db))?;
         let item_module_ast = &parent_module_data.submodules[&submodule_id];
-        if matches!(item_module_ast.body(syntax_db), MaybeModuleBody::Some(_)) {
+        if matches!(item_module_ast.body(db), MaybeModuleBody::Some(_)) {
             // TODO(spapini): Diagnostics in this module that get mapped to parent module
             // should lie in that modules ModuleData, or somehow collected by its
             // diagnostics collector function.
@@ -580,88 +576,81 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             match item_ast.clone() {
                 ast::ModuleItem::Constant(constant) => {
                     let item_id =
-                        ConstantLongId(module_file_id, constant.stable_ptr(syntax_db)).intern(db);
+                        ConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::ModuleItem::Module(module) => {
-                    let item_id =
-                        SubmoduleLongId(module_file_id, module.stable_ptr(syntax_db)).intern(db);
+                    let item_id = SubmoduleLongId(module_file_id, module.stable_ptr(db)).intern(db);
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::ModuleItem::Use(us) => {
-                    for leaf in get_all_path_leaves(syntax_db, &us) {
-                        let id = UseLongId(module_file_id, leaf.stable_ptr(syntax_db)).intern(db);
+                    for leaf in get_all_path_leaves(db, &us) {
+                        let id = UseLongId(module_file_id, leaf.stable_ptr(db)).intern(db);
                         uses.insert(id, leaf);
                         items.push(ModuleItemId::Use(id));
                     }
-                    for star in get_all_path_stars(syntax_db, &us) {
-                        let id =
-                            GlobalUseLongId(module_file_id, star.stable_ptr(syntax_db)).intern(db);
+                    for star in get_all_path_stars(db, &us) {
+                        let id = GlobalUseLongId(module_file_id, star.stable_ptr(db)).intern(db);
                         global_uses.insert(id, star);
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
                     let item_id =
-                        FreeFunctionLongId(module_file_id, function.stable_ptr(syntax_db))
-                            .intern(db);
+                        FreeFunctionLongId(module_file_id, function.stable_ptr(db)).intern(db);
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
                 ast::ModuleItem::ExternFunction(extern_function) => {
                     let item_id =
-                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr(syntax_db))
+                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr(db))
                             .intern(db);
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
                 ast::ModuleItem::ExternType(extern_type) => {
                     let item_id =
-                        ExternTypeLongId(module_file_id, extern_type.stable_ptr(syntax_db))
-                            .intern(db);
+                        ExternTypeLongId(module_file_id, extern_type.stable_ptr(db)).intern(db);
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
                 ast::ModuleItem::Trait(trt) => {
-                    let item_id = TraitLongId(module_file_id, trt.stable_ptr(syntax_db)).intern(db);
+                    let item_id = TraitLongId(module_file_id, trt.stable_ptr(db)).intern(db);
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
                 ast::ModuleItem::Impl(imp) => {
-                    let item_id =
-                        ImplDefLongId(module_file_id, imp.stable_ptr(syntax_db)).intern(db);
+                    let item_id = ImplDefLongId(module_file_id, imp.stable_ptr(db)).intern(db);
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
                 ast::ModuleItem::Struct(structure) => {
-                    let item_id =
-                        StructLongId(module_file_id, structure.stable_ptr(syntax_db)).intern(db);
+                    let item_id = StructLongId(module_file_id, structure.stable_ptr(db)).intern(db);
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
                 ast::ModuleItem::Enum(enm) => {
-                    let item_id = EnumLongId(module_file_id, enm.stable_ptr(syntax_db)).intern(db);
+                    let item_id = EnumLongId(module_file_id, enm.stable_ptr(db)).intern(db);
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
                     let item_id =
-                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr(syntax_db))
-                            .intern(db);
+                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr(db)).intern(db);
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
                 ast::ModuleItem::ImplAlias(impl_alias) => {
-                    let item_id = ImplAliasLongId(module_file_id, impl_alias.stable_ptr(syntax_db))
-                        .intern(db);
+                    let item_id =
+                        ImplAliasLongId(module_file_id, impl_alias.stable_ptr(db)).intern(db);
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
                 ast::ModuleItem::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic::error(
-                        inline_macro_ast.stable_ptr(syntax_db),
+                        inline_macro_ast.stable_ptr(db),
                         format!(
                             "Unknown inline item macro: '{}'.",
                             inline_macro_ast.name(db.upcast()).text(db.upcast())
@@ -724,14 +713,13 @@ fn priv_module_sub_files(
     module_id: ModuleId,
     file_id: FileId,
 ) -> Maybe<Arc<PrivModuleSubFiles>> {
-    let syntax_db = db.upcast();
     let module_main_file = db.module_main_file(module_id)?;
     let file_syntax = db.file_module_syntax(file_id)?;
     let item_asts = if module_main_file == file_id {
         if let ModuleId::Submodule(submodule_id) = module_id {
             let data = db.priv_module_data(submodule_id.parent_module(db))?;
             if let MaybeModuleBody::Some(body) = data.submodules[&submodule_id].body(db.upcast()) {
-                Some(body.items(syntax_db))
+                Some(body.items(db))
             } else {
                 None
             }
@@ -741,7 +729,7 @@ fn priv_module_sub_files(
     } else {
         None
     }
-    .unwrap_or_else(|| file_syntax.items(syntax_db));
+    .unwrap_or_else(|| file_syntax.items(db));
 
     let crate_id = module_id.owning_crate(db);
 
@@ -769,7 +757,7 @@ fn priv_module_sub_files(
     let mut items = Vec::new();
     let mut plugin_diagnostics = Vec::new();
     let mut diagnostics_notes = OrderedHashMap::default();
-    for item_ast in item_asts.elements(syntax_db) {
+    for item_ast in item_asts.elements(db) {
         let mut remove_original_item = false;
         // Iterate the plugins by their order. The first one to change something (either
         // generate new code, remove the original code, or both), breaks the loop. If more
@@ -787,7 +775,7 @@ fn priv_module_sub_files(
                 let generated_file_id = FileLongId::External(
                     PluginGeneratedFileLongId {
                         module_id,
-                        stable_ptr: item_ast.stable_ptr(syntax_db).untyped(),
+                        stable_ptr: item_ast.stable_ptr(db).untyped(),
                         name: generated.name.clone(),
                     }
                     .intern(db)
@@ -818,7 +806,7 @@ fn priv_module_sub_files(
             // Don't add the original item to the module data.
             continue;
         }
-        validate_attributes(syntax_db, &allowed_attributes, &item_ast, &mut plugin_diagnostics);
+        validate_attributes(db, &allowed_attributes, &item_ast, &mut plugin_diagnostics);
         items.push(item_ast);
     }
     let res = PrivModuleSubFiles { files, aux_data, items, plugin_diagnostics, diagnostics_notes };
@@ -1289,7 +1277,6 @@ fn module_item_name_stable_ptr(
     item_id: ModuleItemId,
 ) -> Maybe<SyntaxStablePtrId> {
     let data = db.priv_module_data(module_id)?;
-    let db = db.upcast();
     Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr(db).untyped(),
