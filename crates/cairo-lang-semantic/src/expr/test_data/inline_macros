@@ -1204,3 +1204,31 @@ error: `$callsite` is not supported.
  --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:10
         $callsite::z
          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test empty expr in macro call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($x:expr) => {
+        1
+    };
+}
+
+//! > expected_diagnostics
+error: No matching rule found in inline macro `test_macro`.
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
