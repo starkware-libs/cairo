@@ -70,7 +70,7 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
 use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
 use crate::items::macro_declaration::{
-    MacroExpansionResult, expand_macro_rule, is_macro_rule_match,
+    MacroExpansionResult, MatcherContext, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
@@ -498,17 +498,19 @@ fn compute_expr_inline_macro_semantic(
     let (content, name, mappings, is_macro_rule) =
         if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
             let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-            let Some((rule, captures)) = macro_rules.iter().find_map(|rule| {
-                is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
-                    .map(|captures| (rule, captures))
-            }) else {
+            let Some((rule, (captures, placeholder_to_rep_id))) =
+                macro_rules.iter().find_map(|rule| {
+                    is_macro_rule_match(ctx.db, rule, &syntax.arguments(syntax_db))
+                        .map(|res| (rule, res))
+                })
+            else {
                 return Err(ctx
                     .diagnostics
                     .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
             };
-
-            let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &captures)?;
-
+            let mut matcher_ctx =
+                MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
+            let expanded_code = expand_macro_rule(ctx.db.upcast(), rule, &mut matcher_ctx)?;
             let macro_resolver_data =
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
             ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
