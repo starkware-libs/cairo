@@ -4,8 +4,8 @@ use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_dev_corelib, init_files_group,
+    CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
+    init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
@@ -216,11 +216,6 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
-impl AsFilesGroupMut for RootDatabase {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
 impl Upcast<dyn FilesGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self

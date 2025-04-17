@@ -8,8 +8,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_files_group,
+    CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_files_group,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
@@ -75,11 +74,6 @@ impl Default for DatabaseForTesting {
         res
     }
 }
-impl AsFilesGroupMut for DatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
 impl Upcast<dyn DefsGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn DefsGroup + 'static) {
         self
@@ -143,7 +137,7 @@ pub fn test_expand_plugin_inner(
 
     // Main module file.
     let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
-    db.as_files_group_mut().override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
+    db.override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
 
     let mut diagnostic_items = vec![];
     let expanded_module =

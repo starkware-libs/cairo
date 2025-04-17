@@ -2,7 +2,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroupEx};
+use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -29,7 +29,7 @@ fn test_early_unsafe_panic(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::new();
-    let unsafe_panic_flag_id = FlagId::new(db.as_files_group_mut(), "unsafe_panic");
+    let unsafe_panic_flag_id = FlagId::new(db, "unsafe_panic");
     db.set_flag(unsafe_panic_flag_id, Some(Arc::new(Flag::UnsafePanic(true))));
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,

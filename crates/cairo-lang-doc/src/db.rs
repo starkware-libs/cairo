@@ -1,11 +1,8 @@
 use std::fmt::Write;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, intersperse};
 
@@ -14,15 +11,7 @@ use crate::documentable_item::DocumentableItemId;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
-pub trait DocGroup:
-    Upcast<dyn DefsGroup>
-    + Upcast<dyn SyntaxGroup>
-    + Upcast<dyn FilesGroup>
-    + Upcast<dyn SemanticGroup>
-    + SyntaxGroup
-    + FilesGroup
-    + DefsGroup
-{
+pub trait DocGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.

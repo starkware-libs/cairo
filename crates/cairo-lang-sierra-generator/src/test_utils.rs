@@ -3,8 +3,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
-    init_files_group,
+    ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
@@ -92,11 +91,6 @@ impl SierraGenDatabaseForTesting {
 impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl AsFilesGroupMut for SierraGenDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {

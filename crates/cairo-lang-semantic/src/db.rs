@@ -12,7 +12,6 @@ use cairo_lang_defs::ids::{
     TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -62,12 +61,7 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup:
-    DefsGroup
-    + Upcast<dyn DefsGroup>
-    + Upcast<dyn ParserGroup>
-    + Upcast<dyn FilesGroup>
-    + AsFilesGroupMut
-    + Elongate
+    DefsGroup + Upcast<dyn DefsGroup> + Upcast<dyn ParserGroup> + Elongate
 {
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
