@@ -59,6 +59,19 @@ pub struct MatcherContext {
     pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator>,
 }
 
+impl MatcherContext {
+    /// Returns true if all captures for the given repetition ID have been exhausted.
+    fn is_repetition_done(&self, rep_id: RepetitionId) -> bool {
+        if let Some((name, _)) = self.placeholder_to_rep_id.iter().find(|(_, &r)| r == rep_id) {
+            let index = *self.repetition_indices.get(&rep_id).unwrap_or(&0);
+            if let Some(values) = self.captures.get(name) {
+                return index >= values.len();
+            }
+        }
+        true
+    }
+}
+
 /// The semantic data for a macro declaration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroDeclarationData {
@@ -565,10 +578,19 @@ fn expand_macro_rule_ex(
                 .placeholder_to_rep_id
                 .get(&placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
-            let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
-            for i in 0..repetition_len {
-                matcher_ctx.repetition_indices.insert(rep_id, i);
+            let mut index = 0;
+            loop {
+                matcher_ctx.repetition_indices.insert(rep_id, index);
+                if matcher_ctx.is_repetition_done(rep_id) {
+                    break;
+                }
+
+                if index > 0 {
+                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
+                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
+                    }
+                }
+
                 for element in &elements {
                     expand_macro_rule_ex(
                         db,
@@ -579,12 +601,7 @@ fn expand_macro_rule_ex(
                     )?;
                 }
 
-                // TODO(Dean): Handle the separator addition more gracefully.
-                if i + 1 < repetition_len {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
-                    }
-                }
+                index += 1;
             }
 
             matcher_ctx.repetition_indices.swap_remove(&rep_id);
