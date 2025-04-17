@@ -397,7 +397,7 @@ pub fn get_originating_location(
 /// If any of the provided mappings fully contains the span, origin span of the mapping will be
 /// returned. Otherwise, the function will try to find a span that is a result of a concatenation of
 /// multiple consecutive mappings.
-fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
+pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
     // Find all mappings that have non-empty intersection with the provided span.
     let intersecting_mappings = || {
         code_mapping.iter().filter(|mapping| {
@@ -478,7 +478,7 @@ fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<Te
 }
 
 /// Returns the parent file and the code mappings of the file.
-fn get_parent_and_mapping(
+pub fn get_parent_and_mapping(
     db: &dyn FilesGroup,
     file_id: FileId,
 ) -> Option<(FileId, Arc<[CodeMapping]>)> {
