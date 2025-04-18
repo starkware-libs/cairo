@@ -77,7 +77,7 @@ fn main()
 //! > Item documentation tokens #2
 
 //! > Item signature #3
-fn free_function<T, TPartialEq, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T) -> bool
+fn free_function<T, impl TPartialEq: PartialEq<T>, +Drop<T>, +Copy<T>>(ref self: Array<T>, item: T) -> bool
 
 //! > Item documentation #3
 
