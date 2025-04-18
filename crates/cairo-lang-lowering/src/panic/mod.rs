@@ -141,7 +141,7 @@ fn lower_unsafe_panic(
         assert_eq!(tuple_construct.output, err_data.var_id);
 
         let panic_construct_statement = block.statements.pop();
-        // Assert that the output of `panic_construct_statement` is the first input of of
+        // Assert that the output of `panic_construct_statement` is the first input of
         // 'tuple_construct'.
         assert_matches!(panic_construct_statement, Some(Statement::StructConstruct(panic_construct)) if panic_construct.output == tuple_construct.inputs[0].var_id);
 
