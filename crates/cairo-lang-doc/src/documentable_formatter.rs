@@ -772,75 +772,51 @@ fn is_the_same_root(path1: &str, path2: &str) -> bool {
     extract_root(path1) == extract_root(path2)
 }
 
-/// Performs formatting for types full paths. For example "core::felt252" input results in "felt252"
-/// output.
-pub fn extract_and_format(input: &str) -> String {
-    fn inner(input: &str) -> String {
-        input
-            .split(',')
-            .map(|part| {
-                let mut parts = part.split("::").filter(|s| !s.is_empty()).collect::<Vec<_>>();
+/// Formats complex types full paths. For example "Result<Error::NotFound, System::Error>" input
+/// results in "Result<NotFound, Error>" output.
+fn extract_and_format(input: &str) -> String {
+    let delimiters = [',', '<', '>', '(', ')'];
+    let mut output = String::new();
+    let mut slice_start = 0;
+    let mut in_slice = false;
 
-                if parts.len() >= 2 && parts.last().unwrap_or(&"").contains("<") {
-                    let last = parts.pop().unwrap_or("");
-                    let generic_parts = last
-                        .split::<&[_]>(&['<', '>', ':'])
-                        .filter(|s| !s.is_empty())
-                        .collect::<Vec<_>>();
-                    if generic_parts.len() >= 2 {
-                        let l = generic_parts.len();
-                        parts.push(generic_parts[l - 2]);
-                        format!("{}<{}>", parts.join("::"), generic_parts[l - 1])
-                    } else {
-                        last.to_owned()
-                    }
-                } else {
-                    parts.pop().unwrap_or(part).trim().to_owned()
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(", ")
-    }
-
-    let mut result = String::new();
-    let mut temp = String::new();
-    let mut nest_level = 0;
-
-    for c in input.chars() {
-        match c {
-            '(' | '[' | '<' => {
-                if nest_level == 0 && !temp.is_empty() {
-                    result.push_str(&inner(&temp));
-                    temp.clear();
-                }
-                nest_level += 1;
-                result.push(c);
+    for (i, c) in input.chars().enumerate() {
+        if delimiters.contains(&c) {
+            if in_slice {
+                let slice = &input[slice_start..i];
+                output.push_str(&format_final_part(slice));
+                in_slice = false;
             }
-            ')' | ']' | '>' => {
-                if nest_level == 1 && !temp.is_empty() {
-                    result.push_str(&inner(&temp));
-                    temp.clear();
-                }
-                nest_level -= 1;
-                result.push(c);
-            }
-            ',' if nest_level > 0 => {
-                if !temp.is_empty() {
-                    result.push_str(&inner(&temp));
-                    temp.clear();
-                }
-                result.push(c);
-                result.push(' ');
-            }
-            ',' => temp.push(c),
-            _ => temp.push(c),
+            output.push(c);
+            slice_start = i + 1;
+        } else {
+            in_slice = true;
         }
     }
-
-    if !temp.is_empty() {
-        result.push_str(&inner(&temp));
+    if in_slice {
+        let slice = &input[slice_start..];
+        output.push_str(&format_final_part(slice));
     }
-    result
+    output
+}
+
+/// Formats single type path. For example "core::felt252" input results in "felt252" output.
+fn format_final_part(slice: &str) -> String {
+    let parts: Vec<&str> = slice.split("::").collect();
+    let ensure_whitespace =
+        if let Some(first) = parts.first() { first.starts_with(" ") } else { false };
+    let result = {
+        if let Some(last) = parts.last() {
+            if last.is_empty() && parts.len() > 1 {
+                parts[parts.len() - 2].to_string()
+            } else {
+                last.to_string()
+            }
+        } else {
+            slice.to_string()
+        }
+    };
+    if ensure_whitespace && !result.starts_with(' ') { format!(" {}", result) } else { result }
 }
 
 /// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
