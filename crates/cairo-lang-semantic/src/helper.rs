@@ -2,6 +2,7 @@ use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleIte
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
+use crate::items::functions::GenericFunctionId;
 use crate::{FunctionId, GenericArgumentId, TypeId, corelib};
 
 /// Helper for getting functions in the corelib.
@@ -59,7 +60,11 @@ impl<'a> ModuleHelper<'a> {
         name: impl Into<SmolStr>,
         generic_args: Vec<GenericArgumentId>,
     ) -> FunctionId {
-        corelib::get_function_id(self.db, self.id, name.into(), generic_args)
+        self.generic_function_id(name).concretize(self.db, generic_args)
+    }
+    /// Returns the id of a generic function named `name` in the current module.
+    pub fn generic_function_id(&self, name: impl Into<SmolStr>) -> GenericFunctionId {
+        corelib::get_generic_function_id(self.db, self.id, name.into())
     }
     /// Returns the id of a type named `name` in the current module, with the given
     /// `generic_args`.
