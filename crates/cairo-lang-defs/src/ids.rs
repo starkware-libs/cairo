@@ -468,24 +468,23 @@ define_language_element_id_as_enum! {
     }
 }
 
-define_language_element_id_as_enum! {
-    #[toplevel]
-    /// Id for an item that can be brought into scope with a `use` statement.
-    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`].
-    pub enum ImportableId {
-        Constant(ConstantId),
-        Submodule(SubmoduleId),
-        FreeFunction(FreeFunctionId),
-        Struct(StructId),
-        Enum(EnumId),
-        Variant(VariantId),
-        TypeAlias(ModuleTypeAliasId),
-        ImplAlias(ImplAliasId),
-        Trait(TraitId),
-        Impl(ImplDefId),
-        ExternType(ExternTypeId),
-        ExternFunction(ExternFunctionId),
-    }
+/// Id for an item that can be brought into scope with a `use` statement.
+/// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`] and [`CrateId`].
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ImportableId {
+    Constant(ConstantId),
+    Submodule(SubmoduleId),
+    Crate(CrateId),
+    FreeFunction(FreeFunctionId),
+    Struct(StructId),
+    Enum(EnumId),
+    Variant(VariantId),
+    TypeAlias(ModuleTypeAliasId),
+    ImplAlias(ImplAliasId),
+    Trait(TraitId),
+    Impl(ImplDefId),
+    ExternType(ExternTypeId),
+    ExternFunction(ExternFunctionId),
 }
 
 define_top_level_language_element_id!(
