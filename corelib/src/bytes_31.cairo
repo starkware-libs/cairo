@@ -17,6 +17,7 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
+use crate::num::traits::CheckedSub;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 use crate::traits::{Into, TryInto};
@@ -175,10 +176,10 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
 /// assert that in the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31`
 /// because if `n_bytes > 31` then `n_bytes - 16 > 15` and `one_shift_left_bytes_u128` would panic.
 pub(crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
-    if n_bytes < BYTES_IN_U128 {
-        one_shift_left_bytes_u128(n_bytes).into()
+    if let Some(n_bytes_second_word) = n_bytes.checked_sub(BYTES_IN_U128) {
+        one_shift_left_bytes_u128(n_bytes_second_word).into() * POW_2_128
     } else {
-        one_shift_left_bytes_u128(n_bytes - BYTES_IN_U128).into() * POW_2_128
+        one_shift_left_bytes_u128(n_bytes).into()
     }
 }
 
@@ -199,7 +200,7 @@ pub(crate) fn split_u128(value: u128, n_bytes: usize) -> u256 {
 /// Returns the `u8` at `index` if you look at `value` as an array of 32 `u8`s.
 pub(crate) fn u8_at_u256(value: u256, index: usize) -> u8 {
     get_lsb(
-        if let Some(rev_index) = crate::num::traits::CheckedSub::checked_sub(index, BYTES_IN_U128) {
+        if let Some(rev_index) = index.checked_sub(BYTES_IN_U128) {
             split_u128(value.high, rev_index).high
         } else {
             split_u128(value.low, index).high
