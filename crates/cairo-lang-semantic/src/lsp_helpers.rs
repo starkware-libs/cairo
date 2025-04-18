@@ -145,7 +145,8 @@ fn visible_importables_in_module_ex(
                         ModuleFileId(module_id, FileIndex(0)),
                     )[..],
                 );
-                continue;
+
+                (ImportableId::Crate(crate_id), crate_id.name(db))
             }
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
@@ -309,6 +310,8 @@ pub fn visible_importables_from_module(
     ) {
         module_visible_importables
             .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
+        module_visible_importables
+            .push((ImportableId::Crate(crate_id), crate_id.name(db).to_string()));
     }
 
     // Collect importables visible in the current module.

@@ -469,12 +469,12 @@ define_language_element_id_as_enum! {
 }
 
 define_language_element_id_as_enum! {
-    #[toplevel]
     /// Id for an item that can be brought into scope with a `use` statement.
-    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`].
+    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`] and [`CrateId`].
     pub enum ImportableId {
         Constant(ConstantId),
         Submodule(SubmoduleId),
+        Crate(CrateId),
         FreeFunction(FreeFunctionId),
         Struct(StructId),
         Enum(EnumId),
@@ -1345,5 +1345,20 @@ define_language_element_id_as_enum! {
         ModuleItem(ModuleItemId),
         TraitItem(TraitItemId),
         ImplItem(ImplItemId),
+    }
+}
+
+impl LanguageElementId for CrateId {
+    fn module_file_id(&self, _db: &dyn DefsGroup) -> ModuleFileId {
+        ModuleFileId(ModuleId::CrateRoot(*self), FileIndex(0))
+    }
+
+    fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+        let root_file_id = db.module_main_file(ModuleId::CrateRoot(*self)).unwrap();
+        db.file_module_syntax(root_file_id).unwrap().stable_ptr(db).untyped()
+    }
+
+    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+        StableLocation::new(self.untyped_stable_ptr(db))
     }
 }
