@@ -15,11 +15,11 @@ fn concretize_function(
     match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => {
             // We call `lowered` here in case the function will be substituted to a generated one.
-            Ok(substitution.substitute(db.upcast(), id)?.lowered(db))
+            Ok(substitution.substitute(db, id)?.lowered(db))
         }
         FunctionLongId::Generated(GeneratedFunction { parent, key }) => {
             Ok(FunctionLongId::Generated(GeneratedFunction {
-                parent: substitution.substitute(db.upcast(), parent)?,
+                parent: substitution.substitute(db, parent)?,
                 key,
             })
             .intern(db))
@@ -36,11 +36,11 @@ pub fn concretize_lowered(
 ) -> Maybe<()> {
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
-        var.ty = substitution.substitute(db.upcast(), var.ty)?;
+        var.ty = substitution.substitute(db, var.ty)?;
 
         for impl_id in [&mut var.destruct_impl, &mut var.panic_destruct_impl].into_iter().flatten()
         {
-            *impl_id = substitution.substitute(db.upcast(), *impl_id)?;
+            *impl_id = substitution.substitute(db, *impl_id)?;
         }
     }
     // Substitute all statements.
@@ -51,10 +51,10 @@ pub fn concretize_lowered(
                     stmt.function = concretize_function(db, substitution, stmt.function)?;
                 }
                 Statement::EnumConstruct(stmt) => {
-                    stmt.variant = substitution.substitute(db.upcast(), stmt.variant.clone())?;
+                    stmt.variant = substitution.substitute(db, stmt.variant.clone())?;
                 }
                 Statement::Const(stmt) => {
-                    stmt.value = substitution.substitute(db.upcast(), stmt.value.clone())?;
+                    stmt.value = substitution.substitute(db, stmt.value.clone())?;
                 }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
@@ -71,11 +71,11 @@ pub fn concretize_lowered(
                 }
                 crate::MatchInfo::Value(s) => s.arms.iter_mut(),
             } {
-                *selector = substitution.substitute(db.upcast(), selector.clone())?;
+                *selector = substitution.substitute(db, selector.clone())?;
             }
         }
     }
-    lowered.signature = substitution.substitute(db.upcast(), lowered.signature.clone())?;
+    lowered.signature = substitution.substitute(db, lowered.signature.clone())?;
 
     Ok(())
 }

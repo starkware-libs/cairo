@@ -52,7 +52,6 @@ pub fn priv_struct_declaration_data(
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
@@ -66,11 +65,11 @@ pub fn priv_struct_declaration_data(
     );
     diagnostics.extend(generic_params_data.diagnostics);
 
-    let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = struct_ast.attributes(db).structurize(db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -103,7 +102,7 @@ pub fn struct_generic_params_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = struct_id.module_file_id(db.upcast());
+    let module_file_id = struct_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -120,10 +119,10 @@ pub fn struct_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &struct_ast.generic_params(db.upcast()),
+        &struct_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db.upcast()).untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -165,17 +164,14 @@ pub fn priv_struct_definition_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<StructDefinitionData> {
-    let defs_db = db.upcast();
-
-    let module_file_id = struct_id.module_file_id(defs_db);
-    let crate_id = module_file_id.0.owning_crate(defs_db);
+    let module_file_id = struct_id.module_file_id(db);
+    let crate_id = module_file_id.0.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
@@ -190,35 +186,27 @@ pub fn priv_struct_definition_data(
 
     // Members.
     let mut members = OrderedHashMap::default();
-    for member in struct_ast.members(syntax_db).elements(syntax_db) {
+    for member in struct_ast.members(db).elements(db) {
         let feature_restore = resolver
             .data
             .feature_config
             .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
-        let id = MemberLongId(module_file_id, member.stable_ptr(syntax_db)).intern(db);
-        let ty = resolve_type(
-            db,
-            &mut diagnostics,
-            &mut resolver,
-            &member.type_clause(syntax_db).ty(syntax_db),
-        );
-        let visibility =
-            Visibility::from_ast(syntax_db, &mut diagnostics, &member.visibility(syntax_db));
-        let member_name = member.name(syntax_db).text(syntax_db);
+        let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
+        let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
+        let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
+        let member_name = member.name(db).text(db);
         if let Some(_other_member) =
             members.insert(member_name.clone(), Member { id, ty, visibility })
         {
-            diagnostics.report(
-                member.stable_ptr(syntax_db),
-                StructMemberRedefinition { struct_id, member_name },
-            );
+            diagnostics
+                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
         }
         resolver.data.feature_config.restore(feature_restore);
     }
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db).untyped());
 
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();
@@ -241,7 +229,7 @@ pub fn struct_definition_diagnostics(
         return Default::default();
     };
 
-    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
 
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.
@@ -254,7 +242,7 @@ pub fn struct_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, member) in data.members.iter() {
-        let stable_ptr = member.id.stable_ptr(db.upcast());
+        let stable_ptr = member.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, member.ty, stable_ptr);
         if member.ty.is_phantom(db) {
             diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);

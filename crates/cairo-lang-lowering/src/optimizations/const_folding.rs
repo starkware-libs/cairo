@@ -68,7 +68,7 @@ pub fn const_folding(
     let libfunc_info = priv_const_folding_info(db);
     // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
     // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-    if function_id.base_semantic_function(db).generic_function(db.upcast())
+    if function_id.base_semantic_function(db).generic_function(db)
         == libfunc_info.panic_with_const_felt252
     {
         return;
@@ -278,18 +278,19 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
+        let db = self.db;
         if stmt.function == self.panic_with_felt252 {
             let val = self.as_const(stmt.inputs[0].var_id)?;
             stmt.inputs.clear();
-            stmt.function = ModuleHelper::core(self.db.upcast())
+            stmt.function = ModuleHelper::core(db)
                 .function_id(
                     "panic_with_const_felt252",
-                    vec![GenericArgumentId::Constant(val.clone().intern(self.db))],
+                    vec![GenericArgumentId::Constant(val.clone().intern(db))],
                 )
-                .lowered(self.db);
+                .lowered(db);
             return None;
         }
-        let (id, _generic_args) = stmt.function.get_extern(self.db)?;
+        let (id, _generic_args) = stmt.function.get_extern(db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
             let val = self.as_int(stmt.inputs[1].var_id)?;
@@ -333,15 +334,14 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function =
-                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
-                        .function_id(
-                            "storage_base_address_const",
-                            vec![GenericArgumentId::Constant(
-                                ConstValue::Int(val.clone(), *ty).intern(self.db),
-                            )],
-                        )
-                        .lowered(self.db);
+                stmt.function = ModuleHelper { db, id: self.storage_access_module }
+                    .function_id(
+                        "storage_base_address_const",
+                        vec![GenericArgumentId::Constant(
+                            ConstValue::Int(val.clone(), *ty).intern(db),
+                        )],
+                    )
+                    .lowered(db);
             }
             None
         } else if id == self.into_box {
@@ -393,7 +393,8 @@ impl ConstFoldingContext<'_> {
         &mut self,
         info: &mut MatchExternInfo,
     ) -> Option<(Option<StatementConst>, FlatBlockEnd)> {
-        let (id, generic_args) = info.function.get_extern(self.db)?;
+        let db = self.db;
+        let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val {
@@ -421,12 +422,11 @@ impl ConstFoldingContext<'_> {
             if (lhs.map(Zero::is_zero).unwrap_or_default() && rhs.is_none())
                 || (rhs.map(Zero::is_zero).unwrap_or_default() && lhs.is_none())
             {
-                let db = self.db.upcast();
                 let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
                 let var = &self.variables[nz_input.var_id].clone();
                 let function = self.type_value_ranges.get(&var.ty)?.is_zero;
                 let unused_nz_var = Variable::new(
-                    self.db,
+                    db,
                     ImplLookupContext::default(),
                     corelib::core_nonzero_ty(db, var.ty),
                     var.location,
@@ -528,7 +528,7 @@ impl ConstFoldingContext<'_> {
             let (value, nz_ty) = self.as_int_ex(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
-                .lookup_intern(self.db)
+                .lookup_intern(db)
                 .into_int()
                 .unwrap();
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
@@ -544,9 +544,9 @@ impl ConstFoldingContext<'_> {
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function = ModuleHelper { db: self.db.upcast(), id: self.array_module }
+                    info.function = ModuleHelper { db, id: self.array_module }
                         .function_id("array_snapshot_pop_front", generic_args)
-                        .lowered(self.db);
+                        .lowered(db);
                     success.var_ids.insert(0, unused_arr_output0);
                     failure.var_ids.insert(0, unused_arr_output1);
                 }
@@ -657,7 +657,7 @@ pub struct ConstFoldingLibfuncInfo {
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
-        let core = ModuleHelper::core(db.upcast());
+        let core = ModuleHelper::core(db);
         let felt_sub = core.extern_function_id("felt252_sub");
         let box_module = core.submodule("box");
         let into_box = box_module.extern_function_id("into_box");
@@ -729,7 +729,7 @@ impl ConstFoldingLibfuncInfo {
             ]
             .map(
                 |(ty_name, min, max, as_bounded_int): (&str, BigInt, BigInt, bool)| {
-                    let ty = corelib::get_core_ty_by_name(db.upcast(), ty_name.into(), vec![]);
+                    let ty = corelib::get_core_ty_by_name(db, ty_name.into(), vec![]);
                     let is_zero = if as_bounded_int {
                         bounded_int_module
                             .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])

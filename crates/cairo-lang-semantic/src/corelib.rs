@@ -49,9 +49,8 @@ pub fn get_submodule(
     submodule_name: &str,
 ) -> Option<ModuleId> {
     let submodules = db.module_submodules(base_module).ok()?;
-    let syntax_db = db.upcast();
     for (submodule_id, submodule) in submodules.iter() {
-        if submodule.name(syntax_db).text(syntax_db) == submodule_name {
+        if submodule.name(db).text(db) == submodule_name {
             return Some(ModuleId::Submodule(*submodule_id));
         }
     }
@@ -440,7 +439,7 @@ pub fn unwrap_error_propagation_type(
             if let [ok_variant, err_variant] =
                 db.concrete_enum_variants(enm).to_option()?.as_slice()
             {
-                let name = enm.enum_id(db.upcast()).name(db.upcast());
+                let name = enm.enum_id(db).name(db);
                 if name == "Option" {
                     return Some(ErrorPropagationType::Option {
                         some_variant: ok_variant.clone(),
@@ -569,7 +568,7 @@ fn get_core_function_impl_method(
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| {
-            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
+            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db))
         });
     FunctionLongId {
         function: ConcreteFunction {
@@ -707,7 +706,7 @@ fn get_core_trait_function_infer(
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
-    get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
+    get_core_ty_by_name(db, "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }
 
 pub fn get_usize_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -753,12 +752,11 @@ pub enum LiteralError {
 impl LiteralError {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         match self {
-            Self::OutOfRange(ty) => format!(
-                "The value does not fit within the range of type {}.",
-                ty.format(db.upcast())
-            ),
+            Self::OutOfRange(ty) => {
+                format!("The value does not fit within the range of type {}.", ty.format(db))
+            }
             Self::InvalidTypeForLiteral(ty) => {
-                format!("A numeric literal of type {} cannot be created.", ty.format(db.upcast()))
+                format!("A numeric literal of type {} cannot be created.", ty.format(db))
             }
         }
     }
@@ -827,7 +825,7 @@ pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
     let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.lookup_intern(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
-    (extern_type_id.name(db.upcast()) == "NonZero").then_some(inner)
+    (extern_type_id.name(db) == "NonZero").then_some(inner)
 }
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
@@ -839,7 +837,7 @@ fn try_extract_bounded_int_type_ranges(
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
     let ConcreteExternTypeLongId { extern_type_id, generic_args } =
         db.lookup_intern_concrete_extern_type(extern_ty);
-    require(extern_type_id.name(db.upcast()) == "BoundedInt")?;
+    require(extern_type_id.name(db) == "BoundedInt")?;
     let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
     else {
         return None;

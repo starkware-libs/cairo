@@ -320,21 +320,20 @@ impl<'a> DocumentationCommentParser<'a> {
         item_id: DocumentableItemId,
         path: String,
     ) -> Option<DocumentableItemId> {
-        let syntax_node = item_id.stable_location(self.db.upcast())?.syntax_node(self.db.upcast());
+        let syntax_node = item_id.stable_location(self.db)?.syntax_node(self.db);
         let containing_module = self.find_module_file_containing_node(&syntax_node)?;
-        let mut resolver =
-            Resolver::new(self.db.upcast(), containing_module, InferenceId::NoContext);
+        let mut resolver = Resolver::new(self.db, containing_module, InferenceId::NoContext);
         let mut diagnostics = SemanticDiagnostics::default();
         let segments = self.parse_comment_link_path(path)?;
         resolver
             .resolve_generic_path(
                 &mut diagnostics,
-                segments.to_segments(self.db.upcast()),
+                segments.to_segments(self.db),
                 NotFoundItemType::Identifier,
                 ResolutionContext::Default,
             )
             .ok()?
-            .to_documentable_item_id(self.db.upcast())
+            .to_documentable_item_id(self.db)
     }
 
     /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
@@ -349,7 +348,7 @@ impl<'a> DocumentationCommentParser<'a> {
         .intern(self.db);
 
         let expr = Parser::parse_file_expr(
-            self.db.upcast(),
+            self.db,
             &mut DiagnosticsBuilder::default(),
             virtual_file,
             &path,
@@ -518,7 +517,7 @@ impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
         f.debug_struct("CommentLinkToken")
             .field("label", &self.label)
             .field("path", &self.path)
-            .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db.upcast())))
+            .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db)))
             .finish()
     }
 }

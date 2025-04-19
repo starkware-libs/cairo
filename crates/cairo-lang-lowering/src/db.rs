@@ -395,7 +395,7 @@ fn priv_function_with_body_multi_lowering(
     db: &dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<Arc<MultiLowering>> {
-    let crate_id = function_id.module_file_id(db.upcast()).0.owning_crate(db.upcast());
+    let crate_id = function_id.module_file_id(db).0.owning_crate(db);
     if let Some(map) = db.cached_multi_lowerings(crate_id) {
         if let Some(multi_lowering) = map.get(&function_id) {
             return Ok(Arc::new(multi_lowering.clone()));
@@ -404,7 +404,7 @@ fn priv_function_with_body_multi_lowering(
         }
     };
 
-    let multi_lowering = lower_semantic_function(db.upcast(), function_id)?;
+    let multi_lowering = lower_semantic_function(db, function_id)?;
     Ok(Arc::new(multi_lowering))
 }
 
@@ -465,7 +465,7 @@ fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let semantic_db = db.upcast();
+    let semantic_db = db;
     let generic_function_id = function.function_with_body_id(db);
     db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
     let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
@@ -534,8 +534,8 @@ pub(crate) fn get_direct_callees(
     if lowered_function.blocks.is_empty() {
         return direct_callees;
     }
-    let withdraw_gas_fns = corelib::core_withdraw_gas_fns(db.upcast())
-        .map(|id| FunctionLongId::Semantic(id).intern(db));
+    let withdraw_gas_fns =
+        corelib::core_withdraw_gas_fns(db).map(|id| FunctionLongId::Semantic(id).intern(db));
     let mut visited = vec![false; lowered_function.blocks.len()];
     let mut stack = vec![BlockId(0)];
     while let Some(block_id) = stack.pop() {
@@ -615,7 +615,7 @@ fn functions_with_body_from_function_ids(
                     return Ok(Some(function_with_body));
                 }
             }
-            concrete.body(db.upcast())
+            concrete.body(db)
         })
         .collect::<Maybe<Vec<_>>>()?
         .into_iter()
@@ -637,14 +637,14 @@ fn extract_coupon_function(
     };
 
     // Check that it's an extern function named "coupon_buy" or "coupon_refund".
-    let concrete_function = function_id.get_concrete(db.upcast());
+    let concrete_function = function_id.get_concrete(db);
     let generic_function = concrete_function.generic_function;
     let semantic::items::functions::GenericFunctionId::Extern(extern_function_id) =
         generic_function
     else {
         return Ok(None);
     };
-    let name = extern_function_id.lookup_intern(db).name(db.upcast());
+    let name = extern_function_id.lookup_intern(db).name(db);
     if !(name == "coupon_buy" || name == "coupon_refund") {
         return Ok(None);
     }
@@ -658,9 +658,7 @@ fn extract_coupon_function(
     };
 
     // Convert [semantic::FunctionId] to [ids::ConcreteFunctionWithBodyId].
-    let Some(coupon_function_with_body_id) =
-        coupon_function.get_concrete(db.upcast()).body(db.upcast())?
-    else {
+    let Some(coupon_function_with_body_id) = coupon_function.get_concrete(db).body(db)? else {
         panic!("Unexpected generic_args for coupon_buy().");
     };
 
@@ -714,7 +712,7 @@ fn function_with_body_lowering_diagnostics(
         diagnostics.extend(lowered.diagnostics.clone());
         if flag_add_withdraw_gas(db) && db.in_cycle(function_id, DependencyType::Cost)? {
             let location =
-                Location::new(function_id.base_semantic_function(db).stable_location(db.upcast()));
+                Location::new(function_id.base_semantic_function(db).stable_location(db));
             if !lowered.signature.panicable {
                 diagnostics.add(LoweringDiagnostic {
                     location: location.clone(),
@@ -830,7 +828,7 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .unwrap_or_default()
             }
             ConcreteTypeId::Extern(extern_id) => {
-                match extern_id.extern_type_id(db.upcast()).name(db.upcast()).as_str() {
+                match extern_id.extern_type_id(db).name(db).as_str() {
                     "Array" | "SquashedFelt252Dict" | "EcPoint" => 2,
                     "EcState" => 3,
                     "Uint128MulGuarantee" => 4,

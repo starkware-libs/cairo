@@ -53,9 +53,9 @@ impl<'db> VariableAllocator<'db> {
         Ok(Self {
             db,
             variables,
-            module_file_id: function_id.module_file_id(db.upcast()),
+            module_file_id: function_id.module_file_id(db),
             lookup_context: ImplLookupContext::new(
-                function_id.parent_module(db.upcast()),
+                function_id.parent_module(db),
                 generic_param_ids,
             ),
         })
@@ -304,9 +304,7 @@ impl LoweredExpr {
             )
             .intern(ctx.db),
             LoweredExpr::Member(member_path, _) => member_path.ty(),
-            LoweredExpr::Snapshot { expr, .. } => {
-                wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
-            }
+            LoweredExpr::Snapshot { expr, .. } => wrap_in_snapshots(ctx.db, expr.ty(ctx), 1),
             LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
@@ -447,12 +445,7 @@ pub fn lowering_flow_error_to_sealed_block(
         LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
-                ty: get_ty_by_name(
-                    ctx.db.upcast(),
-                    core_module(ctx.db.upcast()),
-                    "Panic".into(),
-                    vec![],
-                ),
+                ty: get_ty_by_name(ctx.db, core_module(ctx.db), "Panic".into(), vec![]),
                 location,
             }
             .add(ctx, &mut builder.statements);

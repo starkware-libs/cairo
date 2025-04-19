@@ -235,9 +235,9 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
             else {
                 continue;
             };
-            if ty.full_path(db.upcast()) == "core::integer::u128" {
+            if ty.full_path(db) == "core::integer::u128" {
                 diagnostics.push(PluginDiagnostic::error(
-                    use_id.stable_ptr(db.upcast()).untyped(),
+                    use_id.stable_ptr(db).untyped(),
                     "Use items for u128 disallowed.".to_string(),
                 ));
             }

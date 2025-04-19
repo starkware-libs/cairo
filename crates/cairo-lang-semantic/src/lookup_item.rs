@@ -43,18 +43,18 @@ impl LookupItemEx for LookupItemId {
     fn resolver_context(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
             LookupItemId::ImplItem(impl_item_id) => {
-                let impl_def_id = impl_item_id.impl_def_id(db.upcast());
-                let resolver_data = impl_def_id.resolver_data(db.upcast())?;
+                let impl_def_id = impl_item_id.impl_def_id(db);
+                let resolver_data = impl_def_id.resolver_data(db)?;
                 Ok(resolver_data)
             }
             LookupItemId::TraitItem(item) => {
-                let trait_id = item.trait_id(db.upcast());
-                let resolver_data = trait_id.resolver_data(db.upcast())?;
+                let trait_id = item.trait_id(db);
+                let resolver_data = trait_id.resolver_data(db)?;
                 Ok(resolver_data)
             }
             LookupItemId::ModuleItem(item) => {
                 // Top level does not have an outer context, create an empty resolver data.
-                let module_file_id = item.module_file_id(db.upcast());
+                let module_file_id = item.module_file_id(db);
                 let resolver_data =
                     Arc::new(ResolverData::new(module_file_id, InferenceId::NoContext));
                 Ok(resolver_data)
@@ -134,7 +134,7 @@ impl HasResolverData for ExternTypeId {
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
             ModuleItemId::ExternType(*self),
         ));
-        Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()), inference_id)))
+        Ok(Arc::new(ResolverData::new(self.module_file_id(db), inference_id)))
     }
 }
 

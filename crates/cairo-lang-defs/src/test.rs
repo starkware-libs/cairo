@@ -32,7 +32,7 @@ pub struct DatabaseForTesting {
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl Default for DatabaseForTesting {

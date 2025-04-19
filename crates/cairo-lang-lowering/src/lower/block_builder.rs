@@ -152,7 +152,7 @@ impl BlockBuilder {
         let parent_var = self.get_snap_ref(ctx, parent)?;
         let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
         let (parent_number_of_snapshots, _) =
-            peel_snapshots(ctx.db.upcast(), ctx.variables[parent_var.var_id].ty);
+            peel_snapshots(ctx.db, ctx.variables[parent_var.var_id].ty);
         let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
         Some(
             generators::StructMemberAccess {
@@ -160,7 +160,7 @@ impl BlockBuilder {
                 member_tys: members
                     .iter()
                     .map(|(_, member)| {
-                        wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
+                        wrap_in_snapshots(ctx.db, member.ty, parent_number_of_snapshots)
                     })
                     .collect(),
                 member_idx,
@@ -180,7 +180,7 @@ impl BlockBuilder {
             MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [&member_id.name(ctx.db.upcast())]
+                    [&member_id.name(ctx.db)]
                     .ty
             }
         }

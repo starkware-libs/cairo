@@ -16,7 +16,7 @@ pub fn scrub_units(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
 
-    let unit_ty = corelib::unit_ty(db.upcast());
+    let unit_ty = corelib::unit_ty(db);
 
     let mut fixes = vec![];
     for block in lowered.blocks.iter_mut() {

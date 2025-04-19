@@ -65,19 +65,18 @@ impl ResolvedGenericItem {
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        let defs_db = db.upcast();
         match self {
             ResolvedGenericItem::GenericConstant(_) => "".into(),
-            ResolvedGenericItem::Module(id) => id.full_path(defs_db),
+            ResolvedGenericItem::Module(id) => id.full_path(db),
             ResolvedGenericItem::GenericFunction(id) => id.format(db),
-            ResolvedGenericItem::GenericType(id) => id.full_path(defs_db),
-            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(defs_db),
-            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(defs_db),
-            ResolvedGenericItem::Variant(id) => id.id.full_path(defs_db),
-            ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
-            ResolvedGenericItem::Impl(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericType(id) => id.full_path(db),
+            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(db),
+            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(db),
+            ResolvedGenericItem::Variant(id) => id.id.full_path(db),
+            ResolvedGenericItem::Trait(id) => id.full_path(db),
+            ResolvedGenericItem::Impl(id) => id.full_path(db),
             ResolvedGenericItem::Variable(_) => "".into(),
-            ResolvedGenericItem::TraitItem(id) => id.full_path(defs_db),
+            ResolvedGenericItem::TraitItem(id) => id.full_path(db),
         }
     }
 }
