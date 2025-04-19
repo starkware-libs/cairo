@@ -111,7 +111,7 @@ impl EnumConcreteType {
         if long_id.generic_id != EnumType::ID {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
-        Self::new(context.as_type_specialization_context(), &long_id.generic_args)
+        Self::new(context, &long_id.generic_args)
     }
 }
 
@@ -203,7 +203,7 @@ impl NamedLibfunc for EnumInitLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        self.specialize_concrete_lib_func(context.upcast(), args)
+        self.specialize_concrete_lib_func(context, args)
     }
 }
 
@@ -283,7 +283,7 @@ impl NamedLibfunc for EnumFromBoundedIntLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        self.specialize_concrete_lib_func(context.upcast(), args)
+        self.specialize_concrete_lib_func(context, args)
     }
 }
 

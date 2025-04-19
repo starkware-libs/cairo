@@ -42,10 +42,6 @@ impl MockSpecializationContext {
 }
 
 impl SpecializationContext for MockSpecializationContext {
-    fn upcast(&self) -> &dyn SignatureSpecializationContext {
-        self
-    }
-
     fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         ["drop_all_inputs", "identity", "unimplemented"]
             .into_iter()
@@ -101,10 +97,6 @@ impl SignatureSpecializationContext for MockSpecializationContext {
 
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
-    }
-
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
-        self
     }
 
     fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
