@@ -569,7 +569,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
             popped_ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -637,7 +637,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
             popped_ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

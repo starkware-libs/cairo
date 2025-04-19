@@ -374,10 +374,6 @@ impl<TType: GenericType> SignatureSpecializationContext
         self.try_get_function(function_id).map(|f| f.signature)
     }
 
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
-        self
-    }
-
     fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
         Some(if self.function_ap_change.contains_key(function_id) {
             SierraApChange::Known { new_vars_only: false }
@@ -389,10 +385,6 @@ impl<TType: GenericType> SignatureSpecializationContext
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         self.functions.get(function_id).cloned()
-    }
-
-    fn upcast(&self) -> &dyn SignatureSpecializationContext {
-        self
     }
 }
 

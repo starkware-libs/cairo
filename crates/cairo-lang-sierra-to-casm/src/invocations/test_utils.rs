@@ -148,16 +148,8 @@ impl SignatureSpecializationContext for MockSpecializationContext {
     ) -> Option<cairo_lang_sierra::extensions::lib_func::SierraApChange> {
         unreachable!("Function related specialization functionalities are not implemented.")
     }
-
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
-        self
-    }
 }
 impl SpecializationContext for MockSpecializationContext {
-    fn upcast(&self) -> &dyn SignatureSpecializationContext {
-        self
-    }
-
     fn try_get_function(
         &self,
         _function_id: &cairo_lang_sierra::ids::FunctionId,
