@@ -27,12 +27,12 @@ use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::{fn_traits, panic_destruct_trait_fn, unit_ty};
+use crate::corelib::{fn_traits, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
 use crate::{
     ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericArgumentId, GenericParam,
@@ -131,8 +131,7 @@ impl GenericFunctionId {
                     ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function),
                 )?;
 
-                let substitution = &GenericSubstitution::from_impl(id.impl_id);
-                SubstitutionRewriter { db, substitution }.rewrite(signature)
+                GenericSubstitution::from_impl(id.impl_id).substitute(db, signature)
             }
         }
     }
@@ -144,9 +143,8 @@ impl GenericFunctionId {
                 let concrete_trait_id = db.impl_concrete_trait(id.impl_id)?;
                 let concrete_id =
                     ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
-                let substitution = GenericSubstitution::from_impl(id.impl_id);
-                let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
-                rewriter.rewrite(db.concrete_trait_function_generic_params(concrete_id)?)
+                GenericSubstitution::from_impl(id.impl_id)
+                    .substitute(db, db.concrete_trait_function_generic_params(concrete_id)?)
             }
         }
     }
@@ -654,7 +652,7 @@ impl ConcreteFunctionWithBodyId {
             }
             GenericFunctionWithBodyId::Trait(trait_func) => trait_func.trait_function(db),
         };
-        Ok(trait_function == panic_destruct_trait_fn(db.upcast()))
+        Ok(trait_function == db.core_info().panic_destruct_fn)
     }
 }
 
@@ -739,7 +737,7 @@ impl Signature {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
-        let stable_ptr = signature_syntax.stable_ptr();
+        let stable_ptr = signature_syntax.stable_ptr(syntax_db);
         let is_const = matches!(
             declaration_syntax.optional_const(syntax_db),
             ast::OptionTerminalConst::TerminalConst(_)
@@ -844,8 +842,7 @@ pub fn concrete_function_signature(
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
-    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
+    GenericSubstitution::new(&generic_params, &generic_args).substitute(db, generic_signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
@@ -858,11 +855,10 @@ pub fn concrete_function_closure_params(
     let generic_params = generic_function.generic_params(db)?;
     let mut generic_closure_params = db.get_closure_params(generic_function)?;
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
     let mut changed_keys = vec![];
     for (key, value) in generic_closure_params.iter_mut() {
-        rewriter.internal_rewrite(value)?;
-        let updated_key = rewriter.rewrite(*key)?;
+        *value = substitution.substitute(db, *value)?;
+        let updated_key = substitution.substitute(db, *key)?;
         if updated_key != *key {
             changed_keys.push((*key, updated_key));
         }
@@ -885,10 +881,12 @@ fn update_env_with_ast_params(
     env: &mut Environment,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
-    for ast_param in ast_params.iter() {
+    for ast_param in ast_params {
         let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
 
-        if env.add_param(diagnostics, semantic_param.clone(), ast_param, function_title_id).is_ok()
+        if env
+            .add_param(db, diagnostics, semantic_param.clone(), ast_param, function_title_id)
+            .is_ok()
         {
             semantic_params.push(semantic_param);
         }
@@ -907,11 +905,11 @@ fn ast_param_to_semantic(
 
     let name = ast_param.name(syntax_db).text(syntax_db);
 
-    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr()).intern(db);
+    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(syntax_db)).intern(db);
 
     let ty = match ast_param.type_clause(syntax_db) {
         ast::OptionTypeClause::Empty(missing) => {
-            resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
+            resolver.inference().new_type_var(Some(missing.stable_ptr(syntax_db).untyped()))
         }
         ast::OptionTypeClause::TypeClause(ty_syntax) => {
             resolve_type(db, diagnostics, resolver, &ty_syntax.ty(syntax_db))
@@ -929,7 +927,7 @@ fn ast_param_to_semantic(
         name,
         ty,
         mutability,
-        stable_ptr: ast_param.name(syntax_db).stable_ptr(),
+        stable_ptr: ast_param.name(syntax_db).stable_ptr(syntax_db),
     }
 }
 

@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{self, Any};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -6,20 +6,22 @@ use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
-use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, ast, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-/// A trait for arbitrary data that a macro generates along with a generated file.
+/// A trait for arbitrary data that a macro generates along with the generated file.
+#[typetag::serde]
 pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {
     fn as_any(&self) -> &dyn Any;
     fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DynGeneratedFileAuxData(pub Arc<dyn GeneratedFileAuxData>);
 impl DynGeneratedFileAuxData {
     pub fn new<T: GeneratedFileAuxData + 'static>(aux_data: T) -> Self {
@@ -73,7 +75,11 @@ pub struct PluginResult {
 pub struct PluginDiagnostic {
     /// The stable pointer of the syntax node that caused the diagnostic.
     pub stable_ptr: SyntaxStablePtrId,
-    /// The content of the diagnostic.
+    /// Span relative to the start of the `stable_ptr`.
+    /// No assertion is made that the span is fully contained within the node pointed to by
+    /// `stable_ptr`. When printing diagnostics, any part of the span that falls outside the
+    /// referenced node will be silently ignored.
+    pub relative_span: Option<TextSpan>,
     pub message: String,
     /// The severity of the diagnostic.
     pub severity: Severity,
@@ -87,9 +93,9 @@ impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
+            relative_span: None,
             message,
             severity: Severity::Error,
-            inner_span: None,
         }
     }
 
@@ -114,10 +120,15 @@ impl PluginDiagnostic {
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
+            relative_span: None,
             message,
             severity: Severity::Warning,
-            inner_span: None,
         }
+    }
+
+    pub fn with_relative_span(mut self, span: TextSpan) -> Self {
+        self.relative_span = Some(span);
+        self
     }
 }
 
@@ -136,7 +147,7 @@ pub struct MacroPluginMetadata<'a> {
 
 // TODO(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
-pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
+pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
@@ -178,6 +189,12 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     fn phantom_type_attributes(&self) -> Vec<String> {
         Vec::new()
     }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
+    }
 }
 
 /// Result of plugin code generation.
@@ -188,7 +205,7 @@ pub struct InlinePluginResult {
     pub diagnostics: Vec<PluginDiagnostic>,
 }
 
-pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
+pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
@@ -202,6 +219,12 @@ pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
     /// Allows for the plugin to provide documentation for an inline macro.
     fn documentation(&self) -> Option<String> {
         None
+    }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
     }
 }
 

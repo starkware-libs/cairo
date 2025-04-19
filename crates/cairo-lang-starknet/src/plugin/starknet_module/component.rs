@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
+use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -122,7 +123,7 @@ fn get_embeddable_as_impl_generic_params(
     item_impl: &ast::ItemImpl,
 ) -> Result<ast::GenericParamList, PluginDiagnostic> {
     let generic_params = item_impl.generic_params(db);
-    let generic_params_ptr = generic_params.stable_ptr().untyped();
+    let generic_params_ptr = generic_params.stable_ptr(db).untyped();
     let first_generic_param_diagnostic = |stable_ptr| {
         PluginDiagnostic::error(
             stable_ptr,
@@ -134,7 +135,7 @@ fn get_embeddable_as_impl_generic_params(
     };
 
     let ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) = generic_params else {
-        return Err(first_generic_param_diagnostic(item_impl.name(db).stable_ptr().untyped()));
+        return Err(first_generic_param_diagnostic(item_impl.name(db).stable_ptr(db).untyped()));
     };
     let generic_params_node = params.generic_params(db);
     let mut generic_param_elements = generic_params_node.elements(db).into_iter();
@@ -186,7 +187,7 @@ impl EmbeddableAsImplParams {
     ) -> Option<EmbeddableAsImplParams> {
         let Some(attr_arg_value) = get_embeddable_as_attr_value(db, &attr) else {
             diagnostics.push(PluginDiagnostic::error(
-                attr.stable_ptr().untyped(),
+                attr.stable_ptr(db),
                 format!(
                     "`{EMBEDDABLE_AS_ATTR}` attribute must have a single unnamed argument for the \
                      generated impl name, e.g.: #[{EMBEDDABLE_AS_ATTR}(MyImpl)]."
@@ -209,7 +210,7 @@ impl EmbeddableAsImplParams {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
                 diagnostics.push(PluginDiagnostic::error(
-                    semicolon.stable_ptr().untyped(),
+                    semicolon.stable_ptr(db),
                     format!("`{EMBEDDABLE_AS_ATTR}` attribute is not supported for empty impls."),
                 ));
                 return None;
@@ -241,7 +242,7 @@ fn handle_component_impl(
             || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
         {
             diagnostics.push(PluginDiagnostic::error(
-                param.stable_ptr().untyped(),
+                param.stable_ptr(db),
                 format!(
                     "`embeddable_as` impls can't have impl generic parameters of \
                      `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
@@ -340,7 +341,7 @@ fn handle_component_embeddable_as_impl_item(
     let parameters_elements = parameters.elements(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic::error(
-            parameters.stable_ptr().untyped(),
+            parameters.stable_ptr(db),
             format!(
                 "A function in an #[{EMBEDDABLE_AS_ATTR}] impl in a component must have a first \
                  `self` parameter."
@@ -352,7 +353,7 @@ fn handle_component_embeddable_as_impl_item(
         handle_first_param_for_embeddable_as(db, first_param)
     else {
         diagnostics.push(PluginDiagnostic::error(
-            parameters.stable_ptr().untyped(),
+            parameters.stable_ptr(db),
             format!(
                 "The first parameter of a function in an #[{EMBEDDABLE_AS_ATTR}] impl in a \
                  component must be either `self: @{GENERIC_COMPONENT_STATE_NAME}` (for view \
@@ -421,7 +422,7 @@ fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
 ) -> Option<(String, String, String)> {
-    require(param.name(db).text(db) == "self")?;
+    require(param.name(db).text(db) == SELF_PARAM_KW)?;
     if param.is_ref_param(db) {
         return if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
             .ty(db)

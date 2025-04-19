@@ -71,7 +71,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::UnsupportedPattern => {
-                "Inner patterns are not in this context.".into()
+                "Inner patterns are not allowed in this context.".into()
             }
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
@@ -181,7 +181,7 @@ impl MatchError {
                 "Unreachable else clause.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
-                unreachable!("While-let is does not have two arms.")
+                unreachable!("While-let does not have two arms.")
             }
             (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::Match) => {
                 unreachable!("Numeric values are supported in match conditions.")

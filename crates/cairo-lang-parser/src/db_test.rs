@@ -70,7 +70,7 @@ fn test_token_stream_parser() {
 
     let (root_node, _) = get_syntax_root_and_diagnostics_from_file(db, filepath);
 
-    let token_stream = MockTokenStream::from_syntax_node(db, root_node.clone());
+    let token_stream = MockTokenStream::from_syntax_node(db, root_node);
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
     let original_leaves: Vec<SyntaxNode> = root_node.tokens(db.upcast()).collect();

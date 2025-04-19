@@ -15,7 +15,7 @@ foo
 extern fn bar() -> bad_type;
 
 //! > expected_diagnostics
-error: Type not found.
+error[E0006]: Type not found.
  --> lib.cairo:1:20
 extern fn bar() -> bad_type;
                    ^^^^^^^^

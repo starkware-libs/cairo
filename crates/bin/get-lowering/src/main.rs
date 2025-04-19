@@ -5,9 +5,12 @@ use std::{fmt, fs};
 
 use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
+use cairo_lang_executable::plugin::executable_plugin_suite;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
@@ -26,6 +29,7 @@ use cairo_lang_semantic::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_starknet::starknet_plugin_suite;
+use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
@@ -37,7 +41,7 @@ use itertools::Itertools;
 fn test_lowering_consistency() {
     let db_val = RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
 
@@ -59,7 +63,7 @@ fn test_lowering_consistency() {
 ///
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The crate to compile.
     path: PathBuf,
@@ -72,6 +76,14 @@ struct Args {
     /// whether to print all lowering stages or only the final lowering.
     #[arg(short, long)]
     all: bool,
+
+    /// Disables gas handling.
+    #[arg(short, long)]
+    no_gas: bool,
+
+    /// Use the executable plugin suite instead of the starknet suite
+    #[arg(short, long)]
+    executable: bool,
 
     /// The index of the generated function to output.
     #[arg(long)]
@@ -110,7 +122,7 @@ impl fmt::Display for PhasesDisplay<'_> {
             add_withdraw_gas(db, function_id, lowered).unwrap()
         });
         apply_stage("after_lower_panics", &|lowered| {
-            *lowered = lower_panics(db, function_id, lowered).unwrap();
+            lower_panics(db, function_id, lowered).unwrap();
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
@@ -223,10 +235,22 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let mut db_val = RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()?;
+    let mut db_builder = RootDatabase::builder();
+    let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
+    if args.no_gas {
+        cfg.insert(Cfg::kv("gas", "disabled"));
+        db_builder.skip_auto_withdraw_gas();
+    }
+
+    db_builder.with_cfg(cfg);
+    db_builder.detect_corelib();
+    db_builder.with_default_plugin_suite(test_plugin_suite());
+    let plugin_suite =
+        if args.executable { executable_plugin_suite() } else { starknet_plugin_suite() };
+
+    db_builder.with_default_plugin_suite(plugin_suite);
+
+    let mut db_val = db_builder.build()?;
 
     let main_crate_ids = setup_project(&mut db_val, Path::new(&args.path))?;
     let db = &db_val;
@@ -246,9 +270,9 @@ fn main() -> anyhow::Result<()> {
                     GeneratedFunctionKey::Loop(id) => {
                         (id.0.lookup(db).span_without_trivia(db.upcast()), "".into())
                     }
-                    GeneratedFunctionKey::TraitFunc(trat_function, id) => (
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
                         id.syntax_node(db).span_without_trivia(db.upcast()),
-                        trat_function.name(db),
+                        trait_function.name(db),
                     ),
                 })
                 .take(generated_function_index + 1)
@@ -270,10 +294,18 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
+        let Ok(lowered) = db.final_concrete_function_with_body_lowered(function_id) else {
+            // Run DiagnosticsReporter only in case of failure.
+            DiagnosticsReporter::default()
+                .with_crates(&main_crate_ids)
+                .ensure(db)
+                .with_context(|| "Failed to compile")?;
+            anyhow::bail!("Failed to get lowered function.")
+        };
+
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
         } else {
-            let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
             LoweredDisplay::new(db, &lowered).to_string()
         }
     } else {

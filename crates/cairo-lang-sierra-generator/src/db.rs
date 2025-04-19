@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
@@ -9,12 +10,12 @@ use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use lowering::ids::ConcreteFunctionWithBodyId;
-use semantic::items::imp::ImplLookupContext;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
 use crate::replace_ids::SierraIdReplacer;
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::types::cycle_breaker_info;
 use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
 /// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.
@@ -149,7 +150,6 @@ fn get_function_signature(
     // there.
     let lowered_function_id = function_id.lookup_intern(db);
     let signature = lowered_function_id.signature(db.upcast())?;
-    let may_panic = db.function_may_panic(lowered_function_id)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
@@ -170,9 +170,12 @@ fn get_function_signature(
     }
 
     let mut ret_types = implicits;
+
+    let may_panic =
+        !flag_unsafe_panic(db.upcast()) && db.function_may_panic(lowered_function_id)?;
     if may_panic {
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
-        ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
+        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
     } else {
         ret_types.extend(extra_rets);
         // Functions that return the unit type don't have a return type in the signature.
@@ -194,13 +197,12 @@ fn get_type_info(
     let long_id = match concrete_type_id.lookup_intern(db) {
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
-            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
-            let info = db.type_info(ImplLookupContext::default(), ty)?;
+            let info = cycle_breaker_info(db, ty)?;
             return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
-                long_id,
+                long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
                 storable: true,
-                droppable: info.droppable.is_ok(),
-                duplicatable: info.copyable.is_ok(),
+                droppable: info.droppable,
+                duplicatable: info.duplicatable,
                 zero_sized: false,
             }));
         }

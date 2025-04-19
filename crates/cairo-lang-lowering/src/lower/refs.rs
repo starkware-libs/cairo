@@ -11,7 +11,7 @@ use itertools::chain;
 use crate::VariableId;
 use crate::db::LoweringGroup;
 
-//  Information about members captured by the closure and their types.
+/// Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
 pub struct ClosureInfo {
     // TODO(TomerStarkware): unite copiable members and snapshots into a single map.
@@ -128,7 +128,7 @@ impl SemanticLoweringMapping {
         // TODO(TomerStarkware): check if path is captured by a closure and invalidate the closure.
         // Right now this can only happen if we take a snapshot of the variable (as the
         // snapshot function returns a new var).
-        // we need the make sure the borrow checker invalidates the closure when mutable capture
+        // we need to ensure the borrow checker invalidates the closure when mutable capture
         // is supported.
 
         let value = self.break_into_value(ctx, path)?;

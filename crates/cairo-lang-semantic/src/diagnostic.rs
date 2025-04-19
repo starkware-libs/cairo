@@ -5,7 +5,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitImplId, UseId,
+    TraitImplId, TraitItemId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -595,6 +595,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                         .join(", ")
                 )
             }
+            SemanticDiagnosticKind::UseSelfNonMulti => {
+                "`self` in `use` items is not allowed not in multi.".into()
+            }
+            SemanticDiagnosticKind::UseSelfEmptyPath => {
+                "`self` in `use` items is not allowed for empty path.".into()
+            }
             SemanticDiagnosticKind::UseStarEmptyPath => {
                 "`*` in `use` items is not allowed for empty path.".into()
             }
@@ -865,9 +871,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
                 "Can only break with a value inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
-                "`return` not allowed inside a `loop`.".into()
-            }
             SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop => {
                 "`?` not allowed inside a `loop`.".into()
             }
@@ -1018,7 +1021,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 }
             }
             SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
-                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
+                format!(
+                    "Trait `{}` should not be implemented outside of the corelib.",
+                    trait_id.full_path(db.upcast())
+                )
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
@@ -1069,6 +1075,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        if let SemanticDiagnosticKind::PluginDiagnostic(diag) = &self.kind {
+            if let Some(relative_span) = diag.relative_span {
+                return self.stable_location.diagnostic_location_with_offsets(
+                    db.upcast(),
+                    relative_span.start.as_u32(),
+                    relative_span.end.as_u32(),
+                );
+            }
+        }
+
         let mut location = self.stable_location.diagnostic_location(db.upcast());
         if self.after {
             location = location.after();
@@ -1091,7 +1107,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedImport { .. }
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
-            | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1334,6 +1351,8 @@ pub enum SemanticDiagnosticKind {
     InvalidPath,
     PathNotFound(NotFoundItemType),
     AmbiguousPath(Vec<ModuleItemId>),
+    UseSelfNonMulti,
+    UseSelfEmptyPath,
     UseStarEmptyPath,
     GlobalUsesNotSupportedInEdition(Edition),
     TraitInTraitMustBeExplicit,
@@ -1426,7 +1445,6 @@ pub enum SemanticDiagnosticKind {
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     BreakWithValueOnlyAllowedInsideALoop,
-    ReturnNotAllowedInsideALoop,
     ErrorPropagateNotAllowedInsideALoop,
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
@@ -1508,6 +1526,7 @@ impl SemanticDiagnosticKind {
             Self::MissingMember(_) => error_code!(E0003),
             Self::MissingItemsInImpl(_) => error_code!(E0004),
             Self::ModuleFileNotFound(_) => error_code!(E0005),
+            Self::PathNotFound(_) => error_code!(E0006),
             _ => return None,
         })
     }
@@ -1561,17 +1580,19 @@ impl From<&ResolvedConcreteItem> for ElementKind {
 impl From<&ResolvedGenericItem> for ElementKind {
     fn from(val: &ResolvedGenericItem) -> Self {
         match val {
-            ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
+            ResolvedGenericItem::GenericConstant(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Constant(_)) => ElementKind::Constant,
             ResolvedGenericItem::Module(_) => ElementKind::Module,
-            ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
-            ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
-                ElementKind::Type
-            }
+            ResolvedGenericItem::GenericFunction(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Function(_)) => ElementKind::Function,
+            ResolvedGenericItem::GenericType(_)
+            | ResolvedGenericItem::GenericTypeAlias(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Type(_)) => ElementKind::Type,
             ResolvedGenericItem::Variant(_) => ElementKind::Variant,
             ResolvedGenericItem::Trait(_) => ElementKind::Trait,
-            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
-                ElementKind::Impl
-            }
+            ResolvedGenericItem::Impl(_)
+            | ResolvedGenericItem::GenericImplAlias(_)
+            | ResolvedGenericItem::TraitItem(TraitItemId::Impl(_)) => ElementKind::Impl,
             ResolvedGenericItem::Variable(_) => ElementKind::Variable,
             ResolvedGenericItem::Macro(_) => ElementKind::Macro,
         }

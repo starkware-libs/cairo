@@ -1,15 +1,14 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_files_group,
+    CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_files_group,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
@@ -23,6 +22,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
+use itertools::chain;
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -64,13 +64,14 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_base_plugins());
+        init_defs_group(&mut res);
+        res.set_default_macro_plugins(
+            get_base_plugins()
+                .into_iter()
+                .map(|plugin| res.intern_macro_plugin(MacroPluginLongId(plugin)))
+                .collect(),
+        );
         res
-    }
-}
-impl AsFilesGroupMut for DatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn DefsGroup> for DatabaseForTesting {
@@ -112,9 +113,15 @@ pub fn test_expand_plugin_inner(
     extra_plugins: &[Arc<dyn MacroPlugin>],
 ) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
-    let mut plugins = db.macro_plugins();
-    plugins.extend_from_slice(extra_plugins);
-    db.set_macro_plugins(plugins);
+
+    let extra_plugins = extra_plugins
+        .iter()
+        .cloned()
+        .map(|plugin| db.intern_macro_plugin(MacroPluginLongId(plugin)));
+
+    let default_plugins = db.default_macro_plugins();
+    let plugins = chain!(default_plugins.iter().cloned(), extra_plugins).collect::<Arc<[_]>>();
+    db.set_default_macro_plugins(plugins);
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
@@ -130,7 +137,7 @@ pub fn test_expand_plugin_inner(
 
     // Main module file.
     let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
-    db.as_files_group_mut().override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
+    db.override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
 
     let mut diagnostic_items = vec![];
     let expanded_module =
@@ -193,7 +200,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                 } else {
                     PluginResult {
                         diagnostics: vec![PluginDiagnostic::error(
-                            &struct_ast,
+                            struct_ast.stable_ptr(db),
                             "Double indirection diagnostic".to_string(),
                         )],
                         ..PluginResult::default()

@@ -9,7 +9,7 @@ use cairo_lang_semantic::{GenericArgumentId, Mutability, corelib};
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, QueryAttrs};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
 
@@ -60,7 +60,7 @@ impl MacroPlugin for ExecutablePlugin {
         let generics = declaration.generic_params(db);
         if !generics.is_empty(db) {
             diagnostics.push(PluginDiagnostic::error(
-                &generics,
+                generics.stable_ptr(db),
                 "Executable functions cannot have generic params.".to_string(),
             ));
         }
@@ -85,7 +85,7 @@ impl MacroPlugin for ExecutablePlugin {
             for modifier in param.modifiers(db).elements(db) {
                 if let ast::Modifier::Ref(terminal_ref) = modifier {
                     diagnostics.push(PluginDiagnostic::error(
-                        &terminal_ref,
+                        terminal_ref.stable_ptr(db),
                         "Parameters of an `#[executable]` function can't be `ref`.".into(),
                     ));
                 }
@@ -166,23 +166,29 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             };
             if signature.return_type != corelib::unit_ty(db) {
                 diagnostics.push(PluginDiagnostic::error(
-                    &signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db),
+                    signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db).stable_ptr(syntax_db),
                     "Invalid return type for `#[executable_raw]` function, expected `()`."
                         .to_string(),
                 ));
             }
             let [input, output] = &signature.params[..] else {
                 diagnostics.push(PluginDiagnostic::error(
-                    &signature.stable_ptr.lookup(syntax_db).parameters(syntax_db),
+                    signature
+                        .stable_ptr
+                        .lookup(syntax_db)
+                        .parameters(syntax_db)
+                        .stable_ptr(syntax_db),
                     "Invalid number of params for `#[executable_raw]` function, expected 2."
                         .to_string(),
                 ));
                 continue;
             };
             if input.ty
-                != corelib::get_core_ty_by_name(db, "Span".into(), vec![GenericArgumentId::Type(
-                    db.core_felt252_ty(),
-                )])
+                != corelib::get_core_ty_by_name(
+                    db,
+                    "Span".into(),
+                    vec![GenericArgumentId::Type(db.core_info().felt252)],
+                )
             {
                 diagnostics.push(PluginDiagnostic::error(
                     input.stable_ptr.untyped(),

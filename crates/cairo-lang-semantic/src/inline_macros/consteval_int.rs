@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
 
@@ -40,7 +40,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         const DEPRECATION_FEATURE: &str = r#""deprecated-consteval-int-macro""#;
         if !metadata.allowed_features.contains(DEPRECATION_FEATURE) {
             diagnostics.push(PluginDiagnostic::warning(
-                syntax.stable_ptr().untyped(),
+                syntax.stable_ptr(db),
                 format!(
                     "Usage of deprecated macro `{}` with no `#[feature({DEPRECATION_FEATURE})]` \
                      attribute. Note: Use simple calculations instead, as these are supported in \

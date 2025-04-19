@@ -1,19 +1,19 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
-    core_array_felt252_ty, core_module, core_submodule, get_function_id, get_ty_by_name,
-    option_none_variant, option_some_variant, unit_ty,
+    core_module, core_submodule, get_function_id, never_ty, option_none_variant,
+    option_some_variant, unit_ty,
 };
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
-use cairo_lang_utils::Intern;
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeLongId};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementConst, StatementStructConstruct, VarUsage,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo,
+    MatchInfo, Statement, StatementCall, VarUsage,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -97,72 +97,46 @@ fn create_panic_block(
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
-    let new_array_var =
-        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
-    let out_of_gas_err_var = variables.new_var(VarRequest { ty: db.core_felt252_ty(), location });
-    let panic_instance_var = variables.new_var(VarRequest {
-        ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
-        location,
-    });
-    let panic_data_var =
-        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
-    let err_data_var = variables.new_var(VarRequest {
-        ty: TypeLongId::Tuple(vec![variables[panic_instance_var].ty, variables[panic_data_var].ty])
-            .intern(db),
-        location,
-    });
+    let never_ty = never_ty(db.upcast());
+    let never_var = variables.new_var(VarRequest { ty: never_ty, location });
     lowered.variables = variables.variables;
 
-    let array_module = core_submodule(db.upcast(), "array");
+    let gas_panic_fn = get_function_id(
+        db.upcast(),
+        core_module(db.upcast()),
+        "panic_with_const_felt252".into(),
+        vec![GenericArgumentId::Constant(
+            ConstValue::Int(
+                BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
+                db.core_info().felt252,
+            )
+            .intern(db),
+        )],
+    )
+    .lowered(db);
 
-    let add_location = |var_id| VarUsage { var_id, location };
+    let never_enum_id = extract_matches!(
+        extract_matches!(never_ty.lookup_intern(db), TypeLongId::Concrete),
+        ConcreteTypeId::Enum
+    );
 
-    // The block consists of creating a new array, appending 'Out of gas' to it and panic with this
-    // array as panic data.
+    // The block consists of calling  panic_with_const_felt252::<'Out of gas'> and matching on its
+    // `never` result.
     Ok(FlatBlock {
-        statements: vec![
-            Statement::Call(StatementCall {
-                function: get_function_id(db.upcast(), array_module, "array_new".into(), vec![
-                    GenericArgumentId::Type(db.core_felt252_ty()),
-                ])
-                .lowered(db),
-                inputs: vec![],
-                with_coupon: false,
-                outputs: vec![new_array_var],
+        statements: vec![Statement::Call(StatementCall {
+            function: gas_panic_fn,
+            inputs: vec![],
+            with_coupon: false,
+            outputs: vec![never_var],
+            location,
+        })],
+        end: FlatBlockEnd::Match {
+            info: MatchInfo::Enum(MatchEnumInfo {
+                concrete_enum_id: never_enum_id,
+                input: VarUsage { var_id: never_var, location },
+                arms: vec![],
                 location,
             }),
-            Statement::Const(StatementConst {
-                value: ConstValue::Int(
-                    BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
-                    db.core_felt252_ty(),
-                ),
-                output: out_of_gas_err_var,
-            }),
-            Statement::Call(StatementCall {
-                function: get_function_id(db.upcast(), array_module, "array_append".into(), vec![
-                    GenericArgumentId::Type(db.core_felt252_ty()),
-                ])
-                .lowered(db),
-                inputs: vec![new_array_var, out_of_gas_err_var]
-                    .into_iter()
-                    .map(add_location)
-                    .collect(),
-                with_coupon: false,
-                outputs: vec![panic_data_var],
-                location,
-            }),
-            Statement::StructConstruct(StatementStructConstruct {
-                inputs: vec![],
-                output: panic_instance_var,
-            }),
-            Statement::StructConstruct(StatementStructConstruct {
-                inputs: vec![panic_instance_var, panic_data_var]
-                    .into_iter()
-                    .map(add_location)
-                    .collect(),
-                output: err_data_var,
-            }),
-        ],
-        end: FlatBlockEnd::Panic(VarUsage { var_id: err_data_var, location }),
+        },
     })
 }

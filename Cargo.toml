@@ -32,6 +32,7 @@ members = [
     "crates/cairo-lang-doc",
     "crates/cairo-lang-eq-solver",
     "crates/cairo-lang-executable",
+    "crates/cairo-lang-execute-utils",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
     "crates/cairo-lang-lowering",
@@ -48,7 +49,6 @@ members = [
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
-    "crates/cairo-lang-primitive-token",
     "crates/cairo-lang-starknet",
     "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
@@ -60,6 +60,7 @@ members = [
     "crates/bin/cairo-execute",
     "crates/bin/cairo-format",
     "crates/bin/cairo-run",
+    "crates/bin/cairo-size-profiler",
     "crates/bin/cairo-test",
     "crates/bin/generate-syntax",
     "crates/bin/sierra-compile",
@@ -73,7 +74,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.9.2"
+version = "2.11.4"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -87,14 +88,16 @@ ark-secp256r1 = "0.5.0"
 ark-std = "0.5.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.2", features = ["mod_builtin"] }
-clap = { version = "4.5.27", features = ["derive"] }
+bincode = "1.3.3"
+cairo-lang-primitive-token = "1"
+cairo-vm = { version = "2.0.1", features = ["mod_builtin"] }
+clap = { version = "4.5.29", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.34"
-convert_case = "0.7.1"
+convert_case = "0.8.0"
 derivative = "2.2.0"
-diffy = "0.4.0"
+diffy = "0.4.2"
 env_logger = "0.11.6"
 genco = "0.17.10"
 good_lp = { version = "1.11.0", features = ["minilp"], default-features = false }
@@ -111,7 +114,7 @@ log = "0.4.25"
 num-bigint = { version = "0.4.6", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
-parity-scale-codec = { version = "3.6.12", default-features = false, features = [
+parity-scale-codec = { version = "3.7.4", default-features = false, features = [
     "derive",
 ] }
 path-clean = "1.0.1"
@@ -120,21 +123,22 @@ proc-macro2 = "1.0.93"
 quote = "1.0.38"
 rand = "0.9.0"
 rayon = "1.10.0"
-rstest = "0.24.0"
+rstest = "0.25.0"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 schemars = { version = "0.8.21", features = ["preserve_order"] }
 semver = { version = "1.0.25", features = ["serde"] }
-serde = { version = "1.0.217", default-features = false, features = ["derive"] }
+serde = { version = "1.0.217", default-features = false, features = ["derive","rc"] }
 serde_json = "1.0.138"
+typetag = "0.2"
 sha2 = "0.10.8"
 sha3 = "0.10.8"
-smol_str = { version = "0.3.2", features = ["serde"] }
+smol_str = { version = "0.3.2", default-features = false }
 starknet-types-core = { version = "0.1.7", features = [
     "hash",
     "prime-bigint",
     "serde",
 ] }
-syn = { version = "2.0.96", features = ["full", "extra-traits"] }
+syn = { version = "2.0.98", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
 test-log = "0.2.17"
@@ -145,8 +149,8 @@ time = { version = "0.3.37", features = [
     "local-offset",
 ] }
 tokio = { version = "1.43.0", features = ["full", "sync"] }
-toml = "0.8.19"
+toml = "0.8.20"
 unescaper = "0.1.5"
 xshell = "0.2.7"
 
-openssl = { version = "0.10.69" }
+openssl = { version = "0.10.71" }

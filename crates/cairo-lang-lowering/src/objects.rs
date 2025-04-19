@@ -288,7 +288,7 @@ impl Statement {
     }
 
     pub fn outputs(&self) -> &[VariableId] {
-        match &self {
+        match self {
             Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
             Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
@@ -296,6 +296,18 @@ impl Statement {
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
+        }
+    }
+
+    pub fn outputs_mut(&mut self) -> &mut [VariableId] {
+        match self {
+            Statement::Const(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {
@@ -381,7 +393,7 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    outputs: [VariableId; 2],
+    pub outputs: [VariableId; 2],
 }
 impl StatementSnapshot {
     pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {
@@ -485,6 +497,13 @@ impl MatchInfo {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,
             MatchInfo::Value(s) => &s.arms,
+        }
+    }
+    pub fn arms_mut(&mut self) -> &mut [MatchArm] {
+        match self {
+            MatchInfo::Enum(s) => &mut s.arms,
+            MatchInfo::Extern(s) => &mut s.arms,
+            MatchInfo::Value(s) => &mut s.arms,
         }
     }
     pub fn location(&self) -> &LocationId {

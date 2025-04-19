@@ -6,8 +6,8 @@
 //! [`StoragePointerWriteAccess`] traits, along with useful storage-only collection types like
 //! [`Vec`] and [`Map`].
 //!
-//! [`Vec`]: crate::starknet::storage::vec::Vec
-//! [`Map`]: crate::starknet::storage::map::Map
+//! [`Vec`]: starknet::storage::vec::Vec
+//! [`Map`]: starknet::storage::map::Map
 //!
 //! # Overview
 //!
@@ -54,11 +54,11 @@
 //! with the `StoragePointer` traits to read and write in these entries.
 //! - [`VecTrait`] and [`MutableVecTrait`] allow for interacting with storage [`Vec`]s.
 //!
-//! [`VecTrait`]: crate::starknet::storage::vec::VecTrait
-//! [`MutableVecTrait`]: crate::starknet::storage::vec::MutableVecTrait
-//! [`StorageMapReadAccess`]: crate::starknet::storage::map::StorageMapReadAccess
-//! [`StorageMapWriteAccess`]: crate::starknet::storage::map::StorageMapWriteAccess
-//! [`StoragePathEntry`]: crate::starknet::storage::map::StoragePathEntry
+//! [`VecTrait`]: starknet::storage::vec::VecTrait
+//! [`MutableVecTrait`]: starknet::storage::vec::MutableVecTrait
+//! [`StorageMapReadAccess`]: starknet::storage::map::StorageMapReadAccess
+//! [`StorageMapWriteAccess`]: starknet::storage::map::StorageMapWriteAccess
+//! [`StoragePathEntry`]: starknet::storage::map::StoragePathEntry
 //!
 //! ## Examples
 //!
@@ -164,7 +164,7 @@ use vec::{
     MutableVecIndexView, MutableVecIntoIterRange, PathableMutableVecIntoIterRange,
     PathableVecIntoIterRange, VecIndexView, VecIntoIterRange,
 };
-pub use vec::{MutableVecTrait, Vec, VecTrait};
+pub use vec::{MutableVecTrait, Vec, VecIter, VecTrait};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
@@ -215,7 +215,7 @@ pub trait StorageAsPointer<TMemberState> {
 /// # Examples
 ///
 //! ```
-//! use core::starknet::storage::StoragePointerReadAccess;
+//! use starknet::storage::StoragePointerReadAccess;
 //!
 //! #[storage]
 //! struct Storage {
@@ -236,7 +236,7 @@ pub trait StoragePointerReadAccess<T> {
 /// # Examples
 ///
 //! ```
-//! use core::starknet::storage::StoragePointerWriteAccess;
+//! use starknet::storage::StoragePointerWriteAccess;
 //!
 //! #[storage]
 //! struct Storage {
@@ -567,6 +567,20 @@ trait MutableTrait<T> {
 impl MutableImpl<T> of MutableTrait<Mutable<T>> {
     type InnerType = T;
 }
+
+pub trait StoragePathMutableConversion<T> {
+    /// Converts a `StoragePath<Mutable<T>>` to a `StoragePath<T>`. This is useful to expose
+    /// functions implemented for `StoragePath<T>` on a `StoragePath<Mutable<T>>`.
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T>;
+}
+
+
+impl StoragePathAsNonMutImpl<T> of StoragePathMutableConversion<T> {
+    fn as_non_mut(self: StoragePath<Mutable<T>>) -> StoragePath<T> {
+        StoragePath { __hash_state__: self.__hash_state__ }
+    }
+}
+
 
 /// Trait for turning collection of values into an iterator over a specific range.
 pub trait IntoIterRange<T> {

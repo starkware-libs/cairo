@@ -39,7 +39,7 @@ fn test_span() {
         TextOffset(TextWidth(3)).position_in_file(&db, file),
         Some(TextPosition { line: 1, col: 0 })
     );
-    // Offsets 6,7 is inside a unicode char.
+    // Offsets 6,7 are inside a unicode char.
     assert_eq!(
         TextOffset(TextWidth(8)).position_in_file(&db, file),
         Some(TextPosition { line: 1, col: 3 })

@@ -36,7 +36,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
 
         let ast::Expr::String(input_string) = arg else {
             let diagnostics = vec![PluginDiagnostic::error(
-                syntax.stable_ptr().untyped(),
+                syntax.stable_ptr(db).untyped(),
                 format!("`{}` macro argument must be a string", SelectorMacro::NAME),
             )];
             return InlinePluginResult { code: None, diagnostics };

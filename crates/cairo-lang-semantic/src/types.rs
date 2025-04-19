@@ -7,10 +7,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use sha3::{Digest, Keccak256};
@@ -18,7 +19,7 @@ use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty,
+    concrete_panic_destruct_trait, core_submodule, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -31,7 +32,7 @@ use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::imp::{ImplId, ImplLookupContext};
-use crate::resolve::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
@@ -144,18 +145,36 @@ impl TypeLongId {
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let phantom_type_attributes = db.declared_phantom_type_attributes();
+        let defs_db = db.upcast();
+
         match self {
             TypeLongId::Concrete(id) => match id {
-                ConcreteTypeId::Struct(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Enum(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Extern(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Struct(id) => {
+                    let crate_id =
+                        db.lookup_intern_struct(id.struct_id(db)).0.0.owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Enum(id) => {
+                    let crate_id = db.lookup_intern_enum(id.enum_id(db)).0.0.owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Extern(id) => {
+                    let crate_id = db
+                        .lookup_intern_extern_type(id.extern_type_id(db))
+                        .0
+                        .0
+                        .owning_crate(defs_db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
@@ -187,9 +206,9 @@ impl TypeLongId {
                 .module_file_id(db)
                 .map(|module_file_id| module_file_id.0),
             TypeLongId::Missing(_) => None,
-            TypeLongId::Tuple(_) => None,
+            TypeLongId::Tuple(_) => Some(core_submodule(db, "tuple")),
             TypeLongId::ImplType(_) => None,
-            TypeLongId::FixedSizeArray { .. } => None,
+            TypeLongId::FixedSizeArray { .. } => Some(core_submodule(db, "fixed_size_array")),
             TypeLongId::Closure(closure) => {
                 if let Ok(function_id) = closure.parent_function {
                     function_id
@@ -536,27 +555,25 @@ pub fn resolve_type(
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, None)
-        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
+    resolve_type_ex(db, diagnostics, resolver, ty_syntax, ResolutionContext::Default)
 }
-/// Resolves a type given a module and a path. `statement_env` should be provided if called from
-/// statement context.
-pub fn resolve_type_with_environment(
+/// Resolves a type given a module and a path. Allows defining a resolution context.
+pub fn resolve_type_ex(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
-    statement_env: Option<&mut Environment>,
+    ctx: ResolutionContext<'_>,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, statement_env)
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, ctx)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
-pub fn maybe_resolve_type(
+fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
-    mut statement_env: Option<&mut Environment>,
+    mut ctx: ResolutionContext<'_>,
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
@@ -565,33 +582,35 @@ pub fn maybe_resolve_type(
                 diagnostics,
                 path,
                 NotFoundItemType::Type,
-                statement_env,
+                ctx,
             )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
-                    return Err(diagnostics.report(path, NotAType));
+                    return Err(diagnostics.report(path.stable_ptr(syntax_db), NotAType));
                 }
             }
         }
-        ast::Expr::Parenthesized(expr_syntax) => resolve_type_with_environment(
-            db,
-            diagnostics,
-            resolver,
-            &expr_syntax.expr(syntax_db),
-            statement_env,
-        ),
+        ast::Expr::Parenthesized(expr_syntax) => {
+            resolve_type_ex(db, diagnostics, resolver, &expr_syntax.expr(syntax_db), ctx)
+        }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
                 .map(|subexpr_syntax| {
-                    resolve_type_with_environment(
+                    resolve_type_ex(
                         db,
                         diagnostics,
                         resolver,
                         &subexpr_syntax,
-                        statement_env.as_deref_mut(),
+                        match ctx {
+                            ResolutionContext::Default => ResolutionContext::Default,
+                            ResolutionContext::ModuleItem(id) => ResolutionContext::ModuleItem(id),
+                            ResolutionContext::Statement(ref mut env) => {
+                                ResolutionContext::Statement(env)
+                            }
+                        },
                     )
                 })
                 .collect();
@@ -600,49 +619,39 @@ pub fn maybe_resolve_type(
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
         {
-            let ty = resolve_type_with_environment(
-                db,
-                diagnostics,
-                resolver,
-                &unary_syntax.expr(syntax_db),
-                statement_env,
-            );
+            let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(syntax_db), ctx);
             TypeLongId::Snapshot(ty).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
         {
-            let ty = resolve_type_with_environment(
-                db,
-                diagnostics,
-                resolver,
-                &unary_syntax.expr(syntax_db),
-                statement_env,
-            );
+            let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(syntax_db), ctx);
             if let Some(desnapped_ty) =
                 try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
             {
                 desnapped_ty
             } else {
-                return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
+                return Err(diagnostics.report(ty_syntax.stable_ptr(syntax_db), DesnapNonSnapshot));
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
             let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
-                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+                return Err(diagnostics
+                    .report(ty_syntax.stable_ptr(syntax_db), FixedSizeArrayTypeNonSingleType));
             };
-            let ty = resolve_type_with_environment(db, diagnostics, resolver, ty, statement_env);
+            let ty = resolve_type_ex(db, diagnostics, resolver, ty, ctx);
             let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
             {
                 Some(size) => size,
                 None => {
-                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
+                    return Err(diagnostics
+                        .report(ty_syntax.stable_ptr(syntax_db), FixedSizeArrayTypeEmptySize));
                 }
             };
             TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {
-            return Err(diagnostics.report(ty_syntax, UnknownType));
+            return Err(diagnostics.report(ty_syntax.stable_ptr(syntax_db), UnknownType));
         }
     })
 }
@@ -677,14 +686,14 @@ pub fn extract_fixed_size_array_size(
                 db,
                 &mut ctx,
                 &size,
-                size_expr_syntax.stable_ptr().untyped(),
+                size_expr_syntax.stable_ptr(syntax_db).untyped(),
                 get_usize_ty(db),
                 false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
             } else {
-                Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize))
+                Err(diagnostics.report(syntax.stable_ptr(syntax_db), FixedSizeArrayNonNumericSize))
             }
         }
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
@@ -693,12 +702,13 @@ pub fn extract_fixed_size_array_size(
 
 /// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
 pub fn verify_fixed_size_array_size(
+    db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     size: &BigInt,
     syntax: &ast::ExprFixedSizeArray,
 ) -> Maybe<()> {
     if size > &BigInt::from(i16::MAX) {
-        return Err(diagnostics.report(syntax, FixedSizeArraySizeTooBig));
+        return Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArraySizeTooBig));
     }
     Ok(())
 }
@@ -946,7 +956,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         // a var free ImplType needs to be rewritten if has impl bounds constraints.
         TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_var_free(db))
+            chain!(&closure.captured_types, &closure.param_tys).all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
     }

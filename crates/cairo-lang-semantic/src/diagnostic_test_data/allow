@@ -1,0 +1,26 @@
+//! > Test allow_attr attribute
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow(unused_imports)] // Valid allow arg.
+mod some {
+    use core::ArrayTrait;
+}
+
+#[allow(invalid_lint)] // Invalid allow arg.
+fn func() {}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: `allow` attribute argument not supported.
+ --> lib.cairo:6:8
+#[allow(invalid_lint)] // Invalid allow arg.
+       ^^^^^^^^^^^^^^

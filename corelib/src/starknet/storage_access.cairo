@@ -43,13 +43,17 @@ use starknet::syscalls::{storage_read_syscall, storage_write_syscall};
 
 /// Represents the address of a storage value in a Starknet contract.
 /// The value range of this type is `[0, 2**251)`.
-#[derive(Copy, Drop)]
 pub extern type StorageAddress;
+
+impl StorageAddressCopy of Copy<StorageAddress>;
+impl StorageAddressDrop of Drop<StorageAddress>;
 
 /// Represents a base storage address that can be combined with offsets.
 /// The value range of this type is `[0, 2**251 - 256)`.
-#[derive(Copy, Drop)]
 pub extern type StorageBaseAddress;
+
+impl StorageBaseAddressCopy of Copy<StorageBaseAddress>;
+impl StorageBaseAddressDrop of Drop<StorageBaseAddress>;
 
 /// Returns a `StorageBaseAddress` given a constant `felt252` value.
 ///
@@ -58,7 +62,7 @@ pub extern type StorageBaseAddress;
 /// # Examples
 ///
 /// ```
-/// use core::starknet::storage_access::storage_base_address_const;
+/// use starknet::storage_access::storage_base_address_const;
 ///
 /// let base_address = storage_base_address_const::<0>();
 /// ```
@@ -136,8 +140,8 @@ impl LowerHexStorageBaseAddress of core::fmt::LowerHex<StorageBaseAddress> {
 /// etc.) do not implement `Store` directly. Instead, use specialized storage types, such as [`Vec`]
 /// or [`Map`].
 ///
-/// [`Map`]: crate::starknet::storage::Map
-/// [`Vec`]: crate::starknet::storage::Vec
+/// [`Map`]: starknet::storage::Map
+/// [`Vec`]: starknet::storage::Vec
 ///
 /// # Derivation
 ///
@@ -262,7 +266,7 @@ pub trait Store<T> {
 /// Packing multiple integer fields into a single storage slot:
 ///
 /// ```
-/// use core::starknet::storage_access::StorePacking;
+/// use starknet::storage_access::StorePacking;
 ///
 /// #[derive(Drop)]
 /// struct Sizes {
@@ -295,7 +299,7 @@ pub trait Store<T> {
 /// }
 /// ```
 ///
-/// By implementing `StorePacking` for `Sizes`, the `Sizes` will be stored in it's packed form,
+/// By implementing `StorePacking` for `Sizes`, the `Sizes` will be stored in its packed form,
 /// using a single storage slot instead of 3. When retrieved, it will automatically be unpacked back
 /// into the original type.
 pub trait StorePacking<T, PackedT> {

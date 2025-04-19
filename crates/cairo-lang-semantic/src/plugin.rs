@@ -1,14 +1,16 @@
+use std::any::{self, Any};
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId, ModuleId};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin, PluginDiagnostic};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SemanticGroup;
+use crate::ids::AnalyzerPluginId;
 
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
 /// modules.
-pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
+pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Runs the plugin on a module.
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
     /// Allows this plugin supplies.
@@ -18,6 +20,12 @@ pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
     /// `#[allow(some_pattern)]` you will need to declare it here.
     fn declared_allows(&self) -> Vec<String> {
         Vec::new()
+    }
+
+    /// A `TypeId` of the plugin, used to compare the concrete types
+    /// of plugins given as trait objects.
+    fn plugin_type_id(&self) -> any::TypeId {
+        self.type_id()
     }
 }
 
@@ -71,4 +79,13 @@ impl PluginSuite {
         self.analyzer_plugins.extend(suite.analyzer_plugins);
         self
     }
+}
+
+/// A helper representation for the plugin IDs obtained from
+/// [`crate::db::PluginSuiteInput::intern_plugin_suite`].
+#[derive(Clone, Debug)]
+pub struct InternedPluginSuite {
+    pub macro_plugins: Arc<[MacroPluginId]>,
+    pub inline_macro_plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId>>,
+    pub analyzer_plugins: Arc<[AnalyzerPluginId]>,
 }

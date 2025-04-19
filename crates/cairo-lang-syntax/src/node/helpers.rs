@@ -42,7 +42,21 @@ impl GetIdentifier for ast::UsePathLeafPtr {
                 .identifier(db);
         }
         let ident_green = self.ident_green(db);
-        ident_green.identifier(db)
+        let ident = ident_green.identifier(db);
+        if ident != "self" {
+            return ident;
+        }
+        let mut node = self.0.lookup(db);
+        loop {
+            node = if let Some(parent) = node.parent(db) {
+                parent
+            } else {
+                return ident;
+            };
+            if matches!(node.kind(db), SyntaxKind::UsePathSingle) {
+                return ast::UsePathSingle::from_syntax_node(db, node).ident(db).identifier(db);
+            }
+        }
     }
 }
 impl GetIdentifier for ast::PathSegmentGreen {
@@ -111,11 +125,12 @@ impl PathSegmentEx for ast::PathSegment {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
+            ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
     fn generic_args(&self, db: &dyn SyntaxGroup) -> Option<Vec<ast::GenericArg>> {
         match self {
-            ast::PathSegment::Simple(_) => None,
+            ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
                 Some(segment.generic_args(db).generic_args(db).elements(db))
             }
@@ -166,6 +181,39 @@ impl NameGreen for ItemExternFunctionPtr {
 impl NameGreen for TraitItemFunctionPtr {
     fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         self.declaration_green(db).name_green(db)
+    }
+}
+
+/// Provides methods to extract a _name_ of AST objects.
+pub trait HasName {
+    /// Gets a [`TerminalIdentifier`] that represents a _name_ of this AST object.
+    fn name(&self, db: &dyn SyntaxGroup) -> ast::TerminalIdentifier;
+}
+
+impl HasName for FunctionWithBody {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for ItemExternFunction {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for TraitItemFunction {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        self.declaration(db).name(db)
+    }
+}
+
+impl HasName for UsePathLeaf {
+    fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        match self.alias_clause(db) {
+            ast::OptionAliasClause::Empty(_) => self.ident(db).identifier_ast(db),
+            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db),
+        }
     }
 }
 
@@ -428,70 +476,68 @@ impl QueryAttrs for SyntaxNode {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self.kind(db) {
             SyntaxKind::ItemConstant => {
-                ast::ItemConstant::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemConstant::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemModule => {
-                ast::ItemModule::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemModule::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::FunctionWithBody => {
-                ast::FunctionWithBody::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::FunctionWithBody::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemUse => {
-                ast::ItemUse::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemUse::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemExternFunction => {
-                ast::ItemExternFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemExternFunction::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemExternType => {
-                ast::ItemExternType::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemExternType::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemTrait => {
-                ast::ItemTrait::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemTrait::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemImpl => {
-                ast::ItemImpl::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemImpl::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemImplAlias => {
-                ast::ItemImplAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemImplAlias::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemStruct => {
-                ast::ItemStruct::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemStruct::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemEnum => {
-                ast::ItemEnum::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemEnum::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemTypeAlias => {
-                ast::ItemTypeAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemTypeAlias::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::TraitItemFunction => {
-                ast::TraitItemFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::TraitItemFunction::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemInlineMacro => {
-                ast::ItemInlineMacro::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemInlineMacro::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::AttributeList => {
-                ast::AttributeList::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::AttributeList::from_syntax_node(db, *self).attributes_elements(db)
             }
-            SyntaxKind::Member => {
-                ast::Member::from_syntax_node(db, self.clone()).attributes_elements(db)
-            }
+            SyntaxKind::Member => ast::Member::from_syntax_node(db, *self).attributes_elements(db),
             SyntaxKind::Variant => {
-                ast::Variant::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::Variant::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementBreak => {
-                ast::StatementBreak::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementBreak::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementContinue => {
-                ast::StatementContinue::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementContinue::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementReturn => {
-                ast::StatementReturn::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementReturn::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementLet => {
-                ast::StatementLet::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementLet::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementExpr => {
-                ast::StatementExpr::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementExpr::from_syntax_node(db, *self).attributes_elements(db)
             }
             _ => vec![],
         }
@@ -551,10 +597,10 @@ impl WrappedArgListHelper for WrappedArgList {
 
     fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         match self {
-            WrappedArgList::ParenthesizedArgList(args) => (&args.lparen(db)).into(),
-            WrappedArgList::BracketedArgList(args) => (&args.lbrack(db)).into(),
-            WrappedArgList::BracedArgList(args) => (&args.lbrace(db)).into(),
-            WrappedArgList::Missing(_) => self.into(),
+            WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr(db).untyped(),
+            WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr(db).untyped(),
+            WrappedArgList::BracedArgList(args) => args.lbrace(db).stable_ptr(db).untyped(),
+            WrappedArgList::Missing(_) => self.stable_ptr(db).untyped(),
         }
     }
 }
@@ -629,7 +675,7 @@ impl UsePathEx for ast::UsePath {
     fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse {
         let mut node = self.as_syntax_node();
         loop {
-            let Some(parent) = node.parent() else {
+            let Some(parent) = node.parent(db) else {
                 unreachable!("UsePath is not under an ItemUse.");
             };
             match parent.kind(db) {
@@ -645,9 +691,92 @@ impl UsePathEx for ast::UsePath {
 impl UsePathLeaf {
     /// Retrieves the stable pointer of the name of the leaf.
     pub fn name_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
-        match self.alias_clause(db) {
-            ast::OptionAliasClause::Empty(_) => self.ident(db).stable_ptr().untyped(),
-            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db).stable_ptr().untyped(),
+        self.name(db).stable_ptr(db).untyped()
+    }
+}
+
+/// Helper trait for check syntactically if a type is dependent on a given identifier.
+pub trait IsDependentType {
+    /// Returns true if `self` is dependent on `identifier` in an internal type.
+    /// For example given identifier `T` will return true for:
+    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
+    /// Does not resolve paths, type aliases or named generics.
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool;
+}
+
+impl IsDependentType for ast::ExprPath {
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+        let segments = self.elements(db);
+        if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
+            identifiers.contains(&arg_segment.ident(db).text(db).as_str())
+        } else {
+            segments.into_iter().any(|segment| {
+                let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
+                    return false;
+                };
+                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
+                    let generic_arg_value = match arg {
+                        ast::GenericArg::Named(named) => named.value(db),
+                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
+                    };
+                    match generic_arg_value {
+                        ast::GenericArgValue::Expr(arg_expr) => {
+                            arg_expr.expr(db).is_dependent_type(db, identifiers)
+                        }
+                        ast::GenericArgValue::Underscore(_) => false,
+                    }
+                })
+            })
+        }
+    }
+}
+
+impl IsDependentType for ast::Expr {
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
+        match self {
+            ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifiers),
+            ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifiers),
+            ast::Expr::Binary(binary) => {
+                binary.lhs(db).is_dependent_type(db, identifiers)
+                    || binary.rhs(db).is_dependent_type(db, identifiers)
+            }
+            ast::Expr::Tuple(tuple) => tuple
+                .expressions(db)
+                .elements(db)
+                .iter()
+                .any(|expr| expr.is_dependent_type(db, identifiers)),
+            ast::Expr::FixedSizeArray(arr) => {
+                arr.exprs(db)
+                    .elements(db)
+                    .iter()
+                    .any(|expr| expr.is_dependent_type(db, identifiers))
+                    || match arr.size(db) {
+                        ast::OptionFixedSizeArraySize::Empty(_) => false,
+                        ast::OptionFixedSizeArraySize::FixedSizeArraySize(size) => {
+                            size.size(db).is_dependent_type(db, identifiers)
+                        }
+                    }
+            }
+            ast::Expr::Literal(_)
+            | ast::Expr::ShortString(_)
+            | ast::Expr::String(_)
+            | ast::Expr::False(_)
+            | ast::Expr::True(_)
+            | ast::Expr::Parenthesized(_)
+            | ast::Expr::FunctionCall(_)
+            | ast::Expr::StructCtorCall(_)
+            | ast::Expr::Block(_)
+            | ast::Expr::Match(_)
+            | ast::Expr::If(_)
+            | ast::Expr::Loop(_)
+            | ast::Expr::While(_)
+            | ast::Expr::For(_)
+            | ast::Expr::Closure(_)
+            | ast::Expr::ErrorPropagate(_)
+            | ast::Expr::FieldInitShorthand(_)
+            | ast::Expr::Indexed(_)
+            | ast::Expr::InlineMacro(_)
+            | ast::Expr::Missing(_) => false,
         }
     }
 }

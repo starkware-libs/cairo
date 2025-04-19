@@ -70,16 +70,16 @@ pub extern fn get_block_hash_syscall(
     block_number: u64,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
-/// Gets information about the currently executing block and the transactions in the block. For a
-/// complete description of this information, see [`Execution information`].
-///
+/// Gets information about the currently executing block and the transactions within it.
+/// For a complete description of this information, see [`Execution information`].
 /// When an account’s `__validate__`, `__validate_deploy__`, or `__validate_declare__` function
+///
 /// calls `get_execution_info`, the return values for `block_timestamp` and `block_number` are
 /// modified as follows:
 /// * `block_timestamp` returns the hour, rounded down to the nearest hour.
 /// * `block_number` returns the block number, rounded down to the nearest multiple of 100.
 ///
-/// [`Execution information`]: core::starknet::info::ExecutionInfo
+/// [`Execution information`]: starknet::info::ExecutionInfo
 ///
 /// # Returns
 ///
@@ -91,7 +91,7 @@ pub extern fn get_execution_info_syscall() -> SyscallResult<
 
 /// Gets information about the current execution, version 2.
 /// This syscall should not be called directly. Instead, use
-/// `core::starknet::info::get_execution_info`.
+/// `starknet::info::get_execution_info`.
 ///
 /// # Returns
 ///
@@ -211,3 +211,21 @@ pub extern fn keccak_syscall(
 pub extern fn sha256_process_block_syscall(
     state: core::sha256::Sha256StateHandle, input: Box<[u32; 16]>,
 ) -> SyscallResult<core::sha256::Sha256StateHandle> implicits(GasBuiltin, System) nopanic;
+
+/// Invokes the given entry point as a v0 meta transaction.
+///
+/// * The signature is replaced with the given signature.
+/// * The caller is the OS (address 0).
+/// * The transaction version is replaced by 0.
+/// * The transaction hash is replaced by the corresponding version-0 transaction hash.
+///
+/// The changes apply to the called contract and the inner contracts it calls.
+///
+/// NOTE: This syscall should only be used to allow support for old version-0 bound accounts,
+/// and should not be used for other purposes.
+pub extern fn meta_tx_v0_syscall(
+    address: ContractAddress,
+    entry_point_selector: felt252,
+    calldata: Span<felt252>,
+    signature: Span<felt252>,
+) -> starknet::SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;

@@ -21,7 +21,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteStructId, add_type_based_diagnostics, resolve_type};
 use crate::{GenericParam, SemanticDiagnostic, semantic};
 
@@ -70,7 +70,7 @@ pub fn priv_struct_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -123,7 +123,7 @@ pub fn struct_generic_params_data(
         &struct_ast.generic_params(db.upcast()),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db.upcast()).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -165,7 +165,10 @@ pub fn priv_struct_definition_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<StructDefinitionData> {
-    let module_file_id = struct_id.module_file_id(db.upcast());
+    let defs_db = db.upcast();
+
+    let module_file_id = struct_id.module_file_id(defs_db);
+    let crate_id = module_file_id.0.owning_crate(defs_db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -191,8 +194,8 @@ pub fn priv_struct_definition_data(
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, &member, &mut diagnostics));
-        let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
+            .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
+        let id = MemberLongId(module_file_id, member.stable_ptr(syntax_db)).intern(db);
         let ty = resolve_type(
             db,
             &mut diagnostics,
@@ -205,14 +208,17 @@ pub fn priv_struct_definition_data(
         if let Some(_other_member) =
             members.insert(member_name.clone(), Member { id, ty, visibility })
         {
-            diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
+            diagnostics.report(
+                member.stable_ptr(syntax_db),
+                StructMemberRedefinition { struct_id, member_name },
+            );
         }
         resolver.data.feature_config.restore(feature_restore);
     }
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(syntax_db).untyped());
 
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();
@@ -234,10 +240,13 @@ pub fn struct_definition_diagnostics(
     let Ok(data) = db.priv_struct_definition_data(struct_id) else {
         return Default::default();
     };
+
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.
     if db
-        .declared_phantom_type_attributes()
+        .declared_phantom_type_attributes(crate_id)
         .iter()
         .any(|attr| struct_id.has_attr(db, attr).unwrap_or_default())
     {
@@ -286,8 +295,7 @@ pub fn concrete_struct_members(
         generic_members
             .iter()
             .map(|(name, member)| {
-                let ty =
-                    SubstitutionRewriter { db, substitution: &substitution }.rewrite(member.ty)?;
+                let ty = substitution.substitute(db, member.ty)?;
                 Ok((name.clone(), semantic::Member { ty, ..member.clone() }))
             })
             .collect::<Maybe<_>>()?,

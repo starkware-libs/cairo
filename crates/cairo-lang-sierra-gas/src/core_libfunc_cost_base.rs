@@ -42,6 +42,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::qm31::QM31Concrete;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -411,6 +412,7 @@ pub fn core_libfunc_cost(
                 vec![DICT_SQUASH_FIXED_COST.into()]
             }
         },
+        Felt252SquashedDict(_) => vec![ConstCost::default().into()],
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => {
                 vec![BranchCost::Regular {
@@ -608,6 +610,21 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
+        // TODO(ilya): Add blake token to blake gas cost.
+        Blake(_) => vec![ConstCost::steps(1).into()],
+        Trace(_) => vec![ConstCost::steps(1).into()],
+        QM31(libfunc) => match libfunc {
+            QM31Concrete::Const(_) => vec![ConstCost::default().into()],
+            QM31Concrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
+            // TODO(orizi): Add qm31 token to gas cost.
+            QM31Concrete::BinaryOperation(_) => vec![ConstCost::steps(1).into()],
+            QM31Concrete::Pack(_) => vec![ConstCost::steps(6).into()],
+            QM31Concrete::Unpack(_) => {
+                vec![ConstCost { steps: 15, holes: 0, range_checks: 5, range_checks96: 0 }.into()]
+            }
+            QM31Concrete::FromM31(_) => vec![ConstCost::default().into()],
+        },
+        UnsafePanic(_) => vec![],
     }
 }
 
@@ -858,12 +875,10 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
             vec![ConstCost { steps: 30, holes: 0, range_checks: 7, range_checks96: 0 }]
         }
         Uint256Concrete::InvModN(_) => {
-            vec![ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 }, ConstCost {
-                steps: 25,
-                holes: 0,
-                range_checks: 7,
-                range_checks96: 0,
-            }]
+            vec![
+                ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 },
+                ConstCost { steps: 25, holes: 0, range_checks: 7, range_checks96: 0 },
+            ]
         }
     }
 }
@@ -878,7 +893,7 @@ fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
 }
 
 /// Returns costs for i64/i32/i16/i8 libfuncs.
-fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
+fn sint_libfunc_cost<TSintTraits: SintTraits + IntMulTraits>(
     libfunc: &SintConcrete<TSintTraits>,
 ) -> Vec<BranchCost> {
     match libfunc {
@@ -894,7 +909,6 @@ fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
                 ConstCost { steps: 10, holes: 0, range_checks: 3, range_checks96: 0 }.into(),
             ]
         }
-        SintConcrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
         SintConcrete::Operation(_) => vec![
             ConstCost { steps: 6, holes: 0, range_checks: 2, range_checks96: 0 }.into(),
             ConstCost { steps: 6, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
@@ -919,9 +933,6 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
                 ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
                 ConstCost { steps: 10, holes: 0, range_checks: 3, range_checks96: 0 }.into(),
             ]
-        }
-        Sint128Concrete::IsZero(_) => {
-            vec![steps(1).into(), steps(1).into()]
         }
         Sint128Concrete::Equal(_) => {
             vec![steps(2).into(), steps(3).into()]

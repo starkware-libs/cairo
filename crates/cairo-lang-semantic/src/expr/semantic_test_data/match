@@ -540,7 +540,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: ?3::add,
+                        function: ?2::add,
                         args: [
                             Value(
                                 Literal(

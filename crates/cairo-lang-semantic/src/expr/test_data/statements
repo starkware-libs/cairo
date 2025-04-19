@@ -15,7 +15,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> lib.cairo:2:18
     let mut x = 3
                  ^
@@ -38,7 +38,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> lib.cairo:2:19
     let mut _x = 3
                   ^
@@ -64,7 +64,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> lib.cairo:3:17
         return 1
                 ^
@@ -87,7 +87,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> lib.cairo:2:13
     return 1
             ^
