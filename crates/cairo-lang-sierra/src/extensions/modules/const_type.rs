@@ -277,8 +277,7 @@ impl ConstAsBoxLibfunc {
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }?;
         let segment_id = segment_id.to_u32().ok_or(SpecializationError::UnsupportedGenericArg)?;
-        let (inner_ty, _) =
-            extract_const_info(context.as_type_specialization_context(), const_type)?;
+        let (inner_ty, _) = extract_const_info(context, const_type)?;
         let boxed_inner_ty = box_ty(context, inner_ty)?;
 
         Ok(ConstAsBoxConcreteLibfunc {
@@ -313,7 +312,7 @@ impl NamedLibfunc for ConstAsBoxLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        self.specialize_concrete_lib_func(context.upcast(), args)
+        self.specialize_concrete_lib_func(context, args)
     }
 }
 
@@ -339,7 +338,7 @@ impl ConstAsImmediateLibfunc {
         args: &[GenericArg],
     ) -> Result<ConstAsImmediateConcreteLibfunc, SpecializationError> {
         let const_type = args_as_single_type(args)?;
-        let (ty, _) = extract_const_info(context.as_type_specialization_context(), &const_type)?;
+        let (ty, _) = extract_const_info(context, &const_type)?;
         Ok(ConstAsImmediateConcreteLibfunc {
             const_type,
             signature: LibfuncSignature::new_non_branch(
@@ -371,6 +370,6 @@ impl NamedLibfunc for ConstAsImmediateLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        self.specialize_concrete_lib_func(context.upcast(), args)
+        self.specialize_concrete_lib_func(context, args)
     }
 }

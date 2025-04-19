@@ -56,7 +56,7 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
         }
         Ok(SignatureAndConstConcreteLibfunc {
             c,
-            signature: <Self as NamedLibfunc>::specialize_signature(self, context.upcast(), args)?,
+            signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
         })
     }
 }

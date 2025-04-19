@@ -822,7 +822,7 @@ impl NamedLibfunc for GetOutputLibFunc {
 
         // TODO(ilya): Fail if `circuit_ty` does not contain output_ty.
         Ok(ConcreteGetOutputLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
             circuit_ty,
             output_ty,
         })
@@ -925,10 +925,7 @@ impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyLibfunc {
         let limb_count = args_as_single_value(args)?
             .to_usize()
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
-        Ok(Self::Concrete {
-            signature: self.specialize_signature(context.upcast(), args)?,
-            limb_count,
-        })
+        Ok(Self::Concrete { signature: self.specialize_signature(context, args)?, limb_count })
     }
 }
 pub struct ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {

@@ -112,7 +112,7 @@ impl NamedLibfunc for CouponBuyLibfunc {
 
         Ok(SignatureAndFunctionConcreteLibfunc {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -157,7 +157,7 @@ impl NamedLibfunc for CouponRefundLibfunc {
 
         Ok(SignatureAndFunctionConcreteLibfunc {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
