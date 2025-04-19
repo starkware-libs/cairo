@@ -29,7 +29,7 @@ pub fn concrete_function_with_body_scc(
     function_id: ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-    compute_scc(&ConcreteFunctionWithBodyNode { function_id, db: db.upcast(), dependency_type })
+    compute_scc(&ConcreteFunctionWithBodyNode { function_id, db, dependency_type })
 }
 
 /// Query implementation of
@@ -53,9 +53,5 @@ pub fn concrete_function_with_body_inlined_scc(
     function_id: ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-    compute_scc(&ConcreteFunctionWithBodyInlinedNode {
-        function_id,
-        db: db.upcast(),
-        dependency_type,
-    })
+    compute_scc(&ConcreteFunctionWithBodyInlinedNode { function_id, db, dependency_type })
 }
