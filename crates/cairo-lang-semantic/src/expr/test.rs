@@ -2,8 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
@@ -109,7 +109,7 @@ fn test_expand_expr(
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db);
     let expanded_code = expanded_code.replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([

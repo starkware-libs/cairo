@@ -190,19 +190,18 @@ pub fn extract_semantic_entrypoints(
     db: &dyn LoweringGroup,
     contract: &ContractDeclaration,
 ) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
-    let external: Vec<_> = get_contract_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
+    let external: Vec<_> = get_contract_abi_functions(db, contract, EXTERNAL_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let l1_handler: Vec<_> = get_contract_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
+    let l1_handler: Vec<_> = get_contract_abi_functions(db, contract, L1_HANDLER_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let constructor: Vec<_> =
-        get_contract_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-            .into_iter()
-            .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-            .collect();
+    let constructor: Vec<_> = get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE)?
+        .into_iter()
+        .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
+        .collect();
     if constructor.len() > 1 {
         anyhow::bail!("Expected at most one constructor.");
     }
