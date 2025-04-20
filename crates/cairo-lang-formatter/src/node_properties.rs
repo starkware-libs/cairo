@@ -847,28 +847,24 @@ impl SyntaxNodeFormat for SyntaxNode {
                     true,
                     true,
                 );
-                if let Some(grandparent_kind) = self.grandparent_kind(db) {
-                    if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
-                        match grandparent_kind {
-                            SyntaxKind::ExprInlineMacro => {
-                                match config.breaking_behavior.macro_call {
-                                    CollectionsBreakingBehavior::SingleBreakPoint => {
-                                        properties.set_single_breakpoint();
-                                    }
-                                    CollectionsBreakingBehavior::LineByLine => {
-                                        properties.set_line_by_line();
-                                    }
+                if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
+                    match self.grandparent_kind(db) {
+                        Some(SyntaxKind::ExprInlineMacro) | None => {
+                            match config.breaking_behavior.macro_call {
+                                CollectionsBreakingBehavior::SingleBreakPoint => {
+                                    properties.set_single_breakpoint();
+                                }
+                                CollectionsBreakingBehavior::LineByLine => {
+                                    properties.set_line_by_line();
                                 }
                             }
-                            _ => {
-                                properties.set_line_by_line();
-                            }
+                        }
+                        _ => {
+                            properties.set_line_by_line();
                         }
                     }
-                    BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
-                } else {
-                    BreakLinePointsPositions::None
                 }
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
                 let mut properties = BreakLinePointProperties::new(

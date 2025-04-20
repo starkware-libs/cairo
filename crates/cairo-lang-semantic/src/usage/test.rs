@@ -45,7 +45,7 @@ fn test_function_usage(
     let mut usages_str = String::new();
     for (expr_id, usage) in usages.usages.iter() {
         let expr = &function_def.arenas.exprs[*expr_id];
-        let stable_ptr = expr.stable_ptr(db);
+        let stable_ptr = expr.stable_ptr();
         let node = stable_ptr.untyped().lookup(db);
         let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
 

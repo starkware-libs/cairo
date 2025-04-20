@@ -34,7 +34,7 @@ fn test_expr_lookup() {
     let expr_formatter = ExprFormatter { db, function_id };
     let mut expr_debugs = Vec::new();
     for (expr_id, expr) in &db.function_body(function_id).unwrap().arenas.exprs {
-        assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr(db)), Ok(expr_id));
+        assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr()), Ok(expr_id));
         expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
     }
     expr_debugs.sort();

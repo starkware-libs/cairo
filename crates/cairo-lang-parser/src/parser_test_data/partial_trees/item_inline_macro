@@ -335,7 +335,7 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
 a_macro!
         ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:9
 a_macro!
         ^
@@ -369,12 +369,12 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-error: Missing token TerminalRParen.
+error: Missing token ')'.
  --> dummy_file.cairo:2:12
 fn foo() {}
            ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:2:12
 fn foo() {}
            ^
