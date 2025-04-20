@@ -7,9 +7,10 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroDeclarationId,
+    MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};

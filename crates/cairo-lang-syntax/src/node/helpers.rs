@@ -7,8 +7,9 @@ use super::ast::{
     ItemImpl, ItemImplAlias, ItemInlineMacro, ItemMacroDeclaration, ItemModule, ItemStruct,
     ItemTrait, ItemTypeAlias, ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized,
     Statement, StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
-    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
+    TerminalIdentifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem,
+    TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr, TraitItemImpl, TraitItemType,
+    UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -706,7 +707,7 @@ pub trait IsDependentType {
 
 impl IsDependentType for ast::ExprPath {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
-        let segments = self.elements(db);
+        let segments = self.segments(db).elements(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.ident(db).text(db).as_str())
         } else {
@@ -776,6 +777,7 @@ impl IsDependentType for ast::Expr {
             | ast::Expr::FieldInitShorthand(_)
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
+            | ast::Expr::Placeholder(_)
             | ast::Expr::Missing(_) => false,
         }
     }

@@ -18,11 +18,11 @@ impl MacroPlugin for CompileErrorPlugin {
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
-        let item_ast_ptr = item_ast.stable_ptr();
+        let item_ast_ptr = item_ast.stable_ptr(db);
         if let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast.clone() {
             let Some(legacy_inline_macro_ast) = inline_macro_ast.as_legacy_inline_macro(db) else {
                 return PluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                    inline_macro_ast.as_syntax_node().stable_ptr(),
+                    inline_macro_ast.as_syntax_node().stable_ptr(db),
                 ));
             };
             if legacy_inline_macro_ast.name(db).text(db) == "compile_error" {
@@ -30,7 +30,7 @@ impl MacroPlugin for CompileErrorPlugin {
                     db,
                     &legacy_inline_macro_ast,
                     ast::WrappedArgList::ParenthesizedArgList(_),
-                    &item_ast
+                    item_ast_ptr
                 );
                 let ast::Expr::String(err_message) = compilation_error_arg.clone() else {
                     return PluginResult::diagnostic_only(PluginDiagnostic::error_with_inner_span(

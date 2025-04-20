@@ -929,6 +929,8 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    // TODO DOC
+    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -939,6 +941,7 @@ impl<'a> FormatterImpl<'a> {
             line_state: PendingLineState::new(),
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
+            is_merging_use_items: false,
             is_last_element_comment: false,
         }
     }
@@ -965,7 +968,7 @@ impl<'a> FormatterImpl<'a> {
                 TokenTreeNode::from_syntax_node(self.db, syntax_node.clone()),
                 self.db,
             );
-            let file_id = syntax_node.stable_ptr().file_id(self.db);
+            let file_id = syntax_node.stable_ptr(self.db).file_id(self.db);
 
             if let Some(wrapped_arg_list) = as_wrapped_arg_list {
                 let new_syntax_node = SyntaxNode::new_root(self.db, file_id, wrapped_arg_list.0);

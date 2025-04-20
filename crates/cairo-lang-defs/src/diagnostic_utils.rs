@@ -37,7 +37,7 @@ impl StableLocation {
     }
 
     pub fn from_ast<TNode: TypedSyntaxNode>(db: &dyn SyntaxGroup, node: &TNode) -> Self {
-        Self(node.as_syntax_node().stable_ptr(db))
+        Self::new(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
@@ -47,14 +47,14 @@ impl StableLocation {
 
     /// Returns the [SyntaxStablePtrId] of the [StableLocation].
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
-        self.0
+        self.stable_ptr
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
         match self.inner_span {
             Some((start, width)) => {
-                let start = self.syntax_node(db).offset().add_width(start);
+                let start = self.syntax_node(db).offset(db).add_width(start);
                 let end = start.add_width(width);
                 DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
             }
@@ -74,9 +74,9 @@ impl StableLocation {
         db: &dyn DefsGroup,
         until_stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticLocation {
-        let start = self.0.lookup(db).span_start_without_trivia(db);
+        let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.0.file_id(db), span: TextSpan { start, end } }
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
     }
 
     /// Returns the [DiagnosticLocation] corresponding to a subrange of the [StableLocation],
@@ -87,7 +87,7 @@ impl StableLocation {
         start_offset: u32,
         end_offset: u32,
     ) -> DiagnosticLocation {
-        let syntax_node = self.0.lookup(db);
+        let syntax_node = self.stable_ptr.lookup(db);
         let node_span = syntax_node.span_without_trivia(db);
 
         let span = TextSpan {
@@ -101,7 +101,7 @@ impl StableLocation {
                 .min(node_span.end),
         };
 
-        DiagnosticLocation { file_id: self.0.file_id(db), span }
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span }
     }
 }
 

@@ -169,8 +169,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
-                    || grandparent_kind(db, self) == Some(SyntaxKind::MacroRuleParam) =>
+                if self.grandparent_kind(db) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
+                    || self.grandparent_kind(db) == Some(SyntaxKind::MacroRuleParam) =>
             {
                 true
             }
@@ -1003,7 +1003,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 false
             } else {
                 matches!(
-                    grandparent_kind(db, &path_node),
+                    path_node.grandparent_kind(db),
                     Some(
                         SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous

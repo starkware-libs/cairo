@@ -6,10 +6,10 @@ use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, ast, ast};
+use cairo_lang_syntax::node::{SyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -96,6 +96,7 @@ impl PluginDiagnostic {
             relative_span: None,
             message,
             severity: Severity::Error,
+            inner_span: None,
         }
     }
 
@@ -107,11 +108,12 @@ impl PluginDiagnostic {
         message: String,
     ) -> PluginDiagnostic {
         let stable_ptr = stable_ptr.into();
-        let offset = inner_span.offset() - stable_ptr.lookup(db).offset();
+        let offset = inner_span.offset(db) - stable_ptr.lookup(db).offset(db);
         let width = inner_span.width(db);
         PluginDiagnostic {
             stable_ptr,
             message,
+            relative_span: None,
             severity: Severity::Error,
             inner_span: Some((offset, width)),
         }
@@ -123,6 +125,7 @@ impl PluginDiagnostic {
             relative_span: None,
             message,
             severity: Severity::Warning,
+            inner_span: None,
         }
     }
 

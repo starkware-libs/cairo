@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
     VariantId,
 };
-use cairo_lang_diagnostics::{Maybe, Maybe, skip_diagnostic, skip_diagnostic};
+use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -69,6 +69,7 @@ mod test;
 
 mod item;
 
+// TODO!!! MOVE TO KEYWORDS
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
 
@@ -367,12 +368,8 @@ impl<'db> Resolver<'db> {
             self
         };
         // Find where the first segment lies in.
-        let mut item: ResolvedItem = (callbacks.resolve_path_first_segment)(
-            active_resolver,
-            diagnostics,
-            &mut segments,
-            statement_env,
-        )?;
+        let mut item: ResolvedItem =
+            (callbacks.resolve_path_first_segment)(active_resolver, diagnostics, &mut segments)?;
 
         // Follow modules.
         while let Some(segment) = segments.next() {

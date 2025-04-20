@@ -497,7 +497,8 @@ pub struct ModuleData {
     pub(crate) impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     pub(crate) extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     pub(crate) extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
-    macro_declarations: Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
+    pub(crate) macro_declarations:
+        Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
     pub(crate) global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
 
     pub(crate) files: Arc<[FileId]>,
@@ -668,7 +669,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 }
                 ast::ModuleItem::MacroDeclaration(macro_declaration) => {
                     let item_id =
-                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr())
+                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr(db))
                             .intern(db);
                     macro_declarations.insert(item_id, macro_declaration);
                     items.push(ModuleItemId::MacroDeclaration(item_id));
@@ -856,7 +857,8 @@ fn collect_extra_allowed_attributes(
             }
             for arg in args {
                 if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                    if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                    if let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                    {
                         extra_allowed_attributes.insert(segment.ident(db).text(db).into());
                         continue;
                     }
@@ -1340,10 +1342,10 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr(db).untyped(),
         ModuleItemId::ExternFunction(id) => {
-            data.extern_functions[id].declaration(db).name(db).stable_ptr().untyped()
+            data.extern_functions[id].declaration(db).name(db).stable_ptr(db).untyped()
         }
         ModuleItemId::MacroDeclaration(id) => {
-            data.macro_declarations[id].name(db).stable_ptr().untyped()
+            data.macro_declarations[id].name(db).stable_ptr(db).untyped()
         }
     })
 }

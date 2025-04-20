@@ -75,7 +75,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
-    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem,
+    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
@@ -485,6 +485,7 @@ fn compute_expr_inline_macro_semantic(
     let syntax_db = ctx.db.upcast();
     let macro_name = syntax.path(syntax_db).identifier(ctx.db.upcast()).to_string();
     let prev_macro_resolver_data = ctx.resolver.macro_defsite_data.clone();
+    let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
         matches!(
@@ -507,7 +508,7 @@ fn compute_expr_inline_macro_semantic(
         &mut Default::default(),
         &syntax.path(syntax_db),
         NotFoundItemType::Macro,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     );
     let (content, name, mappings, is_macro_rule) =
         if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
@@ -518,9 +519,10 @@ fn compute_expr_inline_macro_semantic(
                         .map(|res| (rule, res))
                 })
             else {
-                return Err(ctx
-                    .diagnostics
-                    .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+                return Err(ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNoMatchingRule(macro_name.into()),
+                ));
             };
             let mut matcher_ctx =
                 MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
@@ -529,10 +531,13 @@ fn compute_expr_inline_macro_semantic(
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
             ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
             (expanded_code.text, macro_name.into(), expanded_code.code_mappings, true)
-        } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
+        } else if let Some(macro_plugin_id) =
+            ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
+        {
+            let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
             let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
                 cfg_set: &ctx.cfg_set,
-                declared_derives: &ctx.db.declared_derives(),
+                declared_derives: &ctx.db.declared_derives(crate_id),
                 allowed_features: &ctx.resolver.data.feature_config.allowed_features,
                 edition: ctx.resolver.settings.edition,
             });
@@ -552,13 +557,14 @@ fn compute_expr_inline_macro_semantic(
 
             let Some(code) = result.code else {
                 return Err(diag_added.unwrap_or_else(|| {
-                    ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into()))
+                    ctx.diagnostics
+                        .report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name.into()))
                 }));
             };
             (code.content, code.name, code.code_mappings, false)
         } else {
             return Err(ctx.diagnostics.report(
-                syntax,
+                syntax.stable_ptr(ctx.db),
                 InlineMacroNotFound(
                     syntax
                         .path(syntax_db)
@@ -571,7 +577,7 @@ fn compute_expr_inline_macro_semantic(
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db.upcast())),
         name,
         content: content.clone().into(),
         code_mappings: mappings.clone().into(),
@@ -980,7 +986,7 @@ fn compute_expr_function_call_semantic(
             ctx,
             &variable_name,
             is_callsite_prefixed,
-            path.stable_ptr().into(),
+            path.stable_ptr(ctx.db).into(),
         ) {
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
@@ -1109,14 +1115,17 @@ fn compute_expr_function_call_semantic(
         }
         ResolvedConcreteItem::Function(function) => {
             if is_shadowed_by_variable {
-                return Err(ctx.diagnostics.report(&path, CallingShadowedFunction {
-                    shadowed_function_name: path
-                        .segments(syntax_db)
-                        .elements(syntax_db)
-                        .first()
-                        .unwrap()
-                        .identifier(syntax_db),
-                }));
+                return Err(ctx.diagnostics.report(
+                    path.stable_ptr(ctx.db),
+                    CallingShadowedFunction {
+                        shadowed_function_name: path
+                            .segments(syntax_db)
+                            .elements(syntax_db)
+                            .first()
+                            .unwrap()
+                            .identifier(syntax_db),
+                    },
+                ));
             }
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
@@ -2419,7 +2428,7 @@ fn maybe_compute_pattern_semantic(
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
             if path.segments(syntax_db).elements(syntax_db).len() > 1 {
-                return Err(ctx.diagnostics.report(path, Unsupported));
+                return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier =
@@ -3160,7 +3169,7 @@ fn method_call_expr(
     let path = expr.path(syntax_db);
     let Ok([segment]): Result<[_; 1], _> = path.segments(syntax_db).elements(syntax_db).try_into()
     else {
-        return Err(ctx.diagnostics.report(&expr, InvalidMemberExpression));
+        return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
@@ -3524,7 +3533,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             ctx,
             &variable_name,
             is_callsite_prefixed,
-            path.stable_ptr().into(),
+            path.stable_ptr(ctx.db).into(),
         ) {
             match res.clone() {
                 Expr::Var(expr_var) => {
@@ -3595,10 +3604,11 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr)
-        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
+    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr).ok_or_else(|| {
+        ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
+    })?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(syntax_db), item);
+    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
     Ok(res)
 }
 
@@ -3610,7 +3620,7 @@ pub fn get_binded_expr_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
-    let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset();
+    let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset(ctx.db);
     let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
@@ -4119,6 +4129,7 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
                             | ResolvedGenericItem::Variable(_)
+                            | ResolvedGenericItem::TraitItem(_)
                             | ResolvedGenericItem::Macro(_) => {
                                 return Err(ctx
                                     .diagnostics
