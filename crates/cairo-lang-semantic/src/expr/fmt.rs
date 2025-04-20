@@ -18,6 +18,6 @@ impl Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'_> {
 }
 impl Upcast<dyn DefsGroup + 'static> for ExprFormatter<'_> {
     fn upcast(&self) -> &(dyn DefsGroup + 'static) {
-        self.db.upcast()
+        self.db
     }
 }
