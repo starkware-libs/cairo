@@ -2,6 +2,7 @@
 name = "cairo-execute"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Executable for creating executables and running them for the Cairo programming language"
