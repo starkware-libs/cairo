@@ -4,6 +4,7 @@ mod test;
 
 use std::cmp::Reverse;
 
+use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -11,7 +12,6 @@ use itertools::{Itertools, zip_eq};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
-use crate::ids::FunctionId;
 use crate::{
     BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
@@ -27,6 +27,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
     let ctx = ReorderStatementsContext {
+        db,
         lowered: &*lowered,
         moveable_functions: &db.priv_movable_function_ids(),
         statement_to_move: vec![],
@@ -74,14 +75,19 @@ pub struct ReorderStatementsInfo {
 }
 
 pub struct ReorderStatementsContext<'a> {
+    db: &'a dyn LoweringGroup,
     lowered: &'a FlatLowered,
     // A list of function that can be moved.
-    moveable_functions: &'a UnorderedHashSet<FunctionId>,
+    moveable_functions: &'a UnorderedHashSet<ExternFunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
 impl ReorderStatementsContext<'_> {
     fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
-        self.moveable_functions.contains(&stmt.function)
+        if let Some((extern_id, _)) = stmt.function.get_extern(self.db) {
+            self.moveable_functions.contains(&extern_id)
+        } else {
+            false
+        }
     }
 }
 impl Analyzer<'_> for ReorderStatementsContext<'_> {

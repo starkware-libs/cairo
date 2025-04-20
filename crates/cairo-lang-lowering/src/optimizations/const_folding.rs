@@ -772,12 +772,16 @@ pub struct ConstFoldingLibfuncInfo {
     array_get: ExternFunctionId,
     /// The `array_snapshot_pop_front` libfunc.
     array_snapshot_pop_front: ExternFunctionId,
+    /// The `array_snapshot_pop_back` libfunc.
+    array_snapshot_pop_back: ExternFunctionId,
     /// The `array_len` libfunc.
     array_len: ExternFunctionId,
     /// The `array_new` libfunc.
     array_new: ExternFunctionId,
     /// The `array_append` libfunc.
     array_append: ExternFunctionId,
+    /// The `array_pop_front` libfunc.
+    array_pop_front: ExternFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: ExternFunctionId,
     /// The `storage_base_address_const` libfunc.
@@ -887,9 +891,11 @@ impl ConstFoldingLibfuncInfo {
             bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
             array_get: array_module.extern_function_id("array_get"),
             array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
+            array_snapshot_pop_back: array_module.extern_function_id("array_snapshot_pop_back"),
             array_len: array_module.extern_function_id("array_len"),
             array_new: array_module.extern_function_id("array_new"),
             array_append: array_module.extern_function_id("array_append"),
+            array_pop_front: array_module.extern_function_id("array_pop_front"),
             storage_base_address_from_felt252: storage_access_module
                 .extern_function_id("storage_base_address_from_felt252"),
             storage_base_address_const: storage_access_module
