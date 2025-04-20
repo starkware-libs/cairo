@@ -225,7 +225,7 @@ pub fn const_folding(
                     MatchInfo::Extern(info) => {
                         if let Some((extra_stmt, updated_end)) = ctx.handle_extern_block_end(info) {
                             if let Some(stmt) = extra_stmt {
-                                block.statements.push(Statement::Const(stmt));
+                                block.statements.push(stmt);
                             }
                             block.end = updated_end;
                         }
@@ -392,7 +392,7 @@ impl ConstFoldingContext<'_> {
     fn handle_extern_block_end(
         &mut self,
         info: &mut MatchExternInfo,
-    ) -> Option<(Option<StatementConst>, FlatBlockEnd)> {
+    ) -> Option<(Option<Statement>, FlatBlockEnd)> {
         let db = self.db;
         let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
@@ -412,7 +412,7 @@ impl ConstFoldingContext<'_> {
                 let nz_val = ConstValue::NonZero(Box::new(val.clone()));
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
                 (
-                    Some(StatementConst { value: nz_val, output: nz_var }),
+                    Some(Statement::Const(StatementConst { value: nz_val, output: nz_var })),
                     FlatBlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
@@ -490,7 +490,7 @@ impl ConstFoldingContext<'_> {
                 lhs? - rhs?
             };
             let ty = self.variables[info.arms[0].var_ids[0]].ty;
-            let range = self.type_value_ranges.get(&ty)?;
+            let range = &self.type_value_ranges.get(&ty)?.range;
             let (arm_index, value) = match range.normalized(value) {
                 NormalizedResult::InRange(value) => (0, value),
                 NormalizedResult::Under(value) => (1, value),
@@ -504,20 +504,47 @@ impl ConstFoldingContext<'_> {
             let value = ConstValue::Int(value, ty);
             self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
             Some((
-                Some(StatementConst { value, output: actual_output }),
+                Some(Statement::Const(StatementConst { value, output: actual_output })),
                 FlatBlockEnd::Goto(arm.block_id, Default::default()),
             ))
         } else if id == self.downcast {
+            let range = |ty: TypeId| {
+                Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
+                    ti.range.clone()
+                } else {
+                    let (min, max) = corelib::try_extract_bounded_int_type_ranges(db, ty)?;
+                    TypeRange { min, max }
+                })
+            };
             let input_var = info.inputs[0].var_id;
-            let value = self.as_int(input_var)?;
             let success_output = info.arms[0].var_ids[0];
-            let ty = self.variables[success_output].ty;
-            let range = self.type_value_ranges.get(&ty)?;
-            Some(if let NormalizedResult::InRange(value) = range.normalized(value.clone()) {
-                let value = ConstValue::Int(value, ty);
+            let out_ty = self.variables[success_output].ty;
+            let out_range = range(out_ty)?;
+            let Some(value) = self.as_int(input_var) else {
+                let in_ty = self.variables[input_var].ty;
+                let in_range = range(in_ty)?;
+                return if in_range.min < out_range.min || in_range.max > out_range.max {
+                    None
+                } else {
+                    let generic_args = [in_ty, out_ty].map(GenericArgumentId::Type).to_vec();
+                    let function = db.core_info().upcast_fn.concretize(db, generic_args);
+                    return Some((
+                        Some(Statement::Call(StatementCall {
+                            function: function.lowered(db),
+                            inputs: vec![info.inputs[0]],
+                            with_coupon: false,
+                            outputs: vec![success_output],
+                            location: info.location,
+                        })),
+                        FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                    ));
+                };
+            };
+            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value.clone()) {
+                let value = ConstValue::Int(value, out_ty);
                 self.var_info.insert(success_output, VarInfo::Const(value.clone()));
                 (
-                    Some(StatementConst { value, output: success_output }),
+                    Some(Statement::Const(StatementConst { value, output: success_output })),
                     FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
                 )
             } else {
@@ -534,7 +561,11 @@ impl ConstFoldingContext<'_> {
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
-                Some(self.propagate_const_and_get_statement(value.clone(), output, nz_ty)),
+                Some(Statement::Const(self.propagate_const_and_get_statement(
+                    value.clone(),
+                    output,
+                    nz_ty,
+                ))),
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
@@ -737,7 +768,7 @@ impl ConstFoldingLibfuncInfo {
                         integer_module.function_id(format!("{ty_name}_is_zero"), vec![])
                     }
                     .lowered(db);
-                    let info = TypeInfo { min, max, is_zero };
+                    let info = TypeInfo { range: TypeRange { min, max }, is_zero };
                     (ty, info)
                 },
             ),
@@ -782,14 +813,21 @@ impl std::ops::Deref for ConstFoldingContext<'_> {
 /// The information of a type required for const foldings.
 #[derive(Debug, PartialEq, Eq)]
 struct TypeInfo {
+    /// The value range of the type.
+    range: TypeRange,
+    /// The function to check if the value is zero for the type.
+    is_zero: FunctionId,
+}
+
+/// The range of values of a numeric type.
+#[derive(Debug, PartialEq, Eq, Clone)]
+struct TypeRange {
     /// The minimum value of the type.
     min: BigInt,
     /// The maximum value of the type.
     max: BigInt,
-    /// The function to check if the value is zero for the type.
-    is_zero: FunctionId,
 }
-impl TypeInfo {
+impl TypeRange {
     /// Normalizes the value to the range.
     /// Assumes the value is within size of range of the range.
     fn normalized(&self, value: BigInt) -> NormalizedResult {

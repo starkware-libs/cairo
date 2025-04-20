@@ -802,7 +802,7 @@ pub fn try_extract_nz_wrapped_type(db: &dyn SemanticGroup, ty: TypeId) -> Option
 }
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
-fn try_extract_bounded_int_type_ranges(
+pub fn try_extract_bounded_int_type_ranges(
     db: &dyn SemanticGroup,
     ty: TypeId,
 ) -> Option<(BigInt, BigInt)> {
