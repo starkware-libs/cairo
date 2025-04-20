@@ -273,7 +273,7 @@ impl Analyzer<'_> for DestructAdder<'_> {
 }
 
 fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
-    get_ty_by_name(db, core_module(db), "Panic".into(), vec![])
+    get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![])
 }
 
 /// Report borrow checking diagnostics.
@@ -290,8 +290,8 @@ pub fn add_destructs(
         return;
     };
 
-    let panic_ty = panic_ty(db);
-    let felt_arr_ty = core_array_felt252_ty(db);
+    let panic_ty = panic_ty(db.upcast());
+    let felt_arr_ty = core_array_felt252_ty(db.upcast());
     let never_fn_actual_return_ty = TypeLongId::Tuple(vec![panic_ty, felt_arr_ty]).intern(db);
     let checker = DestructAdder {
         db,
@@ -322,8 +322,10 @@ pub fn add_destructs(
     let panic_trait_function = info.panic_destruct_fn;
 
     // Add destructions.
-    let stable_ptr =
-        function_id.function_with_body_id(db).base_semantic_function(db).untyped_stable_ptr(db);
+    let stable_ptr = function_id
+        .function_with_body_id(db.upcast())
+        .base_semantic_function(db)
+        .untyped_stable_ptr(db.upcast());
 
     let location = variables.get_location(stable_ptr);
 
@@ -358,7 +360,7 @@ pub fn add_destructs(
         let mut last_panic_var = first_panic_var;
 
         for destruction in destructions {
-            let output_var = variables.new_var(VarRequest { ty: unit_ty(db), location });
+            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {

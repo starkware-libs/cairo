@@ -192,16 +192,17 @@ pub fn extract_item_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
+    let syntax_db = db.upcast();
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
-        db,
+        syntax_db,
         syntax,
         FEATURE_ATTR,
         || SemanticDiagnosticKind::UnsupportedFeatureAttrArguments,
         diagnostics,
         |value| {
             if let ast::Expr::String(value) = value {
-                config.allowed_features.insert(value.text(db));
+                config.allowed_features.insert(value.text(syntax_db));
                 true
             } else {
                 false
@@ -209,12 +210,12 @@ pub fn extract_item_feature_config(
         },
     );
     process_feature_attr_kind(
-        db,
+        syntax_db,
         syntax,
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| match value.as_syntax_node().get_text_without_trivia(db).as_str() {
+        |value| match value.as_syntax_node().get_text_without_trivia(syntax_db).as_str() {
             "deprecated" => {
                 config.allow_deprecated = true;
                 true
@@ -262,8 +263,9 @@ pub fn extract_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let mut current_module_id = element_id.parent_module(db);
-    let crate_id = current_module_id.owning_crate(db);
+    let defs_db = db.upcast();
+    let mut current_module_id = element_id.parent_module(defs_db);
+    let crate_id = current_module_id.owning_crate(defs_db);
     let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
@@ -277,7 +279,7 @@ pub fn extract_feature_config(
                 };
             }
             ModuleId::Submodule(id) => {
-                current_module_id = id.parent_module(db);
+                current_module_id = id.parent_module(defs_db);
                 let module = &db.module_submodules(current_module_id).unwrap()[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();

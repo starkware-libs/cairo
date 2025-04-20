@@ -253,8 +253,8 @@ impl InferenceError {
             InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 } => {
                 format!(
                     "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
-                    impl_id.format(db),
-                    trait_type_id.name(db),
+                    impl_id.format(db.upcast()),
+                    trait_type_id.name(db.upcast()),
                     ty0.debug(db),
                     ty1.debug(db)
                 )
@@ -606,7 +606,8 @@ impl<'db> Inference<'db> {
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> LocalImplVarId {
         let mut lookup_context = lookup_context;
-        lookup_context.insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db).0);
+        lookup_context
+            .insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db.upcast()).0);
 
         let id = LocalImplVarId(self.impl_vars.len());
         if let Some(stable_ptr) = stable_ptr {

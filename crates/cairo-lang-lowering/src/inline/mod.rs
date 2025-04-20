@@ -44,7 +44,7 @@ pub fn get_inline_diagnostics(
     if let InlineConfiguration::Always(_) = inline_config {
         if db.in_cycle(function_id, crate::DependencyType::Call)? {
             diagnostics.report(
-                function_id.base_semantic_function(db).untyped_stable_ptr(db),
+                function_id.base_semantic_function(db).untyped_stable_ptr(db.upcast()),
                 LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
             );
         }

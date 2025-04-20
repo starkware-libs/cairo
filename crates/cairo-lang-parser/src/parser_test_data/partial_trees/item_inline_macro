@@ -335,17 +335,10 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
 a_macro!
         ^
 
-<<<<<<< HEAD
-error: Missing token TerminalSemicolon.
+error: Missing token ';'.
  --> dummy_file.cairo:1:9
 a_macro!
         ^
-=======
-error: Missing token ';'.
- --> dummy_file.cairo:1:7
-macro!
-      ^
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 
 //! > expected_tree
 └── Top level kind: ModuleItemList
@@ -376,27 +369,15 @@ ModuleItemList
 FunctionWithBody
 
 //! > expected_diagnostics
-<<<<<<< HEAD
-error: Missing token TerminalRParen.
- --> dummy_file.cairo:2:12
-fn foo() {}
-           ^
-
-error: Missing token TerminalSemicolon.
- --> dummy_file.cairo:2:12
-fn foo() {}
-           ^
-=======
 error: Missing token ')'.
- --> dummy_file.cairo:1:16
-identifier!(1,2
-               ^
+ --> dummy_file.cairo:2:12
+fn foo() {}
+           ^
 
 error: Missing token ';'.
- --> dummy_file.cairo:1:16
-identifier!(1,2
-               ^
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+ --> dummy_file.cairo:2:12
+fn foo() {}
+           ^
 
 //! > expected_tree
 └── Top level kind: ModuleItemList

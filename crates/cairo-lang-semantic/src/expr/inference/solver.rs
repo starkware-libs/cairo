@@ -54,7 +54,8 @@ impl Ambiguity {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls_str = impls.iter().map(|imp| format!("`{}`", imp.format(db))).join(", ");
+                let impls_str =
+                    impls.iter().map(|imp| format!("`{}`", imp.format(db.upcast()))).join(", ");
                 format!(
                     "Trait `{:?}` has multiple implementations, in: {impls_str}",
                     concrete_trait_id.debug(db)
@@ -132,7 +133,7 @@ pub fn enrich_lookup_context(
     concrete_trait_id: ConcreteTraitId,
     lookup_context: &mut ImplLookupContext,
 ) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0);
+    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db.upcast()).0);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {

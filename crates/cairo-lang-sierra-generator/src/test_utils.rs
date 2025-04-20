@@ -45,7 +45,7 @@ pub struct SierraGenDatabaseForTesting {
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl ExternalFiles for SierraGenDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self, external_id)
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
@@ -158,7 +158,7 @@ pub fn setup_db_and_get_crate_id(
 }
 
 pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db, "fn test(){}");
+    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }

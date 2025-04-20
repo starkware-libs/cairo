@@ -4,17 +4,12 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-<<<<<<< HEAD
     ItemImpl, ItemImplAlias, ItemInlineMacro, ItemMacroDeclaration, ItemModule, ItemStruct,
     ItemTrait, ItemTypeAlias, ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized,
     Statement, StatementBreak, StatementContinue, StatementExpr, StatementLet, StatementReturn,
-=======
-    ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
-    StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifier,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction,
-    TraitItemFunctionPtr, TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
+    TerminalIdentifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem,
+    TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr, TraitItemImpl, TraitItemType,
+    UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
@@ -712,7 +707,7 @@ pub trait IsDependentType {
 
 impl IsDependentType for ast::ExprPath {
     fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifiers: &[&str]) -> bool {
-        let segments = self.elements(db);
+        let segments = self.segments(db).elements(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.ident(db).text(db).as_str())
         } else {
@@ -782,6 +777,7 @@ impl IsDependentType for ast::Expr {
             | ast::Expr::FieldInitShorthand(_)
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
+            | ast::Expr::Placeholder(_)
             | ast::Expr::Missing(_) => false,
         }
     }

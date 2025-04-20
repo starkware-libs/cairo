@@ -1161,7 +1161,7 @@ macro bas_use_z_from_callsite {
 fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo[bas_use_z_from_callsite]:2:9
         z
         ^

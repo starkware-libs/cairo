@@ -101,9 +101,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             return self
                 .location
                 .stable_location
-                .diagnostic_location_until(db, *last_statement_ptr);
+                .diagnostic_location_until(db.upcast(), *last_statement_ptr);
         }
-        self.location.stable_location.diagnostic_location(db)
+        self.location.stable_location.diagnostic_location(db.upcast())
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
@@ -151,14 +151,16 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchArmNonSequential, MatchKind::Match) => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
             }
-            (MatchDiagnostic::NonExhaustiveMatchValue, MatchKind::Match) => {
-                "Match is non exhaustive - add a wildcard pattern (`_`).".into()
+            (MatchDiagnostic::NonExhaustiveMatchFelt252, MatchKind::Match) => {
+                "Match is non exhaustive - match over a numerical value must have a wildcard card \
+                 pattern (`_`)."
+                    .into()
             }
 
             (
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
                 | MatchDiagnostic::UnsupportedMatchArmNonSequential
-                | MatchDiagnostic::NonExhaustiveMatchValue,
+                | MatchDiagnostic::NonExhaustiveMatchFelt252,
                 MatchKind::IfLet | MatchKind::WhileLet(_, _),
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
 
@@ -241,6 +243,6 @@ pub enum MatchDiagnostic {
 
     UnsupportedMatchArmNotALiteral,
     UnsupportedMatchArmNonSequential,
-    NonExhaustiveMatchValue,
+    NonExhaustiveMatchFelt252,
     UnsupportedNumericInLetCondition,
 }

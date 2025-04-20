@@ -31,7 +31,7 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -183,7 +183,10 @@ fn get_all_funcs(
         for module_id in modules.iter() {
             let free_funcs = db.module_free_functions_ids(*module_id).unwrap();
             for func_id in free_funcs.iter() {
-                res.insert(func_id.full_path(db), GenericFunctionWithBodyId::Free(*func_id));
+                res.insert(
+                    func_id.full_path(db.upcast()),
+                    GenericFunctionWithBodyId::Free(*func_id),
+                );
             }
 
             let impl_ids = db.module_impls_ids(*module_id).unwrap();
@@ -191,7 +194,7 @@ fn get_all_funcs(
                 let impl_funcs = db.impl_functions(*impl_def_id).unwrap();
                 for impl_func in impl_funcs.values() {
                     res.insert(
-                        impl_func.full_path(db),
+                        impl_func.full_path(db.upcast()),
                         GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
                             concrete_impl_id: ConcreteImplLongId {
                                 impl_def_id: *impl_def_id,
@@ -265,11 +268,12 @@ fn main() -> anyhow::Result<()> {
                 .keys()
                 .sorted_by_key(|key| match key {
                     GeneratedFunctionKey::Loop(id) => {
-                        (id.0.lookup(db).span_without_trivia(db), "".into())
+                        (id.0.lookup(db).span_without_trivia(db.upcast()), "".into())
                     }
-                    GeneratedFunctionKey::TraitFunc(trait_function, id) => {
-                        (id.syntax_node(db).span_without_trivia(db), trait_function.name(db))
-                    }
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
+                        id.syntax_node(db).span_without_trivia(db.upcast()),
+                        trait_function.name(db),
+                    ),
                 })
                 .take(generated_function_index + 1)
                 .collect_vec();

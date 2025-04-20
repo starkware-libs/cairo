@@ -26,14 +26,14 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
     ) -> InlinePluginResult {
         let Some(legacy_inline_macro) = syntax.clone().as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                syntax.as_syntax_node().stable_ptr(),
+                syntax.as_syntax_node().stable_ptr(db),
             ));
         };
         let constant_expression = extract_macro_single_unnamed_arg!(
             db,
             &legacy_inline_macro,
             ast::WrappedArgList::ParenthesizedArgList(_),
-            syntax.stable_ptr()
+            syntax.stable_ptr(db)
         );
 
         let mut diagnostics = vec![];
@@ -139,15 +139,10 @@ pub fn compute_constant_expr(
                     ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,
             ),
             _ => {
-<<<<<<< HEAD
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
-                    macro_ast.stable_ptr(),
+                    macro_ast.stable_ptr(db),
                     bin_expr.as_syntax_node(),
-=======
-                diagnostics.push(PluginDiagnostic::error(
-                    bin_expr.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                     "Unsupported binary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -158,15 +153,10 @@ pub fn compute_constant_expr(
                 Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics, macro_ast)?)
             }
             _ => {
-<<<<<<< HEAD
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
-                    macro_ast.stable_ptr(),
+                    macro_ast.stable_ptr(db),
                     un_expr.as_syntax_node(),
-=======
-                diagnostics.push(PluginDiagnostic::error(
-                    un_expr.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                     "Unsupported unary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -176,15 +166,10 @@ pub fn compute_constant_expr(
             compute_constant_expr(db, &paren_expr.expr(db), diagnostics, macro_ast)
         }
         _ => {
-<<<<<<< HEAD
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                macro_ast.stable_ptr(),
+                macro_ast.stable_ptr(db),
                 value.as_syntax_node(),
-=======
-            diagnostics.push(PluginDiagnostic::error(
-                value.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 "Unsupported expression in consteval_int macro".to_string(),
             ));
             None

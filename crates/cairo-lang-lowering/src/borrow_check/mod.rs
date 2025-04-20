@@ -75,7 +75,7 @@ impl DropPosition {
         let location = location.lookup_intern(db);
         notes.push(DiagnosticNote::with_location(
             text.into(),
-            location.stable_location.diagnostic_location(db),
+            location.stable_location.diagnostic_location(db.upcast()),
         ));
         notes.extend(location.notes);
     }
@@ -97,7 +97,6 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
         let Err(drop_err) = var.droppable.clone() else {
             return;
         };
-        let db = self.db;
         let mut add_called_fn = |impl_id, function| {
             self.potential_destruct_calls.entry(block_id).or_default().push(
                 cairo_lang_semantic::FunctionLongId {
@@ -109,8 +108,8 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
                         generic_args: vec![],
                     },
                 }
-                .intern(db)
-                .lowered(db),
+                .intern(self.db)
+                .lowered(self.db),
             );
         };
         let destruct_err = match var.destruct_impl.clone() {
@@ -132,17 +131,18 @@ impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
             None
         };
 
-        let mut location = var.location.lookup_intern(db);
+        let mut location = var.location.lookup_intern(self.db);
         if let Some(drop_position) = opt_drop_position {
-            drop_position.enrich_as_notes(db, &mut location.notes);
+            drop_position.enrich_as_notes(self.db, &mut location.notes);
         }
+        let semantic_db = self.db.upcast();
         self.diagnostics.report_by_location(
             location
-                .with_note(DiagnosticNote::text_only(drop_err.format(db.upcast())))
-                .with_note(DiagnosticNote::text_only(destruct_err.format(db.upcast())))
+                .with_note(DiagnosticNote::text_only(drop_err.format(semantic_db)))
+                .with_note(DiagnosticNote::text_only(destruct_err.format(semantic_db)))
                 .maybe_with_note(
                     panic_destruct_err
-                        .map(|err| DiagnosticNote::text_only(err.format(db.upcast()))),
+                        .map(|err| DiagnosticNote::text_only(err.format(semantic_db))),
                 ),
             VariableNotDropped { drop_err, destruct_err },
         );

@@ -34,7 +34,7 @@ pub struct LoweringDatabaseForTesting {
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl ExternalFiles for LoweringDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self, external_id)
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {

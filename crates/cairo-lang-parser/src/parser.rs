@@ -2825,10 +2825,13 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalDollar => {
                 let dollar = self.take::<TerminalDollar>();
                 if !self.is_inside_macro_expansion {
-                    self.add_diagnostic(ParserDiagnosticKind::InvalidPlaceholderPath, TextSpan {
-                        start: self.offset,
-                        end: self.offset.add_width(self.current_width),
-                    })
+                    self.add_diagnostic(
+                        ParserDiagnosticKind::InvalidPlaceholderPath,
+                        TextSpan {
+                            start: self.offset,
+                            end: self.offset.add_width(self.current_width),
+                        },
+                    )
                 };
                 dollar.into()
             }

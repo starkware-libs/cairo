@@ -6,17 +6,11 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
-<<<<<<< HEAD
-    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
-    LookupItemId, MacroDeclarationId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    StructId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId,
-    UseId, VariantId,
-=======
     ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, ImportableId,
-    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroDeclarationId,
+    MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
@@ -1776,7 +1770,7 @@ fn module_semantic_diagnostics(
                         };
 
                         let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
+                            StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
                             SemanticDiagnosticKind::ModuleFileNotFound(path),
@@ -1805,7 +1799,8 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
+    {
         let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
@@ -1875,7 +1870,7 @@ fn add_unused_import_diagnostics(
         let resolver_data = db.use_resolver_data(use_id).ok()?;
         require(!resolver_data.feature_config.allow_unused_imports)?;
         Some(diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(use_id.untyped_stable_ptr(db)),
+            StableLocation::new(use_id.untyped_stable_ptr(db.upcast())),
             SemanticDiagnosticKind::UnusedImport(use_id),
         )))
     })();

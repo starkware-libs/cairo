@@ -5,10 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-<<<<<<< HEAD
-=======
 use cairo_lang_syntax::node::db::SyntaxGroup;
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
@@ -107,12 +104,12 @@ pub fn function_with_body_generic_params(
             db.free_function_generic_params(free_function_id)
         }
         FunctionWithBodyId::Impl(impl_function_id) => {
-            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db))?;
+            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db.upcast()))?;
             res.extend(db.impl_function_generic_params(impl_function_id)?);
             Ok(res)
         }
         FunctionWithBodyId::Trait(trait_function_id) => {
-            let mut res = db.trait_generic_params(trait_function_id.trait_id(db))?;
+            let mut res = db.trait_generic_params(trait_function_id.trait_id(db.upcast()))?;
             res.extend(db.trait_function_generic_params(trait_function_id)?);
             Ok(res)
         }
@@ -275,22 +272,14 @@ pub fn get_inline_config(
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-<<<<<<< HEAD
             ] if &path.as_syntax_node().get_text(db.upcast()) == "always" => {
-=======
-            ] if &path.node.get_text(db) == "always" => {
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 config = InlineConfiguration::Always(attr.clone());
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-<<<<<<< HEAD
             ] if &path.as_syntax_node().get_text(db.upcast()) == "never" => {
-=======
-            ] if &path.node.get_text(db) == "never" => {
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {

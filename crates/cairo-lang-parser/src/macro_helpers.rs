@@ -22,7 +22,7 @@ pub fn token_tree_as_wrapped_arg_list(
 ) -> Option<WrappedArgListGreen> {
     let mut diagnostics: DiagnosticsBuilder<ParserDiagnostic> = DiagnosticsBuilder::default();
     let node_text = token_tree.as_syntax_node().get_text(db);
-    let file_id = token_tree.stable_ptr().0.file_id(db);
+    let file_id = token_tree.stable_ptr(db).0.file_id(db);
     let mut parser = Parser::new(db, file_id, &node_text, &mut diagnostics);
     let wrapped_arg_list_green = parser.parse_wrapped_arg_list();
     if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -78,8 +78,8 @@ impl AsLegacyInlineMacro for ExprInlineMacro {
         let bang = TerminalNotGreen(*bang);
         let wrapped_arg_list = token_tree_as_wrapped_arg_list(self.arguments(db), db)?;
         let legacy_green = LegacyExprInlineMacro::new_green(db, macro_name, bang, wrapped_arg_list);
-        let file_id = self.stable_ptr().0.file_id(db);
-        let offset = self.stable_ptr().0.lookup(db).offset();
+        let file_id = self.stable_ptr(db).0.file_id(db);
+        let offset = self.stable_ptr(db).0.lookup(db).offset(db);
         Some(LegacyExprInlineMacro::from_syntax_node(
             db,
             SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
@@ -108,8 +108,8 @@ impl AsLegacyInlineMacro for ItemInlineMacro {
             wrapped_arg_list,
             semicolon,
         );
-        let file_id = self.stable_ptr().0.file_id(db);
-        let offset = self.stable_ptr().0.lookup(db).offset();
+        let file_id = self.stable_ptr(db).0.file_id(db);
+        let offset = self.stable_ptr(db).0.lookup(db).offset(db);
         Some(LegacyItemInlineMacro::from_syntax_node(
             db,
             SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),

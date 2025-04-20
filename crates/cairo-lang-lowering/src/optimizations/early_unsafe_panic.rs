@@ -24,11 +24,12 @@ use crate::{
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
 pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
-    if !flag_unsafe_panic(db) || lowered.blocks.is_empty() {
+    if !flag_unsafe_panic(db.upcast()) || lowered.blocks.is_empty() {
         return;
     }
 
-    let core = ModuleHelper::core(db);
+    let semantic_db = db.upcast();
+    let core = ModuleHelper::core(semantic_db);
     let libfuncs_with_sideffect = HashSet::from_iter([
         core.submodule("debug").extern_function_id("print"),
         core.submodule("internal").extern_function_id("trace"),

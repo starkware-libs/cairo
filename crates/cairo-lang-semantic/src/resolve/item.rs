@@ -1,11 +1,6 @@
 use cairo_lang_defs::ids::{
-<<<<<<< HEAD
     ConstantId, GenericTypeId, ImplAliasId, ImplDefId, MacroDeclarationId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, TopLevelLanguageElementId, TraitId, VarId,
-=======
-    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    TopLevelLanguageElementId, TraitId, TraitItemId, VarId,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+    ModuleTypeAliasId, TopLevelLanguageElementId, TraitId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -35,11 +30,8 @@ pub enum ResolvedGenericItem {
     Trait(TraitId),
     Impl(ImplDefId),
     Variable(VarId),
-<<<<<<< HEAD
     Macro(MacroDeclarationId),
-=======
     TraitItem(TraitItemId),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 }
 impl ResolvedGenericItem {
     /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
@@ -75,11 +67,11 @@ impl ResolvedGenericItem {
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        let defs_db = db.upcast();
         match self {
             ResolvedGenericItem::GenericConstant(_) => "".into(),
-            ResolvedGenericItem::Module(id) => id.full_path(db),
+            ResolvedGenericItem::Module(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericFunction(id) => id.format(db),
-<<<<<<< HEAD
             ResolvedGenericItem::GenericType(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericImplAlias(id) => id.full_path(defs_db),
@@ -87,16 +79,8 @@ impl ResolvedGenericItem {
             ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
             ResolvedGenericItem::Impl(id) => id.full_path(defs_db),
             ResolvedGenericItem::Macro(id) => id.full_path(defs_db),
-=======
-            ResolvedGenericItem::GenericType(id) => id.full_path(db),
-            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(db),
-            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(db),
-            ResolvedGenericItem::Variant(id) => id.id.full_path(db),
-            ResolvedGenericItem::Trait(id) => id.full_path(db),
-            ResolvedGenericItem::Impl(id) => id.full_path(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
             ResolvedGenericItem::Variable(_) => "".into(),
-            ResolvedGenericItem::TraitItem(id) => id.full_path(db),
+            ResolvedGenericItem::TraitItem(id) => id.full_path(defs_db),
         }
     }
 }

@@ -192,7 +192,7 @@ fn const_type_id(
     db: &dyn SierraGenGroup,
     value: &ConstValue,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-    let ty = value.ty(db).unwrap();
+    let ty = value.ty(db.upcast()).unwrap();
     let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
     SierraGeneratorTypeLongId::Regular(
         cairo_lang_sierra::program::ConcreteTypeLongId {
@@ -370,7 +370,7 @@ pub fn generic_libfunc_id(
     generic_args: Vec<GenericArg>,
 ) -> ConcreteLibfuncId {
     cairo_lang_sierra::program::ConcreteLibfuncLongId {
-        generic_id: GenericLibfuncId::from_string(extern_id.name(db)),
+        generic_id: GenericLibfuncId::from_string(extern_id.name(db.upcast())),
         generic_args,
     }
     .intern(db)
@@ -383,7 +383,7 @@ pub fn get_concrete_libfunc_id(
     with_coupon: bool,
 ) -> (Option<lowering::ids::ConcreteFunctionWithBodyId>, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
-    if let Some(body) = function.body(db).expect("No diagnostics at this stage.") {
+    if let Some(body) = function.body(db.upcast()).expect("No diagnostics at this stage.") {
         if with_coupon {
             return (Some(body), coupon_call_libfunc_id(db, function));
         } else {
@@ -397,7 +397,10 @@ pub fn get_concrete_libfunc_id(
         extract_matches!(function.lookup_intern(db), lowering::ids::FunctionLongId::Semantic);
     let concrete_function = semantic.lookup_intern(db).function;
     let GenericFunctionId::Extern(extern_id) = concrete_function.generic_function else {
-        panic!("Expected an extern function, found: {:?}", concrete_function.full_path(db));
+        panic!(
+            "Expected an extern function, found: {:?}",
+            concrete_function.full_path(db.upcast())
+        );
     };
 
     let mut generic_args = vec![];

@@ -71,11 +71,11 @@ fn get_item_documentation_as_tokens(
             // 2. Non-inline Module (module as a file): It could have module level comments, but
             //    not the inner ones.
             extract_item_inner_documentation(db, item_id),
-            extract_item_module_level_documentation(db, item_id),
+            extract_item_module_level_documentation(db.upcast(), item_id),
         ),
     };
 
-    let doc_parser = DocumentationCommentParser::new(db);
+    let doc_parser = DocumentationCommentParser::new(db.upcast());
 
     let outer_comment_tokens =
         outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
@@ -117,9 +117,9 @@ fn extract_item_inner_documentation(
         )
     ) {
         let raw_text = item_id
-            .stable_location(db)?
-            .syntax_node(db)
-            .get_text_without_inner_commentable_children(db);
+            .stable_location(db.upcast())?
+            .syntax_node(db.upcast())
+            .get_text_without_inner_commentable_children(db.upcast());
         Some(extract_item_inner_documentation_from_raw_text(raw_text))
     } else {
         None
@@ -132,7 +132,8 @@ fn extract_item_outer_documentation(
     item_id: DocumentableItemId,
 ) -> Option<String> {
     // Get the text of the item (trivia + definition)
-    let raw_text = item_id.stable_location(db)?.syntax_node(db).get_text(db);
+    let raw_text =
+        item_id.stable_location(db.upcast())?.syntax_node(db.upcast()).get_text(db.upcast());
     Some(
         raw_text
         .lines()

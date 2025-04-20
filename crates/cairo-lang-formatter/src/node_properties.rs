@@ -169,12 +169,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenColon
-<<<<<<< HEAD
-                if grandparent_kind(db, self) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
-                    || grandparent_kind(db, self) == Some(SyntaxKind::MacroRuleParam) =>
-=======
-                if self.grandparent_kind(db) == Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+                if self.grandparent_kind(db) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
+                    || self.grandparent_kind(db) == Some(SyntaxKind::MacroRuleParam) =>
             {
                 true
             }
@@ -851,28 +847,24 @@ impl SyntaxNodeFormat for SyntaxNode {
                     true,
                     true,
                 );
-                if let Some(grandparent_kind) = self.grandparent_kind(db) {
-                    if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
-                        match grandparent_kind {
-                            SyntaxKind::ExprInlineMacro => {
-                                match config.breaking_behavior.macro_call {
-                                    CollectionsBreakingBehavior::SingleBreakPoint => {
-                                        properties.set_single_breakpoint();
-                                    }
-                                    CollectionsBreakingBehavior::LineByLine => {
-                                        properties.set_line_by_line();
-                                    }
+                if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
+                    match self.grandparent_kind(db) {
+                        Some(SyntaxKind::ExprInlineMacro) | None => {
+                            match config.breaking_behavior.macro_call {
+                                CollectionsBreakingBehavior::SingleBreakPoint => {
+                                    properties.set_single_breakpoint();
+                                }
+                                CollectionsBreakingBehavior::LineByLine => {
+                                    properties.set_line_by_line();
                                 }
                             }
-                            _ => {
-                                properties.set_line_by_line();
-                            }
+                        }
+                        _ => {
+                            properties.set_line_by_line();
                         }
                     }
-                    BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
-                } else {
-                    BreakLinePointsPositions::None
                 }
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
                 let mut properties = BreakLinePointProperties::new(
@@ -1007,11 +999,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 false
             } else {
                 matches!(
-<<<<<<< HEAD
-                    grandparent_kind(db, &path_node),
-=======
-                    path_node.parent_kind(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+                    path_node.grandparent_kind(db),
                     Some(
                         SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous

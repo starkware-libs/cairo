@@ -154,7 +154,7 @@ impl ReturnOptimizerContext<'_> {
     fn try_merge_match(
         &mut self,
         match_info: &MatchInfo,
-        infos: impl Iterator<Item = AnalyzerInfo>,
+        infos: &[AnalyzerInfo],
     ) -> Option<ReturnInfo> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return None;
@@ -561,7 +561,9 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         match_info: &'a MatchInfo,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        Self::Info { opt_return_info: self.try_merge_match(match_info, infos) }
+        let infos: Vec<_> = infos.collect();
+        let opt_return_info = self.try_merge_match(match_info, &infos);
+        Self::Info { opt_return_info }
     }
 
     fn info_from_return(
