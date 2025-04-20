@@ -10,7 +10,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::items::imp::ImplLookupContextId;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -225,7 +225,7 @@ pub struct Variable {
 impl Variable {
     pub fn new(
         db: &dyn LoweringGroup,
-        ctx: ImplLookupContext,
+        ctx: ImplLookupContextId,
         ty: semantic::TypeId,
         location: LocationId,
     ) -> Self {

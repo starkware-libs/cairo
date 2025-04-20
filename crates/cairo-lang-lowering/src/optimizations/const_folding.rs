@@ -426,8 +426,8 @@ impl ConstFoldingContext<'_> {
                 let var = &self.variables[nz_input.var_id].clone();
                 let function = self.type_value_ranges.get(&var.ty)?.is_zero;
                 let unused_nz_var = Variable::new(
-                    db,
-                    ImplLookupContext::default(),
+                    self.db,
+                    ImplLookupContext::default().intern(db),
                     corelib::core_nonzero_ty(db, var.ty),
                     var.location,
                 );

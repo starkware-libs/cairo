@@ -544,6 +544,11 @@ define_top_level_language_element_id!(
     lookup_intern_impl_def,
     intern_impl_def
 );
+impl UnstableSalsaId for ImplDefId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 
 // --- Impl type items ---
 define_named_language_element_id!(
@@ -687,6 +692,11 @@ define_top_level_language_element_id!(
     lookup_intern_impl_alias,
     intern_impl_alias
 );
+impl UnstableSalsaId for ImplAliasId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 define_top_level_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
@@ -772,6 +782,11 @@ impl TraitImplId {
 impl TopLevelLanguageElementId for TraitImplId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
+    }
+}
+impl UnstableSalsaId for TraitImplId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
     }
 }
 
@@ -935,6 +950,13 @@ impl GenericParamId {
         self.lookup_intern(db).generic_item(db)
     }
 }
+
+impl UnstableSalsaId for GenericParamId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
+
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         write!(

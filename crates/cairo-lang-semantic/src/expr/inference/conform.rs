@@ -610,7 +610,7 @@ impl Inference<'_> {
                 inference.new_impl_var(
                     inference.db.concrete_trait_impl_concrete_trait(concrete_trait_impl).unwrap(),
                     stable_ptr,
-                    ImplLookupContext::default(),
+                    ImplLookupContext::default().intern(self.db),
                 )
             },
         )

@@ -31,7 +31,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
-use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLookupContextId};
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
@@ -726,14 +726,15 @@ pub struct TypeInfo {
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
 pub fn get_impl_at_context(
     db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
+    lookup_context: ImplLookupContextId,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: Option<SyntaxStablePtrId>,
 ) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
-    inference.conform_generic_params_type_constraints(&constrains);
+    let constraints =
+        db.generic_params_type_constraints(lookup_context.lookup_intern(db).generic_params);
+    inference.conform_generic_params_type_constraints(&constraints);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
@@ -896,16 +897,14 @@ pub fn type_size_info_cycle(
 /// Query implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info(
     db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
+    lookup_context: ImplLookupContextId,
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // Dummy stable pointer for type inference variables, since inference is disabled.
-    let droppable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
-    let copyable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
+    let droppable = get_impl_at_context(db, lookup_context, concrete_drop_trait(db, ty), None);
+    let copyable = get_impl_at_context(db, lookup_context, concrete_copy_trait(db, ty), None);
     let destruct_impl =
-        get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
+        get_impl_at_context(db, lookup_context, concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
         get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     Ok(TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl })

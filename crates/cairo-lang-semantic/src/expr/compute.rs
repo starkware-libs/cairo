@@ -66,7 +66,7 @@ use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, valida
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{ImplLookupContext, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{ImplLookupContextId, filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -601,8 +601,8 @@ fn compute_expr_unary_semantic(
             let function = inference
                 .infer_trait_function(
                     concrete_trait_function,
-                    &impl_lookup_context,
-                    Some(syntax.stable_ptr(db).untyped()),
+                    impl_lookup_context,
+                    Some(syntax.stable_ptr(ctx.db).into()),
                 )
                 .map_err(|err_set| {
                     inference.report_on_pending_error(
@@ -739,8 +739,8 @@ fn call_core_binary_op(
     let function = inference
         .infer_trait_function(
             concrete_trait_function,
-            &impl_lookup_context,
-            Some(stable_ptr.untyped()),
+            impl_lookup_context,
+            Some(syntax.stable_ptr(db).into()),
         )
         .map_err(|err_set| {
             inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr.untyped())
@@ -3024,7 +3024,7 @@ fn method_call_expr(
                         db,
                         ty,
                         &method_name,
-                        lookup_context.clone(),
+                        lookup_context,
                         module_file_id,
                         lexpr_clone.stable_ptr().untyped(),
                     )
@@ -4047,7 +4047,7 @@ fn match_method_to_traits(
     db: &dyn SemanticGroup,
     ty: semantic::TypeId,
     method_name: &SmolStr,
-    lookup_context: ImplLookupContext,
+    lookup_context: ImplLookupContextId,
     module_file_id: ModuleFileId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Vec<String> {
@@ -4065,7 +4065,7 @@ fn match_method_to_traits(
             let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self(
                 trait_function,
                 ty,
-                &lookup_context,
+                lookup_context,
                 Some(stable_ptr),
                 |_| {},
             )?;
@@ -4073,7 +4073,7 @@ fn match_method_to_traits(
             match inference.trait_solution_set(
                 concrete_trait_id,
                 ImplVarTraitItemMappings::default(),
-                lookup_context.clone(),
+                lookup_context.lookup_intern(db),
             ) {
                 Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => Some(path.clone()),
                 _ => None,
