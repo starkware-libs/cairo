@@ -16,8 +16,9 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, Statement, StatementCall};
 ///
 /// The algorithm is as follows:
 /// Check if the function will have the `GasBuiltin` implicit after the lower_implicits stage.
-/// If so, add a `redeposit_gas` call at the beginning of every branch in the code.
-/// Otherwise, do nothing.
+/// If so, after every block that ends with match, add a call to `redeposit_gas` af the beggining of the
+/// next block that ends with a `return` or a `goto`.
+/// Note that assuming `reorganize_blocks` stage is applied before this stage, every `goto` statement is a convergence point.
 ///
 /// Note that for implementation simplicity this stage must be applied before `LowerImplicits`
 /// stage.
@@ -53,41 +54,51 @@ pub fn gas_redeposit(
         vec![],
     )
     .lowered(db);
-    let mut stack = vec![BlockId::root()];
+
+    let maybe_add_redeposit_gas = |statements: &mut Vec<Statement>, opt_location| {
+        if let Some(location) = opt_location {
+            // The `redeposit_gas` function is added at the beginning of the block as it result in smaller code when the
+            // GasBuiltin is revoked during the block.
+            statements.insert(
+                0,
+                Statement::Call(StatementCall {
+                    function: redeposit_gas,
+                    inputs: vec![],
+                    with_coupon: false,
+                    outputs: vec![],
+                    location,
+                }),
+            );
+        }
+    };
+
+    let mut stack = vec![(BlockId::root(), None)];
     let mut visited = vec![false; lowered.blocks.len()];
     let mut redeposit_commands = vec![];
-    while let Some(block_id) = stack.pop() {
+    while let Some((block_id, opt_location)) = stack.pop() {
         if visited[block_id.0] {
             continue;
         }
         visited[block_id.0] = true;
-        let block = &lowered.blocks[block_id];
+        let block = &mut lowered.blocks[block_id];
+        let statements = &mut block.statements;
         match &block.end {
             FlatBlockEnd::Goto(block_id, _) => {
-                stack.push(*block_id);
+                maybe_add_redeposit_gas(statements, opt_location);
+                stack.push((*block_id, None));
             }
             FlatBlockEnd::Match { info } => {
                 let location = info.location().with_auto_generation_note(db, "withdraw_gas");
                 for arm in info.arms() {
-                    stack.push(arm.block_id);
+                    stack.push((arm.block_id, Some(location)));
                     redeposit_commands.push((arm.block_id, location));
                 }
             }
-            &FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
+            FlatBlockEnd::Return(..) => {
+                maybe_add_redeposit_gas(statements, opt_location);
+            }
+            FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::NotSet => unreachable!("Block end not set"),
         }
-    }
-    for (block_id, location) in redeposit_commands {
-        let block = &mut lowered.blocks[block_id];
-        block.statements.insert(
-            0,
-            Statement::Call(StatementCall {
-                function: redeposit_gas,
-                inputs: vec![],
-                with_coupon: false,
-                outputs: vec![],
-                location,
-            }),
-        );
     }
 }
