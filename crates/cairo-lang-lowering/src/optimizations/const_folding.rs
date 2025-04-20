@@ -9,7 +9,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
+use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -19,13 +19,15 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::Zero;
+use num_traits::cast::ToPrimitive;
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementStructConstruct, StatementStructDestructure, VarUsage, Variable, VariableId,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
+    VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -43,6 +45,8 @@ enum VarInfo {
     Struct(Vec<Option<VarInfo>>),
     /// The variable is a box of another variable.
     Box(Box<VarInfo>),
+    /// The variable is an array of known const values.
+    Array(Vec<VarInfo>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -230,10 +234,9 @@ pub fn const_folding(
                         }
                     }
                     MatchInfo::Extern(info) => {
-                        if let Some((extra_stmt, updated_end)) = ctx.handle_extern_block_end(info) {
-                            if let Some(stmt) = extra_stmt {
-                                block.statements.push(stmt);
-                            }
+                        if let Some((extra_stmts, updated_end)) = ctx.handle_extern_block_end(info)
+                        {
+                            block.statements.extend(extra_stmts);
                             block.end = updated_end;
                         }
                     }
@@ -374,6 +377,27 @@ impl ConstFoldingContext<'_> {
             let value = ConstValue::Int(int_value.clone(), self.variables[output].ty);
             self.var_info.insert(output, VarInfo::Const(value.clone()));
             Some(StatementConst { value, output })
+        } else if id == self.array_new {
+            self.var_info.insert(stmt.outputs[0], VarInfo::Array(vec![]));
+            None
+        } else if id == self.array_append {
+            let mut var_infos =
+                if let VarInfo::Array(var_infos) = self.var_info.get(&stmt.inputs[0].var_id)? {
+                    var_infos.clone()
+                } else {
+                    return None;
+                };
+            let appended = stmt.inputs[1];
+            var_infos.push(
+                self.var_info.get(&appended.var_id).cloned().unwrap_or(VarInfo::Var(appended)),
+            );
+            self.var_info.insert(stmt.outputs[0], VarInfo::Array(var_infos));
+            None
+        } else if id == self.array_len {
+            let info = self.var_info.get(&stmt.inputs[0].var_id)?;
+            let desnapped = try_extract_matches!(info, VarInfo::Snapshot)?;
+            let length = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?.len();
+            Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0], false))
         } else {
             None
         }
@@ -406,7 +430,7 @@ impl ConstFoldingContext<'_> {
     fn handle_extern_block_end(
         &mut self,
         info: &mut MatchExternInfo,
-    ) -> Option<(Option<Statement>, FlatBlockEnd)> {
+    ) -> Option<(Vec<Statement>, FlatBlockEnd)> {
         let db = self.db;
         let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
@@ -419,14 +443,14 @@ impl ConstFoldingContext<'_> {
                 _ => unreachable!(),
             };
             Some(if is_zero {
-                (None, FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()))
+                (vec![], FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()))
             } else {
                 let arm = &info.arms[1];
                 let nz_var = arm.var_ids[0];
                 let nz_val = ConstValue::NonZero(Box::new(val.clone()));
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
                 (
-                    Some(Statement::Const(StatementConst { value: nz_val, output: nz_var })),
+                    vec![Statement::Const(StatementConst { value: nz_val, output: nz_var })],
                     FlatBlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
@@ -447,7 +471,7 @@ impl ConstFoldingContext<'_> {
                 );
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
                 return Some((
-                    None,
+                    vec![],
                     FlatBlockEnd::Match {
                         info: MatchInfo::Extern(MatchExternInfo {
                             function,
@@ -474,7 +498,7 @@ impl ConstFoldingContext<'_> {
                 ));
             }
             Some((
-                None,
+                vec![],
                 FlatBlockEnd::Goto(
                     info.arms[if lhs? == rhs? { 1 } else { 0 }].block_id,
                     Default::default(),
@@ -490,14 +514,14 @@ impl ConstFoldingContext<'_> {
             if rhs.map(Zero::is_zero).unwrap_or_default() && !self.diff_fns.contains(&id) {
                 let arm = &info.arms[0];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
-                return Some((None, FlatBlockEnd::Goto(arm.block_id, Default::default())));
+                return Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())));
             }
             let lhs = self.as_int(info.inputs[0].var_id);
             let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
                 if lhs.map(Zero::is_zero).unwrap_or_default() {
                     let arm = &info.arms[0];
                     self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
-                    return Some((None, FlatBlockEnd::Goto(arm.block_id, Default::default())));
+                    return Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())));
                 }
                 lhs? + rhs?
             } else {
@@ -518,7 +542,7 @@ impl ConstFoldingContext<'_> {
             let value = ConstValue::Int(value, ty);
             self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
             Some((
-                Some(Statement::Const(StatementConst { value, output: actual_output })),
+                vec![Statement::Const(StatementConst { value, output: actual_output })],
                 FlatBlockEnd::Goto(arm.block_id, Default::default()),
             ))
         } else if self.downcast_fns.contains(&id) {
@@ -543,13 +567,13 @@ impl ConstFoldingContext<'_> {
                     let generic_args = [in_ty, out_ty].map(GenericArgumentId::Type).to_vec();
                     let function = db.core_info().upcast_fn.concretize(db, generic_args);
                     return Some((
-                        Some(Statement::Call(StatementCall {
+                        vec![Statement::Call(StatementCall {
                             function: function.lowered(db),
                             inputs: vec![info.inputs[0]],
                             with_coupon: false,
                             outputs: vec![success_output],
                             location: info.location,
-                        })),
+                        })],
                         FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
                     ));
                 };
@@ -558,11 +582,11 @@ impl ConstFoldingContext<'_> {
                 let value = ConstValue::Int(value, out_ty);
                 self.var_info.insert(success_output, VarInfo::Const(value.clone()));
                 (
-                    Some(Statement::Const(StatementConst { value, output: success_output })),
+                    vec![Statement::Const(StatementConst { value, output: success_output })],
                     FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
                 )
             } else {
-                (None, FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()))
+                (vec![], FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()))
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
@@ -575,22 +599,82 @@ impl ConstFoldingContext<'_> {
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
-                Some(Statement::Const(self.propagate_const_and_get_statement(
+                vec![Statement::Const(self.propagate_const_and_get_statement(
                     value.clone(),
                     output,
                     nz_ty,
-                ))),
+                ))],
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
-            if self.as_int(info.inputs[1].var_id)?.is_zero() {
+            let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
+            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id) {
+                if let VarInfo::Array(infos) = arr_info.as_ref() {
+                    if let Some(output_var_info) = infos.get(index) {
+                        let arm = &info.arms[0];
+                        let output_var_info = output_var_info.clone();
+                        let box_info =
+                            VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
+                        self.var_info.insert(arm.var_ids[0], box_info);
+                        if let VarInfo::Const(value) = output_var_info {
+                            let value_ty = value.ty(db).ok()?;
+                            let value_box_ty = corelib::core_box_ty(db, value_ty);
+                            let location = info.location;
+                            let boxed_var = Variable::new(
+                                db,
+                                ImplLookupContext::default(),
+                                value_box_ty,
+                                location,
+                            );
+                            let boxed = self.variables.alloc(boxed_var.clone());
+                            let unused_boxed = self.variables.alloc(boxed_var);
+                            let snapped = self.variables.alloc(Variable::new(
+                                db,
+                                ImplLookupContext::default(),
+                                TypeLongId::Snapshot(value_box_ty).intern(db),
+                                location,
+                            ));
+                            return Some((
+                                vec![
+                                    Statement::Const(StatementConst {
+                                        value: ConstValue::Boxed(value.into()),
+                                        output: boxed,
+                                    }),
+                                    Statement::Snapshot(StatementSnapshot {
+                                        input: VarUsage { var_id: boxed, location },
+                                        outputs: [unused_boxed, snapped],
+                                    }),
+                                    Statement::Call(StatementCall {
+                                        function: self
+                                            .box_forward_snapshot
+                                            .concretize(db, vec![GenericArgumentId::Type(value_ty)])
+                                            .lowered(db),
+                                        inputs: vec![VarUsage { var_id: snapped, location }],
+                                        with_coupon: false,
+                                        outputs: vec![arm.var_ids[0]],
+                                        location: info.location,
+                                    }),
+                                ],
+                                FlatBlockEnd::Goto(arm.block_id, Default::default()),
+                            ));
+                        }
+                    } else {
+                        return Some((
+                            vec![],
+                            FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()),
+                        ));
+                    }
+                }
+            }
+            if index.is_zero() {
                 if let [success, failure] = info.arms.as_mut_slice() {
                     let arr = info.inputs[0].var_id;
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function =
-                        self.array_snapshot_pop_front.concretize(db, generic_args).lowered(db);
+                    info.function = GenericFunctionId::Extern(self.array_snapshot_pop_front)
+                        .concretize(db, generic_args)
+                        .lowered(db);
                     success.var_ids.insert(0, unused_arr_output0);
                     failure.var_ids.insert(0, unused_arr_output1);
                 }
@@ -658,6 +742,8 @@ pub struct ConstFoldingLibfuncInfo {
     into_box: ExternFunctionId,
     /// The `unbox` libfunc.
     unbox: ExternFunctionId,
+    /// The `box_forward_snapshot` libfunc.
+    box_forward_snapshot: GenericFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions that check if numbers are equal.
@@ -685,7 +771,13 @@ pub struct ConstFoldingLibfuncInfo {
     /// The `array_get` libfunc.
     array_get: ExternFunctionId,
     /// The `array_snapshot_pop_front` libfunc.
-    array_snapshot_pop_front: GenericFunctionId,
+    array_snapshot_pop_front: ExternFunctionId,
+    /// The `array_len` libfunc.
+    array_len: ExternFunctionId,
+    /// The `array_new` libfunc.
+    array_new: ExternFunctionId,
+    /// The `array_append` libfunc.
+    array_append: ExternFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: ExternFunctionId,
     /// The `storage_base_address_const` libfunc.
@@ -780,6 +872,7 @@ impl ConstFoldingLibfuncInfo {
             felt_sub: core.extern_function_id("felt252_sub"),
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
+            box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
             nz_fns,
             eq_fns,
             uadd_fns,
@@ -793,7 +886,10 @@ impl ConstFoldingLibfuncInfo {
             bounded_int_sub: bounded_int_module.extern_function_id("bounded_int_sub"),
             bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
             array_get: array_module.extern_function_id("array_get"),
-            array_snapshot_pop_front: array_module.generic_function_id("array_snapshot_pop_front"),
+            array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
+            array_len: array_module.extern_function_id("array_len"),
+            array_new: array_module.extern_function_id("array_new"),
+            array_append: array_module.extern_function_id("array_append"),
             storage_base_address_from_felt252: storage_access_module
                 .extern_function_id("storage_base_address_from_felt252"),
             storage_base_address_const: storage_access_module

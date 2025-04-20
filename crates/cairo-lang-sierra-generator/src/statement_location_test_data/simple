@@ -3668,147 +3668,16 @@ Inlined at:
             core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
-snapshot_take<Array<felt252>>([4]) -> ([10], [11])
+struct_construct<Unit>() -> ([10])
 Originating location:
-            __array_builder_macro_result__
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: array_inline_macro::array_inline_macro
-drop<Array<felt252>>([10]) -> ()
-Originating location:
-            __array_builder_macro_result__
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-store_temp<Snapshot<Array<felt252>>>([11]) -> ([11])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-dup<Snapshot<Array<felt252>>>([11]) -> ([11], [12])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_len<felt252>([12]) -> ([13])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-snapshot_take<Array<felt252>>([9]) -> ([14], [15])
-Originating location:
-            __array_builder_macro_result__
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-drop<Array<felt252>>([14]) -> ()
-Originating location:
-            __array_builder_macro_result__
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: array_inline_macro::array_inline_macro
-store_temp<Snapshot<Array<felt252>>>([15]) -> ([15])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-                           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-dup<Snapshot<Array<felt252>>>([15]) -> ([15], [16])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-                           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_len<felt252>([16]) -> ([17])
-Originating location:
-        array_len(self.snapshot)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanImpl::len
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-                           ^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<u32>([13]) -> ([13])
+enum_init<core::bool, 1>([10]) -> ([11])
 Originating location:
         u32_eq(*lhs, *rhs)
         ^^^^^^^^^^^^^^^^^^
@@ -3831,14 +3700,14 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<u32>([17]) -> ([17])
+store_temp<core::bool>([11]) -> ([11])
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
+        let (r,) = bool_not_impl(a);
+                   ^^^^^^^^^^^^^^^^
+In function: core::BoolNot::not
 Inlined at:
         !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
+        ^^^^^^^^^^^^^^^^^^^
 Inlined at:
         if (*lhs).len() != (*rhs).len() {
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -3854,17 +3723,146 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-u32_eq([13], [17]) { fallthrough() label_test::some_array_checks::1() }
+bool_not_impl([11]) -> ([12])
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
+        let (r,) = bool_not_impl(a);
+                   ^^^^^^^^^^^^^^^^
+In function: core::BoolNot::not
+Inlined at:
+        !Self::eq(lhs, rhs)
+        ^^^^^^^^^^^^^^^^^^^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
 Inlined at:
         !Self::eq(lhs, rhs)
          ^^^^^^^^^^^^^^^^^^
 Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+drop<core::bool>([12]) -> ()
+Originating location:
+        let (r,) = bool_not_impl(a);
+                   ^^^^^^^^^^^^^^^^
+In function: core::BoolNot::not
+Inlined at:
+        !Self::eq(lhs, rhs)
+        ^^^^^^^^^^^^^^^^^^^
+Inlined at:
         if (*lhs).len() != (*rhs).len() {
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+snapshot_take<Array<felt252>>([4]) -> ([13], [14])
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+drop<Array<felt252>>([13]) -> ()
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+snapshot_take<Array<felt252>>([9]) -> ([15], [16])
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+drop<Array<felt252>>([15]) -> ()
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+struct_construct<core::array::Span::<core::felt252>>([14]) -> ([17])
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+struct_construct<core::array::Span::<core::felt252>>([16]) -> ([18])
+Originating location:
+            __array_builder_macro_result__
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+store_temp<core::array::Span::<core::felt252>>([17]) -> ([17])
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<core::array::Span::<core::felt252>>([18]) -> ([18])
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+function_call<user@core::array::SpanPartialEq::eq[194-446]>([17], [18]) -> ([19])
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool)>>([19]) { fallthrough([20]) label_test::some_array_checks::1([21]) }
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -3879,15 +3877,11 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          loop {
+ _________^
+| ...
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -3900,17 +3894,13 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<Snapshot<Array<felt252>>>([15]) -> ()
+struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool>>([20]) -> ([22], [23], [24])
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          loop {
+ _________^
+| ...
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -3923,17 +3913,13 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<Snapshot<Array<felt252>>>([11]) -> ()
+drop<core::array::Span::<core::felt252>>([22]) -> ()
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          loop {
+ _________^
+| ...
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -3946,17 +3932,13 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([18])
+drop<core::array::Span::<core::felt252>>([23]) -> ()
 Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          loop {
+ _________^
+| ...
+|         }
+|_________^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -3969,30 +3951,7 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_init<core::bool, 0>([18]) -> ([19])
-Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::bool>([19]) -> ([19])
+bool_not_impl([24]) -> ([25])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
@@ -4000,218 +3959,6 @@ In function: core::BoolNot::not
 Inlined at:
         !Self::eq(lhs, rhs)
         ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-bool_not_impl([19]) -> ([20])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::bool>([20]) -> ()
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([21])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-enum_init<core::bool, 0>([21]) -> ([22])
-Originating location:
-            return false;
-                   ^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::bool>([22]) -> ([23])
-Originating location:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-jump() { label_test::some_array_checks::3() }
-Originating location:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-label_test::some_array_checks::1:
-Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-branch_align() -> ()
-Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([24])
-Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-enum_init<core::bool, 1>([24]) -> ([25])
-Originating location:
-        u32_eq(*lhs, *rhs)
-        ^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32PartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
 Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -4222,341 +3969,181 @@ Originating location:
                    ^^^^^^^^^^^^^^^^
 In function: core::BoolNot::not
 Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
 if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-bool_not_impl([25]) -> ([26])
+dup<core::bool>([25]) -> ([25], [26])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
 In function: core::BoolNot::not
 Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
 if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<core::bool>([26]) -> ()
+bool_not_impl([26]) -> ([27])
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
 In function: core::BoolNot::not
 Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
 if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_construct<core::array::Span::<core::felt252>>([11]) -> ([27])
+drop<core::bool>([27]) -> ()
 Originating location:
         let (r,) = bool_not_impl(a);
                    ^^^^^^^^^^^^^^^^
 In function: core::BoolNot::not
 Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
 if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_construct<core::array::Span::<core::felt252>>([15]) -> ([28])
+enum_match<core::bool>([25]) { fallthrough([28]) label_test::some_array_checks::3([29]) }
 Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-        if (*lhs).len() != (*rhs).len() {
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::array::Span::<core::felt252>>([27]) -> ([27])
-Originating location:
-          loop {
- _________^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
 | ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::array::Span::<core::felt252>>([28]) -> ([28])
-Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-function_call<user@core::array::SpanPartialEq::eq[194-446]>([27], [28]) -> ([29])
-Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool)>>([29]) { fallthrough([30]) label_test::some_array_checks::4([31]) }
-Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| }
+|_^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-          loop {
- _________^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
 | ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| }
+|_^
 In function: assert_macro::assert_macro
-struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool>>([30]) -> ([32], [33], [34])
+drop<Unit>([28]) -> ()
 Originating location:
-          loop {
- _________^
+  if !(array![1, 2] != array![2, 1]) {
+ _^
 | ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
-Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+| }
+|_^
 In function: assert_macro::assert_macro
-drop<core::array::Span::<core::felt252>>([32]) -> ()
+array_new<bytes31>() -> ([30])
 Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
 Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
 Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-drop<core::array::Span::<core::felt252>>([33]) -> ()
+const_as_immediate<Const<felt252, 0>>() -> ([31])
 Originating location:
-          loop {
- _________^
-| ...
-|         }
-|_________^
-In function: core::array::SpanPartialEq::eq
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
 Inlined at:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
 Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<core::bool>([34]) -> ([23])
+const_as_immediate<Const<u32, 0>>() -> ([32])
 Originating location:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
 Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
 Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+struct_construct<core::byte_array::ByteArray>([30], [31], [32]) -> ([33])
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+snapshot_take<core::byte_array::ByteArray>([33]) -> ([34], [35])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+drop<core::byte_array::ByteArray>([34]) -> ()
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<Snapshot<core::byte_array::ByteArray>>([35]) -> ([35])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+function_call<user@core::panics::panic_with_byte_array>([35]) -> ([36])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+enum_init<core::panics::PanicResult::<((),)>, 1>([36]) -> ([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+return([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::3:
 Originating location:
-        lhs.span() == rhs.span()
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayPartialEq::eq
-Inlined at:
-        !Self::eq(lhs, rhs)
-         ^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-bool_not_impl([23]) -> ([35])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-        !Self::eq(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::bool>([35]) -> ([35])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-dup<core::bool>([35]) -> ([35], [36])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-bool_not_impl([36]) -> ([37])
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::bool>([37]) -> ()
-Originating location:
-        let (r,) = bool_not_impl(a);
-                   ^^^^^^^^^^^^^^^^
-In function: core::BoolNot::not
-Inlined at:
-if !(array![1, 2] != array![2, 1]) {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-enum_match<core::bool>([35]) { fallthrough([38]) label_test::some_array_checks::6([39]) }
-Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
 | ...
@@ -4571,7 +4158,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-drop<Unit>([38]) -> ()
+drop<Unit>([29]) -> ()
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4579,126 +4166,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-array_new<bytes31>() -> ([40])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([41])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-const_as_immediate<Const<u32, 0>>() -> ([42])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-struct_construct<core::byte_array::ByteArray>([40], [41], [42]) -> ([43])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-snapshot_take<core::byte_array::ByteArray>([43]) -> ([44], [45])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::byte_array::ByteArray>([44]) -> ()
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<Snapshot<core::byte_array::ByteArray>>([45]) -> ([45])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-function_call<user@core::panics::panic_with_byte_array>([45]) -> ([46])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([46]) -> ([47])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([47]) -> ([47])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-return([47])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-label_test::some_array_checks::6:
+struct_construct<Unit>() -> ([38])
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4706,7 +4174,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-branch_align() -> ()
+struct_construct<Tuple<Unit>>([38]) -> ([39])
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4714,31 +4182,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-drop<Unit>([39]) -> ()
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([48])
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-struct_construct<Tuple<Unit>>([48]) -> ([49])
-Originating location:
-  if !(array![1, 2] != array![2, 1]) {
- _^
-| ...
-| }
-|_^
-In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 0>([49]) -> ([50])
+enum_init<core::panics::PanicResult::<((),)>, 0>([39]) -> ([40])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4746,7 +4190,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::some_array_checks
-store_temp<core::panics::PanicResult::<((),)>>([50]) -> ([50])
+store_temp<core::panics::PanicResult::<((),)>>([40]) -> ([40])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4754,15 +4198,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::some_array_checks
-return([50])
-Originating location:
-  fn some_array_checks() {
- ________________________^
-|     assert!(array![1, 2] != array![2, 1], "");
-| }
-|_^
-In function: lib.cairo::some_array_checks
-label_test::some_array_checks::7:
+return([40])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4772,6 +4208,14 @@ Originating location:
 In function: lib.cairo::some_array_checks
 label_test::some_array_checks::4:
 Originating location:
+  fn some_array_checks() {
+ ________________________^
+|     assert!(array![1, 2] != array![2, 1], "");
+| }
+|_^
+In function: lib.cairo::some_array_checks
+label_test::some_array_checks::1:
+Originating location:
           loop {
  _________^
 | ...
@@ -4808,22 +4252,17 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([31]) -> ([51])
+enum_init<core::panics::PanicResult::<((),)>, 1>([21]) -> ([41])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([51]) -> ([51])
+store_temp<core::panics::PanicResult::<((),)>>([41]) -> ([41])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-return([51])
-Originating location:
-if !(array![1, 2] != array![2, 1]) {
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-label_test::some_array_checks::5:
+return([41])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
