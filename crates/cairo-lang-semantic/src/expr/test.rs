@@ -109,7 +109,7 @@ fn test_expand_expr(
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = expr.stable_ptr(db).0.lookup(db).get_text(db.upcast());
     let expanded_code = expanded_code.replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -229,16 +229,13 @@ fn test_expr_call_failures() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
-    assert_eq!(
-        diagnostics,
-        indoc! { "
+    assert_eq!(diagnostics, indoc! { "
             error[E0006]: Function not found.
              --> lib.cairo:2:1
             foo()
             ^^^
 
-        "}
-    );
+        "});
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(

@@ -122,7 +122,7 @@ fn test_ast() {
 }
 
 #[test]
-fn test_stable_ptr() {
+fn test_stable_ptr(db) {
     let db_val = DatabaseForTesting::default();
     let db = &db_val;
     let root = setup(db);
@@ -163,14 +163,10 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-<<<<<<< HEAD
             empty_dollar,
             ExprPathInner::new_green(db, vec![
                 PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
             ]),
-=======
-            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
->>>>>>> e08485ef62d40b5ca5d7587f92f6b4ba7ea5b83b
         )
         .into(),
         terminal_plus.into(),

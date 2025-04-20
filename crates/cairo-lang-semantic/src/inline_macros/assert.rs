@@ -34,7 +34,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
             legacy_inline_macro.arguments(db)
         else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         let Some((value, format_args)) = arguments.split_first() else {

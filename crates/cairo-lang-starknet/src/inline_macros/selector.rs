@@ -31,7 +31,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
             db,
             &legacy_inline_macro,
             ast::WrappedArgList::ParenthesizedArgList(_),
-            syntax.stable_ptr()
+            syntax.stable_ptr(db)
         );
 
         let ast::Expr::String(input_string) = arg else {

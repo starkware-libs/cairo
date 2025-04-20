@@ -196,12 +196,12 @@ fn collect_expansion_placeholders(
     if node.kind(db) == SyntaxKind::ExprPath {
         let path_node = ExprPath::from_syntax_node(db, node.clone());
         if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
-            placeholders.push((path_node.stable_ptr().untyped(), placeholder_name));
+            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name));
             return placeholders;
         }
     }
     if !node.kind(db).is_terminal() {
-        for child in db.get_children(node).iter() {
+        for child in node.get_children(db).iter() {
             placeholders.extend(collect_expansion_placeholders(db, child.clone()));
         }
     }
@@ -283,7 +283,7 @@ fn is_macro_rule_match_ex(
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: captured_text,
-                                stable_ptr: input_token.stable_ptr().untyped(),
+                                stable_ptr: input_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -294,7 +294,8 @@ fn is_macro_rule_match_ex(
                     PlaceholderKind::Expr => {
                         let mut cloned_iter = input_iter.clone();
                         let peek_token = cloned_iter.peek()?;
-                        let file_id = peek_token.as_syntax_node().stable_ptr().file_id(db.upcast());
+                        let file_id =
+                            peek_token.as_syntax_node().stable_ptr(db).file_id(db.upcast());
                         let expr_node = as_expr_macro_token_tree(
                             input_iter.clone().cloned(),
                             file_id,
@@ -311,7 +312,7 @@ fn is_macro_rule_match_ex(
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: expr_text.to_string(),
-                                stable_ptr: peek_token.stable_ptr().untyped(),
+                                stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -596,7 +597,7 @@ fn expand_macro_rule_ex(
                 return Ok(());
             }
 
-            for child in db.get_children(node).as_ref() {
+            for child in node.get_children(db).iter() {
                 expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, code_mappings)?;
             }
             return Ok(());
@@ -606,7 +607,7 @@ fn expand_macro_rule_ex(
         res_buffer.push_str(&node.get_text(db));
         return Ok(());
     }
-    for child in db.get_children(node).iter() {
+    for child in node.get_children(db).iter() {
         expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, code_mappings)?;
     }
     Ok(())

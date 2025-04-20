@@ -94,33 +94,6 @@ impl AstPathExtract for ast::ExprPath {
 
         arg_expr.expr(db).is_identifier(db, generic_arg)
     }
-<<<<<<< HEAD
-
-    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
-        let segments = self.segments(db).elements(db);
-        let Some((last, head)) = segments.split_last() else { return false };
-        match last {
-            ast::PathSegment::Simple(arg_segment) => {
-                head.is_empty() && arg_segment.ident(db).text(db) == identifier
-            }
-            ast::PathSegment::WithGenericArgs(with_generics) => {
-                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
-                    let generic_arg_value = match arg {
-                        ast::GenericArg::Named(named) => named.value(db),
-                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
-                    };
-                    match generic_arg_value {
-                        ast::GenericArgValue::Expr(arg_expr) => {
-                            arg_expr.expr(db).is_dependent_type(db, identifier)
-                        }
-                        ast::GenericArgValue::Underscore(_) => false,
-                    }
-                })
-            }
-        }
-    }
-=======
->>>>>>> e08485ef62d40b5ca5d7587f92f6b4ba7ea5b83b
 }
 impl AstPathExtract for ast::Expr {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {

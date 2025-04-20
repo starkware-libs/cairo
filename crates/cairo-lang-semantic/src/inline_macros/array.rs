@@ -29,7 +29,7 @@ impl InlineMacroExprPlugin for ArrayMacro {
             ));
         };
         let ast::WrappedArgList::BracketedArgList(args) = legacy_inline_macro.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let mut builder = PatchBuilder::new(db, syntax);
         builder.add_str(

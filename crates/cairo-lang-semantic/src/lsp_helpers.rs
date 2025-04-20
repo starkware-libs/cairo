@@ -188,6 +188,8 @@ fn visible_importables_in_module_ex(
             ResolvedGenericItem::Variable(_)
             | ResolvedGenericItem::TraitItem(_)
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
+            // TODO!!!
+            ResolvedGenericItem::Macro(macro_declaration_id) => todo!(),
         };
 
         result.push((resolved_item, name.to_string()));

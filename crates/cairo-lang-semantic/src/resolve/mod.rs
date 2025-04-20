@@ -2183,8 +2183,10 @@ impl<'db> Resolver<'db> {
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
     ) -> Maybe<Resolver<'db>> {
         if segments.len() == 1 {
-            return Err(diagnostics
-                .report(segments.next().unwrap().stable_ptr(), EmptyPathAfterResolverModifier));
+            return Err(diagnostics.report(
+                segments.next().unwrap().stable_ptr(self.db),
+                EmptyPathAfterResolverModifier,
+            ));
         }
         match segments.peek() {
             Some(ast::PathSegment::Simple(path_segment_simple)) => {
@@ -2200,11 +2202,13 @@ impl<'db> Resolver<'db> {
                                 .clone_with_inference_id(self.db, self.inference_data.inference_id),
                         ))
                     } else {
-                        Err(diagnostics
-                            .report(ident.stable_ptr(), ResolverModifierNotSupportedInContext))
+                        Err(diagnostics.report(
+                            ident.stable_ptr(self.db),
+                            ResolverModifierNotSupportedInContext,
+                        ))
                     }
                 } else {
-                    Err(diagnostics.report(ident.stable_ptr(), UnknownResolverModifier {
+                    Err(diagnostics.report(ident.stable_ptr(self.db), UnknownResolverModifier {
                         modifier: ident_text,
                     }))
                 }

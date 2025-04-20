@@ -61,7 +61,7 @@ fn get_dep_component_generate_code_helper(
         &legacy_inline_macro,
         2,
         ast::WrappedArgList::ParenthesizedArgList(_),
-        syntax.stable_ptr()
+        syntax.stable_ptr(db)
     );
 
     if is_mut {
@@ -79,15 +79,10 @@ fn get_dep_component_generate_code_helper(
         if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
-<<<<<<< HEAD
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
                 db,
-                syntax.stable_ptr(),
+                syntax.stable_ptr(db),
                 contract_arg.as_syntax_node(),
-=======
-            let diagnostics = vec![PluginDiagnostic::error(
-                contract_arg.stable_ptr(db).untyped(),
->>>>>>> e08485ef62d40b5ca5d7587f92f6b4ba7ea5b83b
                 format!(
                     "The first argument of `{}` macro must have only a `ref` modifier.",
                     GetDepComponentMutMacro::NAME

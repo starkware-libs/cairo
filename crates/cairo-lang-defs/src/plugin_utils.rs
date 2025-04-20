@@ -132,7 +132,7 @@ pub fn escape_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> String {
 ///     syntax,
 ///     2,
 ///     ast::WrappedArgList::ParenthesizedArgList(_) | ast::WrappedArgList::BracedArgList(_),
-///     token_tree_syntax.stable_ptr()
+///     token_tree_syntax.stable_ptr(db)
 /// );
 #[macro_export]
 macro_rules! extract_macro_unnamed_args {
@@ -183,7 +183,7 @@ macro_rules! extract_macro_unnamed_args {
 ///     db,
 ///     arg_list_syntax,
 ///     ast::WrappedArgList::ParenthesizedArgList(_) | ast::WrappedArgList::BracedArgList(_),
-///     token_tree_syntax.stable_ptr()
+///     token_tree_syntax.stable_ptr(db)
 /// );
 #[macro_export]
 macro_rules! extract_macro_single_unnamed_arg {

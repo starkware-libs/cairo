@@ -670,10 +670,10 @@ pub fn priv_impl_declaration_data_inner(
         .contains(&concrete_trait.trait_id(db))
             && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)
         {
-            diagnostics.report(
-                trait_path_syntax.stable_ptr(syntax_db),
-                CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
-            );
+            diagnostics
+                .report(trait_path_syntax.stable_ptr(syntax_db), CompilerTraitReImplementation {
+                    trait_id: concrete_trait.trait_id(db),
+                });
         }
     }
 
@@ -971,10 +971,10 @@ fn deref_impl_diagnostics(
                     )
                 })
                 .join(" -> ");
-            diagnostics.report(
-                impl_def_id.stable_ptr(db.upcast()),
-                SemanticDiagnosticKind::DerefCycle { deref_chain },
-            );
+            diagnostics
+                .report(impl_def_id.stable_ptr(db.upcast()), SemanticDiagnosticKind::DerefCycle {
+                    deref_chain,
+                });
             return;
         }
     }
@@ -1307,13 +1307,10 @@ pub fn priv_impl_definition_data(
                         &func.attributes(db.upcast()),
                     );
                     if item_id_by_name
-                        .insert(
-                            name.clone(),
-                            ImplItemInfo {
-                                id: ImplItemId::Function(impl_function_id),
-                                feature_kind,
-                            },
-                        )
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Function(impl_function_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1334,10 +1331,10 @@ pub fn priv_impl_definition_data(
                         &ty.attributes(db.upcast()),
                     );
                     if item_id_by_name
-                        .insert(
-                            name.clone(),
-                            ImplItemInfo { id: ImplItemId::Type(impl_type_id), feature_kind },
-                        )
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Type(impl_type_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1359,13 +1356,10 @@ pub fn priv_impl_definition_data(
                         &constant.attributes(db.upcast()),
                     );
                     if item_id_by_name
-                        .insert(
-                            name.clone(),
-                            ImplItemInfo {
-                                id: ImplItemId::Constant(impl_constant_id),
-                                feature_kind,
-                            },
-                        )
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Constant(impl_constant_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -1386,10 +1380,10 @@ pub fn priv_impl_definition_data(
                         &imp.attributes(db.upcast()),
                     );
                     if item_id_by_name
-                        .insert(
-                            name.clone(),
-                            ImplItemInfo { id: ImplItemId::Impl(impl_impl_id), feature_kind },
-                        )
+                        .insert(name.clone(), ImplItemInfo {
+                            id: ImplItemId::Impl(impl_impl_id),
+                            feature_kind,
+                        })
                         .is_some()
                     {
                         diagnostics.report(
@@ -2395,25 +2389,22 @@ fn validate_impl_item_type(
     let trait_id = concrete_trait_id.trait_id(db);
     let type_name = impl_type_def_id.name(defs_db);
     let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
-        diagnostics.report(
-            impl_type_ast.stable_ptr(syntax_db),
-            ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name: type_name,
-                trait_id,
-                item_kind: "type".into(),
-            },
-        )
+        diagnostics.report(impl_type_ast.stable_ptr(syntax_db), ImplItemNotInTrait {
+            impl_def_id,
+            impl_item_name: type_name,
+            trait_id,
+            item_kind: "type".into(),
+        })
     })?;
 
     // TODO(yuval): add validations for generic parameters, then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     let generic_params_node = impl_type_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(
-            generic_params_node.stable_ptr(syntax_db),
-            GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "type".into() },
-        );
+        diagnostics.report(generic_params_node.stable_ptr(syntax_db), GenericsNotSupportedInItem {
+            scope: "Impl".into(),
+            item_kind: "type".into(),
+        });
     }
 
     Ok(trait_type_id)
@@ -2598,15 +2589,12 @@ fn validate_impl_item_constant(
 
     let trait_constant_id =
         db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
-            diagnostics.report(
-                impl_constant_ast.stable_ptr(syntax_db),
-                ImplItemNotInTrait {
-                    impl_def_id,
-                    impl_item_name: constant_name,
-                    trait_id,
-                    item_kind: "const".into(),
-                },
-            )
+            diagnostics.report(impl_constant_ast.stable_ptr(syntax_db), ImplItemNotInTrait {
+                impl_def_id,
+                impl_item_name: constant_name,
+                trait_id,
+                item_kind: "const".into(),
+            })
         })?;
     let concrete_trait_constant =
         ConcreteTraitConstantId::new(db, concrete_trait_id, trait_constant_id);
@@ -2622,10 +2610,10 @@ fn validate_impl_item_constant(
     let expected_ty = inference.rewrite(concrete_trait_constant_ty).no_err();
     let actual_ty = inference.rewrite(constant_ty).no_err();
     if expected_ty != actual_ty {
-        diagnostics.report(
-            impl_constant_type_clause_ast.stable_ptr(syntax_db),
-            WrongType { expected_ty, actual_ty },
-        );
+        diagnostics.report(impl_constant_type_clause_ast.stable_ptr(syntax_db), WrongType {
+            expected_ty,
+            actual_ty,
+        });
     }
     Ok(trait_constant_id)
 }
@@ -2871,25 +2859,22 @@ fn validate_impl_item_impl(
     let trait_id = concrete_trait_id.trait_id(db);
     let impl_name = impl_impl_def_id.name(defs_db);
     let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.clone())?.ok_or_else(|| {
-        diagnostics.report(
-            impl_impl_ast.stable_ptr(syntax_db),
-            ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name: impl_name,
-                trait_id,
-                item_kind: "impl".into(),
-            },
-        )
+        diagnostics.report(impl_impl_ast.stable_ptr(syntax_db), ImplItemNotInTrait {
+            impl_def_id,
+            impl_item_name: impl_name,
+            trait_id,
+            item_kind: "impl".into(),
+        })
     })?;
 
     // TODO(TomerStarkware): add validations for generic parameters, then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     let generic_params_node = impl_impl_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(
-            generic_params_node.stable_ptr(syntax_db),
-            GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "impl".into() },
-        );
+        diagnostics.report(generic_params_node.stable_ptr(syntax_db), GenericsNotSupportedInItem {
+            scope: "Impl".into(),
+            item_kind: "impl".into(),
+        });
     }
 
     let concrete_trait_impl = ConcreteTraitImplId::new(db, concrete_trait_id, trait_impl_id);
@@ -2908,13 +2893,10 @@ fn validate_impl_item_impl(
             .conform_traits(resolved_impl_concrete_trait?, concrete_trait_impl_concrete_trait?)
             .is_err()
         {
-            diagnostics.report(
-                impl_impl_ast.stable_ptr(syntax_db),
-                TraitMismatch {
-                    expected_trt: concrete_trait_impl_concrete_trait?,
-                    actual_trt: resolved_impl_concrete_trait?,
-                },
-            );
+            diagnostics.report(impl_impl_ast.stable_ptr(syntax_db), TraitMismatch {
+                expected_trt: concrete_trait_impl_concrete_trait?,
+                actual_trt: resolved_impl_concrete_trait?,
+            });
         }
         Ok(())
     })();
@@ -3356,15 +3338,12 @@ fn validate_impl_function_signature(
     let function_name = impl_function_id.name(defs_db);
     let trait_function_id =
         db.trait_function_by_name(trait_id, function_name.clone())?.ok_or_else(|| {
-            diagnostics.report(
-                impl_function_syntax.stable_ptr(syntax_db),
-                ImplItemNotInTrait {
-                    impl_def_id,
-                    impl_item_name: function_name,
-                    trait_id,
-                    item_kind: "function".into(),
-                },
-            )
+            diagnostics.report(impl_function_syntax.stable_ptr(syntax_db), ImplItemNotInTrait {
+                impl_def_id,
+                impl_item_name: function_name,
+                trait_id,
+                item_kind: "function".into(),
+            })
         })?;
     let concrete_trait_function =
         ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
@@ -3393,15 +3372,12 @@ fn validate_impl_function_signature(
     for (trait_generic_param, generic_param) in izip!(func_generics, impl_func_generics.iter()) {
         if let Some(name) = trait_generic_param.id().name(defs_db) {
             if Some(name.clone()) != generic_param.id().name(defs_db) {
-                diagnostics.report(
-                    generic_param.stable_ptr(defs_db),
-                    WrongParameterName {
-                        impl_def_id,
-                        impl_function_id,
-                        trait_id,
-                        expected_name: name,
-                    },
-                );
+                diagnostics.report(generic_param.stable_ptr(defs_db), WrongParameterName {
+                    impl_def_id,
+                    impl_function_id,
+                    trait_id,
+                    expected_name: name,
+                });
             }
         }
         match (generic_param, trait_generic_param) {
@@ -3440,16 +3416,13 @@ fn validate_impl_function_signature(
             (GenericParam::Const(generic_param), GenericParam::Const(trait_generic_param)) => {
                 let expected_ty = function_substitution.substitute(db, trait_generic_param.ty)?;
                 if generic_param.ty != expected_ty {
-                    diagnostics.report(
-                        generic_param.id.stable_ptr(defs_db),
-                        WrongParameterType {
-                            impl_def_id,
-                            impl_function_id,
-                            trait_id,
-                            expected_ty,
-                            actual_ty: generic_param.ty,
-                        },
-                    );
+                    diagnostics.report(generic_param.id.stable_ptr(defs_db), WrongParameterType {
+                        impl_def_id,
+                        impl_function_id,
+                        trait_id,
+                        expected_ty,
+                        actual_ty: generic_param.ty,
+                    });
                 }
             }
             (generic_param, trait_generic_param) => {
@@ -3545,17 +3518,17 @@ fn validate_impl_function_signature(
     }
 
     if !concrete_trait_signature.panicable && signature.panicable {
-        diagnostics.report(
-            signature_syntax.stable_ptr(syntax_db),
-            PassPanicAsNopanic { impl_function_id, trait_id },
-        );
+        diagnostics.report(signature_syntax.stable_ptr(syntax_db), PassPanicAsNopanic {
+            impl_function_id,
+            trait_id,
+        });
     }
 
     if concrete_trait_signature.is_const && !signature.is_const {
-        diagnostics.report(
-            signature_syntax.stable_ptr(syntax_db),
-            PassConstAsNonConst { impl_function_id, trait_id },
-        );
+        diagnostics.report(signature_syntax.stable_ptr(syntax_db), PassConstAsNonConst {
+            impl_function_id,
+            trait_id,
+        });
     }
 
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
@@ -3571,16 +3544,13 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr(syntax_db);
-        diagnostics.report(
-            location_ptr,
-            WrongReturnTypeForImpl {
-                impl_def_id,
-                impl_function_id,
-                trait_id,
-                expected_ty,
-                actual_ty,
-            },
-        );
+        diagnostics.report(location_ptr, WrongReturnTypeForImpl {
+            impl_def_id,
+            impl_function_id,
+            trait_id,
+            expected_ty,
+            actual_ty,
+        });
     }
     Ok(trait_function_id)
 }

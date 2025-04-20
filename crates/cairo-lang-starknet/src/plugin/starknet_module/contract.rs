@@ -74,6 +74,8 @@ impl ComponentsGenerationData {
             let component_name = match component_path.segments(db).elements(db).last().unwrap() {
                 ast::PathSegment::WithGenericArgs(x) => x.ident(db),
                 ast::PathSegment::Simple(x) => x.ident(db),
+                // TODO!!! i THINK I ADDED A FUNCTION THAT DOES THIS
+                ast::PathSegment::Missing(path_segment_missing) => todo!(),
             };
 
             let has_component_impl = RewriteNode::interpolate_patched(
@@ -137,7 +139,7 @@ impl ComponentsGenerationData {
         if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 storage_name.as_syntax_node(),
                 format!(
                     "`{0}` is not a substorage member in the contract's \
@@ -154,7 +156,7 @@ impl ComponentsGenerationData {
         if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 event_name.as_syntax_node(),
                 format!(
                     "`{event_name_str}` is not a nested event in the contract's \
@@ -571,7 +573,7 @@ pub fn handle_component_inline_macro(
 ) {
     let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
         diagnostics
-            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr()));
+            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr(db)));
         return;
     };
     let macro_args = match legacy_component_macro_ast.arguments(db) {
@@ -594,7 +596,7 @@ pub fn handle_component_inline_macro(
             path_arg,
             "path",
             false,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -602,7 +604,7 @@ pub fn handle_component_inline_macro(
             storage_arg,
             "storage",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -610,7 +612,7 @@ pub fn handle_component_inline_macro(
             event_arg,
             "event",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
     ) else {
         return;

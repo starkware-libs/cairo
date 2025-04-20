@@ -45,7 +45,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
             legacy_inline_macro.arguments(db)
         else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         if arguments.len() < 2 {
@@ -64,7 +64,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
                     db,
-                    syntax.stable_ptr(),
+                    syntax.stable_ptr(db),
                     lhs.as_syntax_node(),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
@@ -75,7 +75,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
                     db,
-                    syntax.stable_ptr(),
+                    syntax.stable_ptr(db),
                     rhs.as_syntax_node(),
                     format!("Macro `{}` requires the second argument to be unnamed.", Self::NAME),
                 )],
@@ -190,7 +190,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             && !metadata.cfg_set.contains(&Cfg::name("test"))
         {
             diagnostics.push(PluginDiagnostic::error(
-                syntax.stable_ptr(),
+                syntax.stable_ptr(db),
                 format!("`{}` macro is only available in test mode.", Self::NAME),
             ));
         }
