@@ -55,7 +55,7 @@ pub fn extern_type_declaration_generic_params_data(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = extern_type_id.module_file_id(db.upcast());
+    let module_file_id = extern_type_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?.to_maybe()?;
 
@@ -69,16 +69,13 @@ pub fn extern_type_declaration_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &extern_type_syntax.generic_params(db.upcast()),
+        &extern_type_syntax.generic_params(db),
     );
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report(
-            param.stable_ptr(db.upcast()).untyped(),
-            ExternTypeWithImplGenericsNotSupported,
-        );
+        diagnostics.report(param.stable_ptr(db).untyped(), ExternTypeWithImplGenericsNotSupported);
     }
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db.upcast()).untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -104,12 +101,11 @@ pub fn priv_extern_type_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    let syntax_db = db.upcast();
-    let attributes = extern_type_syntax.attributes(syntax_db).structurize(syntax_db);
+    let attributes = extern_type_syntax.attributes(db).structurize(db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, extern_type_syntax.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 

@@ -25,7 +25,7 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let semantic_db = db.upcast();
+    let semantic_db = db;
     let bool_not_func_id = FunctionLongId::Semantic(corelib::get_core_function_id(
         semantic_db,
         "bool_not_impl".into(),
