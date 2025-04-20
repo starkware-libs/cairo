@@ -70,7 +70,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -119,7 +119,7 @@ impl NamedLibfunc for CouponCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

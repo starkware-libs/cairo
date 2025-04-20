@@ -71,14 +71,18 @@ impl ComponentsGenerationData {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-            // TODO!!! VERIFY UNWRAP IS SAFE HERE
-            let component_name = component_path
-                .segments(db)
-                .elements(db)
-                .last()
-                .cloned()
-                .unwrap()
-                .identifier_ast(db);
+            let Some(component_segment) = component_path.segments(db).elements(db).last().cloned()
+            else {
+                diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                    db,
+                    node.stable_ptr(db),
+                    component_path.as_syntax_node(),
+                    "Component path must contain at least one segment.".into(),
+                ));
+                continue;
+            };
+
+            let component_name = component_segment.identifier_ast(db);
             let has_component_impl = RewriteNode::interpolate_patched(
                 &formatdoc!(
                     "impl HasComponentImpl_$component_name$ of \

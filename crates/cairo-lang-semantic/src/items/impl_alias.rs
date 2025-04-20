@@ -65,7 +65,6 @@ pub fn impl_alias_semantic_data_helper(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let syntax_db = db.upcast();
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
@@ -75,24 +74,23 @@ pub fn impl_alias_semantic_data_helper(
 
     let item = resolver.resolve_concrete_path(
         &mut diagnostics,
-        &impl_alias_ast.impl_path(syntax_db),
+        &impl_alias_ast.impl_path(db),
         NotFoundItemType::Impl,
     );
     let resolved_impl = item.and_then(|item| {
         try_extract_matches!(item, ResolvedConcreteItem::Impl).ok_or_else(|| {
-            diagnostics
-                .report(impl_alias_ast.impl_path(syntax_db).stable_ptr(syntax_db), UnknownImpl)
+            diagnostics.report(impl_alias_ast.impl_path(db).stable_ptr(db), UnknownImpl)
         })
     });
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db).untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
     let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
 
-    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = impl_alias_ast.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
@@ -125,14 +123,11 @@ pub fn impl_alias_semantic_data_cycle_helper(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
-    let syntax_db = db.upcast();
-    let err =
-        Err(diagnostics
-            .report(impl_alias_ast.name(syntax_db).stable_ptr(syntax_db), ImplAliasCycle));
+    let err = Err(diagnostics.report(impl_alias_ast.name(db).stable_ptr(db), ImplAliasCycle));
     let generic_params = generic_params_data.generic_params.clone();
     diagnostics.extend(generic_params_data.diagnostics);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
-    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = impl_alias_ast.attributes(db).structurize(db);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
@@ -185,7 +180,7 @@ pub fn impl_alias_generic_params_data(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+    let module_file_id = impl_alias_id.module_file_id(db);
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     impl_alias_generic_params_data_helper(
         db,
@@ -219,11 +214,11 @@ pub fn impl_alias_generic_params_data_helper(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &impl_alias_ast.generic_params(db.upcast()),
+        &impl_alias_ast.generic_params(db),
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db.upcast()).untyped());
+    inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -258,7 +253,7 @@ pub fn impl_alias_attributes(
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
 pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
-    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+    let module_file_id = impl_alias_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
@@ -266,7 +261,7 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     resolver.set_feature_config(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
 
-    let impl_path_syntax = impl_alias_ast.impl_path(db.upcast());
+    let impl_path_syntax = impl_alias_ast.impl_path(db);
 
     match resolver.resolve_generic_path_with_args(
         &mut diagnostics,

@@ -57,17 +57,10 @@ pub trait SignatureSpecializationContext: TypeSpecializationContext {
     ) -> Result<ConcreteTypeId, SpecializationError> {
         self.get_concrete_type(id, &[GenericArg::Type(wrapped)])
     }
-
-    /// Upcasting to the [TypeSpecializationContext], since trait upcasting is still experimental.
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext;
 }
 
 /// Trait for the specialization of full libfuncs.
 pub trait SpecializationContext: SignatureSpecializationContext {
-    /// Upcasting to the [SignatureSpecializationContext], since trait upcasting is still
-    /// experimental.
-    fn upcast(&self) -> &dyn SignatureSpecializationContext;
-
     /// Returns the function object associated with the given [FunctionId].
     fn try_get_function(&self, function_id: &FunctionId) -> Option<Function>;
 
@@ -229,9 +222,7 @@ impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibfunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
+        Ok(SignatureOnlyConcreteLibfunc { signature: self.specialize_signature(context, args)? })
     }
 }
 
@@ -271,7 +262,7 @@ impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGen
         let ty = args_as_single_type(args)?;
         Ok(SignatureAndTypeConcreteLibfunc {
             ty: ty.clone(),
-            signature: self.0.specialize_signature(context.upcast(), ty)?,
+            signature: self.0.specialize_signature(context, ty)?,
         })
     }
 }

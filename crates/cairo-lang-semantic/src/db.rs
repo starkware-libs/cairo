@@ -1770,7 +1770,7 @@ fn module_semantic_diagnostics(
                         };
 
                         let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
+                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
                             SemanticDiagnosticKind::ModuleFileNotFound(path),
@@ -1799,8 +1799,7 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
-    {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
@@ -1870,7 +1869,7 @@ fn add_unused_import_diagnostics(
         let resolver_data = db.use_resolver_data(use_id).ok()?;
         require(!resolver_data.feature_config.allow_unused_imports)?;
         Some(diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(use_id.untyped_stable_ptr(db.upcast())),
+            StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),
         )))
     })();

@@ -2,6 +2,7 @@
 name = "cairo-lang-sierra-generator"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Sierra code generation from lowered Cairo representation."
