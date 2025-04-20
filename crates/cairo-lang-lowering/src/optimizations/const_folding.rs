@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
 use cairo_lang_semantic::helper::ModuleHelper;
-use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::GenericFunctionWithBodyId;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
@@ -354,7 +354,7 @@ impl ConstFoldingContext<'_> {
             // Not inserting the value into the `var_info` map because the
             // resulting box isn't an actual const at the Sierra level.
             Some(StatementConst { value, output: stmt.outputs[0] })
-        } else if id == self.upcast {
+        } else if self.upcast_fns.contains(&id) {
             let int_value = self.as_int(stmt.inputs[0].var_id)?;
             let output = stmt.outputs[0];
             let value = ConstValue::Int(int_value.clone(), self.variables[output].ty);
@@ -507,7 +507,7 @@ impl ConstFoldingContext<'_> {
                 Some(Statement::Const(StatementConst { value, output: actual_output })),
                 FlatBlockEnd::Goto(arm.block_id, Default::default()),
             ))
-        } else if id == self.downcast {
+        } else if self.downcast_fns.contains(&id) {
             let range = |ty: TypeId| {
                 Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
                     ti.range.clone()
@@ -643,10 +643,6 @@ pub struct ConstFoldingLibfuncInfo {
     felt_sub: ExternFunctionId,
     /// The `into_box` libfunc.
     into_box: ExternFunctionId,
-    /// The `upcast` libfunc.
-    upcast: ExternFunctionId,
-    /// The `downcast` libfunc.
-    downcast: ExternFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions that check if numbers are equal.
@@ -685,6 +681,8 @@ pub struct ConstFoldingLibfuncInfo {
     panic_with_const_felt252: GenericFunctionWithBodyId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
+    /// The info used for semantic const calculation.
+    const_calculation_info: Arc<ConstCalcInfo>,
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
@@ -694,8 +692,6 @@ impl ConstFoldingLibfuncInfo {
         let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
-        let upcast = bounded_int_module.extern_function_id("upcast");
-        let downcast = bounded_int_module.extern_function_id("downcast");
         let array_module = core.submodule("array");
         let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
@@ -776,8 +772,6 @@ impl ConstFoldingLibfuncInfo {
         Self {
             felt_sub,
             into_box,
-            upcast,
-            downcast,
             nz_fns,
             eq_fns,
             uadd_fns,
@@ -799,6 +793,7 @@ impl ConstFoldingLibfuncInfo {
                 core.free_function_id("panic_with_const_felt252"),
             ),
             type_value_ranges,
+            const_calculation_info: db.const_calc_info(),
         }
     }
 }
@@ -807,6 +802,13 @@ impl std::ops::Deref for ConstFoldingContext<'_> {
     type Target = ConstFoldingLibfuncInfo;
     fn deref(&self) -> &ConstFoldingLibfuncInfo {
         self.libfunc_info
+    }
+}
+
+impl std::ops::Deref for ConstFoldingLibfuncInfo {
+    type Target = ConstCalcInfo;
+    fn deref(&self) -> &ConstCalcInfo {
+        &self.const_calculation_info
     }
 }
 
