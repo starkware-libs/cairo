@@ -32,7 +32,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
         db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     let array_ty = db
         .get_concrete_type_id(get_core_ty_by_name(
-            db.upcast(),
+            db,
             "Array".into(),
             vec![GenericArgumentId::Type(db.core_info().felt252)],
         ))

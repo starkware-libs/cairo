@@ -40,7 +40,7 @@ pub struct RootDatabase {
 impl salsa::Database for RootDatabase {}
 impl ExternalFiles for RootDatabase {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for RootDatabase {
@@ -170,18 +170,18 @@ impl RootDatabaseBuilder {
             init_dev_corelib(&mut db, path)
         }
 
-        let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
+        let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
         db.set_flag(
             add_withdraw_gas_flag_id,
             Some(Arc::new(Flag::AddWithdrawGas(self.auto_withdraw_gas))),
         );
-        let panic_backtrace_flag_id = FlagId::new(db.upcast(), "panic_backtrace");
+        let panic_backtrace_flag_id = FlagId::new(&db, "panic_backtrace");
         db.set_flag(
             panic_backtrace_flag_id,
             Some(Arc::new(Flag::PanicBacktrace(self.panic_backtrace))),
         );
 
-        let unsafe_panic_flag_id = FlagId::new(db.upcast(), "unsafe_panic");
+        let unsafe_panic_flag_id = FlagId::new(&db, "unsafe_panic");
         db.set_flag(unsafe_panic_flag_id, Some(Arc::new(Flag::UnsafePanic(self.unsafe_panic))));
 
         if let Some(config) = &self.project_config {

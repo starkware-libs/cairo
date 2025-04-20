@@ -22,9 +22,9 @@ compile_error!();
 
 
 error: `compile_error!` argument must be an unnamed string argument.
- --> test_src/lib.cairo:3:16
+ --> test_src/lib.cairo:3:1
 compile_error!(1);
-               ^
+^^^^^^^^^^^^^^^^^^
 
 
 error: Macro `compile_error` must have exactly 1 unnamed arguments.
