@@ -89,7 +89,7 @@ impl ResolvedItems {
         segment: &syntax::node::ast::PathSegment,
         resolved_item: ResolvedConcreteItem,
     ) -> ResolvedConcreteItem {
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         let identifier = segment.identifier_ast(syntax_db);
         if let Some(generic_item) = resolved_item.generic(db) {
             // Mark the generic item as well, for language server resolved_items.
@@ -106,7 +106,7 @@ impl ResolvedItems {
         segment: &syntax::node::ast::PathSegment,
         resolved_item: ResolvedGenericItem,
     ) -> ResolvedGenericItem {
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         let identifier = segment.identifier_ast(syntax_db);
         self.generic.insert(identifier.stable_ptr(syntax_db), resolved_item.clone());
         resolved_item
@@ -236,8 +236,7 @@ impl Resolver<'_> {
         syntax: &impl QueryAttrs,
         diagnostics: &mut SemanticDiagnostics,
     ) {
-        self.feature_config =
-            extract_feature_config(self.db.upcast(), element_id, syntax, diagnostics);
+        self.feature_config = extract_feature_config(self.db, element_id, syntax, diagnostics);
     }
 }
 
@@ -300,7 +299,7 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
-        let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
+        let owning_crate_id = data.module_file_id.0.owning_crate(db);
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
         Self { owning_crate_id, settings, db, data, macro_defsite_data: None }
     }
@@ -314,7 +313,7 @@ impl<'db> Resolver<'db> {
     /// and thus, they are added to the Resolver only after they are resolved.
     pub fn add_generic_param(&mut self, generic_param_id: GenericParamId) {
         self.generic_params.push(generic_param_id);
-        let db = self.db.upcast();
+        let db = self.db;
         if let Some(name) = generic_param_id.name(db) {
             self.generic_param_by_name.insert(name, generic_param_id);
         }
@@ -351,7 +350,7 @@ impl<'db> Resolver<'db> {
         >,
     ) -> Maybe<ResolvedItem> {
         let db = self.db;
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         let is_placeholder = path.is_placeholder(syntax_db);
 
         let elements_vec = path.to_segments(syntax_db);
@@ -442,7 +441,7 @@ impl<'db> Resolver<'db> {
         inner_item_info: ModuleItemInfo,
         segment: &ast::PathSegment,
     ) -> Maybe<ResolvedConcreteItem> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let generic_args_syntax = segment.generic_args(syntax_db);
         let segment_stable_ptr = segment.stable_ptr(syntax_db).untyped();
         self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
@@ -486,7 +485,7 @@ impl<'db> Resolver<'db> {
         }
 
         let db = self.db;
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
@@ -657,8 +656,7 @@ impl<'db> Resolver<'db> {
         let validate_segment =
             |diagnostics: &mut SemanticDiagnostics, segment: &ast::PathSegment| match segment {
                 ast::PathSegment::WithGenericArgs(generic_args) if !allow_generic_args => {
-                    Err(diagnostics
-                        .report(generic_args.stable_ptr(self.db.upcast()), UnexpectedGenericArgs))
+                    Err(diagnostics.report(generic_args.stable_ptr(self.db), UnexpectedGenericArgs))
                 }
                 _ => Ok(()),
             };
@@ -677,7 +675,7 @@ impl<'db> Resolver<'db> {
                     )
                 },
                 resolve_path_next_segment: |resolver, diagnostics, item, segment, item_type| {
-                    let identifier = segment.identifier_ast(self.db.upcast());
+                    let identifier = segment.identifier_ast(self.db);
                     resolver.resolve_path_next_segment_generic(
                         diagnostics,
                         item,
@@ -712,7 +710,7 @@ impl<'db> Resolver<'db> {
             return Ok(ResolvedGenericItem::Module(base_module?));
         }
         let db = self.db;
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 if !allow_generic_args {
@@ -821,7 +819,7 @@ impl<'db> Resolver<'db> {
             ModuleId,
         ),
     ) -> Option<Maybe<ModuleId>> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
@@ -835,7 +833,7 @@ impl<'db> Resolver<'db> {
                 }
                 ModuleId::Submodule(submodule_id) => {
                     let db = self.db;
-                    let parent = submodule_id.parent_module(self.db.upcast());
+                    let parent = submodule_id.parent_module(self.db);
                     mark(&mut self.resolved_items, db, segment, parent);
                     parent
                 }
@@ -853,7 +851,7 @@ impl<'db> Resolver<'db> {
         identifier: &TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ModuleItemInfo> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         match self.db.module_item_info_by_name(*module_id, ident)? {
             Some(info) => Ok(info),
             None => {
@@ -882,7 +880,7 @@ impl<'db> Resolver<'db> {
         segment: &ast::PathSegment,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let identifier = &segment.identifier_ast(syntax_db);
         let generic_args_syntax = segment.generic_args(syntax_db);
 
@@ -1178,7 +1176,7 @@ impl<'db> Resolver<'db> {
         generic_item: ResolvedGenericItem,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> Maybe<ResolvedConcreteItem> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         Ok(match generic_item {
             ResolvedGenericItem::GenericConstant(id) => {
                 ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?)
@@ -1268,7 +1266,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
             ResolvedGenericItem::TraitItem(id) => {
-                panic!("`{}` is not a module item.", id.full_path(self.db.upcast()))
+                panic!("`{}` is not a module item.", id.full_path(self.db))
             }
         })
     }
@@ -1329,8 +1327,7 @@ impl<'db> Resolver<'db> {
         module_id: ModuleId,
         identifier: &ast::TerminalIdentifier,
     ) -> Option<ModuleItemInfo> {
-        let inner_item_info =
-            self.db.module_item_info_by_name(module_id, identifier.text(self.db.upcast()));
+        let inner_item_info = self.db.module_item_info_by_name(module_id, identifier.text(self.db));
         if let Ok(Some(inner_item_info)) = inner_item_info {
             self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
             return Some(inner_item_info);
@@ -1346,7 +1343,7 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedGenericItem> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let ident = identifier.text(syntax_db);
         match containing_item {
             ResolvedGenericItem::Module(module_id) => {
@@ -1387,12 +1384,12 @@ impl<'db> Resolver<'db> {
         &mut self,
         identifier: &ast::TerminalIdentifier,
     ) -> Option<ResolvedConcreteItem> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
         if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident) {
-            let item = match generic_param_id.kind(self.db.upcast()) {
+            let item = match generic_param_id.kind(self.db) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
                 ),
@@ -1418,7 +1415,7 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         mut ctx: ResolutionContext<'_>,
     ) -> ResolvedBase {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let ident = identifier.text(syntax_db);
         let module_id = self.module_file_id.0;
         if let ResolutionContext::Statement(ref mut env) = ctx {
@@ -1559,11 +1556,11 @@ impl<'db> Resolver<'db> {
         generic_args: &[ast::GenericArg],
     ) -> Maybe<ConcreteVariant> {
         let concrete_enum_id = ConcreteEnumLongId {
-            enum_id: variant_id.enum_id(self.db.upcast()),
+            enum_id: variant_id.enum_id(self.db),
             generic_args: self.resolve_generic_args(
                 diagnostics,
                 GenericSubstitution::default(),
-                &self.db.enum_generic_params(variant_id.enum_id(self.db.upcast()))?,
+                &self.db.enum_generic_params(variant_id.enum_id(self.db))?,
                 generic_args,
                 stable_ptr,
             )?,
@@ -1571,7 +1568,7 @@ impl<'db> Resolver<'db> {
         .intern(self.db);
         self.db.concrete_enum_variant(
             concrete_enum_id,
-            &self.db.variant_semantic(variant_id.enum_id(self.db.upcast()), variant_id)?,
+            &self.db.variant_semantic(variant_id.enum_id(self.db), variant_id)?,
         )
     }
 
@@ -1660,7 +1657,7 @@ impl<'db> Resolver<'db> {
                     .get(&generic_param.id())
                     .and_then(|arg_syntax| {
                         if let ast::GenericArgValue::Expr(expr) = arg_syntax {
-                            Some(expr.expr(self.db.upcast()))
+                            Some(expr.expr(self.db))
                         } else {
                             None
                         }
@@ -1683,14 +1680,14 @@ impl<'db> Resolver<'db> {
         generic_params: &[GenericParam],
         generic_args_syntax: &[ast::GenericArg],
     ) -> Maybe<UnorderedHashMap<GenericParamId, ast::GenericArgValue>> {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         let mut arg_syntax_per_param =
             UnorderedHashMap::<GenericParamId, ast::GenericArgValue>::default();
         let mut last_named_arg_index = None;
         let generic_param_by_name = generic_params
             .iter()
             .enumerate()
-            .filter_map(|(i, param)| Some((param.id().name(self.db.upcast())?, (i, param.id()))))
+            .filter_map(|(i, param)| Some((param.id().name(self.db)?, (i, param.id()))))
             .collect::<UnorderedHashMap<_, _>>();
         for (idx, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
             match generic_arg_syntax {
@@ -1764,7 +1761,7 @@ impl<'db> Resolver<'db> {
                     inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
                 });
         };
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         Ok(match generic_param {
             GenericParam::Type(_) => {
                 let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
@@ -1868,7 +1865,7 @@ impl<'db> Resolver<'db> {
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
-        let module_crate = module_id.owning_crate(self.db.upcast());
+        let module_crate = module_id.owning_crate(self.db);
         let module_edition =
             self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
         module_edition.ignore_visibility()
@@ -1885,7 +1882,7 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         item_info: &T,
     ) {
-        let syntax_db = self.db.upcast();
+        let syntax_db = self.db;
         match &item_info.feature_kind() {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
@@ -1926,10 +1923,8 @@ impl<'db> Resolver<'db> {
         item_info: &ModuleItemInfo,
     ) {
         if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
-            diagnostics.report(
-                identifier.stable_ptr(self.db.upcast()),
-                ItemNotVisible(item_info.item_id, vec![]),
-            );
+            diagnostics
+                .report(identifier.stable_ptr(self.db), ItemNotVisible(item_info.item_id, vec![]));
         }
 
         self.validate_feature_constraints(diagnostics, identifier, item_info);
@@ -1942,7 +1937,7 @@ impl<'db> Resolver<'db> {
         item_info: &ModuleItemInfo,
         user_module: ModuleId,
     ) -> bool {
-        let db = self.db.upcast();
+        let db = self.db;
         self.ignore_visibility_checks(containing_module_id)
             || visibility::peek_visible_in(
                 db,
@@ -2150,7 +2145,7 @@ impl<'db> Resolver<'db> {
         inner_generic_item: ResolvedGenericItem,
         generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> ResolvedConcreteItem {
-        let segment_stable_ptr = segment.stable_ptr(self.db.upcast()).untyped();
+        let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
         let mut specialized_item = self
             .specialize_generic_module_item(
                 diagnostics,
@@ -2184,8 +2179,8 @@ impl<'db> Resolver<'db> {
         }
         match segments.peek() {
             Some(ast::PathSegment::Simple(path_segment_simple)) => {
-                let ident = path_segment_simple.ident(self.db.upcast());
-                let ident_text = ident.text(self.db.upcast());
+                let ident = path_segment_simple.ident(self.db);
+                let ident_text = ident.text(self.db);
                 // TODO(Gil): Add support for $callsite.
                 if ident_text == MACRO_DEF_SITE {
                     segments.next();
@@ -2224,7 +2219,7 @@ fn resolve_self_segment(
     identifier: &ast::TerminalIdentifier,
     trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
-    require(identifier.text(db.upcast()) == SELF_TYPE_KW)?;
+    require(identifier.text(db) == SELF_TYPE_KW)?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 
@@ -2237,7 +2232,7 @@ fn resolve_actual_self_segment(
 ) -> Maybe<ResolvedConcreteItem> {
     match trait_or_impl_ctx {
         TraitOrImplContext::None => {
-            Err(diagnostics.report(identifier.stable_ptr(db.upcast()), SelfNotSupportedInContext))
+            Err(diagnostics.report(identifier.stable_ptr(db), SelfNotSupportedInContext))
         }
         TraitOrImplContext::Trait(trait_id) => {
             let generic_parameters = db.trait_generic_params(*trait_id)?;

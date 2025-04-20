@@ -140,10 +140,10 @@ macro_rules! define_short_id {
                 use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
-                let db = db.upcast();
+                let semantic_db = db.upcast();
                 cairo_lang_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
-                    &db.$lookup(*self),
-                    db,
+                    &semantic_db.$lookup(*self),
+                    semantic_db,
                 )
                 .fmt(f)
             }
