@@ -152,7 +152,7 @@ struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
-        let syntax_db = db.upcast();
+        let syntax_db = db;
         let mut diagnostics = vec![];
         let Ok(free_functions) = db.module_free_functions(module_id) else {
             return diagnostics;

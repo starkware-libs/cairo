@@ -17,7 +17,7 @@ pub fn create_bool(
     variant: semantic::ConcreteVariant,
     location: LocationId,
 ) -> VarUsage {
-    let semantic_db = ctx.db.upcast();
+    let semantic_db = ctx.db;
 
     let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(semantic_db), location }
         .add(ctx, &mut builder.statements);
@@ -33,7 +33,7 @@ pub fn lower_logical_op(
 ) -> LoweringResult<LoweredExpr> {
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
-    let semantic_db = ctx.db.upcast();
+    let semantic_db = ctx.db;
 
     let unit_ty = corelib::unit_ty(semantic_db);
     let lhs = lower_expr_to_var_usage(ctx, builder, expr.lhs)?;

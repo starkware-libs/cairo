@@ -114,7 +114,7 @@ fn get_contract_internal_module_abi_functions(
     module_name: &str,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let module_id = get_submodule_id(db.upcast(), generated_module_id, module_name)?;
+    let module_id = get_submodule_id(db, generated_module_id, module_name)?;
     get_module_aliased_functions(db, module_id)?
         .into_iter()
         .map(|f| f.try_map(|f| semantic::ConcreteFunctionWithBodyId::from_no_generics_free(db, f)))
@@ -141,7 +141,7 @@ fn get_module_aliased_functions(
             {
                 Ok(Aliased {
                     value: function_id,
-                    alias: leaf.stable_ptr(db.upcast()).identifier(db.upcast()).to_string(),
+                    alias: leaf.stable_ptr(db).identifier(db).to_string(),
                 })
             } else {
                 bail!("Expected a free function.")
@@ -158,7 +158,7 @@ fn get_impl_aliases_abi_functions(
     contract: &ContractDeclaration,
     module_prefix: &str,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let generated_module_id = get_generated_contract_module(db, contract)?;
     let mut diagnostics = SemanticDiagnostics::default();
     let mut all_abi_functions = vec![];
@@ -168,7 +168,7 @@ fn get_impl_aliases_abi_functions(
         .with_context(|| "Failed to get external module impl aliases.")?
         .iter()
     {
-        if !impl_alias.has_attr_with_arg(db.upcast(), ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) {
+        if !impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) {
             continue;
         }
         let resolver_data = db
@@ -238,8 +238,8 @@ fn get_generated_contract_module(
     db: &dyn SemanticGroup,
     contract: &ContractDeclaration,
 ) -> anyhow::Result<ModuleId> {
-    let parent_module_id = contract.submodule_id.parent_module(db.upcast());
-    let contract_name = contract.submodule_id.name(db.upcast());
+    let parent_module_id = contract.submodule_id.parent_module(db);
+    let contract_name = contract.submodule_id.name(db);
 
     match db
         .module_item_by_name(parent_module_id, contract_name.clone())
@@ -267,7 +267,7 @@ fn get_submodule_id(
         Some(ModuleItemId::Submodule(submodule_id)) => Ok(ModuleId::Submodule(submodule_id)),
         _ => anyhow::bail!(
             "Failed to get the submodule `{submodule_name}` of `{}`.",
-            module_id.full_path(db.upcast())
+            module_id.full_path(db)
         ),
     }
 }
@@ -320,7 +320,7 @@ fn analyze_contract<T: SierraIdReplacer>(
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =
-        extract_semantic_entrypoints(db.upcast(), contract)?;
+        extract_semantic_entrypoints(db, contract)?;
     let externals =
         external.into_iter().map(|f| get_selector_and_sierra_function(db, &f, replacer)).collect();
     let l1_handlers = l1_handler
@@ -347,7 +347,7 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
     function_with_body: &Aliased<lowering::ids::ConcreteFunctionWithBodyId>,
     replacer: &T,
 ) -> (Felt252, FunctionId) {
-    let function_id = function_with_body.value.function_id(db.upcast()).expect("Function error.");
+    let function_id = function_with_body.value.function_id(db).expect("Function error.");
     let sierra_id = replacer.replace_function_id(&function_id.intern(db));
     let selector: Felt252 = starknet_keccak(function_with_body.alias.as_bytes()).into();
     (selector, sierra_id)

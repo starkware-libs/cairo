@@ -81,8 +81,8 @@ pub fn free_function_generic_params_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<GenericParamsData> {
-    let syntax_db = db.upcast();
-    let module_file_id = free_function_id.module_file_id(db.upcast());
+    let syntax_db = db;
+    let module_file_id = free_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
@@ -132,7 +132,7 @@ pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     let declaration = free_function_syntax.declaration(syntax_db);
@@ -244,7 +244,7 @@ pub fn priv_free_function_body_data(
         environment,
         ContextFunction::Function(function_id),
     );
-    let function_body = free_function_syntax.body(db.upcast());
+    let function_body = free_function_syntax.body(db);
     let return_type = declaration.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;

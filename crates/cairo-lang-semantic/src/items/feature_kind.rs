@@ -192,7 +192,7 @@ pub fn extract_item_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
         syntax_db,
@@ -263,7 +263,7 @@ pub fn extract_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let defs_db = db.upcast();
+    let defs_db = db;
     let mut current_module_id = element_id.parent_module(defs_db);
     let crate_id = current_module_id.owning_crate(defs_db);
     let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];

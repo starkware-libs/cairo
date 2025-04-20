@@ -145,7 +145,7 @@ impl TypeLongId {
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let defs_db = db.upcast();
+        let defs_db = db;
 
         match self {
             TypeLongId::Concrete(id) => match id {
@@ -191,9 +191,7 @@ impl TypeLongId {
     /// Returns the module id of the given type if applicable.
     pub fn module_id(&self, db: &dyn SemanticGroup) -> Option<ModuleId> {
         match self {
-            TypeLongId::Concrete(concrete) => {
-                Some(concrete.generic_type(db).module_file_id(db.upcast()).0)
-            }
+            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).module_file_id(db).0),
             TypeLongId::Snapshot(ty) => {
                 let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
                 inner_ty.module_id(db)
@@ -214,7 +212,7 @@ impl TypeLongId {
                     function_id
                         .get_concrete(db)
                         .generic_function
-                        .module_file_id(db.upcast())
+                        .module_file_id(db)
                         .map(|module_file_id| module_file_id.0)
                 } else {
                     None
@@ -229,7 +227,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        let def_db = db.upcast();
+        let def_db = db;
         match self {
             TypeLongId::Concrete(concrete) => write!(f, "{}", concrete.format(db)),
             TypeLongId::Tuple(inner_types) => {
@@ -314,7 +312,7 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let generic_type_format = self.generic_type(db).format(db.upcast());
+        let generic_type_format = self.generic_type(db).format(db);
         let mut generic_args = self.generic_args(db).into_iter();
         if let Some(first) = generic_args.next() {
             // Soft limit for the number of chars in the formatted type.
@@ -480,7 +478,7 @@ impl DebugWithDb<dyn SemanticGroup> for ClosureTypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()))
+        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db))
     }
 }
 
@@ -498,7 +496,7 @@ impl ImplTypeId {
     pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
         if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
-            assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+            assert_eq!(Ok(ty.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
 
         ImplTypeId { impl_id, ty }
@@ -510,7 +508,7 @@ impl ImplTypeId {
         self.ty
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+        format!("{}::{}", self.impl_id.name(db), self.ty.name(db)).into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
@@ -575,7 +573,7 @@ fn maybe_resolve_type(
     ty_syntax: &ast::Expr,
     mut ctx: ResolutionContext<'_>,
 ) -> Maybe<TypeId> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
             match resolver.resolve_concrete_path_ex(
@@ -664,7 +662,7 @@ pub fn extract_fixed_size_array_size(
     syntax: &ast::ExprFixedSizeArray,
     resolver: &Resolver<'_>,
 ) -> Maybe<Option<ConstValueId>> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     match syntax.size(syntax_db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
             let environment = Environment::empty();
@@ -814,7 +812,7 @@ pub fn add_type_based_diagnostics(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
         let long_id = extrn.lookup_intern(db);
-        if long_id.extern_type_id.name(db.upcast()).as_str() == "Array" {
+        if long_id.extern_type_id.name(db).as_str() == "Array" {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
                     diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
@@ -965,7 +963,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
 pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId) -> String {
     match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => {
-            let mut result = concrete_type_id.generic_type(db).format(db.upcast());
+            let mut result = concrete_type_id.generic_type(db).format(db);
             let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
             if generic_args.peek().is_some() {
                 result.push_str("::<h0x");
@@ -1028,7 +1026,7 @@ pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: us
 
 /// Returns `true` if coupons are enabled in the module.
 pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
 }

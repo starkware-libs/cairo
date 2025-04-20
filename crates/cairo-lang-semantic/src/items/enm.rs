@@ -50,7 +50,7 @@ pub fn priv_enum_declaration_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
+    let syntax_db = db;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -100,7 +100,7 @@ pub fn enum_generic_params_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = enum_id.module_file_id(db.upcast());
+    let module_file_id = enum_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
 
@@ -114,10 +114,10 @@ pub fn enum_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &enum_ast.generic_params(db.upcast()),
+        &enum_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db.upcast()).untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -188,7 +188,7 @@ pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<EnumDefinitionData> {
-    let defs_db = db.upcast();
+    let defs_db = db;
 
     let module_file_id = enum_id.module_file_id(defs_db);
     let crate_id = module_file_id.0.owning_crate(defs_db);
@@ -197,7 +197,7 @@ pub fn priv_enum_definition_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
+    let syntax_db = db;
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -221,7 +221,7 @@ pub fn priv_enum_definition_data(
         let ty = match variant.type_clause(syntax_db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
             ast::OptionTypeClause::TypeClause(type_clause) => {
-                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db.upcast()))
+                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
             }
         };
         let variant_name = variant.name(syntax_db).text(syntax_db);
@@ -261,7 +261,7 @@ pub fn enum_definition_diagnostics(
         return Default::default();
     };
 
-    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
 
     // If the enum is a phantom type, no need to check if its variants are fully valid types, as
     // they won't be used.
@@ -274,7 +274,7 @@ pub fn enum_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, variant) in data.variant_semantic.iter() {
-        let stable_ptr = variant.id.stable_ptr(db.upcast());
+        let stable_ptr = variant.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, stable_ptr);
         if variant.ty.is_phantom(db) {
             diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);

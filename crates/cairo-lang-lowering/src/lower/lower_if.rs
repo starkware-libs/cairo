@@ -46,7 +46,7 @@ pub fn lower_expr_if_bool(
 
     // The condition cannot be unit.
     let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
-    let semantic_db = ctx.db.upcast();
+    let semantic_db = ctx.db;
     let unit_ty = corelib::unit_ty(semantic_db);
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
@@ -107,7 +107,7 @@ pub fn lower_expr_if_let(
     let ty = matched_expr.ty();
 
     if ty == ctx.db.core_info().felt252
-        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
+        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db, ty).is_some()
     {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
             expr.stable_ptr.untyped(),
@@ -118,7 +118,7 @@ pub fn lower_expr_if_let(
         )));
     }
 
-    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
 
     let arms = vec![
         MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },

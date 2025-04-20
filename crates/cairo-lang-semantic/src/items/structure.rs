@@ -52,7 +52,7 @@ pub fn priv_struct_declaration_data(
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
+    let syntax_db = db;
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
@@ -103,7 +103,7 @@ pub fn struct_generic_params_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = struct_id.module_file_id(db.upcast());
+    let module_file_id = struct_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -120,10 +120,10 @@ pub fn struct_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &struct_ast.generic_params(db.upcast()),
+        &struct_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db.upcast()).untyped());
+    inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -165,7 +165,7 @@ pub fn priv_struct_definition_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<StructDefinitionData> {
-    let defs_db = db.upcast();
+    let defs_db = db;
 
     let module_file_id = struct_id.module_file_id(defs_db);
     let crate_id = module_file_id.0.owning_crate(defs_db);
@@ -175,7 +175,7 @@ pub fn priv_struct_definition_data(
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let struct_ast = db.module_struct_by_id(struct_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
+    let syntax_db = db;
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
@@ -241,7 +241,7 @@ pub fn struct_definition_diagnostics(
         return Default::default();
     };
 
-    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
 
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.
@@ -254,7 +254,7 @@ pub fn struct_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, member) in data.members.iter() {
-        let stable_ptr = member.id.stable_ptr(db.upcast());
+        let stable_ptr = member.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, member.ty, stable_ptr);
         if member.ty.is_phantom(db) {
             diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);

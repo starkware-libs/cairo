@@ -44,7 +44,7 @@ pub fn type_alias_generic_params_data_helper(
         None => Resolver::new(db, module_file_id, inference_id),
     };
     resolver.set_feature_config(&lookup_item_id, type_alias_ast, &mut diagnostics);
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -69,7 +69,7 @@ pub fn type_alias_semantic_data_helper(
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
 ) -> Maybe<TypeAliasData> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
@@ -98,7 +98,7 @@ pub fn type_alias_semantic_data_cycle_helper(
     lookup_item_id: LookupItemId,
     generic_params_data: GenericParamsData,
 ) -> Maybe<TypeAliasData> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let err =
         Err(diagnostics

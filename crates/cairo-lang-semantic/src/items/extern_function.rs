@@ -68,8 +68,8 @@ pub fn extern_function_declaration_generic_params_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<GenericParamsData> {
-    let syntax_db = db.upcast();
-    let module_file_id = extern_function_id.module_file_id(db.upcast());
+    let syntax_db = db;
+    let module_file_id = extern_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
     let declaration = extern_function_syntax.declaration(syntax_db);
@@ -134,7 +134,7 @@ pub fn priv_extern_function_declaration_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    let syntax_db = db.upcast();
+    let syntax_db = db;
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
 
@@ -165,7 +165,7 @@ pub fn priv_extern_function_declaration_data(
 
     if signature.panicable {
         let panic_function = extract_matches!(
-            get_core_generic_function_id(db.upcast(), "panic".into()),
+            get_core_generic_function_id(db, "panic".into()),
             GenericFunctionId::Extern
         );
         if extern_function_id != panic_function {
