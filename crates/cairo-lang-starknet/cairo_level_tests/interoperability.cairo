@@ -82,7 +82,7 @@ fn test_flow_safe_dispatcher() {
 // gas usage and add about 94000.
 #[test]
 #[available_gas(804080)]
-#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ('Syscall out of gas', 'ENTRYPOINT_FAILED'))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.
     test_flow();

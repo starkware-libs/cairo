@@ -29,12 +29,12 @@ pub fn gas_redeposit(
     if lowered.blocks.is_empty() {
         return;
     }
-    if matches!(db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")),
+    if matches!(db.get_flag(FlagId::new(db, "add_withdraw_gas")),
         Some(flag) if matches!(*flag, Flag::AddWithdrawGas(false)))
     {
         return;
     }
-    let gb_ty = corelib::get_core_ty_by_name(db.upcast(), "GasBuiltin".into(), vec![]);
+    let gb_ty = corelib::get_core_ty_by_name(db, "GasBuiltin".into(), vec![]);
     // Checking if the implicits of this function past lowering includes `GasBuiltin`.
     if let Ok(implicits) = db.function_with_body_implicits(function_id) {
         if !implicits.into_iter().contains(&gb_ty) {
@@ -47,8 +47,8 @@ pub fn gas_redeposit(
     );
 
     let redeposit_gas = corelib::get_function_id(
-        db.upcast(),
-        corelib::core_submodule(db.upcast(), "gas"),
+        db,
+        corelib::core_submodule(db, "gas"),
         "redeposit_gas".into(),
         vec![],
     )

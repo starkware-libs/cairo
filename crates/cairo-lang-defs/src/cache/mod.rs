@@ -384,7 +384,6 @@ pub struct ModuleDataCached {
     plugin_diagnostics: Vec<(ModuleFileCached, PluginDiagnosticCached)>,
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
-// TODO ADD TO SOME TEST!!!
 impl ModuleDataCached {
     fn new(module_data: ModuleData, ctx: &mut DefCacheSavingContext<'_>) -> Self {
         Self {
@@ -652,7 +651,7 @@ impl<T: TypedSyntaxNode> TypeSyntaxNodeCached<T> {
         }
     }
     fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> T {
-        T::from_syntax_node(ctx.db.upcast(), self.syntax_node.embed(ctx))
+        T::from_syntax_node(ctx.db, self.syntax_node.embed(ctx))
     }
 }
 
@@ -1493,7 +1492,7 @@ impl SyntaxNodeCached {
         let parent = inner.parent.as_ref().map(|it| it.embed(ctx));
         let stable_ptr = inner.stable_ptr.embed(ctx);
         let offset = inner.offset;
-        SyntaxNode::new_with_inner(ctx.db.upcast(), green, offset, parent, stable_ptr)
+        SyntaxNode::new_with_inner(ctx.db, green, offset, parent, stable_ptr)
     }
 }
 
@@ -1508,12 +1507,9 @@ impl LanguageElementCached {
         ctx: &mut DefCacheSavingContext<'_>,
     ) -> Self {
         Self {
-            module_file_id: ModuleFileCached::new(
-                language_element.module_file_id(ctx.db.upcast()),
-                ctx,
-            ),
+            module_file_id: ModuleFileCached::new(language_element.module_file_id(ctx.db), ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(
-                language_element.untyped_stable_ptr(ctx.db.upcast()),
+                language_element.untyped_stable_ptr(ctx.db),
                 ctx,
             ),
         }
