@@ -288,6 +288,21 @@ impl ConstFoldingContext<'_> {
                 )
                 .lowered(self.db);
             return None;
+        } else if stmt.function == self.storage_base_address_from_felt252 {
+            let input_var = stmt.inputs[0].var_id;
+            if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
+                stmt.inputs.clear();
+                stmt.function =
+                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
+                        .function_id(
+                            "storage_base_address_const",
+                            vec![GenericArgumentId::Constant(
+                                ConstValue::Int(val.clone(), *ty).intern(self.db),
+                            )],
+                        )
+                        .lowered(self.db);
+            }
+            return None;
         }
         let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
@@ -329,21 +344,6 @@ impl ConstFoldingContext<'_> {
             self.var_info.insert(r_output, VarInfo::Const(r_value.clone()));
             additional_consts.push(StatementConst { value: r_value, output: r_output });
             Some(StatementConst { value: q_value, output: q_output })
-        } else if id == self.storage_base_address_from_felt252 {
-            let input_var = stmt.inputs[0].var_id;
-            if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
-                stmt.inputs.clear();
-                stmt.function =
-                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
-                        .function_id(
-                            "storage_base_address_const",
-                            vec![GenericArgumentId::Constant(
-                                ConstValue::Int(val.clone(), *ty).intern(self.db),
-                            )],
-                        )
-                        .lowered(self.db);
-            }
-            None
         } else if id == self.into_box {
             let const_value = match self.var_info.get(&stmt.inputs[0].var_id)? {
                 VarInfo::Const(val) => val,
@@ -647,7 +647,7 @@ pub struct ConstFoldingLibfuncInfo {
     /// The storage access module.
     storage_access_module: ModuleId,
     /// The `storage_base_address_from_felt252` libfunc.
-    storage_base_address_from_felt252: ExternFunctionId,
+    storage_base_address_from_felt252: FunctionId,
     /// The `core::panic_with_felt252` function.
     panic_with_felt252: FunctionId,
     /// The `core::panic_with_const_felt252` function.
@@ -669,8 +669,9 @@ impl ConstFoldingLibfuncInfo {
         let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
-        let storage_base_address_from_felt252 =
-            storage_access_module.extern_function_id("storage_base_address_from_felt252");
+        let storage_base_address_from_felt252 = storage_access_module
+            .function_id("storage_base_address_from_felt252", vec![])
+            .lowered(db);
         let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
             [
                 core.extern_function_id("felt252_is_zero"),
