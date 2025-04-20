@@ -166,7 +166,7 @@ libfunc snapshot_take<core::starknet::storage::storage_base::StorageBase::<core:
 libfunc drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>> = drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>;
 libfunc struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>> = struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>;
 libfunc pedersen = pedersen;
-libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
+libfunc function_call<user@core::starknet::storage_access::storage_base_address_from_felt252> = function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>;
 libfunc enable_ap_tracking = enable_ap_tracking;
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>> = function_call<user@core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>>;
@@ -214,6 +214,7 @@ libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>> = const_as_immediate<Const<felt252, 110930490496575599150170734222081291576>>;
 libfunc const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>> = const_as_immediate<Const<felt252, 476442828812030857794232422692155113556837216824>>;
+libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
 libfunc const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>> = const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>;
 libfunc struct_deconstruct<Tuple<ContractAddress, ContractAddress>> = struct_deconstruct<Tuple<ContractAddress, ContractAddress>>;
 libfunc struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>> = struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>;
@@ -758,8 +759,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([33]) -> ([34]);
 store_temp<felt252>([34]) -> ([34]);
 pedersen([0], [34], [28]) -> ([35], [36]);
+store_temp<RangeCheck>([24]) -> ([24]);
 store_temp<felt252>([36]) -> ([36]);
-storage_base_address_from_felt252([24], [36]) -> ([37], [38]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([24], [36]) -> ([37], [38]);
 struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([38]) -> ([39]);
 snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([39]) -> ([40], [41]);
 drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([40]) -> ();
@@ -771,7 +773,6 @@ const_as_immediate<Const<u32, 0>>() -> ([46]);
 dup<u32>([46]) -> ([46], [47]);
 store_temp<u32>([47]) -> ([47]);
 store_temp<Pedersen>([35]) -> ([35]);
-store_temp<RangeCheck>([37]) -> ([37]);
 storage_read_syscall([25], [3], [47], [45]) { fallthrough([48], [49], [50]) F4_B5([51], [52], [53]) };
 branch_align() -> ();
 enable_ap_tracking() -> ();
@@ -2454,11 +2455,16 @@ store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
 F16:
+storage_base_address_from_felt252([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<StorageBaseAddress>([3]) -> ([3]);
+return([2], [3]);
+F17:
 const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F17:
+F18:
 struct_deconstruct<Tuple<ContractAddress, ContractAddress>>([5]) -> ([6], [7]);
 contract_address_to_felt252([6]) -> ([8]);
 struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([4]) -> ([9]);
@@ -2467,8 +2473,9 @@ pedersen([2], [10], [8]) -> ([11], [12]);
 contract_address_to_felt252([7]) -> ([13]);
 store_temp<felt252>([12]) -> ([12]);
 pedersen([11], [12], [13]) -> ([14], [15]);
+store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<felt252>([15]) -> ([15]);
-storage_base_address_from_felt252([0], [15]) -> ([16], [17]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([0], [15]) -> ([16], [17]);
 struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([17]) -> ([18]);
 snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([18]) -> ([19], [20]);
 drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([19]) -> ();
@@ -2480,25 +2487,24 @@ const_as_immediate<Const<u32, 0>>() -> ([25]);
 dup<u32>([25]) -> ([25], [26]);
 store_temp<u32>([26]) -> ([26]);
 store_temp<Pedersen>([14]) -> ([14]);
-store_temp<RangeCheck>([16]) -> ([16]);
-storage_read_syscall([1], [3], [26], [24]) { fallthrough([27], [28], [29]) F17_B4([30], [31], [32]) };
+storage_read_syscall([1], [3], [26], [24]) { fallthrough([27], [28], [29]) F18_B4([30], [31], [32]) };
 branch_align() -> ();
 store_temp<felt252>([29]) -> ([29]);
 store_temp<GasBuiltin>([27]) -> ([27]);
 store_temp<System>([28]) -> ([28]);
-u128s_from_felt252([16], [29]) { fallthrough([33], [34]) F17_B2([35], [36], [37]) };
+u128s_from_felt252([16], [29]) { fallthrough([33], [34]) F18_B2([35], [36], [37]) };
 branch_align() -> ();
 const_as_immediate<Const<u8, 1>>() -> ([38]);
 storage_address_from_base_and_offset([22], [38]) -> ([39]);
 store_temp<u32>([25]) -> ([25]);
 store_temp<StorageAddress>([39]) -> ([39]);
 store_temp<RangeCheck>([33]) -> ([33]);
-storage_read_syscall([27], [28], [25], [39]) { fallthrough([40], [41], [42]) F17_B1([43], [44], [45]) };
+storage_read_syscall([27], [28], [25], [39]) { fallthrough([40], [41], [42]) F18_B1([43], [44], [45]) };
 branch_align() -> ();
 store_temp<felt252>([42]) -> ([42]);
 store_temp<GasBuiltin>([40]) -> ([40]);
 store_temp<System>([41]) -> ([41]);
-u128s_from_felt252([33], [42]) { fallthrough([46], [47]) F17_B0([48], [49], [50]) };
+u128s_from_felt252([33], [42]) { fallthrough([46], [47]) F18_B0([48], [49], [50]) };
 branch_align() -> ();
 redeposit_gas([40]) -> ([51]);
 struct_construct<core::integer::u256>([34], [47]) -> ([52]);
@@ -2510,7 +2516,7 @@ store_temp<Pedersen>([14]) -> ([14]);
 store_temp<System>([41]) -> ([41]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([54]) -> ([54]);
 return([46], [51], [14], [41], [54]);
-F17_B0:
+F18_B0:
 branch_align() -> ();
 drop<u128>([49]) -> ();
 drop<u128>([50]) -> ();
@@ -2519,8 +2525,8 @@ redeposit_gas([40]) -> ([55]);
 store_temp<RangeCheck>([48]) -> ([56]);
 store_temp<GasBuiltin>([55]) -> ([57]);
 store_temp<System>([41]) -> ([58]);
-jump() { F17_B3() };
-F17_B1:
+jump() { F18_B3() };
+F18_B1:
 branch_align() -> ();
 drop<u128>([34]) -> ();
 struct_construct<core::panics::Panic>() -> ([59]);
@@ -2532,7 +2538,7 @@ store_temp<Pedersen>([14]) -> ([14]);
 store_temp<System>([44]) -> ([44]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([61]) -> ([61]);
 return([33], [43], [14], [44], [61]);
-F17_B2:
+F18_B2:
 branch_align() -> ();
 drop<u128>([36]) -> ();
 drop<u128>([37]) -> ();
@@ -2542,7 +2548,7 @@ redeposit_gas([27]) -> ([62]);
 store_temp<RangeCheck>([35]) -> ([56]);
 store_temp<GasBuiltin>([62]) -> ([57]);
 store_temp<System>([28]) -> ([58]);
-F17_B3:
+F18_B3:
 function_call<user@core::panic_with_const_felt252::<476442828812030857794232422692155113556837216824>>() -> ([63]);
 enum_init<core::panics::PanicResult::<(core::integer::u256,)>, 1>([63]) -> ([64]);
 store_temp<RangeCheck>([56]) -> ([56]);
@@ -2551,7 +2557,7 @@ store_temp<Pedersen>([14]) -> ([14]);
 store_temp<System>([58]) -> ([58]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([64]) -> ([64]);
 return([56], [57], [14], [58], [64]);
-F17_B4:
+F18_B4:
 branch_align() -> ();
 drop<StorageBaseAddress>([22]) -> ();
 drop<u32>([25]) -> ();
@@ -2564,15 +2570,15 @@ store_temp<Pedersen>([14]) -> ([14]);
 store_temp<System>([31]) -> ([31]);
 store_temp<core::panics::PanicResult::<(core::integer::u256,)>>([67]) -> ([67]);
 return([16], [30], [14], [31], [67]);
-F18:
+F19:
 const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492914>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F19:
+F20:
 dup<ContractAddress>([5]) -> ([5], [8]);
 contract_address_to_felt252([8]) -> ([9]);
-felt252_is_zero([9]) { fallthrough() F19_B0([10]) };
+felt252_is_zero([9]) { fallthrough() F20_B0([10]) };
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -2586,12 +2592,12 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([3]) -> ([3]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([12]) -> ([12]);
 return([0], [1], [2], [3], [12]);
-F19_B0:
+F20_B0:
 branch_align() -> ();
 drop<NonZero<felt252>>([10]) -> ();
 dup<ContractAddress>([6]) -> ([6], [13]);
 contract_address_to_felt252([13]) -> ([14]);
-felt252_is_zero([14]) { fallthrough() F19_B1([15]) };
+felt252_is_zero([14]) { fallthrough() F20_B1([15]) };
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -2605,7 +2611,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([3]) -> ([3]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([17]) -> ([17]);
 return([0], [1], [2], [3], [17]);
-F19_B1:
+F20_B1:
 branch_align() -> ();
 drop<NonZero<felt252>>([15]) -> ();
 dup<ContractAddress>([5]) -> ([5], [18]);
@@ -2618,8 +2624,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([24]) -> ([25]);
 store_temp<felt252>([25]) -> ([25]);
 pedersen([2], [25], [19]) -> ([26], [27]);
+store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<felt252>([27]) -> ([27]);
-storage_base_address_from_felt252([0], [27]) -> ([28], [29]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([0], [27]) -> ([28], [29]);
 struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([29]) -> ([30]);
 snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([30]) -> ([31], [32]);
 drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([31]) -> ();
@@ -2631,31 +2638,30 @@ const_as_immediate<Const<u32, 0>>() -> ([37]);
 dup<u32>([37]) -> ([37], [38]);
 store_temp<u32>([38]) -> ([38]);
 store_temp<Pedersen>([26]) -> ([26]);
-store_temp<RangeCheck>([28]) -> ([28]);
-storage_read_syscall([1], [3], [38], [36]) { fallthrough([39], [40], [41]) F19_B30([42], [43], [44]) };
+storage_read_syscall([1], [3], [38], [36]) { fallthrough([39], [40], [41]) F20_B30([42], [43], [44]) };
 branch_align() -> ();
 store_temp<felt252>([41]) -> ([41]);
 store_temp<GasBuiltin>([39]) -> ([39]);
 store_temp<System>([40]) -> ([40]);
-u128s_from_felt252([28], [41]) { fallthrough([45], [46]) F19_B28([47], [48], [49]) };
+u128s_from_felt252([28], [41]) { fallthrough([45], [46]) F20_B28([47], [48], [49]) };
 branch_align() -> ();
 const_as_immediate<Const<u8, 1>>() -> ([50]);
 storage_address_from_base_and_offset([34], [50]) -> ([51]);
 store_temp<u32>([37]) -> ([37]);
 store_temp<StorageAddress>([51]) -> ([51]);
 store_temp<RangeCheck>([45]) -> ([45]);
-storage_read_syscall([39], [40], [37], [51]) { fallthrough([52], [53], [54]) F19_B27([55], [56], [57]) };
+storage_read_syscall([39], [40], [37], [51]) { fallthrough([52], [53], [54]) F20_B27([55], [56], [57]) };
 branch_align() -> ();
 store_temp<felt252>([54]) -> ([54]);
 store_temp<GasBuiltin>([52]) -> ([52]);
 store_temp<System>([53]) -> ([53]);
-u128s_from_felt252([45], [54]) { fallthrough([58], [59]) F19_B26([60], [61], [62]) };
+u128s_from_felt252([45], [54]) { fallthrough([58], [59]) F20_B26([60], [61], [62]) };
 branch_align() -> ();
 const_as_immediate<Const<felt252, 1065622543624526936256554561967983185612257046533136611876836524258158810564>>() -> ([63]);
 struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>([63]) -> ([64]);
 dup<core::integer::u256>([7]) -> ([7], [65]);
 struct_deconstruct<core::integer::u256>([65]) -> ([66], [67]);
-u128_overflowing_sub([58], [59], [67]) { fallthrough([68], [69]) F19_B2([70], [71]) };
+u128_overflowing_sub([58], [59], [67]) { fallthrough([68], [69]) F20_B2([70], [71]) };
 branch_align() -> ();
 redeposit_gas([52]) -> ([72]);
 struct_construct<Unit>() -> ([73]);
@@ -2664,8 +2670,8 @@ store_temp<RangeCheck>([68]) -> ([75]);
 store_temp<GasBuiltin>([72]) -> ([76]);
 store_temp<u128>([69]) -> ([77]);
 store_temp<core::bool>([74]) -> ([78]);
-jump() { F19_B3() };
-F19_B2:
+jump() { F20_B3() };
+F20_B2:
 branch_align() -> ();
 redeposit_gas([52]) -> ([79]);
 struct_construct<Unit>() -> ([80]);
@@ -2674,28 +2680,28 @@ store_temp<RangeCheck>([70]) -> ([75]);
 store_temp<GasBuiltin>([79]) -> ([76]);
 store_temp<u128>([71]) -> ([77]);
 store_temp<core::bool>([81]) -> ([78]);
-F19_B3:
-u128_overflowing_sub([75], [46], [66]) { fallthrough([82], [83]) F19_B4([84], [85]) };
+F20_B3:
+u128_overflowing_sub([75], [46], [66]) { fallthrough([82], [83]) F20_B4([84], [85]) };
 branch_align() -> ();
 redeposit_gas([76]) -> ([86]);
 store_temp<RangeCheck>([82]) -> ([87]);
 store_temp<GasBuiltin>([86]) -> ([88]);
 store_temp<u128>([83]) -> ([89]);
 store_temp<u128>([77]) -> ([90]);
-jump() { F19_B5() };
-F19_B4:
+jump() { F20_B5() };
+F20_B4:
 branch_align() -> ();
 const_as_immediate<Const<u128, 1>>() -> ([91]);
 store_temp<u128>([91]) -> ([91]);
-u128_overflowing_sub([84], [77], [91]) { fallthrough([92], [93]) F19_B24([94], [95]) };
+u128_overflowing_sub([84], [77], [91]) { fallthrough([92], [93]) F20_B24([94], [95]) };
 branch_align() -> ();
 redeposit_gas([76]) -> ([96]);
 store_temp<RangeCheck>([92]) -> ([87]);
 store_temp<GasBuiltin>([96]) -> ([88]);
 store_temp<u128>([85]) -> ([89]);
 store_temp<u128>([93]) -> ([90]);
-F19_B5:
-enum_match<core::bool>([78]) { fallthrough([97]) F19_B23([98]) };
+F20_B5:
+enum_match<core::bool>([78]) { fallthrough([97]) F20_B23([98]) };
 branch_align() -> ();
 drop<Unit>([97]) -> ();
 dup<ContractAddress>([5]) -> ([5], [99]);
@@ -2706,8 +2712,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([103]) -> ([104]);
 store_temp<felt252>([104]) -> ([104]);
 pedersen([26], [104], [100]) -> ([105], [106]);
+store_temp<RangeCheck>([87]) -> ([87]);
 store_temp<felt252>([106]) -> ([106]);
-storage_base_address_from_felt252([87], [106]) -> ([107], [108]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([87], [106]) -> ([107], [108]);
 u128_to_felt252([89]) -> ([109]);
 dup<StorageBaseAddress>([108]) -> ([108], [110]);
 storage_address_from_base([110]) -> ([111]);
@@ -2715,8 +2722,7 @@ const_as_immediate<Const<u32, 0>>() -> ([112]);
 dup<u32>([112]) -> ([112], [113]);
 store_temp<u32>([113]) -> ([113]);
 store_temp<Pedersen>([105]) -> ([105]);
-store_temp<RangeCheck>([107]) -> ([107]);
-storage_write_syscall([88], [53], [113], [111], [109]) { fallthrough([114], [115]) F19_B22([116], [117], [118]) };
+storage_write_syscall([88], [53], [113], [111], [109]) { fallthrough([114], [115]) F20_B22([116], [117], [118]) };
 branch_align() -> ();
 u128_to_felt252([90]) -> ([119]);
 const_as_immediate<Const<u8, 1>>() -> ([120]);
@@ -2724,7 +2730,7 @@ storage_address_from_base_and_offset([108], [120]) -> ([121]);
 store_temp<GasBuiltin>([114]) -> ([114]);
 store_temp<u32>([112]) -> ([112]);
 store_temp<StorageAddress>([121]) -> ([121]);
-storage_write_syscall([114], [115], [112], [121], [119]) { fallthrough([122], [123]) F19_B21([124], [125], [126]) };
+storage_write_syscall([114], [115], [112], [121], [119]) { fallthrough([122], [123]) F20_B21([124], [125], [126]) };
 branch_align() -> ();
 dup<ContractAddress>([6]) -> ([6], [127]);
 contract_address_to_felt252([127]) -> ([128]);
@@ -2736,8 +2742,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([133]) -> ([134]);
 store_temp<felt252>([134]) -> ([134]);
 pedersen([105], [134], [128]) -> ([135], [136]);
+store_temp<RangeCheck>([107]) -> ([107]);
 store_temp<felt252>([136]) -> ([136]);
-storage_base_address_from_felt252([107], [136]) -> ([137], [138]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([107], [136]) -> ([137], [138]);
 struct_construct<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([138]) -> ([139]);
 snapshot_take<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([139]) -> ([140], [141]);
 drop<core::starknet::storage::StoragePointer0Offset::<core::integer::u256>>([140]) -> ();
@@ -2750,31 +2757,30 @@ dup<u32>([146]) -> ([146], [147]);
 store_temp<GasBuiltin>([122]) -> ([122]);
 store_temp<u32>([147]) -> ([147]);
 store_temp<Pedersen>([135]) -> ([135]);
-store_temp<RangeCheck>([137]) -> ([137]);
-storage_read_syscall([122], [123], [147], [145]) { fallthrough([148], [149], [150]) F19_B20([151], [152], [153]) };
+storage_read_syscall([122], [123], [147], [145]) { fallthrough([148], [149], [150]) F20_B20([151], [152], [153]) };
 branch_align() -> ();
 store_temp<felt252>([150]) -> ([150]);
 store_temp<GasBuiltin>([148]) -> ([148]);
 store_temp<System>([149]) -> ([149]);
-u128s_from_felt252([137], [150]) { fallthrough([154], [155]) F19_B18([156], [157], [158]) };
+u128s_from_felt252([137], [150]) { fallthrough([154], [155]) F20_B18([156], [157], [158]) };
 branch_align() -> ();
 const_as_immediate<Const<u8, 1>>() -> ([159]);
 storage_address_from_base_and_offset([143], [159]) -> ([160]);
 store_temp<u32>([146]) -> ([146]);
 store_temp<StorageAddress>([160]) -> ([160]);
 store_temp<RangeCheck>([154]) -> ([154]);
-storage_read_syscall([148], [149], [146], [160]) { fallthrough([161], [162], [163]) F19_B17([164], [165], [166]) };
+storage_read_syscall([148], [149], [146], [160]) { fallthrough([161], [162], [163]) F20_B17([164], [165], [166]) };
 branch_align() -> ();
 store_temp<felt252>([163]) -> ([163]);
 store_temp<GasBuiltin>([161]) -> ([161]);
 store_temp<System>([162]) -> ([162]);
-u128s_from_felt252([154], [163]) { fallthrough([167], [168]) F19_B16([169], [170], [171]) };
+u128s_from_felt252([154], [163]) { fallthrough([167], [168]) F20_B16([169], [170], [171]) };
 branch_align() -> ();
 const_as_immediate<Const<felt252, 1065622543624526936256554561967983185612257046533136611876836524258158810564>>() -> ([172]);
 struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>([172]) -> ([173]);
 dup<core::integer::u256>([7]) -> ([7], [174]);
 struct_deconstruct<core::integer::u256>([174]) -> ([175], [176]);
-u128_overflowing_add([167], [168], [176]) { fallthrough([177], [178]) F19_B6([179], [180]) };
+u128_overflowing_add([167], [168], [176]) { fallthrough([177], [178]) F20_B6([179], [180]) };
 branch_align() -> ();
 redeposit_gas([161]) -> ([181]);
 struct_construct<Unit>() -> ([182]);
@@ -2783,8 +2789,8 @@ store_temp<RangeCheck>([177]) -> ([184]);
 store_temp<GasBuiltin>([181]) -> ([185]);
 store_temp<u128>([178]) -> ([186]);
 store_temp<core::bool>([183]) -> ([187]);
-jump() { F19_B7() };
-F19_B6:
+jump() { F20_B7() };
+F20_B6:
 branch_align() -> ();
 redeposit_gas([161]) -> ([188]);
 struct_construct<Unit>() -> ([189]);
@@ -2793,28 +2799,28 @@ store_temp<RangeCheck>([179]) -> ([184]);
 store_temp<GasBuiltin>([188]) -> ([185]);
 store_temp<u128>([180]) -> ([186]);
 store_temp<core::bool>([190]) -> ([187]);
-F19_B7:
-u128_overflowing_add([184], [155], [175]) { fallthrough([191], [192]) F19_B8([193], [194]) };
+F20_B7:
+u128_overflowing_add([184], [155], [175]) { fallthrough([191], [192]) F20_B8([193], [194]) };
 branch_align() -> ();
 redeposit_gas([185]) -> ([195]);
 store_temp<RangeCheck>([191]) -> ([196]);
 store_temp<GasBuiltin>([195]) -> ([197]);
 store_temp<u128>([192]) -> ([198]);
 store_temp<u128>([186]) -> ([199]);
-jump() { F19_B9() };
-F19_B8:
+jump() { F20_B9() };
+F20_B8:
 branch_align() -> ();
 const_as_immediate<Const<u128, 1>>() -> ([200]);
 store_temp<u128>([200]) -> ([200]);
-u128_overflowing_add([193], [186], [200]) { fallthrough([201], [202]) F19_B14([203], [204]) };
+u128_overflowing_add([193], [186], [200]) { fallthrough([201], [202]) F20_B14([203], [204]) };
 branch_align() -> ();
 redeposit_gas([185]) -> ([205]);
 store_temp<RangeCheck>([201]) -> ([196]);
 store_temp<GasBuiltin>([205]) -> ([197]);
 store_temp<u128>([194]) -> ([198]);
 store_temp<u128>([202]) -> ([199]);
-F19_B9:
-enum_match<core::bool>([187]) { fallthrough([206]) F19_B13([207]) };
+F20_B9:
+enum_match<core::bool>([187]) { fallthrough([206]) F20_B13([207]) };
 branch_align() -> ();
 drop<Unit>([206]) -> ();
 dup<ContractAddress>([6]) -> ([6], [208]);
@@ -2825,8 +2831,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([212]) -> ([213]);
 store_temp<felt252>([213]) -> ([213]);
 pedersen([135], [213], [209]) -> ([214], [215]);
+store_temp<RangeCheck>([196]) -> ([196]);
 store_temp<felt252>([215]) -> ([215]);
-storage_base_address_from_felt252([196], [215]) -> ([216], [217]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([196], [215]) -> ([216], [217]);
 u128_to_felt252([198]) -> ([218]);
 dup<StorageBaseAddress>([217]) -> ([217], [219]);
 storage_address_from_base([219]) -> ([220]);
@@ -2834,8 +2841,7 @@ const_as_immediate<Const<u32, 0>>() -> ([221]);
 dup<u32>([221]) -> ([221], [222]);
 store_temp<u32>([222]) -> ([222]);
 store_temp<Pedersen>([214]) -> ([214]);
-store_temp<RangeCheck>([216]) -> ([216]);
-storage_write_syscall([197], [162], [222], [220], [218]) { fallthrough([223], [224]) F19_B12([225], [226], [227]) };
+storage_write_syscall([197], [162], [222], [220], [218]) { fallthrough([223], [224]) F20_B12([225], [226], [227]) };
 branch_align() -> ();
 u128_to_felt252([199]) -> ([228]);
 const_as_immediate<Const<u8, 1>>() -> ([229]);
@@ -2843,7 +2849,7 @@ storage_address_from_base_and_offset([217], [229]) -> ([230]);
 store_temp<GasBuiltin>([223]) -> ([223]);
 store_temp<u32>([221]) -> ([221]);
 store_temp<StorageAddress>([230]) -> ([230]);
-storage_write_syscall([223], [224], [221], [230], [228]) { fallthrough([231], [232]) F19_B11([233], [234], [235]) };
+storage_write_syscall([223], [224], [221], [230], [228]) { fallthrough([231], [232]) F20_B11([233], [234], [235]) };
 branch_align() -> ();
 array_new<felt252>() -> ([236]);
 array_new<felt252>() -> ([237]);
@@ -2869,7 +2875,7 @@ drop<Array<felt252>>([250]) -> ();
 struct_construct<core::array::Span::<core::felt252>>([249]) -> ([252]);
 struct_construct<core::array::Span::<core::felt252>>([251]) -> ([253]);
 store_temp<GasBuiltin>([231]) -> ([231]);
-emit_event_syscall([231], [232], [252], [253]) { fallthrough([254], [255]) F19_B10([256], [257], [258]) };
+emit_event_syscall([231], [232], [252], [253]) { fallthrough([254], [255]) F20_B10([256], [257], [258]) };
 branch_align() -> ();
 store_temp<GasBuiltin>([254]) -> ([254]);
 redeposit_gas([254]) -> ([259]);
@@ -2882,7 +2888,7 @@ store_temp<Pedersen>([214]) -> ([214]);
 store_temp<System>([255]) -> ([255]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([262]) -> ([262]);
 return([216], [259], [214], [255], [262]);
-F19_B10:
+F20_B10:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 struct_construct<core::panics::Panic>() -> ([263]);
@@ -2894,7 +2900,7 @@ store_temp<Pedersen>([214]) -> ([214]);
 store_temp<System>([257]) -> ([257]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([265]) -> ([265]);
 return([216], [256], [214], [257], [265]);
-F19_B11:
+F20_B11:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -2909,7 +2915,7 @@ store_temp<Pedersen>([214]) -> ([214]);
 store_temp<System>([234]) -> ([234]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([268]) -> ([268]);
 return([216], [233], [214], [234], [268]);
-F19_B12:
+F20_B12:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -2927,7 +2933,7 @@ store_temp<Pedersen>([214]) -> ([214]);
 store_temp<System>([226]) -> ([226]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([271]) -> ([271]);
 return([216], [225], [214], [226], [271]);
-F19_B13:
+F20_B13:
 branch_align() -> ();
 drop<Unit>([207]) -> ();
 drop<u128>([198]) -> ();
@@ -2940,8 +2946,8 @@ drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storag
 redeposit_gas([197]) -> ([272]);
 store_temp<RangeCheck>([196]) -> ([273]);
 store_temp<GasBuiltin>([272]) -> ([274]);
-jump() { F19_B15() };
-F19_B14:
+jump() { F20_B15() };
+F20_B14:
 branch_align() -> ();
 drop<u128>([204]) -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
@@ -2954,7 +2960,7 @@ drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storag
 redeposit_gas([185]) -> ([275]);
 store_temp<RangeCheck>([203]) -> ([273]);
 store_temp<GasBuiltin>([275]) -> ([274]);
-F19_B15:
+F20_B15:
 function_call<user@core::panic_with_const_felt252::<39879774624079483812136948410799859986295>>() -> ([276]);
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([276]) -> ([277]);
 store_temp<RangeCheck>([273]) -> ([273]);
@@ -2963,7 +2969,7 @@ store_temp<Pedersen>([135]) -> ([135]);
 store_temp<System>([162]) -> ([162]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([277]) -> ([277]);
 return([273], [274], [135], [162], [277]);
-F19_B16:
+F20_B16:
 branch_align() -> ();
 drop<u128>([170]) -> ();
 drop<u128>([171]) -> ();
@@ -2976,8 +2982,8 @@ redeposit_gas([161]) -> ([278]);
 store_temp<RangeCheck>([169]) -> ([279]);
 store_temp<GasBuiltin>([278]) -> ([280]);
 store_temp<System>([162]) -> ([281]);
-jump() { F19_B19() };
-F19_B17:
+jump() { F20_B19() };
+F20_B17:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -2993,7 +2999,7 @@ store_temp<Pedersen>([135]) -> ([135]);
 store_temp<System>([165]) -> ([165]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([284]) -> ([284]);
 return([154], [164], [135], [165], [284]);
-F19_B18:
+F20_B18:
 branch_align() -> ();
 drop<u128>([157]) -> ();
 drop<u128>([158]) -> ();
@@ -3007,7 +3013,7 @@ redeposit_gas([148]) -> ([285]);
 store_temp<RangeCheck>([156]) -> ([279]);
 store_temp<GasBuiltin>([285]) -> ([280]);
 store_temp<System>([149]) -> ([281]);
-F19_B19:
+F20_B19:
 function_call<user@core::panic_with_const_felt252::<476442828812030857794232422692155113556837216824>>() -> ([286]);
 struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([286]) -> ([287], [288]);
 drop<core::panics::Panic>([287]) -> ();
@@ -3020,7 +3026,7 @@ store_temp<Pedersen>([135]) -> ([135]);
 store_temp<System>([281]) -> ([281]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([291]) -> ([291]);
 return([279], [280], [135], [281], [291]);
-F19_B20:
+F20_B20:
 branch_align() -> ();
 drop<StorageBaseAddress>([143]) -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
@@ -3037,7 +3043,7 @@ store_temp<Pedersen>([135]) -> ([135]);
 store_temp<System>([152]) -> ([152]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([294]) -> ([294]);
 return([137], [151], [135], [152], [294]);
-F19_B21:
+F20_B21:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3052,7 +3058,7 @@ store_temp<Pedersen>([105]) -> ([105]);
 store_temp<System>([125]) -> ([125]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([297]) -> ([297]);
 return([107], [124], [105], [125], [297]);
-F19_B22:
+F20_B22:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3070,7 +3076,7 @@ store_temp<Pedersen>([105]) -> ([105]);
 store_temp<System>([117]) -> ([117]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([300]) -> ([300]);
 return([107], [116], [105], [117], [300]);
-F19_B23:
+F20_B23:
 branch_align() -> ();
 drop<Unit>([98]) -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
@@ -3083,8 +3089,8 @@ drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storag
 redeposit_gas([88]) -> ([301]);
 store_temp<RangeCheck>([87]) -> ([302]);
 store_temp<GasBuiltin>([301]) -> ([303]);
-jump() { F19_B25() };
-F19_B24:
+jump() { F20_B25() };
+F20_B24:
 branch_align() -> ();
 drop<u128>([95]) -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
@@ -3097,7 +3103,7 @@ drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storag
 redeposit_gas([76]) -> ([304]);
 store_temp<RangeCheck>([94]) -> ([302]);
 store_temp<GasBuiltin>([304]) -> ([303]);
-F19_B25:
+F20_B25:
 function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([305]);
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([305]) -> ([306]);
 store_temp<RangeCheck>([302]) -> ([302]);
@@ -3106,7 +3112,7 @@ store_temp<Pedersen>([26]) -> ([26]);
 store_temp<System>([53]) -> ([53]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([306]) -> ([306]);
 return([302], [303], [26], [53], [306]);
-F19_B26:
+F20_B26:
 branch_align() -> ();
 drop<u128>([61]) -> ();
 drop<u128>([62]) -> ();
@@ -3119,8 +3125,8 @@ redeposit_gas([52]) -> ([307]);
 store_temp<RangeCheck>([60]) -> ([308]);
 store_temp<GasBuiltin>([307]) -> ([309]);
 store_temp<System>([53]) -> ([310]);
-jump() { F19_B29() };
-F19_B27:
+jump() { F20_B29() };
+F20_B27:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3136,7 +3142,7 @@ store_temp<Pedersen>([26]) -> ([26]);
 store_temp<System>([56]) -> ([56]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([313]) -> ([313]);
 return([45], [55], [26], [56], [313]);
-F19_B28:
+F20_B28:
 branch_align() -> ();
 drop<u128>([48]) -> ();
 drop<u128>([49]) -> ();
@@ -3150,7 +3156,7 @@ redeposit_gas([39]) -> ([314]);
 store_temp<RangeCheck>([47]) -> ([308]);
 store_temp<GasBuiltin>([314]) -> ([309]);
 store_temp<System>([40]) -> ([310]);
-F19_B29:
+F20_B29:
 function_call<user@core::panic_with_const_felt252::<476442828812030857794232422692155113556837216824>>() -> ([315]);
 struct_deconstruct<Tuple<core::panics::Panic, Array<felt252>>>([315]) -> ([316], [317]);
 drop<core::panics::Panic>([316]) -> ();
@@ -3163,7 +3169,7 @@ store_temp<Pedersen>([26]) -> ([26]);
 store_temp<System>([310]) -> ([310]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([320]) -> ([320]);
 return([308], [309], [26], [310], [320]);
-F19_B30:
+F20_B30:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<StorageBaseAddress>([34]) -> ();
@@ -3180,7 +3186,7 @@ store_temp<Pedersen>([26]) -> ([26]);
 store_temp<System>([43]) -> ([43]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([323]) -> ([323]);
 return([28], [42], [26], [43], [323]);
-F20:
+F21:
 const_as_immediate<Const<felt252, 337994139936370667767799129369552596157394447336989834104582481799883947719>>() -> ([8]);
 struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([8]) -> ([9]);
 snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([9]) -> ([10], [11]);
@@ -3199,29 +3205,29 @@ store_temp<System>([3]) -> ([3]);
 store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([15]) -> ([15]);
 store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([18]);
 function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::tuple::TupleSize0Drop>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::tuple::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read>([0], [1], [2], [3], [15], [18]) -> ([19], [20], [21], [22], [23]);
-enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) F20_B10([25]) };
+enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([24]) F21_B10([25]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<core::integer::u256>>([24]) -> ([26]);
 const_as_immediate<Const<u128, 340282366920938463463374607431768211455>>() -> ([27]);
 struct_deconstruct<core::integer::u256>([26]) -> ([28], [29]);
 dup<u128>([28]) -> ([28], [30]);
 dup<u128>([27]) -> ([27], [31]);
-u128_eq([30], [31]) { fallthrough() F20_B0() };
+u128_eq([30], [31]) { fallthrough() F21_B0() };
 branch_align() -> ();
 drop<u128>([27]) -> ();
 redeposit_gas([20]) -> ([32]);
 store_temp<GasBuiltin>([32]) -> ([33]);
-jump() { F20_B1() };
-F20_B0:
+jump() { F21_B1() };
+F21_B0:
 branch_align() -> ();
 dup<u128>([29]) -> ([29], [34]);
-u128_eq([34], [27]) { fallthrough() F20_B9() };
+u128_eq([34], [27]) { fallthrough() F21_B9() };
 branch_align() -> ();
 redeposit_gas([20]) -> ([35]);
 store_temp<GasBuiltin>([35]) -> ([33]);
-F20_B1:
+F21_B1:
 struct_deconstruct<core::integer::u256>([7]) -> ([36], [37]);
-u128_overflowing_sub([19], [29], [37]) { fallthrough([38], [39]) F20_B2([40], [41]) };
+u128_overflowing_sub([19], [29], [37]) { fallthrough([38], [39]) F21_B2([40], [41]) };
 branch_align() -> ();
 redeposit_gas([33]) -> ([42]);
 struct_construct<Unit>() -> ([43]);
@@ -3230,8 +3236,8 @@ store_temp<RangeCheck>([38]) -> ([45]);
 store_temp<GasBuiltin>([42]) -> ([46]);
 store_temp<u128>([39]) -> ([47]);
 store_temp<core::bool>([44]) -> ([48]);
-jump() { F20_B3() };
-F20_B2:
+jump() { F21_B3() };
+F21_B2:
 branch_align() -> ();
 redeposit_gas([33]) -> ([49]);
 struct_construct<Unit>() -> ([50]);
@@ -3240,28 +3246,28 @@ store_temp<RangeCheck>([40]) -> ([45]);
 store_temp<GasBuiltin>([49]) -> ([46]);
 store_temp<u128>([41]) -> ([47]);
 store_temp<core::bool>([51]) -> ([48]);
-F20_B3:
-u128_overflowing_sub([45], [28], [36]) { fallthrough([52], [53]) F20_B4([54], [55]) };
+F21_B3:
+u128_overflowing_sub([45], [28], [36]) { fallthrough([52], [53]) F21_B4([54], [55]) };
 branch_align() -> ();
 redeposit_gas([46]) -> ([56]);
 store_temp<RangeCheck>([52]) -> ([57]);
 store_temp<GasBuiltin>([56]) -> ([58]);
 store_temp<u128>([53]) -> ([59]);
 store_temp<u128>([47]) -> ([60]);
-jump() { F20_B5() };
-F20_B4:
+jump() { F21_B5() };
+F21_B4:
 branch_align() -> ();
 const_as_immediate<Const<u128, 1>>() -> ([61]);
 store_temp<u128>([61]) -> ([61]);
-u128_overflowing_sub([54], [47], [61]) { fallthrough([62], [63]) F20_B7([64], [65]) };
+u128_overflowing_sub([54], [47], [61]) { fallthrough([62], [63]) F21_B7([64], [65]) };
 branch_align() -> ();
 redeposit_gas([46]) -> ([66]);
 store_temp<RangeCheck>([62]) -> ([57]);
 store_temp<GasBuiltin>([66]) -> ([58]);
 store_temp<u128>([55]) -> ([59]);
 store_temp<u128>([63]) -> ([60]);
-F20_B5:
-enum_match<core::bool>([48]) { fallthrough([67]) F20_B6([68]) };
+F21_B5:
+enum_match<core::bool>([48]) { fallthrough([67]) F21_B6([68]) };
 branch_align() -> ();
 drop<Unit>([67]) -> ();
 redeposit_gas([58]) -> ([69]);
@@ -3275,7 +3281,7 @@ store_temp<ContractAddress>([6]) -> ([6]);
 store_temp<core::integer::u256>([70]) -> ([70]);
 function_call<user@cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::approve_helper>([57], [69], [21], [22], [4], [5], [6], [70]) -> ([71], [72], [73], [74], [75]);
 return([71], [72], [73], [74], [75]);
-F20_B6:
+F21_B6:
 branch_align() -> ();
 drop<Unit>([68]) -> ();
 drop<ContractAddress>([6]) -> ();
@@ -3286,8 +3292,8 @@ drop<u128>([60]) -> ();
 redeposit_gas([58]) -> ([76]);
 store_temp<RangeCheck>([57]) -> ([77]);
 store_temp<GasBuiltin>([76]) -> ([78]);
-jump() { F20_B8() };
-F20_B7:
+jump() { F21_B8() };
+F21_B7:
 branch_align() -> ();
 drop<u128>([65]) -> ();
 drop<ContractAddress>([6]) -> ();
@@ -3298,7 +3304,7 @@ drop<core::bool>([48]) -> ();
 redeposit_gas([46]) -> ([79]);
 store_temp<RangeCheck>([64]) -> ([77]);
 store_temp<GasBuiltin>([79]) -> ([78]);
-F20_B8:
+F21_B8:
 function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([80]);
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([80]) -> ([81]);
 store_temp<RangeCheck>([77]) -> ([77]);
@@ -3307,7 +3313,7 @@ store_temp<Pedersen>([21]) -> ([21]);
 store_temp<System>([22]) -> ([22]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([81]) -> ([81]);
 return([77], [78], [21], [22], [81]);
-F20_B9:
+F21_B9:
 branch_align() -> ();
 drop<ContractAddress>([6]) -> ();
 drop<ContractAddress>([5]) -> ();
@@ -3324,7 +3330,7 @@ store_temp<Pedersen>([21]) -> ([21]);
 store_temp<System>([22]) -> ([22]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([85]) -> ([85]);
 return([19], [82], [21], [22], [85]);
-F20_B10:
+F21_B10:
 branch_align() -> ();
 drop<ContractAddress>([6]) -> ();
 drop<ContractAddress>([5]) -> ();
@@ -3337,15 +3343,15 @@ store_temp<Pedersen>([21]) -> ([21]);
 store_temp<System>([22]) -> ([22]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([86]) -> ([86]);
 return([19], [20], [21], [22], [86]);
-F21:
+F22:
 const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492915>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F22:
+F23:
 dup<ContractAddress>([6]) -> ([6], [8]);
 contract_address_to_felt252([8]) -> ([9]);
-felt252_is_zero([9]) { fallthrough() F22_B0([10]) };
+felt252_is_zero([9]) { fallthrough() F23_B0([10]) };
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3359,7 +3365,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([3]) -> ([3]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([12]) -> ([12]);
 return([0], [1], [2], [3], [12]);
-F22_B0:
+F23_B0:
 branch_align() -> ();
 drop<NonZero<felt252>>([10]) -> ();
 dup<ContractAddress>([5]) -> ([5], [13]);
@@ -3376,8 +3382,9 @@ dup<ContractAddress>([6]) -> ([6], [23]);
 contract_address_to_felt252([23]) -> ([24]);
 store_temp<felt252>([22]) -> ([22]);
 pedersen([21], [22], [24]) -> ([25], [26]);
+store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<felt252>([26]) -> ([26]);
-storage_base_address_from_felt252([0], [26]) -> ([27], [28]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([0], [26]) -> ([27], [28]);
 dup<core::integer::u256>([7]) -> ([7], [29]);
 struct_deconstruct<core::integer::u256>([29]) -> ([30], [31]);
 u128_to_felt252([30]) -> ([32]);
@@ -3387,8 +3394,7 @@ const_as_immediate<Const<u32, 0>>() -> ([35]);
 dup<u32>([35]) -> ([35], [36]);
 store_temp<u32>([36]) -> ([36]);
 store_temp<Pedersen>([25]) -> ([25]);
-store_temp<RangeCheck>([27]) -> ([27]);
-storage_write_syscall([1], [3], [36], [34], [32]) { fallthrough([37], [38]) F22_B3([39], [40], [41]) };
+storage_write_syscall([1], [3], [36], [34], [32]) { fallthrough([37], [38]) F23_B3([39], [40], [41]) };
 branch_align() -> ();
 u128_to_felt252([31]) -> ([42]);
 const_as_immediate<Const<u8, 1>>() -> ([43]);
@@ -3396,7 +3402,7 @@ storage_address_from_base_and_offset([28], [43]) -> ([44]);
 store_temp<GasBuiltin>([37]) -> ([37]);
 store_temp<u32>([35]) -> ([35]);
 store_temp<StorageAddress>([44]) -> ([44]);
-storage_write_syscall([37], [38], [35], [44], [42]) { fallthrough([45], [46]) F22_B2([47], [48], [49]) };
+storage_write_syscall([37], [38], [35], [44], [42]) { fallthrough([45], [46]) F23_B2([47], [48], [49]) };
 branch_align() -> ();
 array_new<felt252>() -> ([50]);
 array_new<felt252>() -> ([51]);
@@ -3422,7 +3428,7 @@ drop<Array<felt252>>([64]) -> ();
 struct_construct<core::array::Span::<core::felt252>>([63]) -> ([66]);
 struct_construct<core::array::Span::<core::felt252>>([65]) -> ([67]);
 store_temp<GasBuiltin>([45]) -> ([45]);
-emit_event_syscall([45], [46], [66], [67]) { fallthrough([68], [69]) F22_B1([70], [71], [72]) };
+emit_event_syscall([45], [46], [66], [67]) { fallthrough([68], [69]) F23_B1([70], [71], [72]) };
 branch_align() -> ();
 store_temp<GasBuiltin>([68]) -> ([68]);
 redeposit_gas([68]) -> ([73]);
@@ -3435,7 +3441,7 @@ store_temp<Pedersen>([25]) -> ([25]);
 store_temp<System>([69]) -> ([69]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([76]) -> ([76]);
 return([27], [73], [25], [69], [76]);
-F22_B1:
+F23_B1:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 struct_construct<core::panics::Panic>() -> ([77]);
@@ -3447,7 +3453,7 @@ store_temp<Pedersen>([25]) -> ([25]);
 store_temp<System>([71]) -> ([71]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([79]) -> ([79]);
 return([27], [70], [25], [71], [79]);
-F22_B2:
+F23_B2:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3462,7 +3468,7 @@ store_temp<Pedersen>([25]) -> ([25]);
 store_temp<System>([48]) -> ([48]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([82]) -> ([82]);
 return([27], [47], [25], [48], [82]);
-F22_B3:
+F23_B3:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<core::integer::u256>([7]) -> ();
@@ -3480,153 +3486,6 @@ store_temp<Pedersen>([25]) -> ([25]);
 store_temp<System>([40]) -> ([40]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([85]) -> ([85]);
 return([27], [39], [25], [40], [85]);
-F23:
-get_execution_info_v2_syscall([1], [3]) { fallthrough([7], [8], [9]) F23_B8([10], [11], [12]) };
-branch_align() -> ();
-store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([9]) -> ([9]);
-unbox<core::starknet::info::v2::ExecutionInfo>([9]) -> ([13]);
-struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([13]) -> ([14], [15], [16], [17], [18]);
-drop<Box<core::starknet::info::BlockInfo>>([14]) -> ();
-drop<Box<core::starknet::info::v2::TxInfo>>([15]) -> ();
-drop<ContractAddress>([17]) -> ();
-drop<felt252>([18]) -> ();
-const_as_immediate<Const<felt252, 337994139936370667767799129369552596157394447336989834104582481799883947719>>() -> ([19]);
-struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([19]) -> ([20]);
-snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([20]) -> ([21], [22]);
-drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([21]) -> ();
-struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([22]) -> ([23]);
-rename<felt252>([23]) -> ([24]);
-struct_construct<core::pedersen::HashState>([24]) -> ([25]);
-struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([25]) -> ([26]);
-store_temp<ContractAddress>([16]) -> ([16]);
-dup<ContractAddress>([16]) -> ([16], [27]);
-dup<ContractAddress>([5]) -> ([5], [28]);
-struct_construct<Tuple<ContractAddress, ContractAddress>>([27], [28]) -> ([29]);
-store_temp<RangeCheck>([0]) -> ([0]);
-store_temp<GasBuiltin>([7]) -> ([7]);
-store_temp<Pedersen>([2]) -> ([2]);
-store_temp<System>([8]) -> ([8]);
-store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([26]) -> ([26]);
-store_temp<Tuple<ContractAddress, ContractAddress>>([29]) -> ([29]);
-function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::tuple::TupleSize0Drop>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::tuple::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read>([0], [7], [2], [8], [26], [29]) -> ([30], [31], [32], [33], [34]);
-enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([34]) { fallthrough([35]) F23_B7([36]) };
-branch_align() -> ();
-struct_deconstruct<Tuple<core::integer::u256>>([35]) -> ([37]);
-struct_deconstruct<core::integer::u256>([37]) -> ([38], [39]);
-struct_deconstruct<core::integer::u256>([6]) -> ([40], [41]);
-u128_overflowing_add([30], [39], [41]) { fallthrough([42], [43]) F23_B0([44], [45]) };
-branch_align() -> ();
-redeposit_gas([31]) -> ([46]);
-struct_construct<Unit>() -> ([47]);
-enum_init<core::bool, 0>([47]) -> ([48]);
-store_temp<RangeCheck>([42]) -> ([49]);
-store_temp<GasBuiltin>([46]) -> ([50]);
-store_temp<u128>([43]) -> ([51]);
-store_temp<core::bool>([48]) -> ([52]);
-jump() { F23_B1() };
-F23_B0:
-branch_align() -> ();
-redeposit_gas([31]) -> ([53]);
-struct_construct<Unit>() -> ([54]);
-enum_init<core::bool, 1>([54]) -> ([55]);
-store_temp<RangeCheck>([44]) -> ([49]);
-store_temp<GasBuiltin>([53]) -> ([50]);
-store_temp<u128>([45]) -> ([51]);
-store_temp<core::bool>([55]) -> ([52]);
-F23_B1:
-u128_overflowing_add([49], [38], [40]) { fallthrough([56], [57]) F23_B2([58], [59]) };
-branch_align() -> ();
-redeposit_gas([50]) -> ([60]);
-store_temp<RangeCheck>([56]) -> ([61]);
-store_temp<GasBuiltin>([60]) -> ([62]);
-store_temp<u128>([57]) -> ([63]);
-store_temp<u128>([51]) -> ([64]);
-jump() { F23_B3() };
-F23_B2:
-branch_align() -> ();
-const_as_immediate<Const<u128, 1>>() -> ([65]);
-store_temp<u128>([65]) -> ([65]);
-u128_overflowing_add([58], [51], [65]) { fallthrough([66], [67]) F23_B5([68], [69]) };
-branch_align() -> ();
-redeposit_gas([50]) -> ([70]);
-store_temp<RangeCheck>([66]) -> ([61]);
-store_temp<GasBuiltin>([70]) -> ([62]);
-store_temp<u128>([59]) -> ([63]);
-store_temp<u128>([67]) -> ([64]);
-F23_B3:
-enum_match<core::bool>([52]) { fallthrough([71]) F23_B4([72]) };
-branch_align() -> ();
-drop<Unit>([71]) -> ();
-redeposit_gas([62]) -> ([73]);
-struct_construct<core::integer::u256>([63], [64]) -> ([74]);
-store_temp<RangeCheck>([61]) -> ([61]);
-store_temp<GasBuiltin>([73]) -> ([73]);
-store_temp<Pedersen>([32]) -> ([32]);
-store_temp<System>([33]) -> ([33]);
-store_temp<ContractAddress>([16]) -> ([16]);
-store_temp<ContractAddress>([5]) -> ([5]);
-store_temp<core::integer::u256>([74]) -> ([74]);
-function_call<user@cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::approve_helper>([61], [73], [32], [33], [4], [16], [5], [74]) -> ([75], [76], [77], [78], [79]);
-return([75], [76], [77], [78], [79]);
-F23_B4:
-branch_align() -> ();
-drop<Unit>([72]) -> ();
-drop<ContractAddress>([5]) -> ();
-drop<ContractAddress>([16]) -> ();
-drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
-drop<u128>([63]) -> ();
-drop<u128>([64]) -> ();
-redeposit_gas([62]) -> ([80]);
-store_temp<RangeCheck>([61]) -> ([81]);
-store_temp<GasBuiltin>([80]) -> ([82]);
-jump() { F23_B6() };
-F23_B5:
-branch_align() -> ();
-drop<u128>([69]) -> ();
-drop<ContractAddress>([5]) -> ();
-drop<ContractAddress>([16]) -> ();
-drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
-drop<u128>([59]) -> ();
-drop<core::bool>([52]) -> ();
-redeposit_gas([50]) -> ([83]);
-store_temp<RangeCheck>([68]) -> ([81]);
-store_temp<GasBuiltin>([83]) -> ([82]);
-F23_B6:
-function_call<user@core::panic_with_const_felt252::<39879774624079483812136948410799859986295>>() -> ([84]);
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([84]) -> ([85]);
-store_temp<RangeCheck>([81]) -> ([81]);
-store_temp<GasBuiltin>([82]) -> ([82]);
-store_temp<Pedersen>([32]) -> ([32]);
-store_temp<System>([33]) -> ([33]);
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([85]) -> ([85]);
-return([81], [82], [32], [33], [85]);
-F23_B7:
-branch_align() -> ();
-drop<ContractAddress>([5]) -> ();
-drop<ContractAddress>([16]) -> ();
-drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
-drop<core::integer::u256>([6]) -> ();
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([36]) -> ([86]);
-store_temp<RangeCheck>([30]) -> ([30]);
-store_temp<GasBuiltin>([31]) -> ([31]);
-store_temp<Pedersen>([32]) -> ([32]);
-store_temp<System>([33]) -> ([33]);
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([86]) -> ([86]);
-return([30], [31], [32], [33], [86]);
-F23_B8:
-branch_align() -> ();
-drop<core::integer::u256>([6]) -> ();
-drop<ContractAddress>([5]) -> ();
-drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
-struct_construct<core::panics::Panic>() -> ([87]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([87], [12]) -> ([88]);
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([88]) -> ([89]);
-store_temp<RangeCheck>([0]) -> ([0]);
-store_temp<GasBuiltin>([10]) -> ([10]);
-store_temp<Pedersen>([2]) -> ([2]);
-store_temp<System>([11]) -> ([11]);
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([89]) -> ([89]);
-return([0], [10], [2], [11], [89]);
 F24:
 get_execution_info_v2_syscall([1], [3]) { fallthrough([7], [8], [9]) F24_B8([10], [11], [12]) };
 branch_align() -> ();
@@ -3661,7 +3520,7 @@ branch_align() -> ();
 struct_deconstruct<Tuple<core::integer::u256>>([35]) -> ([37]);
 struct_deconstruct<core::integer::u256>([37]) -> ([38], [39]);
 struct_deconstruct<core::integer::u256>([6]) -> ([40], [41]);
-u128_overflowing_sub([30], [39], [41]) { fallthrough([42], [43]) F24_B0([44], [45]) };
+u128_overflowing_add([30], [39], [41]) { fallthrough([42], [43]) F24_B0([44], [45]) };
 branch_align() -> ();
 redeposit_gas([31]) -> ([46]);
 struct_construct<Unit>() -> ([47]);
@@ -3681,7 +3540,7 @@ store_temp<GasBuiltin>([53]) -> ([50]);
 store_temp<u128>([45]) -> ([51]);
 store_temp<core::bool>([55]) -> ([52]);
 F24_B1:
-u128_overflowing_sub([49], [38], [40]) { fallthrough([56], [57]) F24_B2([58], [59]) };
+u128_overflowing_add([49], [38], [40]) { fallthrough([56], [57]) F24_B2([58], [59]) };
 branch_align() -> ();
 redeposit_gas([50]) -> ([60]);
 store_temp<RangeCheck>([56]) -> ([61]);
@@ -3693,7 +3552,7 @@ F24_B2:
 branch_align() -> ();
 const_as_immediate<Const<u128, 1>>() -> ([65]);
 store_temp<u128>([65]) -> ([65]);
-u128_overflowing_sub([58], [51], [65]) { fallthrough([66], [67]) F24_B5([68], [69]) };
+u128_overflowing_add([58], [51], [65]) { fallthrough([66], [67]) F24_B5([68], [69]) };
 branch_align() -> ();
 redeposit_gas([50]) -> ([70]);
 store_temp<RangeCheck>([66]) -> ([61]);
@@ -3739,7 +3598,7 @@ redeposit_gas([50]) -> ([83]);
 store_temp<RangeCheck>([68]) -> ([81]);
 store_temp<GasBuiltin>([83]) -> ([82]);
 F24_B6:
-function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([84]);
+function_call<user@core::panic_with_const_felt252::<39879774624079483812136948410799859986295>>() -> ([84]);
 enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([84]) -> ([85]);
 store_temp<RangeCheck>([81]) -> ([81]);
 store_temp<GasBuiltin>([82]) -> ([82]);
@@ -3775,12 +3634,159 @@ store_temp<System>([11]) -> ([11]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([89]) -> ([89]);
 return([0], [10], [2], [11], [89]);
 F25:
+get_execution_info_v2_syscall([1], [3]) { fallthrough([7], [8], [9]) F25_B8([10], [11], [12]) };
+branch_align() -> ();
+store_temp<Box<core::starknet::info::v2::ExecutionInfo>>([9]) -> ([9]);
+unbox<core::starknet::info::v2::ExecutionInfo>([9]) -> ([13]);
+struct_deconstruct<core::starknet::info::v2::ExecutionInfo>([13]) -> ([14], [15], [16], [17], [18]);
+drop<Box<core::starknet::info::BlockInfo>>([14]) -> ();
+drop<Box<core::starknet::info::v2::TxInfo>>([15]) -> ();
+drop<ContractAddress>([17]) -> ();
+drop<felt252>([18]) -> ();
+const_as_immediate<Const<felt252, 337994139936370667767799129369552596157394447336989834104582481799883947719>>() -> ([19]);
+struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([19]) -> ([20]);
+snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([20]) -> ([21], [22]);
+drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([21]) -> ();
+struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([22]) -> ([23]);
+rename<felt252>([23]) -> ([24]);
+struct_construct<core::pedersen::HashState>([24]) -> ([25]);
+struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([25]) -> ([26]);
+store_temp<ContractAddress>([16]) -> ([16]);
+dup<ContractAddress>([16]) -> ([16], [27]);
+dup<ContractAddress>([5]) -> ([5], [28]);
+struct_construct<Tuple<ContractAddress, ContractAddress>>([27], [28]) -> ([29]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<GasBuiltin>([7]) -> ([7]);
+store_temp<Pedersen>([2]) -> ([2]);
+store_temp<System>([8]) -> ([8]);
+store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>([26]) -> ([26]);
+store_temp<Tuple<ContractAddress, ContractAddress>>([29]) -> ([29]);
+function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::tuple::TupleSize0Drop>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::tuple::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read>([0], [7], [2], [8], [26], [29]) -> ([30], [31], [32], [33], [34]);
+enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([34]) { fallthrough([35]) F25_B7([36]) };
+branch_align() -> ();
+struct_deconstruct<Tuple<core::integer::u256>>([35]) -> ([37]);
+struct_deconstruct<core::integer::u256>([37]) -> ([38], [39]);
+struct_deconstruct<core::integer::u256>([6]) -> ([40], [41]);
+u128_overflowing_sub([30], [39], [41]) { fallthrough([42], [43]) F25_B0([44], [45]) };
+branch_align() -> ();
+redeposit_gas([31]) -> ([46]);
+struct_construct<Unit>() -> ([47]);
+enum_init<core::bool, 0>([47]) -> ([48]);
+store_temp<RangeCheck>([42]) -> ([49]);
+store_temp<GasBuiltin>([46]) -> ([50]);
+store_temp<u128>([43]) -> ([51]);
+store_temp<core::bool>([48]) -> ([52]);
+jump() { F25_B1() };
+F25_B0:
+branch_align() -> ();
+redeposit_gas([31]) -> ([53]);
+struct_construct<Unit>() -> ([54]);
+enum_init<core::bool, 1>([54]) -> ([55]);
+store_temp<RangeCheck>([44]) -> ([49]);
+store_temp<GasBuiltin>([53]) -> ([50]);
+store_temp<u128>([45]) -> ([51]);
+store_temp<core::bool>([55]) -> ([52]);
+F25_B1:
+u128_overflowing_sub([49], [38], [40]) { fallthrough([56], [57]) F25_B2([58], [59]) };
+branch_align() -> ();
+redeposit_gas([50]) -> ([60]);
+store_temp<RangeCheck>([56]) -> ([61]);
+store_temp<GasBuiltin>([60]) -> ([62]);
+store_temp<u128>([57]) -> ([63]);
+store_temp<u128>([51]) -> ([64]);
+jump() { F25_B3() };
+F25_B2:
+branch_align() -> ();
+const_as_immediate<Const<u128, 1>>() -> ([65]);
+store_temp<u128>([65]) -> ([65]);
+u128_overflowing_sub([58], [51], [65]) { fallthrough([66], [67]) F25_B5([68], [69]) };
+branch_align() -> ();
+redeposit_gas([50]) -> ([70]);
+store_temp<RangeCheck>([66]) -> ([61]);
+store_temp<GasBuiltin>([70]) -> ([62]);
+store_temp<u128>([59]) -> ([63]);
+store_temp<u128>([67]) -> ([64]);
+F25_B3:
+enum_match<core::bool>([52]) { fallthrough([71]) F25_B4([72]) };
+branch_align() -> ();
+drop<Unit>([71]) -> ();
+redeposit_gas([62]) -> ([73]);
+struct_construct<core::integer::u256>([63], [64]) -> ([74]);
+store_temp<RangeCheck>([61]) -> ([61]);
+store_temp<GasBuiltin>([73]) -> ([73]);
+store_temp<Pedersen>([32]) -> ([32]);
+store_temp<System>([33]) -> ([33]);
+store_temp<ContractAddress>([16]) -> ([16]);
+store_temp<ContractAddress>([5]) -> ([5]);
+store_temp<core::integer::u256>([74]) -> ([74]);
+function_call<user@cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::approve_helper>([61], [73], [32], [33], [4], [16], [5], [74]) -> ([75], [76], [77], [78], [79]);
+return([75], [76], [77], [78], [79]);
+F25_B4:
+branch_align() -> ();
+drop<Unit>([72]) -> ();
+drop<ContractAddress>([5]) -> ();
+drop<ContractAddress>([16]) -> ();
+drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
+drop<u128>([63]) -> ();
+drop<u128>([64]) -> ();
+redeposit_gas([62]) -> ([80]);
+store_temp<RangeCheck>([61]) -> ([81]);
+store_temp<GasBuiltin>([80]) -> ([82]);
+jump() { F25_B6() };
+F25_B5:
+branch_align() -> ();
+drop<u128>([69]) -> ();
+drop<ContractAddress>([5]) -> ();
+drop<ContractAddress>([16]) -> ();
+drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
+drop<u128>([59]) -> ();
+drop<core::bool>([52]) -> ();
+redeposit_gas([50]) -> ([83]);
+store_temp<RangeCheck>([68]) -> ([81]);
+store_temp<GasBuiltin>([83]) -> ([82]);
+F25_B6:
+function_call<user@core::panic_with_const_felt252::<39879774624085075084607933104993585622903>>() -> ([84]);
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([84]) -> ([85]);
+store_temp<RangeCheck>([81]) -> ([81]);
+store_temp<GasBuiltin>([82]) -> ([82]);
+store_temp<Pedersen>([32]) -> ([32]);
+store_temp<System>([33]) -> ([33]);
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([85]) -> ([85]);
+return([81], [82], [32], [33], [85]);
+F25_B7:
+branch_align() -> ();
+drop<ContractAddress>([5]) -> ();
+drop<ContractAddress>([16]) -> ();
+drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
+drop<core::integer::u256>([6]) -> ();
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([36]) -> ([86]);
+store_temp<RangeCheck>([30]) -> ([30]);
+store_temp<GasBuiltin>([31]) -> ([31]);
+store_temp<Pedersen>([32]) -> ([32]);
+store_temp<System>([33]) -> ([33]);
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([86]) -> ([86]);
+return([30], [31], [32], [33], [86]);
+F25_B8:
+branch_align() -> ();
+drop<core::integer::u256>([6]) -> ();
+drop<ContractAddress>([5]) -> ();
+drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
+struct_construct<core::panics::Panic>() -> ([87]);
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([87], [12]) -> ([88]);
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>, 1>([88]) -> ([89]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<GasBuiltin>([10]) -> ([10]);
+store_temp<Pedersen>([2]) -> ([2]);
+store_temp<System>([11]) -> ([11]);
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([89]) -> ([89]);
+return([0], [10], [2], [11], [89]);
+F26:
 storage_base_address_const<1528802474226268325865027367859591458315299653151958663884057507666229546336>() -> ([10]);
 storage_address_from_base([10]) -> ([11]);
 const_as_immediate<Const<u32, 0>>() -> ([12]);
 store_temp<u32>([12]) -> ([12]);
 store_temp<StorageAddress>([11]) -> ([11]);
-storage_write_syscall([1], [3], [12], [11], [5]) { fallthrough([13], [14]) F25_B8([15], [16], [17]) };
+storage_write_syscall([1], [3], [12], [11], [5]) { fallthrough([13], [14]) F26_B8([15], [16], [17]) };
 branch_align() -> ();
 storage_base_address_const<944713526212149105522785400348068751682982210605126537021911324578866405028>() -> ([18]);
 storage_address_from_base([18]) -> ([19]);
@@ -3788,7 +3794,7 @@ const_as_immediate<Const<u32, 0>>() -> ([20]);
 store_temp<GasBuiltin>([13]) -> ([13]);
 store_temp<u32>([20]) -> ([20]);
 store_temp<StorageAddress>([19]) -> ([19]);
-storage_write_syscall([13], [14], [20], [19], [6]) { fallthrough([21], [22]) F25_B7([23], [24], [25]) };
+storage_write_syscall([13], [14], [20], [19], [6]) { fallthrough([21], [22]) F26_B7([23], [24], [25]) };
 branch_align() -> ();
 storage_base_address_const<134830404806214277570220174593674215737759987247891306080029841794115377321>() -> ([26]);
 u8_to_felt252([7]) -> ([27]);
@@ -3797,13 +3803,13 @@ const_as_immediate<Const<u32, 0>>() -> ([29]);
 store_temp<GasBuiltin>([21]) -> ([21]);
 store_temp<u32>([29]) -> ([29]);
 store_temp<StorageAddress>([28]) -> ([28]);
-storage_write_syscall([21], [22], [29], [28], [27]) { fallthrough([30], [31]) F25_B6([32], [33], [34]) };
+storage_write_syscall([21], [22], [29], [28], [27]) { fallthrough([30], [31]) F26_B6([32], [33], [34]) };
 branch_align() -> ();
 dup<ContractAddress>([9]) -> ([9], [35]);
 contract_address_to_felt252([35]) -> ([36]);
 store_temp<GasBuiltin>([30]) -> ([30]);
 store_temp<System>([31]) -> ([31]);
-felt252_is_zero([36]) { fallthrough() F25_B0([37]) };
+felt252_is_zero([36]) { fallthrough() F26_B0([37]) };
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<ContractAddress>([9]) -> ();
@@ -3816,7 +3822,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([31]) -> ([31]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([39]) -> ([39]);
 return([0], [30], [2], [31], [39]);
-F25_B0:
+F26_B0:
 branch_align() -> ();
 drop<NonZero<felt252>>([37]) -> ();
 storage_base_address_const<603278275252936218847294002513349627170936020082667936993356353388973422646>() -> ([40]);
@@ -3829,7 +3835,7 @@ const_as_immediate<Const<u32, 0>>() -> ([47]);
 dup<u32>([47]) -> ([47], [48]);
 store_temp<u32>([48]) -> ([48]);
 store_temp<StorageAddress>([46]) -> ([46]);
-storage_write_syscall([30], [31], [48], [46], [44]) { fallthrough([49], [50]) F25_B5([51], [52], [53]) };
+storage_write_syscall([30], [31], [48], [46], [44]) { fallthrough([49], [50]) F26_B5([51], [52], [53]) };
 branch_align() -> ();
 u128_to_felt252([43]) -> ([54]);
 const_as_immediate<Const<u8, 1>>() -> ([55]);
@@ -3838,7 +3844,7 @@ storage_address_from_base_and_offset([40], [55]) -> ([56]);
 store_temp<GasBuiltin>([49]) -> ([49]);
 store_temp<u32>([47]) -> ([47]);
 store_temp<StorageAddress>([56]) -> ([56]);
-storage_write_syscall([49], [50], [47], [56], [54]) { fallthrough([57], [58]) F25_B4([59], [60], [61]) };
+storage_write_syscall([49], [50], [47], [56], [54]) { fallthrough([57], [58]) F26_B4([59], [60], [61]) };
 branch_align() -> ();
 dup<ContractAddress>([9]) -> ([9], [62]);
 contract_address_to_felt252([62]) -> ([63]);
@@ -3850,8 +3856,9 @@ struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::st
 rename<felt252>([68]) -> ([69]);
 store_temp<felt252>([69]) -> ([69]);
 pedersen([2], [69], [63]) -> ([70], [71]);
+store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<felt252>([71]) -> ([71]);
-storage_base_address_from_felt252([0], [71]) -> ([72], [73]);
+function_call<user@core::starknet::storage_access::storage_base_address_from_felt252>([0], [71]) -> ([72], [73]);
 dup<core::integer::u256>([8]) -> ([8], [74]);
 struct_deconstruct<core::integer::u256>([74]) -> ([75], [76]);
 u128_to_felt252([75]) -> ([77]);
@@ -3862,8 +3869,7 @@ dup<u32>([80]) -> ([80], [81]);
 store_temp<GasBuiltin>([57]) -> ([57]);
 store_temp<u32>([81]) -> ([81]);
 store_temp<Pedersen>([70]) -> ([70]);
-store_temp<RangeCheck>([72]) -> ([72]);
-storage_write_syscall([57], [58], [81], [79], [77]) { fallthrough([82], [83]) F25_B3([84], [85], [86]) };
+storage_write_syscall([57], [58], [81], [79], [77]) { fallthrough([82], [83]) F26_B3([84], [85], [86]) };
 branch_align() -> ();
 u128_to_felt252([76]) -> ([87]);
 const_as_immediate<Const<u8, 1>>() -> ([88]);
@@ -3871,7 +3877,7 @@ storage_address_from_base_and_offset([73], [88]) -> ([89]);
 store_temp<GasBuiltin>([82]) -> ([82]);
 store_temp<u32>([80]) -> ([80]);
 store_temp<StorageAddress>([89]) -> ([89]);
-storage_write_syscall([82], [83], [80], [89], [87]) { fallthrough([90], [91]) F25_B2([92], [93], [94]) };
+storage_write_syscall([82], [83], [80], [89], [87]) { fallthrough([90], [91]) F26_B2([92], [93], [94]) };
 branch_align() -> ();
 contract_address_const<0>() -> ([95]);
 array_new<felt252>() -> ([96]);
@@ -3898,7 +3904,7 @@ drop<Array<felt252>>([110]) -> ();
 struct_construct<core::array::Span::<core::felt252>>([109]) -> ([112]);
 struct_construct<core::array::Span::<core::felt252>>([111]) -> ([113]);
 store_temp<GasBuiltin>([90]) -> ([90]);
-emit_event_syscall([90], [91], [112], [113]) { fallthrough([114], [115]) F25_B1([116], [117], [118]) };
+emit_event_syscall([90], [91], [112], [113]) { fallthrough([114], [115]) F26_B1([116], [117], [118]) };
 branch_align() -> ();
 store_temp<GasBuiltin>([114]) -> ([114]);
 redeposit_gas([114]) -> ([119]);
@@ -3911,7 +3917,7 @@ store_temp<Pedersen>([70]) -> ([70]);
 store_temp<System>([115]) -> ([115]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([122]) -> ([122]);
 return([72], [119], [70], [115], [122]);
-F25_B1:
+F26_B1:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 struct_construct<core::panics::Panic>() -> ([123]);
@@ -3923,7 +3929,7 @@ store_temp<Pedersen>([70]) -> ([70]);
 store_temp<System>([117]) -> ([117]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([125]) -> ([125]);
 return([72], [116], [70], [117], [125]);
-F25_B2:
+F26_B2:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<ContractAddress>([9]) -> ();
@@ -3937,7 +3943,7 @@ store_temp<Pedersen>([70]) -> ([70]);
 store_temp<System>([93]) -> ([93]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([128]) -> ([128]);
 return([72], [92], [70], [93], [128]);
-F25_B3:
+F26_B3:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<ContractAddress>([9]) -> ();
@@ -3954,7 +3960,7 @@ store_temp<Pedersen>([70]) -> ([70]);
 store_temp<System>([85]) -> ([85]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([131]) -> ([131]);
 return([72], [84], [70], [85], [131]);
-F25_B4:
+F26_B4:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<ContractAddress>([9]) -> ();
@@ -3968,7 +3974,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([60]) -> ([60]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([134]) -> ([134]);
 return([0], [59], [2], [60], [134]);
-F25_B5:
+F26_B5:
 branch_align() -> ();
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState>([4]) -> ();
 drop<ContractAddress>([9]) -> ();
@@ -3985,7 +3991,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([52]) -> ([52]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([137]) -> ([137]);
 return([0], [51], [2], [52], [137]);
-F25_B6:
+F26_B6:
 branch_align() -> ();
 drop<ContractAddress>([9]) -> ();
 drop<core::integer::u256>([8]) -> ();
@@ -3999,7 +4005,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([33]) -> ([33]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([140]) -> ([140]);
 return([0], [32], [2], [33], [140]);
-F25_B7:
+F26_B7:
 branch_align() -> ();
 drop<ContractAddress>([9]) -> ();
 drop<core::integer::u256>([8]) -> ();
@@ -4014,7 +4020,7 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([24]) -> ([24]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([143]) -> ([143]);
 return([0], [23], [2], [24], [143]);
-F25_B8:
+F26_B8:
 branch_align() -> ();
 drop<ContractAddress>([9]) -> ();
 drop<core::integer::u256>([8]) -> ();
@@ -4030,35 +4036,35 @@ store_temp<Pedersen>([2]) -> ([2]);
 store_temp<System>([16]) -> ([16]);
 store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>>([146]) -> ([146]);
 return([0], [15], [2], [16], [146]);
-F26:
+F27:
 const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492917>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F27:
+F28:
 const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492916>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F28:
+F29:
 array_new<felt252>() -> ([1]);
 array_append<felt252>([1], [0]) -> ([2]);
 struct_construct<core::panics::Panic>() -> ([3]);
 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
 store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
-F29:
+F30:
 const_as_immediate<Const<felt252, 25936191677694277552149992725516921697451103245639728>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F30:
+F31:
 const_as_immediate<Const<felt252, 395754877894504967531585582359572169455970492464>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F31:
-enum_match<cairo_level_tests::components::erc20_mini::Event>([0]) { fallthrough([3]) F31_B0([4]) };
+F32:
+enum_match<cairo_level_tests::components::erc20_mini::Event>([0]) { fallthrough([3]) F32_B0([4]) };
 branch_align() -> ();
 const_as_immediate<Const<felt252, 271746229759260285552388728919865295615886751538523744128730118297934206697>>() -> ([5]);
 store_temp<felt252>([5]) -> ([5]);
@@ -4094,7 +4100,7 @@ array_append<felt252>([29], [33]) -> ([34]);
 store_temp<Array<felt252>>([6]) -> ([6]);
 store_temp<Array<felt252>>([34]) -> ([34]);
 return([6], [34]);
-F31_B0:
+F32_B0:
 branch_align() -> ();
 const_as_immediate<Const<felt252, 544914742286571513055574265148471203182105283038408585630116262969508767999>>() -> ([35]);
 store_temp<felt252>([35]) -> ([35]);
@@ -4130,22 +4136,22 @@ array_append<felt252>([59], [63]) -> ([64]);
 store_temp<Array<felt252>>([36]) -> ([36]);
 store_temp<Array<felt252>>([64]) -> ([64]);
 return([36], [64]);
-F32:
+F33:
 const_as_immediate<Const<felt252, 39879774624079483812136948410799859986295>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F33:
+F34:
 const_as_immediate<Const<felt252, 39879774624085075084607933104993585622903>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F34:
+F35:
 const_as_immediate<Const<felt252, 101313248740993271302566317381896466254801065025584>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
 return([1]);
-F35:
+F36:
 const_as_immediate<Const<felt252, 7300388948442106731950660484798539862217172507820428101544021685107>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 function_call<user@core::panic_with_felt252>([0]) -> ([1]);
@@ -4167,23 +4173,24 @@ core::panic_with_const_felt252::<77332293814602881208023342084758381660807595350
 core::panic_with_const_felt252::<375233589013918064796019>@F13() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<110930490496575599150170734222081291576>@F14() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<476442828812030857794232422692155113556837216824>@F15() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>@F16() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::tuple::TupleSize0Drop>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::tuple::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read@F17([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>, [5]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
-core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492914>@F18() -> (Tuple<core::panics::Panic, Array<felt252>>);
-cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::transfer_helper@F19([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::spend_allowance@F20([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492915>@F21() -> (Tuple<core::panics::Panic, Array<felt252>>);
-cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::approve_helper@F22([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-cairo_level_tests::components::erc20_mini::ERC20Impl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::increase_allowance@F23([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-cairo_level_tests::components::erc20_mini::ERC20Impl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::decrease_allowance@F24([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::erc20_init@F25([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: felt252, [6]: felt252, [7]: u8, [8]: core::integer::u256, [9]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
-core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492917>@F26() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492916>@F27() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_felt252@F28([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<25936191677694277552149992725516921697451103245639728>@F29() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<395754877894504967531585582359572169455970492464>@F30() -> (Tuple<core::panics::Panic, Array<felt252>>);
-cairo_level_tests::components::erc20_mini::EventIsEvent::append_keys_and_data@F31([0]: cairo_level_tests::components::erc20_mini::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>);
-core::panic_with_const_felt252::<39879774624079483812136948410799859986295>@F32() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<39879774624085075084607933104993585622903>@F33() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<101313248740993271302566317381896466254801065025584>@F34() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::panic_with_const_felt252::<7300388948442106731950660484798539862217172507820428101544021685107>@F35() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::starknet::storage_access::storage_base_address_from_felt252@F16([0]: RangeCheck, [1]: felt252) -> (RangeCheck, StorageBaseAddress);
+core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492913>@F17() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::tuple::TupleSize0Drop>, core::tuple::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::tuple::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::tuple::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::tuple::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::tuple::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::tuple::TupleNextDrop::<(core::integer::u128,), core::tuple::TupleSplitTupleSize1::<core::integer::u128>, core::tuple::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::tuple::TupleSize0Drop>, core::tuple::TupleSplitTupleSize1::<core::integer::u128>>>>::read@F18([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>, [5]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
+core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492914>@F19() -> (Tuple<core::panics::Panic, Array<felt252>>);
+cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::transfer_helper@F20([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::spend_allowance@F21([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492915>@F22() -> (Tuple<core::panics::Panic, Array<felt252>>);
+cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::approve_helper@F23([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+cairo_level_tests::components::erc20_mini::ERC20Impl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::increase_allowance@F24([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+cairo_level_tests::components::erc20_mini::ERC20Impl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::decrease_allowance@F25([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+cairo_level_tests::components::erc20_mini::ERC20HelperImpl::<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ERC20HasStorage, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractStateEventEmitter, cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::EventERC20TokenIntoEvent>::erc20_init@F26([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, [5]: felt252, [6]: felt252, [7]: u8, [8]: core::integer::u256, [9]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::ContractState, ())>);
+core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492917>@F27() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<485748461484230571791265682659113160264223489397539653310998840191492916>@F28() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F29([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<25936191677694277552149992725516921697451103245639728>@F30() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<395754877894504967531585582359572169455970492464>@F31() -> (Tuple<core::panics::Panic, Array<felt252>>);
+cairo_level_tests::components::erc20_mini::EventIsEvent::append_keys_and_data@F32([0]: cairo_level_tests::components::erc20_mini::Event, [1]: Array<felt252>, [2]: Array<felt252>) -> (Array<felt252>, Array<felt252>);
+core::panic_with_const_felt252::<39879774624079483812136948410799859986295>@F33() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<39879774624085075084607933104993585622903>@F34() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<101313248740993271302566317381896466254801065025584>@F35() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_const_felt252::<7300388948442106731950660484798539862217172507820428101544021685107>@F36() -> (Tuple<core::panics::Panic, Array<felt252>>);
