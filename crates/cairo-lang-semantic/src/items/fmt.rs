@@ -42,7 +42,7 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 value.fmt(f, db)?;
                 write!(f, ".into_box()")
             }
-            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db.upcast())),
+            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db)),
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
             ConstValue::ImplConstant(id) => id.fmt(f, db),
@@ -53,8 +53,8 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
 impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for ConcreteVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let db = db.upcast();
-        let enum_name = self.concrete_enum_id.enum_id(db.upcast()).name(db.upcast());
-        let variant_name = self.id.name(db.upcast());
+        let enum_name = self.concrete_enum_id.enum_id(db).name(db);
+        let variant_name = self.id.name(db);
         write!(f, "{enum_name}::{variant_name}")
     }
 }

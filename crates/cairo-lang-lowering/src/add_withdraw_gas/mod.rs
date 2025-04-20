@@ -50,8 +50,8 @@ fn add_withdraw_gas_to_function(
         end: FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 function: get_function_id(
-                    db.upcast(),
-                    core_submodule(db.upcast(), "gas"),
+                    db,
+                    core_submodule(db, "gas"),
                     "withdraw_gas".into(),
                     vec![],
                 )
@@ -60,16 +60,16 @@ fn add_withdraw_gas_to_function(
                 arms: vec![
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_some_variant(
-                            db.upcast(),
-                            unit_ty(db.upcast()),
+                            db,
+                            unit_ty(db),
                         )),
                         block_id: old_root_new_id,
                         var_ids: vec![],
                     },
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_none_variant(
-                            db.upcast(),
-                            unit_ty(db.upcast()),
+                            db,
+                            unit_ty(db),
                         )),
                         block_id: panic_block_id,
                         var_ids: vec![],
@@ -97,13 +97,13 @@ fn create_panic_block(
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
-    let never_ty = never_ty(db.upcast());
+    let never_ty = never_ty(db);
     let never_var = variables.new_var(VarRequest { ty: never_ty, location });
     lowered.variables = variables.variables;
 
     let gas_panic_fn = get_function_id(
-        db.upcast(),
-        core_module(db.upcast()),
+        db,
+        core_module(db),
         "panic_with_const_felt252".into(),
         vec![GenericArgumentId::Constant(
             ConstValue::Int(
