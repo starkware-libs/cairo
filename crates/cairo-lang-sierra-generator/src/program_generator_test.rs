@@ -32,29 +32,16 @@ fn test_program_generator(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let program = checked_compile_to_sierra(inputs["cairo"].as_str());
+    let program = checked_compile_to_sierra(inputs["cairo_code"].as_str());
     TestRunnerResult::success(OrderedHashMap::from([("sierra_code".into(), program.to_string())]))
 }
 
-#[test_case(
-    "f1",
-    &[
-        "test::f1", "test::f2", "test::f3",
-        "test::f4", "test::f5", "test::f6",
-    ];
-    "finds all"
-)]
-#[test_case(
-    "f2",
-    &[
-        "test::f2", "test::f3", "test::f4", "test::f5", "test::f6",
-    ];
-    "all but first"
-)]
-#[test_case("f3", &["test::f3", "test::f5", "test::f6"]; "f3 -> f5 -> f6")]
-#[test_case("f4", &["test::f4", "test::f5", "test::f6"]; "f4 -> (f5 -> f6, f6)")]
-#[test_case("f5", &["test::f5", "test::f6"]; "f5 -> f6")]
-#[test_case("f6", &["test::f6"]; "self loop")]
+#[test_case("f1", &["f1", "f2", "f3", "f4", "f5", "f6"]; "finds all")]
+#[test_case("f2", &["f2", "f3", "f4", "f5", "f6"]; "all but first")]
+#[test_case("f3", &["f3", "f5", "f6"]; "f3 -> f5 -> f6")]
+#[test_case("f4", &["f4", "f5", "f6"]; "f4 -> (f5 -> f6, f6)")]
+#[test_case("f5", &["f5", "f6"]; "f5 -> f6")]
+#[test_case("f6", &["f6"]; "self loop")]
 fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
     let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
         #[inline(never)]
@@ -89,7 +76,7 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
         replace_sierra_ids_in_program(&db, &program)
             .funcs
             .into_iter()
-            .map(|f| f.id.to_string())
+            .filter_map(|f| f.id.to_string().strip_prefix("test::").map(|s| s.to_string()))
             .collect_vec(),
         sierra_used_funcs
     );

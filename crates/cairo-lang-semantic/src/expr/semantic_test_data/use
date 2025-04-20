@@ -1371,6 +1371,7 @@ test_expr_semantics(expect_diagnostics: false)
 edition = "2024_07"
 
 //! > module_code
+#[feature("corelib-internal-use")]
 use core::starknet::*;
 
 //! > function_body

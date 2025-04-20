@@ -1,6 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
 };
@@ -44,7 +45,7 @@ impl FeatureKind {
             return Self::Stable;
         };
         if unstable_attrs.len() + deprecated_attrs.len() + internal_attrs.len() > 1 {
-            add_diag(diagnostics, &attrs.stable_ptr(), FeatureMarkerDiagnostic::MultipleMarkers);
+            add_diag(diagnostics, &attrs.stable_ptr(db), FeatureMarkerDiagnostic::MultipleMarkers);
             return Self::Stable;
         }
 
@@ -71,6 +72,12 @@ impl FeatureKind {
     }
 }
 
+/// A trait for retrieving the `FeatureKind` of an item.
+pub trait HasFeatureKind {
+    /// Returns the `FeatureKind` associated with the implementing struct.
+    fn feature_kind(&self) -> &FeatureKind;
+}
+
 /// Diagnostics for feature markers.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum FeatureMarkerDiagnostic {
@@ -94,7 +101,11 @@ fn parse_feature_attr<const EXTRA_ALLOWED: usize>(
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
-            add_diag(diagnostics, &arg.stable_ptr(), FeatureMarkerDiagnostic::UnsupportedArgument);
+            add_diag(
+                diagnostics,
+                &arg.stable_ptr(db),
+                FeatureMarkerDiagnostic::UnsupportedArgument,
+            );
             continue;
         };
         let Some(i) = allowed_args.iter().position(|x| x == &name.text.as_str()) else {
@@ -177,20 +188,20 @@ pub struct FeatureConfigRestore {
 /// Returns the allowed features of an object which supports attributes.
 pub fn extract_item_feature_config(
     db: &dyn SemanticGroup,
+    crate_id: CrateId,
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let syntax_db = db.upcast();
     let mut config = FeatureConfig::default();
     process_feature_attr_kind(
-        syntax_db,
+        db,
         syntax,
         FEATURE_ATTR,
         || SemanticDiagnosticKind::UnsupportedFeatureAttrArguments,
         diagnostics,
         |value| {
             if let ast::Expr::String(value) = value {
-                config.allowed_features.insert(value.text(syntax_db));
+                config.allowed_features.insert(value.text(db));
                 true
             } else {
                 false
@@ -198,12 +209,12 @@ pub fn extract_item_feature_config(
         },
     );
     process_feature_attr_kind(
-        syntax_db,
+        db,
         syntax,
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| match value.as_syntax_node().get_text_without_trivia(syntax_db).as_str() {
+        |value| match value.as_syntax_node().get_text_without_trivia(db).as_str() {
             "deprecated" => {
                 config.allow_deprecated = true;
                 true
@@ -212,7 +223,7 @@ pub fn extract_item_feature_config(
                 config.allow_unused_imports = true;
                 true
             }
-            other => db.declared_allows().contains(other),
+            other => db.declared_allows(crate_id).contains(other),
         },
     );
     config
@@ -251,9 +262,9 @@ pub fn extract_feature_config(
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
-    let defs_db = db.upcast();
-    let mut current_module_id = element_id.parent_module(defs_db);
-    let mut config_stack = vec![extract_item_feature_config(db, syntax, diagnostics)];
+    let mut current_module_id = element_id.parent_module(db);
+    let crate_id = current_module_id.owning_crate(db);
+    let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
@@ -266,11 +277,11 @@ pub fn extract_feature_config(
                 };
             }
             ModuleId::Submodule(id) => {
-                current_module_id = id.parent_module(defs_db);
+                current_module_id = id.parent_module(db);
                 let module = &db.module_submodules(current_module_id).unwrap()[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();
-                config_stack.push(extract_item_feature_config(db, module, ignored));
+                config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));
             }
         }
     };

@@ -113,13 +113,13 @@ impl Relocation {
 pub struct RelocationEntry {
     /// The index of the casm instruction that needs to be relocated.
     pub instruction_idx: CodeOffset,
-    /// The relocation the needs to be applied.
+    /// The relocation that needs to be applied.
     pub relocation: Relocation,
 }
 
 /// Applies 'relocations' to 'instructions'.
 ///
-/// This is currently O(instruction.len()) rather then O(relocations.len()),
+/// This is currently O(instruction.len()) rather than O(relocations.len()),
 /// But another pass is required anyhow to generate the bytecode and the relocations
 /// can be applied during that pass.
 pub fn relocate_instructions(

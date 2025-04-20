@@ -163,6 +163,8 @@ enum StarknetLibfuncs {
     GetExecutionInfoV2,
     ReplaceClass: starknet::ClassHash,
     SendMessageToL1: (felt252, Span<felt252>),
+    GetClassHashAt: starknet::ContractAddress,
+    MetaTxV0: (starknet::ContractAddress, felt252, Span<felt252>, Span<felt252>),
 }
 
 enum ConstsLibfuncs {
@@ -474,6 +476,14 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         StarknetLibfuncs::SendMessageToL1((
             address, data,
         )) => use_and_panic(syscalls::send_message_to_l1_syscall(address, data)),
+        StarknetLibfuncs::GetClassHashAt(address) => use_and_panic(
+            syscalls::get_class_hash_at_syscall(address),
+        ),
+        StarknetLibfuncs::MetaTxV0((
+            address, entry_point_selector, calldata, signature,
+        )) => use_and_panic(
+            syscalls::meta_tx_v0_syscall(address, entry_point_selector, calldata, signature),
+        ),
     }
 }
 
@@ -489,10 +499,8 @@ extern fn i32_const<const VALUE: i32>() -> i32 nopanic;
 extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
 extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
 extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
-use starknet::class_hash::class_hash_const;
-use starknet::contract_address::contract_address_const;
-use starknet::storage_access::storage_base_address_const;
 
+#[feature("deprecated-starknet-consts")]
 fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
     match libfuncs {
         ConstsLibfuncs::Felt252 => use_and_panic(felt252_const::<0>()),
@@ -507,9 +515,13 @@ fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
         ConstsLibfuncs::I64 => use_and_panic(i64_const::<0>()),
         ConstsLibfuncs::I128 => use_and_panic(i128_const::<0>()),
         ConstsLibfuncs::Byte31 => use_and_panic(bytes31_const::<0>()),
-        ConstsLibfuncs::StorageBase => use_and_panic(storage_base_address_const::<0>()),
-        ConstsLibfuncs::ClassHash => use_and_panic(class_hash_const::<0>()),
-        ConstsLibfuncs::ContractAddress => use_and_panic(contract_address_const::<0>()),
+        ConstsLibfuncs::StorageBase => use_and_panic(
+            starknet::storage_access::storage_base_address_const::<0>(),
+        ),
+        ConstsLibfuncs::ClassHash => use_and_panic(starknet::class_hash::class_hash_const::<0>()),
+        ConstsLibfuncs::ContractAddress => use_and_panic(
+            starknet::contract_address::contract_address_const::<0>(),
+        ),
     }
 }
 

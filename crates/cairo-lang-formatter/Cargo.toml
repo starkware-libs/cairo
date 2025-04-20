@@ -2,17 +2,18 @@
 name = "cairo-lang-formatter"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Cairo formatter."
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.9.2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.9.2" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.9.2" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.9.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.11.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.4" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.11.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 diffy.workspace = true
 ignore.workspace = true
 itertools = { workspace = true, default-features = true }

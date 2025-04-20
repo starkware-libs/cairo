@@ -70,7 +70,11 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_separated_list("ArgList", "Arg", "TerminalComma")
     .add_struct(StructBuilder::new("ExprMissing"))
-    .add_enum(EnumBuilder::new("PathSegment").missing("Simple").node("WithGenericArgs"))
+    .add_enum(EnumBuilder::new("PathSegment")
+        .node("Simple")
+        .node("WithGenericArgs")
+        .missing("Missing")
+    )
     .add_struct(StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier"))
     .add_option("TerminalColonColon")
     .add_struct(StructBuilder::new("PathSegmentWithGenericArgs")
@@ -78,12 +82,19 @@ pub fn get_spec() -> Vec<Node> {
         .node("separator", "OptionTerminalColonColon")
         .node("generic_args", "GenericArgs")
     )
+<<<<<<< HEAD
     .add_struct(StructBuilder::new("ExprPath")
         .node("dollar", "OptionTerminalDollar")
         .node("segments", "ExprPathInner")
     )
     .add_option("TerminalDollar")
     .add_separated_list("ExprPathInner", "PathSegment", "TerminalColonColon")
+=======
+    // When a segment is missing, we parse a missing token, to point to from other
+    // parts of the code. This simplifies the handling of paths.
+    .add_struct(StructBuilder::new("PathSegmentMissing").node("ident","TerminalIdentifier"))
+    .add_separated_list("ExprPath", "PathSegment", "TerminalColonColon")
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     .add_struct(StructBuilder::new("ExprParenthesized")
         .node("lparen", "TerminalLParen")
         .node("expr", "Expr")

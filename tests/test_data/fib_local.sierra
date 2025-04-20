@@ -12,53 +12,56 @@ libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
 libfunc drop<Uninitialized<felt252>> = drop<Uninitialized<felt252>>;
-libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
-libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::fib_local::fib> = function_call<user@examples::fib_local::fib>;
 libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 libfunc store_local<felt252> = store_local<felt252>;
 libfunc felt252_add = felt252_add;
 
-alloc_local<felt252>() -> ([2]); // 0
-finalize_locals() -> (); // 1
-disable_ap_tracking() -> (); // 2
-dup<felt252>([0]) -> ([0], [3]); // 3
-felt252_is_zero([3]) { fallthrough() 11([4]) }; // 4
-branch_align() -> (); // 5
-drop<felt252>([0]) -> (); // 6
-drop<Uninitialized<felt252>>([2]) -> (); // 7
-const_as_immediate<Const<felt252, 1>>() -> ([5]); // 8
-store_temp<felt252>([5]) -> ([5]); // 9
-return([5]); // 10
-branch_align() -> (); // 11
-drop<NonZero<felt252>>([4]) -> (); // 12
-const_as_immediate<Const<felt252, 1>>() -> ([6]); // 13
-dup<felt252>([0]) -> ([0], [7]); // 14
-felt252_sub([7], [6]) -> ([8]); // 15
-store_temp<felt252>([8]) -> ([8]); // 16
-felt252_is_zero([8]) { fallthrough() 24([9]) }; // 17
-branch_align() -> (); // 18
-drop<felt252>([0]) -> (); // 19
-drop<Uninitialized<felt252>>([2]) -> (); // 20
-const_as_immediate<Const<felt252, 1>>() -> ([10]); // 21
-store_temp<felt252>([10]) -> ([10]); // 22
-return([10]); // 23
-branch_align() -> (); // 24
-drop<NonZero<felt252>>([9]) -> (); // 25
-const_as_immediate<Const<felt252, 1>>() -> ([11]); // 26
-dup<felt252>([0]) -> ([0], [12]); // 27
-felt252_sub([12], [11]) -> ([13]); // 28
-store_temp<felt252>([13]) -> ([13]); // 29
-function_call<user@examples::fib_local::fib>([13]) -> ([1]); // 30
-const_as_immediate<Const<felt252, 2>>() -> ([14]); // 31
-felt252_sub([0], [14]) -> ([15]); // 32
-store_temp<felt252>([15]) -> ([15]); // 33
-store_local<felt252>([2], [1]) -> ([1]); // 34
-function_call<user@examples::fib_local::fib>([15]) -> ([16]); // 35
-felt252_add([1], [16]) -> ([17]); // 36
-store_temp<felt252>([17]) -> ([17]); // 37
-return([17]); // 38
+F0:
+alloc_local<felt252>() -> ([2]);
+finalize_locals() -> ();
+disable_ap_tracking() -> ();
+dup<felt252>([0]) -> ([0], [3]);
+felt252_is_zero([3]) { fallthrough() F0_B0([4]) };
+branch_align() -> ();
+drop<felt252>([0]) -> ();
+drop<Uninitialized<felt252>>([2]) -> ();
+jump() { F0_B1() };
+F0_B0:
+branch_align() -> ();
+drop<NonZero<felt252>>([4]) -> ();
+const_as_immediate<Const<felt252, 1>>() -> ([5]);
+dup<felt252>([0]) -> ([0], [6]);
+felt252_sub([6], [5]) -> ([7]);
+store_temp<felt252>([7]) -> ([7]);
+felt252_is_zero([7]) { fallthrough() F0_B2([8]) };
+branch_align() -> ();
+drop<felt252>([0]) -> ();
+drop<Uninitialized<felt252>>([2]) -> ();
+F0_B1:
+const_as_immediate<Const<felt252, 1>>() -> ([9]);
+store_temp<felt252>([9]) -> ([9]);
+return([9]);
+F0_B2:
+branch_align() -> ();
+drop<NonZero<felt252>>([8]) -> ();
+const_as_immediate<Const<felt252, 1>>() -> ([10]);
+dup<felt252>([0]) -> ([0], [11]);
+felt252_sub([11], [10]) -> ([12]);
+store_temp<felt252>([12]) -> ([12]);
+function_call<user@examples::fib_local::fib>([12]) -> ([1]);
+const_as_immediate<Const<felt252, 2>>() -> ([13]);
+felt252_sub([0], [13]) -> ([14]);
+store_temp<felt252>([14]) -> ([14]);
+store_local<felt252>([2], [1]) -> ([1]);
+function_call<user@examples::fib_local::fib>([14]) -> ([15]);
+felt252_add([1], [15]) -> ([16]);
+store_temp<felt252>([16]) -> ([16]);
+return([16]);
 
-examples::fib_local::fib@0([0]: felt252) -> (felt252);
+examples::fib_local::fib@F0([0]: felt252) -> (felt252);

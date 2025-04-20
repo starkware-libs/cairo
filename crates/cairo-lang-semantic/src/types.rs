@@ -7,10 +7,11 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use sha3::{Digest, Keccak256};
@@ -18,7 +19,7 @@ use smol_str::SmolStr;
 
 use crate::corelib::{
     concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty,
+    concrete_panic_destruct_trait, core_submodule, get_usize_ty,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -31,7 +32,7 @@ use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::imp::{ImplId, ImplLookupContext};
-use crate::resolve::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolutionContext, ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
@@ -144,18 +145,30 @@ impl TypeLongId {
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let phantom_type_attributes = db.declared_phantom_type_attributes();
         match self {
             TypeLongId::Concrete(id) => match id {
-                ConcreteTypeId::Struct(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Enum(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
-                ConcreteTypeId::Extern(id) => phantom_type_attributes
-                    .iter()
-                    .any(|attr| id.has_attr(db, attr).unwrap_or_default()),
+                ConcreteTypeId::Struct(id) => {
+                    let crate_id = db.lookup_intern_struct(id.struct_id(db)).0.0.owning_crate(db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Enum(id) => {
+                    let crate_id = db.lookup_intern_enum(id.enum_id(db)).0.0.owning_crate(db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
+                ConcreteTypeId::Extern(id) => {
+                    let crate_id =
+                        db.lookup_intern_extern_type(id.extern_type_id(db)).0.0.owning_crate(db);
+
+                    db.declared_phantom_type_attributes(crate_id)
+                        .iter()
+                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
@@ -172,9 +185,7 @@ impl TypeLongId {
     /// Returns the module id of the given type if applicable.
     pub fn module_id(&self, db: &dyn SemanticGroup) -> Option<ModuleId> {
         match self {
-            TypeLongId::Concrete(concrete) => {
-                Some(concrete.generic_type(db).module_file_id(db.upcast()).0)
-            }
+            TypeLongId::Concrete(concrete) => Some(concrete.generic_type(db).module_file_id(db).0),
             TypeLongId::Snapshot(ty) => {
                 let (_n_snapshots, inner_ty) = peel_snapshots(db, *ty);
                 inner_ty.module_id(db)
@@ -187,15 +198,15 @@ impl TypeLongId {
                 .module_file_id(db)
                 .map(|module_file_id| module_file_id.0),
             TypeLongId::Missing(_) => None,
-            TypeLongId::Tuple(_) => None,
+            TypeLongId::Tuple(_) => Some(core_submodule(db, "tuple")),
             TypeLongId::ImplType(_) => None,
-            TypeLongId::FixedSizeArray { .. } => None,
+            TypeLongId::FixedSizeArray { .. } => Some(core_submodule(db, "fixed_size_array")),
             TypeLongId::Closure(closure) => {
                 if let Ok(function_id) = closure.parent_function {
                     function_id
                         .get_concrete(db)
                         .generic_function
-                        .module_file_id(db.upcast())
+                        .module_file_id(db)
                         .map(|module_file_id| module_file_id.0)
                 } else {
                     None
@@ -210,7 +221,6 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        let def_db = db.upcast();
         match self {
             TypeLongId::Concrete(concrete) => write!(f, "{}", concrete.format(db)),
             TypeLongId::Tuple(inner_types) => {
@@ -222,10 +232,10 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
             }
             TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
-                write!(f, "{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
+                write!(f, "{}", generic_param.name(db).unwrap_or_else(|| "_".into()))
             }
             TypeLongId::ImplType(impl_type_id) => {
-                write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(def_db))
+                write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(db))
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
@@ -295,7 +305,7 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let generic_type_format = self.generic_type(db).format(db.upcast());
+        let generic_type_format = self.generic_type(db).format(db);
         let mut generic_args = self.generic_args(db).into_iter();
         if let Some(first) = generic_args.next() {
             // Soft limit for the number of chars in the formatted type.
@@ -461,7 +471,7 @@ impl DebugWithDb<dyn SemanticGroup> for ClosureTypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()))
+        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db))
     }
 }
 
@@ -479,7 +489,7 @@ impl ImplTypeId {
     pub fn new(impl_id: ImplId, ty: TraitTypeId, db: &dyn SemanticGroup) -> Self {
         if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
-            assert_eq!(Ok(ty.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+            assert_eq!(Ok(ty.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
 
         ImplTypeId { impl_id, ty }
@@ -491,7 +501,7 @@ impl ImplTypeId {
         self.ty
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.ty.name(db.upcast())).into()
+        format!("{}::{}", self.impl_id.name(db), self.ty.name(db)).into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
@@ -536,113 +546,103 @@ pub fn resolve_type(
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, None)
-        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
+    resolve_type_ex(db, diagnostics, resolver, ty_syntax, ResolutionContext::Default)
 }
-/// Resolves a type given a module and a path. `statement_env` should be provided if called from
-/// statement context.
-pub fn resolve_type_with_environment(
+/// Resolves a type given a module and a path. Allows defining a resolution context.
+pub fn resolve_type_ex(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
-    statement_env: Option<&mut Environment>,
+    ctx: ResolutionContext<'_>,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, statement_env)
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, ctx)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
-pub fn maybe_resolve_type(
+fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
-    mut statement_env: Option<&mut Environment>,
+    mut ctx: ResolutionContext<'_>,
 ) -> Maybe<TypeId> {
-    let syntax_db = db.upcast();
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
             match resolver.resolve_concrete_path_ex(
                 diagnostics,
                 path,
                 NotFoundItemType::Type,
-                statement_env,
+                ctx,
             )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
-                    return Err(diagnostics.report(path, NotAType));
+                    return Err(diagnostics.report(path.stable_ptr(db), NotAType));
                 }
             }
         }
-        ast::Expr::Parenthesized(expr_syntax) => resolve_type_with_environment(
-            db,
-            diagnostics,
-            resolver,
-            &expr_syntax.expr(syntax_db),
-            statement_env,
-        ),
+        ast::Expr::Parenthesized(expr_syntax) => {
+            resolve_type_ex(db, diagnostics, resolver, &expr_syntax.expr(db), ctx)
+        }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
-                .expressions(syntax_db)
-                .elements(syntax_db)
+                .expressions(db)
+                .elements(db)
                 .into_iter()
                 .map(|subexpr_syntax| {
-                    resolve_type_with_environment(
+                    resolve_type_ex(
                         db,
                         diagnostics,
                         resolver,
                         &subexpr_syntax,
-                        statement_env.as_deref_mut(),
+                        match ctx {
+                            ResolutionContext::Default => ResolutionContext::Default,
+                            ResolutionContext::ModuleItem(id) => ResolutionContext::ModuleItem(id),
+                            ResolutionContext::Statement(ref mut env) => {
+                                ResolutionContext::Statement(env)
+                            }
+                        },
                     )
                 })
                 .collect();
             TypeLongId::Tuple(sub_tys).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
-            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
+            if matches!(unary_syntax.op(db), ast::UnaryOperator::At(_)) =>
         {
-            let ty = resolve_type_with_environment(
-                db,
-                diagnostics,
-                resolver,
-                &unary_syntax.expr(syntax_db),
-                statement_env,
-            );
+            let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
             TypeLongId::Snapshot(ty).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
-            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
+            if matches!(unary_syntax.op(db), ast::UnaryOperator::Desnap(_)) =>
         {
-            let ty = resolve_type_with_environment(
-                db,
-                diagnostics,
-                resolver,
-                &unary_syntax.expr(syntax_db),
-                statement_env,
-            );
+            let ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
             if let Some(desnapped_ty) =
                 try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
             {
                 desnapped_ty
             } else {
-                return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
+                return Err(diagnostics.report(ty_syntax.stable_ptr(db), DesnapNonSnapshot));
             }
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
-            let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
-                return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
+            let [ty] = &array_syntax.exprs(db).elements(db)[..] else {
+                return Err(
+                    diagnostics.report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeNonSingleType)
+                );
             };
-            let ty = resolve_type_with_environment(db, diagnostics, resolver, ty, statement_env);
-            let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
-            {
-                Some(size) => size,
-                None => {
-                    return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeEmptySize));
-                }
-            };
+            let ty = resolve_type_ex(db, diagnostics, resolver, ty, ctx);
+            let size =
+                match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)? {
+                    Some(size) => size,
+                    None => {
+                        return Err(diagnostics
+                            .report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeEmptySize));
+                    }
+                };
             TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {
-            return Err(diagnostics.report(ty_syntax, UnknownType));
+            return Err(diagnostics.report(ty_syntax.stable_ptr(db), UnknownType));
         }
     })
 }
@@ -655,8 +655,7 @@ pub fn extract_fixed_size_array_size(
     syntax: &ast::ExprFixedSizeArray,
     resolver: &Resolver<'_>,
 ) -> Maybe<Option<ConstValueId>> {
-    let syntax_db = db.upcast();
-    match syntax.size(syntax_db) {
+    match syntax.size(db) {
         ast::OptionFixedSizeArraySize::FixedSizeArraySize(size_clause) => {
             let environment = Environment::empty();
             let resolver = Resolver::with_data(
@@ -671,20 +670,20 @@ pub fn extract_fixed_size_array_size(
                 environment,
                 ContextFunction::Global,
             );
-            let size_expr_syntax = size_clause.size(syntax_db);
+            let size_expr_syntax = size_clause.size(db);
             let size = compute_expr_semantic(&mut ctx, &size_expr_syntax);
             let const_value = resolve_const_expr_and_evaluate(
                 db,
                 &mut ctx,
                 &size,
-                size_expr_syntax.stable_ptr().untyped(),
+                size_expr_syntax.stable_ptr(db).untyped(),
                 get_usize_ty(db),
                 false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
             } else {
-                Err(diagnostics.report(syntax, FixedSizeArrayNonNumericSize))
+                Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize))
             }
         }
         ast::OptionFixedSizeArraySize::Empty(_) => Ok(None),
@@ -693,12 +692,13 @@ pub fn extract_fixed_size_array_size(
 
 /// Verifies that a given fixed size array size is within limits, and adds a diagnostic if not.
 pub fn verify_fixed_size_array_size(
+    db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     size: &BigInt,
     syntax: &ast::ExprFixedSizeArray,
 ) -> Maybe<()> {
     if size > &BigInt::from(i16::MAX) {
-        return Err(diagnostics.report(syntax, FixedSizeArraySizeTooBig));
+        return Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArraySizeTooBig));
     }
     Ok(())
 }
@@ -804,7 +804,7 @@ pub fn add_type_based_diagnostics(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.lookup_intern(db) {
         let long_id = extrn.lookup_intern(db);
-        if long_id.extern_type_id.name(db.upcast()).as_str() == "Array" {
+        if long_id.extern_type_id.name(db).as_str() == "Array" {
             if let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..] {
                 if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
                     diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
@@ -946,7 +946,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
         // a var free ImplType needs to be rewritten if has impl bounds constraints.
         TypeLongId::ImplType(_) => false,
         TypeLongId::Closure(closure) => {
-            closure.param_tys.iter().all(|param| param.is_var_free(db))
+            chain!(&closure.captured_types, &closure.param_tys).all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
     }
@@ -955,7 +955,7 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
 pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId) -> String {
     match ty.lookup_intern(db) {
         TypeLongId::Concrete(concrete_type_id) => {
-            let mut result = concrete_type_id.generic_type(db).format(db.upcast());
+            let mut result = concrete_type_id.generic_type(db).format(db);
             let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
             if generic_args.peek().is_some() {
                 result.push_str("::<h0x");
@@ -1018,7 +1018,7 @@ pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: us
 
 /// Returns `true` if coupons are enabled in the module.
 pub(crate) fn are_coupons_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let owning_crate = module_file_id.0.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
 }

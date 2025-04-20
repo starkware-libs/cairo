@@ -79,10 +79,15 @@ fn get_dep_component_generate_code_helper(
         if !matches!(&contract_arg_modifiers[..], &[ast::Modifier::Ref(_)]) {
             // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
             // point to the arg.
+<<<<<<< HEAD
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
                 db,
                 syntax.stable_ptr(),
                 contract_arg.as_syntax_node(),
+=======
+            let diagnostics = vec![PluginDiagnostic::error(
+                contract_arg.stable_ptr(db).untyped(),
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 format!(
                     "The first argument of `{}` macro must have only a `ref` modifier.",
                     GetDepComponentMutMacro::NAME

@@ -192,7 +192,7 @@ error: Cannot desnap a non copyable type.
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering_flat
-Parameters: v0: @core::array::Array::<core::felt252>
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
 //! > ==========================================================================
 
@@ -229,3 +229,165 @@ Statements:
   () <- test::bar(v3)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test snapshot invalidation full var.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> usize {
+    let mut array: Array<u32> = array![14];
+    let mut i = 0;
+
+    while i < array.len() {
+        i += 1;
+    }
+
+    array.pop_front().unwrap();
+
+    array.len()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
+  (v3: core::integer::u32) <- 14
+  (v4: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v2, v3)
+  (v5: core::array::Array::<core::integer::u32>, v6: @core::array::Array::<core::integer::u32>) <- snapshot(v4)
+  (v7: core::integer::u32) <- 0
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[83-134](v0, v1, v7, v6)
+End:
+  Match(match_enum(v10) {
+    PanicResult::Ok(v11) => blk1,
+    PanicResult::Err(v12) => blk4,
+  })
+
+blk1:
+Statements:
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
+End:
+  Match(match core::array::array_pop_front::<core::integer::u32>(v5) {
+    Option::Some(v14, v15) => blk2,
+    Option::None(v16) => blk3,
+  })
+
+blk2:
+Statements:
+  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v13)
+  (v18: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v15)
+  (v19: core::array::Array::<core::integer::u32>, v20: @core::array::Array::<core::integer::u32>) <- snapshot(v14)
+  (v21: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v20)
+  (v22: (core::integer::u32,)) <- struct_construct(v21)
+  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v22)
+End:
+  Return(v8, v17, v23)
+
+blk3:
+Statements:
+  (v24: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v13)
+  (v25: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v26: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v25)
+End:
+  Return(v8, v24, v26)
+
+blk4:
+Statements:
+  (v27: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
+  (v28: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
+End:
+  Return(v8, v27, v28)
+
+//! > ==========================================================================
+
+//! > Test snapshot invalidation partial var.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() -> @u8 {
+    let mut a = A { b: 8 };
+    loop {
+        let _v = @(a.b);
+        break;
+    }
+    a = A { b: 7 };
+
+    @(a.b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 7
+  (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test snapshot use same snapshot inner loop.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let a = A { b: 7 };
+    loop {
+        let _ = @a;
+        loop {
+            let _ = @a;
+            break;
+        }
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Return()

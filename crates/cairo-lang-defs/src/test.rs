@@ -3,24 +3,23 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_files_group,
+    CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_files_group,
 };
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, ast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
-use crate::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use crate::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use crate::ids::{
-    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    SubmoduleLongId,
+    FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleLongId,
 };
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -33,24 +32,20 @@ pub struct DatabaseForTesting {
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![
-            Arc::new(FooToBarPlugin),
-            Arc::new(RemoveOrigPlugin),
-            Arc::new(DummyPlugin),
-        ]);
+        init_defs_group(&mut res);
+        res.set_default_macro_plugins(Arc::new([
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(FooToBarPlugin))),
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(RemoveOrigPlugin))),
+            res.intern_macro_plugin(MacroPluginLongId(Arc::new(DummyPlugin))),
+        ]));
         res
-    }
-}
-impl AsFilesGroupMut for DatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn DefsGroup> for DatabaseForTesting {
@@ -99,7 +94,7 @@ fn test_generic_item_id(
         match node.kind(db) {
             SyntaxKind::ItemModule => {
                 let submodule_id =
-                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr()))
+                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr(db)))
                         .intern(db);
                 module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id), FileIndex(0));
             }
@@ -108,7 +103,7 @@ fn test_generic_item_id(
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
                 let param_id =
-                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr()))
+                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
                 writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
@@ -116,8 +111,8 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in db.get_children(node.clone()).iter() {
-            find_generics(db, module_file_id, child, output);
+        for child in node.get_children(db) {
+            find_generics(db, module_file_id, &child, output);
         }
     }
     find_generics(db, module_file_id, &node, &mut output);
@@ -125,15 +120,12 @@ fn test_generic_item_id(
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
 
-pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
-    db: &mut T,
-    content: &str,
-) -> ModuleId {
+pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) -> ModuleId {
     let crate_id = CrateId::plain(db, "test");
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    db.as_files_group_mut().override_file_content(file, Some(content.into()));
+    db.override_file_content(file, Some(content.into()));
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
     assert_eq!(syntax_diagnostics, "");
     ModuleId::CrateRoot(crate_id)
@@ -142,9 +134,12 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
 #[test]
 fn test_module_file() {
     let mut db_val = DatabaseForTesting::default();
-    let module_id = setup_test_module(&mut db_val, indoc! {"
+    let module_id = setup_test_module(
+        &mut db_val,
+        indoc! {"
             mod mysubmodule;
-        "});
+        "},
+    );
     let db = &db_val;
     let item_id =
         extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
@@ -163,7 +158,7 @@ fn test_module_file() {
 
 fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
+    db.override_file_content(file_id, Some(content.into()));
 }
 
 #[test]
@@ -193,15 +188,18 @@ fn test_submodules() {
     );
 
     // Test file mappings.
-    assert_eq!(&db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..], vec![
-        module_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..], vec![
-        submodule_id
-    ]);
-    assert_eq!(&db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..], vec![
-        subsubmodule_id
-    ]);
+    assert_eq!(
+        &db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..],
+        vec![module_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..],
+        vec![submodule_id]
+    );
+    assert_eq!(
+        &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
+        vec![subsubmodule_id]
+    );
 }
 
 #[derive(Debug)]
@@ -236,7 +234,10 @@ impl MacroPlugin for DummyPlugin {
                     aux_data: None,
                     diagnostics_note: Default::default(),
                 }),
-                diagnostics: vec![PluginDiagnostic::error(&free_function_ast, "bla".into())],
+                diagnostics: vec![PluginDiagnostic::error(
+                    free_function_ast.stable_ptr(db),
+                    "bla".into(),
+                )],
                 remove_original_item: false,
             },
             _ => PluginResult::default(),
@@ -478,7 +479,12 @@ fn test_unknown_item_macro() {
     assert_eq!(
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
+<<<<<<< HEAD
          SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
          severity: Error, inner_span: None })]"
+=======
+         SyntaxStablePtrId(3), relative_span: None, message: \"Unknown inline item macro: \
+         'unknown_item_macro'.\", severity: Error })]"
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     )
 }

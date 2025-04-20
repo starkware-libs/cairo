@@ -133,10 +133,13 @@ impl NamedLibfunc for DowncastLibfunc {
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: to_ty,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: to_ty,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.
@@ -155,13 +158,13 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let from_range = Range::from_type(context.upcast(), from_ty.clone())?;
+        let from_range = Range::from_type(context, from_ty.clone())?;
         // Shrinking the range of the destination type by the range of the source type.
-        let to_range: Range = Range::from_type(context.upcast(), to_ty.clone())?
+        let to_range: Range = Range::from_type(context, to_ty.clone())?
             .intersection(&from_range)
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(DowncastConcreteLibfunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
             from_range,
             from_ty,
             to_range,

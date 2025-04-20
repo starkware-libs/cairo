@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
@@ -17,7 +18,7 @@ pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, file_id: FileId, settings: String },
+    Virtual { name: SmolStr, file_id: FileId, settings: String, cache_file: Option<BlobId> },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
@@ -78,14 +79,14 @@ pub enum FileLongId {
     External(salsa::InternId),
 }
 /// Whether the file holds syntax for a module or for an expression.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FileKind {
     Module,
     Expr,
 }
 
 /// A mapping for a code rewrite.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CodeMapping {
     pub span: TextSpan,
     pub origin: CodeOrigin,
@@ -108,9 +109,9 @@ impl CodeMapping {
 }
 
 /// The origin of a code mapping.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CodeOrigin {
-    /// The origin is a copied node staring at the given offset.
+    /// The origin is a copied node starting at the given offset.
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
     Span(TextSpan),
@@ -172,7 +173,7 @@ impl FileId {
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(_) => FileKind::Module,
-            FileLongId::Virtual(vf) => vf.kind.clone(),
+            FileLongId::Virtual(vf) => vf.kind,
             FileLongId::External(_) => FileKind::Module,
         }
     }
@@ -191,7 +192,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
         match self {
-            Directory::Real(path) => FileId::new(db, path.join(&name)),
+            Directory::Real(path) => FileId::new(db, path.join(name.as_str())),
             Directory::Virtual { files, dirs: _ } => files
                 .get(&name)
                 .copied()
@@ -203,7 +204,7 @@ impl Directory {
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, name: SmolStr) -> Directory {
         match self {
-            Directory::Real(path) => Directory::Real(path.join(&name)),
+            Directory::Real(path) => Directory::Real(path.join(name.as_str())),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(&name) {
                     dir.as_ref().clone()
@@ -212,5 +213,20 @@ impl Directory {
                 }
             }
         }
+    }
+}
+
+/// A FileId for data that is not necessarily a valid UTF-8 string.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum BlobLongId {
+    OnDisk(PathBuf),
+    Virtual(Arc<[u8]>),
+}
+
+define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
+
+impl BlobId {
+    pub fn new(db: &dyn FilesGroup, path: PathBuf) -> BlobId {
+        BlobLongId::OnDisk(path.clean()).intern(db)
     }
 }

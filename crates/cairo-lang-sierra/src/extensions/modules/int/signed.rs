@@ -8,7 +8,6 @@ use super::{
     IntWideMulLibfunc,
 };
 use crate::define_libfunc_hierarchy;
-use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
@@ -35,14 +34,13 @@ pub trait SintTraits: IntTraits {
 }
 
 define_libfunc_hierarchy! {
-    pub enum SintLibfunc<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits> {
+    pub enum SintLibfunc<TSintTraits: SintTraits + IntMulTraits> {
         Const(IntConstLibfunc<TSintTraits>),
         Equal(IntEqualLibfunc<TSintTraits>),
         ToFelt252(IntToFelt252Libfunc<TSintTraits>),
         FromFelt252(IntFromFelt252Libfunc<TSintTraits>),
         Operation(SintOperationLibfunc<TSintTraits>),
         Diff(SintDiffLibfunc<TSintTraits>),
-        IsZero(IsZeroLibfunc<TSintTraits>),
         WideMul(IntWideMulLibfunc<TSintTraits>),
     }, SintConcrete
 }
@@ -103,10 +101,10 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
             branch_signatures: vec![
                 // In range.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Below range.
@@ -131,7 +129,7 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -168,18 +166,21 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
             branch_signatures: vec![
                 // Positive.
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: unsigned_ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: unsigned_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Negative.
                 BranchSignature {
-                    vars: vec![rc_output_info, OutputVarInfo {
-                        ty: unsigned_ty,
-                        ref_info: wrapping_result_ref_info,
-                    }],
+                    vars: vec![
+                        rc_output_info,
+                        OutputVarInfo { ty: unsigned_ty, ref_info: wrapping_result_ref_info },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -213,11 +214,6 @@ impl IntMulTraits for Sint8Traits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Sint16Type as NamedType>::ID;
 }
 
-impl IsZeroTraits for Sint8Traits {
-    const IS_ZERO: &'static str = "i8_is_zero";
-    const GENERIC_TYPE_ID: GenericTypeId = <Sint8Type as NamedType>::ID;
-}
-
 /// Type for i8.
 pub type Sint8Type = IntType<Sint8Traits>;
 pub type Sint8Libfunc = SintLibfunc<Sint8Traits>;
@@ -246,11 +242,6 @@ impl IntTraits for Sint16Traits {
 impl IntMulTraits for Sint16Traits {
     const WIDE_MUL: &'static str = "i16_wide_mul";
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Sint32Type as NamedType>::ID;
-}
-
-impl IsZeroTraits for Sint16Traits {
-    const IS_ZERO: &'static str = "i16_is_zero";
-    const GENERIC_TYPE_ID: GenericTypeId = <Sint16Type as NamedType>::ID;
 }
 
 /// Type for i16.
@@ -283,11 +274,6 @@ impl IntMulTraits for Sint32Traits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Sint64Type as NamedType>::ID;
 }
 
-impl IsZeroTraits for Sint32Traits {
-    const IS_ZERO: &'static str = "i32_is_zero";
-    const GENERIC_TYPE_ID: GenericTypeId = <Sint32Type as NamedType>::ID;
-}
-
 /// Type for i32.
 pub type Sint32Type = IntType<Sint32Traits>;
 pub type Sint32Libfunc = SintLibfunc<Sint32Traits>;
@@ -316,11 +302,6 @@ impl IntTraits for Sint64Traits {
 impl IntMulTraits for Sint64Traits {
     const WIDE_MUL: &'static str = "i64_wide_mul";
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Sint128Type as NamedType>::ID;
-}
-
-impl IsZeroTraits for Sint64Traits {
-    const IS_ZERO: &'static str = "i64_is_zero";
-    const GENERIC_TYPE_ID: GenericTypeId = <Sint64Type as NamedType>::ID;
 }
 
 /// Type for i64.

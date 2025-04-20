@@ -57,6 +57,14 @@ pub enum Opcode {
     Ret,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum OpcodeExtension {
+    Stone,
+    Blake2s,
+    Blake2sFinalize,
+    QM31,
+}
+
 /// The low level representation of a cairo instruction.
 #[derive(Debug, Eq, PartialEq)]
 pub struct InstructionRepr {
@@ -72,6 +80,7 @@ pub struct InstructionRepr {
     pub ap_update: ApUpdate,
     pub fp_update: FpUpdate,
     pub opcode: Opcode,
+    pub opcode_extension: OpcodeExtension,
 }
 
 #[cfg(feature = "serde")]
@@ -110,6 +119,7 @@ impl Instruction {
                     ap_update: ApUpdate::Add,
                     fp_update: FpUpdate::Regular,
                     opcode: Opcode::Nop,
+                    opcode_extension: OpcodeExtension::Stone,
                 }
             }
             InstructionBody::AssertEq(insn) => {
@@ -127,6 +137,25 @@ impl Instruction {
                     ap_update: if self.inc_ap { ApUpdate::Add1 } else { ApUpdate::Regular },
                     fp_update: FpUpdate::Regular,
                     opcode: Opcode::AssertEq,
+                    opcode_extension: OpcodeExtension::Stone,
+                }
+            }
+            InstructionBody::QM31AssertEq(insn) => {
+                let res = insn.b.to_res_description();
+                InstructionRepr {
+                    off0: insn.a.offset,
+                    off1: res.off1,
+                    off2: res.off2,
+                    imm: res.imm,
+                    dst_register: insn.a.register,
+                    op0_register: res.op0_register,
+                    op1_addr: res.op1_addr,
+                    res: res.res,
+                    pc_update: PcUpdate::Regular,
+                    ap_update: if self.inc_ap { ApUpdate::Add1 } else { ApUpdate::Regular },
+                    fp_update: FpUpdate::Regular,
+                    opcode: Opcode::AssertEq,
+                    opcode_extension: OpcodeExtension::QM31,
                 }
             }
             InstructionBody::Call(insn) => {
@@ -145,6 +174,7 @@ impl Instruction {
                     ap_update: ApUpdate::Add2,
                     fp_update: FpUpdate::ApPlus2,
                     opcode: Opcode::Call,
+                    opcode_extension: OpcodeExtension::Stone,
                 }
             }
             InstructionBody::Jump(insn) => {
@@ -162,6 +192,7 @@ impl Instruction {
                     ap_update: if self.inc_ap { ApUpdate::Add1 } else { ApUpdate::Regular },
                     fp_update: FpUpdate::Regular,
                     opcode: Opcode::Nop,
+                    opcode_extension: OpcodeExtension::Stone,
                 }
             }
             InstructionBody::Jnz(insn) => {
@@ -179,6 +210,7 @@ impl Instruction {
                     ap_update: if self.inc_ap { ApUpdate::Add1 } else { ApUpdate::Regular },
                     fp_update: FpUpdate::Regular,
                     opcode: Opcode::Nop,
+                    opcode_extension: OpcodeExtension::Stone,
                 }
             }
             InstructionBody::Ret(_) => {
@@ -196,6 +228,29 @@ impl Instruction {
                     ap_update: ApUpdate::Regular,
                     fp_update: FpUpdate::Dst,
                     opcode: Opcode::Ret,
+                    opcode_extension: OpcodeExtension::Stone,
+                }
+            }
+            InstructionBody::Blake2sCompress(insn) => {
+                assert!(self.inc_ap);
+                InstructionRepr {
+                    off0: insn.byte_count.offset,
+                    off1: insn.state.offset,
+                    off2: insn.message.offset,
+                    imm: None,
+                    dst_register: insn.byte_count.register,
+                    op0_register: insn.state.register,
+                    op1_addr: insn.message.register.to_op1_addr(),
+                    res: Res::Op1,
+                    pc_update: PcUpdate::Regular,
+                    ap_update: ApUpdate::Add1,
+                    fp_update: FpUpdate::Regular,
+                    opcode: Opcode::Nop,
+                    opcode_extension: if insn.finalize {
+                        OpcodeExtension::Blake2sFinalize
+                    } else {
+                        OpcodeExtension::Blake2s
+                    },
                 }
             }
         }

@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
@@ -52,9 +53,9 @@ impl<'db> VariableAllocator<'db> {
         Ok(Self {
             db,
             variables,
-            module_file_id: function_id.module_file_id(db.upcast()),
+            module_file_id: function_id.module_file_id(db),
             lookup_context: ImplLookupContext::new(
-                function_id.parent_module(db.upcast()),
+                function_id.parent_module(db),
                 generic_param_ids,
             ),
         })
@@ -123,6 +124,21 @@ impl<'db> EncapsulatingLoweringContext<'db> {
     }
 }
 
+/// The loop result variants for a loop with an early return.
+#[derive(Clone)]
+pub struct LoopEarlyReturnInfo {
+    pub normal_return_variant: ConcreteVariant,
+    pub early_return_variant: ConcreteVariant,
+}
+
+/// Context for lowering a loop.
+pub struct LoopContext {
+    /// The loop expression
+    pub loop_expr_id: semantic::ExprId,
+    /// Optional info related to early return from the loop.
+    pub early_return_info: Option<LoopEarlyReturnInfo>,
+}
+
 pub struct LoweringContext<'a, 'db> {
     pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
     /// Variable allocator.
@@ -132,20 +148,23 @@ pub struct LoweringContext<'a, 'db> {
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId,
     /// Id for the current concrete function to be used when generating recursive calls.
-    /// This it the generic function specialized with its own generic parameters.
+    /// This is the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
-    /// Current loop expression needed for recursive calls in `continue`
-    pub current_loop_expr_id: Option<semantic::ExprId>,
+    /// Current loop context.
+    pub current_loop_ctx: Option<LoopContext>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
     pub blocks: FlatBlocksBuilder,
+    // The return type in the current context, for loops this differs from signature.return_type.
+    pub return_type: semantic::TypeId,
 }
 impl<'a, 'db> LoweringContext<'a, 'db> {
     pub fn new(
         global_ctx: &'a mut EncapsulatingLoweringContext<'db>,
         function_id: FunctionWithBodyId,
         signature: Signature,
+        return_type: semantic::TypeId,
     ) -> Maybe<Self>
     where
         'db: 'a,
@@ -159,9 +178,10 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
-            current_loop_expr_id: None,
+            current_loop_ctx: None,
             diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
+            return_type,
         })
     }
 }
@@ -284,9 +304,7 @@ impl LoweredExpr {
             )
             .intern(ctx.db),
             LoweredExpr::Member(member_path, _) => member_path.ty(),
-            LoweredExpr::Snapshot { expr, .. } => {
-                wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
-            }
+            LoweredExpr::Snapshot { expr, .. } => wrap_in_snapshots(ctx.db, expr.ty(ctx), 1),
             LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
@@ -427,12 +445,7 @@ pub fn lowering_flow_error_to_sealed_block(
         LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
-                ty: get_ty_by_name(
-                    ctx.db.upcast(),
-                    core_module(ctx.db.upcast()),
-                    "Panic".into(),
-                    vec![],
-                ),
+                ty: get_ty_by_name(ctx.db, core_module(ctx.db), "Panic".into(), vec![]),
                 location,
             }
             .add(ctx, &mut builder.statements);

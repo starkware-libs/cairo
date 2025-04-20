@@ -125,7 +125,7 @@ fn format_var_with_ty(
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
     let var = &ctx.variables[var_id];
-    write!(f, ": {}", var.ty.format(ctx.db.upcast()))
+    write!(f, ": {}", var.ty.format(ctx.db))
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for BlockId {
@@ -148,8 +148,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarUsage {
                 self.location
                     .lookup_intern(ctx.db)
                     .stable_location
-                    .syntax_node(ctx.db.upcast())
-                    .get_text_without_trivia(ctx.db.upcast())
+                    .syntax_node(ctx.db)
+                    .get_text_without_trivia(ctx.db)
                     .lines()
                     .map(|s| s.trim())
                     .join(" ")
@@ -292,9 +292,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumValue {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name =
-            self.variant.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
-        let variant_name = self.variant.id.name(ctx.db.upcast());
+        let enum_name = self.variant.concrete_enum_id.enum_id(ctx.db).name(ctx.db);
+        let variant_name = self.variant.id.name(ctx.db);
         write!(f, "{enum_name}::{variant_name}(",)?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")

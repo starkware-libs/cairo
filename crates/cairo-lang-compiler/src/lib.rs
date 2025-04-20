@@ -90,7 +90,10 @@ pub fn compile(
     project_config: ProjectConfig,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
+    let mut db = RootDatabase::builder()
+        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .with_project_config(project_config.clone())
+        .build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)

@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_filesystem::ids::CrateId;
 use smol_str::SmolStr;
 
-/// Item which documentation can be fetched from source code.
+/// Item whose documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum DocumentableItemId {
     Crate(CrateId),
@@ -33,7 +33,7 @@ impl DocumentableItemId {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),
             DocumentableItemId::LookupItem(LookupItemId::TraitItem(id)) => id.name(db),
-            DocumentableItemId::Crate(id) => id.name(db.upcast()),
+            DocumentableItemId::Crate(id) => id.name(db),
             DocumentableItemId::Member(id) => id.name(db),
             DocumentableItemId::Variant(id) => id.name(db),
         }

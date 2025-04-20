@@ -37,9 +37,9 @@ impl SyntaxStablePtrId {
             SyntaxStablePtr::Root(file_id, green) => SyntaxNode::new_root(db, file_id, green),
             SyntaxStablePtr::Child { parent, .. } => {
                 let parent = parent.lookup(db);
-                for child in db.get_children(parent).iter() {
-                    if child.stable_ptr() == *self {
-                        return child.clone();
+                for child in parent.get_children(db) {
+                    if child.stable_ptr(db) == *self {
+                        return child;
                     }
                 }
                 unreachable!();

@@ -70,7 +70,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -102,7 +102,7 @@ impl NamedLibfunc for CouponCallLibfunc {
         let signature = context.get_function_signature(&function_id)?;
         let ap_change = context.get_function_ap_change(&function_id)?;
 
-        let coupon_ty = coupon_ty(context, function_id.clone())?;
+        let coupon_ty = coupon_ty(context, function_id)?;
         Ok(LibfuncSignature::new_non_branch(
             chain!(signature.param_types.iter().cloned(), [coupon_ty]).collect(),
             get_output_var_infos(context, signature)?,
@@ -119,7 +119,7 @@ impl NamedLibfunc for CouponCallLibfunc {
 
         Ok(Self::Concrete {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

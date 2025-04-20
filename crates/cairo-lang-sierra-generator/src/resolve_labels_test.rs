@@ -42,20 +42,23 @@ fn test_resolve_labels() {
     let label_replacer = LabelReplacer::from_statements(&statements);
     let (statements, _statements_location) =
         resolve_labels_and_extract_locations(statements, &label_replacer);
-    assert_eq!(statements.iter().map(|x| format!("{x}")).collect::<Vec<String>>(), vec![
-        // labels 7 and 5 (instruction index 0).
-        "Instruction0() -> ()",
-        "Instruction1() -> ()",
-        "jump() { 8() }",
-        "jump() { 0() }",
-        // label 0 (instruction index 5).
-        "jump() { 0() }",
-        "jump() { 0() }",
-        "Instruction2() -> ()",
-        "jump() { 4() }",
-        // label 8 (instruction index 8).
-        "jump() { 8() }",
-        "jump() { 10() }",
-        // label 9 (instruction index 10).
-    ]);
+    assert_eq!(
+        statements.iter().map(|x| format!("{x}")).collect::<Vec<String>>(),
+        vec![
+            // labels 7 and 5 (instruction index 0).
+            "Instruction0() -> ()",
+            "Instruction1() -> ()",
+            "jump() { 8() }",
+            "jump() { 0() }",
+            // label 0 (instruction index 5).
+            "jump() { 0() }",
+            "jump() { 0() }",
+            "Instruction2() -> ()",
+            "jump() { 4() }",
+            // label 8 (instruction index 8).
+            "jump() { 8() }",
+            "jump() { 10() }",
+            // label 9 (instruction index 10).
+        ]
+    );
 }

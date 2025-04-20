@@ -64,27 +64,20 @@ impl UseTree {
     }
 
     /// Merge and organize the `use` paths in a hierarchical structure.
-    pub fn create_merged_use_items(
-        self,
-        allow_duplicate_uses: bool,
-        top_level: bool,
-    ) -> Vec<String> {
+    pub fn create_merged_use_items(self, allow_duplicate_uses: bool) -> Vec<String> {
         let mut leaf_paths: Vec<String> = self
             .leaves
             .into_iter()
-            .map(|leaf| {
-                if let Some(alias) = leaf.alias {
-                    format!("{} as {alias}", leaf.name)
-                } else {
-                    leaf.name
-                }
-            })
+            .map(
+                |Leaf { name, alias }| {
+                    if let Some(alias) = alias { format!("{name} as {alias}") } else { name }
+                },
+            )
             .collect();
 
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
-            let subtree_merged_use_items =
-                subtree.create_merged_use_items(allow_duplicate_uses, false);
+            let subtree_merged_use_items = subtree.create_merged_use_items(allow_duplicate_uses);
             nested_paths.extend(
                 subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}")),
             );
@@ -99,22 +92,37 @@ impl UseTree {
             0 => {}
             1 if nested_paths.is_empty() => return leaf_paths,
             1 => nested_paths.extend(leaf_paths),
-            _ if top_level => nested_paths.extend(leaf_paths),
             _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
         }
 
         nested_paths
     }
 
+    /// Making sure `self` imports do not remain by themselves.
+    fn organize_self_imports(&mut self) {
+        // First canonizing existing `self` to a direct module.
+        for (segment, child) in self.children.iter_mut() {
+            // Calling recursively to make sure all children are organized.
+            child.organize_self_imports();
+            // If the expected imports are only of `self` pushing them to parent.
+            if child.leaves.iter().all(|leaf| leaf.name == "self") {
+                for leaf in std::mem::take(&mut child.leaves) {
+                    self.leaves.push(Leaf { name: segment.clone(), alias: leaf.alias });
+                }
+            }
+        }
+    }
+
     /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
     pub fn generate_syntax_node_from_use(
-        self,
+        mut self,
         db: &dyn SyntaxGroup,
         allow_duplicate_uses: bool,
         decorations: String,
     ) -> SyntaxNode {
         let mut formatted_use_items = String::new();
-        for statement in self.create_merged_use_items(allow_duplicate_uses, false) {
+        self.organize_self_imports();
+        for statement in self.create_merged_use_items(allow_duplicate_uses) {
             formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
         }
 
@@ -525,7 +533,7 @@ impl LineBuilder {
             let mut first_break_point_index = 0;
             while first_break_point_index < last_break_point_index {
                 let middle_break_point_index =
-                    (first_break_point_index + last_break_point_index + 1) / 2;
+                    (first_break_point_index + last_break_point_index).div_ceil(2);
                 let middle_break_point = breaking_positions[middle_break_point_index];
                 let middle_break_point_width = self.width_between(0, middle_break_point);
                 if middle_break_point_width <= max_line_width {
@@ -661,13 +669,13 @@ impl LineBuilder {
         let highest_precedence = self
             .get_highest_protected_zone_precedence()
             .expect("Tried to unprotect a line builder with no protected zones.");
-        for child in self.children.iter() {
+        for child in &self.children {
             match child {
                 LineComponent::ProtectedZone { builder: sub_tree, precedence }
                     if *precedence == highest_precedence && !first_protected_zone_found =>
                 {
                     first_protected_zone_found = true;
-                    for sub_child in sub_tree.children.iter() {
+                    for sub_child in &sub_tree.children {
                         unprotected_builder.push_child(sub_child.clone());
                     }
                 }
@@ -921,7 +929,6 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
-    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -933,7 +940,6 @@ impl<'a> FormatterImpl<'a> {
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
             is_last_element_comment: false,
-            is_merging_use_items: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -944,6 +950,7 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+<<<<<<< HEAD
         if self.is_merging_use_items {
             // When merging, only format this node once and return to avoid recursion.
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
@@ -967,6 +974,8 @@ impl<'a> FormatterImpl<'a> {
                 return;
             }
         }
+=======
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -1006,7 +1015,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children = self.db.get_children(syntax_node.clone()).to_vec();
+        let mut children = syntax_node.get_children(self.db);
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1054,12 +1063,12 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                if !self.has_only_whitespace_trivia(node) {
-                    new_children.push(node.clone());
+                if !self.has_only_whitespace_trivia(node) || self.should_ignore_node_format(node) {
+                    new_children.push(*node);
                     continue;
                 }
 
-                let use_item = ast::ItemUse::from_syntax_node(self.db, node.clone());
+                let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
 
                 let decorations = chain!(
                     use_item
@@ -1084,12 +1093,8 @@ impl<'a> FormatterImpl<'a> {
                 );
 
                 // Add merged children to the new_children list.
-                let children = self.db.get_children(merged_node.clone()).to_vec();
-                if !children.is_empty() {
-                    let grandchildren = self.db.get_children(children[0].clone()).to_vec();
-                    for child in grandchildren {
-                        new_children.push(child.clone());
-                    }
+                if let Some(child) = merged_node.get_children(self.db).into_iter().nth(0) {
+                    new_children.extend(child.get_children(self.db));
                 }
             }
         }
@@ -1151,7 +1156,7 @@ impl<'a> FormatterImpl<'a> {
                     // Sort `Module` items alphabetically by their name.
                     let mut sorted_section = section_nodes.to_vec();
                     sorted_section.sort_by_key(|node| {
-                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                        ast::ItemModule::from_syntax_node(self.db, *node)
                             .name(self.db)
                             .text(self.db)
                     });
@@ -1162,8 +1167,8 @@ impl<'a> FormatterImpl<'a> {
                     let mut sorted_section = section_nodes.to_vec();
                     sorted_section.sort_by(|a, b| {
                         compare_use_paths(
-                            &ast::ItemUse::from_syntax_node(self.db, a.clone()).use_path(self.db),
-                            &ast::ItemUse::from_syntax_node(self.db, b.clone()).use_path(self.db),
+                            &ast::ItemUse::from_syntax_node(self.db, *a).use_path(self.db),
+                            &ast::ItemUse::from_syntax_node(self.db, *b).use_path(self.db),
                             self.db,
                         )
                     });
@@ -1181,8 +1186,7 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let children = self.db.get_children(syntax_node.clone());
-        let mut children_iter = children.iter().cloned();
+        let mut children_iter = syntax_node.get_children(self.db).into_iter();
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
         let token = children_iter.next().unwrap();
         let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
@@ -1284,23 +1288,17 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         (_, UsePath::Multi(_)) => Ordering::Less,
 
         // Case for Leaf vs Single and Single vs Leaf.
-        (UsePath::Leaf(a_leaf), UsePath::Single(b_single)) => {
-            let a_str = a_leaf.extract_ident(db);
-            let b_str = b_single.extract_ident(db);
-
-            match a_str.cmp(&b_str) {
+        (UsePath::Leaf(a), UsePath::Single(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
                 // Leaf is always ordered before Single if equal.
                 Ordering::Equal => Ordering::Less,
                 other => other,
             }
         }
 
-        (UsePath::Single(a_single), UsePath::Leaf(b_leaf)) => {
-            let a_str = a_single.extract_ident(db);
-            let b_str = b_leaf.extract_ident(db);
-
-            // Compare the extracted identifiers.
-            match a_str.cmp(&b_str) {
+        (UsePath::Single(a), UsePath::Leaf(b)) => {
+            // Compare the identifiers.
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
                 // Single is ordered after Leaf if equal.
                 Ordering::Equal => Ordering::Greater,
                 other => other,
@@ -1309,29 +1307,19 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
 
         // Case for Leaf vs Leaf: compare their identifiers, and only if they are equal, compare
         // their aliases.
-        (UsePath::Leaf(a_leaf), UsePath::Leaf(b_leaf)) => {
-            match a_leaf.extract_ident(db).cmp(&b_leaf.extract_ident(db)) {
-                Ordering::Equal => a_leaf.extract_alias(db).cmp(&b_leaf.extract_alias(db)),
+        (UsePath::Leaf(a), UsePath::Leaf(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+                Ordering::Equal => a.extract_alias(db).cmp(&b.extract_alias(db)),
                 other => other,
             }
         }
 
         // Case for Single vs Single: compare their identifiers, then move to the next segment if
         // equal.
-        (UsePath::Single(a_single), UsePath::Single(b_single)) => {
-            let a_ident = a_single.extract_ident(db);
-            let b_ident = b_single.extract_ident(db);
-
-            match (a_ident.as_str(), b_ident.as_str()) {
-                ("super" | "crate", "super" | "crate") => a_ident.cmp(&b_ident),
-                ("super" | "crate", _) => Ordering::Greater,
-                (_, "super" | "crate") => Ordering::Less,
-                _ => match a_ident.cmp(&b_ident) {
-                    Ordering::Equal => {
-                        compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
-                    }
-                    other => other,
-                },
+        (UsePath::Single(a), UsePath::Single(b)) => {
+            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+                Ordering::Equal => compare_use_paths(&a.use_path(db), &b.use_path(db), db),
+                other => other,
             }
         }
 
@@ -1342,20 +1330,30 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
     }
 }
 
+/// Compares two names, with special handling for "super" and "crate".
+fn compare_names(a: &str, b: &str) -> Ordering {
+    match (a, b) {
+        ("super" | "crate", "super" | "crate") => a.cmp(b),
+        ("super" | "crate", _) | (_, "self") => Ordering::Greater,
+        (_, "super" | "crate") | ("self", _) => Ordering::Less,
+        _ => a.cmp(b),
+    }
+}
+
 /// Helper function to extract `UsePath` from a `SyntaxNode`.
 fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UsePath> {
     match node.kind(db) {
         SyntaxKind::UsePathLeaf => {
-            Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathSingle => {
-            Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathMulti => {
-            Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, *node)))
         }
         SyntaxKind::UsePathStar => {
-            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, node.clone())))
+            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, *node)))
         }
         _ => None,
     }

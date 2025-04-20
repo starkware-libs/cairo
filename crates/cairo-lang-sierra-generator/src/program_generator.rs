@@ -188,7 +188,6 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        let sierra_program = DebugReplacer { db }.apply(&self.program);
         let mut funcs = sierra_program.funcs.iter().peekable();
         while let Some(func) = funcs.next() {
             let start = func.entry_point.0;
@@ -205,11 +204,8 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
-                    let loc = get_location_marks(
-                        db.upcast(),
-                        &loc.first().unwrap().diagnostic_location(db.upcast()),
-                        true,
-                    );
+                    let loc =
+                        get_location_marks(db, &loc.first().unwrap().diagnostic_location(db), true);
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }
             }
@@ -318,7 +314,7 @@ pub fn try_get_function_with_body_id(
 
     try_extract_matches!(inner_function, cairo_lang_sierra::program::GenericArg::UserFunc)?
         .lookup_intern(db)
-        .body(db.upcast())
+        .body(db)
         .expect("No diagnostics at this stage.")
 }
 
@@ -332,7 +328,7 @@ pub fn get_sierra_program(
             for (free_func_id, _) in db.module_free_functions(*module_id)?.iter() {
                 // TODO(spapini): Search Impl functions.
                 if let Some(function) =
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), *free_func_id)
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_func_id)
                 {
                     requested_function_ids.push(function)
                 }

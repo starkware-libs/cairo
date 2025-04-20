@@ -5,5 +5,5 @@
 An _assignment statement_ moves a value into the specified target.
 
 An assignment statement consists of a xref:lvalue.adoc[lvalue] followed by an
-equals sign (=) and a expression.
+equals sign (=) and an expression.
 After the assignment, the value of the `lvalue` is changed to the value of the expression.

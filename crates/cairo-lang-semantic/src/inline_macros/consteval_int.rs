@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
 
@@ -40,7 +40,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         const DEPRECATION_FEATURE: &str = r#""deprecated-consteval-int-macro""#;
         if !metadata.allowed_features.contains(DEPRECATION_FEATURE) {
             diagnostics.push(PluginDiagnostic::warning(
-                syntax.stable_ptr().untyped(),
+                syntax.stable_ptr(db),
                 format!(
                     "Usage of deprecated macro `{}` with no `#[feature({DEPRECATION_FEATURE})]` \
                      attribute. Note: Use simple calculations instead, as these are supported in \
@@ -139,10 +139,15 @@ pub fn compute_constant_expr(
                     ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,
             ),
             _ => {
+<<<<<<< HEAD
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
                     macro_ast.stable_ptr(),
                     bin_expr.as_syntax_node(),
+=======
+                diagnostics.push(PluginDiagnostic::error(
+                    bin_expr.stable_ptr(db),
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                     "Unsupported binary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -153,10 +158,15 @@ pub fn compute_constant_expr(
                 Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics, macro_ast)?)
             }
             _ => {
+<<<<<<< HEAD
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
                     macro_ast.stable_ptr(),
                     un_expr.as_syntax_node(),
+=======
+                diagnostics.push(PluginDiagnostic::error(
+                    un_expr.stable_ptr(db),
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                     "Unsupported unary operator in consteval_int macro".to_string(),
                 ));
                 None
@@ -166,10 +176,15 @@ pub fn compute_constant_expr(
             compute_constant_expr(db, &paren_expr.expr(db), diagnostics, macro_ast)
         }
         _ => {
+<<<<<<< HEAD
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 macro_ast.stable_ptr(),
                 value.as_syntax_node(),
+=======
+            diagnostics.push(PluginDiagnostic::error(
+                value.stable_ptr(db),
+>>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 "Unsupported expression in consteval_int macro".to_string(),
             ));
             None

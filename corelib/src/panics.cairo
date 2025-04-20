@@ -47,6 +47,8 @@ pub enum PanicResult<T> {
 /// ```
 pub extern fn panic(data: Array<felt252>) -> crate::never;
 
+extern fn unsafe_panic() -> crate::never nopanic;
+
 /// Panics with a `ByteArray` message.
 ///
 /// Constructs a panic message by prepending the `BYTE_ARRAY_MAGIC` value and
@@ -60,7 +62,7 @@ pub extern fn panic(data: Array<felt252>) -> crate::never;
 /// let error_msg = "An error occurred";
 /// panic_with_byte_array(@error_msg);
 /// ```
-#[inline]
+#[inline(never)]
 pub fn panic_with_byte_array(err: @ByteArray) -> crate::never {
     let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
     err.serialize(ref serialized);

@@ -104,7 +104,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:2:14
     let _x = not_found;
              ^^^^^^^^^

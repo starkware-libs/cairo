@@ -1,17 +1,18 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
-    init_files_group,
+    ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
+};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
@@ -44,7 +45,7 @@ pub struct SierraGenDatabaseForTesting {
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl ExternalFiles for SierraGenDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
@@ -65,10 +66,11 @@ impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
+        init_defs_group(&mut res);
+        init_semantic_group(&mut res);
+
+        let plugin_suite = res.intern_plugin_suite(get_default_plugin_suite());
+        res.set_default_plugins_from_suite(plugin_suite);
 
         res.set_optimization_config(Arc::new(
             OptimizationConfig::default().with_minimal_movable_functions(),
@@ -89,11 +91,6 @@ impl SierraGenDatabaseForTesting {
 impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl AsFilesGroupMut for SierraGenDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
@@ -161,7 +158,7 @@ pub fn setup_db_and_get_crate_id(
 }
 
 pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+    let crate_id = setup_test_crate(db, "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }
@@ -272,7 +269,7 @@ pub fn dummy_push_values_ex(
     values: &[(&str, &str, bool)],
 ) -> pre_sierra::StatementWithLocation {
     let felt252_ty =
-        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
+        db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     pre_sierra::Statement::PushValues(
         values
             .iter()

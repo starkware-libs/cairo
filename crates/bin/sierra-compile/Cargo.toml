@@ -2,6 +2,7 @@
 name = "sierra-compile"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Compiler executable for the Sierra intermediate representation"
@@ -12,8 +13,8 @@ log.workspace = true
 clap.workspace = true
 indoc.workspace = true
 
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.9.2" }
-cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "~2.9.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.9.2", features = [
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.11.4" }
+cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "~2.11.4" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.11.4", features = [
     "env_logger",
 ] }

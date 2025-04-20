@@ -29,7 +29,7 @@ impl Visibility {
                         Self::PublicInCrate
                     } else {
                         diagnostics.add(SemanticDiagnostic::new(
-                            StableLocation::from_ast(&argument),
+                            StableLocation::from_ast(db, &argument),
                             SemanticDiagnosticKind::UnsupportedPubArgument,
                         ));
                         Self::Public

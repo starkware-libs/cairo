@@ -103,10 +103,13 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(get_u256_type(context)?),
             ],
-            vec![OutputVarInfo::new_builtin(range_check_type, 0), OutputVarInfo {
-                ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SimpleDerefs,
-            }],
+            vec![
+                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

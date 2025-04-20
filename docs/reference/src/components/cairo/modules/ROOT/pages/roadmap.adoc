@@ -4,7 +4,7 @@ The next milestone is to reach feature parity with Cairo version 0.
 
 In this section we track the missing features to reach feature parity with the old compiler version.
 
-We divided them by Cairo, Starknet and specific system calls in Starknet OS.
+We divided them into Cairo, Starknet and specific system calls in Starknet OS.
 
 
 ## Cairo features

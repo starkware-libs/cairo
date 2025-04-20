@@ -70,13 +70,19 @@ impl GenericSubstitution {
         }
     }
     pub fn concat(mut self, other: GenericSubstitution) -> Self {
-        for (key, value) in other.param_to_arg.into_iter() {
+        for (key, value) in other.param_to_arg {
             self.param_to_arg.insert(key, value);
         }
         if let Some(self_impl) = other.self_impl {
             self.self_impl = Some(self_impl);
         }
         self
+    }
+    pub fn substitute<'a, Obj>(&'a self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
+    where
+        SubstitutionRewriter<'a>: SemanticRewriter<Obj, DiagnosticAdded>,
+    {
+        SubstitutionRewriter { db, substitution: self }.rewrite(obj)
     }
 }
 impl Deref for GenericSubstitution {
@@ -437,8 +443,8 @@ macro_rules! add_expr_rewrites {
 }
 
 pub struct SubstitutionRewriter<'a> {
-    pub db: &'a dyn SemanticGroup,
-    pub substitution: &'a GenericSubstitution,
+    db: &'a dyn SemanticGroup,
+    substitution: &'a GenericSubstitution,
 }
 impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a> {
     fn get_db(&self) -> &'a dyn SemanticGroup {
@@ -572,7 +578,7 @@ impl SemanticRewriter<GenericFunctionWithBodyId, DiagnosticAdded> for Substituti
         if let GenericFunctionWithBodyId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {
                 if let ImplLongId::Concrete(concrete_impl_id) = self_impl.lookup_intern(self.db) {
-                    if self.rewrite(id.concrete_trait(self.db.upcast()))?
+                    if self.rewrite(id.concrete_trait(self.db))?
                         == self_impl.concrete_trait(self.db)?
                     {
                         *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {

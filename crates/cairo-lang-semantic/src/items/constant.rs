@@ -4,8 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId,
-    VarId,
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
@@ -27,8 +26,8 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreInfo, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_ty_by_name,
+    true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -39,9 +38,8 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
 use crate::items::enm::SemanticEnumEx;
-use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
@@ -179,7 +177,7 @@ impl ConstValue {
     /// Returns the value of an int const as a BigInt.
     pub fn into_int(self) -> Option<BigInt> {
         match self {
-            ConstValue::Int(value, _) => Some(value.clone()),
+            ConstValue::Int(value, _) => Some(value),
             _ => None,
         }
     }
@@ -204,7 +202,7 @@ impl ImplConstantId {
     ) -> Self {
         if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
-            assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+            assert_eq!(Ok(trait_constant_id.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
 
         ImplConstantId { impl_id, trait_constant_id }
@@ -217,8 +215,7 @@ impl ImplConstantId {
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
-            .into()
+        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db)).into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
@@ -279,7 +276,7 @@ pub fn constant_semantic_data_helper(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let syntax_db = db.upcast();
+    let syntax_db = db;
 
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
 
@@ -287,7 +284,7 @@ pub fn constant_semantic_data_helper(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
+        None => Resolver::new(db, element_id.module_file_id(db), inference_id),
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
@@ -313,7 +310,7 @@ pub fn constant_semantic_data_helper(
         db,
         &mut ctx,
         &value,
-        constant_ast.stable_ptr().untyped(),
+        constant_ast.stable_ptr(syntax_db).untyped(),
         constant_type,
         true,
     )
@@ -350,12 +347,13 @@ pub fn constant_semantic_data_cycle_helper(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
+        None => Resolver::new(db, element_id.module_file_id(db), inference_id),
     };
 
     let resolver_data = Arc::new(resolver.data);
 
-    let diagnostic_added = diagnostics.report(constant_ast, SemanticDiagnosticKind::ConstCycle);
+    let diagnostic_added =
+        diagnostics.report(constant_ast.stable_ptr(db), SemanticDiagnosticKind::ConstCycle);
     Ok(ConstantData {
         constant: Err(diagnostic_added),
         const_value: ConstValue::Missing(diagnostic_added).intern(db),
@@ -436,14 +434,14 @@ pub fn value_as_const_value(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<ConstValue, LiteralError> {
-    validate_literal(db.upcast(), ty, value)?;
+    validate_literal(db, ty, value)?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
+        let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty)
         } else {
-            let u128_ty = get_core_ty_by_name(db.upcast(), "u128".into(), vec![]);
+            let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
@@ -454,7 +452,7 @@ pub fn value_as_const_value(
         }
     };
 
-    if let Some(inner) = try_extract_nz_wrapped_type(db.upcast(), ty) {
+    if let Some(inner) = try_extract_nz_wrapped_type(db, ty) {
         Ok(ConstValue::NonZero(Box::new(get_basic_const_value(inner))))
     } else {
         Ok(get_basic_const_value(ty))
@@ -496,15 +494,6 @@ impl ConstantEvaluateContext<'_> {
                 self.validate(*inner);
             }
             Expr::FunctionCall(expr) => {
-                if let Some(value) = try_extract_minus_literal(self.db, &self.arenas.exprs, expr) {
-                    if let Err(err) = validate_literal(self.db, expr.ty, &value) {
-                        self.diagnostics.report(
-                            expr.stable_ptr.untyped(),
-                            SemanticDiagnosticKind::LiteralError(err),
-                        );
-                    }
-                    return;
-                }
                 for arg in &expr.args {
                     match arg {
                         ExprFunctionCallArg::Value(arg) => self.validate(*arg),
@@ -613,7 +602,7 @@ impl ConstantEvaluateContext<'_> {
             return false;
         };
         let impl_def = imp.concrete_impl_id.impl_def_id(db);
-        if impl_def.parent_module(db.upcast()).owning_crate(db.upcast()) != db.core_crate() {
+        if impl_def.parent_module(db).owning_crate(db) != db.core_crate() {
             return false;
         }
         let Ok(trait_id) = db.impl_def_trait(impl_def) else {
@@ -633,8 +622,8 @@ impl ConstantEvaluateContext<'_> {
                 .cloned()
                 .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic())),
             Expr::Constant(expr) => self
-                .rewriter()
-                .rewrite(expr.const_value_id.lookup_intern(db))
+                .generic_substitution
+                .substitute(self.db, expr.const_value_id.lookup_intern(db))
                 .unwrap_or_else(ConstValue::Missing),
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
@@ -805,10 +794,6 @@ impl ConstantEvaluateContext<'_> {
     /// Attempts to evaluate constants from a const function call.
     fn evaluate_function_call(&mut self, expr: &ExprFunctionCall) -> ConstValue {
         let db = self.db;
-        if let Some(value) = try_extract_minus_literal(db.upcast(), &self.arenas.exprs, expr) {
-            return value_as_const_value(db, expr.ty, &value)
-                .expect("LiteralError should have been caught on `validate`");
-        }
         let args = expr
             .args
             .iter()
@@ -821,10 +806,11 @@ impl ConstantEvaluateContext<'_> {
                 SemanticDiagnosticKind::FailedConstantCalculation,
             ));
         }
-        let concrete_function = match self.rewriter().rewrite(expr.function.get_concrete(db)) {
-            Ok(v) => v,
-            Err(err) => return ConstValue::Missing(err),
-        };
+        let concrete_function =
+            match self.generic_substitution.substitute(db, expr.function.get_concrete(db)) {
+                Ok(v) => v,
+                Err(err) => return ConstValue::Missing(err),
+            };
         if let Some(calc_result) =
             self.evaluate_const_function_call(&concrete_function, &args, expr)
         {
@@ -867,9 +853,9 @@ impl ConstantEvaluateContext<'_> {
             }
             id if id == self.div_fn => &args[0].v / &args[1].v,
             id if id == self.rem_fn => &args[0].v % &args[1].v,
-            id if id == self.bit_and_fn => &args[0].v & &args[1].v,
-            id if id == self.bit_or_fn => &args[0].v | &args[1].v,
-            id if id == self.bit_xor_fn => &args[0].v ^ &args[1].v,
+            id if id == self.bitand_fn => &args[0].v & &args[1].v,
+            id if id == self.bitor_fn => &args[0].v | &args[1].v,
+            id if id == self.bitxor_fn => &args[0].v ^ &args[1].v,
             id if id == self.lt_fn => return bool_value(args[0].v < args[1].v),
             id if id == self.le_fn => return bool_value(args[0].v <= args[1].v),
             id if id == self.gt_fn => return bool_value(args[0].v > args[1].v),
@@ -889,7 +875,7 @@ impl ConstantEvaluateContext<'_> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_felt252_ty() {
+        if expr.ty == db.core_info().felt252 {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",
@@ -914,10 +900,13 @@ impl ConstantEvaluateContext<'_> {
     ) -> Option<ConstValue> {
         let db = self.db;
         if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
-            let expr_ty = self.rewriter().rewrite(expr.ty).ok()?;
+            let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 return Some(ConstValue::Int(value.clone(), expr_ty));
+            } else if self.unwrap_non_zero == extern_fn {
+                let [ConstValue::NonZero(value)] = args else { return None };
+                return Some(value.as_ref().clone());
             } else if self.downcast_fns.contains(&extern_fn) {
                 let [ConstValue::Int(value, _)] = args else { return None };
                 let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.lookup_intern(db)
@@ -942,7 +931,7 @@ impl ConstantEvaluateContext<'_> {
             } else {
                 unreachable!(
                     "Unexpected extern function in constant lowering: `{}`",
-                    extern_fn.full_path(db.upcast())
+                    extern_fn.full_path(db)
                 );
             }
         }
@@ -1000,11 +989,6 @@ impl ConstantEvaluateContext<'_> {
             );
         }
         Some(value)
-    }
-
-    /// `SubstitutionRewriter` for the current generic substitution.
-    fn rewriter(&self) -> SubstitutionRewriter<'_> {
-        SubstitutionRewriter { db: self.db, substitution: &self.generic_substitution }
     }
 
     /// Extract const member access from a const value.
@@ -1196,40 +1180,6 @@ pub fn const_calc_info(db: &dyn SemanticGroup) -> Arc<ConstCalcInfo> {
 pub struct ConstCalcInfo {
     /// Traits that are allowed for consts if their impls is in the corelib.
     const_traits: UnorderedHashSet<TraitId>,
-    /// The trait function for `Neg::neg`.
-    neg_fn: TraitFunctionId,
-    /// The trait function for `Add::add`.
-    add_fn: TraitFunctionId,
-    /// The trait function for `Sub::sub`.
-    sub_fn: TraitFunctionId,
-    /// The trait function for `Mul::mul`.
-    mul_fn: TraitFunctionId,
-    /// The trait function for `Div::div`.
-    div_fn: TraitFunctionId,
-    /// The trait function for `Rem::rem`.
-    rem_fn: TraitFunctionId,
-    /// The trait function for `DivRem::div_rem`.
-    div_rem_fn: TraitFunctionId,
-    /// The trait function for `BitAnd::bitand`.
-    bit_and_fn: TraitFunctionId,
-    /// The trait function for `BitOr::bitor`.
-    bit_or_fn: TraitFunctionId,
-    /// The trait function for `BitXor::bitxor`.
-    bit_xor_fn: TraitFunctionId,
-    /// The trait function for `PartialEq::eq`.
-    eq_fn: TraitFunctionId,
-    /// The trait function for `PartialEq::ne`.
-    ne_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::lt`.
-    lt_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::le`.
-    le_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::gt`.
-    gt_fn: TraitFunctionId,
-    /// The trait function for `PartialOrd::ge`.
-    ge_fn: TraitFunctionId,
-    /// The trait function for `Not::not`.
-    not_fn: TraitFunctionId,
     /// The const value for the unit type `()`.
     unit_const: ConstValue,
     /// The const value for `true`.
@@ -1238,104 +1188,86 @@ pub struct ConstCalcInfo {
     false_const: ConstValue,
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId,
-    /// The integer `upcast` function.
+    /// The integer `upcast` style functions.
     upcast_fns: UnorderedHashSet<ExternFunctionId>,
-    /// The integer `downcast` function.
+    /// The integer `downcast` style functions.
     downcast_fns: UnorderedHashSet<ExternFunctionId>,
+    /// The `unwrap_non_zero` function.
+    unwrap_non_zero: ExternFunctionId,
+
+    core_info: Arc<CoreInfo>,
+}
+
+impl std::ops::Deref for ConstCalcInfo {
+    type Target = CoreInfo;
+    fn deref(&self) -> &CoreInfo {
+        &self.core_info
+    }
 }
 
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
     fn new(db: &dyn SemanticGroup) -> Self {
-        let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
-        let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
-        let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
-        let mul_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into());
-        let div_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Div".into());
-        let rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into());
-        let div_rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "DivRem".into());
-        let bit_and_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into());
-        let bit_or_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into());
-        let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
-        let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
-        let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
-        let not_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Not".into());
-        let trait_fn = |trait_id, name: &str| {
-            db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
-        };
+        let core_info = db.core_info();
         let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         let core = ModuleHelper::core(db);
+        let bounded_int = core.submodule("internal").submodule("bounded_int");
         let integer = core.submodule("integer");
+        let zeroable = core.submodule("zeroable");
+        let starknet = core.submodule("starknet");
+        let class_hash_module = starknet.submodule("class_hash");
+        let contract_address_module = starknet.submodule("contract_address");
         Self {
-            const_traits: [
-                neg_trait,
-                add_trait,
-                sub_trait,
-                mul_trait,
-                div_trait,
-                rem_trait,
-                div_rem_trait,
-                bit_and_trait,
-                bit_or_trait,
-                bit_xor_trait,
-                partial_eq_trait,
-                partial_ord_trait,
-                not_trait,
-            ]
-            .into_iter()
-            .collect(),
-            neg_fn: trait_fn(neg_trait, "neg"),
-            add_fn: trait_fn(add_trait, "add"),
-            sub_fn: trait_fn(sub_trait, "sub"),
-            mul_fn: trait_fn(mul_trait, "mul"),
-            div_fn: trait_fn(div_trait, "div"),
-            rem_fn: trait_fn(rem_trait, "rem"),
-            div_rem_fn: trait_fn(div_rem_trait, "div_rem"),
-            bit_and_fn: trait_fn(bit_and_trait, "bitand"),
-            bit_or_fn: trait_fn(bit_or_trait, "bitor"),
-            bit_xor_fn: trait_fn(bit_xor_trait, "bitxor"),
-            eq_fn: trait_fn(partial_eq_trait, "eq"),
-            ne_fn: trait_fn(partial_eq_trait, "ne"),
-            lt_fn: trait_fn(partial_ord_trait, "lt"),
-            le_fn: trait_fn(partial_ord_trait, "le"),
-            gt_fn: trait_fn(partial_ord_trait, "gt"),
-            ge_fn: trait_fn(partial_ord_trait, "ge"),
-            not_fn: trait_fn(not_trait, "not"),
+            const_traits: FromIterator::from_iter([
+                core_info.neg_trt,
+                core_info.add_trt,
+                core_info.sub_trt,
+                core_info.mul_trt,
+                core_info.div_trt,
+                core_info.rem_trt,
+                core_info.div_rem_trt,
+                core_info.bitand_trt,
+                core_info.bitor_trt,
+                core_info.bitxor_trt,
+                core_info.partialeq_trt,
+                core_info.partialord_trt,
+                core_info.not_trt,
+            ]),
             true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
             false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
-            upcast_fns: [
-                "upcast",
-                "u8_to_felt252",
-                "u16_to_felt252",
-                "u32_to_felt252",
-                "u64_to_felt252",
-                "u128_to_felt252",
-                "i8_to_felt252",
-                "i16_to_felt252",
-                "i32_to_felt252",
-                "i64_to_felt252",
-                "i128_to_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
-            downcast_fns: [
-                "downcast",
-                "u8_try_from_felt252",
-                "u16_try_from_felt252",
-                "u32_try_from_felt252",
-                "u64_try_from_felt252",
-                "i8_try_from_felt252",
-                "i16_try_from_felt252",
-                "i32_try_from_felt252",
-                "i64_try_from_felt252",
-                "i128_try_from_felt252",
-            ]
-            .into_iter()
-            .map(|n| integer.extern_function_id(n))
-            .collect(),
+            upcast_fns: FromIterator::from_iter([
+                bounded_int.extern_function_id("upcast"),
+                integer.extern_function_id("u8_to_felt252"),
+                integer.extern_function_id("u16_to_felt252"),
+                integer.extern_function_id("u32_to_felt252"),
+                integer.extern_function_id("u64_to_felt252"),
+                integer.extern_function_id("u128_to_felt252"),
+                integer.extern_function_id("i8_to_felt252"),
+                integer.extern_function_id("i16_to_felt252"),
+                integer.extern_function_id("i32_to_felt252"),
+                integer.extern_function_id("i64_to_felt252"),
+                integer.extern_function_id("i128_to_felt252"),
+                class_hash_module.extern_function_id("class_hash_to_felt252"),
+                contract_address_module.extern_function_id("contract_address_to_felt252"),
+            ]),
+            downcast_fns: FromIterator::from_iter([
+                bounded_int.extern_function_id("downcast"),
+                integer.extern_function_id("u8_try_from_felt252"),
+                integer.extern_function_id("u16_try_from_felt252"),
+                integer.extern_function_id("u32_try_from_felt252"),
+                integer.extern_function_id("u64_try_from_felt252"),
+                integer.extern_function_id("i8_try_from_felt252"),
+                integer.extern_function_id("i16_try_from_felt252"),
+                integer.extern_function_id("i32_try_from_felt252"),
+                integer.extern_function_id("i64_try_from_felt252"),
+                integer.extern_function_id("i128_try_from_felt252"),
+                class_hash_module.extern_function_id("class_hash_try_from_felt252"),
+                contract_address_module.extern_function_id("contract_address_try_from_felt252"),
+            ]),
+            unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
+            core_info,
         }
     }
 }

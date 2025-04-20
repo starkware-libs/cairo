@@ -2,8 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
@@ -34,6 +34,7 @@ cairo_lang_test_utils::test_file_test!(
         constructor: "constructor",
         closure: "closure",
         coupon: "coupon",
+        deref: "deref",
         enum_: "enum",
         error_propagate: "error_propagate",
         for_: "for",
@@ -108,7 +109,7 @@ fn test_expand_expr(
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db);
     let expanded_code = expanded_code.replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -228,13 +229,16 @@ fn test_expr_call_failures() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
-    assert_eq!(diagnostics, indoc! { "
-            error: Function not found.
+    assert_eq!(
+        diagnostics,
+        indoc! { "
+            error[E0006]: Function not found.
              --> lib.cairo:2:1
             foo()
             ^^^
 
-        "});
+        "}
+    );
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(

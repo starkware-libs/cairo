@@ -490,7 +490,7 @@ impl CasmContractClass {
             require(type_resolver.is_valid_entry_point_return_type(panic_result))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            for type_id in input_builtins.iter() {
+            for type_id in input_builtins {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
@@ -535,7 +535,7 @@ impl CasmContractClass {
 
         let as_casm_entry_points = |contract_entry_points: Vec<ContractEntryPoint>| {
             let mut entry_points = vec![];
-            for contract_entry_point in contract_entry_points.into_iter() {
+            for contract_entry_point in contract_entry_points {
                 entry_points.push(as_casm_entry_point(contract_entry_point)?);
             }
             Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)

@@ -16,13 +16,12 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::{find_contracts, get_contracts_info};
-use cairo_lang_utils::Upcast;
 use clap::Parser;
 
 /// Compiles a Cairo project and runs the function `main`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,
@@ -60,7 +59,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    let mut reporter = DiagnosticsReporter::stderr();
+    let mut reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
     if args.allow_warnings {
         reporter = reporter.allow_warnings();
     }
@@ -79,7 +78,7 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }
 
-    let contracts = find_contracts((*db).upcast(), &main_crate_ids);
+    let contracts = find_contracts(db, &main_crate_ids);
     let contracts_info = get_contracts_info(db, contracts, &replacer)?;
     let sierra_program = replacer.apply(&sierra_program);
 

@@ -14,7 +14,7 @@ pub trait IteratorEx<T, impl I: Iterator<T>, +Destruct<T>, +Drop<I::Item>> {
         res
     }
 }
-impl ItratorExImpl<T, impl I: Iterator<T>, +Destruct<T>, +Drop<I::Item>> of IteratorEx<T, I> {}
+impl IteratorExImpl<T, impl I: Iterator<T>, +Destruct<T>, +Drop<I::Item>> of IteratorEx<T, I> {}
 
 #[test]
 fn test_advance_by() {

@@ -544,7 +544,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let bar2 = |b: Option<u32>| {
                 ^^^^^^^^^^^^^^
 
-error: Function not found.
+error[E0006]: Function not found.
  --> lib.cairo:10:19
     let _f: u32 = bar(a).unwrap();
                   ^^^
@@ -644,7 +644,7 @@ error: Capture of mutable variables in a closure is not supported
 
 //! > ==========================================================================
 
-//! > Not generating generating destruct impl when drop impl exists.
+//! > Not generating destruct impl when drop impl exists.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -714,7 +714,7 @@ impl MyImpl of core::ops::FnOnce<u32, ()> {
 }
 
 //! > expected_diagnostics
-error: Trait `core::ops::function::FnOnce` should not be re-implemented.
+error: Trait `core::ops::function::FnOnce` should not be implemented outside of the corelib.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -819,3 +819,29 @@ error: Ambiguous method call. More than one applicable trait function with a sui
  --> lib.cairo:9:13
         arr.len();
             ^^^
+
+//! > ==========================================================================
+
+//! > Closures bad param count.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    call_with(|| {})
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn call_with<F, +core::ops::Fn<F, (i32,)>>(func: F) {
+    func(1);
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `()` and `(core::integer::i32,)`.
+ --> lib.cairo:5:15
+    call_with(|| {})
+              ^^^^^

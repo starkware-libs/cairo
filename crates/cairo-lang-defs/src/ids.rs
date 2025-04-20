@@ -21,13 +21,16 @@
 //
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
+
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
@@ -37,6 +40,7 @@ use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
+use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
@@ -55,9 +59,11 @@ pub trait LanguageElementId {
 
 pub trait NamedLanguageElementLongId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait NamedLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier;
 }
 pub trait TopLevelLanguageElementId: NamedLanguageElementId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -105,14 +111,19 @@ macro_rules! define_named_language_element_id {
         }
         impl NamedLanguageElementLongId for $long_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-                let syntax_db = db.upcast();
-                let terminal_green = self.1.name_green(syntax_db);
-                terminal_green.identifier(syntax_db)
+                let terminal_green = self.1.name_green(db);
+                terminal_green.identifier(db)
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                self.1.lookup(db).name(db)
             }
         }
         impl NamedLanguageElementId for $short_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
+            }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                db.$lookup(*self).name_identifier(db)
             }
         }
     };
@@ -254,6 +265,13 @@ macro_rules! toplevel_enum {
                     )*
                 }
             }
+            fn name_identifier(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifier {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.name_identifier(db),
+                    )*
+                }
+            }
         }
         impl TopLevelLanguageElementId for $enum_name {}
     }
@@ -321,6 +339,116 @@ define_short_id!(
     intern_plugin_generated_file
 );
 
+/// An ID allowing for interning the [`MacroPlugin`] into Salsa database.
+#[derive(Clone, Debug)]
+pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
+
+impl MacroPlugin for MacroPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::PluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        self.0.declared_attributes()
+    }
+
+    fn declared_derives(&self) -> Vec<String> {
+        self.0.declared_derives()
+    }
+
+    fn executable_attributes(&self) -> Vec<String> {
+        self.0.executable_attributes()
+    }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        self.0.phantom_type_attributes()
+    }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `MacroPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
+}
+
+// `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,
+// but pointer-based equality and hash semantics are enough in this case.
+impl PartialEq for MacroPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for MacroPluginLongId {}
+
+impl Hash for MacroPluginLongId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.0).hash(state)
+    }
+}
+
+define_short_id!(
+    MacroPluginId,
+    MacroPluginLongId,
+    DefsGroup,
+    lookup_intern_macro_plugin,
+    intern_macro_plugin
+);
+
+/// An ID allowing for interning the [`InlineMacroExprPlugin`] into Salsa database.
+#[derive(Clone, Debug)]
+pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
+
+impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: &ast::ExprInlineMacro,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::InlinePluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        self.0.documentation()
+    }
+
+    fn plugin_type_id(&self) -> std::any::TypeId {
+        // Ensure the implementation for `InlineMacroExprPluginLongId` returns the same value
+        // as the underlying plugin object.
+        self.0.plugin_type_id()
+    }
+}
+
+// `PartialEq` and `Hash` cannot be derived on `Arc<dyn ...>`,
+// but pointer-based equality and hash semantics are enough in this case.
+impl PartialEq for InlineMacroExprPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for InlineMacroExprPluginLongId {}
+
+impl Hash for InlineMacroExprPluginLongId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.0).hash(state)
+    }
+}
+
+define_short_id!(
+    InlineMacroExprPluginId,
+    InlineMacroExprPluginLongId,
+    DefsGroup,
+    lookup_intern_inline_macro_plugin,
+    intern_inline_macro_plugin
+);
+
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of a module.
@@ -340,6 +468,27 @@ define_language_element_id_as_enum! {
         MacroDeclaration(MacroDeclarationId),
     }
 }
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    /// Id for an item that can be brought into scope with a `use` statement.
+    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`].
+    pub enum ImportableId {
+        Constant(ConstantId),
+        Submodule(SubmoduleId),
+        FreeFunction(FreeFunctionId),
+        Struct(StructId),
+        Enum(EnumId),
+        Variant(VariantId),
+        TypeAlias(ModuleTypeAliasId),
+        ImplAlias(ImplAliasId),
+        Trait(TraitId),
+        Impl(ImplDefId),
+        ExternType(ExternTypeId),
+        ExternFunction(ExternFunctionId),
+    }
+}
+
 define_top_level_language_element_id!(
     SubmoduleId,
     SubmoduleLongId,
@@ -418,7 +567,7 @@ impl ImplTypeDefId {
         let ImplTypeDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl type ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -441,7 +590,7 @@ impl ImplConstantDefId {
         let ImplConstantDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -464,7 +613,7 @@ impl ImplImplDefId {
         let ImplImplDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -487,7 +636,7 @@ impl ImplFunctionId {
         let ImplFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl function ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -576,7 +725,7 @@ impl TraitTypeId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitTypeLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait type ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -603,7 +752,7 @@ impl TraitConstantId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitConstantLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait constant ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -625,7 +774,7 @@ impl TraitImplId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitImplLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait impl ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -647,7 +796,7 @@ impl TraitFunctionId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait function ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -668,7 +817,7 @@ define_named_language_element_id!(
 impl MemberId {
     pub fn struct_id(&self, db: &dyn DefsGroup) -> StructId {
         let MemberLongId(module_file_id, ptr) = self.lookup_intern(db);
-        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 2));
         StructLongId(module_file_id, struct_ptr).intern(db)
     }
 }
@@ -690,7 +839,7 @@ define_named_language_element_id!(
 impl VariantId {
     pub fn enum_id(&self, db: &dyn DefsGroup) -> EnumId {
         let VariantLongId(module_file_id, ptr) = self.lookup_intern(db);
-        let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db, 2));
         EnumLongId(module_file_id, struct_ptr).intern(db)
     }
 }
@@ -759,16 +908,16 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
+        let item_ptr = self.1.0.nth_parent(db, 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
 impl GenericParamId {
     pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
-        self.lookup_intern(db).name(db.upcast())
+        self.lookup_intern(db).name(db)
     }
     pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
-        self.lookup_intern(db).debug_name(db.upcast())
+        self.lookup_intern(db).debug_name(db)
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let long_ids = self.lookup_intern(db);
@@ -776,24 +925,23 @@ impl GenericParamId {
             unreachable!()
         };
 
-        let syntax_db = db.upcast();
         if matches!(
             kind,
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
         ) {
             // For anonymous impls print the declaration.
-            return self.stable_location(db).syntax_node(db).get_text_without_trivia(syntax_db);
+            return self.stable_location(db).syntax_node(db).get_text_without_trivia(db);
         }
 
         let name_green = TerminalIdentifierGreen(key_fields[0]);
-        name_green.identifier(syntax_db).into()
+        name_green.identifier(db).into()
     }
 
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
-        self.lookup_intern(db).kind(db.upcast())
+        self.lookup_intern(db).kind(db)
     }
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        self.lookup_intern(db).generic_item(db.upcast())
+        self.lookup_intern(db).generic_item(db)
     }
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
@@ -801,9 +949,9 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
         write!(
             f,
             "GenericParam{}({}::{})",
-            self.kind(db.upcast()),
+            self.kind(db),
             self.generic_item(db).full_path(db),
-            self.debug_name(db.upcast())
+            self.debug_name(db)
         )
     }
 }
@@ -870,7 +1018,7 @@ impl GenericItemId {
                     SyntaxKind::FunctionWithBody => {
                         // `FunctionWithBody` must be at least 2 levels below the root, and thus
                         // `parent1.parent()` is safe.
-                        match parent1.parent(db.upcast()).lookup_intern(db) {
+                        match parent1.parent(db).lookup_intern(db) {
                             SyntaxStablePtr::Root(_, _) => {
                                 GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     FreeFunctionLongId(
@@ -938,7 +1086,7 @@ impl GenericItemId {
             SyntaxKind::ItemTypeAlias => {
                 // `ItemTypeAlias` must be at least 2 levels below the root, and thus
                 // `parent0.kind()` is safe.
-                match parent0.kind(db.upcast()) {
+                match parent0.kind(db) {
                     SyntaxKind::ModuleItemList => {
                         GenericItemId::ModuleItem(GenericModuleItemId::TypeAlias(
                             ModuleTypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr))
@@ -992,9 +1140,8 @@ define_language_element_id_basic!(
 );
 impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
-        let text = ptr.lookup(syntax_db).text(syntax_db);
+        let text = ptr.lookup(db).text(db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }
 }
@@ -1134,11 +1281,9 @@ impl StatementItemId {
     pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
         match self {
             StatementItemId::Constant(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
+                id.lookup_intern(db).1.lookup(db).name(db).stable_ptr(db).untyped()
             }
-            StatementItemId::Use(id) => {
-                id.lookup_intern(db).1.lookup(db.upcast()).name_stable_ptr(db.upcast())
-            }
+            StatementItemId::Use(id) => id.lookup_intern(db).1.lookup(db).name_stable_ptr(db),
         }
     }
 }
@@ -1202,6 +1347,7 @@ impl ImplItemId {
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
     /// Semantic info lookups should be performed against these items.

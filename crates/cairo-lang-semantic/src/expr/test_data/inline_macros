@@ -227,12 +227,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     write!(f, ba);
               ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:21:17
     write!(f, "{non_existing}").unwrap();
                 ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:24:21
     write!(f, "{}", non_existing).unwrap();
                     ^^^^^^^^^^^^
@@ -418,12 +418,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     writeln!(f, ba);
                 ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:21:19
     writeln!(f, "{non_existing}").unwrap();
                   ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:24:23
     writeln!(f, "{}", non_existing).unwrap();
                       ^^^^^^^^^^^^
@@ -581,12 +581,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     format!(ba);
             ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:15
     format!("{non_existing}");
               ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:17:19
     format!("{}", non_existing);
                   ^^^^^^^^^^^^
@@ -689,12 +689,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     print!(ba);
            ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:14
     print!("{non_existing}");
              ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:17:18
     print!("{}", non_existing);
                  ^^^^^^^^^^^^
@@ -797,12 +797,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     println!(ba);
              ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:16
     println!("{non_existing}");
                ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:17:20
     println!("{}", non_existing);
                    ^^^^^^^^^^^^
@@ -892,12 +892,12 @@ error: Plugin diagnostic: Format string argument must be a string literal.
     panic!(ba);
            ^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:14:14
     panic!("{non_existing}");
              ^^^^^^^^^^^^
 
-error: Identifier not found.
+error[E0006]: Identifier not found.
  --> lib.cairo:17:18
     panic!("{}", non_existing);
                  ^^^^^^^^^^^^
