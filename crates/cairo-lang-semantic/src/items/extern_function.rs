@@ -68,10 +68,11 @@ pub fn extern_function_declaration_generic_params_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = extern_function_id.module_file_id(db);
+    let syntax_db = db.upcast();
+    let module_file_id = extern_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
-    let declaration = extern_function_syntax.declaration(db);
+    let declaration = extern_function_syntax.declaration(syntax_db);
 
     // Generic params.
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -84,11 +85,11 @@ pub fn extern_function_declaration_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &declaration.generic_params(db),
+        &declaration.generic_params(syntax_db),
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(db).untyped());
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(syntax_db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -133,10 +134,11 @@ pub fn priv_extern_function_declaration_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
+    let syntax_db = db.upcast();
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?.to_maybe()?;
 
-    let declaration = extern_function_syntax.declaration(db);
+    let declaration = extern_function_syntax.declaration(syntax_db);
 
     // Generic params.
     let generic_params_data =
@@ -163,15 +165,16 @@ pub fn priv_extern_function_declaration_data(
 
     if signature.panicable {
         let panic_function = extract_matches!(
-            get_core_generic_function_id(db, "panic".into()),
+            get_core_generic_function_id(db.upcast(), "panic".into()),
             GenericFunctionId::Extern
         );
         if extern_function_id != panic_function {
-            diagnostics.report(extern_function_syntax.stable_ptr(db), PanicableExternFunction);
+            diagnostics
+                .report(extern_function_syntax.stable_ptr(syntax_db), PanicableExternFunction);
         }
     }
 
-    let attributes = extern_function_syntax.attributes(db).structurize(db);
+    let attributes = extern_function_syntax.attributes(syntax_db).structurize(syntax_db);
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
     match &inline_config {
@@ -184,7 +187,7 @@ pub fn priv_extern_function_declaration_data(
     }
 
     let (_, implicit_precedence_attr) =
-        get_implicit_precedence(db, &mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
     if let Some(attr) = implicit_precedence_attr {
         diagnostics
             .report(attr.stable_ptr.untyped(), ImplicitPrecedenceAttrForExternFunctionNotAllowed);
@@ -192,7 +195,7 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(db).untyped());
+    inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(syntax_db).untyped());
 
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();

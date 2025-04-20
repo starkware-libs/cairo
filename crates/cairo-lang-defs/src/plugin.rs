@@ -6,12 +6,7 @@ use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
-<<<<<<< HEAD
-use cairo_lang_filesystem::span::TextWidth;
-=======
-use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::ast;
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, ast};
@@ -80,15 +75,11 @@ pub struct PluginResult {
 pub struct PluginDiagnostic {
     /// The stable pointer of the syntax node that caused the diagnostic.
     pub stable_ptr: SyntaxStablePtrId,
-<<<<<<< HEAD
-    /// The content of the diagnostic.
-=======
     /// Span relative to the start of the `stable_ptr`.
     /// No assertion is made that the span is fully contained within the node pointed to by
     /// `stable_ptr`. When printing diagnostics, any part of the span that falls outside the
     /// referenced node will be silently ignored.
     pub relative_span: Option<TextSpan>,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     pub message: String,
     /// The severity of the diagnostic.
     pub severity: Severity,
@@ -102,15 +93,10 @@ impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-<<<<<<< HEAD
-            message,
-            severity: Severity::Error,
-            inner_span: None,
-=======
             relative_span: None,
             message,
             severity: Severity::Error,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+            inner_span: None,
         }
     }
 
@@ -122,11 +108,12 @@ impl PluginDiagnostic {
         message: String,
     ) -> PluginDiagnostic {
         let stable_ptr = stable_ptr.into();
-        let offset = inner_span.offset() - stable_ptr.lookup(db).offset();
+        let offset = inner_span.offset(db) - stable_ptr.lookup(db).offset(db);
         let width = inner_span.width(db);
         PluginDiagnostic {
             stable_ptr,
             message,
+            relative_span: None,
             severity: Severity::Error,
             inner_span: Some((offset, width)),
         }
@@ -135,22 +122,16 @@ impl PluginDiagnostic {
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
         PluginDiagnostic {
             stable_ptr: stable_ptr.into(),
-<<<<<<< HEAD
-            message,
-            severity: Severity::Warning,
-            inner_span: None,
-        }
-=======
             relative_span: None,
             message,
             severity: Severity::Warning,
+            inner_span: None,
         }
     }
 
     pub fn with_relative_span(mut self, span: TextSpan) -> Self {
         self.relative_span = Some(span);
         self
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     }
 }
 

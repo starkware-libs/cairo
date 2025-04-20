@@ -1210,7 +1210,6 @@ libfunc snapshot_take<u32> = snapshot_take<u32>;
 libfunc store_temp<Array<u32>> = store_temp<Array<u32>>;
 libfunc function_call<user@core::sha256::compute_sha256_byte_array[545-866]> = function_call<user@core::sha256::compute_sha256_byte_array[545-866]>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::integer::u32, ())>> = enum_match<core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::integer::u32, ())>>;
-libfunc upcast<u32, felt252> = upcast<u32, felt252>;
 libfunc struct_deconstruct<Tuple<Array<u32>, u32, Unit>> = struct_deconstruct<Tuple<Array<u32>, u32, Unit>>;
 libfunc enable_ap_tracking = enable_ap_tracking;
 libfunc drop<Snapshot<core::byte_array::ByteArray>> = drop<Snapshot<core::byte_array::ByteArray>>;
@@ -6960,7 +6959,7 @@ enum_match<core::panics::PanicResult::<(core::array::Array::<core::integer::u32>
 branch_align() -> ();
 redeposit_gas([45]) -> ([49]);
 dup<u32>([4]) -> ([4], [50]);
-upcast<u32, felt252>([50]) -> ([51]);
+u32_to_felt252([50]) -> ([51]);
 struct_deconstruct<Tuple<Array<u32>, u32, Unit>>([47]) -> ([52], [53], [54]);
 drop<u32>([53]) -> ();
 drop<Unit>([54]) -> ();

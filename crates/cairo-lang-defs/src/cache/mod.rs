@@ -11,8 +11,8 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
-    ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemModulePtr, ItemStructPtr, ItemTraitPtr,
-    ItemTypeAliasPtr, UsePathLeafPtr, UsePathStarPtr,
+    ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemMacroDeclarationPtr, ItemModulePtr,
+    ItemStructPtr, ItemTraitPtr, ItemTypeAliasPtr, UsePathLeafPtr, UsePathStarPtr,
 };
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
@@ -30,9 +30,10 @@ use crate::ids::{
     ConstantId, ConstantLongId, EnumId, EnumLongId, ExternFunctionId, ExternFunctionLongId,
     ExternTypeId, ExternTypeLongId, FileIndex, FreeFunctionId, FreeFunctionLongId, GenericParamId,
     GenericParamLongId, GlobalUseId, GlobalUseLongId, ImplAliasId, ImplAliasLongId, ImplDefId,
-    ImplDefLongId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    ModuleTypeAliasLongId, PluginGeneratedFileId, PluginGeneratedFileLongId, StructId,
-    StructLongId, SubmoduleId, SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
+    ImplDefLongId, LanguageElementId, MacroDeclarationId, MacroDeclarationLongId, ModuleFileId,
+    ModuleId, ModuleItemId, ModuleTypeAliasId, ModuleTypeAliasLongId, PluginGeneratedFileId,
+    PluginGeneratedFileLongId, StructId, StructLongId, SubmoduleId, SubmoduleLongId, TraitId,
+    TraitLongId, UseId, UseLongId,
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 
@@ -237,6 +238,7 @@ pub struct DefCacheLoadingData {
     impl_def_ids: OrderedHashMap<ImplDefIdCached, ImplDefId>,
     extern_type_ids: OrderedHashMap<ExternTypeIdCached, ExternTypeId>,
     extern_function_ids: OrderedHashMap<ExternFunctionIdCached, ExternFunctionId>,
+    macro_declaration_ids: OrderedHashMap<MacroDeclarationIdCached, MacroDeclarationId>,
     global_use_ids: OrderedHashMap<GlobalUseIdCached, GlobalUseId>,
 
     file_ids: OrderedHashMap<FileIdCached, FileId>,
@@ -262,6 +264,7 @@ impl DefCacheLoadingData {
             impl_def_ids: OrderedHashMap::default(),
             extern_type_ids: OrderedHashMap::default(),
             extern_function_ids: OrderedHashMap::default(),
+            macro_declaration_ids: OrderedHashMap::default(),
             global_use_ids: OrderedHashMap::default(),
 
             file_ids: OrderedHashMap::default(),
@@ -332,6 +335,7 @@ pub struct DefCacheSavingData {
     extern_type_ids: OrderedHashMap<ExternTypeId, ExternTypeIdCached>,
     extern_function_ids: OrderedHashMap<ExternFunctionId, ExternFunctionIdCached>,
     global_use_ids: OrderedHashMap<GlobalUseId, GlobalUseIdCached>,
+    macro_declaration_ids: OrderedHashMap<MacroDeclarationId, MacroDeclarationIdCached>,
 
     syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId, SyntaxStablePtrIdCached>,
     file_ids: OrderedHashMap<FileId, FileIdCached>,
@@ -370,6 +374,8 @@ pub struct ModuleDataCached {
     extern_types: OrderedHashMap<ExternTypeIdCached, TypeSyntaxNodeCached<ast::ItemExternType>>,
     extern_functions:
         OrderedHashMap<ExternFunctionIdCached, TypeSyntaxNodeCached<ast::ItemExternFunction>>,
+    macro_declarations:
+        OrderedHashMap<MacroDeclarationIdCached, TypeSyntaxNodeCached<ast::ItemMacroDeclaration>>,
     global_uses: OrderedHashMap<GlobalUseIdCached, TypeSyntaxNodeCached<ast::UsePathStar>>,
 
     files: Vec<FileIdCached>,
@@ -378,6 +384,7 @@ pub struct ModuleDataCached {
     plugin_diagnostics: Vec<(ModuleFileCached, PluginDiagnosticCached)>,
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
+// TODO ADD TO SOME TEST!!!
 impl ModuleDataCached {
     fn new(module_data: ModuleData, ctx: &mut DefCacheSavingContext<'_>) -> Self {
         Self {
@@ -480,6 +487,17 @@ impl ModuleDataCached {
                     )
                 })
                 .collect(),
+
+            macro_declarations: module_data
+                .macro_declarations
+                .iter()
+                .map(|(id, node)| {
+                    (
+                        MacroDeclarationIdCached::new(*id, ctx),
+                        TypeSyntaxNodeCached::new(node.clone(), ctx),
+                    )
+                })
+                .collect(),
             global_uses: module_data
                 .global_uses
                 .iter()
@@ -566,6 +584,12 @@ impl ModuleDataCached {
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
             ),
+            macro_declarations: Arc::new(
+                self.macro_declarations
+                    .iter()
+                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
+                    .collect(),
+            ),
             global_uses: Arc::new(
                 self.global_uses
                     .iter()
@@ -610,6 +634,7 @@ pub struct DefCacheLookups {
     extern_type_ids_lookup: Vec<ExternTypeCached>,
     extern_function_ids_lookup: Vec<ExternFunctionCached>,
     global_use_ids_lookup: Vec<GlobalUseCached>,
+    macro_declaration_ids_lookup: Vec<MacroDeclarationCached>,
 
     file_ids_lookup: Vec<FileCached>,
 }
@@ -627,7 +652,7 @@ impl<T: TypedSyntaxNode> TypeSyntaxNodeCached<T> {
         }
     }
     fn embed(&self, ctx: &mut DefCacheLoadingContext<'_>) -> T {
-        T::from_syntax_node(ctx.db, self.syntax_node.embed(ctx))
+        T::from_syntax_node(ctx.db.upcast(), self.syntax_node.embed(ctx))
     }
 }
 
@@ -781,6 +806,7 @@ enum ModuleItemIdCached {
     Impl(ImplDefIdCached),
     ExternType(ExternTypeIdCached),
     ExternFunction(ExternFunctionIdCached),
+    MacroDeclaration(MacroDeclarationIdCached),
 }
 
 impl ModuleItemIdCached {
@@ -820,6 +846,12 @@ impl ModuleItemIdCached {
             ModuleItemId::ExternFunction(extern_function_id) => ModuleItemIdCached::ExternFunction(
                 ExternFunctionIdCached::new(extern_function_id, ctx),
             ),
+            ModuleItemId::MacroDeclaration(macro_declaration_id) => {
+                ModuleItemIdCached::MacroDeclaration(MacroDeclarationIdCached::new(
+                    macro_declaration_id,
+                    ctx,
+                ))
+            }
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> ModuleItemId {
@@ -849,6 +881,9 @@ impl ModuleItemIdCached {
             }
             ModuleItemIdCached::ExternFunction(extern_function_id) => {
                 ModuleItemId::ExternFunction(extern_function_id.embed(ctx))
+            }
+            ModuleItemIdCached::MacroDeclaration(macro_declaration_id) => {
+                ModuleItemId::MacroDeclaration(macro_declaration_id.embed(ctx))
             }
         }
     }
@@ -1344,6 +1379,52 @@ impl ExternFunctionIdCached {
         extern_function
     }
 }
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+struct MacroDeclarationCached {
+    language_element: LanguageElementCached,
+}
+
+impl MacroDeclarationCached {
+    fn new(
+        macro_declaration_id: MacroDeclarationLongId,
+        ctx: &mut DefCacheSavingContext<'_>,
+    ) -> Self {
+        Self {
+            language_element: LanguageElementCached::new(macro_declaration_id.intern(ctx.db), ctx),
+        }
+    }
+    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> MacroDeclarationLongId {
+        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+
+        MacroDeclarationLongId(module_file_id, ItemMacroDeclarationPtr(stable_ptr))
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+struct MacroDeclarationIdCached(usize);
+
+impl MacroDeclarationIdCached {
+    fn new(macro_declaration_id: MacroDeclarationId, ctx: &mut DefCacheSavingContext<'_>) -> Self {
+        if let Some(id) = ctx.macro_declaration_ids.get(&macro_declaration_id) {
+            return *id;
+        }
+        let macro_declaration =
+            MacroDeclarationCached::new(macro_declaration_id.lookup_intern(ctx.db), ctx);
+        let id = MacroDeclarationIdCached(ctx.macro_declaration_ids_lookup.len());
+        ctx.macro_declaration_ids_lookup.push(macro_declaration);
+        ctx.macro_declaration_ids.insert(macro_declaration_id, id);
+        id
+    }
+    fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> MacroDeclarationId {
+        if let Some(macro_declaration_id) = ctx.macro_declaration_ids.get(&self) {
+            return *macro_declaration_id;
+        }
+        let macro_declaration = ctx.macro_declaration_ids_lookup[self.0].clone();
+        let macro_declaration = macro_declaration.embed(ctx).intern(ctx.db);
+        ctx.macro_declaration_ids.insert(self, macro_declaration);
+        macro_declaration
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct GlobalUseCached {
@@ -1412,7 +1493,7 @@ impl SyntaxNodeCached {
         let parent = inner.parent.as_ref().map(|it| it.embed(ctx));
         let stable_ptr = inner.stable_ptr.embed(ctx);
         let offset = inner.offset;
-        SyntaxNode::new_with_inner(ctx.db, green, offset, parent, stable_ptr)
+        SyntaxNode::new_with_inner(ctx.db.upcast(), green, offset, parent, stable_ptr)
     }
 }
 
@@ -1427,9 +1508,12 @@ impl LanguageElementCached {
         ctx: &mut DefCacheSavingContext<'_>,
     ) -> Self {
         Self {
-            module_file_id: ModuleFileCached::new(language_element.module_file_id(ctx.db), ctx),
+            module_file_id: ModuleFileCached::new(
+                language_element.module_file_id(ctx.db.upcast()),
+                ctx,
+            ),
             stable_ptr: SyntaxStablePtrIdCached::new(
-                language_element.untyped_stable_ptr(ctx.db),
+                language_element.untyped_stable_ptr(ctx.db.upcast()),
                 ctx,
             ),
         }
@@ -1735,6 +1819,7 @@ struct PluginDiagnosticCached {
     stable_ptr: SyntaxStablePtrIdCached,
     message: String,
     severity: SeverityCached,
+    inner_span: Option<(TextWidth, TextWidth)>,
 }
 
 impl PluginDiagnosticCached {
@@ -1749,6 +1834,7 @@ impl PluginDiagnosticCached {
                 Severity::Error => SeverityCached::Error,
                 Severity::Warning => SeverityCached::Warning,
             },
+            inner_span: diagnostic.inner_span,
         }
     }
     fn embed(self, ctx: &mut DefCacheLoadingContext<'_>) -> PluginDiagnostic {
@@ -1760,6 +1846,7 @@ impl PluginDiagnosticCached {
                 SeverityCached::Error => Severity::Error,
                 SeverityCached::Warning => Severity::Warning,
             },
+            inner_span: self.inner_span,
         }
     }
 }

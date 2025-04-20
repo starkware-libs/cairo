@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use syntax::node::TypedStablePtr;
+use syntax::node::db::SyntaxGroup;
 
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
@@ -262,25 +263,26 @@ pub fn generic_impl_param_trait(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<TraitId> {
-    let module_file_id = generic_param_id.module_file_id(db);
+    let syntax_db = db.upcast();
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
     let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
     let generic_params_syntax = extract_matches!(
         option_generic_params_syntax,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList
     );
     let generic_param_syntax = generic_params_syntax
-        .generic_params(db)
-        .elements(db)
+        .generic_params(syntax_db)
+        .elements(syntax_db)
         .into_iter()
         .find(|param_syntax| {
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db)
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
                 == generic_param_id
         })
         .unwrap();
 
     let trait_path_syntax = match generic_param_syntax {
-        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(db),
-        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(db),
+        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(syntax_db),
+        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(syntax_db),
         _ => {
             panic!("generic_impl_param_trait() called on a non impl generic param.")
         }
@@ -293,7 +295,7 @@ pub fn generic_impl_param_trait(
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
-    resolve_trait_path(db, &mut diagnostics, &mut resolver, &trait_path_syntax)
+    resolve_trait_path(syntax_db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
 // --- Computation ---
@@ -308,19 +310,20 @@ pub fn priv_generic_param_data(
         let mut diagnostics = SemanticDiagnostics::default();
         return Ok(GenericParamData {
             generic_param: Err(diagnostics.report(
-                generic_param_id.stable_ptr(db).untyped(),
+                generic_param_id.stable_ptr(db.upcast()).untyped(),
                 SemanticDiagnosticKind::ImplRequirementCycle,
             )),
             diagnostics: diagnostics.build(),
             resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.module_file_id(db),
+                generic_param_id.module_file_id(db.upcast()),
                 InferenceId::GenericParam(generic_param_id),
             )),
         });
     }
-    let module_file_id = generic_param_id.module_file_id(db);
+    let syntax_db: &dyn SyntaxGroup = db.upcast();
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
-    let parent_item_id = generic_param_id.generic_item(db);
+    let parent_item_id = generic_param_id.generic_item(db.upcast());
     let lookup_item: LookupItemId = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
     let inference_id = InferenceId::GenericParam(generic_param_id);
@@ -328,7 +331,7 @@ pub fn priv_generic_param_data(
         Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
     resolver.set_feature_config(
         &lookup_item,
-        &lookup_item.untyped_stable_ptr(db).lookup(db),
+        &lookup_item.untyped_stable_ptr(db.upcast()).lookup(db.upcast()),
         &mut diagnostics,
     );
     let generic_params_syntax = extract_matches!(
@@ -337,9 +340,9 @@ pub fn priv_generic_param_data(
     );
 
     let mut opt_generic_param_syntax = None;
-    for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
+    for param_syntax in generic_params_syntax.generic_params(syntax_db).elements(syntax_db) {
         let cur_generic_param_id =
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+            GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -357,7 +360,7 @@ pub fn priv_generic_param_data(
         parent_item_id,
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(db).untyped());
+    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(syntax_db).untyped());
 
     let param_semantic = inference.rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -423,9 +426,10 @@ fn generic_param_generic_params_list(
     let generic_param_long_id = generic_param_id.lookup_intern(db);
 
     // The generic params list is 2 level up the tree.
-    let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(db, 2);
+    let syntax_db = db.upcast();
+    let wrapped_generic_param_list = generic_param_long_id.1.0.nth_parent(syntax_db, 2);
 
-    Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(db))
+    Ok(ast::OptionWrappedGenericParamListPtr(wrapped_generic_param_list).lookup(syntax_db))
 }
 
 /// Returns the semantic model of a generic parameters list given the list AST, and updates the
@@ -448,15 +452,17 @@ pub fn semantic_generic_params_ex(
     generic_params: &ast::OptionWrappedGenericParamList,
     in_cycle: bool,
 ) -> Vec<GenericParam> {
+    let syntax_db = db.upcast();
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
-            .generic_params(db)
-            .elements(db)
+            .generic_params(syntax_db)
+            .elements(syntax_db)
             .iter()
             .filter_map(|param_syntax| {
                 let generic_param_id =
-                    GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+                    GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db))
+                        .intern(db);
                 let generic_param_data =
                     db.priv_generic_param_data(generic_param_id, in_cycle).ok()?;
                 let generic_param = generic_param_data.generic_param;
@@ -474,7 +480,7 @@ pub fn semantic_generic_params_ex(
 
 /// Returns true if negative impls are enabled in the module.
 fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFileId) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.negative_impls
 }
@@ -484,7 +490,7 @@ fn is_associated_item_constraints_enabled(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
 ) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
     db.crate_config(owning_crate)
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
@@ -498,13 +504,14 @@ fn semantic_from_generic_param_ast(
     param_syntax: &ast::GenericParam,
     parent_item_id: GenericItemId,
 ) -> GenericParam {
-    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+    let syntax_db = db.upcast();
+    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db);
     let mut item_constraints_into_option = |constraint| match constraint {
         OptionAssociatedItemConstraints::Empty(_) => None,
         OptionAssociatedItemConstraints::AssociatedItemConstraints(associated_type_args) => {
             if !is_associated_item_constraints_enabled(db, module_file_id) {
                 diagnostics.report(
-                    associated_type_args.stable_ptr(db),
+                    associated_type_args.stable_ptr(syntax_db),
                     SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled,
                 );
             }
@@ -514,12 +521,12 @@ fn semantic_from_generic_param_ast(
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
-            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db));
+            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }
         ast::GenericParam::ImplNamed(syntax) => {
-            let path_syntax = syntax.trait_path(db);
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
+            let path_syntax = syntax.trait_path(db.upcast());
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -530,8 +537,8 @@ fn semantic_from_generic_param_ast(
             ))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
-            let path_syntax = syntax.trait_path(db);
-            let item_constrains = item_constraints_into_option(syntax.type_constrains(db));
+            let path_syntax = syntax.trait_path(db.upcast());
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
             GenericParam::Impl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -544,19 +551,19 @@ fn semantic_from_generic_param_ast(
         ast::GenericParam::NegativeImpl(syntax) => {
             if !are_negative_impls_enabled(db, module_file_id) {
                 diagnostics.report(
-                    param_syntax.stable_ptr(db),
+                    param_syntax.stable_ptr(syntax_db),
                     SemanticDiagnosticKind::NegativeImplsNotEnabled,
                 );
             }
 
             if !matches!(parent_item_id, GenericItemId::ModuleItem(GenericModuleItemId::Impl(_))) {
                 diagnostics.report(
-                    param_syntax.stable_ptr(db),
+                    param_syntax.stable_ptr(syntax_db),
                     SemanticDiagnosticKind::NegativeImplsOnlyOnImpls,
                 );
             }
 
-            let path_syntax = syntax.trait_path(db);
+            let path_syntax = syntax.trait_path(db.upcast());
             GenericParam::NegImpl(impl_generic_param_semantic(
                 db,
                 resolver,
@@ -578,12 +585,13 @@ fn impl_generic_param_semantic(
     item_constraints: Option<AssociatedItemConstraints>,
     id: GenericParamId,
 ) -> GenericParamImpl {
+    let syntax_db = db.upcast();
     let concrete_trait = resolver
         .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
         .and_then(|resolved_item| match resolved_item {
             ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
             _ => Err(diagnostics
-                .report(path_syntax.stable_ptr(db), SemanticDiagnosticKind::UnknownTrait)),
+                .report(path_syntax.stable_ptr(syntax_db), SemanticDiagnosticKind::UnknownTrait)),
         });
     let type_constraints = concrete_trait
         .ok()
@@ -593,18 +601,20 @@ fn impl_generic_param_semantic(
         .map(|(concrete_trait_id, constraints)| {
             let mut map = OrderedHashMap::default();
 
-            for constraint in constraints.associated_item_constraints(db).elements(db) {
+            for constraint in
+                constraints.associated_item_constraints(syntax_db).elements(db.upcast())
+            {
                 let Ok(trait_type_id_opt) = db.trait_type_by_name(
                     concrete_trait_id.trait_id(db),
-                    constraint.item(db).text(db),
+                    constraint.item(syntax_db).text(syntax_db),
                 ) else {
                     continue;
                 };
                 let Some(trait_type_id) = trait_type_id_opt else {
                     diagnostics.report(
-                        constraint.stable_ptr(db),
+                        constraint.stable_ptr(syntax_db),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
-                            identifier: constraint.item(db).text(db),
+                            identifier: constraint.item(db.upcast()).text(db.upcast()),
                             concrete_trait_id,
                         },
                     );
@@ -619,12 +629,12 @@ fn impl_generic_param_semantic(
                             db,
                             diagnostics,
                             resolver,
-                            &constraint.value(db),
+                            &constraint.value(syntax_db),
                         ));
                     }
                     Entry::Occupied(_) => {
                         diagnostics.report(
-                            path_syntax.stable_ptr(db),
+                            path_syntax.stable_ptr(syntax_db),
                             SemanticDiagnosticKind::DuplicateTypeConstraint {
                                 concrete_trait_type_id,
                             },

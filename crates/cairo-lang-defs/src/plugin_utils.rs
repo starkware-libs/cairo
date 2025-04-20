@@ -132,7 +132,7 @@ pub fn escape_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> String {
 ///     syntax,
 ///     2,
 ///     ast::WrappedArgList::ParenthesizedArgList(_) | ast::WrappedArgList::BracedArgList(_),
-///     token_tree_syntax.stable_ptr()
+///     token_tree_syntax.stable_ptr(db)
 /// );
 #[macro_export]
 macro_rules! extract_macro_unnamed_args {
@@ -155,11 +155,7 @@ macro_rules! extract_macro_unnamed_args {
         let Some(args) = args else {
             return $crate::plugin_utils::PluginResultTrait::diagnostic_only(
                 PluginDiagnostic::error(
-<<<<<<< HEAD
                     $diagnostics_ptr,
-=======
-                    $syntax.stable_ptr($db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                     format!(
                         "Macro `{}` must have exactly {} unnamed arguments.",
                         $crate::plugin_utils::InlineMacroCall::path($syntax, $db)
@@ -187,7 +183,7 @@ macro_rules! extract_macro_unnamed_args {
 ///     db,
 ///     arg_list_syntax,
 ///     ast::WrappedArgList::ParenthesizedArgList(_) | ast::WrappedArgList::BracedArgList(_),
-///     token_tree_syntax.stable_ptr()
+///     token_tree_syntax.stable_ptr(db)
 /// );
 #[macro_export]
 macro_rules! extract_macro_single_unnamed_arg {

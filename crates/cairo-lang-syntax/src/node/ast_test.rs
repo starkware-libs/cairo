@@ -163,14 +163,11 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-<<<<<<< HEAD
             empty_dollar,
-            ExprPathInner::new_green(db, vec![
-                PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
-            ]),
-=======
-            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+            ExprPathInner::new_green(
+                db,
+                vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
+            ),
         )
         .into(),
         terminal_plus.into(),

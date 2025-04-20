@@ -68,7 +68,7 @@ pub fn const_folding(
     let libfunc_info = priv_const_folding_info(db);
     // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
     // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-    if function_id.base_semantic_function(db).generic_function(db)
+    if function_id.base_semantic_function(db).generic_function(db.upcast())
         == libfunc_info.panic_with_const_felt252
     {
         return;
@@ -225,7 +225,7 @@ pub fn const_folding(
                     MatchInfo::Extern(info) => {
                         if let Some((extra_stmt, updated_end)) = ctx.handle_extern_block_end(info) {
                             if let Some(stmt) = extra_stmt {
-                                block.statements.push(stmt);
+                                block.statements.push(Statement::Const(stmt));
                             }
                             block.end = updated_end;
                         }
@@ -278,19 +278,18 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
-        let db = self.db;
         if stmt.function == self.panic_with_felt252 {
             let val = self.as_const(stmt.inputs[0].var_id)?;
             stmt.inputs.clear();
-            stmt.function = ModuleHelper::core(db)
+            stmt.function = ModuleHelper::core(self.db.upcast())
                 .function_id(
                     "panic_with_const_felt252",
-                    vec![GenericArgumentId::Constant(val.clone().intern(db))],
+                    vec![GenericArgumentId::Constant(val.clone().intern(self.db))],
                 )
-                .lowered(db);
+                .lowered(self.db);
             return None;
         }
-        let (id, _generic_args) = stmt.function.get_extern(db)?;
+        let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
             let val = self.as_int(stmt.inputs[1].var_id)?;
@@ -334,14 +333,15 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function = ModuleHelper { db, id: self.storage_access_module }
-                    .function_id(
-                        "storage_base_address_const",
-                        vec![GenericArgumentId::Constant(
-                            ConstValue::Int(val.clone(), *ty).intern(db),
-                        )],
-                    )
-                    .lowered(db);
+                stmt.function =
+                    ModuleHelper { db: self.db.upcast(), id: self.storage_access_module }
+                        .function_id(
+                            "storage_base_address_const",
+                            vec![GenericArgumentId::Constant(
+                                ConstValue::Int(val.clone(), *ty).intern(self.db),
+                            )],
+                        )
+                        .lowered(self.db);
             }
             None
         } else if id == self.into_box {
@@ -392,9 +392,8 @@ impl ConstFoldingContext<'_> {
     fn handle_extern_block_end(
         &mut self,
         info: &mut MatchExternInfo,
-    ) -> Option<(Option<Statement>, FlatBlockEnd)> {
-        let db = self.db;
-        let (id, generic_args) = info.function.get_extern(db)?;
+    ) -> Option<(Option<StatementConst>, FlatBlockEnd)> {
+        let (id, generic_args) = info.function.get_extern(self.db)?;
         if self.nz_fns.contains(&id) {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val {
@@ -412,7 +411,7 @@ impl ConstFoldingContext<'_> {
                 let nz_val = ConstValue::NonZero(Box::new(val.clone()));
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
                 (
-                    Some(Statement::Const(StatementConst { value: nz_val, output: nz_var })),
+                    Some(StatementConst { value: nz_val, output: nz_var }),
                     FlatBlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
@@ -422,11 +421,12 @@ impl ConstFoldingContext<'_> {
             if (lhs.map(Zero::is_zero).unwrap_or_default() && rhs.is_none())
                 || (rhs.map(Zero::is_zero).unwrap_or_default() && lhs.is_none())
             {
+                let db = self.db.upcast();
                 let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
                 let var = &self.variables[nz_input.var_id].clone();
                 let function = self.type_value_ranges.get(&var.ty)?.is_zero;
                 let unused_nz_var = Variable::new(
-                    db,
+                    self.db,
                     ImplLookupContext::default(),
                     corelib::core_nonzero_ty(db, var.ty),
                     var.location,
@@ -490,7 +490,7 @@ impl ConstFoldingContext<'_> {
                 lhs? - rhs?
             };
             let ty = self.variables[info.arms[0].var_ids[0]].ty;
-            let range = &self.type_value_ranges.get(&ty)?.range;
+            let range = self.type_value_ranges.get(&ty)?;
             let (arm_index, value) = match range.normalized(value) {
                 NormalizedResult::InRange(value) => (0, value),
                 NormalizedResult::Under(value) => (1, value),
@@ -504,47 +504,20 @@ impl ConstFoldingContext<'_> {
             let value = ConstValue::Int(value, ty);
             self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
             Some((
-                Some(Statement::Const(StatementConst { value, output: actual_output })),
+                Some(StatementConst { value, output: actual_output }),
                 FlatBlockEnd::Goto(arm.block_id, Default::default()),
             ))
         } else if id == self.downcast {
-            let range = |ty: TypeId| {
-                Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
-                    ti.range.clone()
-                } else {
-                    let (min, max) = corelib::try_extract_bounded_int_type_ranges(db, ty)?;
-                    TypeRange { min, max }
-                })
-            };
             let input_var = info.inputs[0].var_id;
+            let value = self.as_int(input_var)?;
             let success_output = info.arms[0].var_ids[0];
-            let out_ty = self.variables[success_output].ty;
-            let out_range = range(out_ty)?;
-            let Some(value) = self.as_int(input_var) else {
-                let in_ty = self.variables[input_var].ty;
-                let in_range = range(in_ty)?;
-                return if in_range.min < out_range.min || in_range.max > out_range.max {
-                    None
-                } else {
-                    let generic_args = [in_ty, out_ty].map(GenericArgumentId::Type).to_vec();
-                    let function = db.core_info().upcast_fn.concretize(db, generic_args);
-                    return Some((
-                        Some(Statement::Call(StatementCall {
-                            function: function.lowered(db),
-                            inputs: vec![info.inputs[0]],
-                            with_coupon: false,
-                            outputs: vec![success_output],
-                            location: info.location,
-                        })),
-                        FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
-                    ));
-                };
-            };
-            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value.clone()) {
-                let value = ConstValue::Int(value, out_ty);
+            let ty = self.variables[success_output].ty;
+            let range = self.type_value_ranges.get(&ty)?;
+            Some(if let NormalizedResult::InRange(value) = range.normalized(value.clone()) {
+                let value = ConstValue::Int(value, ty);
                 self.var_info.insert(success_output, VarInfo::Const(value.clone()));
                 (
-                    Some(Statement::Const(StatementConst { value, output: success_output })),
+                    Some(StatementConst { value, output: success_output }),
                     FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
                 )
             } else {
@@ -555,17 +528,13 @@ impl ConstFoldingContext<'_> {
             let (value, nz_ty) = self.as_int_ex(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
-                .lookup_intern(db)
+                .lookup_intern(self.db)
                 .into_int()
                 .unwrap();
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
-                Some(Statement::Const(self.propagate_const_and_get_statement(
-                    value.clone(),
-                    output,
-                    nz_ty,
-                ))),
+                Some(self.propagate_const_and_get_statement(value.clone(), output, nz_ty)),
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
@@ -575,9 +544,9 @@ impl ConstFoldingContext<'_> {
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function = ModuleHelper { db, id: self.array_module }
+                    info.function = ModuleHelper { db: self.db.upcast(), id: self.array_module }
                         .function_id("array_snapshot_pop_front", generic_args)
-                        .lowered(db);
+                        .lowered(self.db);
                     success.var_ids.insert(0, unused_arr_output0);
                     failure.var_ids.insert(0, unused_arr_output1);
                 }
@@ -688,7 +657,7 @@ pub struct ConstFoldingLibfuncInfo {
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
-        let core = ModuleHelper::core(db);
+        let core = ModuleHelper::core(db.upcast());
         let felt_sub = core.extern_function_id("felt252_sub");
         let box_module = core.submodule("box");
         let into_box = box_module.extern_function_id("into_box");
@@ -760,7 +729,7 @@ impl ConstFoldingLibfuncInfo {
             ]
             .map(
                 |(ty_name, min, max, as_bounded_int): (&str, BigInt, BigInt, bool)| {
-                    let ty = corelib::get_core_ty_by_name(db, ty_name.into(), vec![]);
+                    let ty = corelib::get_core_ty_by_name(db.upcast(), ty_name.into(), vec![]);
                     let is_zero = if as_bounded_int {
                         bounded_int_module
                             .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
@@ -768,7 +737,7 @@ impl ConstFoldingLibfuncInfo {
                         integer_module.function_id(format!("{ty_name}_is_zero"), vec![])
                     }
                     .lowered(db);
-                    let info = TypeInfo { range: TypeRange { min, max }, is_zero };
+                    let info = TypeInfo { min, max, is_zero };
                     (ty, info)
                 },
             ),
@@ -813,21 +782,14 @@ impl std::ops::Deref for ConstFoldingContext<'_> {
 /// The information of a type required for const foldings.
 #[derive(Debug, PartialEq, Eq)]
 struct TypeInfo {
-    /// The value range of the type.
-    range: TypeRange,
-    /// The function to check if the value is zero for the type.
-    is_zero: FunctionId,
-}
-
-/// The range of values of a numeric type.
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct TypeRange {
     /// The minimum value of the type.
     min: BigInt,
     /// The maximum value of the type.
     max: BigInt,
+    /// The function to check if the value is zero for the type.
+    is_zero: FunctionId,
 }
-impl TypeRange {
+impl TypeInfo {
     /// Normalizes the value to the range.
     /// Assumes the value is within size of range of the range.
     fn normalized(&self, value: BigInt) -> NormalizedResult {

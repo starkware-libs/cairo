@@ -4,10 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-<<<<<<< HEAD
-=======
 use cairo_lang_syntax::node::db::SyntaxGroup;
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
@@ -36,41 +33,28 @@ impl StableLocation {
     }
 
     pub fn file_id(&self, db: &dyn DefsGroup) -> FileId {
-<<<<<<< HEAD
         self.stable_ptr.file_id(db.upcast())
     }
 
-    pub fn from_ast<TNode: TypedSyntaxNode>(node: &TNode) -> Self {
-        Self::new(node.as_syntax_node().stable_ptr())
-=======
-        self.0.file_id(db)
-    }
-
     pub fn from_ast<TNode: TypedSyntaxNode>(db: &dyn SyntaxGroup, node: &TNode) -> Self {
-        Self(node.as_syntax_node().stable_ptr(db))
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+        Self::new(node.as_syntax_node().stable_ptr(db))
     }
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
     pub fn syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
-<<<<<<< HEAD
         self.stable_ptr.lookup(db.upcast())
-=======
-        self.0.lookup(db)
     }
 
     /// Returns the [SyntaxStablePtrId] of the [StableLocation].
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
-        self.0
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+        self.stable_ptr
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
     pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
-<<<<<<< HEAD
         match self.inner_span {
             Some((start, width)) => {
-                let start = self.syntax_node(db).offset().add_width(start);
+                let start = self.syntax_node(db).offset(db).add_width(start);
                 let end = start.add_width(width);
                 DiagnosticLocation { file_id: self.file_id(db), span: TextSpan { start, end } }
             }
@@ -82,10 +66,6 @@ impl StableLocation {
                 }
             }
         }
-=======
-        let syntax_node = self.syntax_node(db);
-        DiagnosticLocation { file_id: self.file_id(db), span: syntax_node.span_without_trivia(db) }
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
@@ -94,19 +74,9 @@ impl StableLocation {
         db: &dyn DefsGroup,
         until_stable_ptr: SyntaxStablePtrId,
     ) -> DiagnosticLocation {
-<<<<<<< HEAD
-        let syntax_db = db.upcast();
-        let start = self.stable_ptr.lookup(syntax_db).span_start_without_trivia(syntax_db);
-        let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
-
-        DiagnosticLocation {
-            file_id: self.stable_ptr.file_id(syntax_db),
-            span: TextSpan { start, end },
-        }
-=======
-        let start = self.0.lookup(db).span_start_without_trivia(db);
+        let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.0.file_id(db), span: TextSpan { start, end } }
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan { start, end } }
     }
 
     /// Returns the [DiagnosticLocation] corresponding to a subrange of the [StableLocation],
@@ -117,7 +87,7 @@ impl StableLocation {
         start_offset: u32,
         end_offset: u32,
     ) -> DiagnosticLocation {
-        let syntax_node = self.0.lookup(db);
+        let syntax_node = self.stable_ptr.lookup(db);
         let node_span = syntax_node.span_without_trivia(db);
 
         let span = TextSpan {
@@ -131,8 +101,7 @@ impl StableLocation {
                 .min(node_span.end),
         };
 
-        DiagnosticLocation { file_id: self.0.file_id(db), span }
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span }
     }
 }
 

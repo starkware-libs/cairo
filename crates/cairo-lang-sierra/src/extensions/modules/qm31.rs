@@ -154,7 +154,7 @@ impl GenericLibfunc for QM31BinaryOperationLibfunc {
             [] => Ok({
                 QM31BinaryOpConcreteLibfunc {
                     operator: self.operator,
-                    signature: self.specialize_signature(context, args)?,
+                    signature: self.specialize_signature(context.upcast(), args)?,
                 }
             }),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
@@ -213,7 +213,11 @@ impl NamedLibfunc for QM31ConstLibfunc {
                 w1: to_m31(w1)?,
                 w2: to_m31(w2)?,
                 w3: to_m31(w3)?,
-                signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
+                signature: <Self as NamedLibfunc>::specialize_signature(
+                    self,
+                    context.upcast(),
+                    args,
+                )?,
             }),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }

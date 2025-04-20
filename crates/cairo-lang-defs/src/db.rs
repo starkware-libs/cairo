@@ -390,7 +390,7 @@ fn declared_phantom_type_attributes(
 }
 
 fn is_submodule_inline(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> bool {
-    match submodule_id.stable_ptr(db).lookup(db).body(db) {
+    match submodule_id.stable_ptr(db).lookup(db.upcast()).body(db.upcast()) {
         MaybeModuleBody::Some(_) => true,
         MaybeModuleBody::None(_) => false,
     }
@@ -399,7 +399,7 @@ fn is_submodule_inline(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> bool {
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
     Ok(match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            db.crate_config(crate_id).to_maybe()?.root.file(db, "lib.cairo".into())
+            db.crate_config(crate_id).to_maybe()?.root.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
@@ -410,7 +410,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
                 db.module_file(submodule_id.module_file_id(db))?
             } else {
                 let name = submodule_id.name(db);
-                db.module_dir(parent)?.file(db, format!("{name}.cairo").into())
+                db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
             }
         }
     })
@@ -485,22 +485,6 @@ pub struct ModuleData {
     pub(crate) items: Arc<[ModuleItemId]>,
 
     // Specific-item-kind maps
-<<<<<<< HEAD
-    constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
-    submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
-    uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
-    free_functions: Arc<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>,
-    structs: Arc<OrderedHashMap<StructId, ast::ItemStruct>>,
-    enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
-    type_aliases: Arc<OrderedHashMap<ModuleTypeAliasId, ast::ItemTypeAlias>>,
-    impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
-    traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
-    impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
-    extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
-    extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
-    macro_declarations: Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
-    global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
-=======
     pub(crate) constants: Arc<OrderedHashMap<ConstantId, ast::ItemConstant>>,
     pub(crate) submodules: Arc<OrderedHashMap<SubmoduleId, ast::ItemModule>>,
     pub(crate) uses: Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>,
@@ -513,8 +497,9 @@ pub struct ModuleData {
     pub(crate) impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     pub(crate) extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     pub(crate) extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+    pub(crate) macro_declarations:
+        Arc<OrderedHashMap<MacroDeclarationId, ast::ItemMacroDeclaration>>,
     pub(crate) global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 
     pub(crate) files: Arc<[FileId]>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
@@ -684,7 +669,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 }
                 ast::ModuleItem::MacroDeclaration(macro_declaration) => {
                     let item_id =
-                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr())
+                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr(db))
                             .intern(db);
                     macro_declarations.insert(item_id, macro_declaration);
                     items.push(ModuleItemId::MacroDeclaration(item_id));
@@ -695,7 +680,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         inline_macro_ast.stable_ptr(db),
                         format!(
                             "Unknown inline item macro: '{}'.",
-                            inline_macro_ast.name(db).text(db)
+                            inline_macro_ast.name(db.upcast()).text(db.upcast())
                         ),
                     ),
                 )),
@@ -745,7 +730,9 @@ pub fn try_ext_as_virtual_impl(
 ) -> Option<VirtualFile> {
     let long_id = PluginGeneratedFileId::from_intern_id(external_id).lookup_intern(db);
     let file_id = FileLongId::External(external_id).intern(db);
-    let data = db.priv_module_sub_files(long_id.module_id, long_id.stable_ptr.file_id(db)).unwrap();
+    let data = db
+        .priv_module_sub_files(long_id.module_id, long_id.stable_ptr.file_id(db.upcast()))
+        .unwrap();
     data.files.get(&file_id).cloned()
 }
 
@@ -759,7 +746,7 @@ fn priv_module_sub_files(
     let item_asts = if module_main_file == file_id {
         if let ModuleId::Submodule(submodule_id) = module_id {
             let data = db.priv_module_data(submodule_id.parent_module(db))?;
-            if let MaybeModuleBody::Some(body) = data.submodules[&submodule_id].body(db) {
+            if let MaybeModuleBody::Some(body) = data.submodules[&submodule_id].body(db.upcast()) {
                 Some(body.items(db))
             } else {
                 None
@@ -806,7 +793,7 @@ fn priv_module_sub_files(
         for plugin_id in db.crate_macro_plugins(crate_id).iter() {
             let plugin = db.lookup_intern_macro_plugin(*plugin_id);
 
-            let result = plugin.generate_code(db, item_ast.clone(), &metadata);
+            let result = plugin.generate_code(db.upcast(), item_ast.clone(), &metadata);
             plugin_diagnostics.extend(result.diagnostics);
             if result.remove_original_item {
                 remove_original_item = true;
@@ -873,7 +860,8 @@ fn collect_extra_allowed_attributes(
             }
             for arg in args {
                 if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg) {
-                    if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                    if let [ast::PathSegment::Simple(segment)] = &path.segments(db).elements(db)[..]
+                    {
                         extra_allowed_attributes.insert(segment.ident(db).text(db).into());
                         continue;
                     }
@@ -1042,7 +1030,7 @@ pub fn module_constant_by_id(
     db: &dyn DefsGroup,
     constant_id: ConstantId,
 ) -> Maybe<Option<ast::ItemConstant>> {
-    let module_constants = db.module_constants(constant_id.module_file_id(db).0)?;
+    let module_constants = db.module_constants(constant_id.module_file_id(db.upcast()).0)?;
     Ok(module_constants.get(&constant_id).cloned())
 }
 
@@ -1061,7 +1049,7 @@ pub fn module_submodule_by_id(
     db: &dyn DefsGroup,
     submodule_id: SubmoduleId,
 ) -> Maybe<Option<ast::ItemModule>> {
-    let module_submodules = db.module_submodules(submodule_id.module_file_id(db).0)?;
+    let module_submodules = db.module_submodules(submodule_id.module_file_id(db.upcast()).0)?;
     Ok(module_submodules.get(&submodule_id).cloned())
 }
 
@@ -1082,7 +1070,8 @@ pub fn module_free_function_by_id(
     db: &dyn DefsGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<Option<ast::FunctionWithBody>> {
-    let module_free_functions = db.module_free_functions(free_function_id.module_file_id(db).0)?;
+    let module_free_functions =
+        db.module_free_functions(free_function_id.module_file_id(db.upcast()).0)?;
     Ok(module_free_functions.get(&free_function_id).cloned())
 }
 
@@ -1097,7 +1086,7 @@ pub fn module_uses_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[Us
     Ok(db.module_uses(module_id)?.keys().copied().collect_vec().into())
 }
 pub fn module_use_by_id(db: &dyn DefsGroup, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>> {
-    let module_uses = db.module_uses(use_id.module_file_id(db).0)?;
+    let module_uses = db.module_uses(use_id.module_file_id(db.upcast()).0)?;
     Ok(module_uses.get(&use_id).cloned())
 }
 
@@ -1106,7 +1095,7 @@ pub fn module_global_use_by_id(
     db: &dyn DefsGroup,
     global_use_id: GlobalUseId,
 ) -> Maybe<Option<ast::UsePathStar>> {
-    let module_global_uses = db.module_global_uses(global_use_id.module_file_id(db).0)?;
+    let module_global_uses = db.module_global_uses(global_use_id.module_file_id(db.upcast()).0)?;
     Ok(module_global_uses.get(&global_use_id).cloned())
 }
 
@@ -1124,7 +1113,7 @@ pub fn module_struct_by_id(
     db: &dyn DefsGroup,
     struct_id: StructId,
 ) -> Maybe<Option<ast::ItemStruct>> {
-    let module_structs = db.module_structs(struct_id.module_file_id(db).0)?;
+    let module_structs = db.module_structs(struct_id.module_file_id(db.upcast()).0)?;
     Ok(module_structs.get(&struct_id).cloned())
 }
 
@@ -1139,7 +1128,7 @@ pub fn module_enums_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[E
     Ok(db.module_enums(module_id)?.keys().copied().collect_vec().into())
 }
 pub fn module_enum_by_id(db: &dyn DefsGroup, enum_id: EnumId) -> Maybe<Option<ast::ItemEnum>> {
-    let module_enums = db.module_enums(enum_id.module_file_id(db).0)?;
+    let module_enums = db.module_enums(enum_id.module_file_id(db.upcast()).0)?;
     Ok(module_enums.get(&enum_id).cloned())
 }
 
@@ -1160,7 +1149,8 @@ pub fn module_type_alias_by_id(
     db: &dyn DefsGroup,
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<Option<ast::ItemTypeAlias>> {
-    let module_type_aliases = db.module_type_aliases(module_type_alias_id.module_file_id(db).0)?;
+    let module_type_aliases =
+        db.module_type_aliases(module_type_alias_id.module_file_id(db.upcast()).0)?;
     Ok(module_type_aliases.get(&module_type_alias_id).cloned())
 }
 
@@ -1181,7 +1171,8 @@ pub fn module_impl_alias_by_id(
     db: &dyn DefsGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Option<ast::ItemImplAlias>> {
-    let module_impl_aliases = db.module_impl_aliases(impl_alias_id.module_file_id(db).0)?;
+    let module_impl_aliases =
+        db.module_impl_aliases(impl_alias_id.module_file_id(db.upcast()).0)?;
     Ok(module_impl_aliases.get(&impl_alias_id).cloned())
 }
 
@@ -1196,7 +1187,7 @@ pub fn module_traits_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[
     Ok(db.module_traits(module_id)?.keys().copied().collect_vec().into())
 }
 pub fn module_trait_by_id(db: &dyn DefsGroup, trait_id: TraitId) -> Maybe<Option<ast::ItemTrait>> {
-    let module_traits = db.module_traits(trait_id.module_file_id(db).0)?;
+    let module_traits = db.module_traits(trait_id.module_file_id(db.upcast()).0)?;
     Ok(module_traits.get(&trait_id).cloned())
 }
 
@@ -1214,7 +1205,7 @@ pub fn module_impl_by_id(
     db: &dyn DefsGroup,
     impl_def_id: ImplDefId,
 ) -> Maybe<Option<ast::ItemImpl>> {
-    let module_impls = db.module_impls(impl_def_id.module_file_id(db).0)?;
+    let module_impls = db.module_impls(impl_def_id.module_file_id(db.upcast()).0)?;
     Ok(module_impls.get(&impl_def_id).cloned())
 }
 
@@ -1235,7 +1226,8 @@ pub fn module_extern_type_by_id(
     db: &dyn DefsGroup,
     extern_type_id: ExternTypeId,
 ) -> Maybe<Option<ast::ItemExternType>> {
-    let module_extern_types = db.module_extern_types(extern_type_id.module_file_id(db).0)?;
+    let module_extern_types =
+        db.module_extern_types(extern_type_id.module_file_id(db.upcast()).0)?;
     Ok(module_extern_types.get(&extern_type_id).cloned())
 }
 
@@ -1281,7 +1273,7 @@ pub fn module_extern_function_by_id(
     extern_function_id: ExternFunctionId,
 ) -> Maybe<Option<ast::ItemExternFunction>> {
     let module_extern_functions =
-        db.module_extern_functions(extern_function_id.module_file_id(db).0)?;
+        db.module_extern_functions(extern_function_id.module_file_id(db.upcast()).0)?;
     Ok(module_extern_functions.get(&extern_function_id).cloned())
 }
 
@@ -1356,7 +1348,7 @@ fn module_item_name_stable_ptr(
             data.extern_functions[id].declaration(db).name(db).stable_ptr(db).untyped()
         }
         ModuleItemId::MacroDeclaration(id) => {
-            data.macro_declarations[id].name(db).stable_ptr().untyped()
+            data.macro_declarations[id].name(db).stable_ptr(db).untyped()
         }
     })
 }

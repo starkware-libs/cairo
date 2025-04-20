@@ -51,7 +51,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = function_id.signature(db)?;
+    let signature = function_id.signature(db.upcast())?;
     let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id)?;
     let root_block = lowered_function.blocks.root_block()?;
 
@@ -128,7 +128,7 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: function_id.function_id(db)?.intern(db),
+        id: function_id.function_id(db.upcast())?.intern(db),
         body: statements,
         entry_point: label_id,
         parameters,

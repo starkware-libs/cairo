@@ -8,12 +8,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
     GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
-<<<<<<< HEAD
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-=======
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
 use const_format::formatcp;
 use indoc::formatdoc;
 use smol_str::SmolStr;
@@ -75,15 +71,14 @@ impl ComponentsGenerationData {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-<<<<<<< HEAD
-            let component_name = match component_path.segments(db).elements(db).last().unwrap() {
-                ast::PathSegment::WithGenericArgs(x) => x.ident(db),
-                ast::PathSegment::Simple(x) => x.ident(db),
-            };
-=======
-            let component_name = component_path.elements(db).last().unwrap().identifier_ast(db);
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
-
+            // TODO!!! VERIFY UNWRAP IS SAFE HERE
+            let component_name = component_path
+                .segments(db)
+                .elements(db)
+                .last()
+                .cloned()
+                .unwrap()
+                .identifier_ast(db);
             let has_component_impl = RewriteNode::interpolate_patched(
                 &formatdoc!(
                     "impl HasComponentImpl_$component_name$ of \
@@ -143,15 +138,10 @@ impl ComponentsGenerationData {
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
         if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
-<<<<<<< HEAD
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 storage_name.as_syntax_node(),
-=======
-            diagnostics.push(PluginDiagnostic::error(
-                storage_name.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 format!(
                     "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
@@ -165,15 +155,10 @@ impl ComponentsGenerationData {
 
         let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
         if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
-<<<<<<< HEAD
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
-                component_macro.stable_ptr().untyped(),
+                component_macro.stable_ptr(db).untyped(),
                 event_name.as_syntax_node(),
-=======
-            diagnostics.push(PluginDiagnostic::error(
-                event_name.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 format!(
                     "`{event_name_str}` is not a nested event in the contract's \
                      `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \
@@ -589,7 +574,7 @@ pub fn handle_component_inline_macro(
 ) {
     let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
         diagnostics
-            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr()));
+            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr(db)));
         return;
     };
     let macro_args = match legacy_component_macro_ast.arguments(db) {
@@ -612,7 +597,7 @@ pub fn handle_component_inline_macro(
             path_arg,
             "path",
             false,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -620,7 +605,7 @@ pub fn handle_component_inline_macro(
             storage_arg,
             "storage",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
         try_extract_named_macro_argument(
             db,
@@ -628,7 +613,7 @@ pub fn handle_component_inline_macro(
             event_arg,
             "event",
             true,
-            component_macro_ast,
+            component_macro_ast.stable_ptr(db),
         ),
     ) else {
         return;
@@ -714,15 +699,10 @@ fn try_extract_named_macro_argument(
                     if elements.len() != 1
                         || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
                     {
-<<<<<<< HEAD
                         diagnostics.push(PluginDiagnostic::error_with_inner_span(
                             db,
                             component_macro_stable_ptr,
                             path.as_syntax_node(),
-=======
-                        diagnostics.push(PluginDiagnostic::error(
-                            path.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                             format!(
                                 "Component macro argument `{arg_name}` must be a simple \
                                  identifier.",
@@ -733,15 +713,10 @@ fn try_extract_named_macro_argument(
                     Some(path)
                 }
                 value => {
-<<<<<<< HEAD
                     diagnostics.push(PluginDiagnostic::error_with_inner_span(
                         db,
                         component_macro_stable_ptr,
                         value.as_syntax_node(),
-=======
-                    diagnostics.push(PluginDiagnostic::error(
-                        value.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                         format!(
                             "Component macro argument `{arg_name}` must be a path expression.",
                         ),
@@ -751,15 +726,10 @@ fn try_extract_named_macro_argument(
             }
         }
         _ => {
-<<<<<<< HEAD
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 db,
                 component_macro_stable_ptr,
                 arg_ast.as_syntax_node(),
-=======
-            diagnostics.push(PluginDiagnostic::error(
-                arg_ast.stable_ptr(db),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                 format!("Invalid component macro argument. Expected `{0}: <value>`", arg_name),
             ));
             None

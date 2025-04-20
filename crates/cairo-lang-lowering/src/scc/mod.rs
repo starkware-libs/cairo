@@ -11,7 +11,11 @@ pub fn function_with_body_scc(
     function_id: FunctionWithBodyId,
     dependency_type: DependencyType,
 ) -> Vec<FunctionWithBodyId> {
-    compute_scc(&FunctionWithBodyNode { function_with_body_id: function_id, dependency_type, db })
+    compute_scc(&FunctionWithBodyNode {
+        function_with_body_id: function_id,
+        dependency_type,
+        db: db.upcast(),
+    })
 }
 
 /// A node to use in the SCC computation.

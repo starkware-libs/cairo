@@ -929,6 +929,8 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    // TODO: CHECK WHAT TODO!!!
+    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -939,6 +941,7 @@ impl<'a> FormatterImpl<'a> {
             line_state: PendingLineState::new(),
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
+            is_merging_use_items: false,
             is_last_element_comment: false,
         }
     }
@@ -950,7 +953,6 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
-<<<<<<< HEAD
         if self.is_merging_use_items {
             // When merging, only format this node once and return to avoid recursion.
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
@@ -963,10 +965,10 @@ impl<'a> FormatterImpl<'a> {
         // TODO(Gil): Consider if we want to keep this behavior when general macro support is added.
         if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
             let as_wrapped_arg_list = token_tree_as_wrapped_arg_list(
-                TokenTreeNode::from_syntax_node(self.db, syntax_node.clone()),
+                TokenTreeNode::from_syntax_node(self.db, *syntax_node),
                 self.db,
             );
-            let file_id = syntax_node.stable_ptr().file_id(self.db);
+            let file_id = syntax_node.stable_ptr(self.db).file_id(self.db);
 
             if let Some(wrapped_arg_list) = as_wrapped_arg_list {
                 let new_syntax_node = SyntaxNode::new_root(self.db, file_id, wrapped_arg_list.0);
@@ -974,8 +976,6 @@ impl<'a> FormatterImpl<'a> {
                 return;
             }
         }
-=======
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }

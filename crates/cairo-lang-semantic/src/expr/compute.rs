@@ -75,11 +75,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::resolve::{
-<<<<<<< HEAD
-    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem,
-=======
-    EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
@@ -261,14 +257,14 @@ impl<'ctx> ComputationContext<'ctx> {
             match var {
                 Binding::LocalItem(local_item) => match local_item.id {
                     StatementItemId::Constant(_) => {
-                        self.diagnostics.report(var.stable_ptr(self.db), UnusedConstant);
+                        self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedConstant);
                     }
                     StatementItemId::Use(_) => {
-                        self.diagnostics.report(var.stable_ptr(self.db), UnusedUse);
+                        self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedUse);
                     }
                 },
                 Binding::LocalVar(_) | Binding::Param(_) => {
-                    self.diagnostics.report(var.stable_ptr(self.db), UnusedVariable);
+                    self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
                 }
             }
         }
@@ -371,7 +367,7 @@ impl Environment {
             Ok(())
         } else {
             Err(diagnostics.report(
-                ast_param.stable_ptr(db),
+                ast_param.stable_ptr(db.upcast()),
                 ParamNameRedefinition { function_title_id, param_name: semantic_param.name },
             ))
         }
@@ -410,7 +406,7 @@ pub fn get_statement_item_by_name(
 /// language server.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> ExprAndId {
     let expr = maybe_compute_expr_semantic(ctx, syntax);
-    let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr(ctx.db));
+    let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr(ctx.db.upcast()));
     let id = ctx.arenas.exprs.alloc(expr.clone());
     ExprAndId { expr, id }
 }
@@ -436,6 +432,7 @@ pub fn maybe_compute_expr_semantic(
     syntax: &ast::Expr,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     // TODO(spapini): When Expr holds the syntax pointer, add it here as well.
     match syntax {
@@ -449,10 +446,12 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::String(literal_syntax) => {
             Ok(Expr::StringLiteral(string_literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => Ok(false_literal_expr(ctx, syntax.stable_ptr(db).into())),
-        ast::Expr::True(syntax) => Ok(true_literal_expr(ctx, syntax.stable_ptr(db).into())),
+        ast::Expr::False(syntax) => {
+            Ok(false_literal_expr(ctx, syntax.stable_ptr(syntax_db).into()))
+        }
+        ast::Expr::True(syntax) => Ok(true_literal_expr(ctx, syntax.stable_ptr(syntax_db).into())),
         ast::Expr::Parenthesized(paren_syntax) => {
-            maybe_compute_expr_semantic(ctx, &paren_syntax.expr(db))
+            maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
         ast::Expr::Unary(syntax) => compute_expr_unary_semantic(ctx, syntax),
         ast::Expr::Binary(binary_op_syntax) => compute_expr_binary_semantic(ctx, binary_op_syntax),
@@ -469,7 +468,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
         ast::Expr::InlineMacro(expr) => compute_expr_inline_macro_semantic(ctx, expr),
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
-            Err(ctx.diagnostics.report(syntax.stable_ptr(db), Unsupported))
+            Err(ctx.diagnostics.report(syntax.stable_ptr(syntax_db), Unsupported))
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
@@ -483,30 +482,14 @@ fn compute_expr_inline_macro_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
-<<<<<<< HEAD
     let syntax_db = ctx.db.upcast();
     let macro_name = syntax.path(syntax_db).identifier(ctx.db.upcast()).to_string();
     let prev_macro_resolver_data = ctx.resolver.macro_defsite_data.clone();
-=======
-    let db = ctx.db;
-
     let crate_id = ctx.resolver.owning_crate_id;
-
-    let macro_name = syntax.path(db).as_syntax_node().get_text_without_trivia(db);
-    let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
-    else {
-        return Err(ctx
-            .diagnostics
-            .report(syntax.stable_ptr(db), InlineMacroNotFound(macro_name.into())));
-    };
-    let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
-
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     // Skipping expanding an inline macro if it had a parser error.
-    if syntax.as_syntax_node().descendants(db).any(|node| {
+    if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
         matches!(
-            node.kind(db),
+            node.kind(syntax_db),
             SyntaxKind::ExprMissing
                 | SyntaxKind::WrappedArgListMissing
                 | SyntaxKind::StatementMissing
@@ -525,7 +508,7 @@ fn compute_expr_inline_macro_semantic(
         &mut Default::default(),
         &syntax.path(syntax_db),
         NotFoundItemType::Macro,
-        Some(&mut ctx.environment),
+        ResolutionContext::Statement(&mut ctx.environment),
     );
     let (content, name, mappings, is_macro_rule) =
         if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
@@ -536,9 +519,10 @@ fn compute_expr_inline_macro_semantic(
                         .map(|res| (rule, res))
                 })
             else {
-                return Err(ctx
-                    .diagnostics
-                    .report(syntax, InlineMacroNoMatchingRule(macro_name.into())));
+                return Err(ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNoMatchingRule(macro_name.into()),
+                ));
             };
             let mut matcher_ctx =
                 MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
@@ -547,13 +531,20 @@ fn compute_expr_inline_macro_semantic(
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
             ctx.resolver.macro_defsite_data = Some(macro_resolver_data);
             (expanded_code.text, macro_name.into(), expanded_code.code_mappings, true)
-        } else if let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() {
-            let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
-                cfg_set: &ctx.cfg_set,
-                declared_derives: &ctx.db.declared_derives(),
-                allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-                edition: ctx.resolver.settings.edition,
-            });
+        } else if let Some(macro_plugin_id) =
+            ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name).cloned()
+        {
+            let macro_plugin = ctx.db.lookup_intern_inline_macro_plugin(macro_plugin_id);
+            let result = macro_plugin.generate_code(
+                syntax_db,
+                syntax,
+                &MacroPluginMetadata {
+                    cfg_set: &ctx.cfg_set,
+                    declared_derives: &ctx.db.declared_derives(crate_id),
+                    allowed_features: &ctx.resolver.data.feature_config.allowed_features,
+                    edition: ctx.resolver.settings.edition,
+                },
+            );
             let mut diag_added = None;
             for diagnostic in result.diagnostics {
                 diag_added = match diagnostic.inner_span {
@@ -568,16 +559,16 @@ fn compute_expr_inline_macro_semantic(
                 }
             }
 
-<<<<<<< HEAD
             let Some(code) = result.code else {
                 return Err(diag_added.unwrap_or_else(|| {
-                    ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into()))
+                    ctx.diagnostics
+                        .report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name.into()))
                 }));
             };
             (code.content, code.name, code.code_mappings, false)
         } else {
             return Err(ctx.diagnostics.report(
-                syntax,
+                syntax.stable_ptr(ctx.db),
                 InlineMacroNotFound(
                     syntax
                         .path(syntax_db)
@@ -590,40 +581,10 @@ fn compute_expr_inline_macro_semantic(
 
     // Create a file
     let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db.upcast())),
         name,
         content: content.clone().into(),
         code_mappings: mappings.clone().into(),
-=======
-    let result = macro_plugin.generate_code(
-        db,
-        syntax,
-        &MacroPluginMetadata {
-            cfg_set: &ctx.cfg_set,
-            declared_derives: &ctx.db.declared_derives(crate_id),
-            allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-            edition: ctx.resolver.settings.edition,
-        },
-    );
-    let mut diag_added = None;
-    for diagnostic in result.diagnostics {
-        diag_added =
-            Some(ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)));
-    }
-
-    let Some(code) = result.code else {
-        return Err(diag_added.unwrap_or_else(|| {
-            ctx.diagnostics.report(syntax.stable_ptr(db), InlineMacroFailed(macro_name.into()))
-        }));
-    };
-
-    // Create a file
-    let new_file = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(db).untyped().file_id(ctx.db)),
-        name: code.name,
-        content: code.content.into(),
-        code_mappings: code.code_mappings.into(),
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
@@ -644,16 +605,21 @@ fn compute_expr_unary_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprUnary,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
-    let unary_op = syntax.op(db);
-    let inner = syntax.expr(db);
+    let syntax_db = ctx.db.upcast();
+    let unary_op = syntax.op(syntax_db);
+    let inner = syntax.expr(syntax_db);
     match (&unary_op, &inner) {
         // If this is not an actual function call, but actually a minus literal (e.g. -1).
         (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
-            let (value, ty) = literal.numeric_value_and_suffix(db).unwrap_or_default();
+            let (value, ty) = literal.numeric_value_and_suffix(syntax_db).unwrap_or_default();
             let ty = ty.as_ref().map(SmolStr::as_str);
 
-            Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr(db).into())?))
+            Ok(Expr::Literal(new_literal_expr(
+                ctx,
+                ty,
+                -value,
+                syntax.stable_ptr(syntax_db).into(),
+            )?))
         }
         (UnaryOperator::At(_), inner) => {
             let expr = compute_expr_semantic(ctx, inner);
@@ -662,7 +628,7 @@ fn compute_expr_unary_semantic(
             Ok(Expr::Snapshot(ExprSnapshot {
                 inner: expr.id,
                 ty,
-                stable_ptr: syntax.stable_ptr(db).into(),
+                stable_ptr: syntax.stable_ptr(syntax_db).into(),
             }))
         }
         (UnaryOperator::Desnap(_), inner) => {
@@ -676,14 +642,14 @@ fn compute_expr_unary_semantic(
                         let inference = &mut ctx.resolver.inference();
                         // The type of the full desnap expr. E.g. the type of `*x` for `*x`.
                         let desnap_expr_type =
-                            inference.new_type_var(Some(inner.stable_ptr(db).untyped()));
+                            inference.new_type_var(Some(inner.stable_ptr(syntax_db).untyped()));
                         let desnapped_expr_type_var =
                             TypeLongId::Snapshot(desnap_expr_type).intern(ctx.db);
                         if let Err(err_set) =
                             inference.conform_ty(desnapped_expr_type_var, desnapped_expr_type)
                         {
                             let diag_added = ctx.diagnostics.report(
-                                syntax.stable_ptr(db),
+                                syntax.stable_ptr(syntax_db),
                                 WrongArgumentType {
                                     expected_ty: desnapped_expr_type_var,
                                     actual_ty: desnapped_expr_type,
@@ -698,7 +664,7 @@ fn compute_expr_unary_semantic(
                     _ => {
                         return Err(ctx
                             .diagnostics
-                            .report(unary_op.stable_ptr(db), DesnapNonSnapshot));
+                            .report(unary_op.stable_ptr(syntax_db), DesnapNonSnapshot));
                     }
                 };
                 (desnapped_expr, desnapped_ty)
@@ -707,7 +673,7 @@ fn compute_expr_unary_semantic(
             Ok(Expr::Desnap(ExprDesnap {
                 inner: desnapped_expr.id,
                 ty: desnapped_ty,
-                stable_ptr: syntax.stable_ptr(db).into(),
+                stable_ptr: syntax.stable_ptr(syntax_db).into(),
             }))
         }
         (_, inner) => {
@@ -717,10 +683,10 @@ fn compute_expr_unary_semantic(
                 ctx.db,
                 &mut ctx.resolver.inference(),
                 &unary_op,
-                syntax.stable_ptr(db).untyped(),
+                syntax.stable_ptr(syntax_db).untyped(),
             )? {
                 Err(err_kind) => {
-                    return Err(ctx.diagnostics.report(unary_op.stable_ptr(db), err_kind));
+                    return Err(ctx.diagnostics.report(unary_op.stable_ptr(syntax_db), err_kind));
                 }
                 Ok(function) => function,
             };
@@ -731,13 +697,13 @@ fn compute_expr_unary_semantic(
                 .infer_trait_function(
                     concrete_trait_function,
                     &impl_lookup_context,
-                    Some(syntax.stable_ptr(db).untyped()),
+                    Some(syntax.stable_ptr(syntax_db).untyped()),
                 )
                 .map_err(|err_set| {
                     inference.report_on_pending_error(
                         err_set,
                         ctx.diagnostics,
-                        syntax.stable_ptr(db).untyped(),
+                        syntax.stable_ptr(syntax_db).untyped(),
                     )
                 })?;
 
@@ -745,8 +711,8 @@ fn compute_expr_unary_semantic(
                 ctx,
                 function,
                 vec![NamedArg(expr, None, Mutability::Immutable)],
-                syntax.stable_ptr(db),
-                syntax.stable_ptr(db).into(),
+                syntax.stable_ptr(syntax_db),
+                syntax.stable_ptr(syntax_db).into(),
             )
         }
     }
@@ -757,11 +723,12 @@ fn compute_expr_binary_semantic(
     syntax: &ast::ExprBinary,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let stable_ptr = syntax.stable_ptr(db).into();
-    let binary_op = syntax.op(db);
-    let lhs_syntax = &syntax.lhs(db);
-    let rhs_syntax = syntax.rhs(db);
+    let stable_ptr = syntax.stable_ptr(syntax_db).into();
+    let binary_op = syntax.op(syntax_db);
+    let lhs_syntax = &syntax.lhs(syntax_db);
+    let rhs_syntax = syntax.rhs(syntax_db);
 
     match binary_op {
         ast::BinaryOperator::Dot(_) => {
@@ -778,7 +745,7 @@ fn compute_expr_binary_semantic(
                 _ => {
                     return Err(ctx
                         .diagnostics
-                        .report(lhs_syntax.stable_ptr(db), InvalidLhsForAssignment));
+                        .report(lhs_syntax.stable_ptr(syntax_db), InvalidLhsForAssignment));
                 }
             };
 
@@ -787,12 +754,12 @@ fn compute_expr_binary_semantic(
                 rexpr.ty(),
                 member_path.ty(),
                 ctx.diagnostics,
-                || rhs_syntax.stable_ptr(db).untyped(),
+                || rhs_syntax.stable_ptr(syntax_db).untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
             )?;
             // Verify the variable argument is mutable.
             if !ctx.semantic_defs[&member_path.base_var()].is_mut() {
-                ctx.diagnostics.report(syntax.stable_ptr(db), AssignmentToImmutableVar);
+                ctx.diagnostics.report(syntax.stable_ptr(syntax_db), AssignmentToImmutableVar);
             }
             Ok(Expr::Assignment(ExprAssignment {
                 ref_arg: member_path,
@@ -817,14 +784,14 @@ fn compute_expr_binary_semantic(
                 lexpr.expr.ty(),
                 bool_ty,
                 ctx.diagnostics,
-                || lhs_syntax.stable_ptr(db).untyped(),
+                || lhs_syntax.stable_ptr(syntax_db).untyped(),
                 |actual_ty, expected_ty| WrongType { expected_ty, actual_ty },
             );
             let _ = inference.conform_ty_for_diag(
                 rexpr.expr.ty(),
                 bool_ty,
                 ctx.diagnostics,
-                || rhs_syntax.stable_ptr(db).untyped(),
+                || rhs_syntax.stable_ptr(syntax_db).untyped(),
                 |actual_ty, expected_ty| WrongType { expected_ty, actual_ty },
             );
 
@@ -848,8 +815,9 @@ fn call_core_binary_op(
     rhs_syntax: &ast::Expr,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-    let stable_ptr = syntax.stable_ptr(db);
-    let binary_op = syntax.op(db);
+    let syntax_db = db.upcast();
+    let stable_ptr = syntax.stable_ptr(syntax_db);
+    let binary_op = syntax.op(db.upcast());
 
     let (concrete_trait_function, snapshot) = match core_binary_operator(
         db,
@@ -858,7 +826,7 @@ fn call_core_binary_op(
         stable_ptr.untyped(),
     )? {
         Err(err_kind) => {
-            return Err(ctx.diagnostics.report(binary_op.stable_ptr(db), err_kind));
+            return Err(ctx.diagnostics.report(binary_op.stable_ptr(syntax_db), err_kind));
         }
         Ok(res) => res,
     };
@@ -878,9 +846,10 @@ fn call_core_binary_op(
     let mut lexpr = compute_expr_semantic(ctx, lhs_syntax);
 
     if let (Expr::Missing(_), BinaryOperator::LT(_)) = (&lexpr.expr, &binary_op) {
-        return Err(ctx
-            .diagnostics
-            .report(binary_op.stable_ptr(db), SemanticDiagnosticKind::MaybeMissingColonColon));
+        return Err(ctx.diagnostics.report(
+            binary_op.stable_ptr(syntax_db),
+            SemanticDiagnosticKind::MaybeMissingColonColon,
+        ));
     }
 
     let mut rexpr = compute_expr_semantic(ctx, rhs_syntax);
@@ -919,10 +888,11 @@ fn compute_expr_tuple_semantic(
     syntax: &ast::ExprListParenthesized,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     let mut items: Vec<ExprId> = vec![];
     let mut types: Vec<TypeId> = vec![];
-    let expressions_syntax = &syntax.expressions(db).elements(db);
+    let expressions_syntax = &syntax.expressions(syntax_db).elements(syntax_db);
     for expr_syntax in expressions_syntax {
         let expr_semantic = compute_expr_semantic(ctx, expr_syntax);
         types.push(ctx.reduce_ty(expr_semantic.ty()));
@@ -931,7 +901,7 @@ fn compute_expr_tuple_semantic(
     Ok(Expr::Tuple(ExprTuple {
         items,
         ty: TypeLongId::Tuple(types).intern(db),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 /// Computes the semantic model of an expression of type [ast::ExprFixedSizeArray].
@@ -940,7 +910,8 @@ fn compute_expr_fixed_size_array_semantic(
     syntax: &ast::ExprFixedSizeArray,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-    let exprs = syntax.exprs(db).elements(db);
+    let syntax_db = db.upcast();
+    let exprs = syntax.exprs(syntax_db).elements(syntax_db);
     let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, &ctx.resolver)?
@@ -949,18 +920,18 @@ fn compute_expr_fixed_size_array_semantic(
         let [expr] = exprs.as_slice() else {
             return Err(ctx
                 .diagnostics
-                .report(syntax.stable_ptr(db), FixedSizeArrayNonSingleValue));
+                .report(syntax.stable_ptr(syntax_db), FixedSizeArrayNonSingleValue));
         };
         let expr_semantic = compute_expr_semantic(ctx, expr);
         let size = size_const_id
             .lookup_intern(db)
             .into_int()
             .ok_or_else(|| {
-                ctx.diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize)
+                ctx.diagnostics.report(syntax.stable_ptr(syntax_db), FixedSizeArrayNonNumericSize)
             })?
             .to_usize()
             .unwrap();
-        verify_fixed_size_array_size(db, ctx.diagnostics, &size.into(), syntax)?;
+        verify_fixed_size_array_size(syntax_db, ctx.diagnostics, &size.into(), syntax)?;
         (
             FixedSizeArrayItems::ValueAndSize(expr_semantic.id, size_const_id),
             expr_semantic.ty(),
@@ -980,7 +951,7 @@ fn compute_expr_fixed_size_array_semantic(
                 expr_semantic.ty(),
                 first_expr_ty,
                 ctx.diagnostics,
-                || expr_syntax.stable_ptr(db).untyped(),
+                || expr_syntax.stable_ptr(syntax_db).untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
             )?;
             items.push(expr_semantic.id);
@@ -989,14 +960,14 @@ fn compute_expr_fixed_size_array_semantic(
     } else {
         (
             FixedSizeArrayItems::Items(vec![]),
-            ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr(db).untyped())),
+            ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr(syntax_db).untyped())),
             ConstValue::Int(0.into(), size_ty).intern(db),
         )
     };
     Ok(Expr::FixedSizeArray(ExprFixedSizeArray {
         items,
         ty: TypeLongId::FixedSizeArray { type_id, size }.intern(db),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -1005,11 +976,11 @@ fn compute_expr_function_call_semantic(
     syntax: &ast::ExprFunctionCall,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let path = syntax.path(db);
-    let args_syntax = syntax.arguments(db).arguments(db);
+    let path = syntax.path(syntax_db);
+    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
     // Check if this is a variable.
-<<<<<<< HEAD
     let mut is_shadowed_by_variable = false;
     if let Some((identifier, is_callsite_prefixed)) =
         try_extract_identifier_from_path(syntax_db, &path)
@@ -1019,17 +990,8 @@ fn compute_expr_function_call_semantic(
             ctx,
             &variable_name,
             is_callsite_prefixed,
-            path.stable_ptr().into(),
+            path.stable_ptr(ctx.db).into(),
         ) {
-=======
-    let segments = path.elements(db);
-    let mut is_shadowed_by_variable = false;
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(db);
-        let variable_name = identifier.text(ctx.db);
-        if let Some(var) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr(db).into())
-        {
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
             if ctx.are_closures_in_context {
@@ -1044,7 +1006,7 @@ fn compute_expr_function_call_semantic(
                         &[call_trait],
                         "call".into(),
                         self_expr.clone(),
-                        syntax.stable_ptr(db).untyped(),
+                        syntax.stable_ptr(syntax_db).untyped(),
                         None,
                         |ty, _, inference_errors| {
                             if call_trait == fn_once_trait {
@@ -1066,12 +1028,12 @@ fn compute_expr_function_call_semantic(
                 let (call_function_id, _, fixed_closure, closure_mutability) =
                     closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))?;
 
-                let args_iter = args_syntax.elements(db).into_iter();
+                let args_iter = args_syntax.elements(syntax_db).into_iter();
                 // Normal parameters
                 let mut args = vec![];
                 let mut arg_types = vec![];
                 for arg_syntax in args_iter {
-                    let stable_ptr = arg_syntax.stable_ptr(db);
+                    let stable_ptr = arg_syntax.stable_ptr(syntax_db);
                     let arg = compute_named_argument_clause(ctx, arg_syntax, None);
                     if arg.2 != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
@@ -1082,11 +1044,11 @@ fn compute_expr_function_call_semantic(
                 let args_expr = Expr::Tuple(ExprTuple {
                     items: args,
                     ty: TypeLongId::Tuple(arg_types).intern(db),
-                    stable_ptr: syntax.stable_ptr(db).into(),
+                    stable_ptr: syntax.stable_ptr(syntax_db).into(),
                 });
                 let args_expr =
                     ExprAndId { expr: args_expr.clone(), id: ctx.arenas.exprs.alloc(args_expr) };
-                let call_ptr = syntax.stable_ptr(db);
+                let call_ptr = syntax.stable_ptr(syntax_db);
                 return expr_function_call(
                     ctx,
                     call_function_id,
@@ -1113,71 +1075,67 @@ fn compute_expr_function_call_semantic(
             let concrete_enum_type =
                 TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db);
             if concrete_enum_type.is_phantom(db) {
-                ctx.diagnostics.report(syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
+                ctx.diagnostics
+                    .report(syntax.stable_ptr(syntax_db), CannotCreateInstancesOfPhantomTypes);
             }
 
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
             let named_args: Vec<_> = args_syntax
-                .elements(db)
+                .elements(syntax_db)
                 .into_iter()
                 .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
                 .collect();
             if named_args.len() != 1 {
                 return Err(ctx.diagnostics.report(
-                    syntax.stable_ptr(db),
+                    syntax.stable_ptr(syntax_db),
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
             let NamedArg(arg, name_terminal, mutability) = named_args[0].clone();
             if let Some(name_terminal) = name_terminal {
-                ctx.diagnostics.report(name_terminal.stable_ptr(db), NamedArgumentsAreNotSupported);
+                ctx.diagnostics
+                    .report(name_terminal.stable_ptr(syntax_db), NamedArgumentsAreNotSupported);
             }
             if mutability != Mutability::Immutable {
                 return Err(ctx
                     .diagnostics
-                    .report(args_syntax.stable_ptr(db), VariantCtorNotImmutable));
+                    .report(args_syntax.stable_ptr(syntax_db), VariantCtorNotImmutable));
             }
             let inference = &mut ctx.resolver.inference();
             inference.conform_ty_for_diag(
                 arg.ty(),
                 variant.ty,
                 ctx.diagnostics,
-                || args_syntax.stable_ptr(db).untyped(),
+                || args_syntax.stable_ptr(syntax_db).untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
             )?;
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant,
                 value_expr: arg.id,
                 ty: concrete_enum_type,
-                stable_ptr: syntax.stable_ptr(db).into(),
+                stable_ptr: syntax.stable_ptr(syntax_db).into(),
             }))
         }
         ResolvedConcreteItem::Function(function) => {
             if is_shadowed_by_variable {
-<<<<<<< HEAD
-                return Err(ctx.diagnostics.report(&path, CallingShadowedFunction {
-                    shadowed_function_name: path
-                        .segments(syntax_db)
-                        .elements(syntax_db)
-                        .first()
-                        .unwrap()
-                        .identifier(syntax_db),
-                }));
-=======
                 return Err(ctx.diagnostics.report(
-                    path.stable_ptr(db),
+                    path.stable_ptr(ctx.db),
                     CallingShadowedFunction {
-                        shadowed_function_name: path.elements(db).first().unwrap().identifier(db),
+                        shadowed_function_name: path
+                            .segments(syntax_db)
+                            .elements(syntax_db)
+                            .first()
+                            .unwrap()
+                            .identifier(syntax_db),
                     },
                 ));
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
             }
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-            let mut args_iter = args_syntax.elements(db).into_iter();
+            let mut args_iter = args_syntax.elements(syntax_db).into_iter();
             // Normal parameters
             let mut named_args = vec![];
             let closure_params = concrete_function_closure_params(db, function)?;
@@ -1196,11 +1154,11 @@ fn compute_expr_function_call_semantic(
             if let Some(arg_syntax) = args_iter.next() {
                 named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
             }
-            let call_ptr = syntax.stable_ptr(db);
+            let call_ptr = syntax.stable_ptr(syntax_db);
             expr_function_call(ctx, function, named_args, call_ptr, call_ptr.into())
         }
         _ => Err(ctx.diagnostics.report(
-            path.stable_ptr(db),
+            path.stable_ptr(syntax_db),
             UnexpectedElement { expected: vec![ElementKind::Function], actual: (&item).into() },
         )),
     }
@@ -1214,25 +1172,32 @@ pub fn compute_named_argument_clause(
     arg_syntax: ast::Arg,
     closure_params_tuple_ty: Option<TypeId>,
 ) -> NamedArg {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
 
-    let mutability =
-        compute_mutability(ctx.diagnostics, db, &arg_syntax.modifiers(db).elements(db));
+    let mutability = compute_mutability(
+        ctx.diagnostics,
+        syntax_db,
+        &arg_syntax.modifiers(syntax_db).elements(syntax_db),
+    );
 
-    let arg_clause = arg_syntax.arg_clause(db);
+    let arg_clause = arg_syntax.arg_clause(syntax_db);
     let (expr, arg_name_identifier) = match arg_clause {
         ast::ArgClause::Unnamed(arg_unnamed) => (
-            handle_possible_closure_expr(ctx, &arg_unnamed.value(db), closure_params_tuple_ty),
+            handle_possible_closure_expr(
+                ctx,
+                &arg_unnamed.value(syntax_db),
+                closure_params_tuple_ty,
+            ),
             None,
         ),
         ast::ArgClause::Named(arg_named) => (
-            handle_possible_closure_expr(ctx, &arg_named.value(db), closure_params_tuple_ty),
-            Some(arg_named.name(db)),
+            handle_possible_closure_expr(ctx, &arg_named.value(syntax_db), closure_params_tuple_ty),
+            Some(arg_named.name(syntax_db)),
         ),
         ast::ArgClause::FieldInitShorthand(arg_field_init_shorthand) => {
-            let name_expr = arg_field_init_shorthand.name(db);
-            let stable_ptr: ast::ExprPtr = name_expr.stable_ptr(db).into();
-            let arg_name_identifier = name_expr.name(db);
+            let name_expr = arg_field_init_shorthand.name(syntax_db);
+            let stable_ptr: ast::ExprPtr = name_expr.stable_ptr(syntax_db).into();
+            let arg_name_identifier = name_expr.name(syntax_db);
             let maybe_expr = resolve_variable_by_name(ctx, &arg_name_identifier, stable_ptr);
             let expr = wrap_maybe_with_missing(ctx, maybe_expr, stable_ptr);
             let expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
@@ -1253,7 +1218,8 @@ fn handle_possible_closure_expr(
 ) -> ExprAndId {
     if let ast::Expr::Closure(expr_closure) = expr {
         let expr = compute_expr_closure_semantic(ctx, expr_closure, closure_param_types);
-        let expr = wrap_maybe_with_missing(ctx, expr, expr_closure.stable_ptr(ctx.db).into());
+        let expr =
+            wrap_maybe_with_missing(ctx, expr, expr_closure.stable_ptr(ctx.db.upcast()).into());
         let id = ctx.arenas.exprs.alloc(expr.clone());
         ExprAndId { expr, id }
     } else {
@@ -1288,26 +1254,26 @@ pub fn compute_root_expr(
     let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.arenas.exprs.alloc(res);
     let inference = &mut ctx.resolver.inference();
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
     let _ = inference.conform_ty_for_diag(
         res_ty,
         return_type,
         ctx.diagnostics,
         || {
             ctx.signature
-                .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
+                .map(|s| match s.stable_ptr.lookup(syntax_db).ret_ty(syntax_db) {
+                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(syntax_db).untyped(),
                     OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                        return_type_clause.ty(db).stable_ptr(db).untyped()
+                        return_type_clause.ty(syntax_db).stable_ptr(syntax_db).untyped()
                     }
                 })
-                .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
+                .unwrap_or_else(|| syntax.stable_ptr(syntax_db).untyped())
         },
         |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
     );
 
     // Check fully resolved.
-    inference.finalize(ctx.diagnostics, syntax.stable_ptr(db).untyped());
+    inference.finalize(ctx.diagnostics, syntax.stable_ptr(syntax_db).untyped());
 
     ctx.apply_inference_rewriter();
     if ctx.signature.map(|s| s.is_const) == Some(true) {
@@ -1322,12 +1288,13 @@ pub fn compute_expr_block_semantic(
     syntax: &ast::ExprBlock,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the tail expression, if exists.
         // TODO(spapini): Consider splitting tail expression in the parser.
-        let tail = get_tail_expression(db, statements.as_slice());
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
         if tail.is_some() {
             statements.pop();
         }
@@ -1359,7 +1326,7 @@ pub fn compute_expr_block_semantic(
             statements: statements_semantic,
             tail: tail_semantic_expr.map(|expr| expr.id),
             ty,
-            stable_ptr: syntax.stable_ptr(db).into(),
+            stable_ptr: syntax.stable_ptr(syntax_db).into(),
         }))
     })
 }
@@ -1436,6 +1403,7 @@ fn compute_arm_semantic(
     is_while_let_arm: bool,
 ) -> (Vec<PatternAndId>, ExprAndId) {
     let db = ctx.db;
+    let syntax_db = db.upcast();
     ctx.run_in_subscope(|new_ctx| {
         // Typecheck the arms's patterns, and introduce the new variables to the subscope.
         // Note that if the arm expr is a block, there will be *another* subscope
@@ -1443,7 +1411,7 @@ fn compute_arm_semantic(
         let mut arm_patterns_variables: UnorderedHashMap<SmolStr, LocalVariable> =
             UnorderedHashMap::default();
         let patterns: Vec<_> = patterns_syntax
-            .elements(db)
+            .elements(syntax_db)
             .iter()
             .map(|pattern_syntax| {
                 let pattern: PatternAndId = compute_pattern_semantic(
@@ -1456,7 +1424,8 @@ fn compute_arm_semantic(
                 for variable in variables {
                     match arm_patterns_variables.entry(variable.name.clone()) {
                         std::collections::hash_map::Entry::Occupied(entry) => {
-                            let get_location = || variable.stable_ptr.lookup(db).stable_ptr(db);
+                            let get_location =
+                                || variable.stable_ptr.lookup(db.upcast()).stable_ptr(syntax_db);
                             let var = entry.get();
 
                             let expected_ty = new_ctx.reduce_ty(var.ty);
@@ -1494,11 +1463,15 @@ fn compute_arm_semantic(
             })
             .collect();
 
-        for (pattern_syntax, pattern) in patterns_syntax.elements(db).iter().zip(patterns.iter()) {
+        for (pattern_syntax, pattern) in
+            patterns_syntax.elements(syntax_db).iter().zip(patterns.iter())
+        {
             let variables = pattern.variables(&new_ctx.arenas.patterns);
 
             if variables.len() != arm_patterns_variables.len() {
-                new_ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
+                new_ctx
+                    .diagnostics
+                    .report(pattern_syntax.stable_ptr(syntax_db), MissingVariableInPattern);
             }
 
             for v in variables {
@@ -1532,9 +1505,10 @@ fn compute_expr_match_semantic(
 ) -> Maybe<Expr> {
     // TODO(yuval): verify exhaustiveness.
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let syntax_arms = syntax.arms(db).elements(db);
-    let expr = compute_expr_semantic(ctx, &syntax.expr(db));
+    let syntax_arms = syntax.arms(syntax_db).elements(syntax_db);
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
     let patterns_and_exprs: Vec<_> = syntax_arms
@@ -1543,8 +1517,8 @@ fn compute_expr_match_semantic(
             compute_arm_semantic(
                 ctx,
                 &expr,
-                syntax_arm.expression(db),
-                &syntax_arm.patterns(db),
+                syntax_arm.expression(syntax_db),
+                &syntax_arm.patterns(syntax_db),
                 false,
             )
         })
@@ -1575,51 +1549,55 @@ fn compute_expr_match_semantic(
         matched_expr: expr.id,
         arms: semantic_arms,
         ty: helper.get_final_type(),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprIf].
 fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Maybe<Expr> {
-    let db = ctx.db;
-    let (condition, if_block) = match &syntax.condition(db) {
+    let syntax_db = ctx.db.upcast();
+    let (condition, if_block) = match &syntax.condition(syntax_db) {
         ast::Condition::Let(condition) => {
-            let expr = compute_expr_semantic(ctx, &condition.expr(db));
+            let expr = compute_expr_semantic(ctx, &condition.expr(syntax_db));
             if let Expr::LogicalOperator(_) = expr.expr {
-                ctx.diagnostics
-                    .report(condition.expr(db).stable_ptr(db), LogicalOperatorNotAllowedInIfLet);
+                ctx.diagnostics.report(
+                    condition.expr(syntax_db).stable_ptr(syntax_db),
+                    LogicalOperatorNotAllowedInIfLet,
+                );
             }
 
             let (patterns, if_block) = compute_arm_semantic(
                 ctx,
                 &expr,
-                ast::Expr::Block(syntax.if_block(db)),
-                &condition.patterns(db),
+                ast::Expr::Block(syntax.if_block(syntax_db)),
+                &condition.patterns(syntax_db),
                 false,
             );
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), if_block)
         }
         ast::Condition::Expr(expr) => {
-            let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(db))?;
+            let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
             (
-                Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(db)).id),
+                Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
                 ExprAndId { expr: if_block.clone(), id: ctx.arenas.exprs.alloc(if_block) },
             )
         }
     };
 
-    let (else_block_opt, else_block_ty) = match syntax.else_clause(db) {
+    let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
         ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
-        ast::OptionElseClause::ElseClause(else_clause) => match else_clause.else_block_or_if(db) {
-            BlockOrIf::Block(block) => {
-                let else_block = compute_expr_block_semantic(ctx, &block)?;
-                (Some(else_block.clone()), else_block.ty())
+        ast::OptionElseClause::ElseClause(else_clause) => {
+            match else_clause.else_block_or_if(syntax_db) {
+                BlockOrIf::Block(block) => {
+                    let else_block = compute_expr_block_semantic(ctx, &block)?;
+                    (Some(else_block.clone()), else_block.ty())
+                }
+                BlockOrIf::If(expr_if) => {
+                    let else_if = compute_expr_if_semantic(ctx, &expr_if)?;
+                    (Some(else_if.clone()), else_if.ty())
+                }
             }
-            BlockOrIf::If(expr_if) => {
-                let else_if = compute_expr_if_semantic(ctx, &expr_if)?;
-                (Some(else_if.clone()), else_if.ty())
-            }
-        },
+        }
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::If);
@@ -1631,20 +1609,20 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         ctx.diagnostics,
         inference,
         if_block_ty,
-        syntax.stable_ptr(db).untyped(),
+        syntax.stable_ptr(syntax_db).untyped(),
     ) && helper.try_merge_types(
         ctx.db,
         ctx.diagnostics,
         inference,
         else_block_ty,
-        syntax.stable_ptr(db).untyped(),
+        syntax.stable_ptr(syntax_db).untyped(),
     );
     Ok(Expr::If(ExprIf {
         condition,
         if_block: if_block.id,
         else_block: else_block_opt.map(|else_block| ctx.arenas.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -1654,10 +1632,11 @@ fn compute_expr_loop_semantic(
     syntax: &ast::ExprLoop,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     let (body, inner_ctx) = compute_loop_body_semantic(
         ctx,
-        syntax.body(db),
+        syntax.body(syntax_db),
         InnerContextKind::Loop {
             type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop),
         },
@@ -1669,7 +1648,7 @@ fn compute_expr_loop_semantic(
     Ok(Expr::Loop(ExprLoop {
         body,
         ty: type_merger.get_final_type(),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -1679,28 +1658,34 @@ fn compute_expr_while_semantic(
     syntax: &ast::ExprWhile,
 ) -> Maybe<Expr> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let (condition, body) = match &syntax.condition(db) {
+    let (condition, body) = match &syntax.condition(syntax_db) {
         ast::Condition::Let(condition) => {
-            let expr = compute_expr_semantic(ctx, &condition.expr(db));
+            let expr = compute_expr_semantic(ctx, &condition.expr(syntax_db));
             if let Expr::LogicalOperator(_) = expr.expr {
-                ctx.diagnostics
-                    .report(condition.expr(db).stable_ptr(db), LogicalOperatorNotAllowedInWhileLet);
+                ctx.diagnostics.report(
+                    condition.expr(syntax_db).stable_ptr(syntax_db),
+                    LogicalOperatorNotAllowedInWhileLet,
+                );
             }
 
             let (patterns, body) = compute_arm_semantic(
                 ctx,
                 &expr,
-                ast::Expr::Block(syntax.body(db)),
-                &condition.patterns(db),
+                ast::Expr::Block(syntax.body(syntax_db)),
+                &condition.patterns(syntax_db),
                 true,
             );
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), body.id)
         }
         ast::Condition::Expr(expr) => {
             let (body, _inner_ctx) =
-                compute_loop_body_semantic(ctx, syntax.body(db), InnerContextKind::While);
-            (Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(db)).id), body)
+                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContextKind::While);
+            (
+                Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
+                body,
+            )
         }
     };
 
@@ -1708,7 +1693,7 @@ fn compute_expr_while_semantic(
         condition,
         body,
         ty: unit_ty(ctx.db),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -1718,9 +1703,10 @@ fn compute_expr_for_semantic(
     syntax: &ast::ExprFor,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-    let expr_ptr = syntax.expr(db).stable_ptr(db);
+    let syntax_db = db.upcast();
+    let expr_ptr = syntax.expr(syntax_db).stable_ptr(syntax_db);
 
-    let expr = compute_expr_semantic(ctx, &syntax.expr(db));
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let expr_id = expr.id;
 
     let into_iterator_trait = ctx.db.core_info().into_iterator_trt;
@@ -1756,9 +1742,11 @@ fn compute_expr_for_semantic(
         expr_ptr,
     )?;
 
-    let into_iter_variable =
-        LocalVarLongId(ctx.resolver.module_file_id, syntax.identifier(db).stable_ptr(db))
-            .intern(ctx.db);
+    let into_iter_variable = LocalVarLongId(
+        ctx.resolver.module_file_id,
+        syntax.identifier(syntax_db).stable_ptr(syntax_db),
+    )
+    .intern(ctx.db);
 
     let into_iter_expr = Expr::Var(ExprVar {
         var: VarId::Local(into_iter_variable),
@@ -1796,7 +1784,7 @@ fn compute_expr_for_semantic(
     let next_success_variant =
         match db.concrete_function_signature(next_function_id)?.return_type.lookup_intern(db) {
             TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-                assert_eq!(enm.enum_id(db).name(db), "Option");
+                assert_eq!(enm.enum_id(db.upcast()).name(db.upcast()), "Option");
                 db.concrete_enum_variants(enm).unwrap().into_iter().next().unwrap()
             }
             _ => unreachable!(),
@@ -1804,7 +1792,7 @@ fn compute_expr_for_semantic(
     let (body_id, pattern) = ctx.run_in_subscope(|new_ctx| {
         let inner_pattern = compute_pattern_semantic(
             new_ctx,
-            &syntax.pattern(db),
+            &syntax.pattern(syntax_db),
             next_success_variant.ty,
             &mut UnorderedHashMap::default(),
         );
@@ -1815,7 +1803,7 @@ fn compute_expr_for_semantic(
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
         let (body, _inner_ctx) =
-            compute_loop_body_semantic(new_ctx, syntax.body(db), InnerContextKind::For);
+            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContextKind::For);
         (body, new_ctx.arenas.patterns.alloc(inner_pattern.pattern))
     });
     Ok(Expr::For(ExprFor {
@@ -1826,7 +1814,7 @@ fn compute_expr_for_semantic(
         pattern,
         body: body_id,
         ty: unit_ty(ctx.db),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -1837,14 +1825,15 @@ fn compute_loop_body_semantic(
     kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
-        let tail = get_tail_expression(db, statements.as_slice());
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
         if tail.is_some() {
             statements.pop();
         }
@@ -1868,7 +1857,7 @@ fn compute_loop_body_semantic(
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
             ty: unit_ty(db),
-            stable_ptr: syntax.stable_ptr(db).into(),
+            stable_ptr: syntax.stable_ptr(syntax_db).into(),
         }));
 
         (body, inner_ctx)
@@ -1882,14 +1871,14 @@ fn compute_expr_closure_semantic(
     params_tuple_ty: Option<TypeId>,
 ) -> Maybe<Expr> {
     ctx.are_closures_in_context = true;
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
-        let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(db) {
+        let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(syntax_db) {
             function_signature_params(
                 new_ctx.diagnostics,
                 new_ctx.db,
                 &mut new_ctx.resolver,
-                &params.params(db).elements(db),
+                &params.params(syntax_db).elements(syntax_db),
                 None,
                 &mut new_ctx.environment,
             )
@@ -1906,38 +1895,39 @@ fn compute_expr_closure_semantic(
                 new_ctx.resolver.inference().report_on_pending_error(
                     err_set,
                     new_ctx.diagnostics,
-                    syntax.stable_ptr(db).untyped(),
+                    syntax.stable_ptr(syntax_db).untyped(),
                 );
             }
         }
 
         params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
-            new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
+            new_ctx.diagnostics.report(param.stable_ptr(ctx.db.upcast()), RefClosureParam);
         });
 
         new_ctx
             .semantic_defs
             .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
 
-        let return_type = match syntax.ret_ty(db) {
+        let return_type = match syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
                 new_ctx.db,
                 new_ctx.diagnostics,
                 &mut new_ctx.resolver,
-                &ty_syntax.ty(db),
+                &ty_syntax.ty(syntax_db),
                 ResolutionContext::Statement(&mut new_ctx.environment),
             ),
-            OptionReturnTypeClause::Empty(missing) => {
-                new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr(db).untyped()))
-            }
+            OptionReturnTypeClause::Empty(missing) => new_ctx
+                .resolver
+                .inference()
+                .new_type_var(Some(missing.stable_ptr(syntax_db).untyped())),
         };
 
         let old_inner_ctx = new_ctx
             .inner_ctx
             .replace(InnerContext { return_type, kind: InnerContextKind::Closure });
-        let body = match syntax.expr(db) {
+        let body = match syntax.expr(syntax_db) {
             ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
-            _ => compute_expr_semantic(new_ctx, &syntax.expr(db)).id,
+            _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
         };
         std::mem::replace(&mut new_ctx.inner_ctx, old_inner_ctx).unwrap();
         let mut inference = new_ctx.resolver.inference();
@@ -1945,10 +1935,12 @@ fn compute_expr_closure_semantic(
             new_ctx.arenas.exprs[body].ty(),
             return_type,
             new_ctx.diagnostics,
-            || match syntax.ret_ty(ctx.db).stable_ptr(db).lookup(ctx.db) {
-                OptionReturnTypeClause::Empty(_) => syntax.expr(db).stable_ptr(db).untyped(),
+            || match syntax.ret_ty(ctx.db.upcast()).stable_ptr(syntax_db).lookup(ctx.db.upcast()) {
+                OptionReturnTypeClause::Empty(_) => {
+                    syntax.expr(syntax_db).stable_ptr(syntax_db).untyped()
+                }
                 OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                    return_type_clause.ty(ctx.db).stable_ptr(db).untyped()
+                    return_type_clause.ty(ctx.db.upcast()).stable_ptr(syntax_db).untyped()
                 }
             },
             |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
@@ -1957,12 +1949,12 @@ fn compute_expr_closure_semantic(
     });
     let parent_function = match ctx.function_id {
         ContextFunction::Global => {
-            Maybe::Err(ctx.diagnostics.report(syntax.stable_ptr(db), ClosureInGlobalScope))
+            Maybe::Err(ctx.diagnostics.report(syntax.stable_ptr(syntax_db), ClosureInGlobalScope))
         }
         ContextFunction::Function(function_id) => function_id,
     };
     if matches!(ctx.function_id, ContextFunction::Global) {
-        ctx.diagnostics.report(syntax.stable_ptr(db), ClosureInGlobalScope);
+        ctx.diagnostics.report(syntax.stable_ptr(syntax_db), ClosureInGlobalScope);
     }
 
     let mut usages = Usages { usages: Default::default() };
@@ -1993,14 +1985,16 @@ fn compute_expr_closure_semantic(
         ret_ty,
         captured_types,
         parent_function,
-        wrapper_location: StableLocation::new(syntax.wrapper(db).stable_ptr(db).into()),
+        wrapper_location: StableLocation::new(
+            syntax.wrapper(syntax_db).stable_ptr(syntax_db).into(),
+        ),
     })
     .intern(ctx.db);
 
     Ok(Expr::ExprClosure(ExprClosure {
         body,
         params,
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
         ty,
     }))
 }
@@ -2010,11 +2004,11 @@ fn compute_closure_body_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::ExprBlock,
 ) -> ExprId {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
 
-    let mut statements = syntax.statements(db).elements(db);
+    let mut statements = syntax.statements(syntax_db).elements(syntax_db);
     // Remove the typed tail expression, if exists.
-    let tail = get_tail_expression(db, statements.as_slice());
+    let tail = get_tail_expression(syntax_db, statements.as_slice());
     if tail.is_some() {
         statements.pop();
     }
@@ -2043,7 +2037,7 @@ fn compute_closure_body_semantic(
         statements: statements_semantic,
         tail: tail_semantic_expr.map(|expr| expr.id),
         ty,
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -2052,26 +2046,26 @@ fn compute_expr_error_propagate_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprErrorPropagate,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
 
     let return_type = ctx.get_return_type().ok_or_else(|| {
         ctx.diagnostics.report(
-            syntax.stable_ptr(db),
+            syntax.stable_ptr(syntax_db),
             UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate),
         )
     })?;
 
     let func_err_prop_ty = unwrap_error_propagation_type(ctx.db, return_type).ok_or_else(|| {
-        ctx.diagnostics.report(syntax.stable_ptr(db), ReturnTypeNotErrorPropagateType)
+        ctx.diagnostics.report(syntax.stable_ptr(syntax_db), ReturnTypeNotErrorPropagateType)
     })?;
 
     // `inner_expr` is the expr inside the `?`.
     let inner_expr = match &func_err_prop_ty {
         crate::corelib::ErrorPropagationType::Option { .. } => {
-            compute_expr_semantic(ctx, &syntax.expr(db))
+            compute_expr_semantic(ctx, &syntax.expr(syntax_db))
         }
         crate::corelib::ErrorPropagationType::Result { .. } => {
-            compute_expr_semantic(ctx, &syntax.expr(db))
+            compute_expr_semantic(ctx, &syntax.expr(syntax_db))
         }
     };
     let func_err_variant = func_err_prop_ty.err_variant();
@@ -2083,7 +2077,7 @@ fn compute_expr_error_propagate_semantic(
     let inner_expr_err_prop_ty =
         unwrap_error_propagation_type(ctx.db, inner_expr_ty).ok_or_else(|| {
             ctx.diagnostics
-                .report(syntax.stable_ptr(db), ErrorPropagateOnNonErrorType(inner_expr_ty))
+                .report(syntax.stable_ptr(syntax_db), ErrorPropagateOnNonErrorType(inner_expr_ty))
         })?;
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
 
@@ -2104,7 +2098,7 @@ fn compute_expr_error_propagate_semantic(
             != inner_expr_err_variant.concrete_enum_id.enum_id(ctx.db)
     {
         ctx.diagnostics.report(
-            syntax.stable_ptr(db),
+            syntax.stable_ptr(syntax_db),
             IncompatibleErrorPropagateType {
                 return_ty: return_type,
                 err_ty: inner_expr_err_variant.ty,
@@ -2116,7 +2110,7 @@ fn compute_expr_error_propagate_semantic(
         ok_variant: inner_expr_err_prop_ty.ok_variant().clone(),
         err_variant: inner_expr_err_variant.clone(),
         func_err_variant: func_err_variant.clone(),
-        stable_ptr: syntax.stable_ptr(db).into(),
+        stable_ptr: syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
@@ -2125,9 +2119,9 @@ fn compute_expr_indexed_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprIndexed,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
-    let expr = compute_expr_semantic(ctx, &syntax.expr(db));
-    let index_expr_syntax = &syntax.index_expr(db);
+    let syntax_db = ctx.db.upcast();
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr_syntax = &syntax.index_expr(syntax_db);
     let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
     if !ctx.reduce_ty(expr.ty()).is_var_free(ctx.db) {
         // Make sure the maximal amount of types is known when trying to access. Ignoring the
@@ -2141,7 +2135,7 @@ fn compute_expr_indexed_semantic(
         &candidate_traits[..],
         "index".into(),
         expr,
-        syntax.stable_ptr(db).untyped(),
+        syntax.stable_ptr(syntax_db).untyped(),
         None,
         |ty, _, inference_errors| Some(NoImplementationOfIndexOperator { ty, inference_errors }),
         |ty, _, _| Some(MultipleImplementationOfIndexOperator(ty)),
@@ -2154,8 +2148,8 @@ fn compute_expr_indexed_semantic(
             NamedArg(fixed_expr, None, mutability),
             NamedArg(index_expr, None, Mutability::Immutable),
         ],
-        syntax.stable_ptr(db),
-        index_expr_syntax.stable_ptr(db),
+        syntax.stable_ptr(syntax_db),
+        index_expr_syntax.stable_ptr(syntax_db),
     )
 }
 
@@ -2231,7 +2225,12 @@ fn compute_method_function_call_data(
         fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
     }
 
-    Ok((function_id, trait_function_id.trait_id(ctx.db), fixed_expr, first_param.mutability))
+    Ok((
+        function_id,
+        trait_function_id.trait_id(ctx.db.upcast()),
+        fixed_expr,
+        first_param.mutability,
+    ))
 }
 
 /// Return candidates for method functions that match the given arguments.
@@ -2317,7 +2316,7 @@ pub fn compute_pattern_semantic(
     let pat = pat.unwrap_or_else(|diag_added| {
         Pattern::Missing(PatternMissing {
             ty: TypeId::missing(ctx.db, diag_added),
-            stable_ptr: syntax.stable_ptr(ctx.db),
+            stable_ptr: syntax.stable_ptr(ctx.db.upcast()),
             diag_added,
         })
     });
@@ -2333,37 +2332,37 @@ fn maybe_compute_pattern_semantic(
     or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
 ) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
     let ty = ctx.reduce_ty(ty);
-    let stable_ptr = pattern_syntax.stable_ptr(db).untyped();
+    let stable_ptr = pattern_syntax.stable_ptr(syntax_db).untyped();
     let pattern = match pattern_syntax {
         ast::Pattern::Underscore(otherwise_pattern) => Pattern::Otherwise(PatternOtherwise {
             ty,
-            stable_ptr: otherwise_pattern.stable_ptr(db),
+            stable_ptr: otherwise_pattern.stable_ptr(syntax_db),
         }),
         ast::Pattern::Literal(literal_pattern) => {
             let literal = literal_to_semantic(ctx, literal_pattern)?;
             Pattern::Literal(PatternLiteral {
                 literal,
-                stable_ptr: literal_pattern.stable_ptr(db).into(),
+                stable_ptr: literal_pattern.stable_ptr(syntax_db).into(),
             })
         }
         ast::Pattern::ShortString(short_string_pattern) => {
             let literal = short_string_to_semantic(ctx, short_string_pattern)?;
             Pattern::Literal(PatternLiteral {
                 literal,
-                stable_ptr: short_string_pattern.stable_ptr(db).into(),
+                stable_ptr: short_string_pattern.stable_ptr(syntax_db).into(),
             })
         }
         ast::Pattern::String(string_pattern) => {
             let string_literal = string_literal_to_semantic(ctx, string_pattern)?;
             Pattern::StringLiteral(PatternStringLiteral {
                 string_literal,
-                stable_ptr: string_pattern.stable_ptr(db).into(),
+                stable_ptr: string_pattern.stable_ptr(syntax_db).into(),
             })
         }
         ast::Pattern::Enum(enum_pattern) => {
-            let path = enum_pattern.path(db);
+            let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(
                 ctx.diagnostics,
                 &path,
@@ -2371,7 +2370,7 @@ fn maybe_compute_pattern_semantic(
                 ResolutionContext::Statement(&mut ctx.environment),
             )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
-                .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAVariant))?;
+                .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(syntax_db), NotAVariant))?;
 
             let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
                 ctx,
@@ -2384,17 +2383,17 @@ fn maybe_compute_pattern_semantic(
             let concrete_variant = ctx
                 .db
                 .concrete_enum_variant(concrete_enum, &generic_variant)
-                .map_err(|_| ctx.diagnostics.report(path.stable_ptr(db), UnknownEnum))?;
+                .map_err(|_| ctx.diagnostics.report(path.stable_ptr(syntax_db), UnknownEnum))?;
 
             // Compute inner pattern.
             let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
 
-            let inner_pattern = match enum_pattern.pattern(db) {
+            let inner_pattern = match enum_pattern.pattern(syntax_db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
                 ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
                     let pattern = compute_pattern_semantic(
                         ctx,
-                        &p.pattern(db),
+                        &p.pattern(syntax_db),
                         inner_ty,
                         or_pattern_variables_map,
                     );
@@ -2406,7 +2405,7 @@ fn maybe_compute_pattern_semantic(
                 variant: concrete_variant,
                 inner_pattern,
                 ty,
-                stable_ptr: enum_pattern.stable_ptr(db).into(),
+                stable_ptr: enum_pattern.stable_ptr(syntax_db).into(),
             })
         }
         ast::Pattern::Path(path) => {
@@ -2427,15 +2426,15 @@ fn maybe_compute_pattern_semantic(
                             ty,
                             generic_variant.enum_id,
                         )?;
-                    let concrete_variant = ctx
-                        .db
-                        .concrete_enum_variant(concrete_enum, &generic_variant)
-                        .map_err(|_| ctx.diagnostics.report(path.stable_ptr(db), UnknownEnum))?;
+                    let concrete_variant =
+                        ctx.db.concrete_enum_variant(concrete_enum, &generic_variant).map_err(
+                            |_| ctx.diagnostics.report(path.stable_ptr(syntax_db), UnknownEnum),
+                        )?;
                     return Ok(Pattern::EnumVariant(PatternEnumVariant {
                         variant: concrete_variant,
                         inner_pattern: None,
                         ty,
-                        stable_ptr: path.stable_ptr(db).into(),
+                        stable_ptr: path.stable_ptr(syntax_db).into(),
                     }));
                 }
             }
@@ -2443,49 +2442,42 @@ fn maybe_compute_pattern_semantic(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-<<<<<<< HEAD
             if path.segments(syntax_db).elements(syntax_db).len() > 1 {
-                return Err(ctx.diagnostics.report(path, Unsupported));
+                return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier =
                 path.segments(syntax_db).elements(syntax_db)[0].identifier_ast(syntax_db);
-=======
-            if path.elements(db).len() > 1 {
-                return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
-            }
-            // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
-            let identifier = path.elements(db)[0].identifier_ast(db);
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
             create_variable_pattern(
                 ctx,
                 identifier,
                 &[],
                 ty,
-                path.stable_ptr(db).into(),
+                path.stable_ptr(syntax_db).into(),
                 or_pattern_variables_map,
             )
         }
         ast::Pattern::Identifier(identifier) => create_variable_pattern(
             ctx,
-            identifier.name(db),
-            &identifier.modifiers(db).elements(db),
+            identifier.name(syntax_db),
+            &identifier.modifiers(syntax_db).elements(syntax_db),
             ty,
-            identifier.stable_ptr(db).into(),
+            identifier.stable_ptr(syntax_db).into(),
             or_pattern_variables_map,
         ),
         ast::Pattern::Struct(pattern_struct) => {
             let pattern_ty = try_extract_matches!(
                 ctx.resolver.resolve_concrete_path_ex(
                     ctx.diagnostics,
-                    &pattern_struct.path(db),
+                    &pattern_struct.path(syntax_db),
                     NotFoundItemType::Type,
                     ResolutionContext::Statement(&mut ctx.environment)
                 )?,
                 ResolvedConcreteItem::Type
             )
             .ok_or_else(|| {
-                ctx.diagnostics.report(pattern_struct.path(db).stable_ptr(db), NotAType)
+                ctx.diagnostics
+                    .report(pattern_struct.path(syntax_db).stable_ptr(syntax_db), NotAType)
             })?;
             let inference = &mut ctx.resolver.inference();
             inference.conform_ty(pattern_ty, peel_snapshots(ctx.db, ty).1.intern(ctx.db)).map_err(
@@ -2505,9 +2497,9 @@ fn maybe_compute_pattern_semantic(
                     ty.check_not_missing(ctx.db)?;
                     Err(ctx
                         .diagnostics
-                        .report(pattern_struct.stable_ptr(db), UnexpectedStructPattern(ty)))
+                        .report(pattern_struct.stable_ptr(syntax_db), UnexpectedStructPattern(ty)))
                 })?;
-            let pattern_param_asts = pattern_struct.params(db).elements(db);
+            let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.as_ref().clone();
             let mut used_members = UnorderedHashSet::<_>::default();
@@ -2533,34 +2525,38 @@ fn maybe_compute_pattern_semantic(
             for pattern_param_ast in pattern_param_asts {
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
-                        let name = single.name(db);
-                        let Some(member) =
-                            get_member(ctx, name.text(db), name.stable_ptr(db).untyped())
-                        else {
+                        let name = single.name(syntax_db);
+                        let Some(member) = get_member(
+                            ctx,
+                            name.text(syntax_db),
+                            name.stable_ptr(syntax_db).untyped(),
+                        ) else {
                             continue;
                         };
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
-                            &single.modifiers(db).elements(db),
+                            &single.modifiers(syntax_db).elements(syntax_db),
                             ty,
-                            single.stable_ptr(db).into(),
+                            single.stable_ptr(syntax_db).into(),
                             or_pattern_variables_map,
                         );
                         field_patterns.push((member, ctx.arenas.patterns.alloc(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
-                        let name = with_expr.name(db);
-                        let Some(member) =
-                            get_member(ctx, name.text(db), name.stable_ptr(db).untyped())
-                        else {
+                        let name = with_expr.name(syntax_db);
+                        let Some(member) = get_member(
+                            ctx,
+                            name.text(syntax_db),
+                            name.stable_ptr(syntax_db).untyped(),
+                        ) else {
                             continue;
                         };
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern = compute_pattern_semantic(
                             ctx,
-                            &with_expr.pattern(db),
+                            &with_expr.pattern(syntax_db),
                             ty,
                             or_pattern_variables_map,
                         );
@@ -2573,8 +2569,10 @@ fn maybe_compute_pattern_semantic(
             }
             if !has_tail {
                 for (member_name, _) in members.iter() {
-                    ctx.diagnostics
-                        .report(pattern_struct.stable_ptr(db), MissingMember(member_name.clone()));
+                    ctx.diagnostics.report(
+                        pattern_struct.stable_ptr(syntax_db),
+                        MissingMember(member_name.clone()),
+                    );
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -2582,7 +2580,7 @@ fn maybe_compute_pattern_semantic(
                 field_patterns,
                 ty,
                 n_snapshots,
-                stable_ptr: pattern_struct.stable_ptr(db),
+                stable_ptr: pattern_struct.stable_ptr(syntax_db),
             })
         }
         ast::Pattern::Tuple(_) => maybe_compute_tuple_like_pattern_semantic(
@@ -2603,7 +2601,7 @@ fn maybe_compute_pattern_semantic(
         )?,
         ast::Pattern::False(pattern_false) => {
             let enum_expr = extract_matches!(
-                false_literal_expr(ctx, pattern_false.stable_ptr(db).into()),
+                false_literal_expr(ctx, pattern_false.stable_ptr(syntax_db).into()),
                 Expr::EnumVariantCtor
             );
 
@@ -2616,14 +2614,14 @@ fn maybe_compute_pattern_semantic(
 
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
-                stable_ptr: pattern_false.stable_ptr(db).into(),
+                stable_ptr: pattern_false.stable_ptr(syntax_db).into(),
                 ty,
                 inner_pattern: None,
             })
         }
         ast::Pattern::True(pattern_true) => {
             let enum_expr = extract_matches!(
-                true_literal_expr(ctx, pattern_true.stable_ptr(db).into()),
+                true_literal_expr(ctx, pattern_true.stable_ptr(syntax_db).into()),
                 Expr::EnumVariantCtor
             );
             extract_concrete_enum_from_pattern_and_validate(
@@ -2635,7 +2633,7 @@ fn maybe_compute_pattern_semantic(
 
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: enum_expr.variant,
-                stable_ptr: pattern_true.stable_ptr(db).into(),
+                stable_ptr: pattern_true.stable_ptr(syntax_db).into(),
                 ty,
                 inner_pattern: None,
             })
@@ -2658,9 +2656,9 @@ fn maybe_compute_tuple_like_pattern_semantic(
     unexpected_pattern: fn(TypeId) -> SemanticDiagnosticKind,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind,
 ) -> Maybe<Pattern> {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
     let (n_snapshots, long_ty) =
-        finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax.stable_ptr(db))?;
+        finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax.stable_ptr(syntax_db))?;
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
         (ast::Pattern::Tuple(_), TypeLongId::Tuple(_) | TypeLongId::Var(_))
@@ -2671,13 +2669,15 @@ fn maybe_compute_tuple_like_pattern_semantic(
         _ => {
             return Err(ctx
                 .diagnostics
-                .report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)));
+                .report(pattern_syntax.stable_ptr(syntax_db), unexpected_pattern(ty)));
         }
     };
     let patterns_syntax = match pattern_syntax {
-        ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(ctx.db).elements(ctx.db),
+        ast::Pattern::Tuple(pattern_tuple) => {
+            pattern_tuple.patterns(ctx.db.upcast()).elements(ctx.db.upcast())
+        }
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
-            pattern_fixed_size_array.patterns(db).elements(db)
+            pattern_fixed_size_array.patterns(syntax_db).elements(syntax_db)
         }
         _ => unreachable!(),
     };
@@ -2695,7 +2695,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
                     let _ = inference.report_on_pending_error(
                         err,
                         ctx.diagnostics,
-                        pattern_syntax.stable_ptr(db).untyped(),
+                        pattern_syntax.stable_ptr(syntax_db).untyped(),
                     );
                 }
                 patterns_syntax.len()
@@ -2708,11 +2708,12 @@ fn maybe_compute_tuple_like_pattern_semantic(
             let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
                 let inner_tys: Vec<_> = patterns_syntax
                     .iter()
-                    .map(|e| inference.new_type_var(Some(e.stable_ptr(db).untyped())))
+                    .map(|e| inference.new_type_var(Some(e.stable_ptr(syntax_db).untyped())))
                     .collect();
                 (inner_tys.clone(), TypeLongId::Tuple(inner_tys))
             } else {
-                let var = inference.new_type_var(Some(pattern_syntax.stable_ptr(db).untyped()));
+                let var =
+                    inference.new_type_var(Some(pattern_syntax.stable_ptr(syntax_db).untyped()));
                 (
                     vec![var; patterns_syntax.len()],
                     TypeLongId::FixedSizeArray {
@@ -2733,7 +2734,7 @@ fn maybe_compute_tuple_like_pattern_semantic(
     let size = inner_tys.len();
     if size != patterns_syntax.len() {
         return Err(ctx.diagnostics.report(
-            pattern_syntax.stable_ptr(db),
+            pattern_syntax.stable_ptr(syntax_db),
             wrong_number_of_elements(size, patterns_syntax.len()),
         ));
     }
@@ -2745,13 +2746,15 @@ fn maybe_compute_tuple_like_pattern_semantic(
     // If all are Some, collect into a Vec.
     let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
     Ok(match pattern_syntax {
-        ast::Pattern::Tuple(syntax) => {
-            Pattern::Tuple(PatternTuple { field_patterns, ty, stable_ptr: syntax.stable_ptr(db) })
-        }
+        ast::Pattern::Tuple(syntax) => Pattern::Tuple(PatternTuple {
+            field_patterns,
+            ty,
+            stable_ptr: syntax.stable_ptr(syntax_db),
+        }),
         ast::Pattern::FixedSizeArray(syntax) => Pattern::FixedSizeArray(PatternFixedSizeArray {
             elements_patterns: field_patterns,
             ty,
-            stable_ptr: syntax.stable_ptr(db),
+            stable_ptr: syntax.stable_ptr(syntax_db),
         }),
         _ => unreachable!(),
     })
@@ -2764,9 +2767,10 @@ fn extract_concrete_enum_from_pattern_and_validate(
     ty: TypeId,
     enum_id: EnumId,
 ) -> Maybe<(ConcreteEnumId, usize)> {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
     // Peel all snapshot wrappers.
-    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(db))?;
+    let (n_snapshots, long_ty) =
+        finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(syntax_db))?;
 
     // Check that type is an enum, and get the concrete enum from it.
     let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
@@ -2776,12 +2780,12 @@ fn extract_concrete_enum_from_pattern_and_validate(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern.stable_ptr(db), UnexpectedEnumPattern(ty)))
+            Err(ctx.diagnostics.report(pattern.stable_ptr(syntax_db), UnexpectedEnumPattern(ty)))
         })?;
     // Check that these are the same enums.
     if enum_id != concrete_enum.enum_id(ctx.db) {
         return Err(ctx.diagnostics.report(
-            pattern.stable_ptr(db),
+            pattern.stable_ptr(syntax_db),
             WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: enum_id },
         ));
     }
@@ -2797,24 +2801,23 @@ fn create_variable_pattern(
     stable_ptr: ast::PatternPtr,
     or_pattern_variables_map: &mut UnorderedHashMap<SmolStr, LocalVariable>,
 ) -> Pattern {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
 
-    let var_id = match or_pattern_variables_map.get(&identifier.text(db)) {
+    let var_id = match or_pattern_variables_map.get(&identifier.text(syntax_db)) {
         Some(var) => var.id,
-        None => {
-            LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr(db)).intern(ctx.db)
-        }
+        None => LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr(syntax_db))
+            .intern(ctx.db),
     };
-    let is_mut = match compute_mutability(ctx.diagnostics, db, modifier_list) {
+    let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
         Mutability::Immutable => false,
         Mutability::Mutable => true,
         Mutability::Reference => {
-            ctx.diagnostics.report(identifier.stable_ptr(db), ReferenceLocalVariable);
+            ctx.diagnostics.report(identifier.stable_ptr(syntax_db), ReferenceLocalVariable);
             false
         }
     };
     Pattern::Variable(PatternVariable {
-        name: identifier.text(db),
+        name: identifier.text(syntax_db),
         var: LocalVariable { id: var_id, ty, is_mut },
         stable_ptr,
     })
@@ -2826,7 +2829,8 @@ fn struct_ctor_expr(
     ctor_syntax: &ast::ExprStructCtorCall,
 ) -> Maybe<Expr> {
     let db = ctx.db;
-    let path = ctor_syntax.path(db);
+    let syntax_db = db.upcast();
+    let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
     let ty = resolve_type_ex(
@@ -2840,48 +2844,54 @@ fn struct_ctor_expr(
 
     let concrete_struct_id = try_extract_matches!(ty.lookup_intern(ctx.db), TypeLongId::Concrete)
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-        .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAStruct))?;
+        .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(syntax_db), NotAStruct))?;
 
     if ty.is_phantom(db) {
-        ctx.diagnostics.report(ctor_syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
+        ctx.diagnostics
+            .report(ctor_syntax.stable_ptr(syntax_db), CannotCreateInstancesOfPhantomTypes);
     }
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
     let mut base_struct = None;
 
-    for (index, arg) in ctor_syntax.arguments(db).arguments(db).elements(db).into_iter().enumerate()
+    for (index, arg) in ctor_syntax
+        .arguments(syntax_db)
+        .arguments(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .enumerate()
     {
         // TODO: Extract to a function for results.
         match arg {
             ast::StructArg::StructArgSingle(arg) => {
-                let arg_identifier = arg.identifier(db);
-                let arg_name = arg_identifier.text(db);
+                let arg_identifier = arg.identifier(syntax_db);
+                let arg_name = arg_identifier.text(syntax_db);
 
                 // Find struct member by name.
                 let Some(member) = members.get(&arg_name) else {
-                    ctx.diagnostics.report(arg_identifier.stable_ptr(db), UnknownMember);
+                    ctx.diagnostics.report(arg_identifier.stable_ptr(syntax_db), UnknownMember);
                     continue;
                 };
                 check_struct_member_is_visible(
                     ctx,
                     member,
-                    arg_identifier.stable_ptr(db).untyped(),
+                    arg_identifier.stable_ptr(syntax_db).untyped(),
                     &arg_name,
                 );
 
                 // Extract expression.
-                let arg_expr = match arg.arg_expr(db) {
+                let arg_expr = match arg.arg_expr(syntax_db) {
                     ast::OptionStructArgExpr::Empty(_) => {
                         let Ok(expr) = resolve_variable_by_name(
                             ctx,
                             &arg_identifier,
-                            path.stable_ptr(db).into(),
+                            path.stable_ptr(syntax_db).into(),
                         ) else {
                             // Insert only the member id, for correct duplicate member reporting.
                             if member_exprs.insert(member.id, None).is_some() {
                                 ctx.diagnostics.report(
-                                    arg_identifier.stable_ptr(db),
+                                    arg_identifier.stable_ptr(syntax_db),
                                     MemberSpecifiedMoreThanOnce,
                                 );
                             }
@@ -2890,14 +2900,14 @@ fn struct_ctor_expr(
                         ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) }
                     }
                     ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
-                        compute_expr_semantic(ctx, &arg_expr.expr(db))
+                        compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
                     }
                 };
 
                 // Insert and check for duplicates.
                 if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
                     ctx.diagnostics
-                        .report(arg_identifier.stable_ptr(db), MemberSpecifiedMoreThanOnce);
+                        .report(arg_identifier.stable_ptr(syntax_db), MemberSpecifiedMoreThanOnce);
                 }
 
                 // Check types.
@@ -2907,7 +2917,7 @@ fn struct_ctor_expr(
                         arg_expr.ty(),
                         member.ty,
                         ctx.diagnostics,
-                        || arg_identifier.stable_ptr(db).untyped(),
+                        || arg_identifier.stable_ptr(syntax_db).untyped(),
                         |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
                     )
                     .is_err()
@@ -2917,22 +2927,29 @@ fn struct_ctor_expr(
             }
             ast::StructArg::StructArgTail(base_struct_syntax) => {
                 // TODO(TomerStarkware): remove tail expression from argument list.
-                if index != ctor_syntax.arguments(db).arguments(db).elements(db).len() - 1 {
+                if index
+                    != ctor_syntax
+                        .arguments(syntax_db)
+                        .arguments(syntax_db)
+                        .elements(syntax_db)
+                        .len()
+                        - 1
+                {
                     ctx.diagnostics.report(
-                        base_struct_syntax.stable_ptr(db),
+                        base_struct_syntax.stable_ptr(syntax_db),
                         StructBaseStructExpressionNotLast,
                     );
                     continue;
                 }
                 let base_struct_expr =
-                    compute_expr_semantic(ctx, &base_struct_syntax.expression(db));
+                    compute_expr_semantic(ctx, &base_struct_syntax.expression(syntax_db));
                 let inference = &mut ctx.resolver.inference();
                 if inference
                     .conform_ty_for_diag(
                         base_struct_expr.ty(),
                         ty,
                         ctx.diagnostics,
-                        || base_struct_syntax.expression(db).stable_ptr(db).untyped(),
+                        || base_struct_syntax.expression(syntax_db).stable_ptr(syntax_db).untyped(),
                         |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
                     )
                     .is_err()
@@ -2952,20 +2969,21 @@ fn struct_ctor_expr(
                 check_struct_member_is_visible(
                     ctx,
                     member,
-                    base_struct.clone().unwrap().1.stable_ptr(db).untyped(),
+                    base_struct.clone().unwrap().1.stable_ptr(syntax_db).untyped(),
                     member_name,
                 );
             } else {
                 ctx.diagnostics
-                    .report(ctor_syntax.stable_ptr(db), MissingMember(member_name.clone()));
+                    .report(ctor_syntax.stable_ptr(syntax_db), MissingMember(member_name.clone()));
             }
         }
     }
     if members.len() == member_exprs.len() {
         if let Some((_, base_struct_syntax)) = base_struct {
-            return Err(ctx
-                .diagnostics
-                .report(base_struct_syntax.stable_ptr(db), StructBaseStructExpressionNoEffect));
+            return Err(ctx.diagnostics.report(
+                base_struct_syntax.stable_ptr(syntax_db),
+                StructBaseStructExpressionNoEffect,
+            ));
         }
     }
     Ok(Expr::StructCtor(ExprStructCtor {
@@ -2973,18 +2991,21 @@ fn struct_ctor_expr(
         members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
         base_struct: base_struct.map(|(x, _)| x),
         ty: TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(db),
-        stable_ptr: ctor_syntax.stable_ptr(db).into(),
+        stable_ptr: ctor_syntax.stable_ptr(syntax_db).into(),
     }))
 }
 
 /// Returns the tail expression of the given list of statements, if exists.
 /// A tail expression is the last statement in the list, if it is an expression and
 /// it does not end with a semicolon.
-fn get_tail_expression(db: &dyn SyntaxGroup, statements: &[ast::Statement]) -> Option<ast::Expr> {
+fn get_tail_expression(
+    syntax_db: &dyn SyntaxGroup,
+    statements: &[ast::Statement],
+) -> Option<ast::Expr> {
     let last = statements.last()?;
     let statement_expr = try_extract_matches!(last, ast::Statement::Expr)?;
-    try_extract_matches!(statement_expr.semicolon(db), ast::OptionTerminalSemicolon::Empty)?;
-    Some(statement_expr.expr(db))
+    try_extract_matches!(statement_expr.semicolon(syntax_db), ast::OptionTerminalSemicolon::Empty)?;
+    Some(statement_expr.expr(syntax_db))
 }
 
 /// Creates a new numeric literal expression.
@@ -3028,11 +3049,12 @@ fn literal_to_semantic(
     literal_syntax: &ast::TerminalLiteralNumber,
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
     let ty = ty.as_ref().map(SmolStr::as_str);
 
-    new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(db).into())
+    new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(syntax_db).into())
 }
 
 /// Creates the semantic model of a short string from its AST.
@@ -3041,13 +3063,14 @@ fn short_string_to_semantic(
     short_string_syntax: &ast::TerminalShortString,
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
-    let value = short_string_syntax.numeric_value(db).unwrap_or_default();
+    let value = short_string_syntax.numeric_value(syntax_db).unwrap_or_default();
 
-    let suffix = short_string_syntax.suffix(db);
+    let suffix = short_string_syntax.suffix(syntax_db);
     let suffix = suffix.as_ref().map(SmolStr::as_str);
 
-    new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr(db).into())
+    new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr(syntax_db).into())
 }
 
 /// Creates a new string literal expression.
@@ -3074,9 +3097,10 @@ fn string_literal_to_semantic(
     string_syntax: &ast::TerminalString,
 ) -> Maybe<ExprStringLiteral> {
     let db = ctx.db;
-    let stable_ptr = string_syntax.stable_ptr(db);
+    let syntax_db = db.upcast();
+    let stable_ptr = string_syntax.stable_ptr(syntax_db);
 
-    let value = string_syntax.string_value(db).unwrap_or_default();
+    let value = string_syntax.string_value(syntax_db).unwrap_or_default();
     // TODO(yuval): support prefixes/suffixes for explicit types?
 
     new_string_literal_expr(ctx, value, stable_ptr.into())
@@ -3106,17 +3130,13 @@ fn try_extract_identifier_from_path(
 fn expr_as_identifier(
     ctx: &mut ComputationContext<'_>,
     path: &ast::ExprPath,
-    db: &dyn SyntaxGroup,
+    syntax_db: &dyn SyntaxGroup,
 ) -> Maybe<SmolStr> {
-<<<<<<< HEAD
     let segments = path.segments(syntax_db).elements(syntax_db);
-=======
-    let segments = path.elements(db);
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     if segments.len() == 1 {
-        return Ok(segments[0].identifier(db));
+        return Ok(segments[0].identifier(syntax_db));
     }
-    Err(ctx.diagnostics.report(path.stable_ptr(db), InvalidMemberExpression))
+    Err(ctx.diagnostics.report(path.stable_ptr(syntax_db), InvalidMemberExpression))
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
@@ -3131,7 +3151,9 @@ fn dot_expr(
     match rhs_syntax {
         ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
         ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
-        _ => Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression)),
+        _ => Err(ctx
+            .diagnostics
+            .report(rhs_syntax.stable_ptr(ctx.db.upcast()), InvalidMemberExpression)),
     }
 }
 
@@ -3161,21 +3183,14 @@ fn method_call_expr(
 ) -> Maybe<Expr> {
     // TODO(spapini): Add ctx.module_id.
     // TODO(spapini): Look also in uses.
-<<<<<<< HEAD
     let syntax_db = ctx.db.upcast();
     let path = expr.path(syntax_db);
     let Ok([segment]): Result<[_; 1], _> = path.segments(syntax_db).elements(syntax_db).try_into()
     else {
-        return Err(ctx.diagnostics.report(&expr, InvalidMemberExpression));
-=======
-    let db = ctx.db;
-    let path = expr.path(db);
-    let Ok([segment]): Result<[_; 1], _> = path.elements(db).try_into() else {
-        return Err(ctx.diagnostics.report(expr.stable_ptr(db), InvalidMemberExpression));
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
+        return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
-    let func_name = segment.identifier(db);
-    let generic_args_syntax = segment.generic_args(db);
+    let func_name = segment.identifier(syntax_db);
+    let generic_args_syntax = segment.generic_args(syntax_db);
 
     if !ctx.reduce_ty(lexpr.ty()).is_var_free(ctx.db) {
         // Run solver to get as much info on the type as possible.
@@ -3188,7 +3203,7 @@ fn method_call_expr(
 
     // Add traits from impl generic args in the context.
     for generic_param in &ctx.resolver.data.generic_params {
-        if generic_param.kind(ctx.db) == GenericKind::Impl {
+        if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
             let Ok(trait_id) = ctx.db.generic_impl_param_trait(*generic_param) else {
                 continue;
             };
@@ -3208,7 +3223,7 @@ fn method_call_expr(
             candidate_traits.keys().copied().collect_vec().as_slice(),
             func_name.clone(),
             lexpr,
-            path.stable_ptr(db).untyped(),
+            path.stable_ptr(syntax_db).untyped(),
             generic_args_syntax,
             |ty, method_name, inference_errors| {
                 let relevant_traits = if !inference_errors.is_empty() {
@@ -3234,7 +3249,7 @@ fn method_call_expr(
         if let Some(trait_item_info) = trait_definition_data.get_trait_item_info(&func_name) {
             ctx.resolver.validate_feature_constraints(
                 ctx.diagnostics,
-                &segment.identifier_ast(db),
+                &segment.identifier_ast(db.upcast()),
                 &trait_item_info,
             );
         }
@@ -3247,7 +3262,8 @@ fn method_call_expr(
     );
 
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
-    let mut args_iter = expr.arguments(db).arguments(db).elements(db).into_iter();
+    let mut args_iter =
+        expr.arguments(syntax_db).arguments(syntax_db).elements(syntax_db).into_iter();
     // Self argument.
     let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
     // Other arguments.
@@ -3269,7 +3285,7 @@ fn method_call_expr(
         named_args.push(compute_named_argument_clause(ctx, arg_syntax, None));
     }
 
-    expr_function_call(ctx, function_id, named_args, expr.stable_ptr(db), stable_ptr)
+    expr_function_call(ctx, function_id, named_args, expr.stable_ptr(syntax_db), stable_ptr)
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
@@ -3279,12 +3295,12 @@ fn member_access_expr(
     rhs_syntax: ast::ExprPath,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
-    let db = ctx.db;
+    let syntax_db = ctx.db.upcast();
 
     // Find MemberId.
-    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?;
+    let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     let (n_snapshots, long_ty) =
-        finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(db))?;
+        finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(syntax_db))?;
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
@@ -3292,14 +3308,14 @@ fn member_access_expr(
                 get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, &member_name)?
             else {
                 return Err(ctx.diagnostics.report(
-                    rhs_syntax.stable_ptr(db),
+                    rhs_syntax.stable_ptr(syntax_db),
                     NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
                 ));
             };
             check_struct_member_is_visible(
                 ctx,
                 &member,
-                rhs_syntax.stable_ptr(db).untyped(),
+                rhs_syntax.stable_ptr(syntax_db).untyped(),
                 &member_name,
             );
             let member_path = match &long_ty {
@@ -3330,8 +3346,11 @@ fn member_access_expr(
                 derefed_expr =
                     ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
-            let (_, long_ty) =
-                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_syntax.stable_ptr(db))?;
+            let (_, long_ty) = finalized_snapshot_peeled_ty(
+                ctx,
+                derefed_expr.ty(),
+                rhs_syntax.stable_ptr(syntax_db),
+            )?;
             let derefed_expr_concrete_struct_id = match long_ty {
                 TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
                     concrete_struct_id
@@ -3356,10 +3375,10 @@ fn member_access_expr(
 
         TypeLongId::Snapshot(_) => {
             // TODO(spapini): Handle snapshot members.
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
+            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(syntax_db), Unsupported))
         }
         TypeLongId::Closure(_) => {
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
+            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(syntax_db), Unsupported))
         }
         TypeLongId::ImplType(impl_type_id) => {
             unreachable!(
@@ -3368,11 +3387,11 @@ fn member_access_expr(
             )
         }
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
+            rhs_syntax.stable_ptr(syntax_db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
         TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
+            rhs_syntax.stable_ptr(syntax_db),
             TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
         )),
         TypeLongId::Missing(diag_added) => Err(*diag_added),
@@ -3515,18 +3534,13 @@ fn finalized_snapshot_peeled_ty(
 /// Resolves a variable or a constant given a context and a path expression.
 fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Maybe<Expr> {
     let db = ctx.db;
-<<<<<<< HEAD
     let syntax_db = db.upcast();
     let segments = path.segments(syntax_db).elements(syntax_db);
-=======
-    let segments = path.elements(db);
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     if segments.is_empty() {
-        return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
+        return Err(ctx.diagnostics.report(path.stable_ptr(syntax_db), Unsupported));
     }
 
     // Check if this is a variable.
-<<<<<<< HEAD
     if let Some((identifier, is_callsite_prefixed)) =
         try_extract_identifier_from_path(syntax_db, path)
     {
@@ -3535,15 +3549,8 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             ctx,
             &variable_name,
             is_callsite_prefixed,
-            path.stable_ptr().into(),
+            path.stable_ptr(ctx.db).into(),
         ) {
-=======
-    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
-        let identifier = ident_segment.ident(db);
-        let variable_name = identifier.text(db);
-        if let Some(res) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr(db).into())
-        {
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
             match res.clone() {
                 Expr::Var(expr_var) => {
                     let item = ResolvedGenericItem::Variable(expr_var.var);
@@ -3551,7 +3558,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
                         .data
                         .resolved_items
                         .generic
-                        .insert(identifier.stable_ptr(db), item);
+                        .insert(identifier.stable_ptr(syntax_db), item);
                 }
                 Expr::Constant(expr_const) => {
                     let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
@@ -3559,7 +3566,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
                         .data
                         .resolved_items
                         .concrete
-                        .insert(identifier.stable_ptr(db), item);
+                        .insert(identifier.stable_ptr(syntax_db), item);
                 }
                 _ => unreachable!(
                     "get_binded_expr_by_name should only return variables or constants"
@@ -3580,11 +3587,11 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         ResolvedConcreteItem::Constant(const_value_id) => Ok(Expr::Constant(ExprConstant {
             const_value_id,
             ty: const_value_id.ty(db)?,
-            stable_ptr: path.stable_ptr(db).into(),
+            stable_ptr: path.stable_ptr(syntax_db).into(),
         })),
 
         ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
-            let stable_ptr = path.stable_ptr(db).into();
+            let stable_ptr = path.stable_ptr(syntax_db).into();
             let concrete_enum_id = variant.concrete_enum_id;
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant,
@@ -3594,7 +3601,7 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
             }))
         }
         resolved_item => Err(ctx.diagnostics.report(
-            path.stable_ptr(db),
+            path.stable_ptr(syntax_db),
             UnexpectedElement {
                 expected: vec![ElementKind::Variable, ElementKind::Constant],
                 actual: (&resolved_item).into(),
@@ -3613,19 +3620,12 @@ pub fn resolve_variable_by_name(
     identifier: &ast::TerminalIdentifier,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
-<<<<<<< HEAD
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr)
-        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
-=======
-    let db = ctx.db;
-    let variable_name = identifier.text(db);
-    let res = get_binded_expr_by_name(ctx, &variable_name, stable_ptr).ok_or_else(|| {
-        ctx.diagnostics.report(identifier.stable_ptr(db), VariableNotFound(variable_name))
+    let res = get_binded_expr_by_name(ctx, &variable_name, false, stable_ptr).ok_or_else(|| {
+        ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(db), item);
+    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
     Ok(res)
 }
 
@@ -3637,7 +3637,7 @@ pub fn get_binded_expr_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let mut maybe_env = Some(&mut *ctx.environment);
-    let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset();
+    let mut cur_offset = stable_ptr.lookup(ctx.db.upcast()).as_syntax_node().offset(ctx.db);
     let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
@@ -3771,7 +3771,7 @@ fn maybe_pop_coupon_argument(
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id);
-        if name_terminal.text(ctx.db) == "__coupon__" && coupons_enabled {
+        if name_terminal.text(ctx.db.upcast()) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
             let arg_ty = arg.ty();
@@ -3830,10 +3830,10 @@ fn check_named_arguments(
         // Check name.
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
-            let name = name_terminal.text(ctx.db);
+            let name = name_terminal.text(ctx.db.upcast());
             if param.name != name.clone() {
                 res = Err(ctx.diagnostics.report(
-                    name_terminal.stable_ptr(ctx.db),
+                    name_terminal.stable_ptr(ctx.db.upcast()),
                     NamedArgumentMismatch { expected: param.name.clone(), found: name },
                 ));
             }
@@ -3851,6 +3851,7 @@ pub fn compute_statement_semantic(
     syntax: ast::Statement,
 ) -> Maybe<StatementId> {
     let db = ctx.db;
+    let syntax_db = db.upcast();
 
     let crate_id = ctx.resolver.owning_crate_id;
 
@@ -3864,15 +3865,15 @@ pub fn compute_statement_semantic(
         .override_with(extract_item_feature_config(db, crate_id, &syntax, ctx.diagnostics));
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
-            let rhs_syntax = &let_syntax.rhs(db);
-            let (rhs_expr, ty) = match let_syntax.type_clause(db) {
+            let rhs_syntax = &let_syntax.rhs(syntax_db);
+            let (rhs_expr, ty) = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => {
                     let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
                     let inferred_type = rhs_expr.ty();
                     (rhs_expr, inferred_type)
                 }
                 ast::OptionTypeClause::TypeClause(type_clause) => {
-                    let var_type_path = type_clause.ty(db);
+                    let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type = resolve_type_ex(
                         db,
                         ctx.diagnostics,
@@ -3889,7 +3890,7 @@ pub fn compute_statement_semantic(
                             inferred_type,
                             explicit_type,
                             ctx.diagnostics,
-                            || rhs_syntax.stable_ptr(db).untyped(),
+                            || rhs_syntax.stable_ptr(syntax_db).untyped(),
                             |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
                         );
                     }
@@ -3900,7 +3901,7 @@ pub fn compute_statement_semantic(
 
             let pattern = compute_pattern_semantic(
                 ctx,
-                &let_syntax.pattern(db),
+                &let_syntax.pattern(syntax_db),
                 ty,
                 &mut UnorderedHashMap::default(),
             );
@@ -3922,69 +3923,73 @@ pub fn compute_statement_semantic(
             semantic::Statement::Let(semantic::StatementLet {
                 pattern: pattern.id,
                 expr: rhs_expr_id,
-                stable_ptr: syntax.stable_ptr(db),
+                stable_ptr: syntax.stable_ptr(syntax_db),
             })
         }
         ast::Statement::Expr(stmt_expr_syntax) => {
-            let expr_syntax = stmt_expr_syntax.expr(db);
+            let expr_syntax = stmt_expr_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, &expr_syntax);
-            if matches!(stmt_expr_syntax.semicolon(db), ast::OptionTerminalSemicolon::Empty(_))
-                && !matches!(
-                    expr_syntax,
-                    ast::Expr::Block(_)
-                        | ast::Expr::If(_)
-                        | ast::Expr::Match(_)
-                        | ast::Expr::Loop(_)
-                        | ast::Expr::While(_)
-                        | ast::Expr::For(_)
-                )
-            {
+            if matches!(
+                stmt_expr_syntax.semicolon(syntax_db),
+                ast::OptionTerminalSemicolon::Empty(_)
+            ) && !matches!(
+                expr_syntax,
+                ast::Expr::Block(_)
+                    | ast::Expr::If(_)
+                    | ast::Expr::Match(_)
+                    | ast::Expr::Loop(_)
+                    | ast::Expr::While(_)
+                    | ast::Expr::For(_)
+            ) {
                 // Point to after the expression, where the semicolon is missing.
-                ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
+                ctx.diagnostics.report_after(expr_syntax.stable_ptr(syntax_db), MissingSemicolon);
             }
             let ty: TypeId = expr.ty();
             if let TypeLongId::Concrete(concrete) = ty.lookup_intern(db) {
                 if concrete.is_must_use(db)? {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
+                    ctx.diagnostics
+                        .report(expr_syntax.stable_ptr(syntax_db), UnhandledMustUseType(ty));
                 }
             }
             if let Expr::FunctionCall(expr_function_call) = &expr.expr {
                 let generic_function_id =
                     expr_function_call.function.lookup_intern(db).function.generic_function;
                 if generic_function_id.is_must_use(db)? {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
+                    ctx.diagnostics
+                        .report(expr_syntax.stable_ptr(syntax_db), UnhandledMustUseFunction);
                 }
             }
             semantic::Statement::Expr(semantic::StatementExpr {
                 expr: expr.id,
-                stable_ptr: syntax.stable_ptr(db),
+                stable_ptr: syntax.stable_ptr(syntax_db),
             })
         }
         ast::Statement::Continue(continue_syntax) => {
             if !ctx.is_inside_loop() {
-                return Err(ctx
-                    .diagnostics
-                    .report(continue_syntax.stable_ptr(db), ContinueOnlyAllowedInsideALoop));
+                return Err(ctx.diagnostics.report(
+                    continue_syntax.stable_ptr(syntax_db),
+                    ContinueOnlyAllowedInsideALoop,
+                ));
             }
             semantic::Statement::Continue(semantic::StatementContinue {
-                stable_ptr: syntax.stable_ptr(db),
+                stable_ptr: syntax.stable_ptr(syntax_db),
             })
         }
         ast::Statement::Return(return_syntax) => {
-            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(db) {
+            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(empty_clause) => {
-                    (None, unit_ty(db), empty_clause.stable_ptr(db).untyped())
+                    (None, unit_ty(db), empty_clause.stable_ptr(syntax_db).untyped())
                 }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
+                    let expr_syntax = expr_clause.expr(syntax_db);
                     let expr = compute_expr_semantic(ctx, &expr_syntax);
-                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(db).untyped())
+                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(syntax_db).untyped())
                 }
             };
             let expected_ty = match &ctx.inner_ctx {
                 None => ctx.get_return_type().ok_or_else(|| {
                     ctx.diagnostics.report(
-                        return_syntax.stable_ptr(db),
+                        return_syntax.stable_ptr(syntax_db),
                         UnsupportedOutsideOfFunction(
                             UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
                         ),
@@ -4007,16 +4012,16 @@ pub fn compute_statement_semantic(
             }
             semantic::Statement::Return(semantic::StatementReturn {
                 expr_option,
-                stable_ptr: syntax.stable_ptr(db),
+                stable_ptr: syntax.stable_ptr(syntax_db),
             })
         }
         ast::Statement::Break(break_syntax) => {
-            let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(db) {
+            let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(expr_empty) => {
-                    (None, unit_ty(db), expr_empty.stable_ptr(db).untyped())
+                    (None, unit_ty(db), expr_empty.stable_ptr(syntax_db).untyped())
                 }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
+                    let expr_syntax = expr_clause.expr(syntax_db);
                     let expr = compute_expr_semantic(ctx, &expr_syntax);
 
                     (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
@@ -4027,7 +4032,7 @@ pub fn compute_statement_semantic(
             if !ctx.is_inside_loop() {
                 return Err(ctx
                     .diagnostics
-                    .report(break_syntax.stable_ptr(db), BreakOnlyAllowedInsideALoop));
+                    .report(break_syntax.stable_ptr(syntax_db), BreakOnlyAllowedInsideALoop));
             }
 
             if let Some(inner_ctx) = &mut ctx.inner_ctx {
@@ -4044,7 +4049,7 @@ pub fn compute_statement_semantic(
                     InnerContextKind::While | InnerContextKind::For => {
                         if expr_option.is_some() {
                             ctx.diagnostics.report(
-                                break_syntax.stable_ptr(db),
+                                break_syntax.stable_ptr(syntax_db),
                                 BreakWithValueOnlyAllowedInsideALoop,
                             );
                         };
@@ -4055,15 +4060,15 @@ pub fn compute_statement_semantic(
 
             semantic::Statement::Break(semantic::StatementBreak {
                 expr_option,
-                stable_ptr: syntax.stable_ptr(db),
+                stable_ptr: syntax.stable_ptr(syntax_db),
             })
         }
         ast::Statement::Item(stmt_item_syntax) => {
-            let item_syntax = &stmt_item_syntax.item(db);
+            let item_syntax = &stmt_item_syntax.item(syntax_db);
             match item_syntax {
                 ast::ModuleItem::Constant(const_syntax) => {
-                    let lhs = const_syntax.type_clause(db).ty(db);
-                    let rhs = const_syntax.value(db);
+                    let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
+                    let rhs = const_syntax.value(db.upcast());
                     let rhs_expr = compute_expr_semantic(ctx, &rhs);
                     let explicit_type = resolve_type_ex(
                         db,
@@ -4076,34 +4081,34 @@ pub fn compute_statement_semantic(
                         db,
                         ctx,
                         &rhs_expr,
-                        stmt_item_syntax.stable_ptr(db).untyped(),
+                        stmt_item_syntax.stable_ptr(syntax_db).untyped(),
                         explicit_type,
                         false,
                     );
-                    let name_syntax = const_syntax.name(db);
-                    let name = name_syntax.text(db);
+                    let name_syntax = const_syntax.name(syntax_db);
+                    let name = name_syntax.text(db.upcast());
                     let rhs_id = StatementConstLongId(
                         ctx.resolver.module_file_id,
-                        const_syntax.stable_ptr(db),
+                        const_syntax.stable_ptr(syntax_db),
                     );
                     let var_def = Binding::LocalItem(LocalItem {
                         id: StatementItemId::Constant(rhs_id.intern(db)),
                         kind: StatementItemKind::Constant(
                             db.intern_const_value(rhs_resolved_expr.clone()),
-                            rhs_resolved_expr.ty(db)?,
+                            rhs_resolved_expr.ty(db.upcast())?,
                         ),
                     });
                     add_item_to_statement_environment(
                         ctx,
                         name,
                         var_def,
-                        name_syntax.stable_ptr(db),
+                        name_syntax.stable_ptr(syntax_db),
                     );
                 }
                 ast::ModuleItem::Use(use_syntax) => {
-                    for leaf in get_all_path_leaves(db, use_syntax) {
-                        let stable_ptr = leaf.stable_ptr(db);
-                        let segments = get_use_path_segments(db, ast::UsePath::Leaf(leaf))?;
+                    for leaf in get_all_path_leaves(syntax_db, use_syntax) {
+                        let stable_ptr = leaf.stable_ptr(syntax_db);
+                        let segments = get_use_path_segments(syntax_db, ast::UsePath::Leaf(leaf))?;
                         let resolved_item = ctx.resolver.resolve_generic_path(
                             ctx.diagnostics,
                             segments,
@@ -4113,7 +4118,7 @@ pub fn compute_statement_semantic(
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
                         );
-                        let name = var_def_id.name(db);
+                        let name = var_def_id.name(db.upcast());
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
                                 let var_def = Binding::LocalItem(LocalItem {
@@ -4141,11 +4146,8 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Trait(_)
                             | ResolvedGenericItem::Impl(_)
                             | ResolvedGenericItem::Variable(_)
-<<<<<<< HEAD
+                            | ResolvedGenericItem::TraitItem(_)
                             | ResolvedGenericItem::Macro(_) => {
-=======
-                            | ResolvedGenericItem::TraitItem(_) => {
->>>>>>> 89e5551c2ef3a45da6ee0b9601a7abe9097c419c
                                 return Err(ctx
                                     .diagnostics
                                     .report(stable_ptr, UnsupportedUseItemInStatement));
@@ -4174,7 +4176,9 @@ pub fn compute_statement_semantic(
                 ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
                 ast::ModuleItem::MacroDeclaration(_) => todo!(),
             }
-            semantic::Statement::Item(semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) })
+            semantic::Statement::Item(semantic::StatementItem {
+                stable_ptr: syntax.stable_ptr(syntax_db),
+            })
         }
         ast::Statement::Missing(_) => todo!(),
     };
@@ -4248,7 +4252,7 @@ fn check_struct_member_is_visible(
     stable_ptr: SyntaxStablePtrId,
     member_name: &SmolStr,
 ) {
-    let db = ctx.db;
+    let db = ctx.db.upcast();
     let containing_module_id = member.id.parent_module(db);
     if ctx.resolver.ignore_visibility_checks(containing_module_id) {
         return;
@@ -4265,7 +4269,7 @@ fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast:
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
     validate_attributes_flat(
-        ctx.db,
+        ctx.db.upcast(),
         &allowed_attributes,
         &OrderedHashSet::default(),
         syntax,

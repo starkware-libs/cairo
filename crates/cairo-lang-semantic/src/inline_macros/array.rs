@@ -25,11 +25,11 @@ impl InlineMacroExprPlugin for ArrayMacro {
     ) -> InlinePluginResult {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                syntax.as_syntax_node().stable_ptr(),
+                syntax.as_syntax_node().stable_ptr(db),
             ));
         };
         let ast::WrappedArgList::BracketedArgList(args) = legacy_inline_macro.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let mut builder = PatchBuilder::new(db, syntax);
         builder.add_str(

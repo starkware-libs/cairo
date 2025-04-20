@@ -140,13 +140,14 @@ pub fn generate_crate_cache(
 
     let mut ctx = CacheSavingContext::new(db, crate_id);
 
-    let def_cache = generate_crate_def_cache(db, crate_id, &mut ctx.semantic_ctx.defs_ctx)?;
+    let def_cache =
+        generate_crate_def_cache(db.upcast(), crate_id, &mut ctx.semantic_ctx.defs_ctx)?;
 
     let cached = function_ids
         .iter()
         .filter_map(|id| {
             db.function_body(*id).ok()?;
-            let multi = match lower_semantic_function(db, *id).map(Arc::new) {
+            let multi = match lower_semantic_function(db.upcast(), *id).map(Arc::new) {
                 Ok(multi) => multi,
                 Err(err) => return Some(Err(err)),
             };
@@ -161,7 +162,7 @@ pub fn generate_crate_cache(
     let mut artifact = Vec::<u8>::new();
 
     if let Ok(def) = bincode::serialize(&(
-        CachedCrateMetadata::new(crate_id, db),
+        CachedCrateMetadata::new(crate_id, db.upcast()),
         def_cache,
         &ctx.semantic_ctx.defs_ctx.lookups,
     )) {
@@ -204,7 +205,7 @@ impl<'db> CacheLoadingContext<'db> {
                 lookups,
             },
             semantic_ctx: SemanticCacheLoadingContext::<'db> {
-                db,
+                db: db.upcast(),
                 data: SemanticCacheLoadingData::new(semantic_lookups),
                 defs_loading_data,
             },
@@ -268,9 +269,9 @@ impl<'db> CacheSavingContext<'db> {
             db,
             data: CacheSavingData::default(),
             semantic_ctx: SemanticCacheSavingContext {
-                db,
+                db: db.upcast(),
                 data: SemanticCacheSavingData::default(),
-                defs_ctx: DefCacheSavingContext::new(db, self_crate_id),
+                defs_ctx: DefCacheSavingContext::new(db.upcast(), self_crate_id),
             },
         }
     }
@@ -1292,9 +1293,9 @@ impl ConstValueCached {
             }
             ConstValueCached::NonZero(value) => ConstValue::NonZero(Box::new(value.embed(ctx))),
             ConstValueCached::Boxed(value) => ConstValue::Boxed(Box::new(value.embed(ctx))),
-            ConstValueCached::Generic(generic_param) => {
-                ConstValue::Generic(generic_param.get_embedded(&ctx.defs_loading_data, ctx.db))
-            }
+            ConstValueCached::Generic(generic_param) => ConstValue::Generic(
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
+            ),
             ConstValueCached::ImplConstant(impl_constant_id) => {
                 ConstValue::ImplConstant(impl_constant_id.embed(ctx))
             }
@@ -1947,7 +1948,7 @@ impl TypeCached {
             }
             TypeCached::Snapshot(type_id) => TypeLongId::Snapshot(type_id.embed(ctx)),
             TypeCached::GenericParameter(generic_param) => TypeLongId::GenericParameter(
-                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
             ),
             TypeCached::ImplType(impl_type) => TypeLongId::ImplType(impl_type.embed(ctx)),
             TypeCached::FixedSizeArray(type_id, size) => TypeLongId::FixedSizeArray {
@@ -2136,7 +2137,7 @@ impl ImplCached {
             ImplCached::Concrete(concrete_impl) => ImplLongId::Concrete(concrete_impl.embed(ctx)),
             ImplCached::ImplImpl(impl_impl) => ImplLongId::ImplImpl(impl_impl.embed(ctx)),
             ImplCached::GenericParameter(generic_param) => ImplLongId::GenericParameter(
-                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
+                generic_param.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
             ),
             ImplCached::GeneratedImpl(generated_impl) => {
                 ImplLongId::GeneratedImpl(generated_impl.embed(ctx))
@@ -2325,7 +2326,7 @@ impl GenericParamTypeCached {
         Self { id: GenericParamCached::new(generic_param.id, &mut ctx.defs_ctx) }
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamType {
-        GenericParamType { id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db) }
+        GenericParamType { id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()) }
     }
 }
 
@@ -2344,7 +2345,7 @@ impl GenericParamConstCached {
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamConst {
         GenericParamConst {
-            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db),
+            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
             ty: self.ty.embed(ctx),
         }
     }
@@ -2372,7 +2373,7 @@ impl GenericParamImplCached {
     }
     fn embed(self, ctx: &mut SemanticCacheLoadingContext<'_>) -> GenericParamImpl {
         GenericParamImpl {
-            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db),
+            id: self.id.get_embedded(&ctx.defs_loading_data, ctx.db.upcast()),
             concrete_trait: Ok(self.concrete_trait.embed(ctx)),
             type_constraints: self
                 .type_constraints

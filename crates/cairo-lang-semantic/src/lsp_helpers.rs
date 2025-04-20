@@ -133,7 +133,7 @@ fn visible_importables_in_module_ex(
     let mut modules_to_visit = vec![];
     // Add importables and traverse modules imported into the current module.
     for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
-        if !is_visible(use_id.name(db))? {
+        if !is_visible(use_id.name(db.upcast()))? {
             continue;
         }
         let resolved_item = db.use_resolved_item(use_id).ok()?;
@@ -150,37 +150,44 @@ fn visible_importables_in_module_ex(
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
 
-                (ImportableId::Submodule(module), module.name(db))
+                (ImportableId::Submodule(module), module.name(db.upcast()))
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
-                (ImportableId::Constant(item_id), item_id.name(db))
+                (ImportableId::Constant(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(item_id)) => {
-                (ImportableId::FreeFunction(item_id), item_id.name(db))
+                (ImportableId::FreeFunction(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(item_id)) => {
-                (ImportableId::ExternFunction(item_id), item_id.name(db))
+                (ImportableId::ExternFunction(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Struct(item_id)) => {
-                (ImportableId::Struct(item_id), item_id.name(db))
+                (ImportableId::Struct(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(item_id)) => {
-                (ImportableId::Enum(item_id), item_id.name(db))
+                (ImportableId::Enum(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Extern(item_id)) => {
-                (ImportableId::ExternType(item_id), item_id.name(db))
+                (ImportableId::ExternType(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericTypeAlias(item_id) => {
-                (ImportableId::TypeAlias(item_id), item_id.name(db))
+                (ImportableId::TypeAlias(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::GenericImplAlias(item_id) => {
-                (ImportableId::ImplAlias(item_id), item_id.name(db))
+                (ImportableId::ImplAlias(item_id), item_id.name(db.upcast()))
             }
             ResolvedGenericItem::Variant(Variant { id, .. }) => {
-                (ImportableId::Variant(id), id.name(db))
+                (ImportableId::Variant(id), id.name(db.upcast()))
             }
-            ResolvedGenericItem::Trait(item_id) => (ImportableId::Trait(item_id), item_id.name(db)),
-            ResolvedGenericItem::Impl(item_id) => (ImportableId::Impl(item_id), item_id.name(db)),
+            ResolvedGenericItem::Trait(item_id) => {
+                (ImportableId::Trait(item_id), item_id.name(db.upcast()))
+            }
+            ResolvedGenericItem::Impl(item_id) => {
+                (ImportableId::Impl(item_id), item_id.name(db.upcast()))
+            }
+            ResolvedGenericItem::Macro(item_id) => {
+                (ImportableId::MacroDeclaration(item_id), item_id.name(db.upcast()))
+            }
             ResolvedGenericItem::Variable(_)
             | ResolvedGenericItem::TraitItem(_)
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
@@ -189,7 +196,7 @@ fn visible_importables_in_module_ex(
         result.push((resolved_item, name.to_string()));
     }
     for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
-        if !is_visible(submodule_id.name(db))? {
+        if !is_visible(submodule_id.name(db.upcast()))? {
             continue;
         }
         result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string()));
@@ -199,10 +206,10 @@ fn visible_importables_in_module_ex(
     macro_rules! module_importables {
         ($query:ident, $map:expr) => {
             for item_id in db.$query(module_id).ok()?.iter().copied() {
-                if !is_visible(item_id.name(db))? {
+                if !is_visible(item_id.name(db.upcast()))? {
                     continue;
                 }
-                result.push(($map(item_id), item_id.name(db).to_string()));
+                result.push(($map(item_id), item_id.name(db.upcast()).to_string()));
             }
         };
     }
@@ -228,7 +235,7 @@ fn visible_importables_in_module_ex(
         )?
         .iter()
         {
-            result.push((*item_id, format!("{}::{}", submodule.name(db), path)));
+            result.push((*item_id, format!("{}::{}", submodule.name(db.upcast()), path)));
         }
     }
     // Traverse the parent module if needed.
@@ -236,7 +243,7 @@ fn visible_importables_in_module_ex(
         match module_id {
             ModuleId::CrateRoot(_) => {}
             ModuleId::Submodule(submodule_id) => {
-                let parent_module_id = submodule_id.parent_module(db);
+                let parent_module_id = submodule_id.parent_module(db.upcast());
                 for (item_id, path) in visible_importables_in_module_ex(
                     db,
                     parent_module_id,
@@ -260,8 +267,8 @@ pub fn visible_importables_in_crate(
     crate_id: CrateId,
     user_module_file_id: ModuleFileId,
 ) -> Arc<[(ImportableId, String)]> {
-    let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
-    let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db) };
+    let is_current_crate = user_module_file_id.0.owning_crate(db.upcast()) == crate_id;
+    let crate_name = if is_current_crate { "crate" } else { &crate_id.name(db.upcast()) };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()

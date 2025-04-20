@@ -216,7 +216,7 @@ impl SyntaxNode {
 
     /// Lookups a syntax node using a position.
     pub fn lookup_position(&self, db: &dyn SyntaxGroup, position: TextPosition) -> SyntaxNode {
-        match position.offset_in_file(db, self.stable_ptr(db).file_id(db)) {
+        match position.offset_in_file(db.upcast(), self.stable_ptr(db).file_id(db)) {
             Some(offset) => self.lookup_offset(db, offset),
             None => *self,
         }

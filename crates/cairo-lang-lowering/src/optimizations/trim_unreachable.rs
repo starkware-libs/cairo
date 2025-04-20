@@ -14,6 +14,7 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         return;
     }
 
+    let semantic_db = db.upcast();
     let mut fixes = vec![];
 
     // Helper function to process a variable.
@@ -28,7 +29,7 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             return false;
         };
 
-        let Ok(variants) = db.enum_variants(concrete_emum_id.enum_id(db)) else {
+        let Ok(variants) = db.enum_variants(concrete_emum_id.enum_id(semantic_db)) else {
             return false;
         };
 

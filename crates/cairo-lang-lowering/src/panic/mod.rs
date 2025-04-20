@@ -48,11 +48,11 @@ pub fn lower_panics(
     )?;
 
     let opt_trace_fn = if matches!(
-        db.get_flag(FlagId::new(db, "panic_backtrace")),
+        db.get_flag(FlagId::new(db.upcast(), "panic_backtrace")),
         Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
     ) {
         Some(
-            ModuleHelper::core(db)
+            ModuleHelper::core(db.upcast())
                 .submodule("internal")
                 .function_id(
                     "trace",
@@ -70,7 +70,7 @@ pub fn lower_panics(
         None
     };
 
-    if flag_unsafe_panic(db) {
+    if flag_unsafe_panic(db.upcast()) {
         lower_unsafe_panic(db, lowered, opt_trace_fn);
         return Ok(());
     }
@@ -118,10 +118,15 @@ fn lower_unsafe_panic(
     lowered: &mut FlatLowered,
     opt_trace_fn: Option<FunctionId>,
 ) {
-    let panics = core_submodule(db, "panics");
-    let panic_func_id =
-        FunctionLongId::Semantic(get_function_id(db, panics, "unsafe_panic".into(), vec![]))
-            .intern(db);
+    let semantic_db = db.upcast();
+    let panics = core_submodule(semantic_db, "panics");
+    let panic_func_id = FunctionLongId::Semantic(get_function_id(
+        semantic_db,
+        panics,
+        "unsafe_panic".into(),
+        vec![],
+    ))
+    .intern(db);
 
     for block in lowered.blocks.iter_mut() {
         let FlatBlockEnd::Panic(err_data) = &mut block.end else {
@@ -136,7 +141,7 @@ fn lower_unsafe_panic(
         assert_eq!(tuple_construct.output, err_data.var_id);
 
         let panic_construct_statement = block.statements.pop();
-        // Assert that the output of `panic_construct_statement` is the first input of
+        // Assert that the output of `panic_construct_statement` is the first input of of
         // 'tuple_construct'.
         assert_matches!(panic_construct_statement, Some(Statement::StructConstruct(panic_construct)) if panic_construct.output == tuple_construct.inputs[0].var_id);
 
@@ -211,19 +216,19 @@ impl PanicSignatureInfo {
         let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
         let ok_ty = semantic::TypeLongId::Tuple(ok_ret_tys.clone()).intern(db);
         let ok_variant = get_core_enum_concrete_variant(
-            db,
+            db.upcast(),
             "PanicResult",
             vec![GenericArgumentId::Type(ok_ty)],
             "Ok",
         );
         let err_variant = get_core_enum_concrete_variant(
-            db,
+            db.upcast(),
             "PanicResult",
             vec![GenericArgumentId::Type(ok_ty)],
             "Err",
         );
-        let always_panic = original_return_ty == never_ty(db);
-        let panic_ty = if always_panic { err_variant.ty } else { get_panic_ty(db, ok_ty) };
+        let always_panic = original_return_ty == never_ty(db.upcast());
+        let panic_ty = if always_panic { err_variant.ty } else { get_panic_ty(db.upcast(), ok_ty) };
 
         Self {
             ok_ret_tys,
@@ -450,7 +455,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
 pub fn function_may_panic(db: &dyn LoweringGroup, function: FunctionId) -> Maybe<bool> {
-    if let Some(body) = function.body(db)? {
+    if let Some(body) = function.body(db.upcast())? {
         return db.function_with_body_may_panic(body);
     }
     Ok(function.signature(db)?.panicable)
@@ -483,7 +488,7 @@ pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
         let direct_callees =
             db.concrete_function_with_body_direct_callees(function, DependencyType::Call)?;
         for direct_callee in direct_callees {
-            if let Some(callee_body) = direct_callee.body(db)? {
+            if let Some(callee_body) = direct_callee.body(db.upcast())? {
                 let callee_scc = db.concrete_function_with_body_scc_representative(
                     callee_body,
                     DependencyType::Call,

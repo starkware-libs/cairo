@@ -38,7 +38,7 @@ pub fn get_concrete_type_id(
             return Ok(SierraGeneratorTypeLongId::CycleBreaker(type_id).intern(db));
         }
         _ => {
-            if type_id.is_phantom(db) {
+            if type_id.is_phantom(db.upcast()) {
                 return Ok(SierraGeneratorTypeLongId::Phantom(type_id).intern(db));
             }
         }
@@ -88,17 +88,17 @@ pub fn get_concrete_long_type_id(
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
                 semantic::ConcreteTypeId::Struct(_) => {
-                    user_type_long_id("Struct", ty.format(db).into())?.into()
+                    user_type_long_id("Struct", ty.format(db.upcast()).into())?.into()
                 }
                 semantic::ConcreteTypeId::Enum(_) => {
-                    user_type_long_id("Enum", ty.format(db).into())?.into()
+                    user_type_long_id("Enum", ty.format(db.upcast()).into())?.into()
                 }
                 semantic::ConcreteTypeId::Extern(extrn) => {
                     ConcreteTypeLongId {
                         // TODO(Gil): Implement name for semantic::ConcreteTypeId
-                        generic_id: extrn.extern_type_id(db).name(db).into(),
+                        generic_id: extrn.extern_type_id(db.upcast()).name(db.upcast()).into(),
                         generic_args: ty
-                            .generic_args(db)
+                            .generic_args(db.upcast())
                             .into_iter()
                             .map(|arg| match arg {
                                 semantic::GenericArgumentId::Type(ty) => {
@@ -144,17 +144,22 @@ pub fn get_concrete_long_type_id(
         }
         semantic::TypeLongId::Coupon(function_id) => ConcreteTypeLongId {
             generic_id: "Coupon".into(),
-            generic_args: vec![SierraGenericArg::UserFunc(function_id.lowered(db).intern(db))],
+            generic_args: vec![SierraGenericArg::UserFunc(
+                function_id.lowered(db.upcast()).intern(db),
+            )],
         }
         .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
-            panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
+            panic!(
+                "Types should be fully resolved at this point. Got: `{}`.",
+                type_id.format(db.upcast())
+            )
         }
         semantic::TypeLongId::Closure(_) => {
-            user_type_long_id("Struct", (type_id.format(db)).into())?.into()
+            user_type_long_id("Struct", (type_id.format(db.upcast())).into())?.into()
         }
     })
 }
@@ -178,7 +183,7 @@ pub fn type_dependencies(
                 db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty).collect()
             }
             semantic::ConcreteTypeId::Extern(_extrn) => ty
-                .generic_args(db)
+                .generic_args(db.upcast())
                 .into_iter()
                 .filter_map(|arg| try_extract_matches!(arg, semantic::GenericArgumentId::Type))
                 .collect(),
@@ -200,7 +205,10 @@ pub fn type_dependencies(
         | semantic::TypeLongId::Var(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
-            panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
+            panic!(
+                "Types should be fully resolved at this point. Got: `{}`.",
+                type_id.format(db.upcast())
+            )
         }
     }
     .into())

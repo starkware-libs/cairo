@@ -16,7 +16,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
-use cairo_lang_utils::{Intern, write_comma_separated};
+use cairo_lang_utils::{Intern, Upcast, write_comma_separated};
 use itertools::Itertools;
 
 use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
@@ -156,7 +156,7 @@ pub fn find_executable_functions(
 pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let semantic = wrapper.base_semantic_function(db);
     let wrapper_name = semantic.name(db);
-    let wrapper_full_path = semantic.full_path(db);
+    let wrapper_full_path = semantic.full_path(db.upcast());
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
@@ -205,7 +205,7 @@ pub fn compile_executable_function_in_prepared_db(
     // Since we build the entry point asking for a single function - we know it will be first, and
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
-    assert_eq!(executable_func.id, executable.function_id(db).unwrap().intern(db));
+    assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {

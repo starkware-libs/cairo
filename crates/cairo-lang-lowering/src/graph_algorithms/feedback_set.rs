@@ -20,7 +20,7 @@ pub fn function_with_body_feedback_set(
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
 pub fn flag_add_withdraw_gas(db: &dyn LoweringGroup) -> bool {
-    db.get_flag(FlagId::new(db, "add_withdraw_gas"))
+    db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas"))
         .map(|flag| *flag == Flag::AddWithdrawGas(true))
         .unwrap_or(true)
 }

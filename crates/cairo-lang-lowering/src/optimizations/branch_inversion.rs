@@ -25,9 +25,13 @@ pub fn branch_inversion(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let bool_not_func_id =
-        FunctionLongId::Semantic(corelib::get_core_function_id(db, "bool_not_impl".into(), vec![]))
-            .intern(db);
+    let semantic_db = db.upcast();
+    let bool_not_func_id = FunctionLongId::Semantic(corelib::get_core_function_id(
+        semantic_db,
+        "bool_not_impl".into(),
+        vec![],
+    ))
+    .intern(db);
 
     for block in lowered.blocks.iter_mut() {
         if let FlatBlockEnd::Match { info: MatchInfo::Enum(ref mut info) } = &mut block.end {

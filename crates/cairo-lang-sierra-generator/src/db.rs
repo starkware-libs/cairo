@@ -149,7 +149,7 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let lowered_function_id = function_id.lookup_intern(db);
-    let signature = lowered_function_id.signature(db)?;
+    let signature = lowered_function_id.signature(db.upcast())?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
@@ -171,14 +171,15 @@ fn get_function_signature(
 
     let mut ret_types = implicits;
 
-    let may_panic = !flag_unsafe_panic(db) && db.function_may_panic(lowered_function_id)?;
+    let may_panic =
+        !flag_unsafe_panic(db.upcast()) && db.function_may_panic(lowered_function_id)?;
     if may_panic {
-        let panic_info = PanicSignatureInfo::new(db, &signature);
+        let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
     } else {
         ret_types.extend(extra_rets);
         // Functions that return the unit type don't have a return type in the signature.
-        if !signature.return_type.is_unit(db) {
+        if !signature.return_type.is_unit(db.upcast()) {
             ret_types.push(db.get_concrete_type_id(signature.return_type)?);
         }
     }
