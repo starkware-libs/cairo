@@ -67,7 +67,7 @@ impl ResolvedGenericItem {
     }
 
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        let defs_db = db.upcast();
+        let defs_db = db;
         match self {
             ResolvedGenericItem::GenericConstant(_) => "".into(),
             ResolvedGenericItem::Module(id) => id.full_path(defs_db),

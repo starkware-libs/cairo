@@ -17,9 +17,7 @@ pub fn create_bool(
     variant: semantic::ConcreteVariant,
     location: LocationId,
 ) -> VarUsage {
-    let semantic_db = ctx.db.upcast();
-
-    let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(semantic_db), location }
+    let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(ctx.db), location }
         .add(ctx, &mut builder.statements);
 
     generators::EnumConstruct { input: unit, variant, location }.add(ctx, &mut builder.statements)
@@ -33,9 +31,9 @@ pub fn lower_logical_op(
 ) -> LoweringResult<LoweredExpr> {
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
-    let semantic_db = ctx.db.upcast();
+    let db = ctx.db;
 
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let unit_ty = corelib::unit_ty(db);
     let lhs = lower_expr_to_var_usage(ctx, builder, expr.lhs)?;
 
     let mut subscope_lhs_true = create_subscope(ctx, builder);
@@ -49,24 +47,16 @@ pub fn lower_logical_op(
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(rhs_var));
             let mut subscope_lhs_false = create_subscope(ctx, builder);
             let lhs_false_block_id = subscope_lhs_false.block_id;
-            let false_var = create_bool(
-                ctx,
-                &mut subscope_lhs_false,
-                corelib::false_variant(semantic_db),
-                location,
-            );
+            let false_var =
+                create_bool(ctx, &mut subscope_lhs_false, corelib::false_variant(db), location);
             let sealed_block_lhs_false = subscope_lhs_false.goto_callsite(Some(false_var));
             (sealed_block_lhs_true, lhs_false_block_id, sealed_block_lhs_false)
         }
 
         // Lowers `lhs || rhs` to `if lhs { true } else { rhs }`.
         semantic::LogicalOperator::OrOr => {
-            let true_var = create_bool(
-                ctx,
-                &mut subscope_lhs_true,
-                corelib::true_variant(semantic_db),
-                location,
-            );
+            let true_var =
+                create_bool(ctx, &mut subscope_lhs_true, corelib::true_variant(db), location);
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(true_var));
             let mut subscope_lhs_false = create_subscope(ctx, builder);
             let lhs_false_block_id = subscope_lhs_false.block_id;
@@ -78,16 +68,16 @@ pub fn lower_logical_op(
     };
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: corelib::core_bool_enum(db),
         input: lhs,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(db)),
                 block_id: lhs_false_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(db)),
                 block_id: lhs_true_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
