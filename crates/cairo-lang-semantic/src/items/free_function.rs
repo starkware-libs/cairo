@@ -81,11 +81,10 @@ pub fn free_function_generic_params_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<GenericParamsData> {
-    let syntax_db = db.upcast();
-    let module_file_id = free_function_id.module_file_id(db.upcast());
+    let module_file_id = free_function_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
-    let declaration = free_function_syntax.declaration(syntax_db);
+    let declaration = free_function_syntax.declaration(db);
 
     // Generic params.
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -98,11 +97,11 @@ pub fn free_function_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &declaration.generic_params(syntax_db),
+        &declaration.generic_params(db),
     );
 
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -132,10 +131,9 @@ pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<FunctionDeclarationData> {
-    let syntax_db = db.upcast();
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
-    let declaration = free_function_syntax.declaration(syntax_db);
+    let declaration = free_function_syntax.declaration(db);
 
     // Generic params.
     let generic_params_data = db.free_function_generic_params_data(free_function_id)?;
@@ -159,19 +157,19 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
-    let attributes = free_function_syntax.attributes(syntax_db).structurize(syntax_db);
+    let attributes = free_function_syntax.attributes(db).structurize(db);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     let (implicit_precedence, _) =
-        get_implicit_precedence(syntax_db, &mut diagnostics, &mut resolver, &attributes);
+        get_implicit_precedence(db, &mut diagnostics, &mut resolver, &attributes);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
 
-    inference.finalize(&mut diagnostics, declaration.stable_ptr(syntax_db).untyped());
+    inference.finalize(&mut diagnostics, declaration.stable_ptr(db).untyped());
     let signature = inference.rewrite(signature).no_err();
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -244,7 +242,7 @@ pub fn priv_free_function_body_data(
         environment,
         ContextFunction::Function(function_id),
     );
-    let function_body = free_function_syntax.body(db.upcast());
+    let function_body = free_function_syntax.body(db);
     let return_type = declaration.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;

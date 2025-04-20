@@ -202,7 +202,7 @@ impl ImplConstantId {
     ) -> Self {
         if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
-            assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
+            assert_eq!(Ok(trait_constant_id.trait_id(db)), db.impl_def_trait(impl_def_id));
         }
 
         ImplConstantId { impl_id, trait_constant_id }
@@ -215,8 +215,7 @@ impl ImplConstantId {
     }
 
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_constant_id.name(db.upcast()))
-            .into()
+        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db)).into()
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
@@ -277,7 +276,6 @@ pub fn constant_semantic_data_helper(
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
-    let syntax_db = db.upcast();
 
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
 
@@ -285,16 +283,12 @@ pub fn constant_semantic_data_helper(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
+        None => Resolver::new(db, element_id.module_file_id(db), inference_id),
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
-    let constant_type = resolve_type(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        &constant_ast.type_clause(syntax_db).ty(syntax_db),
-    );
+    let constant_type =
+        resolve_type(db, &mut diagnostics, &mut resolver, &constant_ast.type_clause(db).ty(db));
 
     let environment = Environment::empty();
     let mut ctx = ComputationContext::new(
@@ -306,12 +300,12 @@ pub fn constant_semantic_data_helper(
         ContextFunction::Global,
     );
 
-    let value = compute_expr_semantic(&mut ctx, &constant_ast.value(syntax_db));
+    let value = compute_expr_semantic(&mut ctx, &constant_ast.value(db));
     let const_value = resolve_const_expr_and_evaluate(
         db,
         &mut ctx,
         &value,
-        constant_ast.stable_ptr(syntax_db).untyped(),
+        constant_ast.stable_ptr(db).untyped(),
         constant_type,
         true,
     )
@@ -348,13 +342,13 @@ pub fn constant_semantic_data_cycle_helper(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
+        None => Resolver::new(db, element_id.module_file_id(db), inference_id),
     };
 
     let resolver_data = Arc::new(resolver.data);
 
-    let diagnostic_added = diagnostics
-        .report(constant_ast.stable_ptr(db.upcast()), SemanticDiagnosticKind::ConstCycle);
+    let diagnostic_added =
+        diagnostics.report(constant_ast.stable_ptr(db), SemanticDiagnosticKind::ConstCycle);
     Ok(ConstantData {
         constant: Err(diagnostic_added),
         const_value: ConstValue::Missing(diagnostic_added).intern(db),
@@ -435,14 +429,14 @@ pub fn value_as_const_value(
     ty: TypeId,
     value: &BigInt,
 ) -> Result<ConstValue, LiteralError> {
-    validate_literal(db.upcast(), ty, value)?;
+    validate_literal(db, ty, value)?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
+        let u256_ty = get_core_ty_by_name(db, "u256".into(), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty)
         } else {
-            let u128_ty = get_core_ty_by_name(db.upcast(), "u128".into(), vec![]);
+            let u128_ty = get_core_ty_by_name(db, "u128".into(), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
@@ -453,7 +447,7 @@ pub fn value_as_const_value(
         }
     };
 
-    if let Some(inner) = try_extract_nz_wrapped_type(db.upcast(), ty) {
+    if let Some(inner) = try_extract_nz_wrapped_type(db, ty) {
         Ok(ConstValue::NonZero(Box::new(get_basic_const_value(inner))))
     } else {
         Ok(get_basic_const_value(ty))
@@ -603,7 +597,7 @@ impl ConstantEvaluateContext<'_> {
             return false;
         };
         let impl_def = imp.concrete_impl_id.impl_def_id(db);
-        if impl_def.parent_module(db.upcast()).owning_crate(db.upcast()) != db.core_crate() {
+        if impl_def.parent_module(db).owning_crate(db) != db.core_crate() {
             return false;
         }
         let Ok(trait_id) = db.impl_def_trait(impl_def) else {
@@ -932,7 +926,7 @@ impl ConstantEvaluateContext<'_> {
             } else {
                 unreachable!(
                     "Unexpected extern function in constant lowering: `{}`",
-                    extern_fn.full_path(db.upcast())
+                    extern_fn.full_path(db)
                 );
             }
         }

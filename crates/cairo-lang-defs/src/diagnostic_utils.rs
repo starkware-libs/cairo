@@ -33,7 +33,7 @@ impl StableLocation {
     }
 
     pub fn file_id(&self, db: &dyn DefsGroup) -> FileId {
-        self.stable_ptr.file_id(db.upcast())
+        self.stable_ptr.file_id(db)
     }
 
     pub fn from_ast<TNode: TypedSyntaxNode>(db: &dyn SyntaxGroup, node: &TNode) -> Self {
@@ -42,7 +42,7 @@ impl StableLocation {
 
     /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
     pub fn syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
-        self.stable_ptr.lookup(db.upcast())
+        self.stable_ptr.lookup(db)
     }
 
     /// Returns the [SyntaxStablePtrId] of the [StableLocation].
@@ -62,7 +62,7 @@ impl StableLocation {
                 let syntax_node = self.syntax_node(db);
                 DiagnosticLocation {
                     file_id: self.file_id(db),
-                    span: syntax_node.span_without_trivia(db.upcast()),
+                    span: syntax_node.span_without_trivia(db),
                 }
             }
         }

@@ -299,7 +299,7 @@ impl InferenceEmbeddings for Inference<'_> {
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
-        let trait_id = trait_function.trait_id(self.db.upcast());
+        let trait_id = trait_function.trait_id(self.db);
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
         require(first_param.name == SELF_PARAM_KW)?;
