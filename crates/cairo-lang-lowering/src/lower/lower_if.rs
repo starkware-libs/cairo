@@ -46,8 +46,8 @@ pub fn lower_expr_if_bool(
 
     // The condition cannot be unit.
     let condition = lower_expr_to_var_usage(ctx, builder, condition)?;
-    let semantic_db = ctx.db.upcast();
-    let unit_ty = corelib::unit_ty(semantic_db);
+    let db = ctx.db;
+    let unit_ty = corelib::unit_ty(db);
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
@@ -72,16 +72,16 @@ pub fn lower_expr_if_bool(
         .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id: corelib::core_bool_enum(semantic_db),
+        concrete_enum_id: corelib::core_bool_enum(db),
         input: condition,
         arms: vec![
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::false_variant(db)),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
             },
             MatchArm {
-                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(semantic_db)),
+                arm_selector: MatchArmSelector::VariantId(corelib::true_variant(db)),
                 block_id: block_main_id,
                 var_ids: vec![main_block_var_id],
             },
@@ -106,9 +106,7 @@ pub fn lower_expr_if_let(
     let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
-    if ty == ctx.db.core_info().felt252
-        || corelib::get_convert_to_felt252_libfunc_name_by_type(ctx.db.upcast(), ty).is_some()
-    {
+    if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
             expr.stable_ptr.untyped(),
             LoweringDiagnosticKind::MatchError(MatchError {
@@ -118,7 +116,7 @@ pub fn lower_expr_if_let(
         )));
     }
 
-    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
+    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
 
     let arms = vec![
         MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },

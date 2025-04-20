@@ -929,7 +929,6 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
-    // TODO: CHECK WHAT TODO!!!
     is_merging_use_items: bool,
 }
 

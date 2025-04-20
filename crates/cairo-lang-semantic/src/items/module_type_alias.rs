@@ -98,7 +98,7 @@ pub fn priv_module_type_alias_semantic_data(
     module_type_alias_id: ModuleTypeAliasId,
     in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData> {
-    let module_file_id = module_type_alias_id.module_file_id(db.upcast());
+    let module_file_id = module_type_alias_id.module_file_id(db);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -145,7 +145,7 @@ pub fn priv_module_type_alias_generic_params_data(
     db: &dyn SemanticGroup,
     module_type_alias_id: ModuleTypeAliasId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = module_type_alias_id.module_file_id(db.upcast());
+    let module_file_id = module_type_alias_id.module_file_id(db);
     let type_alias_ast = db.module_type_alias_by_id(module_type_alias_id)?.to_maybe()?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
