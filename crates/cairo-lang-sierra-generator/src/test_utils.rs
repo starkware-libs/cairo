@@ -17,7 +17,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::{Intern, Upcast, UpcastMut};
+use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -58,7 +58,7 @@ pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
 pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| {
         let mut db = SierraGenDatabaseForTesting::new_empty();
-        let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+        let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
         db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
         Mutex::new(db)
     });
@@ -95,11 +95,6 @@ impl Default for SierraGenDatabaseForTesting {
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl UpcastMut<dyn FilesGroup> for SierraGenDatabaseForTesting {
-    fn upcast_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
