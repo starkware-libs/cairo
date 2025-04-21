@@ -22,13 +22,13 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     // Otherwise, it returns `false.
     let mut handle_var = |var_id: &VariableId, introduction_block| {
         let variable = &lowered.variables[*var_id];
-        let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_emum_id)) =
+        let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
             db.lookup_intern_type(variable.ty)
         else {
             return false;
         };
 
-        let Ok(variants) = db.enum_variants(concrete_emum_id.enum_id(db)) else {
+        let Ok(variants) = db.enum_variants(concrete_enum_id.enum_id(db)) else {
             return false;
         };
 
@@ -36,7 +36,7 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             return false;
         }
 
-        fixes.push((introduction_block, *var_id, concrete_emum_id, variable.location));
+        fixes.push((introduction_block, *var_id, concrete_enum_id, variable.location));
         true
     };
 
