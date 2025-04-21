@@ -58,10 +58,9 @@ End:
 
 blk2:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
 End:
-  Return(v4, v14, v15)
+  Return(v4, v5, v14)
 
 
 Generated loop lowering for source location:
@@ -137,11 +136,10 @@ End:
 
 blk4:
 Statements:
-  (v18: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v20: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v19)
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v19: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v18)
 End:
-  Return(v5, v18, v20)
+  Return(v5, v6, v19)
 
 //! > ==========================================================================
 
@@ -338,10 +336,9 @@ End:
 
 blk2:
 Statements:
-  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v15, v16)
+  Return(v3, v4, v15)
 
 
 Generated loop lowering for source location:
@@ -445,8 +442,7 @@ End:
 
 blk6:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v21: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v20)
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v20: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v19)
 End:
-  Return(v5, v19, v21)
+  Return(v5, v6, v20)
