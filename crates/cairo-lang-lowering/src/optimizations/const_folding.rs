@@ -685,6 +685,34 @@ impl ConstFoldingContext<'_> {
                 }
             }
             None
+        } else if id == self.array_pop_front {
+            let VarInfo::Array(var_infos) = self.var_info.get(&info.inputs[0].var_id)? else {
+                return None;
+            };
+            if let Some(first) = var_infos.first() {
+                if let Some(first) = first.as_ref().cloned() {
+                    let arm = &info.arms[0];
+                    self.var_info.insert(arm.var_ids[0], VarInfo::Array(var_infos[1..].to_vec()));
+                    self.var_info.insert(arm.var_ids[1], VarInfo::Box(first.into()));
+                }
+                None
+            } else {
+                let arm = &info.arms[1];
+                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
+                Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())))
+            }
+        } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
+            let var_info = self.var_info.get(&info.inputs[0].var_id)?;
+            let desnapped = try_extract_matches!(var_info, VarInfo::Snapshot)?;
+            let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
+            // TODO(orizi): Propagate success values as well.
+            if element_var_infos.is_empty() {
+                let arm = &info.arms[1];
+                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
+                Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())))
+            } else {
+                None
+            }
         } else {
             None
         }
