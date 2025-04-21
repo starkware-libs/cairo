@@ -4,10 +4,10 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ExternFunctionId, ModuleId};
+use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
-use cairo_lang_semantic::items::functions::GenericFunctionWithBodyId;
+use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, corelib};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -69,7 +69,7 @@ pub fn const_folding(
     // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
     // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
     if function_id.base_semantic_function(db).generic_function(db)
-        == libfunc_info.panic_with_const_felt252
+        == GenericFunctionWithBodyId::Free(libfunc_info.panic_with_const_felt252)
     {
         return;
     }
@@ -282,11 +282,8 @@ impl ConstFoldingContext<'_> {
         if stmt.function == self.panic_with_felt252 {
             let val = self.as_const(stmt.inputs[0].var_id)?;
             stmt.inputs.clear();
-            stmt.function = ModuleHelper::core(db)
-                .function_id(
-                    "panic_with_const_felt252",
-                    vec![GenericArgumentId::Constant(val.clone().intern(db))],
-                )
+            stmt.function = GenericFunctionId::Free(self.panic_with_const_felt252)
+                .concretize(db, vec![GenericArgumentId::Constant(val.clone().intern(db))])
                 .lowered(db);
             return None;
         }
@@ -334,14 +331,9 @@ impl ConstFoldingContext<'_> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function = ModuleHelper { db, id: self.storage_access_module }
-                    .function_id(
-                        "storage_base_address_const",
-                        vec![GenericArgumentId::Constant(
-                            ConstValue::Int(val.clone(), *ty).intern(db),
-                        )],
-                    )
-                    .lowered(db);
+                let arg = GenericArgumentId::Constant(ConstValue::Int(val.clone(), *ty).intern(db));
+                stmt.function =
+                    self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
             }
             None
         } else if id == self.into_box {
@@ -575,9 +567,8 @@ impl ConstFoldingContext<'_> {
                     let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
                     let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
                     info.inputs.truncate(1);
-                    info.function = ModuleHelper { db, id: self.array_module }
-                        .function_id("array_snapshot_pop_front", generic_args)
-                        .lowered(db);
+                    info.function =
+                        self.array_snapshot_pop_front.concretize(db, generic_args).lowered(db);
                     success.var_ids.insert(0, unused_arr_output0);
                     failure.var_ids.insert(0, unused_arr_output1);
                 }
@@ -667,18 +658,18 @@ pub struct ConstFoldingLibfuncInfo {
     bounded_int_sub: ExternFunctionId,
     /// The `bounded_int_constrain` libfunc.
     bounded_int_constrain: ExternFunctionId,
-    /// The array module.
-    array_module: ModuleId,
     /// The `array_get` libfunc.
     array_get: ExternFunctionId,
-    /// The storage access module.
-    storage_access_module: ModuleId,
+    /// The `array_snapshot_pop_front` libfunc.
+    array_snapshot_pop_front: GenericFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: ExternFunctionId,
+    /// The `storage_base_address_const` libfunc.
+    storage_base_address_const: GenericFunctionId,
     /// The `core::panic_with_felt252` function.
     panic_with_felt252: FunctionId,
     /// The `core::panic_with_const_felt252` function.
-    panic_with_const_felt252: GenericFunctionWithBodyId,
+    panic_with_const_felt252: FreeFunctionId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
     /// The info used for semantic const calculation.
@@ -687,17 +678,12 @@ pub struct ConstFoldingLibfuncInfo {
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
         let core = ModuleHelper::core(db);
-        let felt_sub = core.extern_function_id("felt252_sub");
         let box_module = core.submodule("box");
-        let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
         let array_module = core.submodule("array");
-        let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
-        let storage_base_address_from_felt252 =
-            storage_access_module.extern_function_id("storage_base_address_from_felt252");
         let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
             [
                 core.extern_function_id("felt252_is_zero"),
@@ -737,9 +723,6 @@ impl ConstFoldingLibfuncInfo {
             [bounded_int_module.extern_function_id("bounded_int_div_rem")],
             utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_safe_divmod"))),
         ));
-        let bounded_int_add = bounded_int_module.extern_function_id("bounded_int_add");
-        let bounded_int_sub = bounded_int_module.extern_function_id("bounded_int_sub");
-        let bounded_int_constrain = bounded_int_module.extern_function_id("bounded_int_constrain");
         let type_value_ranges = OrderedHashMap::from_iter(
             [
                 ("u8", BigInt::ZERO, u8::MAX.into(), false),
@@ -770,8 +753,8 @@ impl ConstFoldingLibfuncInfo {
             ),
         );
         Self {
-            felt_sub,
-            into_box,
+            felt_sub: core.extern_function_id("felt252_sub"),
+            into_box: box_module.extern_function_id("into_box"),
             nz_fns,
             eq_fns,
             uadd_fns,
@@ -781,17 +764,17 @@ impl ConstFoldingLibfuncInfo {
             isub_fns,
             wide_mul_fns,
             div_rem_fns,
-            bounded_int_add,
-            bounded_int_sub,
-            bounded_int_constrain,
-            array_module: array_module.id,
-            array_get,
-            storage_access_module: storage_access_module.id,
-            storage_base_address_from_felt252,
+            bounded_int_add: bounded_int_module.extern_function_id("bounded_int_add"),
+            bounded_int_sub: bounded_int_module.extern_function_id("bounded_int_sub"),
+            bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
+            array_get: array_module.extern_function_id("array_get"),
+            array_snapshot_pop_front: array_module.generic_function_id("array_snapshot_pop_front"),
+            storage_base_address_from_felt252: storage_access_module
+                .extern_function_id("storage_base_address_from_felt252"),
+            storage_base_address_const: storage_access_module
+                .generic_function_id("storage_base_address_const"),
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]).lowered(db),
-            panic_with_const_felt252: GenericFunctionWithBodyId::Free(
-                core.free_function_id("panic_with_const_felt252"),
-            ),
+            panic_with_const_felt252: core.free_function_id("panic_with_const_felt252"),
             type_value_ranges,
             const_calculation_info: db.const_calc_info(),
         }
