@@ -59,7 +59,6 @@ End:
 
 blk2:
 Statements:
-  (v26: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
-  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
+  (v26: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
 End:
-  Return(v15, v26, v27)
+  Return(v15, v16, v26)

@@ -238,14 +238,12 @@ End:
 
 blk3:
 Statements:
-  (v46: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v37)
-  (v47: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v40)
+  (v46: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v40)
 End:
-  Return(v36, v46, v47)
+  Return(v36, v37, v46)
 
 blk4:
 Statements:
-  (v48: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
-  (v49: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v18)
+  (v47: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v18)
 End:
-  Return(v14, v48, v49)
+  Return(v14, v15, v47)
