@@ -44,10 +44,9 @@ End:
 
 blk2:
 Statements:
-  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v6, v16, v17)
+  Return(v6, v7, v16)
 
 //! > ==========================================================================
 
@@ -103,10 +102,9 @@ End:
 
 blk2:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
 End:
-  Return(v4, v14, v15)
+  Return(v4, v5, v14)
 
 //! > ==========================================================================
 
@@ -165,10 +163,9 @@ End:
 
 blk2:
 Statements:
-  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v15, v16)
+  Return(v3, v4, v15)
 
 //! > ==========================================================================
 
@@ -227,10 +224,9 @@ End:
 
 blk2:
 Statements:
-  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v15, v16)
+  Return(v3, v4, v15)
 
 //! > ==========================================================================
 
@@ -364,10 +360,9 @@ End:
 
 blk2:
 Statements:
-  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v17: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
+  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
 End:
-  Return(v4, v16, v17)
+  Return(v4, v5, v16)
 
 //! > ==========================================================================
 

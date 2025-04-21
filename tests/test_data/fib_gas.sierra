@@ -76,13 +76,12 @@ branch_align() -> ();
 drop<felt252>([3]) -> ();
 drop<felt252>([2]) -> ();
 drop<felt252>([4]) -> ();
-redeposit_gas([8]) -> ([22]);
-function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([23]);
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([23]) -> ([24]);
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([22]);
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([22]) -> ([23]);
 store_temp<RangeCheck>([7]) -> ([7]);
-store_temp<GasBuiltin>([22]) -> ([22]);
-store_temp<core::panics::PanicResult::<(core::felt252,)>>([24]) -> ([24]);
-return([7], [22], [24]);
+store_temp<GasBuiltin>([8]) -> ([8]);
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([23]) -> ([23]);
+return([7], [8], [23]);
 F1:
 const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);

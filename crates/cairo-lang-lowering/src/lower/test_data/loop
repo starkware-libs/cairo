@@ -61,10 +61,9 @@ End:
 
 blk2:
 Statements:
-  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v14: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
+  (v13: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v13, v14)
+  Return(v3, v4, v13)
 
 
 Generated loop lowering for source location:
@@ -149,11 +148,10 @@ End:
 
 blk4:
 Statements:
-  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v23: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v22)
+  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v21)
 End:
-  Return(v5, v21, v23)
+  Return(v5, v6, v22)
 
 //! > ==========================================================================
 
@@ -219,10 +217,9 @@ End:
 
 blk2:
 Statements:
-  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v14: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
+  (v13: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v13, v14)
+  Return(v3, v4, v13)
 
 
 Generated loop lowering for source location:
@@ -307,11 +304,10 @@ End:
 
 blk4:
 Statements:
-  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v23: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v22)
+  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v22: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v21)
 End:
-  Return(v5, v21, v23)
+  Return(v5, v6, v22)
 
 //! > ==========================================================================
 
@@ -397,10 +393,9 @@ End:
 
 blk2:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
-  (v20: core::panics::PanicResult::<(test::A, ())>) <- PanicResult::Err(v11)
+  (v19: core::panics::PanicResult::<(test::A, ())>) <- PanicResult::Err(v11)
 End:
-  Return(v7, v19, v20)
+  Return(v7, v8, v19)
 
 
 Generated loop lowering for source location:
@@ -472,11 +467,10 @@ End:
 
 blk2:
 Statements:
-  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v19: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Err(v18)
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v18: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- PanicResult::Err(v17)
 End:
-  Return(v7, v17, v19)
+  Return(v7, v8, v18)
 
 //! > ==========================================================================
 
@@ -546,10 +540,9 @@ End:
 
 blk2:
 Statements:
-  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v14: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
+  (v13: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v13, v14)
+  Return(v3, v4, v13)
 
 
 Generated loop lowering for source location:
@@ -678,11 +671,10 @@ End:
 
 blk7:
 Statements:
-  (v26: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v28: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v27)
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v26)
 End:
-  Return(v5, v26, v28)
+  Return(v5, v6, v27)
 
 //! > ==========================================================================
 
@@ -828,10 +820,9 @@ End:
 
 blk2:
 Statements:
-  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v12, v13)
+  Return(v3, v4, v12)
 
 
 Generated loop lowering for source location:
@@ -931,11 +922,10 @@ End:
 
 blk4:
 Statements:
-  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v19: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v18)
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v18: core::panics::PanicResult::<(core::integer::u8, ())>) <- PanicResult::Err(v17)
 End:
-  Return(v5, v17, v19)
+  Return(v5, v6, v18)
 
 //! > ==========================================================================
 
@@ -1440,10 +1430,9 @@ End:
 
 blk2:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v9)
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v9)
 End:
-  Return(v5, v14, v15)
+  Return(v5, v6, v14)
 
 
 Generated loop lowering for source location:
@@ -1528,11 +1517,10 @@ End:
 
 blk4:
 Statements:
-  (v24: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v25: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v26: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- PanicResult::Err(v25)
+  (v24: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v25: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- PanicResult::Err(v24)
 End:
-  Return(v6, v24, v26)
+  Return(v6, v7, v25)
 
 //! > ==========================================================================
 
@@ -1608,10 +1596,9 @@ End:
 
 blk2:
 Statements:
-  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v12, v13)
+  Return(v3, v4, v12)
 
 //! > lowering_diagnostics
 
@@ -1722,10 +1709,9 @@ End:
 
 blk4:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
+  (v19: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v19, v20)
+  Return(v3, v4, v19)
 
 
 Generated loop lowering for source location:
@@ -1900,11 +1886,10 @@ End:
 
 blk9:
 Statements:
-  (v35: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v36: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v37: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Err(v36)
+  (v35: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v36: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- PanicResult::Err(v35)
 End:
-  Return(v5, v35, v37)
+  Return(v5, v6, v36)
 
 //! > lowering_diagnostics
 
@@ -2158,10 +2143,9 @@ End:
 
 blk4:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
+  (v19: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v19, v20)
+  Return(v3, v4, v19)
 
 
 Generated loop lowering for source location:
@@ -2385,11 +2369,10 @@ End:
 
 blk8:
 Statements:
-  (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v33: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v34: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- PanicResult::Err(v33)
+  (v32: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v33: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- PanicResult::Err(v32)
 End:
-  Return(v5, v32, v34)
+  Return(v5, v6, v33)
 
 //! > lowering_diagnostics
 
@@ -2497,10 +2480,9 @@ End:
 
 blk4:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
+  (v19: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v7)
 End:
-  Return(v3, v19, v20)
+  Return(v3, v4, v19)
 
 
 Generated loop lowering for source location:
@@ -2724,11 +2706,10 @@ End:
 
 blk8:
 Statements:
-  (v32: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v33: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v34: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- PanicResult::Err(v33)
+  (v32: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v33: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- PanicResult::Err(v32)
 End:
-  Return(v5, v32, v34)
+  Return(v5, v6, v33)
 
 //! > lowering_diagnostics
 
@@ -2834,10 +2815,9 @@ End:
 
 blk4:
 Statements:
-  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v23: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v9)
+  (v22: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v9)
 End:
-  Return(v5, v22, v23)
+  Return(v5, v6, v22)
 
 
 Generated loop lowering for source location:
@@ -2949,30 +2929,28 @@ End:
 
 blk6:
 Statements:
-  (v26: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
-  (v28: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v27)
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v27: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v26)
 End:
-  Return(v12, v26, v28)
+  Return(v12, v4, v27)
 
 blk7:
 Statements:
-  (v29: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v30: ()) <- struct_construct()
-  (v31: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::Normal(v30)
-  (v32: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v7, v8)
-  (v33: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v32, v31)
-  (v34: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v33)
+  (v28: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v29: ()) <- struct_construct()
+  (v30: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- LoopResult::Normal(v29)
+  (v31: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v7, v8)
+  (v32: (core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)) <- struct_construct(v31, v30)
+  (v33: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Ok(v32)
 End:
-  Return(v3, v29, v34)
+  Return(v3, v28, v33)
 
 blk8:
 Statements:
-  (v35: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v36: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v37: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v36)
+  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v35: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- PanicResult::Err(v34)
 End:
-  Return(v5, v35, v37)
+  Return(v5, v6, v35)
 
 //! > lowering_diagnostics
 
@@ -3095,10 +3073,9 @@ End:
 
 blk4:
 Statements:
-  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v19: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v18)
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v17)
 End:
-  Return(v4, v17, v19)
+  Return(v4, v5, v18)
 
 //! > lowering_diagnostics

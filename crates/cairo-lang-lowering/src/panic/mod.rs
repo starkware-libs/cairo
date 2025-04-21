@@ -196,12 +196,12 @@ pub struct PanicSignatureInfo {
     /// The Ok() variant.
     ok_variant: ConcreteVariant,
     /// The Err() variant.
-    err_variant: ConcreteVariant,
+    pub err_variant: ConcreteVariant,
     /// The PanicResult concrete type - the new return type of the function.
     pub actual_return_ty: TypeId,
     /// Does the function always panic.
     /// Note that if it does - the function returned type is always `(Panic, Array<felt252>)`.
-    always_panic: bool,
+    pub always_panic: bool,
 }
 impl PanicSignatureInfo {
     pub fn new(db: &dyn LoweringGroup, signature: &Signature) -> Self {

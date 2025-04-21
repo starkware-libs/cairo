@@ -215,18 +215,16 @@ End:
 
 blk6:
 Statements:
-  (v29: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
-  (v30: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
+  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
 End:
-  Return(v15, v29, v30)
+  Return(v15, v16, v29)
 
 blk7:
 Statements:
-  (v31: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v32: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v33: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v32)
+  (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v31: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v30)
 End:
-  Return(v5, v31, v33)
+  Return(v5, v6, v31)
 
 //! > ==========================================================================
 
