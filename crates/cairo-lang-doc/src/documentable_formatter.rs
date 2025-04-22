@@ -1057,7 +1057,7 @@ fn write_struct_attributes_syntax(
         let syntax_node = attribute.stable_ptr.lookup(f.db.upcast()).as_syntax_node();
         for child in syntax_node.get_children(f.db.upcast()) {
             let to_text = child.get_text_without_all_comment_trivia(f.db.upcast());
-            let cleaned_text = to_text.replace("\n", "");
+            let cleaned_text = to_text.replace("\n", "").trim().to_owned();
             f.write_str(&cleaned_text)?;
         }
         f.write_str("\n")?;
