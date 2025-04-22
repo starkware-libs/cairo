@@ -468,24 +468,23 @@ define_language_element_id_as_enum! {
     }
 }
 
-define_language_element_id_as_enum! {
-    /// Id for an item that can be brought into scope with a `use` statement.
-    /// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`] and [`CrateId`].
-    pub enum ImportableId {
-        Constant(ConstantId),
-        Submodule(SubmoduleId),
-        Crate(CrateId),
-        FreeFunction(FreeFunctionId),
-        Struct(StructId),
-        Enum(EnumId),
-        Variant(VariantId),
-        TypeAlias(ModuleTypeAliasId),
-        ImplAlias(ImplAliasId),
-        Trait(TraitId),
-        Impl(ImplDefId),
-        ExternType(ExternTypeId),
-        ExternFunction(ExternFunctionId),
-    }
+/// Id for an item that can be brought into scope with a `use` statement.
+/// Basically [`ModuleItemId`] without [`UseId`] and with [`VariantId`] and [`CrateId`].
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ImportableId {
+    Constant(ConstantId),
+    Submodule(SubmoduleId),
+    Crate(CrateId),
+    FreeFunction(FreeFunctionId),
+    Struct(StructId),
+    Enum(EnumId),
+    Variant(VariantId),
+    TypeAlias(ModuleTypeAliasId),
+    ImplAlias(ImplAliasId),
+    Trait(TraitId),
+    Impl(ImplDefId),
+    ExternType(ExternTypeId),
+    ExternFunction(ExternFunctionId),
 }
 
 define_top_level_language_element_id!(
@@ -558,7 +557,7 @@ impl ImplTypeDefId {
         let ImplTypeDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl type ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -581,7 +580,7 @@ impl ImplConstantDefId {
         let ImplConstantDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -604,7 +603,7 @@ impl ImplImplDefId {
         let ImplImplDefLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl constant ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -627,7 +626,7 @@ impl ImplFunctionId {
         let ImplFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
 
         // Impl function ast lies 3 levels below the impl ast.
-        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_file_id, impl_ptr).intern(db)
     }
 }
@@ -716,7 +715,7 @@ impl TraitTypeId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitTypeLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait type ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -743,7 +742,7 @@ impl TraitConstantId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitConstantLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait constant ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -765,7 +764,7 @@ impl TraitImplId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitImplLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait impl ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -787,7 +786,7 @@ impl TraitFunctionId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
         let TraitFunctionLongId(module_file_id, ptr) = self.lookup_intern(db);
         // Trait function ast lies 3 levels below the trait ast.
-        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db.upcast(), 3));
+        let trait_ptr = ast::ItemTraitPtr(ptr.untyped().nth_parent(db, 3));
         TraitLongId(module_file_id, trait_ptr).intern(db)
     }
 }
@@ -808,7 +807,7 @@ define_named_language_element_id!(
 impl MemberId {
     pub fn struct_id(&self, db: &dyn DefsGroup) -> StructId {
         let MemberLongId(module_file_id, ptr) = self.lookup_intern(db);
-        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 2));
         StructLongId(module_file_id, struct_ptr).intern(db)
     }
 }
@@ -830,7 +829,7 @@ define_named_language_element_id!(
 impl VariantId {
     pub fn enum_id(&self, db: &dyn DefsGroup) -> EnumId {
         let VariantLongId(module_file_id, ptr) = self.lookup_intern(db);
-        let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db, 2));
         EnumLongId(module_file_id, struct_ptr).intern(db)
     }
 }
@@ -899,16 +898,16 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
+        let item_ptr = self.1.0.nth_parent(db, 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
 impl GenericParamId {
     pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
-        self.lookup_intern(db).name(db.upcast())
+        self.lookup_intern(db).name(db)
     }
     pub fn debug_name(&self, db: &dyn DefsGroup) -> SmolStr {
-        self.lookup_intern(db).debug_name(db.upcast())
+        self.lookup_intern(db).debug_name(db)
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let long_ids = self.lookup_intern(db);
@@ -929,10 +928,10 @@ impl GenericParamId {
     }
 
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
-        self.lookup_intern(db).kind(db.upcast())
+        self.lookup_intern(db).kind(db)
     }
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        self.lookup_intern(db).generic_item(db.upcast())
+        self.lookup_intern(db).generic_item(db)
     }
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
@@ -940,9 +939,9 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
         write!(
             f,
             "GenericParam{}({}::{})",
-            self.kind(db.upcast()),
+            self.kind(db),
             self.generic_item(db).full_path(db),
-            self.debug_name(db.upcast())
+            self.debug_name(db)
         )
     }
 }
@@ -1009,7 +1008,7 @@ impl GenericItemId {
                     SyntaxKind::FunctionWithBody => {
                         // `FunctionWithBody` must be at least 2 levels below the root, and thus
                         // `parent1.parent()` is safe.
-                        match parent1.parent(db.upcast()).lookup_intern(db) {
+                        match parent1.parent(db).lookup_intern(db) {
                             SyntaxStablePtr::Root(_, _) => {
                                 GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     FreeFunctionLongId(
@@ -1077,7 +1076,7 @@ impl GenericItemId {
             SyntaxKind::ItemTypeAlias => {
                 // `ItemTypeAlias` must be at least 2 levels below the root, and thus
                 // `parent0.kind()` is safe.
-                match parent0.kind(db.upcast()) {
+                match parent0.kind(db) {
                     SyntaxKind::ModuleItemList => {
                         GenericItemId::ModuleItem(GenericModuleItemId::TypeAlias(
                             ModuleTypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr))

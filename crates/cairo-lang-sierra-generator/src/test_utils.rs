@@ -17,7 +17,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::{Intern, Upcast, UpcastMut};
+use cairo_lang_utils::{Intern, Upcast};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -45,7 +45,7 @@ pub struct SierraGenDatabaseForTesting {
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl ExternalFiles for SierraGenDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
@@ -58,7 +58,7 @@ pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
 pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| {
         let mut db = SierraGenDatabaseForTesting::new_empty();
-        let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+        let add_withdraw_gas_flag_id = FlagId::new(&db, "add_withdraw_gas");
         db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
         Mutex::new(db)
     });
@@ -95,11 +95,6 @@ impl Default for SierraGenDatabaseForTesting {
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl UpcastMut<dyn FilesGroup> for SierraGenDatabaseForTesting {
-    fn upcast_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
@@ -158,7 +153,7 @@ pub fn setup_db_and_get_crate_id(
 }
 
 pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+    let crate_id = setup_test_crate(db, "fn test(){}");
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }

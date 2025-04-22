@@ -2,6 +2,7 @@
 name = "starknet-sierra-upgrade-validate"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Compiler executable for validating a Sierra upgrade is valid"

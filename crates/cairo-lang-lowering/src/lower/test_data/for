@@ -87,10 +87,9 @@ End:
 
 blk2:
 Statements:
-  (v29: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v19)
-  (v30: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
+  (v29: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
 End:
-  Return(v18, v29, v30)
+  Return(v18, v19, v29)
 
 
 Generated loop lowering for source location:
@@ -136,44 +135,42 @@ End:
 
 blk1:
 Statements:
-  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v10: core::array::Span::<core::felt252>) <- struct_destructure(v2)
-  (v11: @core::array::Array::<core::felt252>) <- struct_destructure(v10)
+  (v9: core::array::Span::<core::felt252>) <- struct_destructure(v2)
+  (v10: @core::array::Array::<core::felt252>) <- struct_destructure(v9)
 End:
-  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v11) {
-    Option::Some(v12, v13) => blk2,
-    Option::None(v14) => blk3,
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v10) {
+    Option::Some(v11, v12) => blk2,
+    Option::None(v13) => blk3,
   })
 
 blk2:
 Statements:
-  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
-  (v16: @core::felt252) <- core::box::unbox::<@core::felt252>(v13)
-  (v17: core::felt252) <- core::felt252_add(v3, v4)
-  (v18: core::array::Span::<core::felt252>) <- struct_construct(v12)
-  (v19: core::array::SpanIter::<core::felt252>) <- struct_construct(v18)
-  (v20: core::RangeCheck, v21: core::gas::GasBuiltin, v22: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v15, v19, v17, v4)
+  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+  (v15: @core::felt252) <- core::box::unbox::<@core::felt252>(v12)
+  (v16: core::felt252) <- core::felt252_add(v3, v4)
+  (v17: core::array::Span::<core::felt252>) <- struct_construct(v11)
+  (v18: core::array::SpanIter::<core::felt252>) <- struct_construct(v17)
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v14, v18, v16, v4)
 End:
-  Return(v20, v21, v22)
+  Return(v19, v20, v21)
 
 blk3:
 Statements:
-  (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
-  (v24: core::array::Span::<core::felt252>) <- struct_construct(v14)
-  (v25: core::array::SpanIter::<core::felt252>) <- struct_construct(v24)
-  (v26: ()) <- struct_construct()
-  (v27: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v25, v3, v26)
-  (v28: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v27)
+  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+  (v23: core::array::Span::<core::felt252>) <- struct_construct(v13)
+  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
+  (v25: ()) <- struct_construct()
+  (v26: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v24, v3, v25)
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v26)
 End:
-  Return(v5, v23, v28)
+  Return(v5, v22, v27)
 
 blk4:
 Statements:
-  (v29: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v8)
-  (v30: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v31: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v30)
+  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v28)
 End:
-  Return(v7, v29, v31)
+  Return(v7, v8, v29)
 
 //! > ==========================================================================
 
@@ -255,7 +252,6 @@ End:
 
 blk2:
 Statements:
-  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v6, v16, v17)
+  Return(v6, v7, v16)
