@@ -30,8 +30,11 @@
 //!
 //! 2. Mutable access using `MutableVecTrait`:
 //!    ```
-//!    // Append new element
-//!    self.my_vec.append().write(value);
+//!    // Append new element using push
+//!    self.my_vec.push(value);
+//!
+//!    // Allocate space for a new element (useful for nested vectors)
+//!    let new_slot = self.my_vec.allocate();
 //!
 //!    // Modify existing element
 //!    self.my_vec.at(0).write(new_value);
@@ -52,7 +55,7 @@
 //!
 //! fn store_number(ref self: ContractState, number: u256) {
 //!     // Append new number
-//!     self.numbers.append().write(number);
+//!     self.numbers.push(number);
 //!
 //!     // Read first number
 //!     let first = self.numbers[0].read();
