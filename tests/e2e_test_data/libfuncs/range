@@ -133,9 +133,6 @@ test::foo@F0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::result::
 SmallE2ETestRunner
 
 //! > cairo_code
-// TODO(lior): Remove the marker once it is added to range.cairo.
-impl SierraIntRangeSupportU8 of core::ops::range::SierraIntRangeSupport<u8>;
-
 fn foo() {
     for _i in 1_u8..10 {}
 }
@@ -240,7 +237,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<IntRange<u8>> = store_temp<IntRange<u8>>;
 libfunc jump = jump;
-libfunc function_call<user@test::foo[12-38]> = function_call<user@test::foo[12-38]>;
+libfunc function_call<user@test::foo[11-37]> = function_call<user@test::foo[11-37]>;
 libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
 libfunc struct_deconstruct<Tuple<IntRange<u8>, Unit>> = struct_deconstruct<Tuple<IntRange<u8>, Unit>>;
 libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
@@ -287,7 +284,7 @@ store_temp<RangeCheck>([6]) -> ([9]);
 store_temp<GasBuiltin>([12]) -> ([10]);
 store_temp<IntRange<u8>>([7]) -> ([11]);
 F0_B1:
-function_call<user@test::foo[12-38]>([9], [10], [11]) -> ([13], [14], [15]);
+function_call<user@test::foo[11-37]>([9], [10], [11]) -> ([13], [14], [15]);
 enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([15]) { fallthrough([16]) F0_B2([17]) };
 branch_align() -> ();
 redeposit_gas([14]) -> ([18]);
@@ -329,7 +326,7 @@ redeposit_gas([4]) -> ([14]);
 store_temp<RangeCheck>([3]) -> ([3]);
 store_temp<GasBuiltin>([14]) -> ([14]);
 store_temp<IntRange<u8>>([8]) -> ([8]);
-function_call<user@test::foo[12-38]>([3], [14], [8]) -> ([15], [16], [17]);
+function_call<user@test::foo[11-37]>([3], [14], [8]) -> ([15], [16], [17]);
 return([15], [16], [17]);
 F1_B1:
 branch_align() -> ();
@@ -354,12 +351,12 @@ store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
 
 test::foo@F0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
-test::foo[12-38]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
+test::foo[11-37]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: IntRange<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>);
 core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
 
 //! > function_costs
 test::foo: OrderedHashMap({Const: 3840})
-test::foo[12-38]: OrderedHashMap({Const: 1870})
+test::foo[11-37]: OrderedHashMap({Const: 1870})
 core::panic_with_const_felt252::<375233589013918064796019>: OrderedHashMap({Const: 700})
 core::panic_with_felt252: OrderedHashMap({Const: 400})

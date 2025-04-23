@@ -232,25 +232,44 @@ Statements:
   (v2: core::integer::u32) <- 1
   (v3: core::integer::u32) <- 0
   (v4: core::integer::u32) <- 5
-  (v5: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v3, v4)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, ())>) <- test::MyImpl::foo[23-108](v0, v1, v5, v2)
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk1,
-    PanicResult::Err(v10) => blk2,
+  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v3, v4) {
+    Result::Ok(v5, v6) => blk1,
+    Result::Err(v7, v8) => blk2,
   })
 
 blk1:
 Statements:
-  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
-  (v12: core::ops::range::RangeIterator::<core::integer::u32>, v13: ()) <- struct_destructure(v9)
-  (v14: ((),)) <- struct_construct(v13)
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v14)
+  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
 End:
-  Return(v6, v11, v15)
+  Goto(blk3, {v5 -> v10, v9 -> v11, v6 -> v12})
 
 blk2:
 Statements:
-  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
 End:
-  Return(v6, v7, v16)
+  Goto(blk3, {v7 -> v10, v13 -> v11, v8 -> v12})
+
+blk3:
+Statements:
+  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, ())>) <- test::MyImpl::foo[23-108](v10, v11, v12, v2)
+End:
+  Match(match_enum(v16) {
+    PanicResult::Ok(v17) => blk4,
+    PanicResult::Err(v18) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
+  (v20: core::ops::range::internal::IntRange::<core::integer::u32>, v21: ()) <- struct_destructure(v17)
+  (v22: ((),)) <- struct_construct(v21)
+  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v22)
+End:
+  Return(v14, v19, v23)
+
+blk5:
+Statements:
+  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v18)
+End:
+  Return(v14, v15, v24)

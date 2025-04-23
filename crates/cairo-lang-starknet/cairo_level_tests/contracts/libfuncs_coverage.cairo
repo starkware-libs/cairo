@@ -49,6 +49,7 @@ enum Libfuncs {
     Starknet: StarknetLibfuncs,
     Consts: ConstsLibfuncs,
     Snapshot: SnapshotLibfuncs,
+    RangeIter: (u8, u8),
 }
 
 enum NumericLibfuncs<T> {
@@ -231,6 +232,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Starknet(libfuncs) => starknet_libfuncs(libfuncs),
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
+        Libfuncs::RangeIter((s, e)) => { for _ in s..e {} },
     }
 }
 use core::num::traits::Sqrt;
