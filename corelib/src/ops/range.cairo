@@ -294,6 +294,16 @@ mod internal {
 
 /// Marker trait to enable using the Sierra libfuncs for integer range iteration (`IntRange`).
 trait SierraIntRangeSupport<T>;
+impl SierraIntRangeSupportU8 of SierraIntRangeSupport<u8>;
+impl SierraIntRangeSupportU16 of SierraIntRangeSupport<u16>;
+impl SierraIntRangeSupportU32 of SierraIntRangeSupport<u32>;
+impl SierraIntRangeSupportU64 of SierraIntRangeSupport<u64>;
+impl SierraIntRangeSupportU128 of SierraIntRangeSupport<u128>;
+impl SierraIntRangeSupportI8 of SierraIntRangeSupport<i8>;
+impl SierraIntRangeSupportI16 of SierraIntRangeSupport<i16>;
+impl SierraIntRangeSupportI32 of SierraIntRangeSupport<i32>;
+impl SierraIntRangeSupportI64 of SierraIntRangeSupport<i64>;
+impl SierraIntRangeSupportI128 of SierraIntRangeSupport<i128>;
 
 impl SierraRangeIntoIterator<
     T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>,

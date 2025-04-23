@@ -545,7 +545,7 @@ pub impl MutableVecIndexView<
 #[derive(Drop)]
 pub struct VecIter<T, impl VecTraitImpl: VecTrait<T>> {
     vec: T,
-    current_index: crate::ops::RangeIterator<u64>,
+    current_index: IntoIterator::<crate::ops::Range<u64>>::IntoIter,
 }
 
 impl VecIterator<T, impl VecTraitImpl: VecTrait<T>, +Drop<T>, +Copy<T>> of Iterator<VecIter<T>> {
@@ -594,7 +594,7 @@ pub impl PathableVecIntoIterRange<
 #[derive(Drop)]
 struct MutableVecIter<T, impl MutVecTraitImpl: MutableVecTrait<T>> {
     vec: T,
-    current_index: crate::ops::RangeIterator<u64>,
+    current_index: IntoIterator::<crate::ops::Range<u64>>::IntoIter,
 }
 
 impl MutableVecIterator<
