@@ -16,9 +16,15 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
 use crate::FlatLowered;
-use crate::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use crate::db::{ExternalCodeSizeEstimator, LoweringDatabase, LoweringGroup, init_lowering_group};
 use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
+
+impl ExternalCodeSizeEstimator for LoweringDatabaseForTesting {
+    fn get_db(&self) -> &dyn LoweringGroup {
+        self
+    }
+}
 
 #[salsa::database(
     LoweringDatabase,
