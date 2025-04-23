@@ -21,7 +21,7 @@ use crate::{
 ///
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
-/// end and there was no side effects later, the end is replaced with a return statement.
+/// end and there were no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
