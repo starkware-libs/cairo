@@ -45,51 +45,81 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 10: 4 (store_temp<test::MyEnum>([5]) -> ([5]))
-  statement 11: 4 (store_temp<test::MyEnum>([10]) -> ([10]))
-  statement 32: 4 (u8_overflowing_add([0], [19], [20]) { fallthrough([24], [25]) 71([26], [27]) })
-  statement 57: 4 (u8_overflowing_add([15], [37], [38]) { fallthrough([42], [43]) 67([44], [45]) })
-  statement 65: 3 (store_temp<core::panics::PanicResult::<((),)>>([49]) -> ([49]))
-  statement 12: 2 (enum_match<test::MyEnum>([5]) { fallthrough([11]) 17([12]) 21([13]) 27([14]) })
-  statement 37: 2 (enum_match<test::MyEnum>([10]) { fallthrough([29]) 42([30]) 46([31]) 52([32]) })
-  statement 24: 1 (store_temp<u8>([16]) -> ([19]))
-  statement 25: 1 (store_temp<u8>([18]) -> ([20]))
-  statement 26: 1 (jump() { 32() })
-  statement 36: 1 (store_temp<RangeCheck>([24]) -> ([15]))
-  statement 55: 1 (store_temp<u8>([39]) -> ([37]))
-  statement 56: 1 (store_temp<u8>([41]) -> ([38]))
-  statement 58: 1 (branch_align() -> ())
-  statement 61: 1 (store_temp<RangeCheck>([42]) -> ([33]))
-  statement 66: 1 (return([33], [49]))
+  statement 96: 8 (u8_overflowing_add([0], [17], [18]) { fallthrough([22], [23]) 104([24], [25]) })
+  statement 68: 7 (enum_match<test::MyEnum>([1]) { fallthrough([2]) 77([3]) 85([4]) 91([5]) })
+  statement 102: 6 (store_temp<core::panics::PanicResult::<(core::felt252,)>>([28]) -> ([28]))
+  statement 5: 4 (store_temp<test::MyEnum>([4]) -> ([4]))
+  statement 15: 4 (store_temp<test::MyEnum>([12]) -> ([12]))
+  statement 26: 4 (store_temp<test::MyEnum>([21]) -> ([21]))
+  statement 37: 4 (store_temp<test::MyEnum>([30]) -> ([30]))
+  statement 46: 3 (store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37]))
+  statement 75: 3 (store_temp<core::panics::PanicResult::<(core::felt252,)>>([9]) -> ([9]))
+  statement 83: 3 (store_temp<core::panics::PanicResult::<(core::felt252,)>>([13]) -> ([13]))
+  statement 97: 2 (branch_align() -> ())
+  statement 101: 2 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 103: 2 (return([22], [28]))
+  statement 4: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 6: 1 (function_call<user@test::foo>([0], [4]) -> ([5], [6]))
+  statement 7: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([6]) { fallthrough([7]) 63([8]) })
+  statement 14: 1 (store_temp<RangeCheck>([5]) -> ([5]))
+  statement 16: 1 (function_call<user@test::foo>([5], [12]) -> ([13], [14]))
+  statement 17: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([14]) { fallthrough([15]) 58([16]) })
+  statement 25: 1 (store_temp<RangeCheck>([13]) -> ([13]))
+  statement 27: 1 (function_call<user@test::foo>([13], [21]) -> ([22], [23]))
+  statement 28: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([23]) { fallthrough([24]) 53([25]) })
+  statement 36: 1 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 38: 1 (function_call<user@test::foo>([22], [30]) -> ([31], [32]))
+  statement 39: 1 (enum_match<core::panics::PanicResult::<(core::felt252,)>>([32]) { fallthrough([33]) 48([34]) })
+  statement 45: 1 (store_temp<RangeCheck>([31]) -> ([31]))
+  statement 47: 1 (return([31], [37]))
+  statement 69: 1 (branch_align() -> ())
+  statement 74: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 76: 1 (return([0], [9]))
+  statement 77: 1 (branch_align() -> ())
+  statement 82: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 84: 1 (return([0], [13]))
+  statement 88: 1 (store_temp<u8>([14]) -> ([17]))
+  statement 89: 1 (store_temp<u8>([16]) -> ([18]))
+  statement 90: 1 (jump() { 96() })
+  statement 94: 1 (store_temp<u8>([19]) -> ([17]))
+  statement 95: 1 (store_temp<u8>([21]) -> ([18]))
 Weight by concrete libfunc:
-  libfunc store_temp<test::MyEnum>: 8
+  libfunc store_temp<test::MyEnum>: 16
+  libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>>: 12
+  libfunc store_temp<RangeCheck>: 9
   libfunc u8_overflowing_add: 8
-  libfunc enum_match<test::MyEnum>: 4
+  libfunc enum_match<test::MyEnum>: 7
+  libfunc branch_align: 4
+  libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>>: 4
+  libfunc function_call<user@test::foo>: 4
   libfunc store_temp<u8>: 4
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
-  libfunc store_temp<RangeCheck>: 2
-  libfunc branch_align: 1
   libfunc jump: 1
-  return: 1
+  return: 5
 Weight by generic libfunc:
-  libfunc store_temp: 17
+  libfunc store_temp: 44
+  libfunc enum_match: 11
   libfunc u8_overflowing_add: 8
-  libfunc enum_match: 4
-  libfunc branch_align: 1
+  libfunc branch_align: 4
+  libfunc function_call: 4
   libfunc jump: 1
-  return: 1
+  return: 5
 Weight by user function (inc. generated):
-  function test::main: 32
+  function test::foo: 44
+  function test::main: 33
 Weight by original user function (exc. generated):
-  function test::main: 32
+  function test::foo: 44
+  function test::main: 33
 Weight by Cairo function:
-  function lib.cairo::foo: 17
-  function core::integer::U8Add::add: 11
-  function lib.cairo::main: 4
+  function lib.cairo::foo: 34
+  function lib.cairo::main: 33
+  function core::integer::U8Add::add: 10
 Weight by Sierra stack trace:
-  test::main: 32
+  test::main: 77
+  test::main -> test::foo: 44
 Weight by Cairo stack trace:
-  test::main: 32
+  test::main: 77
+  test::main -> test::foo: 44
 
 //! > ==========================================================================
 

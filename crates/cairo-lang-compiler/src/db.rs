@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
@@ -10,20 +11,59 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::{
+    ExternalCodeSizeEstimator, LoweringDatabase, LoweringGroup, init_lowering_group,
+};
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
+use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
 };
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenDatabase, SierraGenGroup};
+use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
+
+impl ExternalCodeSizeEstimator for RootDatabase {
+    /// Estimates the size of a function by compiling it to CASM.
+    /// Note that the size is not accurate since we don't use the real costs for the dummy
+    /// functions.
+    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<isize> {
+        let program = get_dummy_program_for_size_estimation(self, function_id)?;
+
+        let n_dummy_functions = program.funcs.len() - 1;
+
+        // TODO(ilya): Consider adding set costs to dummy functions.
+        let builder = match RunnableBuilder::new(program, Default::default()) {
+            Ok(builder) => builder,
+            Err(err) => {
+                if err.is_ap_overflow_error() {
+                    // If the compilation failed due to an AP overflow, we don't want to panic as it
+                    // can happen for valid code. In this case, the function is
+                    // probably too large for inline so we can just return the max size.
+                    return Ok(isize::MAX);
+                }
+
+                panic!("Failed to compile program to casm.");
+            }
+        };
+        let casm = builder.casm_program();
+        let total_size = casm.instructions.iter().map(|inst| inst.body.op_size()).sum::<usize>();
+        Ok((total_size - (n_dummy_functions * 3)).try_into().unwrap_or(0))
+    }
+
+    fn get_db(&self) -> &dyn LoweringGroup {
+        unreachable!("This shouldn't be called.")
+    }
+}
 
 #[salsa::database(
     DefsDatabase,

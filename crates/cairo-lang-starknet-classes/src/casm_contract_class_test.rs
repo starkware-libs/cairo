@@ -100,7 +100,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
 /// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
 /// constant that was computed by other implementations.
-#[test_case("account__account", "627e0f690cdf493850cf54daf3e6bfe473c6ff1236c4d615251015df9fc2cca")]
+#[test_case("account__account", "3682a25fd77a48136d2feeaa896d6bcf498b1c47df0e14f6b35b252e99eeee9")]
 fn test_compiled_class_hash(name: &str, expected_hash: &str) {
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());

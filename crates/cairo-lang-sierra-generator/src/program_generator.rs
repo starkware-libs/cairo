@@ -392,8 +392,7 @@ fn dummy_call_libfunc_id(
     .intern(db)
 }
 
-
-/// Given `function_id` generates a dummy program with the body of the relevent function
+/// Given `function_id` generates a dummy program with the body of the relevant function
 /// and dummy helper functions that allows the program to be compiled to casm.
 pub fn get_dummy_program_for_size_estimation(
     db: &dyn SierraGenGroup,
