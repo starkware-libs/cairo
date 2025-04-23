@@ -158,8 +158,9 @@ fn try_extract_dummy_func_info<'a>(
 }
 
 /// Libfunc to replace function calls in size estiamtion.
-/// The libfunc consumes the function argments and returns the function return values.
-/// The ap_change and signature are encoded in the generic arguments, see `try_extract_dummy_func_info` for details.
+/// The libfunc consumes the function arguments and returns the function return values.
+/// The ap_change and signature are encoded in the generic arguments, see
+/// `try_extract_dummy_func_info` for details.
 #[derive(Default)]
 pub struct DummyFunctionCallLibfunc {}
 impl NamedLibfunc for DummyFunctionCallLibfunc {

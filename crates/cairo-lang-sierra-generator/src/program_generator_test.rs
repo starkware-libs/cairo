@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -12,7 +13,6 @@ use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use cairo_lang_lowering::db::LoweringGroup;
 
 use super::get_dummy_program_for_size_estimation;
 use crate::db::SierraGenGroup;
