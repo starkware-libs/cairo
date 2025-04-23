@@ -167,6 +167,47 @@ End:
 
 //! > ==========================================================================
 
+//! > Box unbox const folding.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    BoxTrait::new(2).unbox()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v0)
+  (v2: core::felt252) <- core::box::unbox::<core::felt252>(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::box::Box::<core::felt252>) <- 2.into_box()
+  (v2: core::felt252) <- 2
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Division by const non-zero.
 
 //! > test_runner_name

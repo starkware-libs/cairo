@@ -41,6 +41,8 @@ enum VarInfo {
     /// The variable is a struct of other variables.
     /// `None` values represent variables that are not tracked.
     Struct(Vec<Option<VarInfo>>),
+    /// The variable is a box of another variable.
+    Box(Box<VarInfo>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -103,19 +105,24 @@ pub fn const_folding(
         for stmt in block.statements.iter_mut() {
             ctx.maybe_replace_inputs(stmt.inputs_mut());
             match stmt {
-                Statement::Const(StatementConst { value, output }) => {
-                    // Preventing the insertion of non-member consts values (such as a `Box` of a
-                    // const).
-                    if matches!(
-                        value,
-                        ConstValue::Int(..)
-                            | ConstValue::Struct(..)
-                            | ConstValue::Enum(..)
-                            | ConstValue::NonZero(..)
-                    ) {
+                Statement::Const(StatementConst { value, output }) => match value {
+                    value @ (ConstValue::Int(..)
+                    | ConstValue::Struct(..)
+                    | ConstValue::Enum(..)
+                    | ConstValue::NonZero(..)) => {
                         ctx.var_info.insert(*output, VarInfo::Const(value.clone()));
                     }
-                }
+                    ConstValue::Boxed(inner) => {
+                        ctx.var_info.insert(
+                            *output,
+                            VarInfo::Box(VarInfo::Const(inner.as_ref().clone()).into()),
+                        );
+                    }
+                    ConstValue::Generic(_)
+                    | ConstValue::ImplConstant(_)
+                    | ConstValue::Var(..)
+                    | ConstValue::Missing(_) => {}
+                },
                 Statement::Snapshot(stmt) => {
                     if let Some(info) = ctx.var_info.get(&stmt.input.var_id).cloned() {
                         ctx.var_info.insert(stmt.original(), info.clone());
@@ -337,15 +344,30 @@ impl ConstFoldingContext<'_> {
             }
             None
         } else if id == self.into_box {
-            let const_value = match self.var_info.get(&stmt.inputs[0].var_id)? {
-                VarInfo::Const(val) => val,
-                VarInfo::Snapshot(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)?,
-                _ => return None,
+            let input = stmt.inputs[0];
+            let var_info = self.var_info.get(&input.var_id).cloned().unwrap_or(VarInfo::Var(input));
+            let const_value = match &var_info {
+                VarInfo::Const(val) => Some(val.clone()),
+                VarInfo::Snapshot(info) => {
+                    try_extract_matches!(info.as_ref(), VarInfo::Const).cloned()
+                }
+                _ => None,
             };
-            let value = ConstValue::Boxed(const_value.clone().into());
-            // Not inserting the value into the `var_info` map because the
-            // resulting box isn't an actual const at the Sierra level.
-            Some(StatementConst { value, output: stmt.outputs[0] })
+            self.var_info.insert(stmt.outputs[0], VarInfo::Box(var_info.into()));
+            Some(StatementConst {
+                value: ConstValue::Boxed(const_value?.into()),
+                output: stmt.outputs[0],
+            })
+        } else if id == self.unbox {
+            if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
+                let inner = inner.as_ref().clone();
+                if let VarInfo::Const(inner) =
+                    self.var_info.entry(stmt.outputs[0]).insert_entry(inner).get()
+                {
+                    return Some(StatementConst { value: inner.clone(), output: stmt.outputs[0] });
+                }
+            }
+            None
         } else if self.upcast_fns.contains(&id) {
             let int_value = self.as_int(stmt.inputs[0].var_id)?;
             let output = stmt.outputs[0];
@@ -634,6 +656,8 @@ pub struct ConstFoldingLibfuncInfo {
     felt_sub: ExternFunctionId,
     /// The `into_box` libfunc.
     into_box: ExternFunctionId,
+    /// The `unbox` libfunc.
+    unbox: ExternFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions that check if numbers are equal.
@@ -755,6 +779,7 @@ impl ConstFoldingLibfuncInfo {
         Self {
             felt_sub: core.extern_function_id("felt252_sub"),
             into_box: box_module.extern_function_id("into_box"),
+            unbox: box_module.extern_function_id("unbox"),
             nz_fns,
             eq_fns,
             uadd_fns,
