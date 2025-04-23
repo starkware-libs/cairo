@@ -29,8 +29,9 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId};
 use crate::inline::get_inline_diagnostics;
+use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
@@ -41,9 +42,28 @@ use crate::{
     BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement, ids,
 };
 
+/// A trait for estimation of the code size of a function.
+pub trait ExternalCodeSizeEstimator {
+    /// Returns estimated size of the function with the given id.
+    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<isize>;
+}
+
+/// Marker trait for using ApproxCasmInlineWeight as the code size estimator.
+pub trait UseApproxCodeSizeEstimator: Upcast<dyn LoweringGroup> {}
+
+impl<T: UseApproxCodeSizeEstimator> ExternalCodeSizeEstimator for T {
+    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<isize> {
+        let db = self.upcast();
+        let lowered = db.inlined_function_with_body_lowered(function_id)?;
+        Ok(ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered))
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
-pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
+pub trait LoweringGroup:
+    SemanticGroup + Upcast<dyn SemanticGroup> + ExternalCodeSizeEstimator
+{
     #[salsa::interned]
     fn intern_lowering_function(&self, id: ids::FunctionLongId) -> ids::FunctionId;
     #[salsa::interned]

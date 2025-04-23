@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-mod statements_weights;
+pub mod statements_weights;
 
 use std::collections::{HashMap, VecDeque};
 
@@ -13,9 +13,7 @@ use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, zip_eq};
-use statements_weights::InlineWeight;
 
-use self::statements_weights::ApproxCasmInlineWeight;
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{
@@ -74,7 +72,7 @@ pub fn priv_should_inline(
         (InliningStrategy::Default, InlineConfiguration::None) => {
             /// The default threshold for inlining small functions. Decided according to sample
             /// contracts profiling.
-            const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 24;
+            const DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD: usize = 120;
             should_inline_lowered(db, function_id, DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD)
         }
         (InliningStrategy::InlineSmallFunctions(threshold), InlineConfiguration::None) => {
@@ -89,35 +87,8 @@ fn should_inline_lowered(
     function_id: ConcreteFunctionWithBodyId,
     inline_small_functions_threshold: usize,
 ) -> Maybe<bool> {
-    let lowered = db.inlined_function_with_body_lowered(function_id)?;
-    // The inline heuristics optimization flag only applies to non-trivial small functions.
-    // Functions which contain only a call or a literal are always inlined.
-
-    let weight_of_blocks = ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered);
-
-    if weight_of_blocks < inline_small_functions_threshold.into_or_panic() {
-        return Ok(true);
-    }
-
-    let root_block = lowered.blocks.root_block()?;
-    // The inline heuristics optimization flag only applies to non-trivial small functions.
-    // Functions which contain only a call or a literal are always inlined.
-    let num_of_statements: usize =
-        lowered.blocks.iter().map(|(_, block)| block.statements.len()).sum();
-    if num_of_statements < inline_small_functions_threshold {
-        return Ok(true);
-    }
-
-    Ok(match &root_block.end {
-        FlatBlockEnd::Return(..) => {
-            // Inline a function that only calls another function or returns a literal.
-            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Const(_)])
-        }
-        FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } | FlatBlockEnd::Panic(_) => false,
-        FlatBlockEnd::NotSet => {
-            panic!("Unexpected block end.");
-        }
-    })
+    let weight_of_blocks = db.estimate_size(function_id)?;
+    Ok(weight_of_blocks < inline_small_functions_threshold.into_or_panic())
 }
 
 // TODO(ilya): Add Rewriter trait.
