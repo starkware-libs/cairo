@@ -5,7 +5,7 @@ use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::{casm, casm_build_extend, deref};
+use cairo_lang_casm::{ap_change, casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -24,6 +24,7 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_gas::CostError;
+use cairo_lang_sierra_to_casm::annotations::AnnotationError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
@@ -60,6 +61,20 @@ impl BuildError {
             BuildError::SierraCompilationError(err) => err.stmt_indices(),
             _ => vec![],
         }
+    }
+
+    pub fn is_ap_overflow_error(&self) -> bool {
+        let BuildError::SierraCompilationError(err) = self else {
+            return false;
+        };
+
+        let CompilationError::AnnotationError(AnnotationError::ApChangeError { ref error, .. }) =
+            **err
+        else {
+            return false;
+        };
+
+        *error == ap_change::ApChangeError::OffsetOverflow
     }
 }
 
