@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
@@ -10,9 +11,13 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::{
+    ExternalCodeSizeEstimator, LoweringDatabase, LoweringGroup, init_lowering_group,
+};
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
+use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
 };
@@ -21,9 +26,30 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::{SierraGenDatabase, SierraGenGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
+
+impl ExternalCodeSizeEstimator for RootDatabase {
+    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<isize> {
+        let sierra_program_with_debug = self.get_sierra_program_for_functions(vec![function_id])?;
+        let last_statement_idx = match sierra_program_with_debug.program.funcs.get(1) {
+            Some(func) => func.entry_point.0,
+            None => sierra_program_with_debug.program.statements.len() - 1,
+        };
+
+        let builder =
+            RunnableBuilder::new(sierra_program_with_debug.program.clone(), Default::default())
+                .unwrap();
+        let casm = builder.casm_program();
+        Ok(casm.debug_info.sierra_statement_info[last_statement_idx].end_offset.into_or_panic())
+    }
+
+    fn get_db(&self) -> &dyn LoweringGroup {
+        unreachable!("This shouldn't be called.")
+    }
+}
 
 #[salsa::database(
     DefsDatabase,

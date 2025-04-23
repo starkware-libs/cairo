@@ -27,8 +27,9 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::{FunctionId, FunctionLongId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId};
 use crate::inline::get_inline_diagnostics;
+use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
@@ -39,9 +40,23 @@ use crate::{
     BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement, ids,
 };
 
+/// A trait for defining files external to the `filesystem` crate.
+pub trait ExternalCodeSizeEstimator {
+    /// Returns the virtual file matching the external id.
+    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<isize> {
+        let db = self.get_db();
+        let lowered = db.inlined_function_with_body_lowered(function_id)?;
+        Ok(ApproxCasmInlineWeight::new(db, &lowered).lowered_weight(&lowered))
+    }
+
+    fn get_db(&self) -> &dyn LoweringGroup;
+}
+
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
-pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
+pub trait LoweringGroup:
+    SemanticGroup + Upcast<dyn SemanticGroup> + ExternalCodeSizeEstimator
+{
     #[salsa::interned]
     fn intern_lowering_function(&self, id: ids::FunctionLongId) -> ids::FunctionId;
     #[salsa::interned]
