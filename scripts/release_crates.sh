@@ -50,6 +50,7 @@ CRATES_TO_PUBLISH=(
     cairo-run
     cairo-execute
     cairo-test
+    cairo-size-profiler
     sierra-compile
     starknet-compile
     starknet-sierra-compile
