@@ -153,12 +153,7 @@ pub fn const_folding(
                     let mut contains_info = false;
                     for input in inputs.iter() {
                         let Some(info) = ctx.var_info.get(&input.var_id) else {
-                            all_args.push(
-                                ctx.variables[input.var_id]
-                                    .copyable
-                                    .is_ok()
-                                    .then_some(VarInfo::Var(*input)),
-                            );
+                            all_args.push(var_info_if_copy(ctx.variables, *input));
                             continue;
                         };
                         contains_info = true;
@@ -412,14 +407,15 @@ impl ConstFoldingContext<'_> {
             None
         } else if id == self.into_box {
             let input = stmt.inputs[0];
-            let var_info = self.var_info.get(&input.var_id).cloned().unwrap_or(VarInfo::Var(input));
-            let const_value = match &var_info {
-                VarInfo::Const(val) => Some(val.clone()),
-                VarInfo::Snapshot(info) => {
+            let var_info = self.var_info.get(&input.var_id);
+            let const_value = match var_info {
+                Some(VarInfo::Const(val)) => Some(val.clone()),
+                Some(VarInfo::Snapshot(info)) => {
                     try_extract_matches!(info.as_ref(), VarInfo::Const).cloned()
                 }
                 _ => None,
             };
+            let var_info = var_info.cloned().or_else(|| var_info_if_copy(self.variables, input))?;
             self.var_info.insert(stmt.outputs[0], VarInfo::Box(var_info.into()));
             Some(Statement::Const(StatementConst {
                 value: ConstValue::Boxed(const_value?.into()),
@@ -457,10 +453,7 @@ impl ConstFoldingContext<'_> {
             let appended = stmt.inputs[1];
             var_infos.push(match self.var_info.get(&appended.var_id) {
                 Some(var_info) => Some(var_info.clone()),
-                None => self.variables[appended.var_id]
-                    .copyable
-                    .is_ok()
-                    .then_some(VarInfo::Var(appended)),
+                None => var_info_if_copy(self.variables, appended),
             });
             self.var_info.insert(stmt.outputs[0], VarInfo::Array(var_infos));
             None
@@ -819,6 +812,11 @@ impl ConstFoldingContext<'_> {
             *input = *new_var;
         }
     }
+}
+
+/// Returns a `VarInfo` of a variable only if it is copyable.
+fn var_info_if_copy(variables: &Arena<Variable>, input: VarUsage) -> Option<VarInfo> {
+    variables[input.var_id].copyable.is_ok().then_some(VarInfo::Var(input))
 }
 
 /// Query implementation of [LoweringGroup::priv_const_folding_info].
