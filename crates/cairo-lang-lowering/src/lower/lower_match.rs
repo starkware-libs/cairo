@@ -678,35 +678,52 @@ pub(crate) fn lower_expr_match(
         return lower_expr_match_value(ctx, expr, match_input, builder);
     }
 
+    let arms = expr.arms.iter().map(|arm| arm.into()).collect_vec();
+
+    lower_match_arms(
+        ctx,
+        builder,
+        expr.matched_expr,
+        lowered_expr,
+        arms,
+        location,
+        MatchKind::Match,
+    )
+}
+
+/// Lower the collected match arms according to the matched expression.
+pub(crate) fn lower_match_arms(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    matched_expr: semantic::ExprId,
+    lowered_expr: LoweredExpr,
+    arms: Vec<MatchArmWrapper>,
+    location: LocationId,
+    match_type: MatchKind,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
+
     let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
 
-    let arms = expr.arms.iter().map(|arm| arm.into()).collect_vec();
     if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
         return lower_expr_match_tuple(
             ctx,
             builder,
             lowered_expr,
-            expr.matched_expr,
+            matched_expr,
             &TupleInfo { n_snapshots, types },
             &arms,
-            MatchKind::Match,
+            match_type,
         );
     }
 
     // TODO(spapini): Use diagnostics.
     // TODO(spapini): Handle more than just enums.
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, MatchKind::Match);
+        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, match_type);
     }
-    lower_concrete_enum_match(
-        ctx,
-        builder,
-        expr.matched_expr,
-        lowered_expr,
-        &arms,
-        location,
-        MatchKind::Match,
-    )
+
+    lower_concrete_enum_match(ctx, builder, matched_expr, lowered_expr, &arms, location, match_type)
 }
 
 pub(crate) fn lower_concrete_enum_match(
