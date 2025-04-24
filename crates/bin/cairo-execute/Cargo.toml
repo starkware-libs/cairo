@@ -8,12 +8,12 @@ description = "Executable for creating executables and running them for the Cair
 
 [dependencies]
 anyhow.workspace = true
-bincode = { version = "2.0.0-rc.3" }
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.9.2" }
-cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.9.2" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.9.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.9.2" }
-cairo-vm =  { workspace = true, features = ["clap"] }
+bincode = { version = "2.0.1" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.11.4" }
+cairo-lang-executable = { path = "../../cairo-lang-executable", version = "~2.11.4" }
+cairo-lang-execute-utils = { path = "../../cairo-lang-execute-utils", version = "~2.11.4" }
+cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.11.4" }
+cairo-vm = { workspace = true, features = ["clap"] }
 clap.workspace = true
 num-bigint.workspace = true
 serde_json.workspace = true

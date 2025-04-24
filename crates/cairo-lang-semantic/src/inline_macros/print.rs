@@ -97,7 +97,7 @@ fn generate_code_inner(
 ) -> InlinePluginResult {
     let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
         return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-            syntax.as_syntax_node().stable_ptr(),
+            syntax.as_syntax_node().stable_ptr(db),
         ));
     };
     let arguments = syntax.arguments(db);

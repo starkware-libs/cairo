@@ -38,7 +38,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let mut changes_by_block =
         OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
 
-    for (src, opt_dst) in ctx.statement_to_move.into_iter() {
+    for (src, opt_dst) in ctx.statement_to_move {
         changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
 
         if let Some(dst) = opt_dst {
@@ -47,9 +47,8 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         }
     }
 
-    for (block_id, block_changes) in changes_by_block.into_iter() {
+    for (block_id, block_changes) in changes_by_block {
         let statements = &mut lowered.blocks[block_id].statements;
-        let block_len = statements.len();
 
         // Apply block changes in reverse order to prevent a change from invalidating the
         // indices of the other changes.
@@ -57,10 +56,7 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
             block_changes.into_iter().sorted_by_key(|(index, _)| Reverse(*index))
         {
             match opt_statement {
-                Some(stmt) => {
-                    // If index > block_len, we insert the statement at the end of the block.
-                    statements.insert(std::cmp::min(index, block_len), stmt)
-                }
+                Some(stmt) => statements.insert(index, stmt),
                 None => {
                     statements.remove(index);
                 }
@@ -74,9 +70,6 @@ pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
-
-    // Note that StatementLocation.0 might >= block.len() and it means that
-    // the variable should be inserted at the end of the block.
     next_use: UnorderedHashMap<VariableId, StatementLocation>,
 }
 
@@ -177,9 +170,7 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         }
 
         for var_usage in match_info.inputs() {
-            // Make sure we insert the match inputs after the variables that are used in the arms.
-            info.next_use
-                .insert(var_usage.var_id, (statement_location.0, statement_location.1 + 1));
+            info.next_use.insert(var_usage.var_id, statement_location);
         }
 
         info

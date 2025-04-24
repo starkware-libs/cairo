@@ -10,7 +10,7 @@ use cairo_lang_defs::plugin_utils::{
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 /// Macro for assertion.
@@ -28,20 +28,20 @@ impl InlineMacroExprPlugin for AssertMacro {
     ) -> InlinePluginResult {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
-                syntax.as_syntax_node().stable_ptr(),
+                syntax.as_syntax_node().stable_ptr(db),
             ));
         };
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) =
             legacy_inline_macro.arguments(db)
         else {
-            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax);
+            return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         let Some((value, format_args)) = arguments.split_first() else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    arguments_syntax.lparen(db).stable_ptr().untyped(),
+                    arguments_syntax.lparen(db).stable_ptr(db),
                     format!("Macro `{}` requires at least 1 argument.", Self::NAME),
                 )],
             };
@@ -50,7 +50,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
-                    value.stable_ptr().untyped(),
+                    value.stable_ptr(db),
                     format!("Macro `{}` requires the first argument to be unnamed.", Self::NAME),
                 )],
             };

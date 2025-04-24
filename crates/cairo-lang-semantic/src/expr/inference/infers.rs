@@ -16,7 +16,8 @@ use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
     ConcreteTraitTypeId,
 };
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::keyword::SELF_PARAM_KW;
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::ImplTypeId;
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, FunctionId,
@@ -236,12 +237,9 @@ impl InferenceEmbeddings for Inference<'_> {
             stable_ptr,
         )?;
 
-        SubstitutionRewriter {
-            db: self.db,
-            substitution: &GenericSubstitution::new(&impl_alias_generic_params, &generic_args),
-        }
-        .rewrite(impl_id)
-        .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))
+        GenericSubstitution::new(&impl_alias_generic_params, &generic_args)
+            .substitute(self.db, impl_id)
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))
     }
 
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
@@ -258,9 +256,8 @@ impl InferenceEmbeddings for Inference<'_> {
         let new_generic_args =
             self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
         let substitution = GenericSubstitution::new(generic_params, &new_generic_args);
-        let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
-        let generic_args = rewriter
-            .rewrite(generic_args.iter().copied().collect_vec())
+        let generic_args = substitution
+            .substitute(self.db, generic_args.iter().copied().collect_vec())
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
         self.conform_generic_args(&generic_args, expected_generic_args)?;
         Ok(self.rewrite(new_generic_args).no_err())
@@ -276,8 +273,8 @@ impl InferenceEmbeddings for Inference<'_> {
         let mut generic_args = vec![];
         let mut substitution = GenericSubstitution::default();
         for generic_param in generic_params {
-            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(generic_param.clone())
+            let generic_param = substitution
+                .substitute(self.db, generic_param.clone())
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
@@ -288,7 +285,7 @@ impl InferenceEmbeddings for Inference<'_> {
     }
 
     /// Tries to infer a trait function as a method for `self_ty`.
-    /// Supports snapshot snapshot coercions.
+    /// Supports snapshot coercions.
     ///
     /// Returns the deduced type and the number of snapshots that need to be added to it.
     ///
@@ -302,10 +299,10 @@ impl InferenceEmbeddings for Inference<'_> {
         stable_ptr: Option<SyntaxStablePtrId>,
         inference_error_cb: impl FnOnce(InferenceError),
     ) -> Option<(ConcreteTraitId, usize)> {
-        let trait_id = trait_function.trait_id(self.db.upcast());
+        let trait_id = trait_function.trait_id(self.db);
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
-        require(first_param.name == "self")?;
+        require(first_param.name == SELF_PARAM_KW)?;
 
         let trait_generic_params = self.db.trait_generic_params(trait_id).ok()?;
         let trait_generic_args =
@@ -342,9 +339,8 @@ impl InferenceEmbeddings for Inference<'_> {
         let function_substitution =
             GenericSubstitution::new(&function_generic_params, &function_generic_args);
         let substitution = trait_substitution.concat(function_substitution);
-        let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
 
-        let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
+        let fixed_param_ty = substitution.substitute(self.db, first_param.ty).ok()?;
         let (_, n_snapshots) = match self.conform_ty_ex(self_ty, fixed_param_ty, true) {
             Ok(conform) => conform,
             Err(err_set) => {

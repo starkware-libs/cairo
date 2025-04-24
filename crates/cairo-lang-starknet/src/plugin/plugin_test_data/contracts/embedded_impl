@@ -324,15 +324,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitDispatcherCopy of core::traits::Copy::<OutsideTraitDispatcher>;
-impl OutsideTraitDispatcherDrop of core::traits::Drop::<OutsideTraitDispatcher>;
-impl OutsideTraitDispatcherSerde of core::serde::Serde::<OutsideTraitDispatcher> {
+impl OutsideTraitDispatcherCopy<> of core::traits::Copy::<OutsideTraitDispatcher>;
+impl OutsideTraitDispatcherDrop<> of core::traits::Drop::<OutsideTraitDispatcher>;
+impl OutsideTraitDispatcherSerde<> of core::serde::Serde::<OutsideTraitDispatcher> {
     fn serialize(self: @OutsideTraitDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -343,30 +344,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitDispatcher of starknet::Store::<OutsideTraitDispatcher> {
+impl OutsideTraitDispatcherStore<> of starknet::Store::<OutsideTraitDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -422,15 +441,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitLibraryDispatcher>;
-impl OutsideTraitLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitLibraryDispatcher>;
-impl OutsideTraitLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitLibraryDispatcher> {
+impl OutsideTraitLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitLibraryDispatcher>;
+impl OutsideTraitLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitLibraryDispatcher>;
+impl OutsideTraitLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitLibraryDispatcher> {
     fn serialize(self: @OutsideTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -441,30 +461,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitLibraryDispatcher of starknet::Store::<OutsideTraitLibraryDispatcher> {
+impl OutsideTraitLibraryDispatcherStore<> of starknet::Store::<OutsideTraitLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -520,15 +558,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitSafeLibraryDispatcher>;
-impl OutsideTraitSafeLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitSafeLibraryDispatcher>;
-impl OutsideTraitSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitSafeLibraryDispatcher> {
+impl OutsideTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitSafeLibraryDispatcher>;
+impl OutsideTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitSafeLibraryDispatcher>;
+impl OutsideTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitSafeLibraryDispatcher> {
     fn serialize(self: @OutsideTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -539,30 +578,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitSafeLibraryDispatcher of starknet::Store::<OutsideTraitSafeLibraryDispatcher> {
+impl OutsideTraitSafeLibraryDispatcherStore<> of starknet::Store::<OutsideTraitSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -618,15 +675,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeDispatcherCopy of core::traits::Copy::<OutsideTraitSafeDispatcher>;
-impl OutsideTraitSafeDispatcherDrop of core::traits::Drop::<OutsideTraitSafeDispatcher>;
-impl OutsideTraitSafeDispatcherSerde of core::serde::Serde::<OutsideTraitSafeDispatcher> {
+impl OutsideTraitSafeDispatcherCopy<> of core::traits::Copy::<OutsideTraitSafeDispatcher>;
+impl OutsideTraitSafeDispatcherDrop<> of core::traits::Drop::<OutsideTraitSafeDispatcher>;
+impl OutsideTraitSafeDispatcherSerde<> of core::serde::Serde::<OutsideTraitSafeDispatcher> {
     fn serialize(self: @OutsideTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -637,30 +695,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitSafeDispatcher of starknet::Store::<OutsideTraitSafeDispatcher> {
+impl OutsideTraitSafeDispatcherStore<> of starknet::Store::<OutsideTraitSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -716,8 +792,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitDispatcherSubPointers>;
-impl OutsideTraitDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitDispatcherSubPointers>;
+impl OutsideTraitDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitDispatcherSubPointers>;
+impl OutsideTraitDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -725,8 +801,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitDispatcherSubPointersMut>;
-impl OutsideTraitDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitDispatcherSubPointersMut>;
+impl OutsideTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitDispatcherSubPointersMut>;
+impl OutsideTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -734,8 +810,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointers>;
-impl OutsideTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitLibraryDispatcherSubPointers>;
+impl OutsideTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointers>;
+impl OutsideTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -743,8 +819,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointersMut>;
-impl OutsideTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitLibraryDispatcherSubPointersMut>;
+impl OutsideTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitLibraryDispatcherSubPointersMut>;
+impl OutsideTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -752,8 +828,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointers>;
-impl OutsideTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -761,8 +837,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointersMut>;
-impl OutsideTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -770,8 +846,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointers>;
-impl OutsideTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitSafeDispatcherSubPointers>;
+impl OutsideTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointers>;
+impl OutsideTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -779,8 +855,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointersMut>;
-impl OutsideTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitSafeDispatcherSubPointersMut>;
+impl OutsideTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointersMut>;
+impl OutsideTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:17:1
@@ -864,7 +940,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591.try_into().unwrap();
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -905,7 +981,7 @@ lib.cairo:17:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:17:1
@@ -935,8 +1011,8 @@ lib.cairo:19:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:19:5
@@ -944,8 +1020,8 @@ lib.cairo:19:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 
@@ -1363,15 +1439,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructDispatcher>;
-impl OutsideTraitWithDestructDispatcherDrop of core::traits::Drop::<OutsideTraitWithDestructDispatcher>;
-impl OutsideTraitWithDestructDispatcherSerde of core::serde::Serde::<OutsideTraitWithDestructDispatcher> {
+impl OutsideTraitWithDestructDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDestructDispatcher>;
+impl OutsideTraitWithDestructDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDestructDispatcher>;
+impl OutsideTraitWithDestructDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDestructDispatcher> {
     fn serialize(self: @OutsideTraitWithDestructDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDestructDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDestructDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1382,30 +1459,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDestructDispatcher of starknet::Store::<OutsideTraitWithDestructDispatcher> {
+impl OutsideTraitWithDestructDispatcherStore<> of starknet::Store::<OutsideTraitWithDestructDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1461,15 +1556,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcher>;
-impl OutsideTraitWithDestructLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcher>;
-impl OutsideTraitWithDestructLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithDestructLibraryDispatcher> {
+impl OutsideTraitWithDestructLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcher>;
+impl OutsideTraitWithDestructLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcher>;
+impl OutsideTraitWithDestructLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDestructLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithDestructLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDestructLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDestructLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1480,30 +1576,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructLibraryDispatcher> {
+impl OutsideTraitWithDestructLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithDestructLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1559,15 +1673,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcher>;
-impl OutsideTraitWithDestructSafeLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcher>;
-impl OutsideTraitWithDestructSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithDestructSafeLibraryDispatcher> {
+impl OutsideTraitWithDestructSafeLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcher>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcher>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDestructSafeLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithDestructSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDestructSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDestructSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1578,30 +1693,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDestructSafeLibraryDispatcher> {
+impl OutsideTraitWithDestructSafeLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithDestructSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1657,15 +1790,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcher>;
-impl OutsideTraitWithDestructSafeDispatcherDrop of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcher>;
-impl OutsideTraitWithDestructSafeDispatcherSerde of core::serde::Serde::<OutsideTraitWithDestructSafeDispatcher> {
+impl OutsideTraitWithDestructSafeDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcher>;
+impl OutsideTraitWithDestructSafeDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcher>;
+impl OutsideTraitWithDestructSafeDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDestructSafeDispatcher> {
     fn serialize(self: @OutsideTraitWithDestructSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDestructSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDestructSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1676,30 +1810,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDestructSafeDispatcher of starknet::Store::<OutsideTraitWithDestructSafeDispatcher> {
+impl OutsideTraitWithDestructSafeDispatcherStore<> of starknet::Store::<OutsideTraitWithDestructSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDestructSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1755,15 +1907,16 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcher>;
-impl OutsideTraitWithPanicDestructDispatcherDrop of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcher>;
-impl OutsideTraitWithPanicDestructDispatcherSerde of core::serde::Serde::<OutsideTraitWithPanicDestructDispatcher> {
+impl OutsideTraitWithPanicDestructDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcher>;
+impl OutsideTraitWithPanicDestructDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcher>;
+impl OutsideTraitWithPanicDestructDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithPanicDestructDispatcher> {
     fn serialize(self: @OutsideTraitWithPanicDestructDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithPanicDestructDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithPanicDestructDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -1774,30 +1927,48 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithPanicDestructDispatcher of starknet::Store::<OutsideTraitWithPanicDestructDispatcher> {
+impl OutsideTraitWithPanicDestructDispatcherStore<> of starknet::Store::<OutsideTraitWithPanicDestructDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1853,15 +2024,16 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcher>;
-impl OutsideTraitWithPanicDestructLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcher>;
-impl OutsideTraitWithPanicDestructLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithPanicDestructLibraryDispatcher> {
+impl OutsideTraitWithPanicDestructLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcher>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcher>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithPanicDestructLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithPanicDestructLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithPanicDestructLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithPanicDestructLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1872,30 +2044,48 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithPanicDestructLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructLibraryDispatcher> {
+impl OutsideTraitWithPanicDestructLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithPanicDestructLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -1951,15 +2141,16 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcher>;
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcher>;
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcher>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcher>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithPanicDestructSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithPanicDestructSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -1970,30 +2161,48 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithPanicDestructSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2049,15 +2258,16 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcher>;
-impl OutsideTraitWithPanicDestructSafeDispatcherDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcher>;
-impl OutsideTraitWithPanicDestructSafeDispatcherSerde of core::serde::Serde::<OutsideTraitWithPanicDestructSafeDispatcher> {
+impl OutsideTraitWithPanicDestructSafeDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcher>;
+impl OutsideTraitWithPanicDestructSafeDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcher>;
+impl OutsideTraitWithPanicDestructSafeDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithPanicDestructSafeDispatcher> {
     fn serialize(self: @OutsideTraitWithPanicDestructSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithPanicDestructSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithPanicDestructSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -2068,30 +2278,48 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithPanicDestructSafeDispatcher of starknet::Store::<OutsideTraitWithPanicDestructSafeDispatcher> {
+impl OutsideTraitWithPanicDestructSafeDispatcherStore<> of starknet::Store::<OutsideTraitWithPanicDestructSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithPanicDestructSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2147,8 +2375,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointers>;
-impl OutsideTraitWithDestructDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDestructDispatcherSubPointers>;
+impl OutsideTraitWithDestructDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointers>;
+impl OutsideTraitWithDestructDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDestructDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -2156,8 +2384,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointersMut>;
-impl OutsideTraitWithDestructDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDestructDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDestructDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -2165,8 +2393,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointers>;
-impl OutsideTraitWithDestructLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDestructLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDestructLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -2174,8 +2402,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDestructLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -2183,8 +2411,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointers>;
-impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -2192,8 +2420,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -2201,8 +2429,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointers>;
-impl OutsideTraitWithDestructSafeDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcherSubPointers>;
+impl OutsideTraitWithDestructSafeDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointers>;
+impl OutsideTraitWithDestructSafeDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -2210,8 +2438,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDestructSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
-impl OutsideTraitWithDestructSafeDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithDestructSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:15:1
@@ -2219,8 +2447,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointers>;
-impl OutsideTraitWithPanicDestructDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcherSubPointers>;
 
 
 lib.cairo:15:1
@@ -2228,8 +2456,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointersMut>;
-impl OutsideTraitWithPanicDestructDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructDispatcherSubPointersMut>;
 
 
 lib.cairo:15:1
@@ -2237,8 +2465,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointers>;
-impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointers>;
 
 
 lib.cairo:15:1
@@ -2246,8 +2474,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:15:1
@@ -2255,8 +2483,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointers>;
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:15:1
@@ -2264,8 +2492,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:15:1
@@ -2273,8 +2501,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointers>;
-impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointers>;
+impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcherSubPointers>;
 
 
 lib.cairo:15:1
@@ -2282,8 +2510,8 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
-impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:29:1
@@ -2360,7 +2588,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b.try_into().unwrap();
 
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
@@ -2407,7 +2635,7 @@ lib.cairo:29:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:29:1
@@ -2437,8 +2665,8 @@ lib.cairo:31:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:31:5
@@ -2446,8 +2674,8 @@ lib.cairo:31:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
@@ -2681,15 +2909,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropDispatcher>;
-impl OutsideTraitWithDropDispatcherDrop of core::traits::Drop::<OutsideTraitWithDropDispatcher>;
-impl OutsideTraitWithDropDispatcherSerde of core::serde::Serde::<OutsideTraitWithDropDispatcher> {
+impl OutsideTraitWithDropDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDropDispatcher>;
+impl OutsideTraitWithDropDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDropDispatcher>;
+impl OutsideTraitWithDropDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDropDispatcher> {
     fn serialize(self: @OutsideTraitWithDropDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDropDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDropDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -2700,30 +2929,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDropDispatcher of starknet::Store::<OutsideTraitWithDropDispatcher> {
+impl OutsideTraitWithDropDispatcherStore<> of starknet::Store::<OutsideTraitWithDropDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2779,15 +3026,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcher>;
-impl OutsideTraitWithDropLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcher>;
-impl OutsideTraitWithDropLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithDropLibraryDispatcher> {
+impl OutsideTraitWithDropLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcher>;
+impl OutsideTraitWithDropLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcher>;
+impl OutsideTraitWithDropLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDropLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithDropLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDropLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDropLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -2798,30 +3046,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDropLibraryDispatcher of starknet::Store::<OutsideTraitWithDropLibraryDispatcher> {
+impl OutsideTraitWithDropLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithDropLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2877,15 +3143,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeLibraryDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcher>;
-impl OutsideTraitWithDropSafeLibraryDispatcherDrop of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcher>;
-impl OutsideTraitWithDropSafeLibraryDispatcherSerde of core::serde::Serde::<OutsideTraitWithDropSafeLibraryDispatcher> {
+impl OutsideTraitWithDropSafeLibraryDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcher>;
+impl OutsideTraitWithDropSafeLibraryDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcher>;
+impl OutsideTraitWithDropSafeLibraryDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDropSafeLibraryDispatcher> {
     fn serialize(self: @OutsideTraitWithDropSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.class_hash, ref output)
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDropSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDropSafeLibraryDispatcher {
-            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+            class_hash: class_hash.value,
         })
     }
 }
@@ -2896,30 +3163,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDropSafeLibraryDispatcher of starknet::Store::<OutsideTraitWithDropSafeLibraryDispatcher> {
+impl OutsideTraitWithDropSafeLibraryDispatcherStore<> of starknet::Store::<OutsideTraitWithDropSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeLibraryDispatcher {
-                class_hash,
+                class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -2975,15 +3260,16 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeDispatcherCopy of core::traits::Copy::<OutsideTraitWithDropSafeDispatcher>;
-impl OutsideTraitWithDropSafeDispatcherDrop of core::traits::Drop::<OutsideTraitWithDropSafeDispatcher>;
-impl OutsideTraitWithDropSafeDispatcherSerde of core::serde::Serde::<OutsideTraitWithDropSafeDispatcher> {
+impl OutsideTraitWithDropSafeDispatcherCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeDispatcher>;
+impl OutsideTraitWithDropSafeDispatcherDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeDispatcher>;
+impl OutsideTraitWithDropSafeDispatcherSerde<> of core::serde::Serde::<OutsideTraitWithDropSafeDispatcher> {
     fn serialize(self: @OutsideTraitWithDropSafeDispatcher, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::serialize(self.contract_address, ref output)
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDropSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(OutsideTraitWithDropSafeDispatcher {
-            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+            contract_address: contract_address.value,
         })
     }
 }
@@ -2994,30 +3280,48 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
-impl StoreOutsideTraitWithDropSafeDispatcher of starknet::Store::<OutsideTraitWithDropSafeDispatcher> {
+impl OutsideTraitWithDropSafeDispatcherStore<> of starknet::Store::<OutsideTraitWithDropSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
             OutsideTraitWithDropSafeDispatcher {
-                contract_address,
+                contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
     fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
     #[inline(always)]
@@ -3073,8 +3377,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointers>;
-impl OutsideTraitWithDropDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDropDispatcherSubPointers>;
+impl OutsideTraitWithDropDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointers>;
+impl OutsideTraitWithDropDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDropDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3082,8 +3386,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointersMut>;
-impl OutsideTraitWithDropDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDropDispatcherSubPointersMut>;
+impl OutsideTraitWithDropDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointersMut>;
+impl OutsideTraitWithDropDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3091,8 +3395,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointers>;
-impl OutsideTraitWithDropLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDropLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDropLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3100,8 +3404,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithDropLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDropLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDropLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3109,8 +3413,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointers>;
-impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointers>;
+impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3118,8 +3422,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointersMut>;
-impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeLibraryDispatcherSubPointersMut>;
+impl OutsideTraitWithDropSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeLibraryDispatcherSubPointersMut>;
 
 
 lib.cairo:1:1
@@ -3127,8 +3431,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeDispatcherSubPointersDrop of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointers>;
-impl OutsideTraitWithDropSafeDispatcherSubPointersCopy of core::traits::Copy::<OutsideTraitWithDropSafeDispatcherSubPointers>;
+impl OutsideTraitWithDropSafeDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointers>;
+impl OutsideTraitWithDropSafeDispatcherSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeDispatcherSubPointers>;
 
 
 lib.cairo:1:1
@@ -3136,8 +3440,8 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl OutsideTraitWithDropSafeDispatcherSubPointersMutDrop of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
-impl OutsideTraitWithDropSafeDispatcherSubPointersMutCopy of core::traits::Copy::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithDropSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
+impl OutsideTraitWithDropSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
 
 
 lib.cairo:15:1
@@ -3214,7 +3518,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47.try_into().unwrap();
 
 impl ContractStateOutsideImplWithDrop of
     super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {
@@ -3255,7 +3559,7 @@ lib.cairo:15:1
 ^^^^^^^^^^^^^^^^^^^^^
 impls:
 
-impl EventDrop of core::traits::Drop::<Event>;
+impl EventDrop<> of core::traits::Drop::<Event>;
 
 
 lib.cairo:15:1
@@ -3285,8 +3589,8 @@ lib.cairo:17:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
-impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:17:5
@@ -3294,7 +3598,7 @@ lib.cairo:17:5
     ^^^^^^^^^^
 impls:
 
-impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
-impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

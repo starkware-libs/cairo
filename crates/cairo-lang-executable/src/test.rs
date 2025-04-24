@@ -20,7 +20,7 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
             .skip_auto_withdraw_gas()
             .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
             .detect_corelib()
-            .with_plugin_suite(executable_plugin_suite())
+            .with_default_plugin_suite(executable_plugin_suite())
             .build()
             .unwrap(),
     )
@@ -76,7 +76,7 @@ impl TestFileRunner for CompileExecutableTestRunner {
             &db,
             None,
             vec![test_module.crate_id],
-            DiagnosticsReporter::stderr(),
+            DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]),
             Default::default(),
         )
         .map(|compiled| compiled.to_string())

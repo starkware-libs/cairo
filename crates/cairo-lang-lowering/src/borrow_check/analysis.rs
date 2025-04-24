@@ -1,4 +1,4 @@
-//! This module introduced the BackAnalysis utility that allows writing analyzers that go backwards
+//! This module introduces the BackAnalysis utility that allows writing analyzers that go backwards
 //! in the flow of the program, on a Lowered representation.
 
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ pub trait Analyzer<'a> {
         info: &mut Self::Info,
         statement_location: StatementLocation,
         target_block_id: BlockId,
-        remapping: &VarRemapping,
+        remapping: &'a VarRemapping,
     ) {
     }
     fn merge_match(

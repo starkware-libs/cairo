@@ -94,6 +94,8 @@ impl BlockBuilder {
         var: VariableId,
         location: LocationId,
     ) {
+        // Invalidate snapshot to the given memberpath.
+        self.snapped_semantics.swap_remove(&member_path);
         self.semantics.update(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
@@ -130,8 +132,8 @@ impl BlockBuilder {
         self.snapped_semantics.insert(member_path.into(), var);
     }
 
-    /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing a
-    /// its parents.
+    /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing its
+    /// parents.
     pub fn get_snap_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
@@ -150,7 +152,7 @@ impl BlockBuilder {
         let parent_var = self.get_snap_ref(ctx, parent)?;
         let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
         let (parent_number_of_snapshots, _) =
-            peel_snapshots(ctx.db.upcast(), ctx.variables[parent_var.var_id].ty);
+            peel_snapshots(ctx.db, ctx.variables[parent_var.var_id].ty);
         let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
         Some(
             generators::StructMemberAccess {
@@ -158,7 +160,7 @@ impl BlockBuilder {
                 member_tys: members
                     .iter()
                     .map(|(_, member)| {
-                        wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
+                        wrap_in_snapshots(ctx.db, member.ty, parent_number_of_snapshots)
                     })
                     .collect(),
                 member_idx,
@@ -178,7 +180,7 @@ impl BlockBuilder {
             MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
-                    [&member_id.name(ctx.db.upcast())]
+                    [&member_id.name(ctx.db)]
                     .ty
             }
         }
@@ -295,9 +297,22 @@ impl BlockBuilder {
             )
             .collect();
 
+        let TypeLongId::Closure(closure_id) = expr.ty.lookup_intern(ctx.db) else {
+            unreachable!("Closure Expr should have a Closure type.");
+        };
+
+        // Assert that the closure type matches the input we pass to it.
+        assert!(
+            closure_id
+                .captured_types
+                .iter()
+                .eq(inputs.iter().map(|var_usage| &ctx.variables[var_usage.var_id].ty))
+        );
+
         let var_usage =
             generators::StructConstruct { inputs: inputs.clone(), ty: expr.ty, location }
                 .add(ctx, &mut self.statements);
+
         let closure_info = ClosureInfo { members, snapshots };
 
         for (var_usage, member) in izip!(inputs, usage.usage.keys()) {

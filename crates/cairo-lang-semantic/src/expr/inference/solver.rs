@@ -54,8 +54,7 @@ impl Ambiguity {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls_str =
-                    impls.iter().map(|imp| format!("`{}`", imp.format(db.upcast()))).join(", ");
+                let impls_str = impls.iter().map(|imp| format!("`{}`", imp.format(db))).join(", ");
                 format!(
                     "Trait `{:?}` has multiple implementations, in: {impls_str}",
                     concrete_trait_id.debug(db)
@@ -133,7 +132,7 @@ pub fn enrich_lookup_context(
     concrete_trait_id: ConcreteTraitId,
     lookup_context: &mut ImplLookupContext,
 ) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db.upcast()).0);
+    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
@@ -144,7 +143,7 @@ pub fn enrich_lookup_context(
 }
 
 /// Adds the defining module of the type to the lookup context.
-fn enrich_lookup_context_with_ty(
+pub fn enrich_lookup_context_with_ty(
     db: &dyn SemanticGroup,
     ty: TypeId,
     lookup_context: &mut ImplLookupContext,
@@ -245,7 +244,7 @@ impl CandidateSolver {
     ) -> InferenceResult<CandidateSolver> {
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
-        inference.data.impl_type_bounds = impl_type_bounds.clone();
+        inference.data.impl_type_bounds = impl_type_bounds;
         let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
 
         // If the closure params are not var free, we cannot infer the negative impl.

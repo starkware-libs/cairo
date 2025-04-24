@@ -83,9 +83,8 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             (IntOperator::OverflowingSub, true) => {
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
             }
-            (IntOperator::OverflowingAdd, false)
-            | (IntOperator::OverflowingAdd, true)
-            | (IntOperator::OverflowingSub, false) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            (IntOperator::OverflowingAdd | IntOperator::OverflowingSub, false)
+            | (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
         };
 
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
@@ -98,17 +97,20 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             ],
             branch_signatures: vec![
                 BranchSignature {
-                    vars: vec![rc_output_info.clone(), OutputVarInfo {
-                        ty: ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                    }],
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
-                    vars: vec![rc_output_info, OutputVarInfo {
-                        ty,
-                        ref_info: wrapping_result_ref_info,
-                    }],
+                    vars: vec![
+                        rc_output_info,
+                        OutputVarInfo { ty, ref_info: wrapping_result_ref_info },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -123,7 +125,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -148,10 +150,13 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
-            vec![OutputVarInfo::new_builtin(range_check_type, 0), OutputVarInfo {
-                ty: sqrt_ty,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-            }],
+            vec![
+                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo {
+                    ty: sqrt_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                },
+            ],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

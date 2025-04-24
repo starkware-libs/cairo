@@ -3,8 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{LookupIntern, Upcast};
 use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -13,8 +13,8 @@ use smol_str::{SmolStr, ToSmolStr};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId,
-    FlagLongId, VirtualFile,
+    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId,
+    FileLongId, FlagId, FlagLongId, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -50,11 +50,12 @@ pub struct CrateConfiguration {
     /// The root directory of the crate.
     pub root: Directory,
     pub settings: CrateSettings,
+    pub cache_file: Option<BlobId>,
 }
 impl CrateConfiguration {
     /// Returns a new configuration.
     pub fn default_for_root(root: Directory) -> Self {
-        Self { root, settings: CrateSettings::default() }
+        Self { root, settings: CrateSettings::default(), cache_file: None }
     }
 }
 
@@ -182,6 +183,8 @@ pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_file(&self, file: FileLongId) -> FileId;
     #[salsa::interned]
+    fn intern_blob(&self, blob: BlobLongId) -> BlobId;
+    #[salsa::interned]
     fn intern_flag(&self, flag: FlagLongId) -> FlagId;
 
     /// Main input of the project. Lists all the crates configurations.
@@ -215,6 +218,8 @@ pub trait FilesGroup: ExternalFiles {
     fn file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 
+    /// Query for the blob content.
+    fn blob_content(&self, blob_id: BlobId) -> Option<Arc<[u8]>>;
     /// Query to get a compilation flag by its ID.
     fn get_flag(&self, id: FlagId) -> Option<Arc<Flag>>;
 }
@@ -244,56 +249,47 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                     coupons: true,
                 },
             },
+            cache_file: None,
         }),
     );
 }
 
-impl AsFilesGroupMut for dyn FilesGroup {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
-    }
-}
-
-pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
+pub trait FilesGroupEx: FilesGroup {
     /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
-        let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
+        let mut overrides = self.file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
             None => overrides.swap_remove(&file),
         };
-        self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
+        self.set_file_overrides(Arc::new(overrides));
     }
     /// Sets the root directory of the crate. None value removes the crate.
     fn set_crate_config(&mut self, crt: CrateId, root: Option<CrateConfiguration>) {
-        let mut crate_configs = Upcast::upcast(self).crate_configs().as_ref().clone();
+        let mut crate_configs = self.crate_configs().as_ref().clone();
         match root {
             Some(root) => crate_configs.insert(crt, root),
             None => crate_configs.swap_remove(&crt),
         };
-        self.as_files_group_mut().set_crate_configs(Arc::new(crate_configs));
+        self.set_crate_configs(Arc::new(crate_configs));
     }
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, id: FlagId, value: Option<Arc<Flag>>) {
-        let mut flags = Upcast::upcast(self).flags().as_ref().clone();
+        let mut flags = self.flags().as_ref().clone();
         match value {
             Some(value) => flags.insert(id, value),
             None => flags.swap_remove(&id),
         };
-        self.as_files_group_mut().set_flags(Arc::new(flags));
+        self.set_flags(Arc::new(flags));
     }
     /// Merges specified [`CfgSet`] into one already stored in this db.
     fn use_cfg(&mut self, cfg_set: &CfgSet) {
-        let existing = Upcast::upcast(self).cfg_set();
+        let existing = self.cfg_set();
         let merged = existing.union(cfg_set);
-        self.as_files_group_mut().set_cfg_set(Arc::new(merged));
+        self.set_cfg_set(Arc::new(merged));
     }
 }
-impl<T: Upcast<dyn FilesGroup> + AsFilesGroupMut + ?Sized> FilesGroupEx for T {}
-
-pub trait AsFilesGroupMut {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static);
-}
+impl<T: FilesGroup + ?Sized> FilesGroupEx for T {}
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     // TODO(spapini): Sort for stability.
@@ -302,13 +298,17 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match crt.lookup_intern(db) {
         CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, file_id, settings } => Some(CrateConfiguration {
-            root: Directory::Virtual {
-                files: BTreeMap::from([("lib.cairo".into(), file_id)]),
-                dirs: Default::default(),
-            },
-            settings: toml::from_str(&settings).expect("Failed to parse virtual crate settings."),
-        }),
+        CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
+            Some(CrateConfiguration {
+                root: Directory::Virtual {
+                    files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+                    dirs: Default::default(),
+                },
+                settings: toml::from_str(&settings)
+                    .expect("Failed to parse virtual crate settings."),
+                cache_file,
+            })
+        }
     }
 }
 
@@ -346,6 +346,22 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
 }
 fn get_flag(db: &dyn FilesGroup, id: FlagId) -> Option<Arc<Flag>> {
     db.flags().get(&id).cloned()
+}
+
+fn blob_content(db: &dyn FilesGroup, blob: BlobId) -> Option<Arc<[u8]>> {
+    match blob.lookup_intern(db) {
+        BlobLongId::OnDisk(path) => {
+            // This does not result in performance cost due to OS caching and the fact that salsa
+            // will re-execute only this single query if the file content did not change.
+            db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+            match fs::read(path) {
+                Ok(content) => Some(content.into()),
+                Err(_) => None,
+            }
+        }
+        BlobLongId::Virtual(content) => Some(content),
+    }
 }
 
 /// Returns the location of the originating user code.

@@ -27,7 +27,7 @@ mod contract_with_vec {
 fn test_simple_member_write_to_map() {
     let mut map_contract_state = contract_with_map::contract_state_for_testing();
     let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    let vec_entry = vec_contract_state.simple.append();
+    let vec_entry = vec_contract_state.simple.allocate();
     map_contract_state.simple.entry(0).write(1);
     assert_eq!(vec_entry.read(), 1);
 }
@@ -36,7 +36,7 @@ fn test_simple_member_write_to_map() {
 fn test_vec_iter() {
     let mut mut_state = contract_with_vec::contract_state_for_testing();
     for i in 0..9_usize {
-        mut_state.simple.append().write(i);
+        mut_state.simple.push(i);
     }
 
     let state = @contract_with_vec::contract_state_for_testing();
@@ -59,7 +59,7 @@ fn test_vec_iter() {
 fn test_mut_vec_iter() {
     let mut mut_state = contract_with_vec::contract_state_for_testing();
     for i in 0..9_usize {
-        mut_state.simple.append().write(i);
+        mut_state.simple.push(i);
     }
 
     let mut i = 0;
@@ -81,7 +81,7 @@ fn test_mut_vec_iter() {
 fn test_simple_member_write_to_vec() {
     let mut map_contract_state = contract_with_map::contract_state_for_testing();
     let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    vec_contract_state.simple.append().write(1);
+    vec_contract_state.simple.push(1);
     assert_eq!(map_contract_state.simple.entry(0).read(), 1);
 }
 
@@ -89,7 +89,7 @@ fn test_simple_member_write_to_vec() {
 fn test_nested_member_write_to_map() {
     let mut map_contract_state = contract_with_map::contract_state_for_testing();
     let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    let vec_entry = vec_contract_state.nested.append().append();
+    let vec_entry = vec_contract_state.nested.allocate().allocate();
     map_contract_state.nested.entry(0).entry(0).write(1);
     assert_eq!(vec_entry.read(), 1);
 }
@@ -98,7 +98,7 @@ fn test_nested_member_write_to_map() {
 fn test_nested_member_write_to_vec() {
     let mut map_contract_state = contract_with_map::contract_state_for_testing();
     let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    vec_contract_state.nested.append().append().write(1);
+    vec_contract_state.nested.allocate().push(1);
     assert_eq!(map_contract_state.nested.entry(0).entry(0).read(), 1);
 }
 
@@ -117,9 +117,9 @@ fn test_simple_member_push_to_vec() {
 #[test]
 fn test_simple_member_pop_from_vec() {
     let mut state = contract_with_vec::contract_state_for_testing();
-    state.simple.append().write(10);
-    state.simple.append().write(20);
-    state.simple.append().write(30);
+    state.simple.push(10);
+    state.simple.push(20);
+    state.simple.push(30);
     assert_eq!(state.simple.pop(), Some(30));
     assert_eq!(state.simple.pop(), Some(20));
     assert_eq!(state.simple.pop(), Some(10));

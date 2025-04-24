@@ -22,7 +22,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{add_type_based_diagnostics, resolve_type};
 use crate::{ConcreteEnumId, SemanticDiagnostic, semantic};
 
@@ -50,7 +50,6 @@ pub fn priv_enum_declaration_data(
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -62,11 +61,11 @@ pub fn priv_enum_declaration_data(
     );
     diagnostics.extend(generic_params_data.diagnostics);
     let generic_params = generic_params_data.generic_params;
-    let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
+    let attributes = enum_ast.attributes(db).structurize(db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
 
@@ -100,7 +99,7 @@ pub fn enum_generic_params_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<GenericParamsData> {
-    let module_file_id = enum_id.module_file_id(db.upcast());
+    let module_file_id = enum_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
 
@@ -114,10 +113,10 @@ pub fn enum_generic_params_data(
         &mut diagnostics,
         &mut resolver,
         module_file_id,
-        &enum_ast.generic_params(db.upcast()),
+        &enum_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
 
     let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
@@ -188,13 +187,13 @@ pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<EnumDefinitionData> {
-    let module_file_id = enum_id.module_file_id(db.upcast());
+    let module_file_id = enum_id.module_file_id(db);
+    let crate_id = module_file_id.0.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let enum_ast = db.module_enum_by_id(enum_id)?.to_maybe()?;
-    let syntax_db = db.upcast();
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
@@ -209,21 +208,22 @@ pub fn priv_enum_definition_data(
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
-    for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
+    for (variant_idx, variant) in enumerate(enum_ast.variants(db).elements(db)) {
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, &variant, &mut diagnostics));
-        let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
-        let ty = match variant.type_clause(syntax_db) {
+            .override_with(extract_item_feature_config(db, crate_id, &variant, &mut diagnostics));
+        let id = VariantLongId(module_file_id, variant.stable_ptr(db)).intern(db);
+        let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
             ast::OptionTypeClause::TypeClause(type_clause) => {
-                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db.upcast()))
+                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
             }
         };
-        let variant_name = variant.name(syntax_db).text(syntax_db);
+        let variant_name = variant.name(db).text(db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
-            diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });
+            diagnostics
+                .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
         resolver.data.feature_config.restore(feature_restore);
@@ -231,7 +231,7 @@ pub fn priv_enum_definition_data(
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
+    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
 
     for (_, variant) in variant_semantic.iter_mut() {
         variant.ty = inference.rewrite(variant.ty).no_err();
@@ -254,10 +254,13 @@ pub fn enum_definition_diagnostics(
     let Ok(data) = db.priv_enum_definition_data(enum_id) else {
         return Default::default();
     };
+
+    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
+
     // If the enum is a phantom type, no need to check if its variants are fully valid types, as
     // they won't be used.
     if db
-        .declared_phantom_type_attributes()
+        .declared_phantom_type_attributes(crate_id)
         .iter()
         .any(|attr| enum_id.has_attr(db, attr).unwrap_or_default())
     {
@@ -265,7 +268,7 @@ pub fn enum_definition_diagnostics(
     }
     let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
     for (_, variant) in data.variant_semantic.iter() {
-        let stable_ptr = variant.id.stable_ptr(db.upcast());
+        let stable_ptr = variant.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, stable_ptr);
         if variant.ty.is_phantom(db) {
             diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);
@@ -313,13 +316,10 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = concrete_enum_id.lookup_intern(db).generic_args;
-        let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-        SubstitutionRewriter { db, substitution: &substitution }.rewrite(ConcreteVariant {
-            concrete_enum_id,
-            id: variant.id,
-            ty: variant.ty,
-            idx: variant.idx,
-        })
+        GenericSubstitution::new(&generic_params, &generic_args).substitute(
+            db,
+            ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty, idx: variant.idx },
+        )
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].

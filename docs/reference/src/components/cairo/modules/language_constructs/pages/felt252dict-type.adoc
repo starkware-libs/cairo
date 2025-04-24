@@ -44,7 +44,7 @@ dictionary is not used while it is being modified.
 == Dictionary Destruction
 
 Dictionaries are automatically destroyed when they go out of scope. However, the destruction
-process of a dictionary is not trivial, and the `Destruct` trait is implemented for `Felt252Dict``.
+process of a dictionary is not trivial, and the `Destruct` trait is implemented for `Felt252Dict`.
 This means that `Destruct` must be derived for any type that contains a dictionary. For more
 information, see the xref:linear-types.adoc#Destructors[Destructors] section.
 

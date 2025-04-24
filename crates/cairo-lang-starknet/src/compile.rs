@@ -39,15 +39,17 @@ mod test;
 pub fn compile_path(
     path: &Path,
     contract_path: Option<&str>,
-    compiler_config: CompilerConfig<'_>,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
+        .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
-
+    compiler_config.diagnostics_reporter =
+        compiler_config.diagnostics_reporter.with_crates(&main_crate_ids);
     compile_contract_in_prepared_db(&db, contract_path, main_crate_ids, compiler_config)
 }
 
@@ -188,19 +190,18 @@ pub fn extract_semantic_entrypoints(
     db: &dyn LoweringGroup,
     contract: &ContractDeclaration,
 ) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
-    let external: Vec<_> = get_contract_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
+    let external: Vec<_> = get_contract_abi_functions(db, contract, EXTERNAL_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let l1_handler: Vec<_> = get_contract_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
+    let l1_handler: Vec<_> = get_contract_abi_functions(db, contract, L1_HANDLER_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let constructor: Vec<_> =
-        get_contract_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-            .into_iter()
-            .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-            .collect();
+    let constructor: Vec<_> = get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE)?
+        .into_iter()
+        .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
+        .collect();
     if constructor.len() > 1 {
         anyhow::bail!("Expected at most one constructor.");
     }

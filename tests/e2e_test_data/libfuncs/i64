@@ -3,7 +3,7 @@
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: i64) -> felt252 {
     integer::i64_to_felt252(v)
 }
@@ -22,11 +22,12 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc i64_to_felt252 = i64_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-i64_to_felt252([0]) -> ([1]); // 0
-store_temp<felt252>([1]) -> ([1]); // 1
-return([1]); // 2
+F0:
+i64_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
 
-test::foo@0([0]: i64) -> (felt252);
+test::foo@F0([0]: i64) -> (felt252);
 
 //! > ==========================================================================
 
@@ -35,7 +36,7 @@ test::foo@0([0]: i64) -> (felt252);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(v: felt252) -> Option<i64> {
     integer::i64_try_from_felt252(v)
 }
@@ -92,20 +93,22 @@ libfunc store_temp<core::option::Option::<core::integer::i64>> = store_temp<core
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::integer::i64>, 1> = enum_init<core::option::Option::<core::integer::i64>, 1>;
 
-i64_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::option::Option::<core::integer::i64>, 0>([3]) -> ([5]); // 2
-store_temp<RangeCheck>([2]) -> ([2]); // 3
-store_temp<core::option::Option::<core::integer::i64>>([5]) -> ([5]); // 4
-return([2], [5]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([6]); // 7
-enum_init<core::option::Option::<core::integer::i64>, 1>([6]) -> ([7]); // 8
-store_temp<RangeCheck>([4]) -> ([4]); // 9
-store_temp<core::option::Option::<core::integer::i64>>([7]) -> ([7]); // 10
-return([4], [7]); // 11
+F0:
+i64_try_from_felt252([0], [1]) { fallthrough([2], [3]) F0_B0([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([2]);
+store_temp<core::option::Option::<core::integer::i64>>([5]) -> ([5]);
+return([2], [5]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<core::integer::i64>, 1>([6]) -> ([7]);
+store_temp<RangeCheck>([4]) -> ([4]);
+store_temp<core::option::Option::<core::integer::i64>>([7]) -> ([7]);
+return([4], [7]);
 
-test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::i64>);
+test::foo@F0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::i64>);
 
 //! > ==========================================================================
 
@@ -114,7 +117,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i64, b: i64) -> bool {
     integer::i64_eq(a, b)
 }
@@ -143,19 +146,21 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-i64_eq([0], [1]) { fallthrough() 6() }; // 0
-branch_align() -> (); // 1
-struct_construct<Unit>() -> ([2]); // 2
-enum_init<core::bool, 0>([2]) -> ([3]); // 3
-store_temp<core::bool>([3]) -> ([3]); // 4
-return([3]); // 5
-branch_align() -> (); // 6
-struct_construct<Unit>() -> ([4]); // 7
-enum_init<core::bool, 1>([4]) -> ([5]); // 8
-store_temp<core::bool>([5]) -> ([5]); // 9
-return([5]); // 10
+F0:
+i64_eq([0], [1]) { fallthrough() F0_B0() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([4]);
+enum_init<core::bool, 1>([4]) -> ([5]);
+store_temp<core::bool>([5]) -> ([5]);
+return([5]);
 
-test::foo@0([0]: i64, [1]: i64) -> (core::bool);
+test::foo@F0([0]: i64, [1]: i64) -> (core::bool);
 
 //! > ==========================================================================
 
@@ -164,7 +169,7 @@ test::foo@0([0]: i64, [1]: i64) -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo() -> bool {
     integer::i64_eq(11_i64, 12_i64)
 }
@@ -199,22 +204,24 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
 
-const_as_immediate<Const<i64, 11>>() -> ([0]); // 0
-const_as_immediate<Const<i64, 12>>() -> ([1]); // 1
-store_temp<i64>([0]) -> ([0]); // 2
-i64_eq([0], [1]) { fallthrough() 9() }; // 3
-branch_align() -> (); // 4
-struct_construct<Unit>() -> ([2]); // 5
-enum_init<core::bool, 0>([2]) -> ([3]); // 6
-store_temp<core::bool>([3]) -> ([3]); // 7
-return([3]); // 8
-branch_align() -> (); // 9
-struct_construct<Unit>() -> ([4]); // 10
-enum_init<core::bool, 1>([4]) -> ([5]); // 11
-store_temp<core::bool>([5]) -> ([5]); // 12
-return([5]); // 13
+F0:
+const_as_immediate<Const<i64, 11>>() -> ([0]);
+const_as_immediate<Const<i64, 12>>() -> ([1]);
+store_temp<i64>([0]) -> ([0]);
+i64_eq([0], [1]) { fallthrough() F0_B0() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+struct_construct<Unit>() -> ([4]);
+enum_init<core::bool, 1>([4]) -> ([5]);
+store_temp<core::bool>([5]) -> ([5]);
+return([5]);
 
-test::foo@0() -> (core::bool);
+test::foo@F0() -> (core::bool);
 
 //! > ==========================================================================
 
@@ -223,7 +230,7 @@ test::foo@0() -> (core::bool);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i64, b: i64) -> integer::SignedIntegerResult<i64> {
     integer::i64_overflowing_add_impl(a, b)
 }
@@ -273,24 +280,27 @@ libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i64>> = s
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>;
 
-i64_overflowing_add_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 0>([4]) -> ([9]); // 2
-store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([9]) -> ([9]); // 4
-return([3], [9]); // 5
-branch_align() -> (); // 6
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>([6]) -> ([10]); // 7
-store_temp<RangeCheck>([5]) -> ([5]); // 8
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([10]) -> ([10]); // 9
-return([5], [10]); // 10
-branch_align() -> (); // 11
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>([8]) -> ([11]); // 12
-store_temp<RangeCheck>([7]) -> ([7]); // 13
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([11]) -> ([11]); // 14
-return([7], [11]); // 15
+F0:
+i64_overflowing_add_impl([0], [1], [2]) { fallthrough([3], [4]) F0_B0([5], [6]) F0_B1([7], [8]) };
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 0>([4]) -> ([9]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([9]) -> ([9]);
+return([3], [9]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>([6]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([10]) -> ([10]);
+return([5], [10]);
+F0_B1:
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>([8]) -> ([11]);
+store_temp<RangeCheck>([7]) -> ([7]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([11]) -> ([11]);
+return([7], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i64>);
+test::foo@F0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i64>);
 
 //! > ==========================================================================
 
@@ -299,7 +309,7 @@ test::foo@0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer::
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i64, b: i64) -> integer::SignedIntegerResult<i64> {
     integer::i64_overflowing_sub_impl(a, b)
 }
@@ -349,73 +359,27 @@ libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i64>> = s
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>;
 libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>;
 
-i64_overflowing_sub_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 0>([4]) -> ([9]); // 2
-store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([9]) -> ([9]); // 4
-return([3], [9]); // 5
-branch_align() -> (); // 6
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>([6]) -> ([10]); // 7
-store_temp<RangeCheck>([5]) -> ([5]); // 8
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([10]) -> ([10]); // 9
-return([5], [10]); // 10
-branch_align() -> (); // 11
-enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>([8]) -> ([11]); // 12
-store_temp<RangeCheck>([7]) -> ([7]); // 13
-store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([11]) -> ([11]); // 14
-return([7], [11]); // 15
+F0:
+i64_overflowing_sub_impl([0], [1], [2]) { fallthrough([3], [4]) F0_B0([5], [6]) F0_B1([7], [8]) };
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 0>([4]) -> ([9]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([9]) -> ([9]);
+return([3], [9]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 1>([6]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([10]) -> ([10]);
+return([5], [10]);
+F0_B1:
+branch_align() -> ();
+enum_init<core::integer::SignedIntegerResult::<core::integer::i64>, 2>([8]) -> ([11]);
+store_temp<RangeCheck>([7]) -> ([7]);
+store_temp<core::integer::SignedIntegerResult::<core::integer::i64>>([11]) -> ([11]);
+return([7], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i64>);
-
-//! > ==========================================================================
-
-//! > i64_is_zero libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-use zeroable::IsZeroResult;
-fn foo(a: i64) -> i64 {
-    match integer::i64_is_zero(a) {
-        IsZeroResult::Zero => 123_i64,
-        IsZeroResult::NonZero(x) => x.into(),
-    }
-}
-
-//! > casm
-jmp rel 5 if [fp + -3] != 0;
-[ap + 0] = 123, ap++;
-ret;
-[ap + 0] = [fp + -3], ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 200})
-
-//! > sierra_code
-type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<i64, 123> = Const<i64, 123> [storable: false, drop: false, dup: false, zero_sized: false];
-type NonZero<i64> = NonZero<i64> [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc i64_is_zero = i64_is_zero;
-libfunc branch_align = branch_align;
-libfunc const_as_immediate<Const<i64, 123>> = const_as_immediate<Const<i64, 123>>;
-libfunc store_temp<i64> = store_temp<i64>;
-libfunc unwrap_non_zero<i64> = unwrap_non_zero<i64>;
-
-i64_is_zero([0]) { fallthrough() 5([1]) }; // 0
-branch_align() -> (); // 1
-const_as_immediate<Const<i64, 123>>() -> ([2]); // 2
-store_temp<i64>([2]) -> ([2]); // 3
-return([2]); // 4
-branch_align() -> (); // 5
-unwrap_non_zero<i64>([1]) -> ([3]); // 6
-store_temp<i64>([3]) -> ([3]); // 7
-return([3]); // 8
-
-test::foo@0([0]: i64) -> (i64);
+test::foo@F0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i64>);
 
 //! > ==========================================================================
 
@@ -424,7 +388,7 @@ test::foo@0([0]: i64) -> (i64);
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 fn foo(a: i64, b: i64) -> Result<u64, u64> {
     integer::i64_diff(a, b)
 }
@@ -463,19 +427,21 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::result::Result::<core::integer::u64, core::integer::u64>> = store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>;
 libfunc enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1> = enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>;
 
-i64_diff([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) }; // 0
-branch_align() -> (); // 1
-enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>([4]) -> ([7]); // 2
-store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([7]); // 4
-return([3], [7]); // 5
-branch_align() -> (); // 6
-enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>([6]) -> ([8]); // 7
-store_temp<RangeCheck>([5]) -> ([5]); // 8
-store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([8]) -> ([8]); // 9
-return([5], [8]); // 10
+F0:
+i64_diff([0], [1], [2]) { fallthrough([3], [4]) F0_B0([5], [6]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([3]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([7]) -> ([7]);
+return([3], [7]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u64, core::integer::u64>, 1>([6]) -> ([8]);
+store_temp<RangeCheck>([5]) -> ([5]);
+store_temp<core::result::Result::<core::integer::u64, core::integer::u64>>([8]) -> ([8]);
+return([5], [8]);
 
-test::foo@0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::result::Result::<core::integer::u64, core::integer::u64>);
+test::foo@F0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::result::Result::<core::integer::u64, core::integer::u64>);
 
 //! > ==========================================================================
 
@@ -484,7 +450,7 @@ test::foo@0([0]: RangeCheck, [1]: i64, [2]: i64) -> (RangeCheck, core::result::R
 //! > test_runner_name
 SmallE2ETestRunner
 
-//! > cairo
+//! > cairo_code
 #[feature("corelib-internal-use")]
 fn foo(a: i64, b: i64) -> i128 {
     integer::i64_wide_mul(a, b)
@@ -504,8 +470,9 @@ type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc i64_wide_mul = i64_wide_mul;
 libfunc store_temp<i128> = store_temp<i128>;
 
-i64_wide_mul([0], [1]) -> ([2]); // 0
-store_temp<i128>([2]) -> ([2]); // 1
-return([2]); // 2
+F0:
+i64_wide_mul([0], [1]) -> ([2]);
+store_temp<i128>([2]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: i64, [1]: i64) -> (i128);
+test::foo@F0([0]: i64, [1]: i64) -> (i128);

@@ -415,8 +415,12 @@ impl<'a> Parser<'a> {
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
-            // TODO: Improve diagnostic to indicate semicolon or a body were expected.
-            _ => self.parse_token::<TerminalSemicolon>().into(),
+            SyntaxKind::TerminalSemicolon => self.take::<TerminalSemicolon>().into(),
+            _ => self
+                .create_and_report_missing::<TerminalSemicolon>(
+                    ParserDiagnosticKind::ExpectedSemicolonOrBody,
+                )
+                .into(),
         };
 
         ItemModule::new_green(self.db, attributes, visibility, module_kw, name, body)
@@ -2488,7 +2492,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a syntax in side a struct pattern. Example:
+    /// Returns a GreenId of a syntax inside a struct pattern. Example:
     /// `MyStruct { param0, param1: _, .. }`.
     fn try_parse_pattern_struct_param(&mut self) -> TryParseResult<PatternStructParamGreen> {
         Ok(match self.peek().kind {
@@ -2821,10 +2825,13 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalDollar => {
                 let dollar = self.take::<TerminalDollar>();
                 if !self.is_inside_macro_expansion {
-                    self.add_diagnostic(ParserDiagnosticKind::InvalidPlaceholderPath, TextSpan {
-                        start: self.offset,
-                        end: self.offset.add_width(self.current_width),
-                    })
+                    self.add_diagnostic(
+                        ParserDiagnosticKind::InvalidPlaceholderPath,
+                        TextSpan {
+                            start: self.offset,
+                            end: self.offset.add_width(self.current_width),
+                        },
+                    )
                 };
                 dollar.into()
             }
@@ -3252,10 +3259,10 @@ impl<'a> Parser<'a> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.add_diagnostic(diagnostic_kind, TextSpan {
-                            start: self.offset,
-                            end: self.offset,
-                        });
+                        self.add_diagnostic(
+                            diagnostic_kind,
+                            TextSpan { start: self.offset, end: self.offset },
+                        );
                     }
                     break;
                 }
@@ -3519,7 +3526,7 @@ impl<'a> Parser<'a> {
         // comment), return None and do not change the next terminal leading trivia.
         let mut has_header_doc = false;
         let mut split_index = 0;
-        for trivium in self.next_terminal.leading_trivia.iter() {
+        for trivium in &self.next_terminal.leading_trivia {
             match trivium.0.lookup_intern(self.db).kind {
                 SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
                     has_header_doc = true;

@@ -160,21 +160,24 @@ impl FormattingInfo {
         syntax: &ast::ExprInlineMacro,
     ) -> Result<FormattingInfo, Vec<PluginDiagnostic>> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
-            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr())]);
+            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
         };
         let ast::WrappedArgList::ParenthesizedArgList(arguments) =
             legacy_inline_macro.arguments(db)
         else {
-            return Err(
-                unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax).diagnostics
-            );
+            return Err(unsupported_bracket_diagnostic(
+                db,
+                &legacy_inline_macro,
+                syntax.stable_ptr(db),
+            )
+            .diagnostics);
         };
         let argument_list_elements = arguments.arguments(db).elements(db);
         let mut args_iter = argument_list_elements.iter();
         let error_with_inner_span = |inner_span: SyntaxNode, message: &str| {
             PluginDiagnostic::error_with_inner_span(
                 db,
-                syntax.stable_ptr(),
+                syntax.stable_ptr(db),
                 inner_span,
                 message.to_string(),
             )
@@ -279,7 +282,7 @@ impl FormattingInfo {
                     Err(error_message) => {
                         diagnostics.push(PluginDiagnostic::error_with_inner_span(
                             builder.db,
-                            self.macro_ast.stable_ptr(),
+                            self.macro_ast.stable_ptr(builder.db),
                             self.format_string_arg.as_syntax_node(),
                             format!("Invalid format string: {error_message}."),
                         ));
@@ -291,7 +294,7 @@ impl FormattingInfo {
                         let Some(arg) = self.args.get(positional) else {
                             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                                 builder.db,
-                                self.macro_ast.stable_ptr(),
+                                self.macro_ast.stable_ptr(builder.db),
                                 self.format_string_arg.as_syntax_node(),
                                 format!(
                                     "Invalid reference to positional argument {positional} (there \
@@ -358,7 +361,7 @@ impl FormattingInfo {
                 } else {
                     diagnostics.push(PluginDiagnostic::error_with_inner_span(
                         builder.db,
-                        self.macro_ast.stable_ptr(),
+                        self.macro_ast.stable_ptr(builder.db),
                         self.format_string_arg.as_syntax_node(),
                         "Closing `}` without a matching `{`.".to_string(),
                     ));
@@ -370,7 +373,7 @@ impl FormattingInfo {
         if missing_args > 0 {
             diagnostics.push(PluginDiagnostic::error_with_inner_span(
                 builder.db,
-                self.macro_ast.stable_ptr(),
+                self.macro_ast.stable_ptr(builder.db),
                 self.format_string_arg.as_syntax_node(),
                 format!(
                     "{} positional arguments in format string, but only {} arguments.",
@@ -402,7 +405,7 @@ impl FormattingInfo {
             if !used {
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     builder.db,
-                    self.macro_ast.stable_ptr(),
+                    self.macro_ast.stable_ptr(builder.db),
                     self.args[position].as_syntax_node(),
                     "Unused argument.".to_string(),
                 ));

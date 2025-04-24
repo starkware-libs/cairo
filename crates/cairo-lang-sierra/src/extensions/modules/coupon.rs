@@ -103,7 +103,7 @@ impl NamedLibfunc for CouponBuyLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let coupon_ty = args_as_single_type(args)?;
-        let long_id = context.get_type_info(coupon_ty.clone())?.long_id;
+        let long_id = context.get_type_info(coupon_ty)?.long_id;
         if long_id.generic_id != CouponType::id() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -112,7 +112,7 @@ impl NamedLibfunc for CouponBuyLibfunc {
 
         Ok(SignatureAndFunctionConcreteLibfunc {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -135,9 +135,11 @@ impl NamedLibfunc for CouponRefundLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(vec![coupon_ty], vec![], SierraApChange::Known {
-            new_vars_only: true,
-        }))
+        Ok(LibfuncSignature::new_non_branch(
+            vec![coupon_ty],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 
     fn specialize(
@@ -146,7 +148,7 @@ impl NamedLibfunc for CouponRefundLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let coupon_ty = args_as_single_type(args)?;
-        let long_id = context.get_type_info(coupon_ty.clone())?.long_id;
+        let long_id = context.get_type_info(coupon_ty)?.long_id;
         if long_id.generic_id != CouponType::id() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -155,7 +157,7 @@ impl NamedLibfunc for CouponRefundLibfunc {
 
         Ok(SignatureAndFunctionConcreteLibfunc {
             function: context.get_function(&function_id)?,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

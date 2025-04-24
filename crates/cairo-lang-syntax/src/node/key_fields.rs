@@ -43,6 +43,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::OptionTerminalDollarEmpty => {
             vec![]
         }
+        SyntaxKind::PathSegmentMissing => {
+            vec![]
+        }
         SyntaxKind::ExprPathInner => vec![],
         SyntaxKind::ExprParenthesized => {
             vec![]

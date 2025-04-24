@@ -5,13 +5,14 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use const_format::formatcp;
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME};
 use super::starknet_module::StarknetModuleKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventData {
     Struct { members: Vec<(SmolStr, EventFieldKind)> },
     Enum { variants: Vec<(SmolStr, EventFieldKind)> },
@@ -33,11 +34,9 @@ pub fn get_starknet_event_variants(
     module_kind: StarknetModuleKind,
 ) -> Option<Vec<SmolStr>> {
     let (has_event_name, stable_ptr, variants) = match item {
-        ast::ModuleItem::Struct(strct) => (
-            strct.name(db).text(db) == EVENT_TYPE_NAME,
-            strct.name(db).stable_ptr().untyped(),
-            vec![],
-        ),
+        ast::ModuleItem::Struct(strct) => {
+            (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr(db), vec![])
+        }
         ast::ModuleItem::Enum(enm) => {
             let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
             let variants = if has_event_name {
@@ -45,11 +44,11 @@ pub fn get_starknet_event_variants(
             } else {
                 vec![]
             };
-            (has_event_name, enm.name(db).stable_ptr().untyped(), variants)
+            (has_event_name, enm.name(db).stable_ptr(db), variants)
         }
         ast::ModuleItem::Use(item) => {
             for leaf in get_all_path_leaves(db, item) {
-                let stable_ptr = &leaf.stable_ptr();
+                let stable_ptr = &leaf.stable_ptr(db);
                 if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
                     if !item.has_attr(db, EVENT_ATTR) {
                         diagnostics.push(PluginDiagnostic::error(

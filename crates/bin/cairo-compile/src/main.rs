@@ -29,7 +29,7 @@ impl From<crate::InliningStrategy> for cairo_lang_lowering::utils::InliningStrat
 /// Compiles a Cairo project to Sierra.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
-#[clap(version, verbatim_doc_comment)]
+#[command(version, verbatim_doc_comment)]
 struct Args {
     /// The Cairo project path.
     path: PathBuf,
@@ -55,11 +55,14 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let sierra_program = compile_cairo_project_at_path(&args.path, CompilerConfig {
-        replace_ids: args.replace_ids,
-        inlining_strategy: args.inlining_strategy.into(),
-        ..CompilerConfig::default()
-    })?;
+    let sierra_program = compile_cairo_project_at_path(
+        &args.path,
+        CompilerConfig {
+            replace_ids: args.replace_ids,
+            inlining_strategy: args.inlining_strategy.into(),
+            ..CompilerConfig::default()
+        },
+    )?;
 
     match args.output {
         Some(path) => {

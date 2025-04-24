@@ -125,7 +125,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 }
 
 /// An argument to a sierra function run,
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Arg {
     Value(Felt252),
     Array(Vec<Arg>),
@@ -208,6 +208,7 @@ impl SierraCasmRunner {
             syscalls_used_resources: Default::default(),
             no_temporary_segments: true,
             markers: Default::default(),
+            panic_traceback: Default::default(),
         };
         let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
             .run_function(

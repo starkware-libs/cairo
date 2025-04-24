@@ -45,7 +45,9 @@ fn test_assert() {
     };
 
     let code = join(ctx.instructions.iter().map(Instruction::to_string), "\n");
-    assert_eq!(code, indoc! {"
+    assert_eq!(
+        code,
+        indoc! {"
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1] + [fp + -5], ap++
             [fp + 5] = [ap + 1] + 2
@@ -71,5 +73,6 @@ fn test_assert() {
             %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + 9], 2) %}
             call abs 5, ap++
             call rel [fp + 5], ap++
-            ret"});
+            ret"}
+    );
 }

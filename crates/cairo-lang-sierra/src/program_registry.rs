@@ -93,13 +93,15 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
-        let concrete_libfuncs =
-            get_concrete_libfuncs::<TType, TLibfunc>(program, &SpecializationContextForRegistry {
+        let concrete_libfuncs = get_concrete_libfuncs::<TType, TLibfunc>(
+            program,
+            &SpecializationContextForRegistry {
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
                 concrete_types: &concrete_types,
                 function_ap_change,
-            })?;
+            },
+        )?;
         let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
         registry.validate(program)?;
         Ok(registry)
@@ -290,13 +292,16 @@ fn get_concrete_types_maps<TType: GenericType>(
             let TypeDeclaration { id, long_id, declared_type_info } = declaration;
             let DeclaredTypeInfo { storable, droppable, duplicatable, zero_sized } =
                 declared_type_info.as_ref().cloned()?;
-            Some((id.clone(), TypeInfo {
-                long_id: long_id.clone(),
-                storable,
-                droppable,
-                duplicatable,
-                zero_sized,
-            }))
+            Some((
+                id.clone(),
+                TypeInfo {
+                    long_id: long_id.clone(),
+                    storable,
+                    droppable,
+                    duplicatable,
+                    zero_sized,
+                },
+            ))
         })
         .collect();
     for declaration in &program.type_declarations {
@@ -369,10 +374,6 @@ impl<TType: GenericType> SignatureSpecializationContext
         self.try_get_function(function_id).map(|f| f.signature)
     }
 
-    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
-        self
-    }
-
     fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
         Some(if self.function_ap_change.contains_key(function_id) {
             SierraApChange::Known { new_vars_only: false }
@@ -384,10 +385,6 @@ impl<TType: GenericType> SignatureSpecializationContext
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         self.functions.get(function_id).cloned()
-    }
-
-    fn upcast(&self) -> &dyn SignatureSpecializationContext {
-        self
     }
 }
 

@@ -71,7 +71,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::UnsupportedPattern => {
-                "Inner patterns are not in this context.".into()
+                "Inner patterns are not allowed in this context.".into()
             }
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
@@ -101,9 +101,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             return self
                 .location
                 .stable_location
-                .diagnostic_location_until(db.upcast(), *last_statement_ptr);
+                .diagnostic_location_until(db, *last_statement_ptr);
         }
-        self.location.stable_location.diagnostic_location(db.upcast())
+        self.location.stable_location.diagnostic_location(db)
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
@@ -151,16 +151,14 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchArmNonSequential, MatchKind::Match) => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
             }
-            (MatchDiagnostic::NonExhaustiveMatchFelt252, MatchKind::Match) => {
-                "Match is non exhaustive - match over a numerical value must have a wildcard card \
-                 pattern (`_`)."
-                    .into()
+            (MatchDiagnostic::NonExhaustiveMatchValue, MatchKind::Match) => {
+                "Match is non exhaustive - add a wildcard pattern (`_`).".into()
             }
 
             (
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
                 | MatchDiagnostic::UnsupportedMatchArmNonSequential
-                | MatchDiagnostic::NonExhaustiveMatchFelt252,
+                | MatchDiagnostic::NonExhaustiveMatchValue,
                 MatchKind::IfLet | MatchKind::WhileLet(_, _),
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
 
@@ -181,7 +179,7 @@ impl MatchError {
                 "Unreachable else clause.".into()
             }
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::WhileLet(_, _)) => {
-                unreachable!("While-let is does not have two arms.")
+                unreachable!("While-let does not have two arms.")
             }
             (MatchDiagnostic::UnsupportedNumericInLetCondition, MatchKind::Match) => {
                 unreachable!("Numeric values are supported in match conditions.")
@@ -243,6 +241,6 @@ pub enum MatchDiagnostic {
 
     UnsupportedMatchArmNotALiteral,
     UnsupportedMatchArmNonSequential,
-    NonExhaustiveMatchFelt252,
+    NonExhaustiveMatchValue,
     UnsupportedNumericInLetCondition,
 }

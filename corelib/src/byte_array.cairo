@@ -43,18 +43,18 @@
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
-use crate::clone::Clone;
-use crate::cmp::min;
-use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
     one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
 };
+use crate::clone::Clone;
+use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[allow(unused_imports)]
 use crate::serde::Serde;
+use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
@@ -112,27 +112,23 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
         let total_pending_bytes = self.pending_word_len + len;
 
-        if total_pending_bytes < BYTES_IN_BYTES31 {
+        // The split index is the number of bytes left for the next word (new pending_word of the
+        // modified ByteArray).
+        let split_index = if let Some(split_index) =
+            crate::num::traits::CheckedSub::checked_sub(total_pending_bytes, BYTES_IN_BYTES31) {
+            split_index
+        } else {
             self.append_word_fits_into_pending(word, len);
             return;
-        }
+        };
 
-        if total_pending_bytes == BYTES_IN_BYTES31 {
-            self
-                .data
-                .append(
-                    (word + self.pending_word * one_shift_left_bytes_felt252(len))
-                        .try_into()
-                        .unwrap(),
-                );
+        if split_index == 0 {
+            self.append_bytes31(word + self.pending_word * one_shift_left_bytes_felt252(len));
             self.pending_word = 0;
             self.pending_word_len = 0;
             return;
         }
 
-        // The split index is the number of bytes left for the next word (new pending_word of the
-        // modified ByteArray).
-        let split_index = total_pending_bytes - BYTES_IN_BYTES31;
         if split_index == BYTES_IN_U128 {
             self.append_split_index_16(word);
         } else if split_index < BYTES_IN_U128 {
@@ -165,36 +161,17 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
         // `other`, as for each word, this is the number of bytes left for the next word.
         if self.pending_word_len == BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => { self.append_split_index_16((*current_word).into()); },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_16((*word).into());
             }
         } else if self.pending_word_len < BYTES_IN_U128 {
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_lt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_lt_16((*word).into(), self.pending_word_len);
             }
         } else {
             // self.pending_word_len > BYTES_IN_U128
-            loop {
-                match other_data.pop_front() {
-                    Some(current_word) => {
-                        self
-                            .append_split_index_gt_16(
-                                (*current_word).into(), self.pending_word_len,
-                            );
-                    },
-                    None => { break; },
-                }
+            while let Some(word) = other_data.pop_front() {
+                self.append_split_index_gt_16((*word).into(), self.pending_word_len);
             }
         }
 
@@ -244,7 +221,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         }
 
         // self.pending_word_len == 30
-        self.data.append(new_pending.try_into().unwrap());
+        self.append_bytes31(new_pending);
         self.pending_word = 0;
         self.pending_word_len = 0;
     }
@@ -306,13 +283,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         result.append_word_rev(*self.pending_word, *self.pending_word_len);
 
         let mut data = self.data.span();
-        loop {
-            match data.pop_back() {
-                Some(current_word) => {
-                    result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
-                },
-                None => { break; },
-            }
+        while let Some(current_word) = data.pop_back() {
+            result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
         }
         result
     }
@@ -357,9 +329,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             }
         }
     }
-
-    // === Helpers ===
-
+}
+/// Internal functions associated with the `ByteArray` type.
+#[generate_trait]
+impl InternalImpl of InternalTrait {
     /// Appends a single word of `len` bytes to the end of the `ByteArray`, assuming there
     /// is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
     ///
@@ -438,11 +411,17 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// responsibility.
     #[inline]
     fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
-        let to_append = complete_full_word
-            + self.pending_word
-                * one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len);
-        self.data.append(to_append.try_into().unwrap());
+        let shift_value = one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len);
+        self.append_bytes31(complete_full_word + self.pending_word * shift_value);
         self.pending_word = new_pending;
+    }
+
+    /// Appends a `felt252` value assumed to be `bytes31`.
+    ///
+    /// Will append an error value in cases of invalid usage in order to avoid panic code.
+    fn append_bytes31(ref self: ByteArray, value: felt252) {
+        const ON_ERR: bytes31 = 'BA_ILLEGAL_USAGE'_u128.into();
+        self.data.append(value.try_into().unwrap_or(ON_ERR));
     }
 }
 
@@ -512,7 +491,15 @@ impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
 }
 
 impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
-    fn from_iter<I, +Iterator<I>[Item: u8], +Destruct<I>>(iter: I) -> ByteArray {
+    fn from_iter<
+        I,
+        impl IntoIter: IntoIterator<I>,
+        +core::metaprogramming::TypeEqual<IntoIter::Iterator::Item, u8>,
+        +Destruct<IntoIter::IntoIter>,
+        +Destruct<I>,
+    >(
+        iter: I,
+    ) -> ByteArray {
         let mut ba = Default::default();
         for byte in iter {
             ba.append_byte(byte);

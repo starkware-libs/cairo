@@ -19,7 +19,8 @@ use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
-use crate::resolve::{MACRO_DEF_SITE, Resolver, ResolverData};
+use crate::keyword::MACRO_DEF_SITE;
+use crate::resolve::{Resolver, ResolverData};
 
 /// A unique identifier for a repetition block inside a macro rule.
 /// Each `$( ... )` group in the macro pattern gets a new `RepetitionId`.
@@ -57,19 +58,6 @@ pub struct MatcherContext {
 
     /// Store the repetition operator for each repetition.
     pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator>,
-}
-
-impl MatcherContext {
-    /// Returns true if all captures for the given repetition ID have been exhausted.
-    fn is_repetition_done(&self, rep_id: RepetitionId) -> bool {
-        if let Some((name, _)) = self.placeholder_to_rep_id.iter().find(|(_, &r)| r == rep_id) {
-            let index = *self.repetition_indices.get(&rep_id).unwrap_or(&0);
-            if let Some(values) = self.captures.get(name) {
-                return index >= values.len();
-            }
-        }
-        true
-    }
 }
 
 /// The semantic data for a macro declaration.
@@ -119,10 +107,10 @@ pub fn priv_macro_declaration_data(
     db: &dyn SemanticGroup,
     macro_declaration_id: MacroDeclarationId,
 ) -> Maybe<MacroDeclarationData> {
-    let syntax_db: &dyn SyntaxGroup = db.upcast();
+    let syntax_db: &dyn SyntaxGroup = db;
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let module_file_id = macro_declaration_id.module_file_id(db.upcast());
+    let module_file_id = macro_declaration_id.module_file_id(db);
     let macro_declaration_syntax =
         db.module_macro_declaration_by_id(macro_declaration_id)?.to_maybe()?;
     let attributes = macro_declaration_syntax.attributes(syntax_db).structurize(syntax_db);
@@ -135,10 +123,10 @@ pub fn priv_macro_declaration_data(
     // TODO(Dean): Verify consistency bracket terminals.
     let mut rules = vec![];
     for rule_syntax in macro_declaration_syntax.rules(syntax_db).elements(syntax_db) {
-        let pattern = rule_syntax.lhs(db.upcast());
-        let expansion = rule_syntax.rhs(db.upcast());
+        let pattern = rule_syntax.lhs(db);
+        let expansion = rule_syntax.rhs(db);
 
-        let pattern_elements = get_pattern_elements(db.upcast(), pattern.clone());
+        let pattern_elements = get_pattern_elements(db, pattern.clone());
 
         // Collect defined placeholders from pattern
         let defined_placeholders = OrderedHashSet::<_>::from_iter(
@@ -207,15 +195,15 @@ fn collect_expansion_placeholders(
     let mut placeholders = Vec::new();
 
     if node.kind(db) == SyntaxKind::ExprPath {
-        let path_node = ExprPath::from_syntax_node(db, node.clone());
+        let path_node = ExprPath::from_syntax_node(db, node);
         if let Some(placeholder_name) = extract_placeholder(db, &path_node) {
-            placeholders.push((path_node.stable_ptr().untyped(), placeholder_name));
+            placeholders.push((path_node.stable_ptr(db).untyped(), placeholder_name));
             return placeholders;
         }
     }
     if !node.kind(db).is_terminal() {
-        for child in db.get_children(node).iter() {
-            placeholders.extend(collect_expansion_placeholders(db, child.clone()));
+        for child in node.get_children(db).iter() {
+            placeholders.extend(collect_expansion_placeholders(db, *child));
         }
     }
     placeholders
@@ -230,14 +218,14 @@ pub fn is_macro_rule_match(
 ) -> Option<(Captures, OrderedHashMap<String, RepetitionId>)> {
     let mut ctx = MatcherContext::default();
 
-    let matcher_elements = get_pattern_elements(db.upcast(), rule.pattern.clone());
-    let input_elements = match input.subtree(db.upcast()) {
-        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db.upcast()),
-        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db.upcast()),
-        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db.upcast()),
+    let matcher_elements = get_pattern_elements(db, rule.pattern.clone());
+    let input_elements = match input.subtree(db) {
+        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
+        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
+        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Missing(_) => unreachable!(),
     }
-    .elements(db.upcast());
+    .elements(db);
     let mut input_iter = input_elements.iter().peekable();
     is_macro_rule_match_ex(db, matcher_elements, &mut input_iter, &mut ctx, true)?;
     if !validate_repetition_operator_constraints(&ctx) {
@@ -256,14 +244,14 @@ fn is_macro_rule_match_ex(
     ctx: &mut MatcherContext,
     consume_all_input: bool,
 ) -> Option<()> {
-    for matcher_element in matcher_elements.elements(db.upcast()) {
+    for matcher_element in matcher_elements.elements(db) {
         match matcher_element {
             ast::MacroRuleElement::Token(matcher_token) => {
                 let input_token = input_iter.next()?;
                 match input_token {
                     ast::TokenTree::Token(token_tree_leaf) => {
-                        if matcher_token.as_syntax_node().get_text_without_trivia(db.upcast())
-                            != token_tree_leaf.as_syntax_node().get_text_without_trivia(db.upcast())
+                        if matcher_token.as_syntax_node().get_text_without_trivia(db)
+                            != token_tree_leaf.as_syntax_node().get_text_without_trivia(db)
                         {
                             return None;
                         }
@@ -276,17 +264,16 @@ fn is_macro_rule_match_ex(
                 }
             }
             ast::MacroRuleElement::Param(param) => {
-                let placeholder_kind: PlaceholderKind = param.kind(db.upcast()).into();
-                let placeholder_name =
-                    param.name(db.upcast()).as_syntax_node().get_text_without_trivia(db.upcast());
+                let placeholder_kind: PlaceholderKind = param.kind(db).into();
+                let placeholder_name = param.name(db).as_syntax_node().get_text_without_trivia(db);
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
                         let input_token = input_iter.next()?;
                         let captured_text = match input_token {
                             ast::TokenTree::Token(token_tree_leaf) => {
-                                match token_tree_leaf.leaf(db.upcast()) {
+                                match token_tree_leaf.leaf(db) {
                                     ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                        terminal_identifier.text(db.upcast()).to_string()
+                                        terminal_identifier.text(db).to_string()
                                     }
                                     _ => return None,
                                 }
@@ -296,7 +283,7 @@ fn is_macro_rule_match_ex(
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: captured_text,
-                                stable_ptr: input_token.stable_ptr().untyped(),
+                                stable_ptr: input_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -307,13 +294,10 @@ fn is_macro_rule_match_ex(
                     PlaceholderKind::Expr => {
                         let mut cloned_iter = input_iter.clone();
                         let peek_token = cloned_iter.peek()?;
-                        let file_id = peek_token.as_syntax_node().stable_ptr().file_id(db.upcast());
-                        let expr_node = as_expr_macro_token_tree(
-                            input_iter.clone().cloned(),
-                            file_id,
-                            db.upcast(),
-                        )?;
-                        let expr_text = expr_node.as_syntax_node().get_text(db.upcast());
+                        let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
+                        let expr_node =
+                            as_expr_macro_token_tree(input_iter.clone().cloned(), file_id, db)?;
+                        let expr_text = expr_node.as_syntax_node().get_text(db);
                         let expr_length = expr_text.len();
                         // An empty expression is parsed successfully. However we don't want to
                         // capture it a valid expr.
@@ -324,7 +308,7 @@ fn is_macro_rule_match_ex(
                         ctx.captures.entry(placeholder_name.clone()).or_default().push(
                             CapturedValue {
                                 text: expr_text.to_string(),
-                                stable_ptr: peek_token.stable_ptr().untyped(),
+                                stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
@@ -339,16 +323,16 @@ fn is_macro_rule_match_ex(
                         for token_tree_leaf in input_iter.by_ref() {
                             let token_text = match token_tree_leaf {
                                 ast::TokenTree::Token(token_tree_leaf) => {
-                                    token_tree_leaf.as_syntax_node().get_text(db.upcast())
+                                    token_tree_leaf.as_syntax_node().get_text(db)
                                 }
                                 ast::TokenTree::Subtree(token_subtree) => {
-                                    token_subtree.as_syntax_node().get_text(db.upcast())
+                                    token_subtree.as_syntax_node().get_text(db)
                                 }
                                 ast::TokenTree::Repetition(token_repetition) => {
-                                    token_repetition.as_syntax_node().get_text(db.upcast())
+                                    token_repetition.as_syntax_node().get_text(db)
                                 }
                                 ast::TokenTree::Param(token_param) => {
-                                    token_param.as_syntax_node().get_text(db.upcast())
+                                    token_param.as_syntax_node().get_text(db)
                                 }
                                 ast::TokenTree::Missing(_) => unreachable!(),
                             };
@@ -364,15 +348,14 @@ fn is_macro_rule_match_ex(
             ast::MacroRuleElement::Subtree(matcher_subtree) => {
                 let input_token = input_iter.next()?;
                 if let ast::TokenTree::Subtree(input_subtree) = input_token {
-                    let inner_elements =
-                        get_pattern_elements(db.upcast(), matcher_subtree.subtree(db.upcast()));
-                    let inner_input_elements = match input_subtree.subtree(db.upcast()) {
-                        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db.upcast()),
-                        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db.upcast()),
-                        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db.upcast()),
+                    let inner_elements = get_pattern_elements(db, matcher_subtree.subtree(db));
+                    let inner_input_elements = match input_subtree.subtree(db) {
+                        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
+                        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
+                        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
                         ast::WrappedTokenTree::Missing(_) => unreachable!(),
                     }
-                    .elements(db.upcast());
+                    .elements(db);
                     let mut inner_input_iter = inner_input_elements.iter().peekable();
                     is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
                     continue;
@@ -384,12 +367,12 @@ fn is_macro_rule_match_ex(
                 let rep_id = RepetitionId(ctx.next_repetition_id);
                 ctx.next_repetition_id += 1;
                 ctx.current_repetition_stack.push(rep_id);
-                let elements = repetition.elements(db.upcast());
-                let operator = repetition.operator(db.upcast());
-                let separator_token = repetition.separator(db.upcast());
+                let elements = repetition.elements(db);
+                let operator = repetition.operator(db);
+                let separator_token = repetition.separator(db);
                 let expected_separator = match separator_token {
                     ast::OptionTerminalComma::TerminalComma(sep) => {
-                        Some(sep.as_syntax_node().get_text_without_trivia(db.upcast()))
+                        Some(sep.as_syntax_node().get_text_without_trivia(db))
                     }
                     ast::OptionTerminalComma::Empty(_) => None,
                 };
@@ -413,8 +396,7 @@ fn is_macro_rule_match_ex(
                     match_count += 1;
                     if let Some(expected_sep) = &expected_separator {
                         if let Some(ast::TokenTree::Token(token_leaf)) = input_iter.peek() {
-                            let actual =
-                                token_leaf.as_syntax_node().get_text_without_trivia(db.upcast());
+                            let actual = token_leaf.as_syntax_node().get_text_without_trivia(db);
                             if actual == *expected_sep {
                                 input_iter.next();
                             } else {
@@ -506,7 +488,7 @@ fn expand_macro_rule_ex(
 ) -> Maybe<()> {
     match node.kind(db) {
         SyntaxKind::ExprPath => {
-            let path_node = ExprPath::from_syntax_node(db, node.clone());
+            let path_node = ExprPath::from_syntax_node(db, node);
             if let Some(name) = extract_placeholder(db, &path_node) {
                 let rep_index = matcher_ctx
                     .placeholder_to_rep_id
@@ -535,7 +517,7 @@ fn expand_macro_rule_ex(
             }
         }
         SyntaxKind::TokenTreeParam => {
-            let path_node = ast::TokenTreeParam::from_syntax_node(db, node.clone());
+            let path_node = ast::TokenTreeParam::from_syntax_node(db, node);
             if let Some(name) = extract_placeholder_from_param(db, &path_node) {
                 let rep_index = matcher_ctx
                     .placeholder_to_rep_id
@@ -578,19 +560,10 @@ fn expand_macro_rule_ex(
                 .placeholder_to_rep_id
                 .get(&placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
-            let mut index = 0;
-            loop {
-                matcher_ctx.repetition_indices.insert(rep_id, index);
-                if matcher_ctx.is_repetition_done(rep_id) {
-                    break;
-                }
-
-                if index > 0 {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
-                    }
-                }
-
+            let repetition_len =
+                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
+            for i in 0..repetition_len {
+                matcher_ctx.repetition_indices.insert(rep_id, i);
                 for element in &elements {
                     expand_macro_rule_ex(
                         db,
@@ -601,7 +574,12 @@ fn expand_macro_rule_ex(
                     )?;
                 }
 
-                index += 1;
+                // TODO(Dean): Handle the separator addition more gracefully.
+                if i + 1 < repetition_len {
+                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
+                        res_buffer.push_str(&sep.as_syntax_node().get_text(db));
+                    }
+                }
             }
 
             matcher_ctx.repetition_indices.swap_remove(&rep_id);
@@ -613,8 +591,8 @@ fn expand_macro_rule_ex(
                 return Ok(());
             }
 
-            for child in db.get_children(node).as_ref() {
-                expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, code_mappings)?;
+            for child in node.get_children(db).iter() {
+                expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
             }
             return Ok(());
         }
@@ -623,8 +601,8 @@ fn expand_macro_rule_ex(
         res_buffer.push_str(&node.get_text(db));
         return Ok(());
     }
-    for child in db.get_children(node).iter() {
-        expand_macro_rule_ex(db, child.clone(), matcher_ctx, res_buffer, code_mappings)?;
+    for child in node.get_children(db).iter() {
+        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
     }
     Ok(())
 }

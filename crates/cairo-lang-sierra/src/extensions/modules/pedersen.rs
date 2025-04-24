@@ -47,10 +47,13 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
                 felt252_param.clone(),
                 felt252_param,
             ],
-            vec![OutputVarInfo::new_builtin(pedersen_ty, 0), OutputVarInfo {
-                ty: felt252_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-            }],
+            vec![
+                OutputVarInfo::new_builtin(pedersen_ty, 0),
+                OutputVarInfo {
+                    ty: felt252_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

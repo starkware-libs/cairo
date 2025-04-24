@@ -1,18 +1,23 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
+    ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::VirtualFile;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
+use crate::FlatLowered;
 use crate::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
 
 #[salsa::database(
@@ -29,7 +34,7 @@ pub struct LoweringDatabaseForTesting {
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl ExternalFiles for LoweringDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
@@ -41,10 +46,11 @@ impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
+        init_defs_group(&mut res);
+        init_semantic_group(&mut res);
+
+        let suite = res.intern_plugin_suite(get_default_plugin_suite());
+        res.set_default_plugins_from_suite(suite);
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -63,11 +69,6 @@ pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl AsFilesGroupMut for LoweringDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn FilesGroup> for LoweringDatabaseForTesting {
@@ -98,5 +99,17 @@ impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
 impl Upcast<dyn ParserGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
+    }
+}
+
+/// Helper for formatting a lowered representation for tests.
+pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&FlatLowered>) -> String {
+    match lowered {
+        Some(lowered) => {
+            let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
+            format!("{:?}", lowered.debug(&lowered_formatter))
+        }
+        None => "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
+            .to_string(),
     }
 }
