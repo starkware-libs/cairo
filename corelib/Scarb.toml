@@ -8,5 +8,8 @@ experimental-features = ["coupons", "negative_impls", "associated_item_constrain
 #   depend on `core`, which is only true for this particular package. Nobody else should use it.
 no-core = true
 
+[dependencies]
+starknet = "2.11.4"
+
 [dev-dependencies]
 cairo_test = "2.11.4"
