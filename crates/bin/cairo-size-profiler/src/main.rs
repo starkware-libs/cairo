@@ -163,7 +163,7 @@ fn main() -> anyhow::Result<()> {
         *final_user_function_size.entry(user_function).or_default() += casm_size;
         if let Some(locations) = &sierra.debug_info.statements_locations.locations.get(&idx) {
             // TODO(orizi): Find the number of times each function is actually inlined.
-            for loc in locations.iter() {
+            for loc in *locations {
                 let mut segments = vec![];
                 let mut node = loc.syntax_node(db);
                 while let Some(parent) = node.parent(db) {
