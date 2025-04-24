@@ -356,8 +356,7 @@ pub fn lower_expr_while_let(
     let location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 
-    let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
-    let ty = matched_expr.ty();
+    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
 
     if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
@@ -381,7 +380,7 @@ pub fn lower_expr_while_let(
             ctx,
             builder,
             lowered_expr,
-            &matched_expr,
+            matched_expr,
             &TupleInfo { types, n_snapshots },
             &arms,
             match_type,
@@ -392,15 +391,7 @@ pub fn lower_expr_while_let(
         return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, match_type);
     }
 
-    lower_concrete_enum_match(
-        ctx,
-        builder,
-        &matched_expr,
-        lowered_expr,
-        &arms,
-        location,
-        match_type,
-    )
+    lower_concrete_enum_match(ctx, builder, matched_expr, lowered_expr, &arms, location, match_type)
 }
 
 /// Lowers a loop inner function into [FlatLowered].
