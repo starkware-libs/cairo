@@ -55,10 +55,7 @@ use crate::ids::{
 };
 use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
-use crate::lower::lower_match::{
-    MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
-    lower_optimized_extern_match,
-};
+use crate::lower::lower_match::MatchArmWrapper;
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
@@ -368,30 +365,20 @@ pub fn lower_expr_while_let(
         )));
     }
 
-    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
-
     let arms = vec![
         MatchArmWrapper { patterns: patterns.into(), expr: Some(loop_expr.body) },
         MatchArmWrapper { patterns: vec![], expr: None },
     ];
 
-    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
-        return lower_expr_match_tuple(
-            ctx,
-            builder,
-            lowered_expr,
-            matched_expr,
-            &TupleInfo { types, n_snapshots },
-            &arms,
-            match_type,
-        );
-    }
-
-    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, match_type);
-    }
-
-    lower_concrete_enum_match(ctx, builder, matched_expr, lowered_expr, &arms, location, match_type)
+    lower_match::lower_match_arms(
+        ctx,
+        builder,
+        matched_expr,
+        lowered_expr,
+        arms,
+        location,
+        match_type,
+    )
 }
 
 /// Lowers a loop inner function into [FlatLowered].
