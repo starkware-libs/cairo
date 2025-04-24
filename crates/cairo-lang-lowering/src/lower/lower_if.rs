@@ -102,9 +102,7 @@ pub fn lower_expr_if_let(
     log::trace!("Lowering an if let expression: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
-
-    let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
-    let ty = matched_expr.ty();
+    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
 
     if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
@@ -128,7 +126,7 @@ pub fn lower_expr_if_let(
             ctx,
             builder,
             lowered_expr,
-            &matched_expr,
+            matched_expr,
             &TupleInfo { types, n_snapshots },
             &arms,
             MatchKind::IfLet,
@@ -143,7 +141,7 @@ pub fn lower_expr_if_let(
     lower_concrete_enum_match(
         ctx,
         builder,
-        &matched_expr,
+        matched_expr,
         lowered_expr,
         &arms,
         location,
