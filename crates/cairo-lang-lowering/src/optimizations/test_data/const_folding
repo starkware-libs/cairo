@@ -4559,3 +4559,235 @@ End:
   Return(v14)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Array get at known index of known array - in range.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> Option<Box<@u8>> {
+    array![0, 1, 2].get(1)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::integer::u8>) <- core::array::array_new::<core::integer::u8>()
+  (v1: core::integer::u8) <- 0
+  (v2: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v0, v1)
+  (v3: core::integer::u8) <- 1
+  (v4: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v2, v3)
+  (v5: core::integer::u8) <- 2
+  (v6: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v4, v5)
+  (v7: core::array::Array::<core::integer::u8>, v8: @core::array::Array::<core::integer::u8>) <- snapshot(v6)
+  (v9: core::integer::u32) <- 1
+End:
+  Match(match core::array::array_get::<core::integer::u8>(v8, v9) {
+    Option::Some(v10) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v11: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v10)
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk2:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v13)
+End:
+  Goto(blk3, {v14 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::integer::u8>) <- core::array::array_new::<core::integer::u8>()
+  (v1: core::integer::u8) <- 0
+  (v2: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v0, v1)
+  (v3: core::integer::u8) <- 1
+  (v4: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v2, v3)
+  (v5: core::integer::u8) <- 2
+  (v6: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v4, v5)
+  (v7: core::array::Array::<core::integer::u8>, v8: @core::array::Array::<core::integer::u8>) <- snapshot(v6)
+  (v9: core::integer::u32) <- 1
+  (v15: core::box::Box::<core::integer::u8>) <- 1.into_box()
+  (v16: core::box::Box::<core::integer::u8>, v17: @core::box::Box::<core::integer::u8>) <- snapshot(v15)
+  (v10: core::box::Box::<@core::integer::u8>) <- core::box::box_forward_snapshot::<core::integer::u8>(v17)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v11: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v10)
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk2:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v13)
+End:
+  Goto(blk3, {v14 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Array get at known index of known array - out of range.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> Option<Box<@u8>> {
+    array![0, 1, 2].get(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::integer::u8>) <- core::array::array_new::<core::integer::u8>()
+  (v1: core::integer::u8) <- 0
+  (v2: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v0, v1)
+  (v3: core::integer::u8) <- 1
+  (v4: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v2, v3)
+  (v5: core::integer::u8) <- 2
+  (v6: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v4, v5)
+  (v7: core::array::Array::<core::integer::u8>, v8: @core::array::Array::<core::integer::u8>) <- snapshot(v6)
+  (v9: core::integer::u32) <- 5
+End:
+  Match(match core::array::array_get::<core::integer::u8>(v8, v9) {
+    Option::Some(v10) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v11: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v10)
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk2:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v13)
+End:
+  Goto(blk3, {v14 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::integer::u8>) <- core::array::array_new::<core::integer::u8>()
+  (v1: core::integer::u8) <- 0
+  (v2: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v0, v1)
+  (v3: core::integer::u8) <- 1
+  (v4: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v2, v3)
+  (v5: core::integer::u8) <- 2
+  (v6: core::array::Array::<core::integer::u8>) <- core::array::array_append::<core::integer::u8>(v4, v5)
+  (v7: core::array::Array::<core::integer::u8>, v8: @core::array::Array::<core::integer::u8>) <- snapshot(v6)
+  (v9: core::integer::u32) <- 5
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v11: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v10)
+End:
+  Goto(blk3, {v11 -> v12})
+
+blk2:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v13)
+End:
+  Goto(blk3, {v14 -> v12})
+
+blk3:
+Statements:
+End:
+  Return(v12)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Array len of known array.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: felt252) -> usize {
+    array![x, x].len()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v1, v0)
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3)
+  (v6: core::integer::u32) <- core::array::array_len::<core::felt252>(v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v1, v0)
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3)
+  (v6: core::integer::u32) <- 2
+End:
+  Return(v6)
+
+//! > lowering_diagnostics
