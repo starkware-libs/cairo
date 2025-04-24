@@ -683,35 +683,51 @@ pub(crate) fn lower_expr_match(
         return lower_expr_match_value(ctx, expr, match_input, builder);
     }
 
+    let arms = expr.arms.iter().map(|arm| arm.into()).collect_vec();
+
+    lower_match_arms(
+        ctx,
+        expr.matched_expr,
+        builder,
+        location,
+        lowered_expr,
+        ty,
+        arms,
+        MatchKind::Match,
+    )
+}
+
+pub(crate) fn lower_match_arms(
+    ctx: &mut LoweringContext<'_, '_>,
+    matched_expr: semantic::ExprId,
+    builder: &mut BlockBuilder,
+    location: LocationId,
+    lowered_expr: LoweredExpr,
+    ty: cairo_lang_semantic::TypeId,
+    arms: Vec<MatchArmWrapper>,
+    match_type: MatchKind,
+) -> Result<LoweredExpr, LoweringFlowError> {
     let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
 
-    let arms = expr.arms.iter().map(|arm| arm.into()).collect_vec();
     if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
         return lower_expr_match_tuple(
             ctx,
             builder,
             lowered_expr,
-            expr.matched_expr,
+            matched_expr,
             &TupleInfo { n_snapshots, types },
             &arms,
-            MatchKind::Match,
+            match_type,
         );
     }
 
     // TODO(spapini): Use diagnostics.
     // TODO(spapini): Handle more than just enums.
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, MatchKind::Match);
+        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, match_type);
     }
-    lower_concrete_enum_match(
-        ctx,
-        builder,
-        expr.matched_expr,
-        lowered_expr,
-        &arms,
-        location,
-        MatchKind::Match,
-    )
+
+    lower_concrete_enum_match(ctx, builder, matched_expr, lowered_expr, &arms, location, match_type)
 }
 
 pub(crate) fn lower_concrete_enum_match(
