@@ -148,7 +148,7 @@ fn allocate_local_variables(
 ) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();
-    for lowering_var_id in local_variables.iter() {
+    for lowering_var_id in local_variables {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
         let uninitialized_local_var_id =
             context.get_sierra_variable(SierraGenVar::UninitializedLocal(*lowering_var_id));
