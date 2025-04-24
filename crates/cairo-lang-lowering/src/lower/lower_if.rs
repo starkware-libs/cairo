@@ -3,9 +3,8 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_utils::{extract_matches, try_extract_matches};
-use semantic::types::peel_snapshots;
-use semantic::{Condition, MatchArmSelector, TypeLongId};
+use cairo_lang_utils::extract_matches;
+use semantic::{Condition, MatchArmSelector};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
@@ -14,10 +13,7 @@ use crate::diagnostic::LoweringDiagnosticKind::{self};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
-use crate::lower::lower_match::{
-    MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
-    lower_optimized_extern_match,
-};
+use crate::lower::lower_match::{self, MatchArmWrapper};
 use crate::lower::{create_subscope, lower_block, lower_expr, lower_expr_to_var_usage};
 use crate::{MatchArm, MatchEnumInfo, MatchInfo};
 
@@ -114,37 +110,18 @@ pub fn lower_expr_if_let(
         )));
     }
 
-    let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
-
     let arms = vec![
         MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },
         MatchArmWrapper { patterns: vec![], expr: expr.else_block },
     ];
 
-    if let Some(types) = try_extract_matches!(long_type_id, TypeLongId::Tuple) {
-        return lower_expr_match_tuple(
-            ctx,
-            builder,
-            lowered_expr,
-            matched_expr,
-            &TupleInfo { types, n_snapshots },
-            &arms,
-            MatchKind::IfLet,
-        );
-    }
-
-    // TODO(spapini): Use diagnostics.
-    // TODO(spapini): Handle more than just enums.
-    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_match(ctx, builder, extern_enum, &arms, MatchKind::IfLet);
-    }
-    lower_concrete_enum_match(
+    lower_match::lower_match_arms(
         ctx,
-        builder,
         matched_expr,
-        lowered_expr,
-        &arms,
+        builder,
         location,
+        lowered_expr,
+        arms,
         MatchKind::IfLet,
     )
 }
