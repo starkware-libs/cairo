@@ -1638,3 +1638,81 @@ Statements:
   (v19: core::felt252) <- 8
 End:
   Return(v4, v19)
+
+//! > ==========================================================================
+
+//! > Test double Otherwise arm.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Two(_) => 2,
+        A::One(_) => 1,
+        _ => 0,
+        _ => 5,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+    Four: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unreachable pattern arm.
+ --> lib.cairo:12:9
+        _ => 5,
+        ^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test hiding arms.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Two(_) => 2,
+        A::One(_) => 1,
+        _ => 0,
+        A::One(_) => 5,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+    Four: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unreachable pattern arm.
+ --> lib.cairo:12:9
+        A::One(_) => 5,
+        ^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

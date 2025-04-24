@@ -123,7 +123,7 @@ struct PatternPath {
 }
 
 /// Returns an option containing the PatternPath of the underscore pattern, if it exists.
-fn get_underscore_pattern_path(
+fn get_underscore_pattern_path_and_mark_unreachable(
     ctx: &mut LoweringContext<'_, '_>,
     arms: &[MatchArmWrapper],
     match_type: MatchKind,
@@ -131,21 +131,22 @@ fn get_underscore_pattern_path(
     let otherwise_variant = arms
         .iter()
         .enumerate()
-        .map(|(arm_index, arm)| {
-            if arm.patterns.is_empty() {
-                return Some(PatternPath { arm_index, pattern_index: None });
-            }
-            arm.patterns
-                .iter()
-                .position(|pattern| {
+        .filter_map(|(arm_index, arm)| {
+            let pattern_index = if arm.patterns.is_empty() {
+                // Special path for if-let else clause where no patterns exist.
+                None
+            } else {
+                let position = arm.patterns.iter().position(|pattern| {
                     matches!(
                         ctx.function_body.arenas.patterns[*pattern],
                         semantic::Pattern::Otherwise(_)
                     )
-                })
-                .map(|pattern_index| PatternPath { arm_index, pattern_index: Some(pattern_index) })
+                })?;
+                Some(position)
+            };
+            Some(PatternPath { arm_index, pattern_index })
         })
-        .find(|option| option.is_some())??;
+        .next()?;
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         if arm.patterns.is_empty() && arm.expr.is_some() {
@@ -197,27 +198,28 @@ fn get_variant_to_arm_map<'a>(
     let mut map = UnorderedHashMap::default();
     for (arm_index, arm) in arms.enumerate() {
         for (pattern_index, pattern) in arm.patterns.iter().enumerate() {
-            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
+            let pattern = &ctx.function_body.arenas.patterns[*pattern];
 
             if let semantic::Pattern::Otherwise(_) = pattern {
-                break;
+                continue;
             }
 
-            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
-                .ok_or_else(|| {
-                    LoweringFlowError::Failed(ctx.diagnostics.report(
-                        &pattern,
-                        MatchError(MatchError {
-                            kind: match_type,
-                            error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
-                        }),
-                    ))
-                })?
-                .clone();
+            let pat_stable_ptr = pattern.stable_ptr();
+
+            let Some(enum_pattern) = try_extract_matches!(pattern, semantic::Pattern::EnumVariant)
+            else {
+                return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                    pat_stable_ptr,
+                    MatchError(MatchError {
+                        kind: match_type,
+                        error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
+                    }),
+                )));
+            };
 
             if enum_pattern.variant.concrete_enum_id != concrete_enum_id {
                 return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                    &pattern,
+                    pat_stable_ptr,
                     MatchError(MatchError {
                         kind: match_type,
                         error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
@@ -228,7 +230,7 @@ fn get_variant_to_arm_map<'a>(
             match map.entry(enum_pattern.variant.clone()) {
                 Entry::Occupied(_) => {
                     ctx.diagnostics.report(
-                        &pattern,
+                        pat_stable_ptr,
                         MatchError(MatchError {
                             kind: match_type,
                             error: MatchDiagnostic::UnreachableMatchArm,
@@ -572,7 +574,7 @@ pub(crate) fn lower_expr_match_tuple(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     expr: LoweredExpr,
-    matched_expr: &semantic::Expr,
+    matched_expr: semantic::ExprId,
     tuple_info: &TupleInfo,
     arms: &[MatchArmWrapper],
     match_type: MatchKind,
@@ -609,12 +611,12 @@ pub(crate) fn lower_expr_match_tuple(
         .collect::<LoweringResult<Vec<_>>>()?;
     let extracted_enums_details = extract_concrete_enum_tuple(
         ctx,
-        matched_expr.stable_ptr().untyped(),
+        ctx.function_body.arenas.exprs[matched_expr].stable_ptr().untyped(),
         &tuple_info.types,
         match_type,
     )?;
 
-    let otherwise_variant = get_underscore_pattern_path(ctx, arms, match_type);
+    let otherwise_variant = get_underscore_pattern_path_and_mark_unreachable(ctx, arms, match_type);
 
     let variants_map = get_variants_to_arm_map_tuple(
         ctx,
@@ -669,8 +671,7 @@ pub(crate) fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, expr.matched_expr)?;
 
-    let matched_expr = ctx.function_body.arenas.exprs[expr.matched_expr].clone();
-    let ty = matched_expr.ty();
+    let ty = ctx.function_body.arenas.exprs[expr.matched_expr].ty();
 
     if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
         let match_input = lowered_expr.as_var_usage(ctx, builder)?;
@@ -685,7 +686,7 @@ pub(crate) fn lower_expr_match(
             ctx,
             builder,
             lowered_expr,
-            &matched_expr,
+            expr.matched_expr,
             &TupleInfo { n_snapshots, types },
             &arms,
             MatchKind::Match,
@@ -700,7 +701,7 @@ pub(crate) fn lower_expr_match(
     lower_concrete_enum_match(
         ctx,
         builder,
-        &matched_expr,
+        expr.matched_expr,
         lowered_expr,
         &arms,
         location,
@@ -711,30 +712,21 @@ pub(crate) fn lower_expr_match(
 pub(crate) fn lower_concrete_enum_match(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    matched_expr: &semantic::Expr,
+    matched_expr: semantic::ExprId,
     lowered_matched_expr: LoweredExpr,
     arms: &[MatchArmWrapper],
     location: LocationId,
     match_type: MatchKind,
 ) -> LoweringResult<LoweredExpr> {
+    let matched_expr = &ctx.function_body.arenas.exprs[matched_expr];
     let ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots } =
         extract_concrete_enum(ctx, matched_expr.into(), matched_expr.ty(), match_type)?;
     let match_input = lowered_matched_expr.as_var_usage(ctx, builder)?;
 
     // Merge arm blocks.
-    let otherwise_variant = get_underscore_pattern_path(ctx, arms, match_type);
+    let otherwise_variant = get_underscore_pattern_path_and_mark_unreachable(ctx, arms, match_type);
 
-    let variant_map = get_variant_to_arm_map(
-        ctx,
-        arms.iter().take(
-            otherwise_variant
-                .as_ref()
-                .map(|PatternPath { arm_index, .. }| *arm_index)
-                .unwrap_or(arms.len()),
-        ),
-        concrete_enum_id,
-        match_type,
-    )?;
+    let variant_map = get_variant_to_arm_map(ctx, arms.iter(), concrete_enum_id, match_type)?;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
     let variants_block_builders = concrete_variants
@@ -864,19 +856,11 @@ pub(crate) fn lower_optimized_extern_match(
         .map_err(LoweringFlowError::Failed)?;
 
     // Merge arm blocks.
-    let otherwise_variant = get_underscore_pattern_path(ctx, match_arms, match_type);
+    let otherwise_variant =
+        get_underscore_pattern_path_and_mark_unreachable(ctx, match_arms, match_type);
 
-    let variant_map = get_variant_to_arm_map(
-        ctx,
-        match_arms.iter().take(
-            otherwise_variant
-                .as_ref()
-                .map(|PatternPath { arm_index, .. }| *arm_index)
-                .unwrap_or(match_arms.len()),
-        ),
-        extern_enum.concrete_enum_id,
-        match_type,
-    )?;
+    let variant_map =
+        get_variant_to_arm_map(ctx, match_arms.iter(), extern_enum.concrete_enum_id, match_type)?;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
 
