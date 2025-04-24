@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId};
+use cairo_lang_defs::ids::{
+    ExternFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId,
+};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -14,7 +16,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
@@ -332,7 +334,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
-    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
+    fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ExternFunctionId>>;
 
     /// Internal query for the libfuncs information required for const folding.
     #[salsa::invoke(crate::optimizations::const_folding::priv_const_folding_info)]
@@ -366,13 +368,15 @@ pub fn init_lowering_group(
     db: &mut (dyn LoweringGroup + 'static),
     inlining_strategy: InliningStrategy,
 ) {
-    let mut moveable_functions: Vec<String> =
-        ["bool_not_impl", "felt252_add", "felt252_sub", "felt252_mul", "felt252_div"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect();
+    let mut moveable_functions: Vec<String> = chain!(
+        ["bool_not_impl"],
+        ["felt252_add", "felt252_sub", "felt252_mul", "felt252_div"],
+        ["array::array_new", "array::array_append"],
+    )
+    .map(|s| s.to_string())
+    .collect();
 
-    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "u128"] {
+    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"] {
         moveable_functions.push(format!("integer::{}_wide_mul", ty));
     }
 
