@@ -68,12 +68,24 @@ impl StorageBaseAddressDrop of Drop<StorageBaseAddress>;
 /// ```
 pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
 
+
+mod internal {
+    /// Internal libfunc declaration, the wrapper function below is used to reduce code size.
+    pub extern fn storage_base_address_from_felt252(
+        addr: felt252,
+    ) -> super::StorageBaseAddress implicits(super::RangeCheck) nopanic;
+}
+
+
 /// Returns a `StorageBaseAddress` given a `felt252` value.
 ///
 /// Wraps around the value if it is not in the range `[0, 2**251 - 256)`.
-pub extern fn storage_base_address_from_felt252(
-    addr: felt252,
-) -> StorageBaseAddress implicits(RangeCheck) nopanic;
+/// `inline(never)` is used to reduce code size.
+#[inline(never)]
+pub fn storage_base_address_from_felt252(addr: felt252) -> StorageBaseAddress nopanic {
+    internal::storage_base_address_from_felt252(addr)
+}
+
 
 pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
 
