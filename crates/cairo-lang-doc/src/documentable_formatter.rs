@@ -5,11 +5,11 @@ use std::option::Option;
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericImplItemId,
-    GenericItemId, GenericModuleItemId, GenericParamId, GenericTraitItemId, ImplAliasId,
-    ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId, LanguageElementId,
-    LookupItemId, MemberId, ModuleId, ModuleItemId, ModuleTypeAliasId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, TraitItemId,
-    TraitTypeId, VariantId,
+    GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericTraitItemId,
+    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
+    LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, ModuleTypeAliasId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitItemId, TraitTypeId, VariantId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceId;
@@ -808,7 +808,52 @@ fn format_final_part(slice: &str) -> String {
 /// signature documentation.
 fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>) -> String {
     if !params.is_empty() {
-        format!("<{}>", params.iter().map(|param| { param.format(db) }).join(", "))
+        format!(
+            "<{}>",
+            params
+                .iter()
+                .map(|param| {
+                    if matches!(param.kind(db.upcast()), GenericKind::Impl) {
+                        let param_formatted = param.format(db.upcast());
+                        if param_formatted.starts_with("+") {
+                            param_formatted
+                        } else {
+                            match <dyn DocGroup as Upcast<dyn SemanticGroup>>::upcast(db)
+                                .generic_param_semantic(param.to_owned())
+                            {
+                                Ok(generic_param) => match generic_param {
+                                    GenericParam::Impl(generic_param_impl) => {
+                                        match generic_param_impl.concrete_trait {
+                                            Ok(concrete_trait) => {
+                                                let concrete_trait_name = concrete_trait.name(db);
+                                                let concrete_trait_generic_args_formatted =
+                                                    concrete_trait
+                                                        .generic_args(db)
+                                                        .iter()
+                                                        .map(|arg| arg.format(db))
+                                                        .collect::<Vec<_>>()
+                                                        .join(", ");
+                                                format!(
+                                                    "impl {}: {}<{}>",
+                                                    param_formatted,
+                                                    concrete_trait_name,
+                                                    concrete_trait_generic_args_formatted
+                                                )
+                                            }
+                                            Err(_) => param_formatted,
+                                        }
+                                    }
+                                    _ => param_formatted,
+                                },
+                                Err(_) => param_formatted,
+                            }
+                        }
+                    } else {
+                        param.format(db)
+                    }
+                })
+                .join(", ")
+        )
     } else {
         "".to_string()
     }
@@ -910,7 +955,25 @@ fn write_generic_params(
                                 DocumentableItemId::from(LookupItemId::ModuleItem(
                                     ModuleItemId::Trait(concrete_trait.trait_id(f.db)),
                                 ));
-                            f.write_link(name, Some(documentable_id))?;
+                            if name.starts_with("+") {
+                                f.write_link(name, Some(documentable_id))?;
+                            } else {
+                                write!(f, "impl {name}: ")?;
+                                let concrete_trait_name = concrete_trait.name(f.db);
+                                let concrete_trait_generic_args_formatted = concrete_trait
+                                    .generic_args(f.db)
+                                    .iter()
+                                    .map(|arg| extract_and_format(&arg.format(f.db)))
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                f.write_link(
+                                    concrete_trait_name.to_string(),
+                                    Some(documentable_id),
+                                )?;
+                                if !concrete_trait_generic_args_formatted.is_empty() {
+                                    write!(f, "<{}>", concrete_trait_generic_args_formatted)?;
+                                }
+                            }
                         }
                         Err(_) => {
                             write!(f, "{}{}", name, if count == 1 { "" } else { ", " })?;
