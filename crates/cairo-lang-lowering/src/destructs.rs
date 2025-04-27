@@ -331,7 +331,7 @@ pub fn add_destructs(
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
-    // For panic desturction, we need to group them by type and create chains of destruct calls
+    // For panic destruction, we need to group them by type and create chains of destruct calls
     // where each one consumes a panic variable and creates a new one.
     // To facilitate this, we convert each entry to a tuple we the relevant information for
     // ordering and grouping.
