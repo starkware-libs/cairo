@@ -1,4 +1,4 @@
-pub use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
+pub use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait, array_macro};
 pub use crate::box::{Box, BoxTrait};
 pub use crate::byte_array::{ByteArray, ByteArrayTrait};
 pub use crate::bytes_31::{Bytes31Trait, bytes31};

@@ -904,3 +904,20 @@ impl FixedSizedArrayInfoImpl<T, const SIZE: usize> of FixedSizedArrayInfo<[T; SI
     type Element = T;
     const SIZE: usize = SIZE;
 }
+
+/// Inline macro to create an array with the given elements.
+pub macro array_macro {
+    // TODO(Dean): rename to `array!` to match the Cairo 1.0 macro.
+    [$x:expr] => {
+        let mut arr = Array::new();
+        arr.append($x);
+        arr
+    };
+
+    [$first:expr, $($rest:expr),
+        *] => {
+            let mut arr = array_macro![$($rest), *];
+            arr.append($first);
+            arr
+        };
+}
