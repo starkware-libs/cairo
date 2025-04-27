@@ -52,8 +52,9 @@ End:
 blk3:
 Statements:
   (v7: ()) <- struct_construct()
+  () <- struct_destructure(v7)
 End:
-  Return(v7)
+  Return()
 
 //! > after
 Parameters: v0: core::option::Option::<test::NeverWithDrop>, v1: core::integer::u32
@@ -79,8 +80,9 @@ End:
 blk3:
 Statements:
   (v7: ()) <- struct_construct()
+  () <- struct_destructure(v7)
 End:
-  Return(v7)
+  Return()
 
 //! > ==========================================================================
 
