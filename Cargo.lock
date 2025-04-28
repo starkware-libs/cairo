@@ -1174,6 +1174,7 @@ dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-executable",
  "cairo-lang-filesystem",
+ "cairo-lang-lowering",
  "cairo-lang-runnable-utils",
  "cairo-lang-runner",
  "cairo-lang-sierra",
