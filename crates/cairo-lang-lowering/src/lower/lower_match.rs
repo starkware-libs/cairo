@@ -635,10 +635,10 @@ fn lower_tuple_match_arm(
                         inner_pattern: Some(inner_pattern),
                         ..
                     }) => {
-                        let inner_pattern =
-                            ctx.function_body.arenas.patterns[*inner_pattern].clone();
-                        let pattern_location =
-                            ctx.get_location(inner_pattern.stable_ptr().untyped());
+                        let inner_pattern = *inner_pattern;
+                        let pattern_location = ctx.get_location(
+                            ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
+                        );
 
                         let variant_expr = LoweredExpr::AtVariable(VarUsage {
                             var_id: match_tuple_ctx.current_var_ids[index],
@@ -981,8 +981,10 @@ pub(crate) fn lower_concrete_enum_match(
                     inner_pattern: Some(inner_pattern),
                     ..
                 })) => {
-                    let inner_pattern = ctx.function_body.arenas.patterns[*inner_pattern].clone();
-                    let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
+                    let inner_pattern = *inner_pattern;
+                    let pattern_location = ctx.get_location(
+                        ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
+                    );
 
                     let var_id = ctx.new_var(VarRequest {
                         ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
@@ -1128,12 +1130,7 @@ pub(crate) fn lower_optimized_extern_match(
                 Some(Pattern::EnumVariant(PatternEnumVariant {
                     inner_pattern: Some(inner_pattern),
                     ..
-                })) => lower_single_pattern(
-                    ctx,
-                    &mut subscope,
-                    ctx.function_body.arenas.patterns[*inner_pattern].clone(),
-                    variant_expr,
-                ),
+                })) => lower_single_pattern(ctx, &mut subscope, *inner_pattern, variant_expr),
                 Some(
                     Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
                     | Pattern::Otherwise(_),
