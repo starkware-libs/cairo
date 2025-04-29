@@ -313,6 +313,9 @@ pub trait LoweringGroup:
     #[salsa::invoke(crate::inline::priv_should_inline)]
     fn priv_should_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
+    /// Returns whether a function should be specalized.
+    fn priv_should_specialize(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
     /// Returns the configuration struct that controls the behavior of the optimization passes.
     #[salsa::input]
     fn optimization_config(&self) -> Arc<OptimizationConfig>;
@@ -829,4 +832,17 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
             panic!("Function should only be called with fully concrete types")
         }
     }
+}
+
+fn priv_should_specialize(
+    db: &dyn LoweringGroup,
+    function_id: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<bool> {
+    let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_func) =
+        function_id.lookup_intern(db)
+    else {
+        panic!("Expected a specialized function");
+    };
+    // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
+    Ok(8 * db.estimate_size(specialized_func.base)? > 10 * db.estimate_size(function_id)?)
 }
