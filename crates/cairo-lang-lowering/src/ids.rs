@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
@@ -13,6 +16,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
+use itertools::zip_eq;
 use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
@@ -22,7 +26,7 @@ use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
     Semantic(defs::ids::FunctionWithBodyId),
     Generated { parent: defs::ids::FunctionWithBodyId, key: GeneratedFunctionKey },
@@ -39,20 +43,20 @@ impl FunctionWithBodyLongId {
         &self,
         _db: &dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
-        match *self {
-            FunctionWithBodyLongId::Semantic(id) => id,
-            FunctionWithBodyLongId::Generated { parent, .. } => parent,
+        match self {
+            FunctionWithBodyLongId::Semantic(id) => *id,
+            FunctionWithBodyLongId::Generated { parent, .. } => *parent,
         }
     }
     pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyLongId> {
-        Ok(match *self {
+        Ok(match self {
             FunctionWithBodyLongId::Semantic(semantic) => ConcreteFunctionWithBodyLongId::Semantic(
-                semantic::ConcreteFunctionWithBodyId::from_generic(db, semantic)?,
+                semantic::ConcreteFunctionWithBodyId::from_generic(db, *semantic)?,
             ),
             FunctionWithBodyLongId::Generated { parent, key } => {
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
-                    parent: semantic::ConcreteFunctionWithBodyId::from_generic(db, parent)?,
-                    key,
+                    parent: semantic::ConcreteFunctionWithBodyId::from_generic(db, *parent)?,
+                    key: *key,
                 })
             }
         })
@@ -82,10 +86,11 @@ impl SemanticFunctionWithBodyIdEx for cairo_lang_defs::ids::FunctionWithBodyId {
 }
 
 /// Concrete function with body.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ConcreteFunctionWithBodyLongId {
     Semantic(semantic::ConcreteFunctionWithBodyId),
     Generated(GeneratedFunction),
+    Specialized(SpecializedFunction),
 }
 define_short_id!(
     ConcreteFunctionWithBodyId,
@@ -94,6 +99,12 @@ define_short_id!(
     lookup_intern_lowering_concrete_function_with_body,
     intern_lowering_concrete_function_with_body
 );
+
+// The result of `generic_or_specialized`.
+pub enum GenericOrSpecialized {
+    Generic(FunctionWithBodyId),
+    Specialized(SpecializedFunction),
+}
 
 impl ConcreteFunctionWithBodyId {
     pub fn is_panic_destruct_fn(&self, db: &dyn LoweringGroup) -> Maybe<bool> {
@@ -108,6 +119,12 @@ impl ConcreteFunctionWithBodyId {
             _ => Ok(false),
         }
     }
+
+    /// Returns the generic version of the function if it exists, otherwise the function is a
+    /// specialized function and the `SpecializedFunction` struct is returned.
+    pub fn generic_or_specialized(&self, db: &dyn LoweringGroup) -> GenericOrSpecialized {
+        self.lookup_intern(db).generic_or_specialized(db)
+    }
 }
 
 impl UnstableSalsaId for ConcreteFunctionWithBodyId {
@@ -116,22 +133,30 @@ impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     }
 }
 impl ConcreteFunctionWithBodyLongId {
-    pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        let long_id = match *self {
+    /// Returns the generic `FunctionWithLongId` if one exists, otherwise returns the specialized
+    /// function.
+    pub fn generic_or_specialized(self, db: &dyn LoweringGroup) -> GenericOrSpecialized {
+        let long_id = match self {
             ConcreteFunctionWithBodyLongId::Semantic(id) => {
                 FunctionWithBodyLongId::Semantic(id.function_with_body_id(db))
             }
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key }) => {
                 FunctionWithBodyLongId::Generated { parent: parent.function_with_body_id(db), key }
             }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                return GenericOrSpecialized::Specialized(specialized);
+            }
         };
-        long_id.intern(db)
+        GenericOrSpecialized::Generic(long_id.intern(db))
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
         match self {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.substitution(db),
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, .. }) => {
                 parent.substitution(db)
+            }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                specialized.base.substitution(db)
             }
         }
     }
@@ -143,22 +168,29 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Generated(generated) => {
                 FunctionLongId::Generated(*generated)
             }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                FunctionLongId::Specialized(specialized.clone())
+            }
         };
         Ok(long_id.intern(db))
     }
     pub fn base_semantic_function(
         &self,
-        _db: &dyn LoweringGroup,
+        db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
-        match *self {
-            ConcreteFunctionWithBodyLongId::Semantic(id) => id,
+        match self {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => *id,
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.parent,
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                specialized.base.base_semantic_function(db)
+            }
         }
     }
     pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
         match self {
             ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.full_path(db),
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.full_path(db),
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.full_path(db),
         }
     }
 }
@@ -168,9 +200,6 @@ impl ConcreteFunctionWithBodyId {
         semantic: semantic::ConcreteFunctionWithBodyId,
     ) -> Self {
         ConcreteFunctionWithBodyLongId::Semantic(semantic).intern(db)
-    }
-    pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        self.lookup_intern(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
         self.lookup_intern(db).substitution(db)
@@ -182,8 +211,13 @@ impl ConcreteFunctionWithBodyId {
         self.lookup_intern(db).full_path(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        let generic_signature = self.function_with_body_id(db).signature(db)?;
-        self.substitution(db)?.substitute(db, generic_signature)
+        match self.generic_or_specialized(db) {
+            GenericOrSpecialized::Generic(id) => {
+                let generic_signature = id.signature(db)?;
+                self.substitution(db)?.substitute(db, generic_signature)
+            }
+            GenericOrSpecialized::Specialized(specialized) => specialized.signature(db),
+        }
     }
     pub fn from_no_generics_free(
         db: &dyn LoweringGroup,
@@ -206,17 +240,22 @@ impl ConcreteFunctionWithBodyId {
                 GeneratedFunctionKey::Loop(stable_ptr) => StableLocation::new(stable_ptr.untyped()),
                 GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
             },
+            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
+                specialized_function.base.stable_location(db)?
+            }
         })
     }
 }
 
 /// Function.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionLongId {
     /// An original function from the user code.
     Semantic(semantic::FunctionId),
     /// A function generated by the compiler.
     Generated(GeneratedFunction),
+    /// A specialized function.
+    Specialized(SpecializedFunction),
 }
 define_short_id!(
     FunctionId,
@@ -227,7 +266,7 @@ define_short_id!(
 );
 impl FunctionLongId {
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        Ok(Some(match *self {
+        Ok(Some(match self {
             FunctionLongId::Semantic(id) => {
                 let concrete_function = id.get_concrete(db);
                 if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
@@ -273,6 +312,9 @@ impl FunctionLongId {
                 ConcreteFunctionWithBodyLongId::Semantic(body).intern(db)
             }
             FunctionLongId::Generated(generated) => generated.body(db),
+            FunctionLongId::Specialized(specialized) => {
+                ConcreteFunctionWithBodyLongId::Specialized(specialized.clone()).intern(db)
+            }
         }))
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
@@ -281,6 +323,7 @@ impl FunctionLongId {
                 Ok(Signature::from_semantic(db, db.concrete_function_signature(*semantic)?))
             }
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
+            FunctionLongId::Specialized(specialized) => specialized.signature(db),
         }
     }
     pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
@@ -293,6 +336,7 @@ impl FunctionLongId {
         match self {
             FunctionLongId::Semantic(id) => id.full_path(db),
             FunctionLongId::Generated(generated) => generated.parent.full_path(db),
+            FunctionLongId::Specialized(specialized) => specialized.full_path(db),
         }
     }
 }
@@ -349,6 +393,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
         match self {
             FunctionLongId::Semantic(semantic) => write!(f, "{:?}", semantic.debug(db)),
             FunctionLongId::Generated(generated) => write!(f, "{:?}", generated.debug(db)),
+            FunctionLongId::Specialized(specialized) => write!(f, "{:?}", specialized.debug(db)),
         }
     }
 }
@@ -413,6 +458,57 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for GeneratedFunction {
                 )
             }
         }
+    }
+}
+
+/// Specialized function
+///
+/// Specialized functions are generated by the compiler some of the function
+/// arguments are known at compile time and the resulting specialized function is smaller
+/// than the original one.
+///
+/// Specialized functions are identified by the base function and the arguments.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SpecializedFunction {
+    /// The base function.
+    pub base: crate::ids::ConcreteFunctionWithBodyId,
+    /// Optional const assignments for the arguments.
+    pub args: Arc<[Option<ConstValue>]>,
+}
+
+impl SpecializedFunction {
+    pub fn body(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyId {
+        let long_id = ConcreteFunctionWithBodyLongId::Specialized(self.clone());
+        long_id.intern(db)
+    }
+    pub fn full_path(&self, db: &dyn LoweringGroup) -> String {
+        format!("{:?}", self.debug(db))
+    }
+
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
+        let mut base_sign = self.base.signature(db)?;
+
+        base_sign.params = zip_eq(base_sign.params, self.args.iter())
+            .filter_map(|(param, arg)| arg.is_none().then_some(param))
+            .collect::<Vec<_>>();
+
+        Ok(base_sign)
+    }
+}
+impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for SpecializedFunction {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn LoweringGroup + 'a),
+    ) -> std::fmt::Result {
+        write!(f, "{}{{", self.base.full_path(db))?;
+        for arg in self.args.iter() {
+            match arg {
+                Some(value) => write!(f, "{:?}, ", value.debug(db))?,
+                None => write!(f, "None, ")?,
+            }
+        }
+        write!(f, "}}")
     }
 }
 
