@@ -430,8 +430,9 @@ fn priv_function_with_body_lowering(
     let lowered = match &function_id.lookup_intern(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { key, .. } => {
-            multi_lowering.generated_lowerings[key].clone()
-        }
+                        multi_lowering.generated_lowerings[key].clone()
+            }
+        ids::FunctionWithBodyLongId::Specialized(_specialized) => todo!(),
     };
     Ok(Arc::new(lowered))
 }

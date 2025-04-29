@@ -38,6 +38,7 @@ pub fn get_inline_diagnostics(
     let inline_config = match function_id.lookup_intern(db) {
         FunctionWithBodyLongId::Semantic(id) => db.function_declaration_inline_config(id)?,
         FunctionWithBodyLongId::Generated { .. } => InlineConfiguration::None,
+        FunctionWithBodyLongId::Specialized(specialized) => db.function_declaration_inline_config(specialized.base.base_semantic_function(db).function_with_body_id(db))?,
     };
     let mut diagnostics = LoweringDiagnostics::default();
 
