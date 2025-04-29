@@ -1393,6 +1393,7 @@ impl FunctionCached {
             FunctionLongId::Generated(id) => {
                 FunctionCached::Generated(GeneratedFunctionCached::new(id, ctx))
             }
+            FunctionLongId::Specialized(_) => todo!(),
         }
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> FunctionId {
