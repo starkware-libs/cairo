@@ -59,9 +59,7 @@ impl ComponentsGenerationData {
         diagnostics: &mut Vec<PluginDiagnostic>,
     ) -> RewriteNode {
         let mut has_component_impls = vec![];
-        for NestedComponent { component_path, storage_name, event_name, node } in
-            self.components.iter()
-        {
+        for NestedComponent { component_path, storage_name, event_name, node } in &self.components {
             if !self.validate_component(db, diagnostics, storage_name, event_name) {
                 // Don't generate the code for the impl of HasComponent.
                 continue;
