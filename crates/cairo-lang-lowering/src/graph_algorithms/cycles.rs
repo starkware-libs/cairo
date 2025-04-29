@@ -1,8 +1,9 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::{LoweringGroup, get_direct_callees};
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
+use crate::ids::{self, ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
 use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
@@ -31,7 +32,20 @@ pub fn function_with_body_direct_function_with_body_callees(
         .collect::<Maybe<Vec<Option<_>>>>()?
         .into_iter()
         .flatten()
-        .map(|x| x.function_with_body_id(db))
+        .map(|x| {
+            match x.lookup_intern(db) {
+                ids::ConcreteFunctionWithBodyLongId::Semantic(id) => {
+                    ids::FunctionWithBodyLongId::Semantic(id.function_with_body_id(db))
+                }
+                ids::ConcreteFunctionWithBodyLongId::Generated(id) => {
+                    id.function_with_body_long_id(db)
+                }
+                ids::ConcreteFunctionWithBodyLongId::Specialized(_) => {
+                    unreachable!("Specialization of functions only occurs post concretization.")
+                }
+            }
+            .intern(db)
+        })
         .collect())
 }
 
