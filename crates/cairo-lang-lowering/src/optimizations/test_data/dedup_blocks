@@ -30,7 +30,6 @@ End:
 
 blk1:
 Statements:
-  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v1) {
     Option::Some(v6, v7) => blk2,
@@ -39,7 +38,6 @@ End:
 
 blk2:
 Statements:
-  (v9: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v7)
   (v11: ()) <- struct_construct()
   (v12: ((),)) <- struct_construct(v11)
   (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v12)
@@ -72,7 +70,6 @@ End:
 
 blk1:
 Statements:
-  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v1) {
     Option::Some(v6, v7) => blk2,
@@ -81,7 +78,6 @@ End:
 
 blk2:
 Statements:
-  (v9: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v7)
   (v11: ()) <- struct_construct()
   (v12: ((),)) <- struct_construct(v11)
   (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v12)

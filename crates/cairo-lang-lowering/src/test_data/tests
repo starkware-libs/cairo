@@ -284,10 +284,9 @@ End:
 
 blk3:
 Statements:
-  (v5: ((), core::felt252)) <- core::box::unbox::<((), core::felt252)>(v3)
-  (v6: core::felt252) <- 7
+  (v5: core::felt252) <- 7
 End:
-  Return(v6)
+  Return(v5)
 
 //! > ==========================================================================
 

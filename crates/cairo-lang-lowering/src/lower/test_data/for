@@ -146,31 +146,30 @@ End:
 blk2:
 Statements:
   (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v15: @core::felt252) <- core::box::unbox::<@core::felt252>(v12)
-  (v16: core::felt252) <- core::felt252_add(v3, v4)
-  (v17: core::array::Span::<core::felt252>) <- struct_construct(v11)
-  (v18: core::array::SpanIter::<core::felt252>) <- struct_construct(v17)
-  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v14, v18, v16, v4)
+  (v15: core::felt252) <- core::felt252_add(v3, v4)
+  (v16: core::array::Span::<core::felt252>) <- struct_construct(v11)
+  (v17: core::array::SpanIter::<core::felt252>) <- struct_construct(v16)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v5, v14, v17, v15, v4)
 End:
-  Return(v19, v20, v21)
+  Return(v18, v19, v20)
 
 blk3:
 Statements:
-  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v23: core::array::Span::<core::felt252>) <- struct_construct(v13)
-  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
-  (v25: ()) <- struct_construct()
-  (v26: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v24, v3, v25)
-  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v26)
+  (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
+  (v22: core::array::Span::<core::felt252>) <- struct_construct(v13)
+  (v23: core::array::SpanIter::<core::felt252>) <- struct_construct(v22)
+  (v24: ()) <- struct_construct()
+  (v25: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v23, v3, v24)
+  (v26: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v25)
 End:
-  Return(v5, v22, v27)
+  Return(v5, v21, v26)
 
 blk4:
 Statements:
-  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v28)
+  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v28: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v27)
 End:
-  Return(v7, v8, v29)
+  Return(v7, v8, v28)
 
 //! > ==========================================================================
 
