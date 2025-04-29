@@ -801,28 +801,27 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::integer::u8) <- 3
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[45-203](v0, v1, v2)
 End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk1,
-    PanicResult::Err(v7) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v9: ()) <- struct_construct()
-  (v10: ((),)) <- struct_construct(v9)
-  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v7: ()) <- struct_construct()
+  (v8: ((),)) <- struct_construct(v7)
+  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v8)
 End:
-  Return(v3, v8, v11)
+  Return(v2, v6, v9)
 
 blk2:
 Statements:
-  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v3, v4, v12)
+  Return(v4, v5, v11)
 
 
 Generated loop lowering for source location:
@@ -1577,28 +1576,42 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::integer::u8) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[54-175](v0, v1, v2)
 End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk1,
-    PanicResult::Err(v7) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk4,
   })
 
 blk1:
 Statements:
-  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v9: ()) <- struct_construct()
-  (v10: ((),)) <- struct_construct(v9)
-  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::MyImpl::impl_in_trait[54-175]{1, }(v2, v3)
 End:
-  Return(v3, v8, v11)
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v10) => blk3,
+  })
 
 blk2:
 Statements:
-  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v7)
+  (v12: ()) <- struct_construct()
+  (v13: ((),)) <- struct_construct(v12)
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v13)
 End:
-  Return(v3, v4, v12)
+  Return(v6, v11, v14)
+
+blk3:
+Statements:
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
+End:
+  Return(v6, v7, v15)
+
+blk4:
+Statements:
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
+End:
+  Return(v4, v5, v17)
 
 //! > lowering_diagnostics
 
@@ -2776,48 +2789,45 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::integer::u32) <- 1
-  (v3: core::integer::u32) <- 5
-  (v4: core::ops::range::RangeIterator::<core::integer::u32>) <- struct_construct(v2, v3)
-  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v0, v1, v4)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::ops::range::RangeIterator::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76]{{ 1: core::integer::u32, 5: core::integer::u32 }, }(v0, v1)
 End:
-  Match(match_enum(v7) {
-    PanicResult::Ok(v8) => blk1,
-    PanicResult::Err(v9) => blk4,
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk1,
+    PanicResult::Err(v6) => blk4,
   })
 
 blk1:
 Statements:
-  (v10: core::ops::range::RangeIterator::<core::integer::u32>, v11: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- struct_destructure(v8)
+  (v7: core::ops::range::RangeIterator::<core::integer::u32>, v8: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- struct_destructure(v5)
 End:
-  Match(match_enum(v11) {
-    LoopResult::Normal(v12) => blk2,
-    LoopResult::EarlyReturn(v13) => blk3,
+  Match(match_enum(v8) {
+    LoopResult::Normal(v9) => blk2,
+    LoopResult::EarlyReturn(v10) => blk3,
   })
 
 blk2:
 Statements:
-  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v15: ()) <- struct_construct()
-  (v16: core::result::Result::<(), core::integer::u32>) <- Result::Ok(v15)
-  (v17: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v17)
+  (v11: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v12: ()) <- struct_construct()
+  (v13: core::result::Result::<(), core::integer::u32>) <- Result::Ok(v12)
+  (v14: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v13)
+  (v15: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v14)
 End:
-  Return(v5, v14, v18)
+  Return(v2, v11, v15)
 
 blk3:
 Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v20: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v13)
-  (v21: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v20)
+  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v17: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v10)
+  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v17)
 End:
-  Return(v5, v19, v21)
+  Return(v2, v16, v18)
 
 blk4:
 Statements:
-  (v22: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v9)
+  (v19: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v6)
 End:
-  Return(v5, v6, v22)
+  Return(v2, v3, v19)
 
 
 Generated loop lowering for source location:
