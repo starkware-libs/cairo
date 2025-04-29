@@ -197,7 +197,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 .unwrap_or_else(|| sierra_program.statements.len());
             writeln!(f, "// {}:", func.id)?;
             for param in &func.params {
-                writeln!(f, "//   {}", param)?;
+                writeln!(f, "//   {param}")?;
             }
             for i in start..end {
                 writeln!(f, "{}; // {i}", sierra_program.statements[i])?;

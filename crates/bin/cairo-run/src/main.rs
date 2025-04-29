@@ -108,7 +108,7 @@ fn main() -> anyhow::Result<()> {
         match result.profiling_info {
             Some(raw_profiling_info) => {
                 let profiling_info = profiling_info_processor.process(&raw_profiling_info);
-                println!("Profiling info:\n{}", profiling_info);
+                println!("Profiling info:\n{profiling_info}");
             }
             None => println!("Warning: Profiling info not found."),
         }

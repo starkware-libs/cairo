@@ -115,13 +115,13 @@ impl MatchError {
     fn format(&self) -> String {
         match (&self.error, &self.kind) {
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::Match) => {
-                format!("Unsupported matched type. Type: `{}`.", matched_type)
+                format!("Unsupported matched type. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::IfLet) => {
-                format!("Unsupported type in if-let. Type: `{}`.", matched_type)
+                format!("Unsupported type in if-let. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedType(matched_type), MatchKind::WhileLet(_, _)) => {
-                format!("Unsupported type in while-let. Type: `{}`.", matched_type)
+                format!("Unsupported type in while-let. Type: `{matched_type}`.")
             }
             (MatchDiagnostic::UnsupportedMatchedValueTuple, MatchKind::Match) => {
                 "Unsupported matched value. Currently, match on tuples only supports enums as \
@@ -163,7 +163,7 @@ impl MatchError {
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
 
             (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
-                format!("Missing match arm: `{}` not covered.", variant)
+                format!("Missing match arm: `{variant}` not covered.")
             }
             (MatchDiagnostic::MissingMatchArm(_), MatchKind::IfLet) => {
                 unreachable!("If-let is not required to be exhaustive.")

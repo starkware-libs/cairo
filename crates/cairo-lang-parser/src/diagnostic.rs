@@ -89,7 +89,7 @@ impl ParserDiagnostic {
                 SyntaxKind::TerminalUse => "use",
                 SyntaxKind::TerminalWhile => "while",
                 SyntaxKind::TerminalXor => "^",
-                _ => return format!("{:?}", kind),
+                _ => return format!("{kind:?}"),
             }
         )
     }

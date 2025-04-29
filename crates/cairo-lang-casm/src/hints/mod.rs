@@ -36,7 +36,7 @@ pub enum Hint {
 
 impl Hint {
     pub fn representing_string(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 

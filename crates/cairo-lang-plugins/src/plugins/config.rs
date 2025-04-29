@@ -290,7 +290,7 @@ fn parse_predicate_item(
                 _ => {
                     diagnostics.push(PluginDiagnostic::error(
                         call.stable_ptr(db),
-                        format!("Unsupported operator: `{}`.", operator),
+                        format!("Unsupported operator: `{operator}`."),
                     ));
                     None
                 }

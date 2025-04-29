@@ -180,7 +180,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let total_size: usize = casm.instructions.iter().map(|inst| inst.body.op_size()).sum();
-    println!("Total weight (felt252 count): {}", total_size);
+    println!("Total weight (felt252 count): {total_size}");
 
     println!("Weight by concrete libfunc:");
     for (concrete_name, weight) in filter_and_sort(concrete_libfunc_size) {
