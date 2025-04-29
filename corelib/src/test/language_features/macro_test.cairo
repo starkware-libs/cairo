@@ -299,3 +299,48 @@ mod repetition_macro_expansion {
         assert_eq!(expected_ident, actual_ident);
     }
 }
+
+macro count_exprs_rec {
+    [] => {
+        0
+    };
+
+    [$x:expr] => {
+        1
+    };
+
+    [$x:expr, $($xs:expr), +] => {
+        1 + count_exprs_rec![$($xs), +]
+    };
+}
+
+#[test]
+fn test_count_exprs_rec() {
+    assert_eq!(count_exprs_rec![], 0);
+    assert_eq!(count_exprs_rec![5], 1);
+    assert_eq!(count_exprs_rec![5, 6], 2);
+    assert_eq!(count_exprs_rec![1 + 2, 3 * 4, 5 - 6], 3);
+    assert_eq!(count_exprs_rec![10, 20, 30, 40, 50], 5);
+}
+
+macro my_array {
+    [$x:expr] => {
+        let mut arr = array![];
+        arr.append($x);
+        arr
+    };
+
+    [$first:expr, $($rest:expr),
+        *] => {
+            let mut arr = my_array![$($rest), *];
+            arr.append($first);
+            arr
+        };
+}
+
+#[test]
+fn test_array_macro() {
+    let result = my_array![1, 2, 3];
+    let mut expected = array![3, 2, 1];
+    assert_eq!(result, expected);
+}
