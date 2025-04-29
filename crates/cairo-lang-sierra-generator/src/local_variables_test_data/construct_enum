@@ -34,12 +34,11 @@ fn immovable<T>(t: T) -> T {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::bool) <- bool::True(v0)
-  (v2: core::bool) <- test::immovable::<core::bool>(v1)
-  (v3: core::felt252) <- test::revoke_ap()
+  (v0: core::bool) <- test::immovable::<core::bool>[bool::True({}), ()
+  (v1: core::felt252) <- test::revoke_ap()
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
 End:
-  Return(v1)
+  Return(v3)
 
 //! > local_variables
-v1

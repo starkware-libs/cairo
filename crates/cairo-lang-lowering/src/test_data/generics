@@ -34,15 +34,13 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: (core::felt252, core::bool)) <- struct_construct(v0, v2)
-  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v3)
-  (v6: core::felt252) <- 6
-  (v7: ()) <- struct_construct()
-  (v8: core::bool) <- bool::False(v7)
-  (v9: (core::felt252, core::bool)) <- struct_construct(v6, v8)
-  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v9)
+  (v1: core::bool) <- bool::True({})
+  (v2: (core::felt252, core::bool)) <- struct_construct(v0, v1)
+  (v3: core::felt252, v4: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v2)
+  (v5: core::felt252) <- 6
+  (v6: core::bool) <- bool::False({})
+  (v7: (core::felt252, core::bool)) <- struct_construct(v5, v6)
+  (v8: core::felt252, v9: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v7)
 End:
   Return()
 
@@ -76,9 +74,9 @@ struct Query<V> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 1
-  (v1: core::felt252) <- 2
-  (v2: core::felt252) <- core::felt252_add(v1, v0)
+  (v0: core::felt252) <- 2
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
 End:
   Return(v2)
 
@@ -151,8 +149,7 @@ impl MyImpl<T, impl TDrop: Drop<T>> of MyTrait<T> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 5
-  () <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
+  () <- test::MyImpl::bar[5, ()
 End:
   Return()
 

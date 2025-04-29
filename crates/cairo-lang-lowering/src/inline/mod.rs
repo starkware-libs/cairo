@@ -5,6 +5,7 @@ mod statements_weights;
 
 use std::collections::{HashMap, VecDeque};
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
@@ -21,6 +22,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
 };
+use crate::fmt::LoweredFormatter;
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId, LocationId,
 };
@@ -217,6 +219,21 @@ impl Rebuilder for Mapper<'_, '_> {
     fn transform_end(&mut self, end: &mut FlatBlockEnd) {
         match end {
             FlatBlockEnd::Return(returns, _location) => {
+                if self.outputs.len() != returns.len() {
+                    let db = self.variables.db;
+                    let lowered = self.lowered;
+                    let fmt = LoweredFormatter::new(db, &lowered.variables);
+
+                    eprintln!(
+                        "{:?}",
+                        self.inlining_location.diagnostic_location(db).debug(db.elongate())
+                    );
+                    eprintln!("{:?}", self.outputs);
+                    eprintln!("{:?}", returns);
+
+                    eprintln!("{:?}", lowered.debug(&fmt));
+                }
+
                 let remapping = VarRemapping {
                     remapping: OrderedHashMap::from_iter(zip_eq(
                         self.outputs.iter().cloned(),

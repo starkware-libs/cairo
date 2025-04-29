@@ -22,7 +22,10 @@ use num_traits::Zero;
 use num_traits::cast::ToPrimitive;
 
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, SemanticFunctionIdEx,
+    SpecializedFunction,
+};
 use crate::{
     BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
@@ -141,9 +144,9 @@ pub fn const_folding(
                 }
                 Statement::Call(call_stmt) => {
                     if let Some(updated_stmt) =
-                        ctx.handle_statement_call(call_stmt, &mut additional_consts)
+                        ctx.handle_statement_call(call_stmt, &mut additional_consts, function_id)
                     {
-                        *stmt = Statement::Const(updated_stmt);
+                        *stmt = updated_stmt;
                     }
                 }
                 Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
@@ -280,11 +283,91 @@ impl ConstFoldingContext<'_> {
     /// Handles a statement call.
     ///
     /// Returns None if no additional changes are required.
-    /// If changes are required, returns an updated const-statement (to override the current
+    /// If changes are required, returns an updated statement (to override the current
     /// statement).
     /// May add an additional const to `additional_consts` if just replacing the current statement
     /// is not enough.
     fn handle_statement_call(
+        &mut self,
+        call_stmt: &mut StatementCall,
+        additional_consts: &mut Vec<StatementConst>,
+        orig_function_id: ConcreteFunctionWithBodyId,
+    ) -> Option<Statement> {
+        if let Some(const_stms) = self.try_replace_call_with_const(call_stmt, additional_consts) {
+            return Some(Statement::Const(const_stms));
+        }
+
+        if call_stmt.with_coupon {
+            return None;
+        }
+
+        let Ok(Some(func_with_body)) = call_stmt.function.body(self.db) else {
+            return None;
+        };
+
+        if call_stmt
+            .inputs
+            .iter()
+            .all(|arg| !matches!(self.var_info.get(&arg.var_id), Some(VarInfo::Const(_))))
+        {
+            // No const inputs
+            return None;
+        }
+
+        let mut const_arg = vec![];
+        let mut new_args = vec![];
+        for arg in &call_stmt.inputs {
+            if let Some(VarInfo::Const(c)) = self.var_info.get(&arg.var_id) {
+                const_arg.push(Some(c.clone()));
+            } else {
+                const_arg.push(None);
+                new_args.push(*arg);
+            }
+        }
+
+        let (base, args) = match func_with_body.lookup_intern(self.db) {
+            ConcreteFunctionWithBodyLongId::Semantic(_)
+            | ConcreteFunctionWithBodyLongId::Generated(_) => {
+                (func_with_body, const_arg.into_iter().collect())
+            }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
+                // Canonicalize the specialization rather than adding a specialization of a
+                // specializaed function.
+                let mut new_args_iter = chain!(const_arg.into_iter(), std::iter::once(None));
+                let args = specialized_function
+                    .args
+                    .iter()
+                    .map(|arg| {
+                        if arg.is_none() {
+                            return new_args_iter.next().unwrap();
+                        }
+                        arg.clone()
+                    })
+                    .collect();
+
+                (specialized_function.base, args)
+            }
+        };
+
+        let specialized_func_id =
+            ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, args })
+                .intern(self.db);
+
+        // A specialized function can't be use to implement itself.
+        if specialized_func_id == orig_function_id {
+            return None;
+        }
+
+        Some(Statement::Call(StatementCall {
+            function: specialized_func_id.function_id(self.db).unwrap(),
+            inputs: new_args,
+            with_coupon: call_stmt.with_coupon,
+            outputs: std::mem::take(&mut call_stmt.outputs),
+            location: call_stmt.location,
+        }))
+    }
+
+    fn try_replace_call_with_const(
         &mut self,
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,

@@ -35,10 +35,8 @@ fn immovable<T>(t: T) -> T {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: core::bool) <- test::immovable::<core::bool>(v2)
-  (v4: core::felt252) <- 5
-  (v5: test::MyEnum) <- MyEnum::B(v4)
+  (v1: core::bool) <- test::immovable::<core::bool>[bool::True({}), ()
+  (v2: core::felt252) <- 5
+  (v3: test::MyEnum) <- MyEnum::B(v2)
 End:
-  Return(v5)
+  Return(v3)

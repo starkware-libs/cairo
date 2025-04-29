@@ -361,9 +361,10 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v2: core::felt252) <- 0
+  (v3: core::felt252) <- core::felt252_add(v2, v1)
 End:
-  Goto(blk5, {v2 -> v3})
+  Goto(blk5, {v3 -> v4})
 
 blk2:
 Statements:
@@ -378,14 +379,14 @@ End:
 blk4:
 Statements:
 End:
-  Goto(blk5, {v0 -> v3})
+  Goto(blk5, {v0 -> v4})
 
 blk5:
 Statements:
-  (v4: core::felt252) <- 1
-  (v5: core::felt252) <- core::felt252_add(v3, v4)
+  (v5: core::felt252) <- 1
+  (v6: core::felt252) <- core::felt252_add(v4, v5)
 End:
-  Return(v5)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -471,16 +472,17 @@ End:
 
 blk6:
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v10)
+  (v13: core::felt252) <- 0
+  (v14: core::felt252) <- core::felt252_add(v13, v10)
 End:
-  Goto(blk14, {v13 -> v14})
+  Goto(blk14, {v14 -> v15})
 
 blk7:
 Statements:
 End:
   Match(match_enum(v7) {
-    bool::False(v15) => blk8,
-    bool::True(v16) => blk9,
+    bool::False(v16) => blk8,
+    bool::True(v17) => blk9,
   })
 
 blk8:
@@ -497,8 +499,8 @@ blk10:
 Statements:
 End:
   Match(match_enum(v7) {
-    bool::False(v17) => blk11,
-    bool::True(v18) => blk12,
+    bool::False(v18) => blk11,
+    bool::True(v19) => blk12,
   })
 
 blk11:
@@ -514,14 +516,14 @@ End:
 blk13:
 Statements:
 End:
-  Goto(blk14, {v0 -> v14})
+  Goto(blk14, {v0 -> v15})
 
 blk14:
 Statements:
-  (v19: core::felt252) <- 1
-  (v20: core::felt252) <- core::felt252_add(v14, v19)
+  (v20: core::felt252) <- 1
+  (v21: core::felt252) <- core::felt252_add(v15, v20)
 End:
-  Return(v20)
+  Return(v21)
 
 //! > ==========================================================================
 
@@ -633,12 +635,11 @@ enum MyEnum {
 Parameters: v0: test::MyEnum
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 0
 End:
   Match(match_enum(v0) {
-    MyEnum::A(v2) => blk1,
-    MyEnum::B(v3) => blk2,
-    MyEnum::C(v4) => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v2) => blk2,
+    MyEnum::C(v3) => blk3,
   })
 
 blk1:
@@ -658,8 +659,9 @@ End:
 
 blk4:
 Statements:
+  (v4: core::felt252) <- 0
   (v5: core::felt252) <- 5
-  (v6: core::felt252) <- core::felt252_add(v1, v5)
+  (v6: core::felt252) <- core::felt252_add(v4, v5)
   (v7: core::felt252) <- 1
   (v8: core::felt252) <- core::felt252_add(v6, v7)
 End:

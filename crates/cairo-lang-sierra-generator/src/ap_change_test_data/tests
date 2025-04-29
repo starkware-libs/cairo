@@ -88,5 +88,5 @@ fn cycle_if_some(x: Option<felt252>) {
 }
 
 //! > result
-not_cycle: ap_change=Ok(Known { new_vars_only: false }), has_cycles=Ok(false)
+not_cycle: ap_change=Ok(Unknown), has_cycles=Ok(true)
 cycle_if_some: ap_change=Ok(Unknown), has_cycles=Ok(true)

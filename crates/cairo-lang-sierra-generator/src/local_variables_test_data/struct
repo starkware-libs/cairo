@@ -92,11 +92,10 @@ fn immovable<T>(t: T) -> T {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 12
-  (v1: core::felt252) <- test::immovable::<core::felt252>(v0)
+  (v0: core::felt252) <- test::immovable::<core::felt252>[12, ()
   () <- core::internal::revoke_ap_tracking()
 End:
-  Return(v1)
+  Return(v0)
 
 //! > local_variables
-v1
+v0

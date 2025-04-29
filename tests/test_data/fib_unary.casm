@@ -1,8 +1,11 @@
-[ap + 0] = -1, ap++;
-[ap + 0] = -1, ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 5;
 [ap + 0] = [ap + -1] * -1, ap++;
+ret;
+[ap + 0] = -1, ap++;
+[ap + 0] = -1, ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel 3;
 ret;
 jmp rel 4 if [fp + -3] != 0;
 [ap + 0] = [fp + -5], ap++;
