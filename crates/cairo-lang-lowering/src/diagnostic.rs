@@ -144,7 +144,6 @@ impl MatchError {
             (MatchDiagnostic::UnsupportedMatchArmNotATuple, _) => {
                 "Unsupported pattern - not a tuple.".into()
             }
-
             (MatchDiagnostic::UnsupportedMatchArmNotALiteral, MatchKind::Match) => {
                 "Unsupported match arm - not a literal.".into()
             }
@@ -154,14 +153,12 @@ impl MatchError {
             (MatchDiagnostic::NonExhaustiveMatchValue, MatchKind::Match) => {
                 "Match is non exhaustive - add a wildcard pattern (`_`).".into()
             }
-
             (
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
                 | MatchDiagnostic::UnsupportedMatchArmNonSequential
                 | MatchDiagnostic::NonExhaustiveMatchValue,
                 MatchKind::IfLet | MatchKind::WhileLet(_, _),
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
-
             (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
                 format!("Missing match arm: `{variant}` not covered.")
             }
@@ -171,7 +168,6 @@ impl MatchError {
             (MatchDiagnostic::MissingMatchArm(_), MatchKind::WhileLet(_, _)) => {
                 unreachable!("While-let is not required to be exhaustive.")
             }
-
             (MatchDiagnostic::UnreachableMatchArm, MatchKind::Match) => {
                 "Unreachable pattern arm.".into()
             }
