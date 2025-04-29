@@ -825,14 +825,6 @@ error: Inner patterns are not allowed in this context.
         Some(Some(x)) => x,
              ^^^^^^^
 
-error: Missing match arm: `Some` not covered.
- --> lib.cairo:2:5-5:5
-      match a {
- _____^
-| ...
-|     }
-|_____^
-
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
@@ -1951,7 +1943,7 @@ error: Unsupported matched value. Currently, match on tuples only supports enums
 //! > Test Match unreachable Otherwise.
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: false)
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Option<felt252>) -> felt252 {
@@ -1970,25 +1962,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Unreachable pattern arm.
+ --> lib.cairo:5:9
+        _ => 7,
+        ^
 
 //! > lowering_flat
-Parameters: v0: core::option::Option::<core::felt252>
-blk0 (root):
-Statements:
-End:
-  Match(match_enum(v0) {
-    Option::Some(v1) => blk1,
-    Option::None(v2) => blk2,
-  })
-
-blk1:
-Statements:
-  (v3: core::felt252) <- 5
-End:
-  Return(v3)
-
-blk2:
-Statements:
-  (v4: core::felt252) <- 6
-End:
-  Return(v4)
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

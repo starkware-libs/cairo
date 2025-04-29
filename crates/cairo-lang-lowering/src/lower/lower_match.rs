@@ -151,7 +151,7 @@ fn extract_concrete_enum_tuple(
 }
 
 /// The arm and pattern indices of a pattern in a match arm with an or list.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 struct PatternPath {
     arm_index: usize,
     pattern_index: Option<usize>,
@@ -237,38 +237,59 @@ fn get_underscore_pattern_path_and_mark_unreachable(
 /// reaching here are unreachable (even if current variant is itself an enum, subtrees are
 /// irrelevant). [`VariantMatchTree::Empty`] No pattern has touched this path yet. Useful to emit a
 /// `MissingMatchArm` diagnostic later on.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 enum VariantMatchTree {
     /// Mapping of enum variant id(x) to sub [VariantMatchTree].
     Mapping(Vec<VariantMatchTree>),
-    /// Path is covered by a pattern.
-    Full(PatternId, PatternPath),
+    /// Enum variants (sparse subtree) is covered by a pattern.
+    Full(PatternPath),
     /// No pattern has been added to this path.
     Empty,
+}
+
+impl std::fmt::Debug for VariantMatchTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VariantMatchTree::Empty => write!(f, "Empty"),
+            VariantMatchTree::Full(path) => {
+                write!(f, "Pattern (arm {}/pattern {:?})", path.arm_index, path.pattern_index)
+            }
+            VariantMatchTree::Mapping(mapping) => {
+                writeln!(f, "Mapping {{")?;
+                for (variant_idx, item) in mapping.iter().enumerate() {
+                    let item_str = format!("{item:?}");
+                    for line in item_str.lines() {
+                        writeln!(f, "\tVariant {variant_idx}: {line}")?;
+                    }
+                }
+                write!(f, "}}")
+            }
+        }
+    }
 }
 
 impl VariantMatchTree {
     /// Pushes a pattern to the enum paths. Fails if the pattern is unreachable.
     fn push_pattern_path(
         &mut self,
-        ptrn_id: PatternId,
         pattern_path: PatternPath,
+        match_type: MatchKind,
     ) -> Result<(), LoweringDiagnosticKind> {
         match self {
             VariantMatchTree::Empty => {
-                *self = VariantMatchTree::Full(ptrn_id, pattern_path);
+                *self = VariantMatchTree::Full(pattern_path);
                 Ok(())
             }
-            VariantMatchTree::Full(_, _) => Err(MatchError(MatchError {
-                kind: MatchKind::Match,
+            VariantMatchTree::Full(_) => Err(MatchError(MatchError {
+                kind: match_type,
                 error: MatchDiagnostic::UnreachableMatchArm,
             })),
             VariantMatchTree::Mapping(mapping) => {
                 // Need at least one empty path, but should write to all (pattern covers multiple
                 // paths).
                 let mut any_ok = false;
-                for path in mapping.iter_mut() {
-                    if path.push_pattern_path(ptrn_id, pattern_path).is_ok() {
+                for tree in mapping.iter_mut() {
+                    if tree.push_pattern_path(pattern_path, match_type).is_ok() {
                         any_ok = true;
                     }
                 }
@@ -276,7 +297,7 @@ impl VariantMatchTree {
                     Ok(())
                 } else {
                     Err(MatchError(MatchError {
-                        kind: MatchKind::Match,
+                        kind: match_type,
                         error: MatchDiagnostic::UnreachableMatchArm,
                     }))
                 }
@@ -284,16 +305,16 @@ impl VariantMatchTree {
         }
     }
 
-    /// Utility to collect every [`PatternId`] found in `Full` leaves into `leaves`.
-    fn collect_leaves(&self, leaves: &mut OrderedHashSet<PatternId>) {
+    /// Utility to collect every Pattern that reached `Full` nodes, and putting them into `leaves`.
+    fn collect_leaves(&self, leaves: &mut OrderedHashSet<PatternPath>) {
         match self {
             VariantMatchTree::Empty => {}
-            VariantMatchTree::Full(ptrn_id, _) => {
-                leaves.insert(*ptrn_id);
+            VariantMatchTree::Full(path) => {
+                leaves.insert(*path);
             }
             VariantMatchTree::Mapping(mapping) => {
-                for path in mapping.iter() {
-                    path.collect_leaves(leaves);
+                for subtree in mapping.iter() {
+                    subtree.collect_leaves(leaves);
                 }
             }
         }
@@ -318,26 +339,49 @@ impl VariantMatchTree {
                     unreachable!("We just created the mapping.")
                 }
             }
-            VariantMatchTree::Full(_, _) => Ok(None),
+            VariantMatchTree::Full(_) => Ok(None),
             VariantMatchTree::Mapping(items) => Ok(Some(&mut items[concrete_variant.idx])),
         }
     }
 }
 
-/// Returns a map from variants to their corresponding pattern path in a match statement.
-fn get_variant_to_arm_map(
+/// Returns a [VariantMatchTree] representing all enum variants being matched. This includes
+/// recursive patterns such as Option<Option<Option<.....>>>. Depth of the tree depends on the
+/// patterns used in the arms, and the type of the enum being matched.
+fn build_variant_match_tree(
     ctx: &mut LoweringContext<'_, '_>,
     arms: &[MatchArmWrapper<'_>],
-    concrete_enum_id: semantic::ConcreteEnumId,
+    location: LocationId,
     match_type: MatchKind,
-) -> LoweringResult<UnorderedHashMap<semantic::ConcreteVariant, PatternPath>> {
+    concrete_enum_id: semantic::ConcreteEnumId,
+) -> LoweringResult<VariantMatchTree> {
     // I could have Option<Option<Option<.....>>> but only match the first one.
     // This can be generalized to a tree of enums A::A(C::C) does not need to check recursion of
     // A::B(_). Check pattern is legal and collect paths.
+    let stable_ptr = ctx.db.lookup_intern_location(location).stable_location.stable_ptr();
     let mut variant_map = VariantMatchTree::Empty;
     for (arm_index, arm) in arms.iter().enumerate() {
-        let Some(patterns) = arm.patterns() else {
-            continue;
+        let patterns = match arm {
+            MatchArmWrapper::Arm(patterns, _) => patterns,
+            MatchArmWrapper::ElseClause(_) => {
+                // Fill the map as if we are in otherwise. Throw error on unreachable.
+                let arm_stable_ptr = arm
+                    .expr()
+                    .map(|e| ctx.function_body.arenas.exprs[e].stable_ptr().untyped())
+                    .unwrap_or(stable_ptr);
+                variant_map
+                    .push_pattern_path(PatternPath { arm_index, pattern_index: None }, match_type)
+                    .map_err(|e| {
+                        LoweringFlowError::Failed(ctx.diagnostics.report(arm_stable_ptr, e))
+                    })?;
+                continue;
+            }
+            MatchArmWrapper::DefaultClause => {
+                // Fill the map as if we are in otherwise.
+                let _ = variant_map
+                    .push_pattern_path(PatternPath { arm_index, pattern_index: None }, match_type);
+                continue;
+            }
         };
         for (pattern_index, mut pattern) in patterns.iter().copied().enumerate() {
             let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
@@ -358,7 +402,10 @@ fn get_variant_to_arm_map(
                 match &ctx.function_body.arenas.patterns[pattern] {
                     semantic::Pattern::Otherwise(_) => {
                         // Fill leaves and check for usefulness.
-                        let _ = variant_map.push_pattern_path(pattern, pattern_path);
+                        let _ =
+                            variant_map.push_pattern_path(pattern_path, match_type).map_err(|e| {
+                                LoweringFlowError::Failed(ctx.diagnostics.report(pattern_ptr, e))
+                            });
                         // TODO(eytan-starkware) Check result and report warning if unreachable.
                         break;
                     }
@@ -391,7 +438,8 @@ fn get_variant_to_arm_map(
 
                         if let Some(inner_pattern) = enum_pattern.inner_pattern {
                             if !matches_enum(ctx, inner_pattern) {
-                                let _ = try_push(ctx, pattern, pattern_path, variant_map);
+                                let _ =
+                                    try_push(ctx, match_type, pattern, pattern_path, variant_map);
                                 break;
                             }
 
@@ -403,49 +451,15 @@ fn get_variant_to_arm_map(
                             let next_enum =
                                 extract_concrete_enum(ctx, ptr.into(), variant.ty, match_type);
                             concrete_enum_id = next_enum?.concrete_enum_id;
-
                             pattern = inner_pattern;
                         } else {
-                            let _ = try_push(ctx, pattern, pattern_path, variant_map);
+                            let _ = try_push(ctx, match_type, pattern, pattern_path, variant_map);
                             break;
                         }
                     }
                     _ => {
                         break;
                     }
-                }
-            }
-        }
-    }
-    let mut map = UnorderedHashMap::default();
-    // Assert only one level of mapping for now and turn it into normal map format.
-    let concrete_variants =
-        ctx.db.concrete_enum_variants(concrete_enum_id).map_err(LoweringFlowError::Failed)?;
-    match variant_map {
-        VariantMatchTree::Empty => {}
-        VariantMatchTree::Full(_, pattern_path) => {
-            for variant in concrete_variants.iter() {
-                map.insert(variant.clone(), pattern_path);
-            }
-        }
-        VariantMatchTree::Mapping(items) => {
-            for (variant_idx, path) in items.into_iter().enumerate() {
-                match path {
-                    VariantMatchTree::Mapping(_) => {
-                        // Bad pattern we don't support inner enums.
-                        let mut leaves: OrderedHashSet<_> = Default::default();
-                        path.collect_leaves(&mut leaves);
-                        for leaf in leaves.iter() {
-                            ctx.diagnostics.report(
-                                ctx.function_body.arenas.patterns[*leaf].stable_ptr(),
-                                UnsupportedPattern,
-                            );
-                        }
-                    }
-                    VariantMatchTree::Full(_, pattern_path) => {
-                        map.insert(concrete_variants[variant_idx].clone(), pattern_path);
-                    }
-                    VariantMatchTree::Empty => {}
                 }
             }
         }
@@ -457,11 +471,12 @@ fn get_variant_to_arm_map(
     /// it returns an error.
     fn try_push(
         ctx: &mut LoweringContext<'_, '_>,
+        match_type: MatchKind,
         pattern: id_arena::Id<Pattern>,
         pattern_path: PatternPath,
         variant_map: &mut VariantMatchTree,
     ) -> Result<(), LoweringFlowError> {
-        variant_map.push_pattern_path(pattern, pattern_path).map_err(|e| {
+        variant_map.push_pattern_path(pattern_path, match_type).map_err(|e| {
             LoweringFlowError::Failed(
                 ctx.diagnostics.report(ctx.function_body.arenas.patterns[pattern].stable_ptr(), e),
             )
@@ -482,7 +497,7 @@ fn get_variant_to_arm_map(
         )
     }
 
-    Ok(map)
+    Ok(variant_map)
 }
 
 /// Represents a path in a match tree.
@@ -653,19 +668,21 @@ fn lower_tuple_match_arm(
         .get(&match_tuple_ctx.current_path)
         .or(match_tuple_ctx.otherwise_variant.as_ref())
         .ok_or_else(|| {
-            LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                match_tuple_ctx.match_location.lookup_intern(ctx.db),
-                MatchError(MatchError {
-                    kind: match_type,
-                    error: MatchDiagnostic::MissingMatchArm(format!(
-                        "({})",
-                        match_tuple_ctx.current_path.variants
-                            .iter()
-                            .map(|variant| variant.id.name(ctx.db))
-                            .join(", ")
-                    )),
-                }),
-            ))
+            let variants_string = format!(
+                "({})",
+                match_tuple_ctx
+                    .current_path
+                    .variants
+                    .iter()
+                    .map(|variant| variant.id.name(ctx.db))
+                    .join(", ")
+            );
+            report_missing_arm_error(
+                ctx,
+                match_tuple_ctx.match_location,
+                match_type,
+                variants_string,
+            )
         })?;
     let pattern = pattern_path
         .pattern_index
@@ -985,98 +1002,32 @@ pub(crate) fn lower_concrete_enum_match(
     let ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots } =
         extract_concrete_enum(ctx, matched_expr.into(), matched_expr.ty(), match_type)?;
 
-    // TODO(eytan-starkware) I need to have all the concrete variants down to the lowest level?
     let match_input = lowered_matched_expr.as_var_usage(ctx, builder)?;
 
-    // Merge arm blocks.
     // Collect for all variants the arm index and pattern index. This can be recursive as for a
     // variant we can have inner variants.
-    let otherwise_variant = get_underscore_pattern_path_and_mark_unreachable(ctx, arms, match_type);
-    let variant_map = get_variant_to_arm_map(ctx, arms, concrete_enum_id, match_type)?;
+    let variant_map = build_variant_match_tree(ctx, arms, location, match_type, concrete_enum_id)?;
 
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
-    let variants_block_builders = concrete_variants
-        .iter()
-        .map(|concrete_variant| {
-            let PatternPath { arm_index, pattern_index } = variant_map
-                .get(concrete_variant)
-                .or(otherwise_variant.as_ref())
-                .ok_or_else(|| {
-                    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.lookup_intern(ctx.db),
-                        MatchError(MatchError {
-                            kind: match_type,
-                            error: MatchDiagnostic::MissingMatchArm(format!(
-                                "{}",
-                                concrete_variant.id.name(ctx.db)
-                            )),
-                        }),
-                    ))
-                })?;
-            let arm = &arms[*arm_index];
-
-            let mut subscope = create_subscope(ctx, builder);
-
-            let pattern =
-                pattern_index.map(|pattern_index| arm.pattern(ctx, pattern_index).unwrap());
-            let block_id = subscope.block_id;
-            block_ids.push(block_id);
-
-            let lowering_inner_pattern_result = match pattern {
-                Some(Pattern::EnumVariant(PatternEnumVariant {
-                    inner_pattern: Some(inner_pattern),
-                    ..
-                })) => {
-                    let inner_pattern = *inner_pattern;
-                    let pattern_location = ctx.get_location(
-                        ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
-                    );
-
-                    let var_id = ctx.new_var(VarRequest {
-                        ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                        location: pattern_location,
-                    });
-                    arm_var_ids.push(vec![var_id]);
-                    let variant_expr =
-                        LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
-
-                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
-                }
-                Some(
-                    Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
-                    | Pattern::Otherwise(_),
-                ) => {
-                    let location = ctx.get_location(pattern.unwrap().into());
-                    let var_id = ctx.new_var(VarRequest {
-                        ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                        location,
-                    });
-                    arm_var_ids.push(vec![var_id]);
-                    Ok(())
-                }
-                None => {
-                    let var_id = ctx.new_var(VarRequest {
-                        ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                        location,
-                    });
-                    arm_var_ids.push(vec![var_id]);
-                    Ok(())
-                }
-                _ => unreachable!(
-                    "function `get_variant_to_arm_map` should have reported every other pattern \
-                     type"
-                ),
-            };
-            Ok(MatchLeafBuilder {
-                arm_index: *arm_index,
-                lowering_result: lowering_inner_pattern_result,
-                builder: subscope,
-            })
-        })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<LoweringResult<Vec<_>>>()?;
+    // let default_location = ctx.get_location(pattern.stable_ptr().untyped());
+    // TODO(eytan-starkware) fix default location to be correct
+    let pattern_builder =
+        ConcreteEnumVariantPatternBuilder { n_snapshots, default_location: location };
+    let mut builder_context = EnumVariantBuilderContext {
+        builder,
+        arms,
+        arm_var_ids: &mut arm_var_ids,
+        block_ids: &mut block_ids,
+    };
+    let variants_block_builders = pattern_builder.build_enum_variant_blocks(
+        ctx,
+        &mut builder_context,
+        variant_map,
+        location,
+        match_type,
+        &concrete_variants,
+    )?;
 
     let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
@@ -1109,6 +1060,243 @@ pub(crate) fn lower_concrete_enum_match(
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
+struct EnumVariantBuilderContext<'a> {
+    builder: &'a mut BlockBuilder,
+    block_ids: &'a mut Vec<crate::BlockId>,
+    arms: &'a [MatchArmWrapper<'a>],
+    arm_var_ids: &'a mut Vec<Vec<VariableId>>,
+}
+
+impl EnumVariantBuilderContext<'_> {
+    fn add_scope(&mut self, ctx: &mut LoweringContext<'_, '_>) -> BlockBuilder {
+        let subscope = create_subscope(ctx, self.builder);
+        self.block_ids.push(subscope.block_id);
+        subscope
+    }
+
+    fn get_pattern_id(&self, pattern_path: PatternPath) -> Option<PatternId> {
+        pattern_path.pattern_index.map(|i| {
+            self.arms[pattern_path.arm_index].patterns().expect(
+                "Given a pattern index the match arm should contain a pattern, but it is missing.",
+            )[i]
+        })
+    }
+}
+
+/// A trait for preparing and building lowering blocks for match arms representing enum variants.
+/// This trait provides functionality to lower patterns in match expressions, for both concrete and
+/// external enums.
+trait EnumVariantPatternBuilder {
+    /// Lowers a concrete enum variant pattern.
+    /// Returns `Ok(())` if lowering succeeds, or a `LoweringFlowError` if it fails.
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut EnumVariantBuilderContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError>;
+
+    /// Prepares a match leaf builder for a given pattern path.
+    /// Returns a `MatchLeafBuilder` wrapped in a `Result`.
+    fn prepare_match_leaf_lowering(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut EnumVariantBuilderContext<'_>,
+        concrete_variant: &ConcreteVariant,
+        pattern_path: PatternPath,
+    ) -> Result<MatchLeafBuilder, LoweringFlowError> {
+        let mut subscope = builder_context.add_scope(ctx);
+        let pattern = builder_context
+            .get_pattern_id(pattern_path)
+            .map(|id| &ctx.function_body.arenas.patterns[id]);
+        // Lower pattern to check for legality and bind vars.
+        let lowered = match pattern {
+            Some(Pattern::EnumVariant(PatternEnumVariant { inner_pattern, .. })) => self
+                .lower_concrete_enum_variant(
+                    ctx,
+                    builder_context,
+                    &mut subscope,
+                    concrete_variant,
+                    *inner_pattern,
+                ),
+            None | Some(Pattern::Otherwise(_)) => self.lower_concrete_enum_variant(
+                ctx,
+                builder_context,
+                &mut subscope,
+                concrete_variant,
+                None,
+            ),
+            _ => unreachable!(
+                "function `get_variant_to_arm_map` should have reported every other pattern type"
+            ),
+        };
+        Ok(MatchLeafBuilder {
+            arm_index: pattern_path.arm_index,
+            lowering_result: lowered,
+            builder: subscope,
+        })
+    }
+
+    /// Creates semantic subscope (and lowering block) for each enum variant, and creates a
+    /// placeholder var for the variant type. This will update semantic model appropriately, and
+    /// the placeholder will be filled later on. Returns a vector of `MatchLeafBuilder`s wrapped
+    /// in a `Result`, where the subscope of each is filled with appropriate var bindings.
+    fn build_enum_variant_blocks(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut EnumVariantBuilderContext<'_>,
+        variant_map: VariantMatchTree,
+        location: LocationId,
+        match_type: MatchKind,
+        concrete_variants: &[ConcreteVariant],
+    ) -> Result<Vec<MatchLeafBuilder>, LoweringFlowError> {
+        let variants_block_builders = match variant_map {
+            VariantMatchTree::Empty => concrete_variants
+                .iter()
+                .map(|concrete_variant| {
+                    Err(report_missing_variant_error(ctx, location, match_type, concrete_variant))
+                })
+                .collect_vec(),
+            VariantMatchTree::Full(pattern_path) => {
+                // TODO(eytan-starkware) We can actually probably drop the whole match expression
+                // after dealing with variable binding, as this case means
+                // everything is covered by one pattern.
+                // It will probably just happen as part of the multilevel change.
+                concrete_variants
+                    .iter()
+                    .map(|concrete_variant| {
+                        self.prepare_match_leaf_lowering(
+                            ctx,
+                            builder_context,
+                            concrete_variant,
+                            pattern_path,
+                        )
+                    })
+                    .collect_vec()
+            }
+            VariantMatchTree::Mapping(items) => {
+                let mut res = vec![];
+                for (variant_idx, subtree) in items.into_iter().enumerate() {
+                    match subtree {
+                        VariantMatchTree::Mapping(_) => {
+                            // Bad pattern we don't support inner enums. Careful not to include non
+                            // erroring patterns. This is definitely an
+                            // error area as a mapping should not have been created here.
+                            // TODO(eytan-starkware) Remove these comments when multilevel enum is
+                            // done.
+                            let mut leaves: OrderedHashSet<_> = Default::default();
+                            subtree.collect_leaves(&mut leaves);
+                            for path in leaves.iter() {
+                                // Error will be generated during lowering right now
+                                res.push(self.prepare_match_leaf_lowering(
+                                    ctx,
+                                    builder_context,
+                                    &concrete_variants[variant_idx],
+                                    *path,
+                                ));
+                            }
+                        }
+                        VariantMatchTree::Empty => res.push(Err(report_missing_variant_error(
+                            ctx,
+                            location,
+                            match_type,
+                            &concrete_variants[variant_idx],
+                        ))),
+                        VariantMatchTree::Full(pattern_path) => {
+                            // Prepare to lower a single variant
+                            res.push(self.prepare_match_leaf_lowering(
+                                ctx,
+                                builder_context,
+                                &concrete_variants[variant_idx],
+                                pattern_path,
+                            ));
+                        }
+                    }
+                }
+                res
+            }
+        }
+        .into_iter()
+        .collect::<LoweringResult<Vec<_>>>()?;
+        Ok(variants_block_builders)
+    }
+}
+
+/// Implements the [EnumVariantPatternBuilder] trait for external enum variants.
+/// This struct is used to prepare for lowering match arms for external enums.
+struct ExternEnumVariantPatternBuilder {
+    extern_enum: LoweredExprExternEnum,
+}
+
+impl EnumVariantPatternBuilder for ExternEnumVariantPatternBuilder {
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut EnumVariantBuilderContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError> {
+        let location = self.extern_enum.location;
+        let input_tys =
+            match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &self.extern_enum);
+        let mut input_vars =
+            input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec();
+        builder_context.arm_var_ids.push(input_vars.clone());
+        // Bind the arm inputs to implicits and semantic variables.
+        match_extern_arm_ref_args_bind(ctx, &mut input_vars, &self.extern_enum, subscope);
+
+        let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
+        match inner_pattern {
+            Some(inner_pattern) => lower_single_pattern(ctx, subscope, inner_pattern, variant_expr),
+            None => Ok(()),
+        }
+    }
+}
+
+/// Implements the [EnumVariantPatternBuilder] trait for concrete enum variants.
+/// This struct is used to prepare for lowering match arms for concrete enums.
+struct ConcreteEnumVariantPatternBuilder {
+    n_snapshots: usize,
+    default_location: LocationId,
+}
+
+impl EnumVariantPatternBuilder for ConcreteEnumVariantPatternBuilder {
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut EnumVariantBuilderContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError> {
+        if let Some(inner_pattern) = inner_pattern {
+            let pattern_location = ctx.get_location(
+                ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
+            );
+
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, self.n_snapshots),
+                location: pattern_location,
+            });
+            builder_context.arm_var_ids.push(vec![var_id]);
+            let variant_expr =
+                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
+
+            lower_single_pattern(ctx, subscope, inner_pattern, variant_expr)
+        } else {
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, self.n_snapshots),
+                location: self.default_location,
+            });
+            builder_context.arm_var_ids.push(vec![var_id]);
+            Ok(())
+        }
+    }
+}
+
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
 pub(crate) fn lower_optimized_extern_match(
     ctx: &mut LoweringContext<'_, '_>,
@@ -1125,78 +1313,33 @@ pub(crate) fn lower_optimized_extern_match(
         .map_err(LoweringFlowError::Failed)?;
 
     // Merge arm blocks.
-    let otherwise_variant =
-        get_underscore_pattern_path_and_mark_unreachable(ctx, match_arms, match_type);
-
-    let variant_map =
-        get_variant_to_arm_map(ctx, match_arms, extern_enum.concrete_enum_id, match_type)?;
+    let variant_map = build_variant_match_tree(
+        ctx,
+        match_arms,
+        location,
+        match_type,
+        extern_enum.concrete_enum_id,
+    )?;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
 
-    let variants_block_builders = concrete_variants
-        .iter()
-        .map(|concrete_variant| {
-            let mut subscope = create_subscope(ctx, builder);
-            let block_id = subscope.block_id;
-            block_ids.push(block_id);
+    let pattern_builder = ExternEnumVariantPatternBuilder { extern_enum };
+    let mut builder_context = EnumVariantBuilderContext {
+        builder,
+        arms: match_arms,
+        arm_var_ids: &mut arm_var_ids,
+        block_ids: &mut block_ids,
+    };
 
-            let input_tys =
-                match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &extern_enum);
-            let mut input_vars = input_tys
-                .into_iter()
-                .map(|ty| ctx.new_var(VarRequest { ty, location }))
-                .collect_vec();
-            arm_var_ids.push(input_vars.clone());
-
-            // Bind the arm inputs to implicits and semantic variables.
-            match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
-
-            let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
-
-            let PatternPath { arm_index, pattern_index } = variant_map
-                .get(concrete_variant)
-                .or(otherwise_variant.as_ref())
-                .ok_or_else(|| {
-                    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.lookup_intern(ctx.db),
-                        MatchError(MatchError {
-                            kind: match_type,
-                            error: MatchDiagnostic::MissingMatchArm(format!(
-                                "{}",
-                                concrete_variant.id.name(ctx.db)
-                            )),
-                        }),
-                    ))
-                })?;
-
-            let arm = &match_arms[*arm_index];
-            let pattern =
-                pattern_index.map(|pattern_index| arm.pattern(ctx, pattern_index).unwrap());
-
-            let lowering_inner_pattern_result = match pattern {
-                Some(Pattern::EnumVariant(PatternEnumVariant {
-                    inner_pattern: Some(inner_pattern),
-                    ..
-                })) => lower_single_pattern(ctx, &mut subscope, *inner_pattern, variant_expr),
-                Some(
-                    Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
-                    | Pattern::Otherwise(_),
-                )
-                | None => Ok(()),
-                _ => unreachable!(
-                    "function `get_variant_to_arm_map` should have reported every other pattern \
-                     type"
-                ),
-            };
-            Ok(MatchLeafBuilder {
-                arm_index: *arm_index,
-                lowering_result: lowering_inner_pattern_result,
-                builder: subscope,
-            })
-        })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<LoweringResult<Vec<_>>>()?;
+    let variants_block_builders = pattern_builder.build_enum_variant_blocks(
+        ctx,
+        &mut builder_context,
+        variant_map,
+        location,
+        match_type,
+        &concrete_variants,
+    )?;
+    let extern_enum = pattern_builder.extern_enum;
 
     let empty_match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
@@ -1233,6 +1376,7 @@ struct MatchLeafBuilder {
     lowering_result: LoweringResult<()>,
     builder: BlockBuilder,
 }
+
 /// Groups match arms of different variants to their corresponding arms blocks and lowers
 /// the arms expression.
 fn group_match_arms(
@@ -1770,4 +1914,28 @@ fn numeric_match_optimization_threshold(
             _ => panic!("Wrong type flag `{flag:?}`."),
         })
         .unwrap_or(default_threshold)
+}
+
+fn report_missing_arm_error(
+    ctx: &mut LoweringContext<'_, '_>,
+    location: LocationId,
+    match_type: MatchKind,
+    variants: String,
+) -> LoweringFlowError {
+    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
+        location.lookup_intern(ctx.db),
+        MatchError(MatchError {
+            kind: match_type,
+            error: MatchDiagnostic::MissingMatchArm(variants),
+        }),
+    ))
+}
+
+fn report_missing_variant_error(
+    ctx: &mut LoweringContext<'_, '_>,
+    location: LocationId,
+    match_type: MatchKind,
+    variant: &ConcreteVariant,
+) -> LoweringFlowError {
+    report_missing_arm_error(ctx, location, match_type, variant.id.name(ctx.db).to_string())
 }
