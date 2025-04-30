@@ -364,28 +364,82 @@ pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
 
-// TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// Performs truncated division and remainder.
+/// Performs truncated division **and** remainder.
 ///
-/// This trait provides a way to efficiently compute both the quotient and remainder in a single
-/// operation. The division truncates towards zero, matching the behavior of the `/` and `%`
-/// operators.
+/// `T` – dividend type (left-hand operand)
+/// `U` – divisor  type (right-hand operand, must be wrapped in
+///       [`NonZero<U>`](core::num::non_zero::NonZero) at call-site)
+///
+/// The division truncates toward zero, like Cairo’s `/` and `%`.
+///
+/// # Associated types
+/// * [`Quotient`] – the type produced by the division
+/// * [`Remainder`] – the type produced by the modulo
 ///
 /// # Examples
 ///
+/// Identical operand types:
+/// ```cairo
+/// use core::traits::{DivRem, NonZero};
+///
+/// let lhs: u32 = 7;
+/// let rhs: NonZero<u32> = 3.try_into().unwrap();
+/// assert!(DivRem::<u32, u32>::div_rem(lhs, rhs) == (2, 1));
 /// ```
-/// assert!(DivRem::div_rem(7_u32, 3) == (2, 1));
+///
+/// Heterogeneous division (`u256` by `u128`):
+/// ```cairo
+/// use core::traits::DivRem;
+/// use integer::u256_as_non_zero;
+///
+/// let big: u256 = 1_000_000;                    // dividend
+/// let nz10: NonZero<u128> = u256_as_non_zero(10_u128.into());  // divisor
+///
+/// let (q, r) = DivRem::<u256, u128>::div_rem(big, nz10);
+/// // q : u256, r : u128
 /// ```
+pub trait DivRemGeneric<T, U> {
+    /// Quotient returned by the division.
+    type Quotient;
+
+    /// Remainder returned by the modulo operation.
+    type Remainder;
+
+    /// Computes both `/` and `%` in a single pass.
+    fn div_rem(lhs: T, rhs: NonZero<U>) -> (Self::Quotient, Self::Remainder);
+}
+
+#[deprecated(feature: "generic-divrem", note: "Use `DivRemGeneric`.")]
 pub trait DivRem<T> {
-    /// Performs the `/` and the `%` operations, returning both the quotient and remainder.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
-    /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
+
+//  Compatibility bridge:  DivRem<T>  →  DivRemGeneric<T,T>
+mod _divrem_bridge {
+    #[feature("generic-divrem")]
+    use super::{DivRem, DivRemGeneric};
+
+    /// Generic adapter: if the old symmetric `DivRem<T>` exists,
+    /// provide the corresponding `DivRemGeneric<T,T>` implementation.
+    impl Bridge<T, +DivRem<T>> of DivRemGeneric<T, T> {
+        type Quotient = T;
+        type Remainder = T;
+
+        fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T) {
+            DivRem::<T>::div_rem(lhs, rhs)
+        }
+    }
+
+    // Instantiate the generic adapter for every concrete integer type
+    // that already has a symmetric `DivRem` implementation.
+    pub impl BridgeU8 = Bridge<u8>;
+    pub impl BridgeU16 = Bridge<u16>;
+    pub impl BridgeU32 = Bridge<u32>;
+    pub impl BridgeU64 = Bridge<u64>;
+    pub impl BridgeU128 = Bridge<u128>;
+    pub impl BridgeU256 = Bridge<u256>;
+}
+use _divrem_bridge::*;
 
 /// Trait for comparisons using the equality operator.
 ///
@@ -1133,4 +1187,3 @@ pub trait Felt252DictValue<T> {
     #[must_use]
     fn zero_default() -> T nopanic;
 }
-

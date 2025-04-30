@@ -4,6 +4,7 @@ pub mod traits;
 use serde::Serde;
 #[feature("deprecated-index-traits")]
 #[feature("deprecated-op-assign-traits")]
+#[feature("generic-divrem")]
 #[allow(unused_imports)]
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
