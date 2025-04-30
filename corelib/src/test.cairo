@@ -9,6 +9,7 @@ mod cmp_test;
 mod coupon_test;
 mod deref_test;
 mod dict_test;
+mod divrem_generic_test;
 mod ec_test;
 mod felt_test;
 mod fmt_test;
