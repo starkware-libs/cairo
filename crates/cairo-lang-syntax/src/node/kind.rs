@@ -30,6 +30,7 @@ pub enum SyntaxKind {
     ExprStructCtorCall,
     StructArgListBraced,
     ExprBlock,
+    PlaceholderRepetitionBlock,
     ExprMatch,
     MatchArms,
     MatchArm,

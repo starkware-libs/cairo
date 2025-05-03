@@ -1259,7 +1259,10 @@ pub fn compute_expr_block_semantic(
     let db = ctx.db;
 
     ctx.run_in_subscope(|new_ctx| {
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = match syntax.statements(db) {
+            ast::StatementBlock::Statements(statements) => statements.elements(db),
+            _ => vec![],
+        };
         // Remove the tail expression, if exists.
         // TODO(spapini): Consider splitting tail expression in the parser.
         let tail = get_tail_expression(db, statements.as_slice());
@@ -1772,12 +1775,20 @@ fn compute_loop_body_semantic(
     kind: InnerContextKind,
 ) -> (ExprId, InnerContext) {
     let db: &dyn SemanticGroup = ctx.db;
+    let statements = if let ast::StatementBlock::Statements(statements) = syntax.statements(db) {
+        statements.elements(db)
+    } else {
+        unreachable!(
+            "Placeholder or invalid statement block reached `compute_loop_body_semantic`. This \
+             should have been expanded earlier."
+        )
+    };
 
     ctx.run_in_subscope(|new_ctx| {
         let return_type = new_ctx.get_return_type().unwrap();
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
 
-        let mut statements = syntax.statements(db).elements(db);
+        let mut statements = statements;
         // Remove the typed tail expression, if exists.
         let tail = get_tail_expression(db, statements.as_slice());
         if tail.is_some() {
@@ -1947,7 +1958,10 @@ fn compute_closure_body_semantic(
 ) -> ExprId {
     let db = ctx.db;
 
-    let mut statements = syntax.statements(db).elements(db);
+    let mut statements = match syntax.statements(db) {
+        ast::StatementBlock::Statements(statements) => statements.elements(db),
+        _ => vec![],
+    };
     // Remove the typed tail expression, if exists.
     let tail = get_tail_expression(db, statements.as_slice());
     if tail.is_some() {

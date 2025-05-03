@@ -1195,15 +1195,26 @@ fn consume_z(_z: felt252) {}
 
 macro wrap_bas_use_z_from_callsite {
     () => {
-        $defsite::bas_use_z_from_callsite!()
+        $defsite::bas_use_z_from_callsite
+        !()
     };
 }
 
 //! > expected_diagnostics
-error: `$callsite` is not supported.
- --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:2:10
-        $callsite::z
-         ^^^^^^^^
+error: Expected variable or constant, found macro.
+ --> lib.cairo[wrap_bas_use_z_from_callsite]:2:9
+        $defsite::bas_use_z_from_callsite
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Missing semicolon
+ --> lib.cairo[wrap_bas_use_z_from_callsite]:2:42
+        $defsite::bas_use_z_from_callsite
+                                         ^
+
+error: Trait has no implementation in context: core::traits::Not::<()>.
+ --> lib.cairo[wrap_bas_use_z_from_callsite]:3:9
+        !()
+        ^^^
 
 //! > ==========================================================================
 
