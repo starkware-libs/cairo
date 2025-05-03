@@ -1503,6 +1503,38 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parses a placeholder repetition block inside a macro.
+    fn parse_placeholder_repetition_block(&mut self) -> TryParseResult<StatementBlockGreen> {
+        let dollar = self.take::<TerminalDollar>();
+        if self.peek().kind != SyntaxKind::TerminalLParen {
+            return Err(TryParseFailure::SkipToken);
+        }
+        let lparen = self.take::<TerminalLParen>();
+        let elements = StatementList::new_green(
+            self.db,
+            self.parse_list(
+                Self::try_parse_statement,
+                is_of_kind!(rparen, block, rbrace, module_item_kw),
+                "statement",
+            ),
+        );
+        let rparen = self.parse_token::<TerminalRParen>();
+        let operator = match self.peek().kind {
+            SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark>().into(),
+            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+            _ => self
+                .create_and_report_missing::<TerminalPlus>(
+                    ParserDiagnosticKind::MissingRepetitionOperator,
+                )
+                .into(),
+        };
+        let placeholder_repetition_block = PlaceholderRepetitionBlock::new_green(
+            self.db, dollar, lparen, elements, rparen, operator,
+        );
+        Ok(placeholder_repetition_block.into())
+    }
+
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or
     /// TryParseFailure if such an expression can't be parsed.
@@ -2149,12 +2181,29 @@ impl<'a> Parser<'a> {
             return ExprBlock::new_green(
                 self.db,
                 self.create_and_report_missing_terminal::<TerminalLBrace>(),
-                StatementList::new_green(self.db, vec![]),
+                StatementList::new_green(self.db, vec![]).into(),
                 TerminalRBrace::missing(self.db),
             );
         }
         // Don't report diagnostic if one has already been reported.
         let lbrace = self.parse_token_ex::<TerminalLBrace>(skipped_tokens.is_ok());
+        match self.peek().kind {
+            SyntaxKind::TerminalDollar => {
+                let placeholder_repetition_block = self.parse_placeholder_repetition_block();
+                match placeholder_repetition_block {
+                    Ok(placeholder_repetition_block) => {
+                        let rbrace = self.parse_token::<TerminalRBrace>();
+                        ExprBlock::new_green(self.db, lbrace, placeholder_repetition_block, rbrace)
+                    }
+                    Err(_) => self.parse_statements_and_block(lbrace),
+                }
+            }
+            _ => self.parse_statements_and_block(lbrace),
+        }
+    }
+
+    /// Parses a list of statements and constructs an `ExprBlockGreen`.
+    fn parse_statements_and_block(&mut self, lbrace: TerminalLBraceGreen) -> ExprBlockGreen {
         let statements = StatementList::new_green(
             self.db,
             self.parse_list(
@@ -2164,7 +2213,7 @@ impl<'a> Parser<'a> {
             ),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ExprBlock::new_green(self.db, lbrace, statements, rbrace)
+        ExprBlock::new_green(self.db, lbrace, statements.into(), rbrace)
     }
 
     /// Parses an expr block, while allowing placeholder expressions. Restores the previous
@@ -2593,22 +2642,41 @@ impl<'a> Parser<'a> {
                 .into(),
             )
             .into()),
-            _ => match self.try_parse_expr() {
-                Ok(expr) => {
-                    let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                        self.take::<TerminalSemicolon>().into()
-                    } else {
-                        OptionTerminalSemicolonEmpty::new_green(self.db).into()
-                    };
-                    Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon)
-                        .into())
-                }
-                Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
+            SyntaxKind::TerminalLBrace => {
+                let expr_block = self.parse_block();
+                Ok(StatementExpr::new_green(
+                    self.db,
                     attributes,
-                    ParserDiagnosticKind::AttributesWithoutStatement,
-                )),
-                Err(err) => Err(err),
-            },
+                    expr_block.into(),
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into(),
+                )
+                .into())
+            }
+            _ => self.parse_statement_expr(attributes, has_attrs),
+        }
+    }
+
+    /// Parses an expression and wraps it in a StatementExpr.
+    /// Handles optional semicolon and attributes.
+    fn parse_statement_expr(
+        &mut self,
+        attributes: AttributeListGreen,
+        has_attrs: bool,
+    ) -> TryParseResult<StatementGreen> {
+        match self.try_parse_expr() {
+            Ok(expr) => {
+                let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    self.take::<TerminalSemicolon>().into()
+                } else {
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into()
+                };
+                Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon).into())
+            }
+            Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
+                attributes,
+                ParserDiagnosticKind::AttributesWithoutStatement,
+            )),
+            Err(err) => Err(err),
         }
     }
 
@@ -2825,13 +2893,10 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalDollar => {
                 let dollar = self.take::<TerminalDollar>();
                 if !self.is_inside_macro_expansion {
-                    self.add_diagnostic(
-                        ParserDiagnosticKind::InvalidPlaceholderPath,
-                        TextSpan {
-                            start: self.offset,
-                            end: self.offset.add_width(self.current_width),
-                        },
-                    )
+                    self.add_diagnostic(ParserDiagnosticKind::InvalidPlaceholderPath, TextSpan {
+                        start: self.offset,
+                        end: self.offset.add_width(self.current_width),
+                    })
                 };
                 dollar.into()
             }
@@ -3259,10 +3324,10 @@ impl<'a> Parser<'a> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.add_diagnostic(
-                            diagnostic_kind,
-                            TextSpan { start: self.offset, end: self.offset },
-                        );
+                        self.add_diagnostic(diagnostic_kind, TextSpan {
+                            start: self.offset,
+                            end: self.offset,
+                        });
                     }
                     break;
                 }
