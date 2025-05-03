@@ -132,6 +132,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprPlaceholder => {
             vec![]
         }
+        SyntaxKind::ExprPlaceholderRepetitionBlock => {
+            vec![]
+        }
         SyntaxKind::StructArgExpr => {
             vec![]
         }

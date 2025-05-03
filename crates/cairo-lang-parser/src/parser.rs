@@ -1503,6 +1503,48 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parses a placeholder repetition block inside a macro.
+    fn parse_placeholder_repetition_block(&mut self) -> TryParseResult<StatementGreen> {
+        let dollar = self.take::<TerminalDollar>();
+        if self.peek().kind == SyntaxKind::TerminalLParen {
+            let lparen = self.take::<TerminalLParen>();
+            let elements = StatementList::new_green(
+                self.db,
+                self.parse_list(
+                    Self::try_parse_statement,
+                    is_of_kind!(rparen, block, rbrace, module_item_kw),
+                    "statement",
+                ),
+            );
+            let rparen = self.parse_token::<TerminalRParen>();
+            let separator = match self.peek().kind {
+                SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
+                _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
+            };
+            let operator = match self.peek().kind {
+                SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark>().into(),
+                SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+                SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                _ => {
+                    println!("Unexpected token after repetition block: {:?}", self.peek());
+                    return Err(TryParseFailure::SkipToken);
+                }
+            };
+            let statement_expr = StatementExpr::new_green(
+                self.db,
+                AttributeList::new_green(self.db, vec![]),
+                ExprPlaceholderRepetitionBlock::new_green(
+                    self.db, dollar, lparen, elements, rparen, separator, operator,
+                )
+                .into(),
+                OptionTerminalSemicolonEmpty::new_green(self.db).into(),
+            );
+            Ok(statement_expr.into())
+        } else {
+            Err(TryParseFailure::DoNothing)
+        }
+    }
+
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or
     /// TryParseFailure if such an expression can't be parsed.
@@ -2528,6 +2570,10 @@ impl<'a> Parser<'a> {
             Err(_) => (false, AttributeList::new_green(self.db, vec![])),
         };
         match self.peek().kind {
+            SyntaxKind::TerminalDollar => match self.parse_placeholder_repetition_block() {
+                Ok(statement) => Ok(statement),
+                Err(_) => self.parse_statement_expr(attributes, has_attrs),
+            },
             SyntaxKind::TerminalLet => {
                 let let_kw = self.take::<TerminalLet>();
                 let pattern = self.parse_pattern();
@@ -2593,22 +2639,31 @@ impl<'a> Parser<'a> {
                 .into(),
             )
             .into()),
-            _ => match self.try_parse_expr() {
-                Ok(expr) => {
-                    let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                        self.take::<TerminalSemicolon>().into()
-                    } else {
-                        OptionTerminalSemicolonEmpty::new_green(self.db).into()
-                    };
-                    Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon)
-                        .into())
-                }
-                Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
-                    attributes,
-                    ParserDiagnosticKind::AttributesWithoutStatement,
-                )),
-                Err(err) => Err(err),
-            },
+            _ => self.parse_statement_expr(attributes, has_attrs),
+        }
+    }
+
+    /// Parses an expression and wraps it in a StatementExpr.
+    /// Handles optional semicolon and attributes.
+    fn parse_statement_expr(
+        &mut self,
+        attributes: AttributeListGreen,
+        has_attrs: bool,
+    ) -> TryParseResult<StatementGreen> {
+        match self.try_parse_expr() {
+            Ok(expr) => {
+                let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    self.take::<TerminalSemicolon>().into()
+                } else {
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into()
+                };
+                Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon).into())
+            }
+            Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
+                attributes,
+                ParserDiagnosticKind::AttributesWithoutStatement,
+            )),
+            Err(err) => Err(err),
         }
     }
 

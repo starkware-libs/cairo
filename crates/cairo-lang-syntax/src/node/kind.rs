@@ -49,6 +49,7 @@ pub enum SyntaxKind {
     ExprClosure,
     ClosureParamWrapperNAry,
     ExprPlaceholder,
+    ExprPlaceholderRepetitionBlock,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,

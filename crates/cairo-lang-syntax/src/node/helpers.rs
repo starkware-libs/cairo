@@ -778,6 +778,7 @@ impl IsDependentType for ast::Expr {
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
             | ast::Expr::Placeholder(_)
+            | ast::Expr::PlaceholderRepetitionBlock(_)
             | ast::Expr::Missing(_) => false,
         }
     }

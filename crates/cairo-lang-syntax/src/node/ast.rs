@@ -298,6 +298,7 @@ pub enum Expr {
     InlineMacro(ExprInlineMacro),
     FixedSizeArray(ExprFixedSizeArray),
     Placeholder(ExprPlaceholder),
+    PlaceholderRepetitionBlock(ExprPlaceholderRepetitionBlock),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -441,6 +442,11 @@ impl From<ExprPlaceholderPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprPlaceholderRepetitionBlockPtr> for ExprPtr {
+    fn from(value: ExprPlaceholderRepetitionBlockPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -571,6 +577,11 @@ impl From<ExprPlaceholderGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprPlaceholderRepetitionBlockGreen> for ExprGreen {
+    fn from(value: ExprPlaceholderRepetitionBlockGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -635,6 +646,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprPlaceholder => {
                 Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprPlaceholderRepetitionBlock => Expr::PlaceholderRepetitionBlock(
+                ExprPlaceholderRepetitionBlock::from_syntax_node(db, node),
+            ),
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -693,6 +707,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprPlaceholder => {
                 Some(Expr::Placeholder(ExprPlaceholder::from_syntax_node(db, node)))
             }
+            SyntaxKind::ExprPlaceholderRepetitionBlock => Some(Expr::PlaceholderRepetitionBlock(
+                ExprPlaceholderRepetitionBlock::from_syntax_node(db, node),
+            )),
             SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
             _ => None,
         }
@@ -724,6 +741,7 @@ impl TypedSyntaxNode for Expr {
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
             Expr::Placeholder(x) => x.as_syntax_node(),
+            Expr::PlaceholderRepetitionBlock(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -761,6 +779,7 @@ impl Expr {
                 | SyntaxKind::ExprInlineMacro
                 | SyntaxKind::ExprFixedSizeArray
                 | SyntaxKind::ExprPlaceholder
+                | SyntaxKind::ExprPlaceholderRepetitionBlock
                 | SyntaxKind::ExprMissing
         )
     }
@@ -6543,6 +6562,127 @@ impl TypedSyntaxNode for ExprPlaceholder {
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
         ExprPlaceholderPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprPlaceholderRepetitionBlock {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ExprPlaceholderRepetitionBlock {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_ELEMENTS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_SEPARATOR: usize = 4;
+    pub const INDEX_OPERATOR: usize = 5;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        lparen: TerminalLParenGreen,
+        elements: StatementListGreen,
+        rparen: TerminalRParenGreen,
+        separator: OptionTerminalCommaGreen,
+        operator: MacroRepetitionOperatorGreen,
+    ) -> ExprPlaceholderRepetitionBlockGreen {
+        let children: Vec<GreenId> =
+            vec![dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprPlaceholderRepetitionBlockGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPlaceholderRepetitionBlock,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprPlaceholderRepetitionBlock {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0])
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1])
+    }
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> StatementList {
+        StatementList::from_syntax_node(db, self.children[2])
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3])
+    }
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalComma {
+        OptionTerminalComma::from_syntax_node(db, self.children[4])
+    }
+    pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.children[5])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPlaceholderRepetitionBlockPtr(pub SyntaxStablePtrId);
+impl ExprPlaceholderRepetitionBlockPtr {}
+impl TypedStablePtr for ExprPlaceholderRepetitionBlockPtr {
+    type SyntaxNode = ExprPlaceholderRepetitionBlock;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprPlaceholderRepetitionBlock {
+        ExprPlaceholderRepetitionBlock::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprPlaceholderRepetitionBlockPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprPlaceholderRepetitionBlockPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprPlaceholderRepetitionBlockGreen(pub GreenId);
+impl TypedSyntaxNode for ExprPlaceholderRepetitionBlock {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPlaceholderRepetitionBlock);
+    type StablePtr = ExprPlaceholderRepetitionBlockPtr;
+    type Green = ExprPlaceholderRepetitionBlockGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprPlaceholderRepetitionBlockGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprPlaceholderRepetitionBlock,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        StatementList::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                        OptionTerminalComma::missing(db).0,
+                        MacroRepetitionOperator::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprPlaceholderRepetitionBlock,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprPlaceholderRepetitionBlock
+        );
+        Self { children: node.get_children(db).into(), node }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprPlaceholderRepetitionBlock {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        ExprPlaceholderRepetitionBlockPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
