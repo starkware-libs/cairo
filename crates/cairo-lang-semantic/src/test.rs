@@ -191,7 +191,10 @@ impl MacroPlugin for CustomSpanTestPlugin {
         // Find the first function in the file
         if let ast::ModuleItem::FreeFunction(function) = &item_ast {
             // Get function body statements
-            let elements = function.body(db).statements(db).elements(db);
+            let elements = match function.body(db).statements(db) {
+                ast::StatementBlock::Statements(statements) => statements.elements(db),
+                _ => vec![],
+            };
             if elements.is_empty() {
                 return PluginResult::default();
             }
