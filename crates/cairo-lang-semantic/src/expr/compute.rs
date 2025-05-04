@@ -83,8 +83,8 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, GenericArgumentId, GenericParam, LocalItem, Member, Mutability, Parameter,
-    PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
+    ConcreteEnumId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem, Member,
+    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
 
 /// Expression with its id.
@@ -2219,18 +2219,13 @@ fn maybe_compute_pattern_semantic(
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAVariant))?;
 
-            let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
-                ctx,
-                pattern_syntax,
-                ty,
-                generic_variant.enum_id,
-            )?;
-
-            // TODO(lior): Should we report a diagnostic here?
-            let concrete_variant = ctx
-                .db
-                .concrete_enum_variant(concrete_enum, &generic_variant)
-                .map_err(|_| ctx.diagnostics.report(path.stable_ptr(db), UnknownEnum))?;
+            let (concrete_variant, n_snapshots) =
+                extract_concrete_variant_from_pattern_and_validate(
+                    ctx,
+                    pattern_syntax,
+                    ty,
+                    generic_variant,
+                )?;
 
             // Compute inner pattern.
             let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
@@ -2266,17 +2261,13 @@ fn maybe_compute_pattern_semantic(
                 if let Some(generic_variant) =
                     try_extract_matches!(item, ResolvedGenericItem::Variant)
                 {
-                    let (concrete_enum, _n_snapshots) =
-                        extract_concrete_enum_from_pattern_and_validate(
+                    let (concrete_variant, _n_snapshots) =
+                        extract_concrete_variant_from_pattern_and_validate(
                             ctx,
                             pattern_syntax,
                             ty,
-                            generic_variant.enum_id,
+                            generic_variant,
                         )?;
-                    let concrete_variant = ctx
-                        .db
-                        .concrete_enum_variant(concrete_enum, &generic_variant)
-                        .map_err(|_| ctx.diagnostics.report(path.stable_ptr(db), UnknownEnum))?;
                     return Ok(Pattern::EnumVariant(PatternEnumVariant {
                         variant: concrete_variant,
                         inner_pattern: None,
@@ -2623,6 +2614,43 @@ fn extract_concrete_enum_from_pattern_and_validate(
         ));
     }
     Ok((concrete_enum, n_snapshots))
+}
+
+/// Validates that the semantic type of an enum pattern is an enum.
+/// After that finds the concrete variant in the patter, and verifies it has args if needed.
+/// Returns the concrete variant and the number of snapshots.
+fn extract_concrete_variant_from_pattern_and_validate(
+    ctx: &mut ComputationContext<'_>,
+    pattern: &ast::Pattern,
+    ty: TypeId,
+    generic_variant: semantic::Variant,
+) -> Maybe<(ConcreteVariant, usize)> {
+    let (concrete_enum, n_snapshots) =
+        extract_concrete_enum_from_pattern_and_validate(ctx, pattern, ty, generic_variant.enum_id)?;
+    let db = ctx.db;
+
+    // TODO(lior): Should we report a diagnostic here?
+    let needs_args = generic_variant.ty != unit_ty(db);
+    let has_args = matches!(
+        pattern,
+        ast::Pattern::Enum(inner)
+            if matches!(
+                inner.pattern(db),
+                ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(_)
+            )
+    );
+
+    if needs_args && !has_args {
+        return Err(ctx
+            .diagnostics
+            .report(pattern.stable_ptr(db), PatternMissingArgs(generic_variant.id)));
+    }
+
+    let concrete_variant = db
+        .concrete_enum_variant(concrete_enum, &generic_variant)
+        .map_err(|_| ctx.diagnostics.report(pattern.stable_ptr(db), UnknownEnum))?;
+
+    Ok((concrete_variant, n_snapshots))
 }
 
 /// Creates a local variable pattern.
