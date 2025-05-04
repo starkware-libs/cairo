@@ -1126,10 +1126,10 @@ fn foo(a: A, b: A) -> felt252 {
     let x = (@a, b);
     let y = @x;
     match y {
-        (A::Two((t, _)), A::One) => **t + 3,
-        (A::Two, _) => 2,
+        (A::Two((t, _)), A::One(_)) => **t + 3,
+        (A::Two(_), _) => 2,
         (A::One(_), A::One(_)) => 1,
-        (_, A::Three(_)) => 3,
+        (_, A::Three) => 3,
         (_, _) => 6,
     }
 }
@@ -1270,10 +1270,10 @@ test_function_lowering(expect_diagnostics: true)
 //! > function
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
-        (A::Two, A::One) => 5,
-        (A::Two, _) => 2,
+        (A::Two(_), A::One(_)) => 5,
+        (A::Two(_), _) => 2,
         (A::One(_), A::One(_)) => 1,
-        (_, A::Three(_)) => 3,
+        (_, A::Three) => 3,
         (_, A::Four) => 4,
     }
 }
@@ -1331,7 +1331,7 @@ test_function_lowering(expect_diagnostics: true)
 //! > function
 fn foo(a: A, b: A) -> felt252 {
     match (a, (a, b)) {
-        (A::Two, (A::One, A::One)) => 8,
+        (A::Two(_), (A::One(_), A::One(_))) => 8,
         _ => 4,
     }
 }
@@ -1369,8 +1369,8 @@ test_function_lowering(expect_diagnostics: false)
 //! > function
 fn foo(a: A) -> felt252 {
     match (a, get_bool()) {
-        (A::Two, true) => 5,
-        (A::Two, _) => 2,
+        (A::Two(_), true) => 5,
+        (A::Two(_), _) => 2,
         (A::One(_), false) => 1,
         (_, _) => 6,
     }
