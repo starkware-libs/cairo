@@ -5,7 +5,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, UseId,
+    TraitImplId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -1011,6 +1011,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
                 "Type constraints syntax is not enabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::PatternMissingArgs(variant_id) => {
+                format!(
+                    "Pattern missing subpattern for the parameter of variant `{}`. Consider using \
+                     `{}(_)`",
+                    variant_id.full_path(db),
+                    variant_id.full_path(db)
+                )
+            }
         }
     }
 
@@ -1048,6 +1056,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::PatternMissingArgs(_)
             | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
@@ -1439,6 +1448,7 @@ pub enum SemanticDiagnosticKind {
         concrete_trait_type_id: ConcreteTraitTypeId,
     },
     TypeConstraintsSyntaxNotEnabled,
+    PatternMissingArgs(VariantId),
 }
 
 /// The kind of an expression with multiple possible return types.
