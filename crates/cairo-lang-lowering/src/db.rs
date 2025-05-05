@@ -378,7 +378,7 @@ pub fn init_lowering_group(
     .collect();
 
     for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"] {
-        moveable_functions.push(format!("integer::{}_wide_mul", ty));
+        moveable_functions.push(format!("integer::{ty}_wide_mul"));
     }
 
     db.set_optimization_config(Arc::new(

@@ -43,13 +43,13 @@ impl fmt::Display for SignatureError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SignatureError::FailedRetrievingSemanticData(full_path) => {
-                write!(f, "Failed retrieving semantic data for {:?}.", full_path)
+                write!(f, "Failed retrieving semantic data for {full_path:?}.")
             }
             SignatureError::FailedWritingSignature(full_path) => {
-                write!(f, "Failed writing signature for {:?}.", full_path)
+                write!(f, "Failed writing signature for {full_path:?}.")
             }
             SignatureError::FailedWritingType(full_path) => {
-                write!(f, "Failed writing a type for {:?}.", full_path)
+                write!(f, "Failed writing a type for {full_path:?}.")
             }
         }
     }
@@ -460,7 +460,7 @@ impl HirDisplay for ConstantId {
                                 )
                             },
                         )?;
-                        write!(f, " // = {}", value).map_err(|_| {
+                        write!(f, " // = {value}").map_err(|_| {
                             SignatureError::FailedWritingSignature(
                                 constant_full_signature.full_path.clone(),
                             )
@@ -769,7 +769,7 @@ fn extract_and_format(input: &str) -> String {
     let mut slice_start = 0;
     let mut in_slice = false;
 
-    for (i, c) in input.chars().enumerate() {
+    for (i, c) in input.char_indices() {
         if delimiters.contains(&c) {
             if in_slice {
                 let slice = &input[slice_start..i];
@@ -801,7 +801,7 @@ fn format_final_part(slice: &str) -> String {
             _ => slice.to_string(),
         }
     };
-    if ensure_whitespace && !result.starts_with(' ') { format!(" {}", result) } else { result }
+    if ensure_whitespace && !result.starts_with(' ') { format!(" {result}") } else { result }
 }
 
 /// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
@@ -825,19 +825,15 @@ fn format_resolver_generic_params(db: &dyn DocGroup, params: Vec<GenericParamId>
                                     GenericParam::Impl(generic_param_impl) => {
                                         match generic_param_impl.concrete_trait {
                                             Ok(concrete_trait) => {
-                                                let concrete_trait_name = concrete_trait.name(db);
-                                                let concrete_trait_generic_args_formatted =
+                                                format!(
+                                                    "impl {param_formatted}: {}<{}>",
+                                                    concrete_trait.name(db),
                                                     concrete_trait
                                                         .generic_args(db)
                                                         .iter()
                                                         .map(|arg| arg.format(db))
                                                         .collect::<Vec<_>>()
-                                                        .join(", ");
-                                                format!(
-                                                    "impl {}: {}<{}>",
-                                                    param_formatted,
-                                                    concrete_trait_name,
-                                                    concrete_trait_generic_args_formatted
+                                                        .join(", "),
                                                 )
                                             }
                                             Err(_) => param_formatted,
@@ -971,7 +967,7 @@ fn write_generic_params(
                                     Some(documentable_id),
                                 )?;
                                 if !concrete_trait_generic_args_formatted.is_empty() {
-                                    write!(f, "<{}>", concrete_trait_generic_args_formatted)?;
+                                    write!(f, "<{concrete_trait_generic_args_formatted}>")?;
                                 }
                             }
                         }

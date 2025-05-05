@@ -475,7 +475,7 @@ pub fn run_test_file(
 }
 
 fn summary(passed_tests: usize, failed_tests: &[String]) -> String {
-    let passed = format!("{} passed", passed_tests).green();
+    let passed = format!("{passed_tests} passed").green();
     let failed = format!("{} failed", failed_tests.len()).red();
     format!("Summary: {passed}, {failed}:\n{}", failed_tests.join("\n"))
 }

@@ -46,7 +46,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
             DocumentationCommentToken::Link(link) => {
                 write!(&mut buff, "[{}]", link.label).ok()?;
                 if let Some(path) = &link.path {
-                    write!(&mut buff, "({})", path).ok()?;
+                    write!(&mut buff, "({path})").ok()?;
                 }
             }
         }

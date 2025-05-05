@@ -278,10 +278,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     diagnostic_prefix
                 } else {
                     format!(
-                        "{}\nIt is possible that the type inference failed because the types \
-                         differ in the number of snapshots.\nConsider adding or removing \
-                         snapshots.",
-                        diagnostic_prefix
+                        "{diagnostic_prefix}\nIt is possible that the type inference failed \
+                         because the types differ in the number of snapshots.\nConsider adding or \
+                         removing snapshots."
                     )
                 }
             }
@@ -304,9 +303,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 actual,
             } => {
                 format!(
-                    "Wrong number of generic parameters for impl function. Expected: {}, found: \
-                     {}.",
-                    expected, actual
+                    "Wrong number of generic parameters for impl function. Expected: {expected}, \
+                     found: {actual}."
                 )
             }
             SemanticDiagnosticKind::WrongReturnTypeForImpl {
@@ -470,21 +468,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!(
                     "Usage of unstable feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                    note.as_ref().map(|note| format!(" Note: {note}")).unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
                 format!(
                     "Usage of deprecated feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                    note.as_ref().map(|note| format!(" Note: {note}")).unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::InternalFeature { feature_name, note } => {
                 format!(
                     "Usage of internal feature `{feature_name}` with no \
                      `#[feature({feature_name})]` attribute.{}",
-                    note.as_ref().map(|note| format!(" Note: {}", note)).unwrap_or_default()
+                    note.as_ref().map(|note| format!(" Note: {note}")).unwrap_or_default()
                 )
             }
             SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
@@ -508,17 +506,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Unused constant. Consider ignoring by prefixing with `_`.".into()
             }
             SemanticDiagnosticKind::MultipleConstantDefinition(constant_name) => {
-                format!(r#"Multiple definitions of constant "{}"."#, constant_name)
+                format!(r#"Multiple definitions of constant "{constant_name}"."#)
             }
             SemanticDiagnosticKind::UnusedUse => "Unused use.".into(),
             SemanticDiagnosticKind::MultipleDefinitionforBinding(identifier_name) => {
                 format!(
-                    r#"Multiple definitions of identifier '{}' as constant and variable."#,
-                    identifier_name
+                    r#"Multiple definitions of identifier '{identifier_name}' as constant and variable."#
                 )
             }
             SemanticDiagnosticKind::MultipleGenericItemDefinition(type_name) => {
-                format!(r#"Multiple definitions of an item "{}"."#, type_name)
+                format!(r#"Multiple definitions of an item "{type_name}"."#)
             }
             SemanticDiagnosticKind::UnsupportedUseItemInStatement => {
                 "Unsupported use item in statement.".into()
@@ -633,13 +630,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
-                r#"Wrong number of tuple elements in pattern. Expected: {}. Got: {}."#,
-                expected, actual
+                r#"Wrong number of tuple elements in pattern. Expected: {expected}. Got: {actual}."#,
             ),
             SemanticDiagnosticKind::WrongNumberOfFixedSizeArrayElements { expected, actual } => {
                 format!(
-                    "Wrong number of fixed size array elements in pattern. Expected: {}. Got: {}.",
-                    expected, actual
+                    "Wrong number of fixed size array elements in pattern. Expected: {expected}. \
+                     Got: {actual}.",
                 )
             }
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
@@ -863,25 +859,25 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Unknown statement attribute.".into()
             }
             SemanticDiagnosticKind::InlineMacroNotFound(macro_name) => {
-                format!("Inline macro `{}` not found.", macro_name)
+                format!("Inline macro `{macro_name}` not found.")
             }
             SemanticDiagnosticKind::InlineMacroFailed(macro_name) => {
-                format!("Inline macro `{}` failed.", macro_name)
+                format!("Inline macro `{macro_name}` failed.")
             }
             SemanticDiagnosticKind::UnknownGenericParam(name) => {
-                format!("Unknown generic parameter `{}`.", name)
+                format!("Unknown generic parameter `{name}`.")
             }
             SemanticDiagnosticKind::PositionalGenericAfterNamed => {
                 "Positional generic parameters must come before named generic parameters.".into()
             }
             SemanticDiagnosticKind::GenericArgDuplicate(name) => {
-                format!("Generic argument `{}` is specified more than once.", name)
+                format!("Generic argument `{name}` is specified more than once.")
             }
             SemanticDiagnosticKind::TooManyGenericArguments { expected, actual } => {
-                format!("Expected {} generic arguments, found {}.", expected, actual)
+                format!("Expected {expected} generic arguments, found {actual}.")
             }
             SemanticDiagnosticKind::GenericArgOutOfOrder(name) => {
-                format!("Generic argument `{}` is out of order.", name)
+                format!("Generic argument `{name}` is out of order.")
             }
             SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
                 "Only `_` is valid as a negative impl argument.".into()
@@ -933,7 +929,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Non-phantom type containing phantom type.".into()
             }
             SemanticDiagnosticKind::DerefCycle { deref_chain } => {
-                format!("Deref impls cycle detected:\n{}", deref_chain)
+                format!("Deref impls cycle detected:\n{deref_chain}")
             }
             SemanticDiagnosticKind::NoImplementationOfTrait {
                 ty,
@@ -978,7 +974,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
             SemanticDiagnosticKind::CallingShadowedFunction { shadowed_function_name } => {
-                format!("Function `{}` is shadowed by a local variable.", shadowed_function_name)
+                format!("Function `{shadowed_function_name}` is shadowed by a local variable.")
             }
             SemanticDiagnosticKind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()

@@ -45,7 +45,7 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
         } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
             as_string.push(byte as char);
         } else {
-            as_string.push_str(format!(r"\x{:02x}", byte).as_str());
+            as_string.push_str(format!(r"\x{byte:02x}").as_str());
         }
     }
 

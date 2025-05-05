@@ -190,7 +190,7 @@ impl RewriteNode {
             // Replace the substring with the relevant rewrite node.
             // TODO(yuval): this currently panics. Fix it.
             children.push(
-                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {}.", name)),
+                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {name}.")),
             );
         }
         // Flush the remaining text as a text child.

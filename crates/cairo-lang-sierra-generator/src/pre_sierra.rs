@@ -30,7 +30,7 @@ impl std::fmt::Display for LabelIdWithDb<'_> {
         let LabelLongId { parent, id } = self.label_id.lookup_intern(self.db);
         let parent = parent.function_id(self.db).unwrap();
         let dbg = format!("{:?}", parent.debug(self.db));
-        write!(f, "label_{}::{}", dbg, id)
+        write!(f, "label_{dbg}::{id}")
     }
 }
 

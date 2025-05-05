@@ -41,7 +41,7 @@ fn get_diagnostics<Item: QueryAttrs>(
         if args.is_empty() {
             diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(db),
-                format!("Expected arguments. Supported args: {}", HIDDEN_ATTR),
+                format!("Expected arguments. Supported args: {HIDDEN_ATTR}"),
             ));
             return;
         }
@@ -50,7 +50,7 @@ fn get_diagnostics<Item: QueryAttrs>(
                 let ast::Expr::Path(path) = value else {
                     diagnostics.push(PluginDiagnostic::error(
                         value.stable_ptr(db),
-                        format!("Expected identifier. Supported identifiers: {}", HIDDEN_ATTR),
+                        format!("Expected identifier. Supported identifiers: {HIDDEN_ATTR}"),
                     ));
                     return;
                 };
@@ -72,7 +72,7 @@ fn get_diagnostics<Item: QueryAttrs>(
             }
             _ => diagnostics.push(PluginDiagnostic::error(
                 arg.arg.stable_ptr(db),
-                format!("This argument is not supported. Supported args: {}", HIDDEN_ATTR),
+                format!("This argument is not supported. Supported args: {HIDDEN_ATTR}"),
             )),
         });
     });

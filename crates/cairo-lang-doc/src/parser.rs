@@ -140,7 +140,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     } else {
                         let text = {
                             if is_indented_code_block {
-                                format!("    {}", text)
+                                format!("    {text}")
                             } else {
                                 text.to_string()
                             }
@@ -153,7 +153,7 @@ impl<'a> DocumentationCommentParser<'a> {
                         write_list_item_prefix(&mut list_nesting, &mut tokens);
                         prefix_list_item = false;
                     }
-                    let complete_code = format!("`{}`", code);
+                    let complete_code = format!("`{code}`");
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&complete_code);
                     } else {
@@ -189,8 +189,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                     )));
                                 } else {
                                     tokens.push(DocumentationCommentToken::Content(format!(
-                                        "\n```{}\n",
-                                        language
+                                        "\n```{language}\n"
                                     )));
                                 }
                             }
@@ -266,7 +265,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                 .iter()
                                 .map(|a| {
                                     let (left, right) = get_alignment_markers(a);
-                                    format!("{}---{}", left, right)
+                                    format!("{left}---{right}")
                                 })
                                 .join("|")
                         )));
@@ -503,10 +502,10 @@ impl fmt::Display for DocumentationCommentToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DocumentationCommentToken::Content(ref content) => {
-                write!(f, "{}", content)
+                write!(f, "{content}")
             }
             DocumentationCommentToken::Link(ref link_token) => {
-                write!(f, "{}", link_token)
+                write!(f, "{link_token}")
             }
         }
     }
