@@ -111,8 +111,8 @@ pub fn lower_expr_if_let(
     }
 
     let arms = vec![
-        MatchArmWrapper { patterns: patterns.into(), expr: Some(expr.if_block) },
-        MatchArmWrapper { patterns: vec![], expr: expr.else_block },
+        MatchArmWrapper::Arm(patterns, expr.if_block),
+        expr.else_block.map(MatchArmWrapper::ElseClause).unwrap_or(MatchArmWrapper::DefaultClause),
     ];
 
     lower_match::lower_match_arms(
