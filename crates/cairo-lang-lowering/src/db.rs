@@ -475,26 +475,10 @@ fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let semantic_db = db;
-
-    let generic_function_id = function.function_with_body_id(db);
-    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
-    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
-    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
-    Ok(Arc::new(lowered))
-}
-
-// * Adds `withdraw_gas` calls.
-// * Adds panics.
-// * Adds destructor calls.
-fn concrete_function_with_body_postpanic_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = if let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
+    if let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
         function.lookup_intern(db)
     {
-        let base = db.concrete_function_with_body_postpanic_lowered(specialized.base)?;
+        let base = db.priv_concrete_function_with_body_lowered_flat(specialized.base)?;
 
         let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -505,6 +489,16 @@ fn concrete_function_with_body_postpanic_lowered(
         )?;
         let mut statement = vec![];
         let mut parameters = vec![];
+
+        if base.parameters.len() != specialized.args.len() {
+            eprintln!(
+                "Error: function {:?} has {:?} parameters, but {:?} arguments were provided.",
+                function.full_path(db),
+                base.parameters,
+                specialized.args
+            );
+        }
+
         for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
             let var_id = variables.variables.alloc(base.variables[*param].clone());
             if let Some(arg) = arg {
@@ -545,20 +539,35 @@ fn concrete_function_with_body_postpanic_lowered(
             statements: statement,
             end: FlatBlockEnd::Return(ret_usage, location),
         });
-        FlatLowered {
+        return Ok(Arc::new(FlatLowered {
             signature: function.signature(db)?,
             variables: variables.variables,
             blocks: block_builder.build().unwrap(),
             parameters,
             diagnostics: Default::default(),
-        }
-    } else {
-        let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
-        add_withdraw_gas(db, function, &mut lowered)?;
-        lower_panics(db, function, &mut lowered)?;
-        add_destructs(db, function, &mut lowered);
-        lowered
+        }));
     };
+
+    let semantic_db = db;
+
+    let generic_function_id = function.function_with_body_id(db);
+    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
+    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
+    Ok(Arc::new(lowered))
+}
+
+// * Adds `withdraw_gas` calls.
+// * Adds panics.
+// * Adds destructor calls.
+fn concrete_function_with_body_postpanic_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
+    add_withdraw_gas(db, function, &mut lowered)?;
+    lower_panics(db, function, &mut lowered)?;
+    add_destructs(db, function, &mut lowered);
     scrub_units(db, &mut lowered);
 
     Ok(Arc::new(lowered))

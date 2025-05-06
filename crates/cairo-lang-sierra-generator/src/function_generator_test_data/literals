@@ -29,12 +29,8 @@ fn bar(x: felt252) {
 //! > sierra_code
 label_test::foo::0:
 disable_ap_tracking() -> ()
-const_as_immediate<Const<felt252, 5>>() -> ([0])
-dup<felt252>([0]) -> ([0], [1])
-store_temp<felt252>([1]) -> ([1])
-function_call<user@test::bar>([1]) -> ()
-store_temp<felt252>([0]) -> ([0])
-function_call<user@test::bar>([0]) -> ()
+function_call<user@[4]>() -> ()
+function_call<user@[4]>() -> ()
 return()
 
 //! > comment

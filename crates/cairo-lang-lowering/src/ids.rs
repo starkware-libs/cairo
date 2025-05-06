@@ -320,6 +320,19 @@ impl FunctionLongId {
             FunctionLongId::Specialized(specialized) => {
                 let mut base_sign = specialized.base.signature(db)?;
 
+                if base_sign.params.len() != specialized.args.len() {
+                    println!("func: {:?}", specialized.base.full_path(db));
+                    for p in &base_sign.params {
+                        println!("param: {:?}", p.ty().format(db));
+                    }
+
+                    for arg in specialized.args.iter() {
+                        println!("args: {:?}", arg.debug(db));
+                    }
+
+                    panic!("Specialized function has different number of params and args");
+                }
+
                 base_sign.params = zip_eq(base_sign.params, specialized.args.iter())
                     .filter_map(|(param, arg)| {
                         if arg.is_none() {
