@@ -48,9 +48,9 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         id: SierraGeneratorTypeLongId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId;
 
-    /// Creates a Sierra function id for a function id of the semantic model.
+    /// Creates a Sierra function id for a lowering function id.
     // TODO(lior): Can we have the short and long ids in the same place? Currently, the short
-    //   id is defined in sierra and the long id is defined in semantic.
+    //   id is defined in sierra and the long id is defined in lowering.
     #[salsa::interned]
     fn intern_sierra_function(
         &self,
