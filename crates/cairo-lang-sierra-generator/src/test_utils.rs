@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, VirtualFile};
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, UseApproxCodeSizeEstimator};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
@@ -29,6 +29,8 @@ use crate::pre_sierra::{self, LabelLongId};
 use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
+
+impl UseApproxCodeSizeEstimator for SierraGenDatabaseForTesting {}
 
 #[salsa::database(
     DefsDatabase,

@@ -505,11 +505,6 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 2
-  (v1: {closure@lib.cairo:5:29: 5:36}) <- struct_construct()
-  (v2: {closure@lib.cairo:5:29: 5:36}, v3: @{closure@lib.cairo:5:29: 5:36}) <- snapshot(v1)
-  (v4: (core::felt252,)) <- struct_construct(v0)
-  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:5:29: 5:36}(v3, v4)
 End:
   Return()
 
