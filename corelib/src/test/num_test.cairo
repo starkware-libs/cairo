@@ -1,8 +1,11 @@
 use crate::num::traits::{
-    BitSize, Bounded, CheckedAdd, CheckedMul, CheckedSub, OverflowingAdd, OverflowingMul,
+    BitSize, Bounded, CheckedAdd, CheckedMul, CheckedSub, DivRem, OverflowingAdd, OverflowingMul,
     OverflowingSub, Pow, SaturatingAdd, SaturatingMul, SaturatingSub, WrappingAdd, WrappingMul,
     WrappingSub,
 };
+#[feature("generic-divrem")]
+use crate::traits::DivRem as DivRemLegacy;
+use crate::zeroable::NonZero;
 
 
 #[test]
@@ -466,4 +469,58 @@ fn test_pow() {
     assert_eq!(2.pow(8), 0b100000000);
     assert_eq!(2.pow(9), 0b1000000000);
     assert_eq!(2.pow(10), 0b10000000000);
+}
+
+
+// Bridge-driven generic division: u32 / u32
+#[test]
+fn test_divrem_generic_u32() {
+    let lhs: u32 = 27;
+    let rhs: NonZero<u32> = 4_u32.try_into().unwrap();
+
+    let (q, r) = DivRem::<u32, u32>::div_rem(lhs, rhs);
+
+    assert_eq!(q, 6);
+    assert_eq!(r, 3);
+}
+
+
+// Legacy API still works
+#[test]
+fn test_divrem_legacy_u32() {
+    let lhs: u32 = 27;
+    let rhs: NonZero<u32> = 4_u32.try_into().unwrap();
+
+    let (q, r) = DivRemLegacy::<u32>::div_rem(lhs, rhs);
+
+    assert_eq!(q, 6);
+    assert_eq!(r, 3);
+}
+
+#[test]
+fn test_divrem_u256_by_u128() {
+    // Heterogeneous example: u256 / u128.
+    // We supply a one-off impl in the test so corelib proper remains minimal.
+
+    let lhs: u256 = 20;
+    let rhs: NonZero<u128> = 6_u128.try_into().unwrap();
+
+    let (q, r) = DivRem::<u256, u128>::div_rem(lhs, rhs);
+    assert_eq!(q, 3_u256);
+    assert_eq!(r, 2_u128);
+}
+
+// Local impl so the test can call DivRem<u256,u128>.
+impl U256ByU128DivRem of DivRem<u256, u128> {
+    type Quotient = u256;
+    type Remainder = u128;
+
+    fn div_rem(lhs: u256, rhs: NonZero<u128>) -> (u256, u128) {
+        // Reuse the old symmetric trait on (u256,u256).
+        let rhs_u128: u128 = rhs.into();
+        let rhs_u256: u256 = rhs_u128.into();
+        let rhs_u256_nz: NonZero<u256> = rhs_u256.try_into().unwrap();
+        let (q, r_u256) = DivRemLegacy::<u256>::div_rem(lhs, rhs_u256_nz);
+        (q, r_u256.try_into().unwrap())
+    }
 }
