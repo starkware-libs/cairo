@@ -449,6 +449,37 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
 
 //! > ==========================================================================
 
+//! > Usage of non-consts in consts
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(param: u8) -> () {
+    const A: u8 = param;
+    let local: u8 = 1;
+    const B: u8 = local;
+    const _C: u8 = A + B;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: This expression is not supported as constant.
+ --> lib.cairo:2:19
+    const A: u8 = param;
+                  ^^^^^
+
+error: This expression is not supported as constant.
+ --> lib.cairo:4:19
+    const B: u8 = local;
+                  ^^^^^
+
+//! > ==========================================================================
+
 //! > Starknet consts diagnostics
 
 //! > test_runner_name
