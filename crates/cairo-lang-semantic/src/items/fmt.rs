@@ -10,7 +10,7 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
         let db = db.upcast();
         match self {
-            ConstValue::Int(value, _ty) => write!(f, "{}", value),
+            ConstValue::Int(value, _ty) => write!(f, "{value}"),
             ConstValue::Struct(inner, _) => {
                 write!(f, "{{")?;
                 let mut inner = inner.iter().peekable();

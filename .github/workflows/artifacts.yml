@@ -13,7 +13,7 @@ jobs:
       - name: Build for unknown linux
         run: ./scripts/release_tar.sh x86_64-unknown-linux-musl
       - name: Archive artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-x86_64-unknown-linux-musl
           path: target/x86_64-unknown-linux-musl.tar.gz

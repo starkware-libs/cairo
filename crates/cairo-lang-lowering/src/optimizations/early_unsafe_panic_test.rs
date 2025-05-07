@@ -42,11 +42,8 @@ fn test_early_unsafe_panic(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let before = db
-        .function_with_body_lowering(function_id.function_with_body_id(db))
-        .unwrap()
-        .deref()
-        .clone();
+    let before =
+        db.concrete_function_with_body_postpanic_lowered(function_id).unwrap().deref().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut after = before.clone();

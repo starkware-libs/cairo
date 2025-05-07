@@ -38,13 +38,13 @@ impl std::fmt::Display for CompiledFunction {
         writeln!(f)?;
         writeln!(f, "// header")?;
         for instruction in &self.wrapper.header {
-            writeln!(f, "{};", instruction)?;
+            writeln!(f, "{instruction};")?;
         }
         writeln!(f, "// sierra based code")?;
         write!(f, "{}", self.program)?;
         writeln!(f, "// footer")?;
         for instruction in &self.wrapper.footer {
-            writeln!(f, "{};", instruction)?;
+            writeln!(f, "{instruction};")?;
         }
         Ok(())
     }
@@ -163,7 +163,7 @@ pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWit
     let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {
         return wrapper_full_path;
     };
-    format!("{}{}", wrapper_path_to_module, wrapped_name)
+    format!("{wrapper_path_to_module}{wrapped_name}")
 }
 
 /// Runs compiler for an executable function.

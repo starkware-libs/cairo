@@ -681,7 +681,7 @@ fn try_extract_named_macro_argument(
         _ => {
             diagnostics.push(PluginDiagnostic::error(
                 arg_ast.stable_ptr(db),
-                format!("Invalid component macro argument. Expected `{0}: <value>`", arg_name),
+                format!("Invalid component macro argument. Expected `{arg_name}: <value>`"),
             ));
             None
         }

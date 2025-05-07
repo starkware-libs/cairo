@@ -2,16 +2,18 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo, GenericArg, Program, StatementIdx};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, try_extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
 use itertools::{Itertools, chain};
 
 use crate::db::{SierraGenGroup, sierra_concrete_long_id};
@@ -197,7 +199,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 .unwrap_or_else(|| sierra_program.statements.len());
             writeln!(f, "// {}:", func.id)?;
             for param in &func.params {
-                writeln!(f, "//   {}", param)?;
+                writeln!(f, "//   {param}")?;
             }
             for i in start..end {
                 writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
@@ -247,6 +249,22 @@ pub fn get_sierra_program_for_functions(
         }
     }
 
+    let (program, statements_locations) = assemble_program(db, functions, statements);
+    Ok(Arc::new(SierraProgramWithDebug {
+        program,
+        debug_info: SierraProgramDebugInfo {
+            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+        },
+    }))
+}
+
+/// Given a list of functions and statements, generates a Sierra program.
+/// Returns the program and the locations of the statements in the program.
+pub fn assemble_program(
+    db: &dyn SierraGenGroup,
+    functions: Vec<Arc<pre_sierra::Function>>,
+    statements: Vec<pre_sierra::StatementWithLocation>,
+) -> (program::Program, Vec<Vec<StableLocation>>) {
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
@@ -273,12 +291,7 @@ pub fn get_sierra_program_for_functions(
             })
             .collect(),
     };
-    Ok(Arc::new(SierraProgramWithDebug {
-        program,
-        debug_info: SierraProgramDebugInfo {
-            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
-        },
-    }))
+    (program, statements_locations)
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -336,4 +349,108 @@ pub fn get_sierra_program(
         }
     }
     db.get_sierra_program_for_functions(requested_function_ids)
+}
+
+/// Given `function_id` generates a dummy program with the body of the relevant function
+/// and dummy helper functions that allows the program to be compiled to casm.
+/// The generated program is not valid, but it can be used to estimate the size of the
+/// relevant function.
+pub fn get_dummy_program_for_size_estimation(
+    db: &dyn SierraGenGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Program> {
+    let function: Arc<pre_sierra::Function> = db.function_with_body_sierra(function_id)?;
+
+    let mut processed_function_ids =
+        UnorderedHashSet::<ConcreteFunctionWithBodyId>::from_iter([function_id]);
+
+    let mut functions = vec![function.clone()];
+    let mut statements = function.body.clone();
+
+    for statement in &function.body {
+        if let Some(function_id) = try_get_function_with_body_id(db, statement) {
+            if !processed_function_ids.insert(function_id) {
+                continue;
+            }
+
+            let callee: Arc<pre_sierra::Function> = db.function_with_body_sierra(function_id)?;
+            functions.push(callee.clone());
+
+            let label = callee.body[0].clone();
+            let location = label.location.clone();
+
+            // add label
+            statements.push(label);
+            let sierra_signature = db.get_function_signature(callee.id.clone()).unwrap();
+
+            let ret_vars = (0..sierra_signature.ret_types.len())
+                .map(|idx| cairo_lang_sierra::ids::VarId::new(idx.into_or_panic()))
+                .collect_vec();
+
+            statements.push(pre_sierra::StatementWithLocation {
+                location: location.clone(),
+                statement: pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
+                    program::GenInvocation {
+                        libfunc_id: dummy_call_libfunc_id(db, callee.id.clone()),
+                        args: callee.parameters.iter().map(|param| param.id.clone()).collect(),
+                        branches: vec![program::GenBranchInfo {
+                            target: program::GenBranchTarget::Fallthrough,
+                            results: ret_vars.clone(),
+                        }],
+                    },
+                )),
+            });
+
+            statements.push(pre_sierra::StatementWithLocation {
+                location,
+                statement: pre_sierra::Statement::Sierra(program::GenStatement::Return(ret_vars)),
+            });
+        }
+    }
+
+    let (program, _statements_locations) = assemble_program(db, functions, statements);
+
+    Ok(program)
+}
+
+/// Given a function id, generates a dummy function call libfunc id.
+fn dummy_call_libfunc_id(
+    db: &dyn SierraGenGroup,
+    function_id: cairo_lang_sierra::ids::FunctionId,
+) -> ConcreteLibfuncId {
+    let ap_change =
+        db.get_ap_change(function_id.lookup_intern(db).body(db).unwrap().unwrap()).unwrap();
+
+    let mut gargs = vec![];
+
+    gargs.push(GenericArg::UserFunc(function_id.clone()));
+
+    gargs.push(GenericArg::Value(
+        match ap_change {
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::Unknown => 1,
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::Known { new_vars_only: _ } => {
+                0
+            }
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
+                unreachable!("should never happen")
+            }
+        }
+        .into(),
+    ));
+
+    let sierra_signature = db.get_function_signature(function_id.clone()).unwrap();
+
+    let as_generic_arg = |ty: &ConcreteTypeId| GenericArg::Type(ty.clone());
+
+    gargs.push(GenericArg::Value(sierra_signature.param_types.len().into()));
+    gargs.extend(sierra_signature.param_types.iter().map(as_generic_arg));
+
+    gargs.push(GenericArg::Value(sierra_signature.ret_types.len().into()));
+    gargs.extend(sierra_signature.ret_types.iter().map(as_generic_arg));
+
+    cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("dummy_function_call"),
+        generic_args: gargs,
+    }
+    .intern(db)
 }

@@ -302,6 +302,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Trace(_) => unimplemented!(),
         CoreConcreteLibfunc::QM31(_) => unimplemented!(),
         CoreConcreteLibfunc::UnsafePanic(_) => unimplemented!(),
+        CoreConcreteLibfunc::DummyFunctionCall(_) => unimplemented!(),
     })
 }
 

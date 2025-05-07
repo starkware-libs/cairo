@@ -55,7 +55,7 @@ pub fn get_index_enum_type_id(
         .get_concrete_type_id(semantic::TypeLongId::Tuple(vec![]).intern(db))
         .map(SierraGenericArg::Type)?;
     let generic_args = chain!(
-        [SierraGenericArg::UserType(format!("index_enum_type<{}>", index_count).into())],
+        [SierraGenericArg::UserType(format!("index_enum_type<{index_count}>").into())],
         itertools::repeat_n(unit_ty_arg, index_count)
     )
     .collect();

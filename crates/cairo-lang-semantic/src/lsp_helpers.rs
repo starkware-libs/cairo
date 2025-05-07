@@ -247,7 +247,7 @@ fn visible_importables_in_module_ex(
                 )?
                 .iter()
                 {
-                    result.push((*item_id, format!("super::{}", path)));
+                    result.push((*item_id, format!("super::{path}")));
                 }
             }
         }

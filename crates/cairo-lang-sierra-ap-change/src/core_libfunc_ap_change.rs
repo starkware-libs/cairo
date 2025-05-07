@@ -447,6 +447,19 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             QM31Concrete::FromM31(_) => vec![ApChange::Known(0)],
         },
         UnsafePanic(_) => vec![],
+        DummyFunctionCall(libfunc) => {
+            vec![match libfunc.signature.branch_signatures[0].ap_change {
+                cairo_lang_sierra::extensions::lib_func::SierraApChange::Unknown => {
+                    ApChange::Unknown
+                }
+                cairo_lang_sierra::extensions::lib_func::SierraApChange::Known {
+                    new_vars_only: _,
+                } => ApChange::Known(2),
+                cairo_lang_sierra::extensions::lib_func::SierraApChange::BranchAlign => {
+                    unreachable!("DummyFunctionCall is not a branch align libfunc.")
+                }
+            }]
+        }
     }
 }
 

@@ -21,6 +21,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_executable::compile::{find_executable_functions, originating_function_path};
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_runner::profiling::user_function_idx_by_sierra_statement_idx;
 use cairo_lang_sierra::program::{Statement, StatementIdx};
@@ -58,6 +59,10 @@ struct Args {
     /// Implies executable plugin.
     #[arg(long, conflicts_with = "contract")]
     executable: Option<String>,
+
+    /// The inline threshold to use with the `InlineSmallFunctions` strategy.
+    #[arg(long)]
+    inline_threshold: Option<usize>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -76,6 +81,9 @@ fn main() -> anyhow::Result<()> {
             .skip_auto_withdraw_gas()
             .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
             .with_default_plugin_suite(executable_plugin_suite());
+    }
+    if let Some(inline_threshold) = args.inline_threshold {
+        db_builder.with_inlining_strategy(InliningStrategy::InlineSmallFunctions(inline_threshold));
     }
     let db = &mut db_builder.build()?;
 
@@ -180,7 +188,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     let total_size: usize = casm.instructions.iter().map(|inst| inst.body.op_size()).sum();
-    println!("Total weight (felt252 count): {}", total_size);
+    println!("Total weight (felt252 count): {total_size}");
 
     println!("Weight by concrete libfunc:");
     for (concrete_name, weight) in filter_and_sort(concrete_libfunc_size) {

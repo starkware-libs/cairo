@@ -33,3 +33,27 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test uninferred const generic param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: bool) {
+    bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const n: u16>(a: bool) {}
+
+//! > expected_diagnostics
+error: Failed to infer constant.
+ --> lib.cairo:3:5
+    bar(a)
+    ^^^
