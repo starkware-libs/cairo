@@ -1199,7 +1199,7 @@ dependencies = [
 [[package]]
 name = "cairo-vm"
 version = "2.0.1"
-source = "git+https://github.com/lambdaclass/cairo-vm.git?rev=9c44e1cef56c6ea557d6441e27ad3c756bbbe8a9#9c44e1cef56c6ea557d6441e27ad3c756bbbe8a9"
+source = "git+https://github.com/lambdaclass/cairo-vm.git?rev=b1a91f929b5fa29a1a2e9e6990a68a1220c0c673#b1a91f929b5fa29a1a2e9e6990a68a1220c0c673"
 dependencies = [
  "anyhow",
  "bincode 2.0.0-rc.3",

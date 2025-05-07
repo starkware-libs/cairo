@@ -2311,7 +2311,8 @@ pub fn run_function_with_runner(
     additional_initialization(&mut runner.vm)?;
 
     runner.run_until_pc(end, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, hint_processor).map_err(CairoRunError::from)?;
+    // TODO(meidar): Consider exposing the proof_mode parameter. Currently False for sharp.
+    runner.end_run(true, false, hint_processor, false).map_err(CairoRunError::from)?;
     runner.relocate(true).map_err(CairoRunError::from)?;
     Ok(())
 }
