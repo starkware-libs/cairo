@@ -79,9 +79,9 @@ fn test_flow_safe_dispatcher() {
 }
 
 // If the test is failing due to gas usage changes, update the gas limit by taking `test_flow` test
-// gas usage and add about 96000.
+// gas usage and add about 74000.
 #[test]
-#[available_gas(808580)]
+#[available_gas(776480)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED'))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.

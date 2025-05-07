@@ -63,6 +63,7 @@ mod squashed_felt252_dict;
 mod starknet;
 mod structure;
 mod trace;
+mod unsafe_panic;
 
 #[cfg(test)]
 mod test_utils;
@@ -694,7 +695,8 @@ pub fn compile_invocation(
         Dup(_) => misc::build_dup(builder),
         Mem(libfunc) => mem::build(libfunc, builder),
         UnwrapNonZero(_) => misc::build_identity(builder),
-        FunctionCall(libfunc) | CouponCall(libfunc) => function_call::build(libfunc, builder),
+        FunctionCall(libfunc) | CouponCall(libfunc) => function_call::build(libfunc, builder, true),
+        DummyFunctionCall(libfunc) => function_call::build(libfunc, builder, false),
         UnconditionalJump(_) => misc::build_jump(builder),
         ApTracking(_) => misc::build_update_ap_tracking(builder),
         Box(libfunc) => boxing::build(libfunc, builder),
@@ -723,6 +725,7 @@ pub fn compile_invocation(
         Blake(libfunc) => blake::build(libfunc, builder),
         Trace(libfunc) => trace::build(libfunc, builder),
         QM31(libfunc) => qm31::build(libfunc, builder),
+        UnsafePanic(_) => unsafe_panic::build(builder),
     }
 }
 

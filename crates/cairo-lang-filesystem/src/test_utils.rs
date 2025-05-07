@@ -1,6 +1,6 @@
 use cairo_lang_utils::Upcast;
 
-use crate::db::{AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
+use crate::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]
@@ -18,11 +18,6 @@ impl Default for FilesDatabaseForTesting {
 }
 impl Upcast<dyn FilesGroup> for FilesDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl AsFilesGroupMut for FilesDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }

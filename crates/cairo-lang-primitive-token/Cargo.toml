@@ -2,6 +2,7 @@
 name = "cairo-lang-primitive-token"
 version = "1.0.0"
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Primitive representation of a TokenStream"

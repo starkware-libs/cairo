@@ -1,11 +1,8 @@
 use std::fmt::Write;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{Itertools, intersperse};
 
@@ -14,15 +11,7 @@ use crate::documentable_item::DocumentableItemId;
 use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
-pub trait DocGroup:
-    Upcast<dyn DefsGroup>
-    + Upcast<dyn SyntaxGroup>
-    + Upcast<dyn FilesGroup>
-    + Upcast<dyn SemanticGroup>
-    + SyntaxGroup
-    + FilesGroup
-    + DefsGroup
-{
+pub trait DocGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
@@ -57,7 +46,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
             DocumentationCommentToken::Link(link) => {
                 write!(&mut buff, "[{}]", link.label).ok()?;
                 if let Some(path) = &link.path {
-                    write!(&mut buff, "({})", path).ok()?;
+                    write!(&mut buff, "({path})").ok()?;
                 }
             }
         }
@@ -82,11 +71,11 @@ fn get_item_documentation_as_tokens(
             // 2. Non-inline Module (module as a file): It could have module level comments, but
             //    not the inner ones.
             extract_item_inner_documentation(db, item_id),
-            extract_item_module_level_documentation(db.upcast(), item_id),
+            extract_item_module_level_documentation(db, item_id),
         ),
     };
 
-    let doc_parser = DocumentationCommentParser::new(db.upcast());
+    let doc_parser = DocumentationCommentParser::new(db);
 
     let outer_comment_tokens =
         outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
@@ -128,9 +117,9 @@ fn extract_item_inner_documentation(
         )
     ) {
         let raw_text = item_id
-            .stable_location(db.upcast())?
-            .syntax_node(db.upcast())
-            .get_text_without_inner_commentable_children(db.upcast());
+            .stable_location(db)?
+            .syntax_node(db)
+            .get_text_without_inner_commentable_children(db);
         Some(extract_item_inner_documentation_from_raw_text(raw_text))
     } else {
         None
@@ -143,8 +132,7 @@ fn extract_item_outer_documentation(
     item_id: DocumentableItemId,
 ) -> Option<String> {
     // Get the text of the item (trivia + definition)
-    let raw_text =
-        item_id.stable_location(db.upcast())?.syntax_node(db.upcast()).get_text(db.upcast());
+    let raw_text = item_id.stable_location(db)?.syntax_node(db).get_text(db);
     Some(
         raw_text
         .lines()

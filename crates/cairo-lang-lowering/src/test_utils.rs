@@ -3,7 +3,7 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
+    ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::VirtualFile;
@@ -34,7 +34,7 @@ pub struct LoweringDatabaseForTesting {
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl ExternalFiles for LoweringDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
@@ -69,11 +69,6 @@ pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl AsFilesGroupMut for LoweringDatabaseForTesting {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 impl Upcast<dyn FilesGroup> for LoweringDatabaseForTesting {

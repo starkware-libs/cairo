@@ -2,12 +2,13 @@
 name = "starknet-sierra-extract-code"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Compiler executable for printing Starknet Sierra json included code"
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.11.2" }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.11.4" }
 clap.workspace = true
 serde_json.workspace = true

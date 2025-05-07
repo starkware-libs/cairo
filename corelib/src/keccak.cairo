@@ -27,31 +27,15 @@
 
 use starknet::SyscallResultTrait;
 use crate::array::{ArrayTrait, Span, SpanTrait};
-use crate::option::OptionTrait;
-use crate::traits::TryInto;
+use crate::num::traits::Split;
 
-const KECCAK_FULL_RATE_IN_BYTES: usize = 136;
-const KECCAK_FULL_RATE_IN_U64S: usize = 17;
-const BYTES_IN_U64_WORD: usize = 8;
-
-
-fn u128_to_u64(input: u128) -> u64 {
-    input.try_into().unwrap()
-}
-
-fn u128_split(input: u128) -> (u64, u64) {
-    let (high, low) = crate::integer::u128_safe_divmod(
-        input, 0x10000000000000000_u128.try_into().unwrap(),
-    );
-
-    (u128_to_u64(high), u128_to_u64(low))
-}
+const KECCAK_FULL_RATE_IN_U64S: NonZero<usize> = 17;
 
 fn keccak_add_u256_le(ref keccak_input: Array<u64>, v: u256) {
-    let (high, low) = u128_split(v.low);
+    let (high, low) = v.low.split();
     keccak_input.append(low);
     keccak_input.append(high);
-    let (high, low) = u128_split(v.high);
+    let (high, low) = v.high.split();
     keccak_input.append(low);
     keccak_input.append(high);
 }
@@ -90,10 +74,10 @@ pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
 }
 
 fn keccak_add_u256_be(ref keccak_input: Array<u64>, v: u256) {
-    let (high, low) = u128_split(crate::integer::u128_byte_reverse(v.high));
+    let (high, low) = crate::integer::u128_byte_reverse(v.high).split();
     keccak_input.append(low);
     keccak_input.append(high);
-    let (high, low) = u128_split(crate::integer::u128_byte_reverse(v.low));
+    let (high, low) = crate::integer::u128_byte_reverse(v.low).split();
     keccak_input.append(low);
     keccak_input.append(high);
 }
@@ -179,10 +163,9 @@ pub fn cairo_keccak(
 ///
 /// Panics if `last_input_num_bytes` is greater than 7.
 fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize) {
-    let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
     // `last_block_num_full_words` is in range [0, KECCAK_FULL_RATE_IN_U64S - 1]
     let (_, last_block_num_full_words) = crate::integer::u32_safe_divmod(
-        input.len(), words_divisor,
+        input.len(), KECCAK_FULL_RATE_IN_U64S,
     );
 
     // The first word to append would be of the form
@@ -193,7 +176,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
         // This case is handled separately to avoid unnecessary computations.
         1
     } else {
-        let first_padding_byte_part = if last_input_num_bytes == 1 {
+        let first_padding_byte_part: NonZero<u64> = if last_input_num_bytes == 1 {
             0x100
         } else if last_input_num_bytes == 2 {
             0x10000
@@ -210,20 +193,19 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
         } else {
             crate::panic_with_felt252('Keccak last input word >7b')
         };
-        let (_, r) = crate::integer::u64_safe_divmod(
-            last_input_word, first_padding_byte_part.try_into().unwrap(),
-        );
-        first_padding_byte_part + r
+        let (_, r) = crate::integer::u64_safe_divmod(last_input_word, first_padding_byte_part);
+        first_padding_byte_part.into() + r
     };
 
-    if last_block_num_full_words == KECCAK_FULL_RATE_IN_U64S - 1 {
+    const LAST_FULL_COUNT: usize = KECCAK_FULL_RATE_IN_U64S.into() - 1;
+    if last_block_num_full_words == LAST_FULL_COUNT {
         input.append(0x8000000000000000 + first_word_to_append);
         return;
     }
 
-    // last_block_num_full_words < KECCAK_FULL_RATE_IN_U64S - 1
+    // last_block_num_full_words < LAST_FULL_COUNT
     input.append(first_word_to_append);
-    finalize_padding(ref input, KECCAK_FULL_RATE_IN_U64S - 1 - last_block_num_full_words);
+    finalize_padding(ref input, LAST_FULL_COUNT - last_block_num_full_words);
 }
 
 /// Finalizes the padding by appending "0* 1".

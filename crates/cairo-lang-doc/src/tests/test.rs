@@ -24,6 +24,8 @@ cairo_lang_test_utils::test_file_test!(
     comment_markers: "comment_markers.txt",
     signature: "signature.txt",
     lists_formatting: "lists_formatting.txt",
+    tables_formatting: "tables_formatting.txt",
+    rules_formatting: "rules_formatting.txt",
   },
   documentation_test_runner
 );
@@ -279,7 +281,7 @@ impl<'a> ResultDocBuilder<'a> {
                 .unwrap_or_default()
                 .iter()
                 .map(|token| match token {
-                    DocumentationCommentToken::Content(_) => format!("{:?}", token),
+                    DocumentationCommentToken::Content(_) => format!("{token:?}"),
                     DocumentationCommentToken::Link(link_token) => {
                         format!("{:?}", link_token.debug(self.db))
                     }

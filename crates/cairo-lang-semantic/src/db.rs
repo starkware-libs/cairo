@@ -12,7 +12,6 @@ use cairo_lang_defs::ids::{
     TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -62,12 +61,7 @@ pub trait Elongate {
 // This prevents cycles where there shouldn't be any.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup:
-    DefsGroup
-    + Upcast<dyn DefsGroup>
-    + Upcast<dyn ParserGroup>
-    + Upcast<dyn FilesGroup>
-    + AsFilesGroupMut
-    + Elongate
+    DefsGroup + Upcast<dyn DefsGroup> + Upcast<dyn ParserGroup> + Elongate
 {
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
@@ -1649,7 +1643,7 @@ pub trait SemanticGroup:
         module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<ImportableId, String>>>;
     /// Returns all visible importables in a module, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible. If
+    /// `user_module_file_id` is the module from which the importables should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     #[salsa::invoke(lsp_helpers::visible_importables_in_module)]
     fn visible_importables_in_module(
@@ -1659,7 +1653,7 @@ pub trait SemanticGroup:
         include_parent: bool,
     ) -> Arc<[(ImportableId, String)]>;
     /// Returns all visible importables in a crate, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables are should be visible.
+    /// `user_module_file_id` is the module from which the importables should be visible.
     #[salsa::invoke(lsp_helpers::visible_importables_in_crate)]
     fn visible_importables_in_crate(
         &self,
@@ -1744,7 +1738,7 @@ fn module_semantic_diagnostics(
                         };
 
                         let stable_location =
-                            StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
+                            StableLocation::new(submodule_id.stable_ptr(db).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
                             SemanticDiagnosticKind::ModuleFileNotFound(path),
@@ -1770,8 +1764,7 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter()
-    {
+    for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = db.lookup_intern_analyzer_plugin(*analyzer_plugin_id);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
@@ -1841,7 +1834,7 @@ fn add_unused_import_diagnostics(
         let resolver_data = db.use_resolver_data(use_id).ok()?;
         require(!resolver_data.feature_config.allow_unused_imports)?;
         Some(diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(use_id.untyped_stable_ptr(db.upcast())),
+            StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),
         )))
     })();
@@ -1902,7 +1895,7 @@ pub fn get_resolver_data_options(
             }
             ModuleItemId::TypeAlias(id) => vec![db.module_type_alias_resolver_data(id)],
             ModuleItemId::ImplAlias(id) => vec![db.impl_alias_resolver_data(id)],
-            ModuleItemId::Trait(_) => vec![],
+            ModuleItemId::Trait(id) => vec![db.trait_resolver_data(id)],
             ModuleItemId::Impl(id) => vec![db.impl_def_resolver_data(id)],
             ModuleItemId::ExternType(_) => vec![],
             ModuleItemId::ExternFunction(id) => {

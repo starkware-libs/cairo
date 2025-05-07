@@ -71,7 +71,7 @@ impl Location {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db),
         ))
     }
 }
@@ -79,7 +79,7 @@ impl Location {
 impl DebugWithDb<dyn LoweringGroup> for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
         let files_db = db.upcast();
-        self.stable_location.diagnostic_location(db.upcast()).fmt(f, files_db)?;
+        self.stable_location.diagnostic_location(db).fmt(f, files_db)?;
 
         for note in &self.notes {
             f.write_str("\nnote: ")?;
@@ -288,7 +288,7 @@ impl Statement {
     }
 
     pub fn outputs(&self) -> &[VariableId] {
-        match &self {
+        match self {
             Statement::Const(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Call(stmt) => stmt.outputs.as_slice(),
             Statement::StructConstruct(stmt) => std::slice::from_ref(&stmt.output),
@@ -296,6 +296,18 @@ impl Statement {
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
+        }
+    }
+
+    pub fn outputs_mut(&mut self) -> &mut [VariableId] {
+        match self {
+            Statement::Const(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Call(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::StructConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::StructDestructure(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::Snapshot(stmt) => stmt.outputs.as_mut_slice(),
+            Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId> {

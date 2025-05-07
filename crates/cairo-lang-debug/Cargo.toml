@@ -2,12 +2,13 @@
 name = "cairo-lang-debug"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Debug utilities for query objects."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
 
 [dev-dependencies]
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros"}

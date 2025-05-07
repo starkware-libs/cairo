@@ -125,7 +125,7 @@ fn split_remapping(
             let mut dst_vars = vec![];
             for split_src in src_vars {
                 let new_var = variables.alloc(variables[*split_src].clone());
-                // Queue inner remmapping for possible splitting.
+                // Queue inner remapping for possible splitting.
                 stack.push((new_var, *split_src));
                 dst_vars.push(new_var);
             }

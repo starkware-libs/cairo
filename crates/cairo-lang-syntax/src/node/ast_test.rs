@@ -23,7 +23,7 @@ fn test_ast() {
 
     assert_eq!(
         root.descendants(db)
-            .map(|node| (node.kind(db), node.text(db), node.offset(), node.width(db)))
+            .map(|node| (node.kind(db), node.text(db), node.offset(db), node.width(db)))
             .collect::<Vec<_>>(),
         vec![
             (SyntaxKind::ExprBinary, None, TextOffset::START, TextWidth::new_for_testing(7)),
@@ -118,7 +118,7 @@ fn test_stable_ptr() {
     let db = &db_val;
     let root = setup(db);
     for node in root.descendants(db) {
-        let ptr = node.stable_ptr();
+        let ptr = node.stable_ptr(db);
         let looked_up_node = ptr.lookup(db);
         assert_eq!(node, looked_up_node);
     }

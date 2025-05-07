@@ -2,20 +2,22 @@
 name = "cairo-lang-lowering"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Cairo lowering phase."
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.2" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.11.2" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.11.2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.2" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.11.2" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.11.2" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.11.2" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.2" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.11.4" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.11.4" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.11.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.11.4" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.11.4" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.11.4" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.11.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.11.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.11.4" }
+assert_matches.workspace = true
 id-arena.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
@@ -24,7 +26,6 @@ num-integer = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
-smol_str.workspace = true
 bincode.workspace = true
 
 [dev-dependencies]

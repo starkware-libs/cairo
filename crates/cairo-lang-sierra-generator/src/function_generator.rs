@@ -51,7 +51,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = function_id.signature(db.upcast())?;
+    let signature = function_id.signature(db)?;
     let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id)?;
     let root_block = lowered_function.blocks.root_block()?;
 
@@ -128,7 +128,7 @@ fn get_function_code(
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
     Ok(pre_sierra::Function {
-        id: function_id.function_id(db.upcast())?.intern(db),
+        id: function_id.function_id(db)?.intern(db),
         body: statements,
         entry_point: label_id,
         parameters,
@@ -148,7 +148,7 @@ fn allocate_local_variables(
 ) -> Maybe<LocalVariables> {
     let mut sierra_local_variables =
         OrderedHashMap::<cairo_lang_sierra::ids::VarId, cairo_lang_sierra::ids::VarId>::default();
-    for lowering_var_id in local_variables.iter() {
+    for lowering_var_id in local_variables {
         let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
         let uninitialized_local_var_id =
             context.get_sierra_variable(SierraGenVar::UninitializedLocal(*lowering_var_id));

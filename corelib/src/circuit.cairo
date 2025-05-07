@@ -194,7 +194,9 @@ pub struct u384 {
 }
 
 /// A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic.
-pub type u96 = crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+#[feature("bounded-int-utils")]
+pub type u96 =
+    crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
 
 /// Range check builtin for 96-bit operations.
 pub extern type RangeCheck96;
@@ -236,7 +238,9 @@ impl DestructU96Guarantee of Destruct<U96Guarantee> {
 extern type U96Guarantee;
 
 /// Expose the const required by the libfunc to allow the compiler const reusage.
+#[feature("bounded-int-utils")]
 pub type ConstZero = crate::internal::bounded_int::UnitInt<0>;
+#[feature("bounded-int-utils")]
 pub type ConstOne = crate::internal::bounded_int::UnitInt<1>;
 
 /// A type that creates a circuit from a tuple of outputs.
@@ -762,10 +766,11 @@ extern fn get_circuit_output<C, Output>(
 ) -> (u384, U96LimbsLtGuarantee<4>) nopanic;
 
 /// Helper module to convert into `u384`.
+#[feature("bounded-int-utils")]
 mod conversions {
-    use crate::integer::{downcast, upcast};
-    use crate::internal::bounded_int;
-    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt};
+    use crate::internal::bounded_int::{
+        self, AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt, downcast, upcast,
+    };
     use super::{u384, u96};
 
     const POW128: felt252 = 0x100000000000000000000000000000000;

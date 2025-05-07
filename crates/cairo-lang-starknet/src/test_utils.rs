@@ -68,8 +68,8 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
         .collect_vec();
     let [(contracts_crate_id, _)] = contracts_crate.as_slice() else {
         panic!(
-            "Expected exactly one crate with name starting with {}, found: {:?}",
-            CONTRACTS_CRATE_DIR, contracts_crate
+            "Expected exactly one crate with name starting with {CONTRACTS_CRATE_DIR}, found: \
+             {contracts_crate:?}"
         );
     };
     let main_crate_ids = vec![**contracts_crate_id];

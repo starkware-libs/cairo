@@ -5,9 +5,11 @@ use std::{fmt, fs};
 
 use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
+use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::FlatLowered;
@@ -27,8 +29,9 @@ use cairo_lang_semantic::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use cairo_lang_starknet::starknet_plugin_suite;
+use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern};
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
@@ -77,6 +80,10 @@ struct Args {
     /// Disables gas handling.
     #[arg(short, long)]
     no_gas: bool,
+
+    /// Use the executable plugin suite instead of the starknet suite
+    #[arg(short, long)]
+    executable: bool,
 
     /// The index of the generated function to output.
     #[arg(long)]
@@ -176,10 +183,7 @@ fn get_all_funcs(
         for module_id in modules.iter() {
             let free_funcs = db.module_free_functions_ids(*module_id).unwrap();
             for func_id in free_funcs.iter() {
-                res.insert(
-                    func_id.full_path(db.upcast()),
-                    GenericFunctionWithBodyId::Free(*func_id),
-                );
+                res.insert(func_id.full_path(db), GenericFunctionWithBodyId::Free(*func_id));
             }
 
             let impl_ids = db.module_impls_ids(*module_id).unwrap();
@@ -187,7 +191,7 @@ fn get_all_funcs(
                 let impl_funcs = db.impl_functions(*impl_def_id).unwrap();
                 for impl_func in impl_funcs.values() {
                     res.insert(
-                        impl_func.full_path(db.upcast()),
+                        impl_func.full_path(db),
                         GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
                             concrete_impl_id: ConcreteImplLongId {
                                 impl_def_id: *impl_def_id,
@@ -229,12 +233,19 @@ fn main() -> anyhow::Result<()> {
     check_compiler_path(args.single_file, &args.path)?;
 
     let mut db_builder = RootDatabase::builder();
+    let mut cfg = CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]);
     if args.no_gas {
-        db_builder
-            .skip_auto_withdraw_gas()
-            .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]));
+        cfg.insert(Cfg::kv("gas", "disabled"));
+        db_builder.skip_auto_withdraw_gas();
     }
-    db_builder.detect_corelib().with_default_plugin_suite(starknet_plugin_suite());
+
+    db_builder.with_cfg(cfg);
+    db_builder.detect_corelib();
+    db_builder.with_default_plugin_suite(test_plugin_suite());
+    let plugin_suite =
+        if args.executable { executable_plugin_suite() } else { starknet_plugin_suite() };
+
+    db_builder.with_default_plugin_suite(plugin_suite);
 
     let mut db_val = db_builder.build()?;
 
@@ -254,12 +265,11 @@ fn main() -> anyhow::Result<()> {
                 .keys()
                 .sorted_by_key(|key| match key {
                     GeneratedFunctionKey::Loop(id) => {
-                        (id.0.lookup(db).span_without_trivia(db.upcast()), "".into())
+                        (id.0.lookup(db).span_without_trivia(db), "".into())
                     }
-                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
-                        id.syntax_node(db).span_without_trivia(db.upcast()),
-                        trait_function.name(db),
-                    ),
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => {
+                        (id.syntax_node(db).span_without_trivia(db), trait_function.name(db))
+                    }
                 })
                 .take(generated_function_index + 1)
                 .collect_vec();
@@ -280,10 +290,18 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
+        let Ok(lowered) = db.final_concrete_function_with_body_lowered(function_id) else {
+            // Run DiagnosticsReporter only in case of failure.
+            DiagnosticsReporter::default()
+                .with_crates(&main_crate_ids)
+                .ensure(db)
+                .with_context(|| "Failed to compile")?;
+            anyhow::bail!("Failed to get lowered function.")
+        };
+
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
         } else {
-            let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
             LoweredDisplay::new(db, &lowered).to_string()
         }
     } else {

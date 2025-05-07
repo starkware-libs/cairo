@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, UsePathEx};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
@@ -22,6 +22,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
+use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -34,7 +35,7 @@ pub struct UseData {
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
-    let module_file_id = use_id.module_file_id(db.upcast());
+    let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let module_item_id = ModuleItemId::Use(use_id);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
@@ -43,18 +44,47 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
-    let item = use_ast.get_item(db.upcast());
+    let item = use_ast.get_item(db);
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
-    let segments = get_use_path_segments(db.upcast(), use_ast)?;
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        segments,
-        NotFoundItemType::Identifier,
-        ResolutionContext::ModuleItem(module_item_id),
-    );
+    let segments = get_use_path_segments(db, use_ast.clone())?;
+    let resolved_item = match handle_self_path(db, &mut diagnostics, segments, use_ast) {
+        Err(diag_added) => Err(diag_added),
+        Ok(segments) => resolver.resolve_generic_path(
+            &mut diagnostics,
+            segments,
+            NotFoundItemType::Identifier,
+            ResolutionContext::ModuleItem(module_item_id),
+        ),
+    };
     let resolver_data: Arc<ResolverData> = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
+}
+
+/// Processes a `self` path in a `use` statement.
+///
+/// This function checks if the `self` keyword is used correctly in a `use`
+/// statement and modifies the path segments accordingly. It also reports
+/// diagnostics for invalid usage of `self`.
+fn handle_self_path(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    mut segments: Vec<ast::PathSegment>,
+    use_path: ast::UsePath,
+) -> Maybe<Vec<ast::PathSegment>> {
+    if let Some(last) = segments.last() {
+        if last.identifier(db) == SELF_PARAM_KW {
+            if use_path.as_syntax_node().parent(db).unwrap().kind(db) != SyntaxKind::UsePathList {
+                diagnostics.report(use_path.stable_ptr(db), UseSelfNonMulti);
+            }
+            segments.pop();
+        }
+    }
+    if segments.is_empty() {
+        Err(diagnostics.report(use_path.stable_ptr(db), UseSelfEmptyPath))
+    } else {
+        Ok(segments)
+    }
 }
 
 /// Returns the segments that are the parts of the use path.
@@ -94,7 +124,7 @@ fn get_parent_single_use_path(
     use SyntaxKind::*;
     let mut node = use_path.as_syntax_node();
     loop {
-        node = node.parent().expect("`UsePath` is not under an `ItemUse`.");
+        node = node.parent(db).expect("`UsePath` is not under an `ItemUse`.");
         match node.kind(db) {
             ItemUse => return None,
             UsePathSingle => return Some(ast::UsePathSingle::from_syntax_node(db, node)),
@@ -111,10 +141,10 @@ pub fn priv_use_semantic_data_cycle(
     _cycle: &salsa::Cycle,
     use_id: &UseId,
 ) -> Maybe<UseData> {
-    let module_file_id = use_id.module_file_id(db.upcast());
+    let module_file_id = use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
-    let err = Err(diagnostics.report(&use_ast, UseCycle));
+    let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
     Ok(UseData {
@@ -171,7 +201,7 @@ pub fn priv_global_use_semantic_data(
     db: &dyn SemanticGroup,
     global_use_id: GlobalUseId,
 ) -> Maybe<UseGlobalData> {
-    let module_file_id = global_use_id.module_file_id(db.upcast());
+    let module_file_id = global_use_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
@@ -179,13 +209,13 @@ pub fn priv_global_use_semantic_data(
     let edition = resolver.settings.edition;
     if edition.ignore_visibility() {
         // We block support for global use where visibility is ignored.
-        diagnostics.report(&star_ast, GlobalUsesNotSupportedInEdition(edition));
+        diagnostics.report(star_ast.stable_ptr(db), GlobalUsesNotSupportedInEdition(edition));
     }
 
-    let item = star_ast.get_item(db.upcast());
-    let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
+    let item = star_ast.get_item(db);
+    let segments = get_use_path_segments(db, star_ast.clone())?;
     if segments.is_empty() {
-        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(), UseStarEmptyPath));
+        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(db), UseStarEmptyPath));
         return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
     }
     resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
@@ -200,7 +230,7 @@ pub fn priv_global_use_semantic_data(
     let imported_module = match resolved_item {
         ResolvedGenericItem::Module(module_id) => Ok(module_id),
         _ => Err(diagnostics.report(
-            last_segment.stable_ptr(),
+            last_segment.stable_ptr(db),
             UnexpectedElement {
                 expected: vec![ElementKind::Module],
                 actual: (&resolved_item).into(),
@@ -235,16 +265,16 @@ pub fn priv_global_use_semantic_data_cycle(
     let mut diagnostics = SemanticDiagnostics::default();
     let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
-    let segments = get_use_path_segments(db.upcast(), star_ast)?;
+    let segments = get_use_path_segments(db, star_ast)?;
     let err = if cycle.participant_keys().count() <= 3 && segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
         // uses, but which includes itself - but we don't want to report a cycle in this case.
         diagnostics.report(
-            segments.last().unwrap().stable_ptr(),
+            segments.last().unwrap().stable_ptr(db),
             PathNotFound(NotFoundItemType::Identifier),
         )
     } else {
-        diagnostics.report(&global_use_ast, UseCycle)
+        diagnostics.report(global_use_ast.stable_ptr(db), UseCycle)
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }
@@ -280,7 +310,7 @@ pub fn priv_module_use_star_modules(
             let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
                 continue;
             };
-            if peek_visible_in(db.upcast(), *item_visibility, containing_module, user_module) {
+            if peek_visible_in(db, *item_visibility, containing_module, user_module) {
                 stack.push((containing_module, module_id_found));
                 accessible_modules.insert((containing_module, module_id_found));
             }

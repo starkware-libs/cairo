@@ -107,7 +107,7 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
             vec![OutputVarInfo {
                 ty: snapshot_ty(
                     context,
-                    context.get_wrapped_concrete_type(ArrayType::id(), member_type.clone())?,
+                    context.get_wrapped_concrete_type(ArrayType::id(), member_type)?,
                 )?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                     param_idx: 0,
@@ -521,7 +521,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let popped_ty = args_as_single_type(args)?;
         let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
-        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
@@ -569,7 +569,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
             popped_ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -589,7 +589,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let popped_ty = args_as_single_type(args)?;
         let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
-        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
@@ -637,7 +637,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
             popped_ty,
-            signature: self.specialize_signature(context.upcast(), args)?,
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

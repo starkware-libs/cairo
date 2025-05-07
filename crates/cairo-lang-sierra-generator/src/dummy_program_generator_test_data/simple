@@ -1,0 +1,105 @@
+//! > Simple function call
+
+//! > test_runner_name
+test_dummy_program_generator
+
+//! > function
+fn foo(a: u32, b: u32, c: bar::Coupon) -> u32 {
+    coupon_refund(c);
+    let b = baz(a, 5);
+    bar(b, b, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(x: u32, y: u32, z: u32) -> u32 {
+    baz(x + z, y * z)
+}
+
+#[inline(never)]
+fn baz(x: u32, y: u32) -> u32 {
+    if x == 0 {
+        return 5;
+    }
+    bar(x, y, x)
+}
+
+extern fn coupon_refund<T>(c: T) nopanic;
+
+//! > sierra_code
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<u32> = Struct<ut@Tuple, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u32,)>, Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<u32, 5> = Const<u32, 5> [storable: false, drop: false, dup: false, zero_sized: false];
+type Coupon<user@test::bar> = Coupon<user@test::bar> [storable: true, drop: true, dup: false, zero_sized: true];
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc drop<u32> = drop<u32>;
+libfunc coupon_refund<Coupon<user@test::bar>> = coupon_refund<Coupon<user@test::bar>>;
+libfunc const_as_immediate<Const<u32, 5>> = const_as_immediate<Const<u32, 5>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<u32> = store_temp<u32>;
+libfunc function_call<user@test::baz> = function_call<user@test::baz>;
+libfunc enum_match<core::panics::PanicResult::<(core::integer::u32,)>> = enum_match<core::panics::PanicResult::<(core::integer::u32,)>>;
+libfunc branch_align = branch_align;
+libfunc redeposit_gas = redeposit_gas;
+libfunc struct_deconstruct<Tuple<u32>> = struct_deconstruct<Tuple<u32>>;
+libfunc dup<u32> = dup<u32>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1> = enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>;
+libfunc store_temp<core::panics::PanicResult::<(core::integer::u32,)>> = store_temp<core::panics::PanicResult::<(core::integer::u32,)>>;
+libfunc dummy_function_call<user@test::bar, 1, 5, RangeCheck, GasBuiltin, u32, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>> = dummy_function_call<user@test::bar, 1, 5, RangeCheck, GasBuiltin, u32, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>>;
+libfunc dummy_function_call<user@test::baz, 1, 4, RangeCheck, GasBuiltin, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>> = dummy_function_call<user@test::baz, 1, 4, RangeCheck, GasBuiltin, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>>;
+
+F0:
+disable_ap_tracking() -> ();
+drop<u32>([3]) -> ();
+coupon_refund<Coupon<user@test::bar>>([4]) -> ();
+const_as_immediate<Const<u32, 5>>() -> ([5]);
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<GasBuiltin>([1]) -> ([1]);
+store_temp<u32>([2]) -> ([2]);
+store_temp<u32>([5]) -> ([5]);
+function_call<user@test::baz>([0], [1], [2], [5]) -> ([6], [7], [8]);
+enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([8]) { fallthrough([9]) F0_B0([10]) };
+branch_align() -> ();
+redeposit_gas([7]) -> ([11]);
+struct_deconstruct<Tuple<u32>>([9]) -> ([12]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<GasBuiltin>([11]) -> ([11]);
+dup<u32>([12]) -> ([12], [13]);
+store_temp<u32>([13]) -> ([13]);
+dup<u32>([12]) -> ([12], [14]);
+store_temp<u32>([14]) -> ([14]);
+store_temp<u32>([12]) -> ([12]);
+function_call<user@test::bar>([6], [11], [13], [14], [12]) -> ([15], [16], [17]);
+return([15], [16], [17]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>([10]) -> ([18]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<GasBuiltin>([7]) -> ([7]);
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([18]) -> ([18]);
+return([6], [7], [18]);
+F1:
+dummy_function_call<user@test::bar, 1, 5, RangeCheck, GasBuiltin, u32, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>>([0], [1], [2], [3], [4]) -> ([0], [1], [2]);
+return([0], [1], [2]);
+F2:
+dummy_function_call<user@test::baz, 1, 4, RangeCheck, GasBuiltin, u32, u32, 3, RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>>([0], [1], [2], [3]) -> ([0], [1], [2]);
+return([0], [1], [2]);
+
+test::foo@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: u32, [3]: u32, [4]: Coupon<user@test::bar>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>);
+test::bar@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: u32, [3]: u32, [4]: u32) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>);
+test::baz@F2([0]: RangeCheck, [1]: GasBuiltin, [2]: u32, [3]: u32) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::integer::u32,)>);
+
+//! > semantic_diagnostics

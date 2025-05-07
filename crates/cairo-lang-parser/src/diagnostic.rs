@@ -89,7 +89,7 @@ impl ParserDiagnostic {
                 SyntaxKind::TerminalUse => "use",
                 SyntaxKind::TerminalWhile => "while",
                 SyntaxKind::TerminalXor => "^",
-                _ => return format!("{:?}", kind),
+                _ => return format!("{kind:?}"),
             }
         )
     }
@@ -123,6 +123,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutStatement,
     DisallowedTrailingSeparatorOr,
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
+    ExpectedSemicolonOrBody,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -214,6 +215,11 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
                 )
+            }
+            ParserDiagnosticKind::ExpectedSemicolonOrBody => {
+                "Expected either ';' or '{' after module name. Use ';' for an external module \
+                 declaration or '{' for a module with a body."
+                    .to_string()
             }
         }
     }

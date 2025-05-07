@@ -179,8 +179,7 @@ pub enum InferenceError {
         func0: GenericFunctionId,
         func1: GenericFunctionId,
     },
-    ConstInferenceNotSupported,
-
+    ConstNotInferred,
     // TODO(spapini): These are only used for external interface. Separate them along with the
     // finalize() function to a wrapper.
     NoImplsFound(ConcreteTraitId),
@@ -211,9 +210,7 @@ impl InferenceError {
             InferenceError::TraitMismatch { trt0, trt1 } => {
                 format!("Trait mismatch: `{:?}` and `{:?}`.", trt0.debug(db), trt1.debug(db))
             }
-            InferenceError::ConstInferenceNotSupported => {
-                "Const generic inference not yet supported.".into()
-            }
+            InferenceError::ConstNotInferred => "Failed to infer constant.".into(),
             InferenceError::NoImplsFound(concrete_trait_id) => {
                 let info = db.core_info();
                 let trait_id = concrete_trait_id.trait_id(db);
@@ -253,8 +250,8 @@ impl InferenceError {
             InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 } => {
                 format!(
                     "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
-                    impl_id.format(db.upcast()),
-                    trait_type_id.name(db.upcast()),
+                    impl_id.format(db),
+                    trait_type_id.name(db),
                     ty0.debug(db),
                     ty1.debug(db)
                 )
@@ -606,8 +603,7 @@ impl<'db> Inference<'db> {
         stable_ptr: Option<SyntaxStablePtrId>,
     ) -> LocalImplVarId {
         let mut lookup_context = lookup_context;
-        lookup_context
-            .insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db.upcast()).0);
+        lookup_context.insert_module(concrete_trait_id.trait_id(self.db).module_file_id(self.db).0);
 
         let id = LocalImplVarId(self.impl_vars.len());
         if let Some(stable_ptr) = stable_ptr {
@@ -783,6 +779,12 @@ impl<'db> Inference<'db> {
             if self.type_assignment(LocalTypeVarId(id)).is_none() {
                 let ty = TypeLongId::Var(*var).intern(self.db);
                 return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred(ty)));
+            }
+        }
+        for (id, var) in self.const_vars.iter().enumerate() {
+            if !self.const_assignment.contains_key(&LocalConstVarId(id)) {
+                let infernence_var = InferenceVar::Const(var.id);
+                return Some((infernence_var, InferenceError::ConstNotInferred));
             }
         }
         fallback_ret

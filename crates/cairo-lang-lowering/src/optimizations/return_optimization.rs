@@ -21,7 +21,7 @@ use crate::{
 ///
 /// This optimization does backward analysis from return statement and keeps track of
 /// each returned value (see `ValueInfo`), whenever all the returned values are available at a block
-/// end and there was no side effects later, the end is replaced with a return statement.
+/// end and there were no side effects later, the end is replaced with a return statement.
 pub fn return_optimization(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
@@ -154,7 +154,7 @@ impl ReturnOptimizerContext<'_> {
     fn try_merge_match(
         &mut self,
         match_info: &MatchInfo,
-        infos: &[AnalyzerInfo],
+        infos: impl Iterator<Item = AnalyzerInfo>,
     ) -> Option<ReturnInfo> {
         let MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) = match_info else {
             return None;
@@ -561,9 +561,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         match_info: &'a MatchInfo,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let infos: Vec<_> = infos.collect();
-        let opt_return_info = self.try_merge_match(match_info, &infos);
-        Self::Info { opt_return_info }
+        Self::Info { opt_return_info: self.try_merge_match(match_info, infos) }
     }
 
     fn info_from_return(

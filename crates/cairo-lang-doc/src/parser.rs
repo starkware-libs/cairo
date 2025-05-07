@@ -16,9 +16,10 @@ use cairo_lang_syntax::node::ast::{Expr, ExprPath, ItemModule};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
+use itertools::Itertools;
 use pulldown_cmark::{
-    BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options, Parser as MarkdownParser,
-    Tag, TagEnd,
+    Alignment, BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options,
+    Parser as MarkdownParser, Tag, TagEnd,
 };
 
 use crate::db::DocGroup;
@@ -94,9 +95,11 @@ impl<'a> DocumentationCommentParser<'a> {
             None
         };
 
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
         let parser = MarkdownParser::new_with_broken_link_callback(
             &documentation_comment,
-            Options::empty(),
+            options,
             Some(&mut replacer),
         );
 
@@ -121,8 +124,8 @@ impl<'a> DocumentationCommentParser<'a> {
                 }
             };
         let mut prefix_list_item = false;
-
         let mut last_two_events = [None, None];
+        let mut table_alignment: Vec<Alignment> = Vec::new();
 
         for event in parser {
             let current_event = event.clone();
@@ -137,7 +140,7 @@ impl<'a> DocumentationCommentParser<'a> {
                     } else {
                         let text = {
                             if is_indented_code_block {
-                                format!("    {}", text)
+                                format!("    {text}")
                             } else {
                                 text.to_string()
                             }
@@ -150,7 +153,7 @@ impl<'a> DocumentationCommentParser<'a> {
                         write_list_item_prefix(&mut list_nesting, &mut tokens);
                         prefix_list_item = false;
                     }
-                    let complete_code = format!("`{}`", code);
+                    let complete_code = format!("`{code}`");
                     if let Some(link) = current_link.as_mut() {
                         link.label.push_str(&complete_code);
                     } else {
@@ -186,8 +189,7 @@ impl<'a> DocumentationCommentParser<'a> {
                                     )));
                                 } else {
                                     tokens.push(DocumentationCommentToken::Content(format!(
-                                        "\n```{}\n",
-                                        language
+                                        "\n```{language}\n"
                                     )));
                                 }
                             }
@@ -226,17 +228,24 @@ impl<'a> DocumentationCommentParser<'a> {
                                 }
                             }
                         }
-                        Tag::Paragraph => {
+                        Tag::Paragraph | Tag::TableRow => {
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                         Tag::Item => {
                             prefix_list_item = true;
                         }
+                        Tag::Table(alignment) => {
+                            table_alignment = alignment;
+                            tokens.push(DocumentationCommentToken::Content("\n\n".to_string()));
+                        }
+                        Tag::TableCell => {
+                            tokens.push(DocumentationCommentToken::Content("|".to_string()));
+                        }
                         _ => {}
                     }
                 }
                 Event::End(tag_end) => match tag_end {
-                    TagEnd::Heading(_) => {
+                    TagEnd::Heading(_) | TagEnd::Table => {
                         tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                     }
                     TagEnd::List(_) => {
@@ -249,6 +258,19 @@ impl<'a> DocumentationCommentParser<'a> {
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                     }
+                    TagEnd::TableHead => {
+                        tokens.push(DocumentationCommentToken::Content(format!(
+                            "|\n|{}|",
+                            table_alignment
+                                .iter()
+                                .map(|a| {
+                                    let (left, right) = get_alignment_markers(a);
+                                    format!("{left}---{right}")
+                                })
+                                .join("|")
+                        )));
+                        table_alignment.clear();
+                    }
                     TagEnd::CodeBlock => {
                         if !is_indented_code_block {
                             tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
@@ -260,10 +282,16 @@ impl<'a> DocumentationCommentParser<'a> {
                             tokens.push(DocumentationCommentToken::Link(link));
                         }
                     }
+                    TagEnd::TableRow => {
+                        tokens.push(DocumentationCommentToken::Content("|".to_string()));
+                    }
                     _ => {}
                 },
                 Event::SoftBreak => {
                     tokens.push(DocumentationCommentToken::Content("\n".to_string()));
+                }
+                Event::Rule => {
+                    tokens.push(DocumentationCommentToken::Content("\n___\n".to_string()));
                 }
                 _ => {}
             }
@@ -291,21 +319,20 @@ impl<'a> DocumentationCommentParser<'a> {
         item_id: DocumentableItemId,
         path: String,
     ) -> Option<DocumentableItemId> {
-        let syntax_node = item_id.stable_location(self.db.upcast())?.syntax_node(self.db.upcast());
+        let syntax_node = item_id.stable_location(self.db)?.syntax_node(self.db);
         let containing_module = self.find_module_file_containing_node(&syntax_node)?;
-        let mut resolver =
-            Resolver::new(self.db.upcast(), containing_module, InferenceId::NoContext);
+        let mut resolver = Resolver::new(self.db, containing_module, InferenceId::NoContext);
         let mut diagnostics = SemanticDiagnostics::default();
         let segments = self.parse_comment_link_path(path)?;
         resolver
             .resolve_generic_path(
                 &mut diagnostics,
-                segments.to_segments(self.db.upcast()),
+                segments.to_segments(self.db),
                 NotFoundItemType::Identifier,
                 ResolutionContext::Default,
             )
             .ok()?
-            .to_documentable_item_id(self.db.upcast())
+            .to_documentable_item_id(self.db)
     }
 
     /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
@@ -320,7 +347,7 @@ impl<'a> DocumentationCommentParser<'a> {
         .intern(self.db);
 
         let expr = Parser::parse_file_expr(
-            self.db.upcast(),
+            self.db,
             &mut DiagnosticsBuilder::default(),
             virtual_file,
             &path,
@@ -343,8 +370,7 @@ impl<'a> DocumentationCommentParser<'a> {
     /// If the node is located in a virtual file generated by a compiler plugin, this method will
     /// return the (sub)module of the main, user-written file that leads to the node.
     fn find_module_containing_node(&self, node: &SyntaxNode) -> Option<ModuleId> {
-        let db: &dyn SemanticGroup = self.db.upcast();
-        let syntax_db = db.upcast();
+        let db = self.db;
 
         // Get the main module of the main file that leads to the node.
         // The node may be located in a virtual file of a submodule.
@@ -352,7 +378,7 @@ impl<'a> DocumentationCommentParser<'a> {
         let main_module = {
             // Get the file where the node is located.
             // This might be a virtual file generated by a compiler plugin.
-            let node_file_id = node.stable_ptr().file_id(syntax_db);
+            let node_file_id = node.stable_ptr(db).file_id(db);
 
             // Get the root module of a file containing the node.
             let node_main_module = db.file_modules(node_file_id).ok()?.iter().copied().next()?;
@@ -366,13 +392,13 @@ impl<'a> DocumentationCommentParser<'a> {
 
         // Get the stack (bottom-up) of submodule names in the file containing the node, in the main
         // module, that lead to the node.
-        node.ancestors()
-            .filter_map(|node| ItemModule::cast(syntax_db, node))
+        node.ancestors(db)
+            .filter_map(|node| ItemModule::cast(db, node))
             .map(|item_module| {
                 item_module
-                    .stable_ptr()
-                    .name_green(syntax_db)
-                    .identifier(syntax_db)
+                    .stable_ptr(db)
+                    .name_green(db)
+                    .identifier(db)
             })
             // Buffer the stack to get DoubleEndedIterator.
             .collect::<Vec<_>>()
@@ -476,10 +502,10 @@ impl fmt::Display for DocumentationCommentToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DocumentationCommentToken::Content(ref content) => {
-                write!(f, "{}", content)
+                write!(f, "{content}")
             }
             DocumentationCommentToken::Link(ref link_token) => {
-                write!(f, "{}", link_token)
+                write!(f, "{link_token}")
             }
         }
     }
@@ -490,7 +516,7 @@ impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
         f.debug_struct("CommentLinkToken")
             .field("label", &self.label)
             .field("path", &self.path)
-            .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db.upcast())))
+            .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db)))
             .finish()
     }
 }
@@ -506,4 +532,15 @@ fn heading_level_to_markdown(heading_level: HeadingLevel) -> String {
         HeadingLevel::H5 => heading_char.repeat(5),
         HeadingLevel::H6 => heading_char.repeat(6),
     }
+}
+
+/// Maps [`Alignment`] to correct markdown markers.
+fn get_alignment_markers(alignment: &Alignment) -> (String, String) {
+    let (left, right) = match alignment {
+        Alignment::None => ("", ""),
+        Alignment::Left => (":", ""),
+        Alignment::Right => ("", ":"),
+        Alignment::Center => (":", ":"),
+    };
+    (left.to_string(), right.to_string())
 }

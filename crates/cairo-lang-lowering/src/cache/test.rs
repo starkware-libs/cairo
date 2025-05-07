@@ -59,8 +59,7 @@ fn test_cache_check(
     let diagnostics =
         new_db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
     let formatted_lowering_diagnostics = diagnostics.format(&new_db);
-    let combined_diagnostics =
-        format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
+    let combined_diagnostics = format!("{semantic_diagnostics}\n{formatted_lowering_diagnostics}");
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
     TestRunnerResult {
         outputs: OrderedHashMap::from([

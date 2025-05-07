@@ -18,7 +18,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::{Upcast, extract_matches};
+use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 use rstest::{fixture, rstest};
 use starknet_types_core::felt::Felt as Felt252;
@@ -62,7 +62,7 @@ fn checked_compile_to_sierra(
     auto_add_withdraw_gas: bool,
 ) -> cairo_lang_sierra::program::Program {
     let mut locked_db = db.lock().unwrap();
-    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
+    let add_withdraw_gas_flag_id = FlagId::new(&locked_db.snapshot(), "add_withdraw_gas");
     locked_db.set_flag(
         add_withdraw_gas_flag_id,
         Some(Arc::new(Flag::AddWithdrawGas(auto_add_withdraw_gas))),
@@ -76,7 +76,7 @@ fn checked_compile_to_sierra(
             }
             for (free_func_id, _) in db.module_free_functions(*module_id).unwrap().iter() {
                 if let Some(function) =
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), *free_func_id)
+                    ConcreteFunctionWithBodyId::from_no_generics_free(&db, *free_func_id)
                 {
                     requested_function_ids.push(function)
                 }
@@ -282,7 +282,7 @@ fn run_function(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
-    &[3].map(Felt252::from), Some(100000), Some(10280 + 3 * token_gas_cost(CostTokenType::Pedersen)),
+    &[3].map(Felt252::from), Some(100000), Some(10480 + 3 * token_gas_cost(CostTokenType::Pedersen)),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 fn run_function_test(

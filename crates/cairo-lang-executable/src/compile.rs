@@ -16,7 +16,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
-use cairo_lang_utils::{Intern, Upcast, write_comma_separated};
+use cairo_lang_utils::{Intern, write_comma_separated};
 use itertools::Itertools;
 
 use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
@@ -38,13 +38,13 @@ impl std::fmt::Display for CompiledFunction {
         writeln!(f)?;
         writeln!(f, "// header")?;
         for instruction in &self.wrapper.header {
-            writeln!(f, "{};", instruction)?;
+            writeln!(f, "{instruction};")?;
         }
         writeln!(f, "// sierra based code")?;
         write!(f, "{}", self.program)?;
         writeln!(f, "// footer")?;
         for instruction in &self.wrapper.footer {
-            writeln!(f, "{};", instruction)?;
+            writeln!(f, "{instruction};")?;
         }
         Ok(())
     }
@@ -56,6 +56,10 @@ pub struct ExecutableConfig {
     ///
     /// In general, syscalls are not allowed in executables, as they are currently not verified.
     pub allow_syscalls: bool,
+
+    /// Replace the panic flow with an unprovable opcode, this reduces code size but might make it
+    /// more difficult to debug.
+    pub unsafe_panic: bool,
 }
 
 /// Compile the function given by path.
@@ -66,12 +70,17 @@ pub fn compile_executable(
     diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompiledFunction> {
-    let mut db = RootDatabase::builder()
+    let mut builder = RootDatabase::builder();
+    builder
         .skip_auto_withdraw_gas()
         .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
         .detect_corelib()
-        .with_default_plugin_suite(executable_plugin_suite())
-        .build()?;
+        .with_default_plugin_suite(executable_plugin_suite());
+    if config.unsafe_panic {
+        builder.with_unsafe_panic();
+    }
+
+    let mut db = builder.build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
     let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_ids);
@@ -147,14 +156,14 @@ pub fn find_executable_functions(
 pub fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let semantic = wrapper.base_semantic_function(db);
     let wrapper_name = semantic.name(db);
-    let wrapper_full_path = semantic.full_path(db.upcast());
+    let wrapper_full_path = semantic.full_path(db);
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
     let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {
         return wrapper_full_path;
     };
-    format!("{}{}", wrapper_path_to_module, wrapped_name)
+    format!("{wrapper_path_to_module}{wrapped_name}")
 }
 
 /// Runs compiler for an executable function.
@@ -196,7 +205,7 @@ pub fn compile_executable_function_in_prepared_db(
     // Since we build the entry point asking for a single function - we know it will be first, and
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
-    assert_eq!(executable_func.id, executable.function_id(db.upcast()).unwrap().intern(db));
+    assert_eq!(executable_func.id, executable.function_id(db).unwrap().intern(db));
     let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {

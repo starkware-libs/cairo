@@ -69,7 +69,7 @@ where
         known_stack: Default::default(),
     });
     // Go over the statements, restarting whenever we see a branch or a label.
-    for statement in statements.into_iter() {
+    for statement in statements {
         let prev_len = handler.result.len();
         let location = statement.location.clone();
         state_opt = handler.handle_statement(state_opt, statement, get_lib_func_signature);

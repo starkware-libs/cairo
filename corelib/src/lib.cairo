@@ -8,7 +8,7 @@ use serde::Serde;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
     Felt252DictValue, Index, IndexView, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq,
-    PartialOrd, Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop,
+    PartialOrd, Rem, RemEq, Sub, SubEq, TryInto,
 };
 
 /// `usize` is an alias for `u32` type.
@@ -361,7 +361,7 @@ pub fn panic_with_felt252(err_code: felt252) -> never {
 /// ```
 #[inline(never)]
 pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
-    panic(array![ERR_CODE])
+    panic_with_felt252(ERR_CODE)
 }
 
 /// Panics if `cond` is false with the given `felt252` as error message.
@@ -428,6 +428,8 @@ pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
+mod fixed_size_array;
+
 pub mod iter;
 
 pub mod metaprogramming;
@@ -441,3 +443,5 @@ mod test;
 pub mod testing;
 
 pub mod to_byte_array;
+
+mod tuple;

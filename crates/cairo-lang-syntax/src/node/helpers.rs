@@ -42,7 +42,21 @@ impl GetIdentifier for ast::UsePathLeafPtr {
                 .identifier(db);
         }
         let ident_green = self.ident_green(db);
-        ident_green.identifier(db)
+        let ident = ident_green.identifier(db);
+        if ident != "self" {
+            return ident;
+        }
+        let mut node = self.0.lookup(db);
+        loop {
+            node = if let Some(parent) = node.parent(db) {
+                parent
+            } else {
+                return ident;
+            };
+            if matches!(node.kind(db), SyntaxKind::UsePathSingle) {
+                return ast::UsePathSingle::from_syntax_node(db, node).ident(db).identifier(db);
+            }
+        }
     }
 }
 impl GetIdentifier for ast::PathSegmentGreen {
@@ -441,70 +455,68 @@ impl QueryAttrs for SyntaxNode {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self.kind(db) {
             SyntaxKind::ItemConstant => {
-                ast::ItemConstant::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemConstant::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemModule => {
-                ast::ItemModule::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemModule::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::FunctionWithBody => {
-                ast::FunctionWithBody::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::FunctionWithBody::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemUse => {
-                ast::ItemUse::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemUse::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemExternFunction => {
-                ast::ItemExternFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemExternFunction::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemExternType => {
-                ast::ItemExternType::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemExternType::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemTrait => {
-                ast::ItemTrait::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemTrait::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemImpl => {
-                ast::ItemImpl::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemImpl::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemImplAlias => {
-                ast::ItemImplAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemImplAlias::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemStruct => {
-                ast::ItemStruct::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemStruct::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemEnum => {
-                ast::ItemEnum::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemEnum::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemTypeAlias => {
-                ast::ItemTypeAlias::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemTypeAlias::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::TraitItemFunction => {
-                ast::TraitItemFunction::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::TraitItemFunction::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::ItemInlineMacro => {
-                ast::ItemInlineMacro::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::ItemInlineMacro::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::AttributeList => {
-                ast::AttributeList::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::AttributeList::from_syntax_node(db, *self).attributes_elements(db)
             }
-            SyntaxKind::Member => {
-                ast::Member::from_syntax_node(db, self.clone()).attributes_elements(db)
-            }
+            SyntaxKind::Member => ast::Member::from_syntax_node(db, *self).attributes_elements(db),
             SyntaxKind::Variant => {
-                ast::Variant::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::Variant::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementBreak => {
-                ast::StatementBreak::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementBreak::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementContinue => {
-                ast::StatementContinue::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementContinue::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementReturn => {
-                ast::StatementReturn::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementReturn::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementLet => {
-                ast::StatementLet::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementLet::from_syntax_node(db, *self).attributes_elements(db)
             }
             SyntaxKind::StatementExpr => {
-                ast::StatementExpr::from_syntax_node(db, self.clone()).attributes_elements(db)
+                ast::StatementExpr::from_syntax_node(db, *self).attributes_elements(db)
             }
             _ => vec![],
         }
@@ -564,10 +576,10 @@ impl WrappedArgListHelper for WrappedArgList {
 
     fn left_bracket_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
         match self {
-            WrappedArgList::ParenthesizedArgList(args) => (&args.lparen(db)).into(),
-            WrappedArgList::BracketedArgList(args) => (&args.lbrack(db)).into(),
-            WrappedArgList::BracedArgList(args) => (&args.lbrace(db)).into(),
-            WrappedArgList::Missing(_) => self.into(),
+            WrappedArgList::ParenthesizedArgList(args) => args.lparen(db).stable_ptr(db).untyped(),
+            WrappedArgList::BracketedArgList(args) => args.lbrack(db).stable_ptr(db).untyped(),
+            WrappedArgList::BracedArgList(args) => args.lbrace(db).stable_ptr(db).untyped(),
+            WrappedArgList::Missing(_) => self.stable_ptr(db).untyped(),
         }
     }
 }
@@ -642,7 +654,7 @@ impl UsePathEx for ast::UsePath {
     fn get_item(&self, db: &dyn SyntaxGroup) -> ast::ItemUse {
         let mut node = self.as_syntax_node();
         loop {
-            let Some(parent) = node.parent() else {
+            let Some(parent) = node.parent(db) else {
                 unreachable!("UsePath is not under an ItemUse.");
             };
             match parent.kind(db) {
@@ -658,10 +670,7 @@ impl UsePathEx for ast::UsePath {
 impl UsePathLeaf {
     /// Retrieves the stable pointer of the name of the leaf.
     pub fn name_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
-        match self.alias_clause(db) {
-            ast::OptionAliasClause::Empty(_) => self.ident(db).stable_ptr().untyped(),
-            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db).stable_ptr().untyped(),
-        }
+        self.name(db).stable_ptr(db).untyped()
     }
 }
 

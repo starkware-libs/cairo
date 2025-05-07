@@ -1,7 +1,9 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ImplDefId, TraitId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::try_extract_matches;
 
 use crate::db::SemanticGroup;
@@ -37,6 +39,7 @@ mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
 fn resolve_trait_path(
+    syntax_db: &dyn SyntaxGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     trait_path_syntax: &ExprPath,
@@ -49,7 +52,7 @@ fn resolve_trait_path(
         )?,
         ResolvedGenericItem::Trait
     )
-    .ok_or_else(|| diagnostics.report(trait_path_syntax, NotATrait))
+    .ok_or_else(|| diagnostics.report(trait_path_syntax.stable_ptr(syntax_db), NotATrait))
 }
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve

@@ -6,7 +6,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::inline::apply_inlining;
+use crate::optimizations::strategy::OptimizationPhase;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -38,7 +38,7 @@ fn test_function_inlining(
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let after = if let Some(before) = &before {
         let mut after = before.deref().clone();
-        apply_inlining(db, function_id, &mut after).unwrap();
+        OptimizationPhase::ApplyInlining.apply(db, function_id, &mut after).unwrap();
         Some(after)
     } else {
         None

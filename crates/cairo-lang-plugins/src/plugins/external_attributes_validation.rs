@@ -40,8 +40,8 @@ fn get_diagnostics<Item: QueryAttrs>(
         let args = attr.clone().structurize(db).args;
         if args.is_empty() {
             diagnostics.push(PluginDiagnostic::error(
-                attr.stable_ptr(),
-                format!("Expected arguments. Supported args: {}", HIDDEN_ATTR),
+                attr.stable_ptr(db),
+                format!("Expected arguments. Supported args: {HIDDEN_ATTR}"),
             ));
             return;
         }
@@ -49,14 +49,14 @@ fn get_diagnostics<Item: QueryAttrs>(
             AttributeArgVariant::Unnamed(value) => {
                 let ast::Expr::Path(path) = value else {
                     diagnostics.push(PluginDiagnostic::error(
-                        value,
-                        format!("Expected identifier. Supported identifiers: {}", HIDDEN_ATTR),
+                        value.stable_ptr(db),
+                        format!("Expected identifier. Supported identifiers: {HIDDEN_ATTR}"),
                     ));
                     return;
                 };
                 let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
                     diagnostics.push(PluginDiagnostic::error(
-                        path,
+                        path.stable_ptr(db),
                         "Wrong type of argument. Currently only #[doc(hidden)] is supported."
                             .to_owned(),
                     ));
@@ -64,15 +64,15 @@ fn get_diagnostics<Item: QueryAttrs>(
                 };
                 if segment.ident(db).text(db) != HIDDEN_ATTR {
                     diagnostics.push(PluginDiagnostic::error(
-                        path,
+                        path.stable_ptr(db),
                         "Wrong type of argument. Currently only #[doc(hidden)] is supported."
                             .to_owned(),
                     ));
                 }
             }
             _ => diagnostics.push(PluginDiagnostic::error(
-                &arg.arg,
-                format!("This argument is not supported. Supported args: {}", HIDDEN_ATTR),
+                arg.arg.stable_ptr(db),
+                format!("This argument is not supported. Supported args: {HIDDEN_ATTR}"),
             )),
         });
     });
