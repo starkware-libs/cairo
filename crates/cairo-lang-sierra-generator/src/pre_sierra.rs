@@ -51,8 +51,6 @@ pub struct Function {
     pub entry_point: LabelId,
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
-    /// The return types from the function.
-    pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.

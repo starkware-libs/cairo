@@ -55,7 +55,6 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_append<felt252> = array_append<felt252>;
@@ -93,7 +92,6 @@ test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc array_append<felt252> = array_append<felt252>;
