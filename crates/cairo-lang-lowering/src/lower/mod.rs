@@ -365,10 +365,7 @@ pub fn lower_expr_while_let(
         )));
     }
 
-    let arms = vec![
-        MatchArmWrapper { patterns: patterns.into(), expr: Some(loop_expr.body) },
-        MatchArmWrapper { patterns: vec![], expr: None },
-    ];
+    let arms = vec![MatchArmWrapper::Arm(patterns, loop_expr.body), MatchArmWrapper::DefaultClause];
 
     lower_match::lower_match_arms(
         ctx,
