@@ -2,45 +2,45 @@ pub use starknet::storage::{
     StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
     StoragePointerWriteAccess,
 };
-use crate::array::{self, Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
-use crate::box::{self, Box, BoxTrait};
+use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait, self};
+use crate::box::{Box, BoxTrait, self};
 use crate::byte_array::{
-    self, ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait,
+    ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait, self,
 };
 use crate::bytes_31::{
-    self, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait, Felt252TryIntoBytes31, bytes31,
-    bytes31_const,
+    Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait, Felt252TryIntoBytes31, bytes31,
+    bytes31_const, self,
 };
-use crate::clone::{self, Clone};
+use crate::clone::{Clone, self};
 use crate::dict::{
-    self, Felt252Dict, Felt252DictTrait, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash,
+    Felt252Dict, Felt252DictTrait, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, self,
 };
-use crate::ec::{self, EcOp, EcPoint, EcState};
-use crate::gas::{self, BuiltinCosts, GasBuiltin, get_builtin_costs};
+use crate::ec::{EcOp, EcPoint, EcState, self};
+use crate::gas::{BuiltinCosts, GasBuiltin, get_builtin_costs, self};
 use crate::integer::{
-    self, Bitwise, Felt252IntoU256, Felt252TryIntoU128, Felt252TryIntoU16, Felt252TryIntoU32,
+    Bitwise, Felt252IntoU256, Felt252TryIntoU128, Felt252TryIntoU16, Felt252TryIntoU32,
     Felt252TryIntoU64, Felt252TryIntoU8, I128IntoFelt252, I16IntoFelt252, I32IntoFelt252,
     I64IntoFelt252, I8IntoFelt252, NumericLiteral, U128IntoFelt252, U16IntoFelt252, U32IntoFelt252,
-    U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, u128, u128_is_zero, u16, u256, u32, u64,
-    u8,
+    U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, self, u128, u128_is_zero, u16, u256,
+    u32, u64, u8,
 };
 #[feature("corelib-internal-use")]
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 use crate::integer::{u128_sqrt, u256_sqrt};
 use crate::iter::{FromIterator, IntoIterator, Iterator};
-use crate::nullable::{self, Nullable, NullableTrait, match_nullable, null, nullable_from_box};
+use crate::nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box, self};
 pub use crate::ops::Deref;
-use crate::option::Option::{self, None, Some};
-use crate::option::{self, OptionTrait};
-use crate::panics::{self, Panic, PanicResult, panic};
-use crate::pedersen::{self, Pedersen};
-use crate::poseidon::{self, Poseidon};
-use crate::result::Result::{self, Err, Ok};
-use crate::result::{self, ResultTrait};
-use crate::serde::{self, Serde};
+use crate::option::Option::{None, Some, self};
+use crate::option::{OptionTrait, self};
+use crate::panics::{Panic, PanicResult, panic, self};
+use crate::pedersen::{Pedersen, self};
+use crate::poseidon::{Poseidon, self};
+use crate::result::Result::{Err, Ok, self};
+use crate::result::{ResultTrait, self};
+use crate::serde::{Serde, self};
 #[feature("corelib-internal-use")]
-use crate::starknet::{self, System};
-use crate::string::{self, StringLiteral};
+use crate::starknet::{System, self};
+use crate::string::{StringLiteral, self};
 #[cfg(test)]
 use crate::test;
 #[deprecated(
@@ -68,14 +68,14 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
-#[feature("generic-divrem")]
 use crate::traits::{
-    self, Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
+    Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
+    self,
 };
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index, IndexView};
-use crate::zeroable::{self, NonZero, Zeroable};
+use crate::zeroable::{NonZero, Zeroable, self};
 use crate::{
     BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,
     BoolPartialEq, BoolSerde, Felt252Add, Felt252AddEq, Felt252Default, Felt252Felt252DictValue,
