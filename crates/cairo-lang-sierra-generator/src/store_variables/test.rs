@@ -838,11 +838,10 @@ fn consecutive_appends_with_branch() {
             "array_append(0, 1) -> (2)",
             "array_append(2, 3) -> (4)",
             "array_append(4, 5) -> (6)",
-            "store_temp<Array<felt252>>(6) -> (6)",
             "branch() { label_test::test::0() fallthrough() }",
             "label_test::test::0:",
             // Return.
-            "rename<felt252>(6) -> (7)",
+            "store_temp<Array<felt252>>(6) -> (7)",
             "return(7)",
         ]
     );

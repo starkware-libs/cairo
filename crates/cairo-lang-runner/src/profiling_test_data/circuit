@@ -35,33 +35,30 @@ eval_circuit
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 50: 22 (eval_circuit<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([0], [1], [35], [33], [8], [36], [37]) { fallthrough([38], [39], [40]) 80([41], [42], [43], [44]) })
-  statement 21: 7 (add_circuit_input<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([10], [19]) { fallthrough([20]) 32([21]) })
-  statement 43: 7 (add_circuit_input<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([21], [32]) { fallthrough([33]) 116([34]) })
-  statement 6: 6 (try_into_circuit_modulus([7]) { fallthrough([8]) 126() })
-  statement 45: 5 (get_circuit_descriptor<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>() -> ([35]))
-  statement 52: 5 (get_circuit_output<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>, core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>>([40]) -> ([45], [46]))
-  statement 78: 5 (store_temp<core::panics::PanicResult::<(core::circuit::u384,)>>([57]) -> ([57]))
+  statement 49: 22 (eval_circuit<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([0], [1], [35], [33], [8], [36], [37]) { fallthrough([38], [39], [40]) 77([41], [42], [43], [44]) })
+  statement 20: 7 (add_circuit_input<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([10], [19]) { fallthrough([20]) 31([21]) })
+  statement 42: 7 (add_circuit_input<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>([21], [32]) { fallthrough([33]) 111([34]) })
+  statement 6: 6 (try_into_circuit_modulus([7]) { fallthrough([8]) 121() })
+  statement 44: 5 (get_circuit_descriptor<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>() -> ([35]))
+  statement 51: 5 (get_circuit_output<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>, core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>>([40]) -> ([45], [46]))
+  statement 75: 5 (store_temp<core::panics::PanicResult::<(core::circuit::u384,)>>([57]) -> ([57]))
   statement 5: 4 (store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([7]) -> ([7]))
   statement 19: 4 (store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([19]) -> ([19]))
-  statement 42: 4 (store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([32]) -> ([32]))
+  statement 41: 4 (store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([32]) -> ([32]))
   statement 18: 2 (store_temp<CircuitInputAccumulator<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>>([10]) -> ([10]))
-  statement 55: 2 (u96_limbs_less_than_guarantee_verify<4>([46]) { fallthrough([47]) 70([48]) })
-  statement 57: 2 (u96_limbs_less_than_guarantee_verify<3>([47]) { fallthrough([49]) 67([50]) })
-  statement 59: 2 (u96_limbs_less_than_guarantee_verify<2>([49]) { fallthrough([51]) 64([52]) })
-  statement 20: 1 (store_temp<RangeCheck96>([9]) -> ([9]))
-  statement 48: 1 (store_temp<BoundedInt<0, 0>>([36]) -> ([36]))
-  statement 49: 1 (store_temp<BoundedInt<1, 1>>([37]) -> ([37]))
-  statement 51: 1 (branch_align() -> ())
-  statement 53: 1 (store_temp<AddMod>([38]) -> ([38]))
-  statement 54: 1 (store_temp<MulMod>([39]) -> ([39]))
-  statement 62: 1 (store_temp<U96Guarantee>([53]) -> ([54]))
-  statement 63: 1 (jump() { 72() })
-  statement 72: 1 (u96_guarantee_verify([9], [54]) -> ([55]))
-  statement 75: 1 (store_temp<AddMod>([38]) -> ([38]))
-  statement 76: 1 (store_temp<MulMod>([39]) -> ([39]))
-  statement 77: 1 (store_temp<RangeCheck96>([55]) -> ([55]))
-  statement 79: 1 (return([38], [39], [55], [57]))
+  statement 52: 2 (u96_limbs_less_than_guarantee_verify<4>([46]) { fallthrough([47]) 67([48]) })
+  statement 54: 2 (u96_limbs_less_than_guarantee_verify<3>([47]) { fallthrough([49]) 64([50]) })
+  statement 56: 2 (u96_limbs_less_than_guarantee_verify<2>([49]) { fallthrough([51]) 61([52]) })
+  statement 47: 1 (store_temp<BoundedInt<0, 0>>([36]) -> ([36]))
+  statement 48: 1 (store_temp<BoundedInt<1, 1>>([37]) -> ([37]))
+  statement 50: 1 (branch_align() -> ())
+  statement 59: 1 (store_temp<U96Guarantee>([53]) -> ([54]))
+  statement 60: 1 (jump() { 69() })
+  statement 69: 1 (u96_guarantee_verify([9], [54]) -> ([55]))
+  statement 72: 1 (store_temp<AddMod>([38]) -> ([38]))
+  statement 73: 1 (store_temp<MulMod>([39]) -> ([39]))
+  statement 74: 1 (store_temp<RangeCheck96>([55]) -> ([55]))
+  statement 76: 1 (return([38], [39], [55], [57]))
 Weight by concrete libfunc:
   libfunc eval_circuit<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>: 22
   libfunc add_circuit_input<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>: 14
@@ -71,22 +68,22 @@ Weight by concrete libfunc:
   libfunc get_circuit_output<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>, core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>>: 5
   libfunc store_temp<core::panics::PanicResult::<(core::circuit::u384,)>>: 5
   libfunc store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>: 4
-  libfunc store_temp<AddMod>: 2
   libfunc store_temp<CircuitInputAccumulator<Circuit<(core::circuit::MulModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::SubModGate::<core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>)>>>: 2
-  libfunc store_temp<MulMod>: 2
-  libfunc store_temp<RangeCheck96>: 2
   libfunc u96_limbs_less_than_guarantee_verify<2>: 2
   libfunc u96_limbs_less_than_guarantee_verify<3>: 2
   libfunc u96_limbs_less_than_guarantee_verify<4>: 2
   libfunc branch_align: 1
   libfunc jump: 1
+  libfunc store_temp<AddMod>: 1
   libfunc store_temp<BoundedInt<0, 0>>: 1
   libfunc store_temp<BoundedInt<1, 1>>: 1
+  libfunc store_temp<MulMod>: 1
+  libfunc store_temp<RangeCheck96>: 1
   libfunc store_temp<U96Guarantee>: 1
   libfunc u96_guarantee_verify: 1
   return: 1
 Weight by generic libfunc:
-  libfunc store_temp: 28
+  libfunc store_temp: 25
   libfunc eval_circuit: 22
   libfunc add_circuit_input: 14
   libfunc try_into_circuit_modulus: 6
@@ -98,20 +95,20 @@ Weight by generic libfunc:
   libfunc u96_guarantee_verify: 1
   return: 1
 Weight by user function (inc. generated):
-  function test::eval_circuit: 90
+  function test::eval_circuit: 87
 Weight by original user function (exc. generated):
-  function test::eval_circuit: 90
+  function test::eval_circuit: 87
 Weight by Cairo function:
-  function core::circuit::AddInputResultImpl::next: 25
   function core::circuit::EvalCircuitImpl::eval_ex: 25
+  function core::circuit::AddInputResultImpl::next: 24
   function core::circuit::U384TryIntoCircuitModulus::try_into: 10
   function lib.cairo::eval_circuit: 9
-  function core::circuit::IntoU96GuaranteeImplByNext::into_u96_guarantee: 8
+  function core::circuit::IntoU96GuaranteeImplByNext::into_u96_guarantee: 6
   function core::circuit::CircuitOutputsImpl::get_output: 5
   function core::circuit::EvalCircuitImpl::eval: 5
   function core::circuit::IntoU96GuaranteeImplFinal::into_u96_guarantee: 2
   function core::circuit::DestructU96Guarantee::destruct: 1
 Weight by Sierra stack trace:
-  test::eval_circuit: 90
+  test::eval_circuit: 87
 Weight by Cairo stack trace:
-  test::eval_circuit: 90
+  test::eval_circuit: 87
