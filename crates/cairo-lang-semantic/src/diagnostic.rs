@@ -13,6 +13,8 @@ use cairo_lang_diagnostics::{
     ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
+use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -1011,6 +1013,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
                 "Type constraints syntax is not enabled in the current crate.".into()
             }
+            SemanticDiagnosticKind::PatternMissingArgs(path) => {
+                format!(
+                    "Pattern missing subpattern for the payload of variant. Consider using `{}(_)`",
+                    path.elements(db).into_iter().map(|seg| seg.identifier(db)).join("::")
+                )
+            }
         }
     }
 
@@ -1048,6 +1056,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::PatternMissingArgs(_)
             | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
@@ -1439,6 +1448,7 @@ pub enum SemanticDiagnosticKind {
         concrete_trait_type_id: ConcreteTraitTypeId,
     },
     TypeConstraintsSyntaxNotEnabled,
+    PatternMissingArgs(ast::ExprPath),
 }
 
 /// The kind of an expression with multiple possible return types.
