@@ -699,19 +699,21 @@ fn lower_tuple_match_arm(
         .get(&match_tuple_ctx.current_path)
         .or(match_tuple_ctx.otherwise_variant.as_ref())
         .ok_or_else(|| {
-            LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                match_tuple_ctx.match_location.lookup_intern(ctx.db),
-                MatchError(MatchError {
-                    kind: match_type,
-                    error: MatchDiagnostic::MissingMatchArm(format!(
-                        "({})",
-                        match_tuple_ctx.current_path.variants
-                            .iter()
-                            .map(|variant| variant.id.name(ctx.db))
-                            .join(", ")
-                    )),
-                }),
-            ))
+            let variants_string = format!(
+                "({})",
+                match_tuple_ctx
+                    .current_path
+                    .variants
+                    .iter()
+                    .map(|variant| variant.id.name(ctx.db))
+                    .join(", ")
+            );
+            report_missing_arm_error(
+                ctx,
+                match_tuple_ctx.match_location,
+                match_type,
+                variants_string,
+            )
         })?;
     let pattern = pattern_path.pattern_index.map(|i| {
         arms[pattern_path.arm_index]
@@ -1048,21 +1050,10 @@ pub(crate) fn lower_concrete_enum_match(
     let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let PatternPath { arm_index, pattern_index } = variant_map
-                .get(concrete_variant)
-                .or(otherwise_variant.as_ref())
-                .ok_or_else(|| {
-                    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.lookup_intern(ctx.db),
-                        MatchError(MatchError {
-                            kind: match_type,
-                            error: MatchDiagnostic::MissingMatchArm(format!(
-                                "{}",
-                                concrete_variant.id.name(ctx.db)
-                            )),
-                        }),
-                    ))
-                })?;
+            let PatternPath { arm_index, pattern_index } =
+                variant_map.get(concrete_variant).or(otherwise_variant.as_ref()).ok_or_else(
+                    || report_missing_variant_error(ctx, location, match_type, concrete_variant),
+                )?;
             let arm = &arms[*arm_index];
 
             let mut subscope = create_subscope(ctx, builder);
@@ -1204,21 +1195,10 @@ pub(crate) fn lower_optimized_extern_match(
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
 
-            let PatternPath { arm_index, pattern_index } = variant_map
-                .get(concrete_variant)
-                .or(otherwise_variant.as_ref())
-                .ok_or_else(|| {
-                    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
-                        location.lookup_intern(ctx.db),
-                        MatchError(MatchError {
-                            kind: match_type,
-                            error: MatchDiagnostic::MissingMatchArm(format!(
-                                "{}",
-                                concrete_variant.id.name(ctx.db)
-                            )),
-                        }),
-                    ))
-                })?;
+            let PatternPath { arm_index, pattern_index } =
+                variant_map.get(concrete_variant).or(otherwise_variant.as_ref()).ok_or_else(
+                    || report_missing_variant_error(ctx, location, match_type, concrete_variant),
+                )?;
 
             let arm = &match_arms[*arm_index];
             let pattern =
@@ -1821,4 +1801,31 @@ fn numeric_match_optimization_threshold(
             _ => panic!("Wrong type flag `{flag:?}`."),
         })
         .unwrap_or(default_threshold)
+}
+
+/// Reports a missing arm error using `variants` string as part of the message,
+/// and returns a [LoweringFlowError].
+fn report_missing_arm_error(
+    ctx: &mut LoweringContext<'_, '_>,
+    location: LocationId,
+    match_type: MatchKind,
+    variants: String,
+) -> LoweringFlowError {
+    LoweringFlowError::Failed(ctx.diagnostics.report_by_location(
+        location.lookup_intern(ctx.db),
+        MatchError(MatchError {
+            kind: match_type,
+            error: MatchDiagnostic::MissingMatchArm(variants),
+        }),
+    ))
+}
+
+/// Reports a missing arm error and returns a [LoweringFlowError].
+fn report_missing_variant_error(
+    ctx: &mut LoweringContext<'_, '_>,
+    location: LocationId,
+    match_type: MatchKind,
+    variant: &ConcreteVariant,
+) -> LoweringFlowError {
+    report_missing_arm_error(ctx, location, match_type, variant.id.name(ctx.db).to_string())
 }
