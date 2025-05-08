@@ -825,6 +825,14 @@ error: Inner patterns are not allowed in this context.
         Some(Some(x)) => x,
              ^^^^^^^
 
+error: Missing match arm: `Some` not covered.
+ --> lib.cairo:2:5-5:5
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
 
@@ -1716,6 +1724,275 @@ error: Unreachable pattern arm.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test Match Tuple with Enum with Tuple with Enum and variable use.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::Two((t, _)), A::One(_)) => t + 3,
+        (A::Two(_), _) => 2,
+        (A::One(_), A::One(_)) => 1,
+        (_, A::Three(((_, B::One(x)), _))) => x,
+        (_, A::Three(((_, _), x))) => x,
+        (_, _) => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (felt252, felt252),
+    Three: ((felt252, B), felt252),
+    Four: (felt252, felt252, felt252, felt252),
+}
+
+#[derive(Copy, Drop)]
+enum B {
+    One: felt252,
+    Two: (felt252, felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unreachable pattern arm.
+ --> lib.cairo:20:9
+        (_, A::Three(((_, _), x))) => x,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Inner patterns are not allowed in this context.
+ --> lib.cairo:19:27
+        (_, A::Three(((_, B::One(x)), _))) => x,
+                          ^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test Match Enum with inner triple Tuple and variable use.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Two(((_, (t,)), _)) => t + 3,
+        _ => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: ((felt252, (felt252,)), felt252),
+    Three: ((felt252, B), felt252),
+    Four: (felt252, felt252, felt252, felt252),
+}
+
+#[derive(Copy, Drop)]
+enum B {
+    One: felt252,
+    Two: (felt252, felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v2) => blk2,
+    A::Three(v3) => blk3,
+    A::Four(v4) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk2:
+Statements:
+  (v5: (core::felt252, (core::felt252,)), v6: core::felt252) <- struct_destructure(v2)
+  (v7: core::felt252, v8: (core::felt252,)) <- struct_destructure(v5)
+  (v9: core::felt252) <- struct_destructure(v8)
+  (v10: core::felt252) <- 3
+  (v11: core::felt252) <- core::felt252_add(v9, v10)
+End:
+  Return(v11)
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v12: core::felt252) <- 6
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Test Match Enum with inner triple Tuple with inner Enum and variable use.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Three(((_, (B::One(t),)), _)) => t + 3,
+        _ => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (felt252, felt252),
+    Three: ((felt252, (B,)), felt252),
+    Four: (felt252, felt252, felt252, felt252),
+}
+
+#[derive(Copy, Drop)]
+enum B {
+    One: felt252,
+    Two: (felt252, felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Inner patterns are not allowed in this context.
+ --> lib.cairo:16:24
+        A::Three(((_, (B::One(t),)), _)) => t + 3,
+                       ^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test Match triple Tuple and variable use.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: ((felt252, (A,)), felt252)) -> felt252 {
+    match a {
+        ((_, (A::One(t),)), _) => t + 3,
+        _ => 6,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (felt252, felt252),
+    Three: ((felt252, (B,)), felt252),
+    Four: (felt252, felt252, felt252, felt252),
+}
+
+#[derive(Copy, Drop)]
+enum B {
+    One: felt252,
+    Two: (felt252, felt252),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported matched value. Currently, match on tuples only supports enums as tuple members.
+ --> lib.cairo:15:11
+    match a {
+          ^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test Match unreachable Otherwise.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: Option<felt252>) -> felt252 {
+    match a {
+        Some(_) => 5,
+        None => 6,
+        _ => 7,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 5
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 6
+End:
+  Return(v4)
+
 
 //! > ==========================================================================
 
