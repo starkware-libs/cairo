@@ -1043,109 +1043,17 @@ pub(crate) fn lower_concrete_enum_match(
 
     let mut builder_context =
         MatchArmsLoweringContext::new(ctx, builder, arms, concrete_enum_id, match_type)?;
-    let variants_block_builders = concrete_variants
-        .iter()
-        .map(|concrete_variant| {
-            let mut subscope = builder_context.add_scope(ctx);
-            let pattern_path = builder_context.pattern_path_for_variant(
-                ctx,
-                location,
-                match_type,
-                concrete_variant,
-            )?;
-            let pattern = builder_context.pattern(ctx, pattern_path);
 
-            /// Lower the pattern of a concrete enum variant.
-            fn lower_concrete_enum_pattern(
-                ctx: &mut LoweringContext<'_, '_>,
-                builder_context: &mut MatchArmsLoweringContext<'_>,
-                subscope: &mut BlockBuilder,
-                concrete_variant: &ConcreteVariant,
-                default_location: LocationId,
-                inner_pattern: Option<PatternId>,
-                n_snapshots: usize,
-            ) -> Result<(), LoweringFlowError> {
-                match inner_pattern {
-                    Some(inner_pattern) => {
-                        let pattern_location = ctx.get_location(
-                            ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
-                        );
+    let pattern_builder =
+        ConcreteEnumVariantPatternBuilder { n_snapshots, default_location: location };
 
-                        let var_id = ctx.new_var(VarRequest {
-                            ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                            location: pattern_location,
-                        });
-                        builder_context.arm_var_ids.push(vec![var_id]);
-                        let variant_expr = LoweredExpr::AtVariable(VarUsage {
-                            var_id,
-                            location: pattern_location,
-                        });
-
-                        lower_single_pattern(ctx, subscope, inner_pattern, variant_expr)
-                    }
-                    None => {
-                        let var_id = ctx.new_var(VarRequest {
-                            ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                            location: default_location,
-                        });
-                        builder_context.arm_var_ids.push(vec![var_id]);
-                        Ok(())
-                    }
-                }
-            }
-
-            let lowering_inner_pattern_result = match pattern {
-                Some(Pattern::EnumVariant(PatternEnumVariant {
-                    inner_pattern: Some(inner_pattern),
-                    ..
-                })) => {
-                    let inner_pattern = *inner_pattern;
-                    let stable_ptr = pattern.unwrap().stable_ptr().untyped();
-                    let pattern_location = ctx.get_location(stable_ptr);
-                    lower_concrete_enum_pattern(
-                        ctx,
-                        &mut builder_context,
-                        &mut subscope,
-                        concrete_variant,
-                        pattern_location,
-                        Some(inner_pattern),
-                        n_snapshots,
-                    )
-                }
-                Some(
-                    Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
-                    | Pattern::Otherwise(_),
-                )
-                | None => {
-                    let stable_ptr = pattern.map(|p| p.stable_ptr().untyped());
-                    let location = stable_ptr
-                        .map(|stable_ptr| ctx.get_location(stable_ptr))
-                        .unwrap_or(location);
-                    lower_concrete_enum_pattern(
-                        ctx,
-                        &mut builder_context,
-                        &mut subscope,
-                        concrete_variant,
-                        location,
-                        None,
-                        n_snapshots,
-                    )
-                }
-                _ => unreachable!(
-                    "function `get_variant_to_arm_map` should have reported every other pattern \
-                     type"
-                ),
-            };
-
-            Ok(MatchLeafBuilder {
-                arm_index: pattern_path.arm_index,
-                lowering_result: lowering_inner_pattern_result,
-                builder: subscope,
-            })
-        })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<LoweringResult<Vec<_>>>()?;
+    let variants_block_builders = pattern_builder.build_enum_block_variants(
+        ctx,
+        &mut builder_context,
+        location,
+        match_type,
+        &concrete_variants,
+    )?;
 
     let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
@@ -1206,91 +1114,14 @@ pub(crate) fn lower_optimized_extern_match(
         match_type,
     )?;
 
-    let variants_block_builders = concrete_variants
-        .iter()
-        .map(|concrete_variant| {
-            let mut subscope = builder_context.add_scope(ctx);
-            let pattern_path = builder_context.pattern_path_for_variant(
-                ctx,
-                location,
-                match_type,
-                concrete_variant,
-            )?;
-            let pattern = builder_context.pattern(ctx, pattern_path);
-
-            /// Lower the pattern of an extern enum variant.
-            fn lower_extern_pattern(
-                ctx: &mut LoweringContext<'_, '_>,
-                builder_context: &mut MatchArmsLoweringContext<'_>,
-                subscope: &mut BlockBuilder,
-                concrete_variant: &ConcreteVariant,
-                inner_pattern: Option<PatternId>,
-                extern_enum: &LoweredExprExternEnum,
-            ) -> Result<(), LoweringFlowError> {
-                let location = extern_enum.location;
-                let input_tys =
-                    match_extern_variant_arm_input_types(ctx, concrete_variant.ty, extern_enum);
-                let mut input_vars = input_tys
-                    .into_iter()
-                    .map(|ty| ctx.new_var(VarRequest { ty, location }))
-                    .collect_vec();
-                // Bind the arm inputs to implicits and semantic variables.
-                builder_context.arm_var_ids.push(input_vars.clone());
-
-                match_extern_arm_ref_args_bind(ctx, &mut input_vars, extern_enum, subscope);
-                let variant_expr =
-                    extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
-
-                match inner_pattern {
-                    Some(inner_pattern) => {
-                        lower_single_pattern(ctx, subscope, inner_pattern, variant_expr)
-                    }
-                    None => Ok(()),
-                }
-            }
-
-            let lowering_inner_pattern_result = match pattern {
-                Some(Pattern::EnumVariant(PatternEnumVariant {
-                    inner_pattern: Some(inner_pattern),
-                    ..
-                })) => {
-                    let inner_pattern = *inner_pattern;
-                    lower_extern_pattern(
-                        ctx,
-                        &mut builder_context,
-                        &mut subscope,
-                        concrete_variant,
-                        Some(inner_pattern),
-                        &extern_enum,
-                    )
-                }
-                Some(
-                    Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
-                    | Pattern::Otherwise(_),
-                )
-                | None => lower_extern_pattern(
-                    ctx,
-                    &mut builder_context,
-                    &mut subscope,
-                    concrete_variant,
-                    None,
-                    &extern_enum,
-                ),
-                _ => unreachable!(
-                    "function `get_variant_to_arm_map` should have reported every other pattern \
-                     type"
-                ),
-            };
-
-            Ok(MatchLeafBuilder {
-                arm_index: pattern_path.arm_index,
-                lowering_result: lowering_inner_pattern_result,
-                builder: subscope,
-            })
-        })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<LoweringResult<Vec<_>>>()?;
+    let pattern_builder = ExternEnumVariantPatternBuilder { extern_enum: extern_enum.clone() };
+    let variants_block_builders = pattern_builder.build_enum_block_variants(
+        ctx,
+        &mut builder_context,
+        location,
+        match_type,
+        &concrete_variants,
+    )?;
 
     let empty_match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
@@ -1323,6 +1154,170 @@ pub(crate) fn lower_optimized_extern_match(
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
+}
+
+/// Common trait for preparing per-variant lowering scopes, regardless of
+/// whether the enum is *concrete* or *extern*. This trait contains common
+/// code for preparing each pattern for lowering, while assuming it is
+/// an [Pattern::EnumVariant] or [Pattern::Otherwise].
+/// An internal pattern, if exists, is passed to
+/// `lower_concrete_enum_variant`.
+///
+/// Implementors are responsible for implementing `lower_concrete_enum_variant`.
+///
+/// Call-site entry point: `build_enum_block_variants`.
+trait EnumVariantScopeBuilder {
+    /// Lowers a concrete enum variant pattern. This should:
+    /// * Allocate the arm-introduced variables for each variant.
+    /// * Bind those variables to the semantic model.
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut MatchArmsLoweringContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError>;
+
+    /// Orchestrates step 2 of the high-level algorithm:
+    /// For every `concrete_variant` in `concrete_variants`:
+    /// * create a fresh `subscope`.
+    /// * delegate to actual lowering to `lower_concrete_enum_variant`.
+    /// * collect the `MatchLeafBuilder` describing that arm.
+    fn build_enum_block_variants(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut MatchArmsLoweringContext<'_>,
+        location: LocationId,
+        match_type: MatchKind,
+        concrete_variants: &[ConcreteVariant],
+    ) -> Result<Vec<MatchLeafBuilder>, LoweringFlowError> {
+        concrete_variants
+            .iter()
+            .map(|concrete_variant| {
+                let mut subscope = builder_context.add_scope(ctx);
+                let pattern_path = builder_context.pattern_path_for_variant(
+                    ctx,
+                    location,
+                    match_type,
+                    concrete_variant,
+                )?;
+                let pattern = builder_context.pattern(ctx, pattern_path);
+
+                let lowering_inner_pattern_result = match pattern {
+                    Some(Pattern::EnumVariant(PatternEnumVariant {
+                        inner_pattern: Some(inner_pattern),
+                        ..
+                    })) => {
+                        let inner_pattern = *inner_pattern;
+                        self.lower_concrete_enum_variant(
+                            ctx,
+                            builder_context,
+                            &mut subscope,
+                            concrete_variant,
+                            Some(inner_pattern),
+                        )
+                    }
+                    Some(
+                        Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
+                        | Pattern::Otherwise(_),
+                    )
+                    | None => self.lower_concrete_enum_variant(
+                        ctx,
+                        builder_context,
+                        &mut subscope,
+                        concrete_variant,
+                        None,
+                    ),
+                    _ => unreachable!(
+                        "function `get_variant_to_arm_map` should have reported every other \
+                         pattern type"
+                    ),
+                };
+
+                Ok(MatchLeafBuilder {
+                    arm_index: pattern_path.arm_index,
+                    lowering_result: lowering_inner_pattern_result,
+                    builder: subscope,
+                })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .collect::<LoweringResult<Vec<_>>>()
+    }
+}
+
+/// Implements the [EnumVariantScopeBuilder] trait for external enum variants.
+/// This struct is used to prepare for lowering match arms for external enums.
+struct ExternEnumVariantPatternBuilder {
+    extern_enum: LoweredExprExternEnum,
+}
+
+impl EnumVariantScopeBuilder for ExternEnumVariantPatternBuilder {
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut MatchArmsLoweringContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError> {
+        let location = self.extern_enum.location;
+        let input_tys =
+            match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &self.extern_enum);
+        let mut input_vars =
+            input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec();
+        builder_context.arm_var_ids.push(input_vars.clone());
+        // Bind the arm inputs to implicits and semantic variables.
+        match_extern_arm_ref_args_bind(ctx, &mut input_vars, &self.extern_enum, subscope);
+
+        let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
+        match inner_pattern {
+            Some(inner_pattern) => lower_single_pattern(ctx, subscope, inner_pattern, variant_expr),
+            None => Ok(()),
+        }
+    }
+}
+
+/// Implements the [EnumVariantScopeBuilder] trait for concrete enum variants.
+/// This struct is used to prepare for lowering match arms for concrete enums.
+struct ConcreteEnumVariantPatternBuilder {
+    n_snapshots: usize,
+    default_location: LocationId,
+}
+
+impl EnumVariantScopeBuilder for ConcreteEnumVariantPatternBuilder {
+    fn lower_concrete_enum_variant(
+        &self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder_context: &mut MatchArmsLoweringContext<'_>,
+        subscope: &mut BlockBuilder,
+        concrete_variant: &ConcreteVariant,
+        inner_pattern: Option<PatternId>,
+    ) -> Result<(), LoweringFlowError> {
+        if let Some(inner_pattern) = inner_pattern {
+            let pattern_location = ctx.get_location(
+                ctx.function_body.arenas.patterns[inner_pattern].stable_ptr().untyped(),
+            );
+
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, self.n_snapshots),
+                location: pattern_location,
+            });
+            builder_context.arm_var_ids.push(vec![var_id]);
+            let variant_expr =
+                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
+
+            lower_single_pattern(ctx, subscope, inner_pattern, variant_expr)
+        } else {
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, self.n_snapshots),
+                location: self.default_location,
+            });
+            builder_context.arm_var_ids.push(vec![var_id]);
+            Ok(())
+        }
+    }
 }
 
 /// A context for lowering match arms and tracking generated blocks and input vars.
