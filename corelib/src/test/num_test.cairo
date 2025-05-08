@@ -3,9 +3,6 @@ use crate::num::traits::{
     OverflowingSub, Pow, SaturatingAdd, SaturatingMul, SaturatingSub, WrappingAdd, WrappingMul,
     WrappingSub,
 };
-#[feature("generic-divrem")]
-use crate::traits::DivRem as DivRemLegacy;
-use crate::zeroable::NonZero;
 
 
 #[test]
@@ -472,55 +469,47 @@ fn test_pow() {
 }
 
 
-// Bridge-driven generic division: u32 / u32
 #[test]
-fn test_divrem_generic_u32() {
-    let lhs: u32 = 27;
-    let rhs: NonZero<u32> = 4_u32.try_into().unwrap();
-
-    let (q, r) = DivRem::<u32, u32>::div_rem(lhs, rhs);
-
-    assert_eq!(q, 6);
-    assert_eq!(r, 3);
+fn test_divrem() {
+    assert_eq!(DivRem::<u32, u32>::div_rem(27, 4), (6, 3));
+    assert_eq!(DivRem::<u256, u128>::div_rem(20, 6), (3, 2));
+    assert_eq!(DivRem::<u8, u8>::div_rem(5, 9), (0, 5));
+    assert_eq!(DivRem::<u16, u16>::div_rem(0xfffb, 0x10), (0x0fff, 0xb));
+    assert_eq!(DivRem::<u32, u32>::div_rem(0x1234_5678, 1), (0x1234_5678, 0));
+    assert_eq!(DivRem::<u64, u64>::div_rem(0, 17), (0, 0));
+    assert_eq!(DivRem::<u128, u128>::div_rem(123_456, 123_456), (1, 0));
+    assert_eq!(
+        DivRem::<u128, u128>::div_rem(core::num::traits::Bounded::<u128>::MAX, 10),
+        (34028236692093846346337460743176821145_u128, 5),
+    );
+    assert_eq!(DivRem::<u256, u256>::div_rem(1000, 33), (30, 10));
+    assert_eq!(DivRem::<u256, u128>::div_rem(123, 10), (12, 3));
 }
 
 
-// Legacy API still works
 #[test]
-fn test_divrem_legacy_u32() {
-    let lhs: u32 = 27;
-    let rhs: NonZero<u32> = 4_u32.try_into().unwrap();
-
-    let (q, r) = DivRemLegacy::<u32>::div_rem(lhs, rhs);
-
-    assert_eq!(q, 6);
-    assert_eq!(r, 3);
+fn test_divrem_legacy() {
+    assert_eq!(crate::traits::DivRem::div_rem(27_u32, 4), (6, 3));
+    assert_eq!(crate::traits::DivRem::div_rem(0x12_u8, 1), (0x12, 0));
+    assert_eq!(crate::traits::DivRem::div_rem(5_u16, 7), (0, 5));
+    assert_eq!(crate::traits::DivRem::div_rem(1_000_000_u64, 1_000), (1_000, 0));
+    assert_eq!(
+        crate::traits::DivRem::div_rem(
+            Bounded::<u128>::MAX, Bounded::<u128>::MAX.try_into().unwrap(),
+        ),
+        (1, 0),
+    );
+    assert_eq!(crate::traits::DivRem::div_rem(20, 6), (3_u256, 2_u256));
 }
 
-#[test]
-fn test_divrem_u256_by_u128() {
-    // Heterogeneous example: u256 / u128.
-    // We supply a one-off impl in the test so corelib proper remains minimal.
-
-    let lhs: u256 = 20;
-    let rhs: NonZero<u128> = 6_u128.try_into().unwrap();
-
-    let (q, r) = DivRem::<u256, u128>::div_rem(lhs, rhs);
-    assert_eq!(q, 3_u256);
-    assert_eq!(r, 2_u128);
-}
-
-// Local impl so the test can call DivRem<u256,u128>.
+/// One-off impl for the above test.
 impl U256ByU128DivRem of DivRem<u256, u128> {
     type Quotient = u256;
     type Remainder = u128;
 
     fn div_rem(lhs: u256, rhs: NonZero<u128>) -> (u256, u128) {
-        // Reuse the old symmetric trait on (u256,u256).
         let rhs_u128: u128 = rhs.into();
-        let rhs_u256: u256 = rhs_u128.into();
-        let rhs_u256_nz: NonZero<u256> = rhs_u256.try_into().unwrap();
-        let (q, r_u256) = DivRemLegacy::<u256>::div_rem(lhs, rhs_u256_nz);
-        (q, r_u256.try_into().unwrap())
+        let rhs: u256 = rhs_u128.into();
+        (lhs / rhs, (lhs % rhs).low)
     }
 }
