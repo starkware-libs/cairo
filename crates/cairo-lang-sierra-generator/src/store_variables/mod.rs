@@ -423,19 +423,12 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Stores all the variables that may possibly get misaligned due to branches and removes them
     /// The variables will be added according to the order of creation.
     fn store_all_possibly_lost_variables(&mut self, state: &mut VariablesState) {
+        self.store_variables_as_locals(state);
         for (var, var_state) in state.variables.iter_mut() {
-            match var_state {
-                VarState::TempVar { ty } => {
-                    if self.store_var_as_local(var, ty) {
-                        *var_state = VarState::LocalVar;
-                    }
+            if let VarState::Deferred { info } = var_state {
+                if info.kind == DeferredVariableKind::Generic {
+                    *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                 }
-                VarState::Deferred { info } => {
-                    if info.kind != DeferredVariableKind::Const {
-                        *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
-                    }
-                }
-                VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
