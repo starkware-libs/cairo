@@ -115,6 +115,25 @@ impl<Key: Hash + Eq, BH: BuildHasher> OrderedHashSet<Key, BH> {
     ) -> indexmap::set::Union<'a, Key, BH> {
         self.0.union(&other.0)
     }
+
+    /// Sort the set’s values in place using the comparison function `cmp`.
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
+    pub fn sort_by(&mut self, cmp: impl FnMut(&Key, &Key) -> core::cmp::Ordering) {
+        self.0.sort_by(cmp);
+    }
+
+    /// Sort the set’s values in place using a key extraction function.
+    ///
+    /// During sorting, the function is called at most once per entry, by using temporary storage
+    /// to remember the results of its evaluation. The order of calls to the function is
+    /// unspecified and may change between versions of `indexmap` or the standard library.
+    ///
+    /// Computes in **O(m n + n log n + c)** time () and **O(n)** space, where the function is
+    /// **O(m)**, *n* is the length of the map, and *c* the capacity. The sort is stable.
+    pub fn sort_by_cached_key<K: Ord>(&mut self, sort_key: impl FnMut(&Key) -> K) {
+        self.0.sort_by_cached_key(sort_key);
+    }
 }
 
 impl<Key, BH> IntoIterator for OrderedHashSet<Key, BH> {
