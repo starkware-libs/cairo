@@ -165,9 +165,8 @@ fn collect_used_types(
     // This is only relevant for types that are arguments to entry points and are not used in
     // any libfunc. For example, an empty entry point that gets and returns an empty struct, will
     // have no libfuncs, but we still need to declare the struct.
-    let types_in_user_functions = functions.iter().flat_map(|func| {
-        chain!(func.parameters.iter().map(|param| param.ty.clone()), func.ret_types.iter().cloned())
-    });
+    let types_in_user_functions =
+        functions.iter().flat_map(|func| func.parameters.iter().map(|param| param.ty.clone()));
 
     chain!(types_in_libfuncs, types_in_user_functions).collect()
 }

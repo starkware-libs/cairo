@@ -1,5 +1,4 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type core::never = Enum<ut@[861862558883858441923225458096625907389649264301951688694211998892186616580]> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<felt252, 1749165063169615148890104124711417950509560691> = Const<felt252, 1749165063169615148890104124711417950509560691> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 27063539617145597287547105838> = Const<felt252, 27063539617145597287547105838> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 30828113188794245257250221355944970489240709081949230> = Const<felt252, 30828113188794245257250221355944970489240709081949230> [storable: false, drop: false, dup: false, zero_sized: false];

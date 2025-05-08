@@ -51,7 +51,6 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = function_id.signature(db)?;
     let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id)?;
     let root_block = lowered_function.blocks.root_block()?;
 
@@ -95,8 +94,6 @@ fn get_function_code(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
-
     context.push_statement(label);
 
     let sierra_local_variables = allocate_local_variables(&mut context, &local_variables)?;
@@ -132,7 +129,6 @@ fn get_function_code(
         body: statements,
         entry_point: label_id,
         parameters,
-        ret_types,
     }
     .into())
 }

@@ -28,9 +28,8 @@ test::bar: OrderedHashMap({})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
@@ -98,7 +97,6 @@ type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, ze
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::A = Struct<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
@@ -188,7 +186,6 @@ test::foo: OrderedHashMap({Const: 810})
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::A = Enum<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
