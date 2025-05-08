@@ -1045,25 +1045,17 @@ pub(crate) fn lower_concrete_enum_match(
     let otherwise_variant = get_underscore_pattern_path_and_mark_unreachable(ctx, arms, match_type);
     let variant_map = get_variant_to_arm_map(ctx, arms, concrete_enum_id, match_type)?;
 
-    let mut arm_var_ids = vec![];
-    let mut block_ids = vec![];
+    let mut builder_context = MatchArmsLoweringContext::new(builder, arms);
     let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let PatternPath { arm_index, pattern_index } =
+            let pattern_path =
                 variant_map.get(concrete_variant).or(otherwise_variant.as_ref()).ok_or_else(
                     || report_missing_variant_error(ctx, location, match_type, concrete_variant),
                 )?;
-            let arm = &arms[*arm_index];
+            let mut subscope = builder_context.add_scope(ctx);
 
-            let mut subscope = create_subscope(ctx, builder);
-
-            let pattern = pattern_index.map(|pattern_index| {
-                arm.pattern(ctx, pattern_index)
-                    .expect("Pattern was previously found and should be present in the arm.")
-            });
-            let block_id = subscope.block_id;
-            block_ids.push(block_id);
+            let pattern = builder_context.pattern(ctx, *pattern_path);
 
             let lowering_inner_pattern_result = match pattern {
                 Some(Pattern::EnumVariant(PatternEnumVariant {
@@ -1079,7 +1071,7 @@ pub(crate) fn lower_concrete_enum_match(
                         ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
                         location: pattern_location,
                     });
-                    arm_var_ids.push(vec![var_id]);
+                    builder_context.arm_var_ids.push(vec![var_id]);
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
@@ -1089,12 +1081,13 @@ pub(crate) fn lower_concrete_enum_match(
                     Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
                     | Pattern::Otherwise(_),
                 ) => {
-                    let location = ctx.get_location(pattern.unwrap().into());
+                    let stable_ptr = pattern.unwrap().into();
+                    let location = ctx.get_location(stable_ptr);
                     let var_id = ctx.new_var(VarRequest {
                         ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
                         location,
                     });
-                    arm_var_ids.push(vec![var_id]);
+                    builder_context.arm_var_ids.push(vec![var_id]);
                     Ok(())
                 }
                 None => {
@@ -1102,7 +1095,7 @@ pub(crate) fn lower_concrete_enum_match(
                         ty: wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
                         location,
                     });
-                    arm_var_ids.push(vec![var_id]);
+                    builder_context.arm_var_ids.push(vec![var_id]);
                     Ok(())
                 }
                 _ => unreachable!(
@@ -1111,7 +1104,7 @@ pub(crate) fn lower_concrete_enum_match(
                 ),
             };
             Ok(MatchLeafBuilder {
-                arm_index: *arm_index,
+                arm_index: pattern_path.arm_index,
                 lowering_result: lowering_inner_pattern_result,
                 builder: subscope,
             })
@@ -1139,13 +1132,16 @@ pub(crate) fn lower_concrete_enum_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: match_input,
-        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm {
-                arm_selector: MatchArmSelector::VariantId(variant_id),
-                block_id,
-                var_ids,
-            })
-            .collect(),
+        arms: zip_eq(
+            zip_eq(concrete_variants, builder_context.block_ids),
+            builder_context.arm_var_ids,
+        )
+        .map(|((variant_id, block_id), var_ids)| MatchArm {
+            arm_selector: MatchArmSelector::VariantId(variant_id),
+            block_id,
+            var_ids,
+        })
+        .collect(),
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -1172,15 +1168,13 @@ pub(crate) fn lower_optimized_extern_match(
 
     let variant_map =
         get_variant_to_arm_map(ctx, match_arms, extern_enum.concrete_enum_id, match_type)?;
-    let mut arm_var_ids = vec![];
-    let mut block_ids = vec![];
+
+    let mut builder_context = MatchArmsLoweringContext::new(builder, match_arms);
 
     let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
-            let mut subscope = create_subscope(ctx, builder);
-            let block_id = subscope.block_id;
-            block_ids.push(block_id);
+            let mut subscope = builder_context.add_scope(ctx);
 
             let input_tys =
                 match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &extern_enum);
@@ -1188,27 +1182,28 @@ pub(crate) fn lower_optimized_extern_match(
                 .into_iter()
                 .map(|ty| ctx.new_var(VarRequest { ty, location }))
                 .collect_vec();
-            arm_var_ids.push(input_vars.clone());
+            builder_context.arm_var_ids.push(input_vars.clone());
 
             // Bind the arm inputs to implicits and semantic variables.
             match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
 
-            let PatternPath { arm_index, pattern_index } =
+            let pattern_path =
                 variant_map.get(concrete_variant).or(otherwise_variant.as_ref()).ok_or_else(
                     || report_missing_variant_error(ctx, location, match_type, concrete_variant),
                 )?;
 
-            let arm = &match_arms[*arm_index];
-            let pattern =
-                pattern_index.map(|pattern_index| arm.pattern(ctx, pattern_index).unwrap());
+            let pattern = builder_context.pattern(ctx, *pattern_path);
 
             let lowering_inner_pattern_result = match pattern {
                 Some(Pattern::EnumVariant(PatternEnumVariant {
                     inner_pattern: Some(inner_pattern),
                     ..
-                })) => lower_single_pattern(ctx, &mut subscope, *inner_pattern, variant_expr),
+                })) => {
+                    let inner_pattern = *inner_pattern;
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
+                }
                 Some(
                     Pattern::EnumVariant(PatternEnumVariant { inner_pattern: None, .. })
                     | Pattern::Otherwise(_),
@@ -1220,7 +1215,7 @@ pub(crate) fn lower_optimized_extern_match(
                 ),
             };
             Ok(MatchLeafBuilder {
-                arm_index: *arm_index,
+                arm_index: pattern_path.arm_index,
                 lowering_result: lowering_inner_pattern_result,
                 builder: subscope,
             })
@@ -1246,16 +1241,64 @@ pub(crate) fn lower_optimized_extern_match(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
-        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
-            .map(|((variant_id, block_id), var_ids)| MatchArm {
-                arm_selector: MatchArmSelector::VariantId(variant_id),
-                block_id,
-                var_ids,
-            })
-            .collect(),
+        arms: zip_eq(
+            zip_eq(concrete_variants, builder_context.block_ids),
+            builder_context.arm_var_ids,
+        )
+        .map(|((variant_id, block_id), var_ids)| MatchArm {
+            arm_selector: MatchArmSelector::VariantId(variant_id),
+            block_id,
+            var_ids,
+        })
+        .collect(),
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
+}
+
+/// A context for lowering match arms and tracking generated blocks and input vars.
+struct MatchArmsLoweringContext<'a> {
+    /// Outer block builder to generate new subscopes.
+    builder: &'a mut BlockBuilder,
+    /// The block ids of the generated subscopes.
+    block_ids: Vec<crate::BlockId>,
+    /// The match arms to lower.
+    arms: &'a [MatchArmWrapper<'a>],
+    /// For each enum variant, stores `VariableId`s which act as inputs to the arm's subscope.    
+    arm_var_ids: Vec<Vec<VariableId>>,
+}
+
+impl<'a> MatchArmsLoweringContext<'a> {
+    /// Creates a new [MatchArmsLoweringContext] with the given builder and match arms.
+    fn new(builder: &'a mut BlockBuilder, match_arms: &'a [MatchArmWrapper<'_>]) -> Self {
+        Self {
+            builder,
+            block_ids: Default::default(),
+            arms: match_arms,
+            arm_var_ids: Default::default(),
+        }
+    }
+
+    /// Creates a new subscope for the current block, and update used block_ids.
+    fn add_scope(&mut self, ctx: &mut LoweringContext<'_, '_>) -> BlockBuilder {
+        let subscope = create_subscope(ctx, self.builder);
+        self.block_ids.push(subscope.block_id);
+        subscope
+    }
+
+    /// Get pattern from arm by `pattern_path`. Assumes existence of pattern_index only if pattern
+    /// exists.
+    fn pattern(
+        &self,
+        ctx: &'a mut LoweringContext<'_, '_>,
+        pattern_path: PatternPath,
+    ) -> Option<&'a Pattern> {
+        let arm = &self.arms[pattern_path.arm_index];
+        pattern_path.pattern_index.map(|pattern_index| {
+            arm.pattern(ctx, pattern_index)
+                .expect("Pattern was previously found and should be present in the arm.")
+        })
+    }
 }
 
 /// Represents a leaf in match tree, with the arm index it belongs to.
@@ -1264,6 +1307,7 @@ struct MatchLeafBuilder {
     lowering_result: LoweringResult<()>,
     builder: BlockBuilder,
 }
+
 /// Groups match arms of different variants to their corresponding arms blocks and lowers
 /// the arms expression.
 fn group_match_arms(
