@@ -42,33 +42,28 @@ pub trait DivRem<T, U> {
     type Remainder;
 
     /// Computes both `/` and `%` in a single pass.
-    fn div_rem(lhs: T, rhs: NonZero<U>) -> (Self::Quotient, Self::Remainder);
+    fn div_rem(self: T, other: NonZero<U>) -> (Self::Quotient, Self::Remainder);
 }
 
 //  Compatibility bridge:  DivRem<T>  →  DivRemGeneric<T,T>
-mod _divrem_bridge {
-    #[feature("generic-divrem")]
-    use crate::traits::DivRem;
-    use super::DivRem as DivRemGeneric;
-
+mod by_divrem_legacy {
     /// Generic adapter: if the old symmetric `DivRem<T>` exists,
     /// provide the corresponding `DivRemGeneric<T,T>` implementation.
-    impl Bridge<T, +DivRem<T>> of DivRemGeneric<T, T> {
+    pub impl Impl<T, +crate::traits::DivRem<T>> of super::DivRem<T, T> {
         type Quotient = T;
         type Remainder = T;
 
-        fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T) {
-            DivRem::<T>::div_rem(lhs, rhs)
+        fn div_rem(self: T, other: NonZero<T>) -> (T, T) {
+            core::traits::DivRem::<T>::div_rem(self, other)
         }
     }
-
-    // Instantiate the generic adapter for every concrete integer type
-    // that already has a symmetric `DivRem` implementation.
-    pub impl BridgeU8 = Bridge<u8>;
-    pub impl BridgeU16 = Bridge<u16>;
-    pub impl BridgeU32 = Bridge<u32>;
-    pub impl BridgeU64 = Bridge<u64>;
-    pub impl BridgeU128 = Bridge<u128>;
-    pub impl BridgeU256 = Bridge<u256>;
 }
-use _divrem_bridge::*;
+
+// Instantiate the generic adapter for every concrete integer type
+// that already has a symmetric `DivRem` implementation.
+impl DivRemU8 = by_divrem_legacy::Impl<u8>;
+impl DivRemU16 = by_divrem_legacy::Impl<u16>;
+impl DivRemU32 = by_divrem_legacy::Impl<u32>;
+impl DivRemU64 = by_divrem_legacy::Impl<u64>;
+impl DivRemU128 = by_divrem_legacy::Impl<u128>;
+impl DivRemU256 = by_divrem_legacy::Impl<u256>;
