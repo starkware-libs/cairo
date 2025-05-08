@@ -1,4 +1,5 @@
 pub mod checked;
+pub mod divrem;
 pub mod overflowing;
 pub mod pow;
 pub mod saturating;

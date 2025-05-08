@@ -364,7 +364,6 @@ pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
 
-// TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
 /// Performs truncated division and remainder.
 ///
 /// This trait provides a way to efficiently compute both the quotient and remainder in a single
@@ -377,13 +376,6 @@ pub trait RemEq<T> {
 /// assert!(DivRem::div_rem(7_u32, 3) == (2, 1));
 /// ```
 pub trait DivRem<T> {
-    /// Performs the `/` and the `%` operations, returning both the quotient and remainder.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
-    /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
@@ -1133,4 +1125,3 @@ pub trait Felt252DictValue<T> {
     #[must_use]
     fn zero_default() -> T nopanic;
 }
-
