@@ -1,5 +1,5 @@
 use crate::metaprogramming::{SnapRemove, TupleExtendFront, TupleSnapForward, TupleSplit};
-use crate::tuple::{SerdeTuple, TuplePartialEq, TuplePartialEqHelper};
+use crate::tuple::{SerdeTuple, TuplePartialEq, TuplePartialEqHelper,DefaultNext};
 
 impl TupleSplitFixedSizedArraySized1<T> of TupleSplit<[T; 1]> {
     type Head = T;
