@@ -124,19 +124,15 @@ Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
   (v1: {closure@lib.cairo:11:5: 11:7}) <- struct_construct(v0)
-  (v2: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
-  (v3: core::felt252) <- 1997209042069643135709344952807065910992472029923670688473712229447419591075
-  (v5: core::array::Array::<core::felt252>, v4: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2, v3)
-  (v6: core::felt252) <- 0
-  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::array::ArrayImpl::<core::felt252>::append(v5, v6)
-  (v9: core::felt252) <- 345232009571
-  (v11: core::array::Array::<core::felt252>, v10: ()) <- core::array::ArrayImpl::<core::felt252>::append(v8, v9)
-  (v12: core::felt252) <- 5
-  (v14: core::array::Array::<core::felt252>, v13: ()) <- core::array::ArrayImpl::<core::felt252>::append(v11, v12)
-  (v15: core::panics::Panic) <- struct_construct()
-  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v14)
+  (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v3: core::felt252) <- 345232009571
+  (v4: core::integer::u32) <- 5
+  (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
+  (v6: core::byte_array::ByteArray, v7: @core::byte_array::ByteArray) <- snapshot(v5)
+  (v8: core::never) <- core::panics::panic_with_byte_array(v7)
 End:
-  Panic(v16)
+  Match(match_enum(v8) {
+  })
 
 
 Final lowering:
