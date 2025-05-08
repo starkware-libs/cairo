@@ -68,7 +68,6 @@ pub use crate::traits::RemEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
-#[feature("generic-divrem")]
 use crate::traits::{
     self, Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
