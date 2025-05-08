@@ -24,6 +24,7 @@ fn concretize_function(
             })
             .intern(db))
         }
+        FunctionLongId::Specialized(_) => unreachable!("This should not be called."),
     }
 }
 
