@@ -364,12 +364,25 @@ pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
 
-/// Legacy trait for division with remainder.
+/// Performs truncated division and remainder.
 ///
-/// This is kept for backward compatibility.
-/// New code should use `crate::num::traits::ops::divrem::DivRem<T, U>` instead.
-#[deprecated(feature: "generic-divrem", note: "Use `num::traits::ops::divrem::DivRem`.")]
+/// This trait provides a way to efficiently compute both the quotient and remainder in a single
+/// operation. The division truncates towards zero, matching the behavior of the `/` and `%`
+/// operators.
+///
+/// # Examples
+///
+/// ```
+/// assert!(DivRem::div_rem(7_u32, 3) == (2, 1));
+/// ```
 pub trait DivRem<T> {
+    /// Performs the `/` and the `%` operations, returning both the quotient and remainder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
+    /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 

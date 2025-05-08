@@ -16,7 +16,6 @@ pub use crate::result::ResultTrait;
 pub use crate::serde::Serde;
 #[feature("corelib-internal-use")]
 pub use crate::starknet::{self, System};
-#[feature("generic-divrem")]
 pub use crate::traits::{
     Add, Copy, Default, Destruct, Div, DivRem, Drop, Felt252DictValue, Into, Mul, Neg, Not,
     PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
