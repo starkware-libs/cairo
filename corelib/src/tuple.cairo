@@ -747,7 +747,7 @@ impl DefaultTupleBase of Default<()> {
 }
 
 
-impl DefaultNext<
+pub(crate) impl DefaultNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
     +Default<TS::Head>,
