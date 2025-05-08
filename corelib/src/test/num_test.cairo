@@ -3,7 +3,6 @@ use crate::num::traits::{
     OverflowingSub, Pow, SaturatingAdd, SaturatingMul, SaturatingSub, WrappingAdd, WrappingMul,
     WrappingSub,
 };
-#[feature("generic-divrem")]
 use crate::traits::DivRem as DivRemLegacy;
 use crate::zeroable::NonZero;
 
