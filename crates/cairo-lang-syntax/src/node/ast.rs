@@ -4160,7 +4160,7 @@ impl ExprBlock {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
-        statements: StatementListGreen,
+        statements: StatementBlockGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ExprBlockGreen {
         let children: Vec<GreenId> = vec![lbrace.0, statements.0, rbrace.0];
@@ -4178,8 +4178,8 @@ impl ExprBlock {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[0])
     }
-    pub fn statements(&self, db: &dyn SyntaxGroup) -> StatementList {
-        StatementList::from_syntax_node(db, self.children[1])
+    pub fn statements(&self, db: &dyn SyntaxGroup) -> StatementBlock {
+        StatementBlock::from_syntax_node(db, self.children[1])
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[2])
@@ -4215,7 +4215,7 @@ impl TypedSyntaxNode for ExprBlock {
                 details: GreenNodeDetails::Node {
                     children: vec![
                         TerminalLBrace::missing(db).0,
-                        StatementList::missing(db).0,
+                        StatementBlock::missing(db).0,
                         TerminalRBrace::missing(db).0,
                     ],
                     width: TextWidth::default(),
@@ -4244,6 +4244,212 @@ impl TypedSyntaxNode for ExprBlock {
     }
     fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
         ExprBlockPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PlaceholderRepetitionBlock {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl PlaceholderRepetitionBlock {
+    pub const INDEX_DOLLAR: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_ELEMENTS: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_OPERATOR: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        dollar: TerminalDollarGreen,
+        lparen: TerminalLParenGreen,
+        elements: StatementListGreen,
+        rparen: TerminalRParenGreen,
+        operator: MacroRepetitionOperatorGreen,
+    ) -> PlaceholderRepetitionBlockGreen {
+        let children: Vec<GreenId> = vec![dollar.0, lparen.0, elements.0, rparen.0, operator.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        PlaceholderRepetitionBlockGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::PlaceholderRepetitionBlock,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl PlaceholderRepetitionBlock {
+    pub fn dollar(&self, db: &dyn SyntaxGroup) -> TerminalDollar {
+        TerminalDollar::from_syntax_node(db, self.children[0])
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1])
+    }
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> StatementList {
+        StatementList::from_syntax_node(db, self.children[2])
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3])
+    }
+    pub fn operator(&self, db: &dyn SyntaxGroup) -> MacroRepetitionOperator {
+        MacroRepetitionOperator::from_syntax_node(db, self.children[4])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PlaceholderRepetitionBlockPtr(pub SyntaxStablePtrId);
+impl PlaceholderRepetitionBlockPtr {}
+impl TypedStablePtr for PlaceholderRepetitionBlockPtr {
+    type SyntaxNode = PlaceholderRepetitionBlock;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> PlaceholderRepetitionBlock {
+        PlaceholderRepetitionBlock::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<PlaceholderRepetitionBlockPtr> for SyntaxStablePtrId {
+    fn from(ptr: PlaceholderRepetitionBlockPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PlaceholderRepetitionBlockGreen(pub GreenId);
+impl TypedSyntaxNode for PlaceholderRepetitionBlock {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PlaceholderRepetitionBlock);
+    type StablePtr = PlaceholderRepetitionBlockPtr;
+    type Green = PlaceholderRepetitionBlockGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PlaceholderRepetitionBlockGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::PlaceholderRepetitionBlock,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalDollar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        StatementList::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                        MacroRepetitionOperator::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PlaceholderRepetitionBlock,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PlaceholderRepetitionBlock
+        );
+        Self { children: node.get_children(db).into(), node }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::PlaceholderRepetitionBlock {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        PlaceholderRepetitionBlockPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum StatementBlock {
+    Statements(StatementList),
+    Placeholder(PlaceholderRepetitionBlock),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StatementBlockPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for StatementBlockPtr {
+    type SyntaxNode = StatementBlock;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> StatementBlock {
+        StatementBlock::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<StatementBlockPtr> for SyntaxStablePtrId {
+    fn from(ptr: StatementBlockPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<StatementListPtr> for StatementBlockPtr {
+    fn from(value: StatementListPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PlaceholderRepetitionBlockPtr> for StatementBlockPtr {
+    fn from(value: PlaceholderRepetitionBlockPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StatementListGreen> for StatementBlockGreen {
+    fn from(value: StatementListGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PlaceholderRepetitionBlockGreen> for StatementBlockGreen {
+    fn from(value: PlaceholderRepetitionBlockGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StatementBlockGreen(pub GreenId);
+impl TypedSyntaxNode for StatementBlock {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = StatementBlockPtr;
+    type Green = StatementBlockGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StatementList => {
+                StatementBlock::Statements(StatementList::from_syntax_node(db, node))
+            }
+            SyntaxKind::PlaceholderRepetitionBlock => {
+                StatementBlock::Placeholder(PlaceholderRepetitionBlock::from_syntax_node(db, node))
+            }
+            _ => {
+                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "StatementBlock")
+            }
+        }
+    }
+    fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StatementList => {
+                Some(StatementBlock::Statements(StatementList::from_syntax_node(db, node)))
+            }
+            SyntaxKind::PlaceholderRepetitionBlock => Some(StatementBlock::Placeholder(
+                PlaceholderRepetitionBlock::from_syntax_node(db, node),
+            )),
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            StatementBlock::Statements(x) => x.as_syntax_node(),
+            StatementBlock::Placeholder(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self, db: &dyn SyntaxGroup) -> Self::StablePtr {
+        StatementBlockPtr(self.as_syntax_node().lookup_intern(db).stable_ptr)
+    }
+}
+impl StatementBlock {
+    /// Checks if a kind of a variant of [StatementBlock].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::StatementList | SyntaxKind::PlaceholderRepetitionBlock)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

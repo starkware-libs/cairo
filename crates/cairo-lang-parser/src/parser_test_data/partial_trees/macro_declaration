@@ -266,3 +266,135 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro statement expansion.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro array_macro {
+    ($($x:expr), *) => {
+        let mut arr = ArrayTrait::new();
+        {$(
+            arr.append($x);
+        ) * }
+        arr
+    };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'array_macro'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacroMatcher)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroRuleElements)
+    │       │       │   │   └── child #0 (kind: MacroRepetition)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── lparen (kind: TokenLParen): '('
+    │       │       │   │       ├── elements (kind: MacroRuleElements)
+    │       │       │   │       │   └── child #0 (kind: MacroRuleParam)
+    │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │       │       └── kind (kind: ParamExpr)
+    │       │       │   │       │           └── expr (kind: TokenIdentifier): 'expr'
+    │       │       │   │       ├── rparen (kind: TokenRParen): ')'
+    │       │       │   │       ├── separator (kind: TokenComma): ','
+    │       │       │   │       └── operator (kind: TokenMul): '*'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: ExprBlock)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── statements (kind: StatementList)
+    │       │       │   │   ├── child #0 (kind: StatementLet)
+    │       │       │   │   │   ├── attributes (kind: AttributeList) []
+    │       │       │   │   │   ├── let_kw (kind: TokenLet): 'let'
+    │       │       │   │   │   ├── pattern (kind: PatternIdentifier)
+    │       │       │   │   │   │   ├── modifiers (kind: ModifierList)
+    │       │       │   │   │   │   │   └── child #0 (kind: TokenMut): 'mut'
+    │       │       │   │   │   │   └── name (kind: TokenIdentifier): 'arr'
+    │       │       │   │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │       │       │   │   │   ├── eq (kind: TokenEq): '='
+    │       │       │   │   │   ├── rhs (kind: ExprFunctionCall)
+    │       │       │   │   │   │   ├── path (kind: ExprPath)
+    │       │       │   │   │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   │   │   │   │   └── segments (kind: ExprPathInner)
+    │       │       │   │   │   │   │       ├── item #0 (kind: PathSegmentSimple)
+    │       │       │   │   │   │   │       │   └── ident (kind: TokenIdentifier): 'ArrayTrait'
+    │       │       │   │   │   │   │       ├── separator #0 (kind: TokenColonColon): '::'
+    │       │       │   │   │   │   │       └── item #1 (kind: PathSegmentSimple)
+    │       │       │   │   │   │   │           └── ident (kind: TokenIdentifier): 'new'
+    │       │       │   │   │   │   └── arguments (kind: ArgListParenthesized)
+    │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │       │       │   │   │   │       ├── arguments (kind: ArgList) []
+    │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │       │       │   │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │       │       │   │   ├── child #1 (kind: StatementExpr)
+    │       │       │   │   │   ├── attributes (kind: AttributeList) []
+    │       │       │   │   │   ├── expr (kind: ExprBlock)
+    │       │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   │   │   │   ├── statements (kind: PlaceholderRepetitionBlock)
+    │       │       │   │   │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   │   │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   │   │   │   │   ├── elements (kind: StatementList)
+    │       │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │       │       │   │   │   │   │   │       ├── attributes (kind: AttributeList) []
+    │       │       │   │   │   │   │   │       ├── expr (kind: ExprBinary)
+    │       │       │   │   │   │   │   │       │   ├── lhs (kind: ExprPath)
+    │       │       │   │   │   │   │   │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   │   │   │   │   │       │   │   └── segments (kind: ExprPathInner)
+    │       │       │   │   │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │   │   │   │   │       │   │           └── ident (kind: TokenIdentifier): 'arr'
+    │       │       │   │   │   │   │   │       │   ├── op (kind: TokenDot): '.'
+    │       │       │   │   │   │   │   │       │   └── rhs (kind: ExprFunctionCall)
+    │       │       │   │   │   │   │   │       │       ├── path (kind: ExprPath)
+    │       │       │   │   │   │   │   │       │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   │   │   │   │   │       │       │   └── segments (kind: ExprPathInner)
+    │       │       │   │   │   │   │   │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │   │   │   │   │       │       │           └── ident (kind: TokenIdentifier): 'append'
+    │       │       │   │   │   │   │   │       │       └── arguments (kind: ArgListParenthesized)
+    │       │       │   │   │   │   │   │       │           ├── lparen (kind: TokenLParen): '('
+    │       │       │   │   │   │   │   │       │           ├── arguments (kind: ArgList)
+    │       │       │   │   │   │   │   │       │           │   └── item #0 (kind: Arg)
+    │       │       │   │   │   │   │   │       │           │       ├── modifiers (kind: ModifierList) []
+    │       │       │   │   │   │   │   │       │           │       └── arg_clause (kind: ArgClauseUnnamed)
+    │       │       │   │   │   │   │   │       │           │           └── value (kind: ExprPath)
+    │       │       │   │   │   │   │   │       │           │               ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │   │   │   │   │       │           │               └── segments (kind: ExprPathInner)
+    │       │       │   │   │   │   │   │       │           │                   └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │   │   │   │   │       │           │                       └── ident (kind: TokenIdentifier): 'x'
+    │       │       │   │   │   │   │   │       │           └── rparen (kind: TokenRParen): ')'
+    │       │       │   │   │   │   │   │       └── semicolon (kind: TokenSemicolon): ';'
+    │       │       │   │   │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │       │       │   │   │   │   │   └── operator (kind: TokenMul): '*'
+    │       │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       │   │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │       │       │   │   └── child #2 (kind: StatementExpr)
+    │       │       │   │       ├── attributes (kind: AttributeList) []
+    │       │       │   │       ├── expr (kind: ExprPath)
+    │       │       │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   │       │   └── segments (kind: ExprPathInner)
+    │       │       │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │       │           └── ident (kind: TokenIdentifier): 'arr'
+    │       │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > expected_diagnostics

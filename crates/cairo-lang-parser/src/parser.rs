@@ -1432,7 +1432,6 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
-        let mut child_op: Option<SyntaxKind> = None;
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1446,27 +1445,36 @@ impl<'a> Parser<'a> {
                 let rbrack = self.parse_token::<TerminalRBrack>();
                 ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
             } else {
-                let current_op = self.peek().kind;
-                if let Some(child_op_kind) = child_op {
-                    if self.is_comparison_operator(child_op_kind)
-                        && self.is_comparison_operator(current_op)
-                    {
-                        self.add_diagnostic(
-                            ParserDiagnosticKind::ConsecutiveMathOperators {
-                                first_op: child_op_kind,
-                                second_op: current_op,
-                            },
-                            TextSpan { start: self.offset, end: self.offset },
-                        );
-                    }
-                }
-                child_op = Some(current_op);
-                let op = self.parse_binary_operator();
-                let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
-                ExprBinary::new_green(self.db, expr, op, rhs).into()
+                self.parse_binary_expression(expr, precedence, lbrace_allowed)
             };
         }
         Ok(expr)
+    }
+
+    /// Handles parsing a binary expression with diagnostics for consecutive math operators.
+    fn parse_binary_expression(
+        &mut self,
+        expr: ExprGreen,
+        precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+    ) -> ExprGreen {
+        let child_op: Option<SyntaxKind> = None;
+        let current_op = self.peek().kind;
+        if let Some(child_op_kind) = child_op {
+            if self.is_comparison_operator(child_op_kind) && self.is_comparison_operator(current_op)
+            {
+                self.add_diagnostic(
+                    ParserDiagnosticKind::ConsecutiveMathOperators {
+                        first_op: child_op_kind,
+                        second_op: current_op,
+                    },
+                    TextSpan { start: self.offset, end: self.offset },
+                );
+            }
+        }
+        let op = self.parse_binary_operator();
+        let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
+        ExprBinary::new_green(self.db, expr, op, rhs).into()
     }
 
     /// Returns a GreenId of a node with ExprPath, ExprFunctionCall, ExprStructCtorCall,
@@ -2149,12 +2157,81 @@ impl<'a> Parser<'a> {
             return ExprBlock::new_green(
                 self.db,
                 self.create_and_report_missing_terminal::<TerminalLBrace>(),
-                StatementList::new_green(self.db, vec![]),
+                StatementList::new_green(self.db, vec![]).into(),
                 TerminalRBrace::missing(self.db),
             );
         }
         // Don't report diagnostic if one has already been reported.
         let lbrace = self.parse_token_ex::<TerminalLBrace>(skipped_tokens.is_ok());
+        match self.peek().kind {
+            SyntaxKind::TerminalDollar => {
+                let dollar = self.take::<TerminalDollar>();
+                let placeholder_repetition_block = self.parse_placeholder_repetition_block(dollar);
+                match placeholder_repetition_block {
+                    Ok(placeholder_repetition_block) => {
+                        let rbrace = self.parse_token::<TerminalRBrace>();
+                        ExprBlock::new_green(self.db, lbrace, placeholder_repetition_block, rbrace)
+                    }
+                    Err(_) => {
+                        let expr_path = self.parse_path_inner(dollar.into());
+                        self.parse_statements_and_block_with_initial_statements(
+                            lbrace,
+                            vec![expr_path.into()],
+                        )
+                    }
+                }
+            }
+            _ => self.parse_statements_and_block(lbrace),
+        }
+    }
+
+    /// Parses a list of statements and constructs an `ExprBlockGreen`.
+    fn parse_statements_and_block_with_initial_statements(
+        &mut self,
+        lbrace: TerminalLBraceGreen,
+        initial_expressions: Vec<ExprGreen>,
+    ) -> ExprBlockGreen {
+        let mut statements: Vec<StatementGreen> = vec![];
+        for expr in initial_expressions {
+            if let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
+                let full_expr =
+                    self.parse_binary_expression(expr, precedence, LbraceAllowed::Forbid);
+                let statement = StatementExpr::new_green(
+                    self.db,
+                    AttributeList::new_green(self.db, vec![]),
+                    full_expr,
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into(),
+                )
+                .into();
+                statements.push(statement);
+            } else {
+                let statement = StatementExpr::new_green(
+                    self.db,
+                    AttributeList::new_green(self.db, vec![]),
+                    expr,
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into(),
+                )
+                .into();
+                statements.push(statement);
+            }
+        }
+
+        statements.extend(self.parse_list(
+            Self::try_parse_statement,
+            is_of_kind!(rbrace, module_item_kw),
+            "statement",
+        ));
+
+        let rbrace = self.parse_token::<TerminalRBrace>();
+        ExprBlock::new_green(
+            self.db,
+            lbrace,
+            StatementList::new_green(self.db, statements).into(),
+            rbrace,
+        )
+    }
+    /// Parses a list of statements and constructs an `ExprBlockGreen`.
+    fn parse_statements_and_block(&mut self, lbrace: TerminalLBraceGreen) -> ExprBlockGreen {
         let statements = StatementList::new_green(
             self.db,
             self.parse_list(
@@ -2164,7 +2241,41 @@ impl<'a> Parser<'a> {
             ),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ExprBlock::new_green(self.db, lbrace, statements, rbrace)
+        ExprBlock::new_green(self.db, lbrace, statements.into(), rbrace)
+    }
+
+    /// Parses a placeholder repetition block inside a macro.
+    fn parse_placeholder_repetition_block(
+        &mut self,
+        dollar: TerminalDollarGreen,
+    ) -> TryParseResult<StatementBlockGreen> {
+        if self.peek().kind != SyntaxKind::TerminalLParen {
+            return Err(TryParseFailure::SkipToken);
+        }
+        let lparen = self.take::<TerminalLParen>();
+        let elements = StatementList::new_green(
+            self.db,
+            self.parse_list(
+                Self::try_parse_statement,
+                is_of_kind!(rparen, block, rbrace, module_item_kw),
+                "statement",
+            ),
+        );
+        let rparen = self.parse_token::<TerminalRParen>();
+        let operator = match self.peek().kind {
+            SyntaxKind::TerminalQuestionMark => self.take::<TerminalQuestionMark>().into(),
+            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+            _ => self
+                .create_and_report_missing::<TerminalPlus>(
+                    ParserDiagnosticKind::MissingRepetitionOperator,
+                )
+                .into(),
+        };
+        let placeholder_repetition_block = PlaceholderRepetitionBlock::new_green(
+            self.db, dollar, lparen, elements, rparen, operator,
+        );
+        Ok(placeholder_repetition_block.into())
     }
 
     /// Parses an expr block, while allowing placeholder expressions. Restores the previous
@@ -2593,22 +2704,41 @@ impl<'a> Parser<'a> {
                 .into(),
             )
             .into()),
-            _ => match self.try_parse_expr() {
-                Ok(expr) => {
-                    let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                        self.take::<TerminalSemicolon>().into()
-                    } else {
-                        OptionTerminalSemicolonEmpty::new_green(self.db).into()
-                    };
-                    Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon)
-                        .into())
-                }
-                Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
+            SyntaxKind::TerminalLBrace => {
+                let expr_block = self.parse_block();
+                Ok(StatementExpr::new_green(
+                    self.db,
                     attributes,
-                    ParserDiagnosticKind::AttributesWithoutStatement,
-                )),
-                Err(err) => Err(err),
-            },
+                    expr_block.into(),
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into(),
+                )
+                .into())
+            }
+            _ => self.parse_statement_expr(attributes, has_attrs),
+        }
+    }
+
+    /// Parses an expression and wraps it in a StatementExpr.
+    /// Handles optional semicolon and attributes.
+    fn parse_statement_expr(
+        &mut self,
+        attributes: AttributeListGreen,
+        has_attrs: bool,
+    ) -> TryParseResult<StatementGreen> {
+        match self.try_parse_expr() {
+            Ok(expr) => {
+                let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    self.take::<TerminalSemicolon>().into()
+                } else {
+                    OptionTerminalSemicolonEmpty::new_green(self.db).into()
+                };
+                Ok(StatementExpr::new_green(self.db, attributes, expr, optional_semicolon).into())
+            }
+            Err(_) if has_attrs => Ok(self.skip_taken_node_and_return_missing::<Statement>(
+                attributes,
+                ParserDiagnosticKind::AttributesWithoutStatement,
+            )),
+            Err(err) => Err(err),
         }
     }
 
@@ -2838,6 +2968,11 @@ impl<'a> Parser<'a> {
             _ => OptionTerminalDollarEmpty::new_green(self.db).into(),
         };
 
+        self.parse_path_inner(dollar)
+    }
+
+    /// Parses the inner part of a path, including its segments and separators.
+    fn parse_path_inner(&mut self, dollar: OptionTerminalDollarGreen) -> ExprPathGreen {
         let mut children: Vec<ExprPathInnerElementOrSeparatorGreen> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_path_segment();

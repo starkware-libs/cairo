@@ -36,3 +36,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:4:7
+    } + match x {
+      ^

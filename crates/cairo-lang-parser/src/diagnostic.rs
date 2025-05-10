@@ -101,6 +101,7 @@ pub enum ParserDiagnosticKind {
     MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
+    MissingRepetitionOperator,
     MissingTypeClause,
     MissingTypeExpression,
     MissingWrappedArgList,
@@ -149,6 +150,9 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
+            }
+            ParserDiagnosticKind::MissingRepetitionOperator => {
+                "Missing tokens. Expected an operator.".to_string()
             }
             ParserDiagnosticKind::MissingWrappedArgList => "Missing tokens. Expected an argument \
                                                             list wrapped in either parentheses, \
