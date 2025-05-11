@@ -54,11 +54,14 @@ mod test_assert_eq {
     macro assert_eq {
         ($left:ident, $right:ident) => {
             if $left != $right {
-                panic!("PANIC!");
+                // TODO(Gil): Call `panic!` directly when $callsite is supported inside plugins.
+                $callsite::panic();
             }
         };
     }
-
+    fn panic() {
+        panic!("PANIC!");
+    }
     #[test]
     #[should_panic(expected: ("PANIC!",))]
     fn test_user_defined_assert_eq() {
@@ -284,7 +287,10 @@ mod repetition_macro_expansion {
         };
 
         [$x:expr, $y:expr] => {
-            array![$x, $y]
+            let mut arr = $defsite::ArrayTrait::new();
+            arr.append($x);
+            arr.append($y);
+            arr
         };
     }
 
@@ -325,7 +331,7 @@ fn test_count_exprs_rec() {
 
 macro my_array {
     [$x:expr] => {
-        let mut arr = array![];
+        let mut arr = $defsite::ArrayTrait::new();
         arr.append($x);
         arr
     };
@@ -343,4 +349,28 @@ fn test_array_macro() {
     let result = my_array![1, 2, 3];
     let mut expected = array![3, 2, 1];
     assert_eq!(result, expected);
+}
+
+mod callsite_test {
+    fn foo(x: felt252) -> felt252 {
+        x + 100
+    }
+
+    mod inner {
+        fn foo(x: felt252) -> felt252 {
+            x + 200
+        }
+
+        pub macro call_foo {
+            ($x:expr) => {
+                $callsite::foo($x)
+            };
+        }
+    }
+
+    #[test]
+    fn test_callsite_resolution() {
+        assert_eq!(inner::call_foo!(5), 105);
+        assert_eq!(inner::call_foo!((foo(5))), 205);
+    }
 }
