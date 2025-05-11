@@ -54,14 +54,11 @@ mod test_assert_eq {
     macro assert_eq {
         ($left:ident, $right:ident) => {
             if $left != $right {
-                // TODO(Gil): Call `panic!` directly when $callsite is supported inside plugins.
-                $callsite::panic();
+                $callsite::panic!("PANIC!");
             }
         };
     }
-    fn panic() {
-        panic!("PANIC!");
-    }
+
     #[test]
     #[should_panic(expected: ("PANIC!",))]
     fn test_user_defined_assert_eq() {
@@ -331,7 +328,7 @@ fn test_count_exprs_rec() {
 
 macro my_array {
     [$x:expr] => {
-        let mut arr = $defsite::ArrayTrait::new();
+        let mut arr = $defsite::array![];
         arr.append($x);
         arr
     };

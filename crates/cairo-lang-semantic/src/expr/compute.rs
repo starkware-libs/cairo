@@ -598,7 +598,11 @@ fn compute_expr_inline_macro_semantic(
             MacroExpansionResult { text: content, code_mappings: mappings },
         )
     } else {
-        compute_expr_semantic(ctx, &expr_syntax)
+        let prev_plugin_status = ctx.resolver.is_inside_plugin_macro;
+        ctx.resolver.set_plugin_macro(true);
+        let result = compute_expr_semantic(ctx, &expr_syntax);
+        ctx.resolver.set_plugin_macro(prev_plugin_status);
+        result
     };
     ctx.resolver.macro_call_data = prev_macro_resolver_data;
     Ok(expr.expr)

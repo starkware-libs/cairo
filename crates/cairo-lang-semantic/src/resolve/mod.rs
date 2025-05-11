@@ -236,6 +236,9 @@ pub struct Resolver<'db> {
     /// The resolving context for macro related resolving. Should be `Some` only if the current
     /// code is an expansion of a macro.
     pub macro_call_data: Option<ResolverMacroData>,
+    /// Is the code in context was generated from a plugin macro. If so, suppress the requirement
+    /// for resolving modifiers ($callsite or $defsite) in user defined macro paths.
+    pub is_inside_plugin_macro: bool,
     pub owning_crate_id: CrateId,
     pub settings: CrateSettings,
 }
@@ -334,7 +337,14 @@ impl<'db> Resolver<'db> {
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db);
         let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
-        Self { owning_crate_id, settings, db, data, macro_call_data: None }
+        Self {
+            owning_crate_id,
+            settings,
+            db,
+            data,
+            macro_call_data: None,
+            is_inside_plugin_macro: false,
+        }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -349,6 +359,10 @@ impl<'db> Resolver<'db> {
         if let Some(name) = generic_param_id.name(self.db) {
             self.generic_param_by_name.insert(name, generic_param_id);
         }
+    }
+
+    pub fn set_plugin_macro(&mut self, is_plugin_macro: bool) {
+        self.is_inside_plugin_macro = is_plugin_macro;
     }
 
     /// Resolves an item, given a path.
@@ -403,7 +417,7 @@ impl<'db> Resolver<'db> {
         let active_resolver = if is_placeholder {
             &mut self.resolve_placeholder(diagnostics, &mut segments, cur_macro_call_data)?
         } else {
-            if cur_macro_call_data.is_some() {
+            if cur_macro_call_data.is_some() && !self.is_inside_plugin_macro {
                 diagnostics.report(segments_stable_ptr, PathInMacroWithoutModifier);
             }
             self
