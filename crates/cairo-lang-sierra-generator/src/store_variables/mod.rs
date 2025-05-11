@@ -7,10 +7,12 @@ mod state;
 mod test;
 
 use cairo_lang_sierra as sierra;
+use cairo_lang_sierra::extensions::duplicate::DupLibfunc;
 use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
 use sierra::extensions::NamedLibfunc;
@@ -54,7 +56,28 @@ pub fn add_store_statements<GetLibfuncSignature>(
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
-    let mut handler = AddStoreVariableStatements::new(db, local_variables);
+    let mut duplicated_vars: OrderedHashSet<cairo_lang_sierra::ids::VarId> = Default::default();
+    for stmt in &statements {
+        match &stmt.statement {
+            pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
+                if invocation.libfunc_id.lookup_intern(db).generic_id.0 == DupLibfunc::STR_ID {
+                    for arg in &invocation.args {
+                        duplicated_vars.insert(arg.clone());
+                    }
+                }
+            }
+            pre_sierra::Statement::PushValues(push_values) => {
+                for push_value in push_values {
+                    if push_value.dup {
+                        duplicated_vars.insert(push_value.var.clone());
+                    }
+                }
+            }
+            pre_sierra::Statement::Sierra(GenStatement::Return(_)) => {}
+            pre_sierra::Statement::Label(_) => {}
+        }
+    }
+    let mut handler = AddStoreVariableStatements::new(db, local_variables, duplicated_vars);
     let mut state_opt = Some(VariablesState {
         variables: OrderedHashMap::from_iter(params.iter().map(|param| {
             (
@@ -83,6 +106,7 @@ where
 struct AddStoreVariableStatements<'a> {
     db: &'a dyn SierraGenGroup,
     local_variables: LocalVariables,
+    duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
     /// A list of output statements (the original statement, together with the added statements,
     /// such as "store_temp").
     result: Vec<pre_sierra::StatementWithLocation>,
@@ -95,10 +119,15 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(db: &'a dyn SierraGenGroup, local_variables: LocalVariables) -> Self {
+    fn new(
+        db: &'a dyn SierraGenGroup,
+        local_variables: LocalVariables,
+        duplicated_vars: OrderedHashSet<sierra::ids::VarId>,
+    ) -> Self {
         AddStoreVariableStatements {
             db,
             local_variables,
+            duplicated_vars,
             result: Vec::new(),
             future_states: OrderedHashMap::default(),
         }
@@ -421,20 +450,14 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Stores all the variables that may possibly get misaligned due to branches and stores them.
-    /// Storing locals, and additionally storing all deferred vars that are duplicatable vars, as
+    /// Storing locals, and additionally storing all deferred vars that are duplicated, as
     /// misalignments can only be caused by usages after merge, where only a single branch used the
     /// data. The variables will be remain in the same order.
     fn store_all_possibly_lost_variables(&mut self, state: &mut VariablesState) {
         self.store_variables_as_locals(state);
         for (var, var_state) in state.variables.iter_mut() {
             if let VarState::Deferred { info } = var_state {
-                if info.kind != DeferredVariableKind::Const
-                    && if let Ok(info) = self.db.get_type_info(info.ty.clone()) {
-                        info.duplicatable
-                    } else {
-                        true
-                    }
-                {
+                if info.kind != DeferredVariableKind::Const && self.duplicated_vars.contains(var) {
                     *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                 }
             }

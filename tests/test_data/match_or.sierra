@@ -73,7 +73,6 @@ const_as_immediate<Const<u8, 9>>() -> ([8]);
 struct_construct<examples::match_or::P>([6], [7], [8]) -> ([9]);
 enum_init<examples::match_or::MyEnum, 3>([9]) -> ([10]);
 store_temp<examples::match_or::MyEnum>([5]) -> ([5]);
-store_temp<examples::match_or::MyEnum>([10]) -> ([10]);
 enum_match<examples::match_or::MyEnum>([5]) { fallthrough([11]) F0_B0([12]) F0_B1([13]) F0_B2([14]) };
 branch_align() -> ();
 drop<Tuple<felt252, felt252>>([11]) -> ();
@@ -104,6 +103,7 @@ u8_to_felt252([25]) -> ([28]);
 drop<felt252>([28]) -> ();
 store_temp<RangeCheck>([24]) -> ([15]);
 F0_B4:
+store_temp<examples::match_or::MyEnum>([10]) -> ([10]);
 enum_match<examples::match_or::MyEnum>([10]) { fallthrough([29]) F0_B5([30]) F0_B6([31]) F0_B7([32]) };
 branch_align() -> ();
 drop<Tuple<felt252, felt252>>([29]) -> ();

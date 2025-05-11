@@ -751,18 +751,6 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<test::MyEnum>([10]) -> ([10])
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
-In function: lib.cairo::main
 enum_match<test::MyEnum>([5]) { fallthrough([11]) label_test::main::1([12]) label_test::main::2([13]) label_test::main::3([14]) }
 Originating location:
       match a {
@@ -1099,6 +1087,18 @@ Inlined at:
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
+            ^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([10]) -> ([10])
+Originating location:
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 enum_match<test::MyEnum>([10]) { fallthrough([29]) label_test::main::9([30]) label_test::main::10([31]) label_test::main::11([32]) }
