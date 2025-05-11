@@ -27,8 +27,8 @@ use crate::ids::{
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, VarRemapping,
-    VariableId,
+    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall,
+    VarRemapping, VariableId,
 };
 
 pub fn get_inline_diagnostics(
@@ -59,8 +59,7 @@ pub fn priv_should_inline(
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
     // Breaks cycles.
-    // TODO(ilya): consider #[inline(never)] attributes for feedback set.
-    if db.function_with_body_feedback_set(function_id)?.contains(&function_id) {
+    if db.concrete_in_cycle(function_id, DependencyType::Call)? {
         return Ok(false);
     }
 
