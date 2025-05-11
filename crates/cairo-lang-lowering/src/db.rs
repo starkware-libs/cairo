@@ -254,6 +254,14 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         dependency_type: DependencyType,
     ) -> Maybe<bool>;
 
+    /// A concrete version of `in_cycle`.
+    #[salsa::invoke(crate::graph_algorithms::cycles::concrete_in_cycle)]
+    fn concrete_in_cycle(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
+    ) -> Maybe<bool>;
+
     // ### Strongly connected components ###
 
     /// Returns the representative of the concrete function's strongly connected component. The
