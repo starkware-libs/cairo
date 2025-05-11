@@ -460,21 +460,15 @@ pub struct MacroExpansionResult {
     /// The expanded text.
     pub text: String,
     /// Information about placeholder expansions in this macro expansion.
-    /// Must be kept ordered by span.start to enable binary search in get_placeholder_at.
     pub code_mappings: Vec<CodeMapping>,
 }
 
 impl MacroExpansionResult {
     /// Returns the placeholder that was expanded at the given offset, if any.
     pub fn get_placeholder_at(&self, offset: TextOffset) -> Option<&CodeMapping> {
-        // Binary search to find a code mapping containing the offset
-        match self.code_mappings.binary_search_by_key(&offset, |p| p.span.start) {
-            Ok(i) => Some(&self.code_mappings[i]),
-            Err(i) if i > 0 && self.code_mappings[i - 1].span.end > offset => {
-                Some(&self.code_mappings[i - 1])
-            }
-            _ => None,
-        }
+        self.code_mappings
+            .iter()
+            .find(|mapping| mapping.span.start <= offset && offset <= mapping.span.end)
     }
 }
 
