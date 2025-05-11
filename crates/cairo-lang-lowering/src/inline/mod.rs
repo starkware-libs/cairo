@@ -58,12 +58,6 @@ pub fn priv_should_inline(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    // Breaks cycles.
-    // TODO(ilya): consider #[inline(never)] attributes for feedback set.
-    if db.function_with_body_feedback_set(function_id)?.contains(&function_id) {
-        return Ok(false);
-    }
-
     let config = db.function_declaration_inline_config(
         function_id.function_with_body_id(db).base_semantic_function(db),
     )?;
@@ -283,9 +277,16 @@ impl<'db> FunctionInlinerRewriter<'db> {
             if let Some(called_func) = stmt.function.body(self.variables.db)? {
                 // TODO: Implement better logic to avoid inlining of destructors that call
                 // themselves.
-                if called_func != self.calling_function_id
-                    && self.variables.db.priv_should_inline(called_func)?
-                {
+
+                // if there is a call chain from the called function to the caller then we have a
+                // cycle and we can't compute `priv_should_inline`.
+                let on_a_cycle = self
+                    .variables
+                    .db
+                    .concrete_function_with_body_scc(called_func, crate::DependencyType::Call)
+                    .contains(&self.calling_function_id);
+
+                if !on_a_cycle && self.variables.db.priv_should_inline(called_func)? {
                     return self.inline_function(called_func, stmt);
                 }
             }

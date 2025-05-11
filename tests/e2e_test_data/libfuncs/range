@@ -159,7 +159,24 @@ jmp rel 7;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [ap + -6], ap++;
 [ap + 0] = [ap + -7], ap++;
-call rel 20;
+%{ memory[ap + 0] = 1870 <= memory[ap + -3] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -4] + 340282366920938463463374607431768209586, ap++;
+[ap + -1] = [[ap + -6] + 0];
+jmp rel 40;
+[ap + -4] = [ap + 0] + 1870, ap++;
+[ap + -1] = [[ap + -6] + 0];
+[ap + 0] = [ap + -6] + 1, ap++;
+[ap + -4] = [ap + 0] + [ap + -5], ap++;
+jmp rel 7 if [ap + -1] != 0;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -4] + 2470, ap++;
+jmp rel 13;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + 0] = [ap + -8], ap++;
+call rel 30;
 jmp rel 11 if [ap + -3] != 0;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
@@ -169,6 +186,13 @@ jmp rel 11 if [ap + -3] != 0;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+call rel 51;
+[ap + 0] = [ap + -14] + 1, ap++;
+[ap + 0] = [ap + -14], ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
@@ -241,23 +265,23 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<IntRange<u8>> = store_temp<IntRange<u8>>;
 libfunc jump = jump;
+libfunc withdraw_gas = withdraw_gas;
+libfunc int_range_pop_front<u8> = int_range_pop_front<u8>;
+libfunc drop<u8> = drop<u8>;
 libfunc function_call<user@test::foo[12-38]> = function_call<user@test::foo[12-38]>;
 libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
-libfunc struct_deconstruct<Tuple<IntRange<u8>, Unit>> = struct_deconstruct<Tuple<IntRange<u8>, Unit>>;
-libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
+libfunc drop<Tuple<IntRange<u8>, Unit>> = drop<Tuple<IntRange<u8>, Unit>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
-libfunc withdraw_gas = withdraw_gas;
+libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
+libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
 libfunc dup<IntRange<u8>> = dup<IntRange<u8>>;
-libfunc int_range_pop_front<u8> = int_range_pop_front<u8>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<Tuple<IntRange<u8>, Unit>> = struct_construct<Tuple<IntRange<u8>, Unit>>;
 libfunc enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 0> = enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = store_temp<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
-libfunc drop<u8> = drop<u8>;
-libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
 libfunc enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 1> = enum_init<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>, 1>;
 libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -288,25 +312,50 @@ store_temp<RangeCheck>([6]) -> ([9]);
 store_temp<GasBuiltin>([12]) -> ([10]);
 store_temp<IntRange<u8>>([7]) -> ([11]);
 F0_B1:
-function_call<user@test::foo[12-38]>([9], [10], [11]) -> ([13], [14], [15]);
-enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([15]) { fallthrough([16]) F0_B2([17]) };
+withdraw_gas([9], [10]) { fallthrough([13], [14]) F0_B5([15], [16]) };
 branch_align() -> ();
-redeposit_gas([14]) -> ([18]);
-struct_deconstruct<Tuple<IntRange<u8>, Unit>>([16]) -> ([19], [20]);
-drop<IntRange<u8>>([19]) -> ();
-struct_construct<Tuple<Unit>>([20]) -> ([21]);
-enum_init<core::panics::PanicResult::<((),)>, 0>([21]) -> ([22]);
 store_temp<RangeCheck>([13]) -> ([13]);
-store_temp<GasBuiltin>([18]) -> ([18]);
-store_temp<core::panics::PanicResult::<((),)>>([22]) -> ([22]);
-return([13], [18], [22]);
+int_range_pop_front<u8>([11]) { fallthrough() F0_B2([17], [18]) };
+branch_align() -> ();
+redeposit_gas([14]) -> ([19]);
+store_temp<RangeCheck>([13]) -> ([20]);
+store_temp<GasBuiltin>([19]) -> ([21]);
+jump() { F0_B3() };
 F0_B2:
 branch_align() -> ();
-enum_init<core::panics::PanicResult::<((),)>, 1>([17]) -> ([23]);
+drop<u8>([18]) -> ();
 store_temp<RangeCheck>([13]) -> ([13]);
 store_temp<GasBuiltin>([14]) -> ([14]);
-store_temp<core::panics::PanicResult::<((),)>>([23]) -> ([23]);
-return([13], [14], [23]);
+store_temp<IntRange<u8>>([17]) -> ([17]);
+function_call<user@test::foo[12-38]>([13], [14], [17]) -> ([22], [23], [24]);
+enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([24]) { fallthrough([25]) F0_B4([26]) };
+branch_align() -> ();
+drop<Tuple<IntRange<u8>, Unit>>([25]) -> ();
+redeposit_gas([23]) -> ([27]);
+store_temp<RangeCheck>([22]) -> ([20]);
+store_temp<GasBuiltin>([27]) -> ([21]);
+F0_B3:
+struct_construct<Unit>() -> ([28]);
+struct_construct<Tuple<Unit>>([28]) -> ([29]);
+enum_init<core::panics::PanicResult::<((),)>, 0>([29]) -> ([30]);
+store_temp<core::panics::PanicResult::<((),)>>([30]) -> ([30]);
+return([20], [21], [30]);
+F0_B4:
+branch_align() -> ();
+enum_init<core::panics::PanicResult::<((),)>, 1>([26]) -> ([31]);
+store_temp<RangeCheck>([22]) -> ([22]);
+store_temp<GasBuiltin>([23]) -> ([23]);
+store_temp<core::panics::PanicResult::<((),)>>([31]) -> ([31]);
+return([22], [23], [31]);
+F0_B5:
+branch_align() -> ();
+drop<IntRange<u8>>([11]) -> ();
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([32]);
+enum_init<core::panics::PanicResult::<((),)>, 1>([32]) -> ([33]);
+store_temp<RangeCheck>([15]) -> ([15]);
+store_temp<GasBuiltin>([16]) -> ([16]);
+store_temp<core::panics::PanicResult::<((),)>>([33]) -> ([33]);
+return([15], [16], [33]);
 F1:
 disable_ap_tracking() -> ();
 withdraw_gas([0], [1]) { fallthrough([3], [4]) F1_B1([5], [6]) };
@@ -361,7 +410,7 @@ core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::
 core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3840})
+test::foo: OrderedHashMap({Const: 3040})
 test::foo[12-38]: OrderedHashMap({Const: 1870})
 core::panic_with_const_felt252::<375233589013918064796019>: OrderedHashMap({Const: 700})
 core::panic_with_felt252: OrderedHashMap({Const: 400})

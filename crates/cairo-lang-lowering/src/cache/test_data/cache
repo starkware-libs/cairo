@@ -198,6 +198,22 @@ impl MyImpl of MyTrait {}
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo[22-113](v0, v1)
 End:
-  Return(v2, v3, v4)
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v7: core::RangeCheck, v8: core::gas::GasBuiltin, v9: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo[22-113](v2, v6)
+End:
+  Return(v7, v8, v9)
+
+blk2:
+Statements:
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v11: core::panics::PanicResult::<(core::integer::i32,)>) <- PanicResult::Err(v10)
+End:
+  Return(v4, v5, v11)
