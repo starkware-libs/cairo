@@ -87,7 +87,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
 
     fn severity(&self) -> Severity {
         match self.kind {
-            LoweringDiagnosticKind::Unreachable { .. } => Severity::Warning,
+            LoweringDiagnosticKind::Unreachable { .. }
+            | LoweringDiagnosticKind::MatchError(MatchError {
+                kind: _,
+                error: MatchDiagnostic::UnreachableMatchArm,
+            }) => Severity::Warning,
             _ => Severity::Error,
         }
     }
