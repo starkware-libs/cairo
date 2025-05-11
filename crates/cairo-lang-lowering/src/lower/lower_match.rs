@@ -1,10 +1,12 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, GenericArgumentId, corelib};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
@@ -324,7 +326,8 @@ impl VariantMatchTree {
 }
 
 /// Builds a variant match tree from the arms of a match statement.
-/// The tree is used to check for unreachable patterns and represent for each variant it's .
+/// The tree is used to check for unreachable patterns and represent for each variant it's
+/// corresponding matching pattern.
 fn build_variant_match_tree(
     ctx: &mut LoweringContext<'_, '_>,
     arms: &[MatchArmWrapper<'_>],
@@ -935,7 +938,7 @@ pub(crate) fn lower_expr_match_tuple(
         location,
     });
     let sealed_blocks =
-        group_match_arms(ctx, empty_match_info, location, arms, arms_vec, match_type)?;
+        group_match_arms(ctx, &empty_match_info, location, arms, arms_vec, match_type)?;
 
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -1027,7 +1030,13 @@ pub(crate) fn lower_concrete_enum_match(
 
     // Merge arm blocks.
 
-    let mut builder_context = MatchArmsLoweringContext::new(builder, arms);
+    let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id,
+        input: match_input,
+        arms: vec![],
+        location,
+    });
+    let mut builder_context = MatchArmsLoweringContext::new(builder, arms, empty_match_info);
 
     let pattern_builder =
         ConcreteEnumVariantPatternBuilder { n_snapshots, default_location: location };
@@ -1041,16 +1050,9 @@ pub(crate) fn lower_concrete_enum_match(
         concrete_enum_id,
     )?;
 
-    let empty_match_info = MatchInfo::Enum(MatchEnumInfo {
-        concrete_enum_id,
-        input: match_input,
-        arms: vec![],
-        location,
-    });
-
     let sealed_blocks = group_match_arms(
         ctx,
-        empty_match_info,
+        &builder_context.empty_match_info,
         location,
         arms,
         variants_block_builders,
@@ -1060,16 +1062,7 @@ pub(crate) fn lower_concrete_enum_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: match_input,
-        arms: zip_eq(
-            zip_eq(concrete_variants, builder_context.block_ids),
-            builder_context.arm_var_ids,
-        )
-        .map(|((variant_id, block_id), var_ids)| MatchArm {
-            arm_selector: MatchArmSelector::VariantId(variant_id),
-            block_id,
-            var_ids,
-        })
-        .collect(),
+        arms: builder_context.collect_match_arms(&concrete_variants),
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -1092,10 +1085,17 @@ pub(crate) fn lower_optimized_extern_match(
 
     // Merge arm blocks.
 
-    let mut builder_context = MatchArmsLoweringContext::new(builder, match_arms);
+    let empty_match_info = MatchInfo::Extern(MatchExternInfo {
+        function: extern_enum.function.lowered(ctx.db),
+        inputs: vec![],
+        arms: vec![],
+        location,
+    });
+    let mut builder_context = MatchArmsLoweringContext::new(builder, match_arms, empty_match_info);
 
     let pattern_builder = ExternEnumVariantPatternBuilder { extern_enum: extern_enum.clone() };
-    let variants_block_builders = pattern_builder.build_enum_block_variants(
+
+    let variant_block_builders = pattern_builder.build_enum_block_variants(
         ctx,
         &mut builder_context,
         location,
@@ -1104,34 +1104,19 @@ pub(crate) fn lower_optimized_extern_match(
         extern_enum.concrete_enum_id,
     )?;
 
-    let empty_match_info = MatchInfo::Extern(MatchExternInfo {
-        function: extern_enum.function.lowered(ctx.db),
-        inputs: vec![],
-        arms: vec![],
-        location,
-    });
     let sealed_blocks = group_match_arms(
         ctx,
-        empty_match_info,
+        &builder_context.empty_match_info,
         location,
         match_arms,
-        variants_block_builders,
+        variant_block_builders,
         match_type,
     )?;
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
-        arms: zip_eq(
-            zip_eq(concrete_variants, builder_context.block_ids),
-            builder_context.arm_var_ids,
-        )
-        .map(|((variant_id, block_id), var_ids)| MatchArm {
-            arm_selector: MatchArmSelector::VariantId(variant_id),
-            block_id,
-            var_ids,
-        })
-        .collect(),
+        arms: builder_context.collect_match_arms(&concrete_variants),
         location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -1382,16 +1367,23 @@ struct MatchArmsLoweringContext<'a> {
     arms: &'a [MatchArmWrapper<'a>],
     /// For each enum variant, stores `VariableId`s which act as inputs to the arm's subscope.    
     arm_var_ids: Vec<Vec<VariableId>>,
+    /// Empty match info to be used for lowering match arms.
+    empty_match_info: MatchInfo,
 }
 
 impl<'a> MatchArmsLoweringContext<'a> {
     /// Creates a new [MatchArmsLoweringContext] for the given match arms.
-    fn new(builder: &'a mut BlockBuilder, match_arms: &'a [MatchArmWrapper<'_>]) -> Self {
+    fn new(
+        builder: &'a mut BlockBuilder,
+        match_arms: &'a [MatchArmWrapper<'_>],
+        empty_match_info: MatchInfo,
+    ) -> Self {
         Self {
             builder,
             block_ids: Default::default(),
             arms: match_arms,
             arm_var_ids: Default::default(),
+            empty_match_info,
         }
     }
 
@@ -1415,6 +1407,33 @@ impl<'a> MatchArmsLoweringContext<'a> {
                 .expect("Pattern was previously found and should be present in the arm.")
         })
     }
+
+    /// Collects the match arms from the context.
+    ///
+    /// This function converts the internal representation of match arms (block_ids and arm_var_ids)
+    /// into the final `MatchArm` structures that will be used in the lowered code.
+    ///
+    /// Panics if there's a mismatch between the number of concrete variants and
+    /// the number of block IDs or arm variable IDs.
+    fn collect_match_arms(self, concrete_variants: &[ConcreteVariant]) -> Vec<MatchArm> {
+        assert_eq!(
+            concrete_variants.len(),
+            self.block_ids.len(),
+            "Mismatch in number of concrete variants and block ids"
+        );
+        assert_eq!(
+            concrete_variants.len(),
+            self.arm_var_ids.len(),
+            "Mismatch in number of concrete variants and arm var ids"
+        );
+        zip_eq3(concrete_variants, self.block_ids, self.arm_var_ids)
+            .map(|(variant, block_id, var_ids)| MatchArm {
+                arm_selector: MatchArmSelector::VariantId(variant.clone()),
+                block_id,
+                var_ids,
+            })
+            .collect()
+    }
 }
 
 /// Represents a leaf in match tree, with the arm index it belongs to.
@@ -1428,13 +1447,13 @@ struct MatchLeafBuilder {
 /// the arms expression.
 fn group_match_arms(
     ctx: &mut LoweringContext<'_, '_>,
-    empty_match_info: MatchInfo,
+    empty_match_info: &MatchInfo,
     location: LocationId,
     arms: &[MatchArmWrapper<'_>],
     variants_block_builders: Vec<MatchLeafBuilder>,
     kind: MatchKind,
 ) -> LoweringResult<Vec<SealedBlockBuilder>> {
-    variants_block_builders
+    let res = variants_block_builders
         .into_iter()
         .sorted_by_key(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .chunk_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)
@@ -1447,40 +1466,13 @@ fn group_match_arms(
 
             // If the arm has only one pattern, there is no need to create a parent scope.
             if lowering_inner_pattern_results_and_subscopes.len() == 1 {
-                let (lowering_inner_pattern_result, mut subscope) =
+                let (lowering_inner_pattern_result, subscope) =
                     lowering_inner_pattern_results_and_subscopes.pop().unwrap();
 
                 return match lowering_inner_pattern_result {
                     Ok(_) => {
                         // Lower the arm expression.
-                        match (arm.expr(), kind) {
-                            (Some(expr), MatchKind::IfLet | MatchKind::Match) => {
-                                lower_tail_expr(ctx, subscope, expr)
-                            }
-                            (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
-                                let semantic::Expr::Block(expr) =
-                                    ctx.function_body.arenas.exprs[expr].clone()
-                                else {
-                                    unreachable!("While Let expression should be a block");
-                                };
-                                let block_expr = (|| {
-                                    lower_expr_block(ctx, &mut subscope, &expr)?;
-                                    recursively_call_loop_func(
-                                        ctx,
-                                        &mut subscope,
-                                        loop_expr_id,
-                                        stable_ptr,
-                                    )
-                                })();
-
-                                lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
-                            }
-                            (None, _) => lowered_expr_to_block_scope_end(
-                                ctx,
-                                subscope,
-                                Ok(LoweredExpr::Tuple { exprs: vec![], location }),
-                            ),
-                        }
+                        lower_arm_expr_and_seal(ctx, kind, arm, subscope)
                     }
                     Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
                 }
@@ -1497,22 +1489,8 @@ fn group_match_arms(
             let sealed_blocks: Vec<_> = lowering_inner_pattern_results_and_subscopes
                 .into_iter()
                 .map(|(lowering_inner_pattern_result, subscope)| {
-                    // Use the first pattern for the location of the for variable assignment block.
-                    let location = arm
-                        .patterns()
-                        .and_then(|ps| ps.first())
-                        .map(|pattern| {
-                            ctx.get_location(
-                                ctx.function_body.arenas.patterns[*pattern].stable_ptr().untyped(),
-                            )
-                        })
-                        .unwrap_or(location);
                     match lowering_inner_pattern_result {
-                        Ok(_) => lowered_expr_to_block_scope_end(
-                            ctx,
-                            subscope,
-                            Ok(LoweredExpr::Tuple { exprs: vec![], location }),
-                        ),
+                        Ok(_) => Ok(subscope.goto_callsite(None)),
                         Err(err) => lowering_flow_error_to_sealed_block(ctx, subscope, err),
                     }
                     .map_err(LoweringFlowError::Failed)
@@ -1525,36 +1503,42 @@ fn group_match_arms(
                 sealed_blocks,
                 location,
             )?;
-            match (arm.expr(), kind) {
-                (Some(expr), MatchKind::IfLet | MatchKind::Match) => {
-                    lower_tail_expr(ctx, outer_subscope, expr)
-                }
-                (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
-                    let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[expr].clone()
-                    else {
-                        unreachable!("WhileLet expression should be a block");
-                    };
-                    let block_expr = (|| {
-                        lower_expr_block(ctx, &mut outer_subscope, &expr)?;
-                        recursively_call_loop_func(
-                            ctx,
-                            &mut outer_subscope,
-                            loop_expr_id,
-                            stable_ptr,
-                        )
-                    })();
-
-                    lowered_expr_to_block_scope_end(ctx, outer_subscope, block_expr)
-                }
-                (None, _) => lowered_expr_to_block_scope_end(
-                    ctx,
-                    outer_subscope,
-                    Ok(LoweredExpr::Tuple { exprs: vec![], location }),
-                ),
-            }
-            .map_err(LoweringFlowError::Failed)
+            lower_arm_expr_and_seal(ctx, kind, arm, outer_subscope)
+                .map_err(LoweringFlowError::Failed)
         })
-        .collect()
+        .collect();
+
+    /// Lowers the expression of a match arm and seals the block.
+    /// This function is responsible for:
+    /// * Lowering the expression of the arm in the give subscope.
+    /// * Handling the case where the expression is a block and the match arm is a while let.
+    fn lower_arm_expr_and_seal(
+        ctx: &mut LoweringContext<'_, '_>,
+        kind: MatchKind,
+        arm: &MatchArmWrapper<'_>,
+        mut subscope: BlockBuilder,
+    ) -> Maybe<SealedBlockBuilder> {
+        match (arm.expr(), kind) {
+            (Some(expr), MatchKind::IfLet | MatchKind::Match) => {
+                lower_tail_expr(ctx, subscope, expr)
+            }
+            (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
+                let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[expr].clone()
+                else {
+                    unreachable!("WhileLet expression should be a block");
+                };
+                let block_expr = (|| {
+                    lower_expr_block(ctx, &mut subscope, &expr)?;
+                    recursively_call_loop_func(ctx, &mut subscope, loop_expr_id, stable_ptr)
+                })();
+
+                lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
+            }
+            (None, _) => Ok(subscope.goto_callsite(None)),
+        }
+    }
+
+    res
 }
 
 /// Lowers the [semantic::MatchArm] of an expression of type [semantic::ExprMatch] where the matched
@@ -1869,7 +1853,7 @@ fn lower_expr_match_value(
 
         let sealed_blocks = group_match_arms(
             ctx,
-            empty_match_info,
+            &empty_match_info,
             location,
             &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
             arms_vec,
@@ -1934,7 +1918,7 @@ fn lower_expr_match_value(
     });
     let sealed_blocks = group_match_arms(
         ctx,
-        empty_match_info,
+        &empty_match_info,
         location,
         &expr.arms.iter().map(|arm| arm.into()).collect_vec(),
         arms_vec,
