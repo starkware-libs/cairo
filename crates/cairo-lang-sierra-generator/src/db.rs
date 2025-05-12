@@ -119,6 +119,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<pre_sierra::Function>>;
 
+    /// Private query to generate a dummy function for a given function with body.
+    #[salsa::invoke(function_generator::priv_get_dummy_function)]
+    fn priv_get_dummy_function(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<pre_sierra::Function>>;
+
     /// Returns the ap change of a given function if it is known at compile time or
     /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
