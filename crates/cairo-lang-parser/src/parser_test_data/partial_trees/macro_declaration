@@ -266,3 +266,64 @@ error: Missing tokens. Expected a macro rule parameter kind.
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro statement expansion.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro array_macro {
+    ($($x:expr), *) => {
+        let mut arr = ArrayTrait::new();
+        {$(
+            arr.append($x);
+        ) * }
+        arr
+    };
+}
+
+//! > top_level_kind
+PlaceholderRepetitionBlock
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: PlaceholderRepetitionBlock
+    ├── dollar (kind: TokenDollar): '$'
+    ├── lparen (kind: TokenLParen): '('
+    ├── elements (kind: StatementList)
+    │   └── child #0 (kind: StatementExpr)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── expr (kind: ExprBinary)
+    │       │   ├── lhs (kind: ExprPath)
+    │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │   │   └── segments (kind: ExprPathInner)
+    │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │       │   │           └── ident (kind: TokenIdentifier): 'arr'
+    │       │   ├── op (kind: TokenDot): '.'
+    │       │   └── rhs (kind: ExprFunctionCall)
+    │       │       ├── path (kind: ExprPath)
+    │       │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   └── segments (kind: ExprPathInner)
+    │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │           └── ident (kind: TokenIdentifier): 'append'
+    │       │       └── arguments (kind: ArgListParenthesized)
+    │       │           ├── lparen (kind: TokenLParen): '('
+    │       │           ├── arguments (kind: ArgList)
+    │       │           │   └── item #0 (kind: Arg)
+    │       │           │       ├── modifiers (kind: ModifierList) []
+    │       │           │       └── arg_clause (kind: ArgClauseUnnamed)
+    │       │           │           └── value (kind: ExprPath)
+    │       │           │               ├── dollar (kind: TokenDollar): '$'
+    │       │           │               └── segments (kind: ExprPathInner)
+    │       │           │                   └── item #0 (kind: PathSegmentSimple)
+    │       │           │                       └── ident (kind: TokenIdentifier): 'x'
+    │       │           └── rparen (kind: TokenRParen): ')'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    ├── rparen (kind: TokenRParen): ')'
+    └── operator (kind: TokenMul): '*'
+
+//! > expected_diagnostics

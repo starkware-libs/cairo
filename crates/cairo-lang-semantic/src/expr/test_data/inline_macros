@@ -1204,7 +1204,8 @@ fn consume_z(_z: felt252) {}
 
 macro wrap_bas_use_z_from_callsite {
     () => {
-        $defsite::bas_use_z_from_callsite!()
+        $defsite::bas_use_z_from_callsite
+        !()
     };
 }
 

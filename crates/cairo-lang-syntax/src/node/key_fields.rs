@@ -77,6 +77,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprBlock => {
             vec![]
         }
+        SyntaxKind::PlaceholderRepetitionBlock => {
+            vec![]
+        }
         SyntaxKind::ExprMatch => {
             vec![]
         }
