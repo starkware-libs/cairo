@@ -6,6 +6,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_crate_cache;
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
@@ -49,7 +50,7 @@ fn test_cache_check(
     let function_id: ConcreteFunctionWithBodyId =
         ConcreteFunctionWithBodyId::from_semantic(&new_db, test_function.concrete_function_id);
 
-    let lowered = new_db.final_concrete_function_with_body_lowered(function_id);
+    let lowered = new_db.lowered_body(function_id, LoweringStage::Final);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),

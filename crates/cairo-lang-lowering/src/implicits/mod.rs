@@ -13,7 +13,8 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, DependencyType, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage,
+    BlockId, DependencyType, FlatBlockEnd, FlatLowered, LoweringStage, MatchArm, MatchInfo,
+    Statement, VarUsage,
 };
 
 struct Context<'a> {
@@ -255,8 +256,11 @@ pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
         function: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>> {
         let db = self.upcast();
-        let scc_representative = db
-            .concrete_function_with_body_scc_inlined_representative(function, DependencyType::Call);
+        let scc_representative = db.lowered_scc_representative(
+            function,
+            DependencyType::Call,
+            LoweringStage::PostBaseline,
+        );
         let mut implicits = db.scc_implicits(scc_representative)?;
 
         let precedence = db.function_declaration_implicit_precedence(
@@ -271,19 +275,20 @@ impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> 
 
 /// Query implementation of [LoweringGroup::scc_implicits].
 pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
-    let scc_functions = db.concrete_function_with_body_inlined_scc(scc.0, DependencyType::Call);
+    let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::PostBaseline);
     let mut all_implicits = HashSet::new();
     for function in scc_functions {
         // Add the function's explicit implicits.
         all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);
         // For each direct callee, add its implicits.
         let direct_callees =
-            db.concrete_function_with_body_inlined_direct_callees(function, DependencyType::Call)?;
+            db.lowered_direct_callees(function, DependencyType::Call, LoweringStage::PostBaseline)?;
         for direct_callee in direct_callees {
             if let Some(callee_body) = direct_callee.body(db)? {
-                let callee_scc = db.concrete_function_with_body_scc_inlined_representative(
+                let callee_scc = db.lowered_scc_representative(
                     callee_body,
                     DependencyType::Call,
+                    LoweringStage::PostBaseline,
                 );
                 if callee_scc != scc {
                     all_implicits.extend(db.scc_implicits(callee_scc)?);

@@ -530,3 +530,22 @@ pub enum DependencyType {
     /// A function depends on another function if its cost depends on the other function's cost.
     Cost,
 }
+
+/// The requested lowering stage.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum LoweringStage {
+    /// Direct translation from the semantic stage and concretization.
+    Monomorphized,
+    /// After lowering stages that may change the signature of functions, such as `lower_panics`.
+    /// Specifically:
+    /// * Adds `withdraw_gas` calls.
+    /// * Adds panics.
+    /// * Adds destructor calls.
+    PreOptimizations,
+    /// Lowering with baseline optimizations - specifically, adds the stages at
+    /// `baseline_optimization_strategy`.
+    PostBaseline,
+    /// Lowering with all of the optimizations - specifically, adds the stages at
+    /// `final_optimization_strategy`
+    Final,
+}

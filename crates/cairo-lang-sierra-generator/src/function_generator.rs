@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::{self as lowering};
+use cairo_lang_lowering::{self as lowering, LoweringStage};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -52,7 +52,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id)?;
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::Final)?;
     let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
@@ -140,7 +140,7 @@ pub fn priv_get_dummy_function(
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
     // TODO(ilya): Remove the following query.
-    let lowered_function = &*db.concrete_function_with_body_postpanic_lowered(function_id)?;
+    let lowered_function = &*db.lowered_body(function_id, LoweringStage::PreOptimizations)?;
     let ap_tracking_configuration = Default::default();
     let lifetime = Default::default();
 
