@@ -4,6 +4,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::optimizations::strategy::OptimizationPhase;
@@ -34,7 +35,7 @@ fn test_function_inlining(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let before = db.concrete_function_with_body_postpanic_lowered(function_id).ok();
+    let before = db.lowered_body(function_id, LoweringStage::PreOptimizations).ok();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let after = if let Some(before) = &before {
         let mut after = before.deref().clone();

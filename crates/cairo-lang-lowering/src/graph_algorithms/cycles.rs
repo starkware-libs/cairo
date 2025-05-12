@@ -1,9 +1,9 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use crate::DependencyType;
 use crate::db::{LoweringGroup, get_direct_callees};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
+use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].
@@ -40,9 +40,10 @@ pub fn final_contains_call_cycle(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let direct_callees = db.final_concrete_function_with_body_lowered_direct_callees(
+    let direct_callees = db.lowered_direct_callees_with_body(
         function_id,
         DependencyType::Call,
+        LoweringStage::Final,
     )?;
     for callee in direct_callees {
         if db.final_contains_call_cycle(callee)? {
