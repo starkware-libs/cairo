@@ -5,11 +5,11 @@ mod test;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 
 use crate::db::LoweringGroup;
-use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, VarUsage, VariableId};
+use crate::{BlockEnd, BlockId, Lowered, MatchEnumInfo, MatchInfo, VarUsage, VariableId};
 
 /// Trims unreachable code.
 /// The unreachable code is detected by the introduction of an enum with 0 variants.
-pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -43,7 +43,7 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     lowered.parameters.iter().find(|param| handle_var(param, BlockId::root()));
 
     for block in lowered.blocks.iter_mut() {
-        let FlatBlockEnd::Match { info } = &block.end else {
+        let BlockEnd::Match { info } = &block.end else {
             continue;
         };
 
@@ -56,7 +56,7 @@ pub fn trim_unreachable(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         let block = &mut lowered.blocks[block_id];
 
         block.statements.truncate(0);
-        block.end = FlatBlockEnd::Match {
+        block.end = BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id,
                 input: VarUsage { var_id: output, location },

@@ -22,7 +22,7 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::generators;
-use crate::blocks::FlatBlocksBuilder;
+use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
@@ -31,7 +31,7 @@ use crate::ids::{
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
+use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -103,7 +103,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Block usages for the entire encapsulating function.
     pub usages: Usages,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
+    pub lowerings: OrderedHashMap<GeneratedFunctionKey, Lowered>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
@@ -155,7 +155,7 @@ pub struct LoweringContext<'a, 'db> {
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
-    pub blocks: FlatBlocksBuilder,
+    pub blocks: BlocksBuilder,
     // The return type in the current context, for loops this differs from signature.return_type.
     pub return_type: semantic::TypeId,
 }

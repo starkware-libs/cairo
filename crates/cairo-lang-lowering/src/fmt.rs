@@ -10,9 +10,9 @@ use crate::objects::{
     VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
-    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    VarRemapping, VarUsage, Variable,
+    Block, BlockEnd, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo, StatementDesnap,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, VarUsage,
+    Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -44,7 +44,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
         Ok(())
     }
 }
-impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
+impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "Parameters:")?;
         let mut inputs = self.parameters.iter().peekable();
@@ -73,7 +73,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
+impl DebugWithDb<LoweredFormatter<'_>> for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         writeln!(f, "Statements:")?;
         for stmt in &self.statements {
@@ -88,22 +88,22 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
+impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Return(returns, _location) => {
+            BlockEnd::Return(returns, _location) => {
                 write!(f, "  Return(")?;
                 returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
-            FlatBlockEnd::Panic(data) => {
+            BlockEnd::Panic(data) => {
                 write!(f, "  Panic(")?;
                 vec![data.var_id]
             }
-            FlatBlockEnd::Goto(block_id, remapping) => {
+            BlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
             }
-            FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::NotSet => unreachable!(),
+            BlockEnd::Match { info } => {
                 return write!(f, "  Match({:?})", info.debug(ctx));
             }
         };

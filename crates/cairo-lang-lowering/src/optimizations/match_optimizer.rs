@@ -15,7 +15,7 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::utils::RebuilderEx;
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, VarRemapping, VarUsage, Variable, VariableId,
 };
 
@@ -53,7 +53,7 @@ impl MatchOptimizerDemand {
 /// ```
 ///
 /// Change `blk0` to jump directly to `blk4`.
-pub fn optimize_matches(lowered: &mut FlatLowered) {
+pub fn optimize_matches(lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -126,7 +126,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             &fix,
         );
 
-        block.end = FlatBlockEnd::Goto(fix.target_block, new_remapping);
+        block.end = BlockEnd::Goto(fix.target_block, new_remapping);
         if fix.statement_location.0 == fix.match_block {
             // The match was removed (by the assignment of `block.end` above), no need to fix it.
             // Sanity check: there should be no additional remapping in this case.
@@ -135,7 +135,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         }
 
         let block = &mut lowered.blocks[fix.match_block];
-        let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
+        let BlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
             &mut block.end
         else {
             unreachable!("match block should end with a match.");
@@ -159,9 +159,9 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             new_block_remapping.insert(*new_var, VarUsage { var_id: *var, location: *location });
         }
 
-        new_blocks.push(FlatBlock {
+        new_blocks.push(Block {
             statements: vec![],
-            end: FlatBlockEnd::Goto(arm.block_id, new_block_remapping),
+            end: BlockEnd::Goto(arm.block_id, new_block_remapping),
         });
         arm.block_id = next_block_id;
         next_block_id = next_block_id.next_block_id();
@@ -191,7 +191,7 @@ fn handle_additional_statements(
     var_renaming: &mut UnorderedHashMap<(VariableId, usize), VariableId>,
     new_remapping: &mut VarRemapping,
     renamed_vars: &mut OrderedHashMap<VariableId, VariableId>,
-    block: &mut FlatBlock,
+    block: &mut Block,
     fix: &FixInfo,
 ) {
     if fix.additional_stmts.is_empty() {
@@ -390,7 +390,7 @@ pub struct AnalysisInfo<'a> {
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block) {
         info.reachable_blocks.insert(block_id);
     }
 

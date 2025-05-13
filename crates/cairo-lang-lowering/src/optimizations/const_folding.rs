@@ -25,10 +25,9 @@ use num_traits::{Num, Zero};
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
-    VariableId,
+    BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
+    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
+    StatementStructConstruct, StatementStructDestructure, VarUsage, Variable, VariableId,
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.
@@ -68,7 +67,7 @@ enum Reachability {
 pub fn const_folding(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
@@ -96,7 +95,7 @@ pub fn const_folding(
             Reachability::Unreachable => continue,
             Reachability::Any => {}
             Reachability::FromSingleGoto(from_block) => match &lowered.blocks[from_block].end {
-                FlatBlockEnd::Goto(_, remapping) => {
+                BlockEnd::Goto(_, remapping) => {
                     for (dst, src) in remapping.iter() {
                         if let Some(v) = ctx.as_const(src.var_id) {
                             ctx.var_info.insert(*dst, VarInfo::Const(v.clone()));
@@ -213,12 +212,12 @@ pub fn const_folding(
         block.statements.splice(0..0, additional_stmts);
 
         match &mut block.end {
-            FlatBlockEnd::Goto(_, remappings) => {
+            BlockEnd::Goto(_, remappings) => {
                 for (_, v) in remappings.iter_mut() {
                     ctx.maybe_replace_input(v);
                 }
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 ctx.maybe_replace_inputs(info.inputs_mut());
                 match info {
                     MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
@@ -240,23 +239,23 @@ pub fn const_folding(
                     MatchInfo::Value(..) => {}
                 }
             }
-            FlatBlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::Return(ref mut inputs, _) => ctx.maybe_replace_inputs(inputs),
+            BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
         match &block.end {
-            FlatBlockEnd::Goto(dst_block_id, _) => {
+            BlockEnd::Goto(dst_block_id, _) => {
                 reachability[dst_block_id.0] = match reachability[dst_block_id.0] {
                     Reachability::Unreachable => Reachability::FromSingleGoto(BlockId(block_id)),
                     Reachability::FromSingleGoto(_) | Reachability::Any => Reachability::Any,
                 }
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 for arm in info.arms() {
                     assert_eq!(reachability[arm.block_id.0], Reachability::Unreachable);
                     reachability[arm.block_id.0] = Reachability::Any;
                 }
             }
-            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(..) => {}
+            BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
         }
     }
 }
@@ -494,7 +493,7 @@ impl ConstFoldingContext<'_> {
     fn handle_extern_block_end(
         &mut self,
         info: &mut MatchExternInfo,
-    ) -> Option<(Vec<Statement>, FlatBlockEnd)> {
+    ) -> Option<(Vec<Statement>, BlockEnd)> {
         let db = self.db;
         let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
@@ -507,7 +506,7 @@ impl ConstFoldingContext<'_> {
                 _ => unreachable!(),
             };
             Some(if is_zero {
-                (vec![], FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()))
+                (vec![], BlockEnd::Goto(info.arms[0].block_id, Default::default()))
             } else {
                 let arm = &info.arms[1];
                 let nz_var = arm.var_ids[0];
@@ -515,7 +514,7 @@ impl ConstFoldingContext<'_> {
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val.clone()));
                 (
                     vec![Statement::Const(StatementConst { value: nz_val, output: nz_var })],
-                    FlatBlockEnd::Goto(arm.block_id, Default::default()),
+                    BlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
         } else if self.eq_fns.contains(&id) {
@@ -536,7 +535,7 @@ impl ConstFoldingContext<'_> {
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
                 return Some((
                     vec![],
-                    FlatBlockEnd::Match {
+                    BlockEnd::Match {
                         info: MatchInfo::Extern(MatchExternInfo {
                             function,
                             inputs: vec![nz_input],
@@ -563,7 +562,7 @@ impl ConstFoldingContext<'_> {
             }
             Some((
                 vec![],
-                FlatBlockEnd::Goto(
+                BlockEnd::Goto(
                     info.arms[if lhs? == rhs? { 1 } else { 0 }].block_id,
                     Default::default(),
                 ),
@@ -578,14 +577,14 @@ impl ConstFoldingContext<'_> {
             if rhs.map(Zero::is_zero).unwrap_or_default() && !self.diff_fns.contains(&id) {
                 let arm = &info.arms[0];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
-                return Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())));
+                return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
             }
             let lhs = self.as_int(info.inputs[0].var_id);
             let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
                 if lhs.map(Zero::is_zero).unwrap_or_default() {
                     let arm = &info.arms[0];
                     self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
-                    return Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())));
+                    return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
                 }
                 lhs? + rhs?
             } else {
@@ -607,7 +606,7 @@ impl ConstFoldingContext<'_> {
             self.var_info.insert(actual_output, VarInfo::Const(value.clone()));
             Some((
                 vec![Statement::Const(StatementConst { value, output: actual_output })],
-                FlatBlockEnd::Goto(arm.block_id, Default::default()),
+                BlockEnd::Goto(arm.block_id, Default::default()),
             ))
         } else if self.downcast_fns.contains(&id) {
             let range = |ty: TypeId| {
@@ -638,7 +637,7 @@ impl ConstFoldingContext<'_> {
                             outputs: vec![success_output],
                             location: info.location,
                         })],
-                        FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                        BlockEnd::Goto(info.arms[0].block_id, Default::default()),
                     ));
                 };
             };
@@ -647,10 +646,10 @@ impl ConstFoldingContext<'_> {
                 self.var_info.insert(success_output, VarInfo::Const(value.clone()));
                 (
                     vec![Statement::Const(StatementConst { value, output: success_output })],
-                    FlatBlockEnd::Goto(info.arms[0].block_id, Default::default()),
+                    BlockEnd::Goto(info.arms[0].block_id, Default::default()),
                 )
             } else {
-                (vec![], FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()))
+                (vec![], BlockEnd::Goto(info.arms[1].block_id, Default::default()))
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
@@ -664,7 +663,7 @@ impl ConstFoldingContext<'_> {
             let output = info.arms[arm_idx].var_ids[0];
             Some((
                 vec![self.propagate_const_and_get_statement(value.clone(), output, nz_ty)],
-                FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
+                BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
@@ -715,13 +714,13 @@ impl ConstFoldingContext<'_> {
                                         location: info.location,
                                     }),
                                 ],
-                                FlatBlockEnd::Goto(arm.block_id, Default::default()),
+                                BlockEnd::Goto(arm.block_id, Default::default()),
                             ));
                         }
                     } else {
                         return Some((
                             vec![],
-                            FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()),
+                            BlockEnd::Goto(info.arms[1].block_id, Default::default()),
                         ));
                     }
                 }
@@ -754,7 +753,7 @@ impl ConstFoldingContext<'_> {
             } else {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())))
+                Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())))
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
@@ -764,7 +763,7 @@ impl ConstFoldingContext<'_> {
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((vec![], FlatBlockEnd::Goto(arm.block_id, Default::default())))
+                Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())))
             } else {
                 None
             }

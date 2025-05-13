@@ -9,7 +9,7 @@ use itertools::{Itertools, chain, izip, zip_eq};
 use super::var_renamer::VarRenamer;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 /// Cancels out a (StructConstruct, StructDestructure) and (Snap, Desnap) pair.
 ///
@@ -21,7 +21,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, 
 ///
 /// See CancelOpsContext::handle_stmt for more detail on when it is safe
 /// to remove a statement.
-pub fn cancel_ops(lowered: &mut FlatLowered) {
+pub fn cancel_ops(lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -55,7 +55,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
 }
 
 pub struct CancelOpsContext<'a> {
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 
     /// Maps a variable to the use sites of that variable.
     /// Note that a remapping is considered as usage here.

@@ -21,8 +21,8 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, StatementCall,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
+    BlockEnd, BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
@@ -41,7 +41,7 @@ enum AddDestructFlowType {
 /// Context for the destructor call addition phase,
 pub struct DestructAdder<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
     destructions: Vec<DestructionEntry>,
     panic_ty: TypeId,
     /// The actual return type of a never function after adding panics.
@@ -280,7 +280,7 @@ fn panic_ty(db: &dyn LoweringGroup) -> semantic::TypeId {
 pub fn add_destructs(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -420,7 +420,7 @@ pub fn add_destructs(
             }
             AddDestructFlowType::PanicPostMatch => {
                 let block = &mut lowered.blocks[BlockId(match_block_id)];
-                let FlatBlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
+                let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
                     unreachable!();
                 };
 
@@ -518,7 +518,7 @@ pub fn add_destructs(
                     None => {
                         assert_eq!(statement_idx, block.statements.len());
                         let panic_var = match &mut block.end {
-                            FlatBlockEnd::Return(vars, _) => &mut vars[0].var_id,
+                            BlockEnd::Return(vars, _) => &mut vars[0].var_id,
                             _ => unreachable!("Expected a return statement."),
                         };
 
