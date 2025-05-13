@@ -325,201 +325,6 @@ impl VariantMatchTree {
     }
 }
 
-/// Builds a variant match tree from the arms of a match statement.
-/// The tree is used to check for unreachable patterns and represent for each variant it's
-/// corresponding matching pattern.
-fn build_variant_match_tree(
-    ctx: &mut LoweringContext<'_, '_>,
-    arms: &[MatchArmWrapper<'_>],
-    concrete_enum_id: semantic::ConcreteEnumId,
-    match_type: MatchKind,
-) -> LoweringResult<VariantMatchTree> {
-    // An Enum might contain nested Enum variants. A good example using either is:
-    // ```Either<Either<felt252, Option<felt252>>, Either<Option<Array<felt252>>, Felt252Dict>>```
-    // If we draw it as a tree we can see different branches have different types and depths:
-    // ```
-    // Either
-    // ├── Either
-    // │   ├── felt252
-    // │   └── Option
-    // │       ├── Some<felt252>
-    // │       └── None
-    // └── Either
-    //     ├── Option
-    //     |   └── Some<Array<felt252>> <---- Not an enum so no branching
-    //     │   └── None
-    //     └── Felt252Dict
-    // ```
-    // This can be generalized to a tree where each enum type intoduces one branch per variant.
-    // We use [VariantMatchTree] to check patterns are legal (reachable and all branches end with a pattern).
-    let mut variant_match_tree = VariantMatchTree::Empty;
-    for (arm_index, arm) in arms.iter().enumerate() {
-        let patterns = match arm {
-            MatchArmWrapper::DefaultClause => {
-                let _ = variant_match_tree
-                    .push_pattern_path(match_type, PatternPath { arm_index, pattern_index: None });
-                continue;
-            }
-            MatchArmWrapper::ElseClause(e) => {
-                let ptr = ctx.function_body.arenas.exprs[*e].stable_ptr();
-                try_push(
-                    ctx,
-                    match_type,
-                    ptr,
-                    PatternPath { arm_index, pattern_index: None },
-                    &mut variant_match_tree,
-                );
-                continue;
-            }
-            MatchArmWrapper::Arm(patterns, _) => patterns,
-        };
-        for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
-            let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
-            let pattern_ptr = ctx.function_body.arenas.patterns[pattern].stable_ptr();
-
-            let variant_match_tree = &mut variant_match_tree;
-            if !(matches_enum(ctx, pattern) | matches_other(ctx, pattern)) {
-                return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                    pattern_ptr,
-                    MatchError(MatchError {
-                        kind: match_type,
-                        error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
-                    }),
-                )));
-            }
-            unfold_pattern_and_push_to_tree(
-                ctx,
-                match_type,
-                pattern,
-                pattern_path,
-                variant_match_tree,
-                concrete_enum_id,
-            )?;
-        }
-    }
-
-    /// Recursively unfolds a pattern and pushes it to a variant match tree.
-    /// This function handles nested enum patterns by traversing the enum patterns and updating the
-    /// variant match tree accordingly.
-    /// The function handles three main cases:
-    /// * Otherwise (_) patterns: fills all leaves in the tree
-    /// * Enum variant patterns: recursively processes nested patterns if they exist
-    /// * Other patterns: reports errors for unsupported pattern types
-    ///
-    /// # Returns
-    /// * `Ok(())` if the pattern was successfully unfolded and pushed to the tree.
-    /// * `Err(LoweringFlowError)` if an error occurred during processing (e.g., mismatched enum
-    ///   types, or unsupported pattern types).
-    fn unfold_pattern_and_push_to_tree(
-        ctx: &mut LoweringContext<'_, '_>,
-        match_type: MatchKind,
-        mut pattern: PatternId,
-        pattern_path: PatternPath,
-        mut variant_match_tree: &mut VariantMatchTree,
-        mut concrete_enum_id: semantic::ConcreteEnumId,
-    ) -> Result<(), LoweringFlowError> {
-        let pattern_ptr = ctx.function_body.arenas.patterns[pattern].stable_ptr();
-        loop {
-            match &ctx.function_body.arenas.patterns[pattern] {
-                semantic::Pattern::Otherwise(_) => {
-                    // Fill leaves and check for usefulness.
-                    try_push(ctx, match_type, pattern_ptr, pattern_path, variant_match_tree);
-                    break;
-                }
-                semantic::Pattern::EnumVariant(enum_pattern) => {
-                    if concrete_enum_id != enum_pattern.variant.concrete_enum_id {
-                        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-                            pattern_ptr,
-                            MatchError(MatchError {
-                                kind: match_type,
-                                error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
-                            }),
-                        )));
-                    }
-                    // Expand paths in map to include all variants of this enum_pattern.
-                    if let Some(vmap) = variant_match_tree
-                        .get_mapping_or_insert(ctx, enum_pattern.variant.clone())
-                        .map_err(LoweringFlowError::Failed)?
-                    {
-                        variant_match_tree = vmap;
-                    } else {
-                        ctx.diagnostics.report(
-                            pattern_ptr,
-                            MatchError(MatchError {
-                                kind: match_type,
-                                error: MatchDiagnostic::UnreachableMatchArm,
-                            }),
-                        );
-                        break;
-                    }
-
-                    if let Some(inner_pattern) = enum_pattern.inner_pattern {
-                        if !matches_enum(ctx, inner_pattern) {
-                            try_push(
-                                ctx,
-                                match_type,
-                                pattern_ptr,
-                                pattern_path,
-                                variant_match_tree,
-                            );
-                            break;
-                        }
-
-                        let ptr = ctx.function_body.arenas.patterns[inner_pattern].stable_ptr();
-                        let variant = &ctx
-                            .db
-                            .concrete_enum_variants(concrete_enum_id)
-                            .map_err(LoweringFlowError::Failed)?[enum_pattern.variant.idx];
-                        let next_enum =
-                            extract_concrete_enum(ctx, ptr.into(), variant.ty, match_type);
-                        concrete_enum_id = next_enum?.concrete_enum_id;
-
-                        pattern = inner_pattern;
-                    } else {
-                        try_push(ctx, match_type, pattern_ptr, pattern_path, variant_match_tree);
-                        break;
-                    }
-                }
-                _ => {
-                    break;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// This function attempts to push a pattern onto the [VariantMatchTree] This will fill the
-    /// appropriate subtrees as covered (i.e. full). If the pattern is unreachable (i.e.,
-    /// the enum variant it represents is already covered), it reports it. Assumes push can
-    /// only fail on unreachable patterns.
-    fn try_push(
-        ctx: &mut LoweringContext<'_, '_>,
-        match_type: MatchKind,
-        stable_ptr: impl Into<SyntaxStablePtrId>,
-        pattern_path: PatternPath,
-        variant_map: &mut VariantMatchTree,
-    ) {
-        let _ = variant_map
-            .push_pattern_path(match_type, pattern_path)
-            .map_err(|e| ctx.diagnostics.report(stable_ptr, e));
-    }
-
-    /// Checks if a pattern matches an enum variant.
-    fn matches_enum(ctx: &LoweringContext<'_, '_>, pattern: PatternId) -> bool {
-        matches!(ctx.function_body.arenas.patterns[pattern], semantic::Pattern::EnumVariant(_))
-    }
-
-    /// Checks if a pattern matches `otherwise` or a variable.
-    fn matches_other(ctx: &LoweringContext<'_, '_>, pattern: PatternId) -> bool {
-        matches!(
-            ctx.function_body.arenas.patterns[pattern],
-            semantic::Pattern::Otherwise(_) | semantic::Pattern::Variable(_)
-        )
-    }
-
-    Ok(variant_match_tree)
-}
-
 /// Represents a path in a match tree.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 struct MatchingPath {
@@ -1158,8 +963,12 @@ trait EnumVariantScopeBuilder {
         concrete_enum_id: semantic::ConcreteEnumId,
     ) -> Result<Vec<MatchLeafBuilder>, LoweringFlowError> {
         // Collect for all patterns into a `VariantMatchTree` to reason about patterns per variant.
-        let variant_match_tree =
-            build_variant_match_tree(ctx, builder_context.arms, concrete_enum_id, match_type)?;
+        let variant_match_tree = Self::build_variant_match_tree(
+            ctx,
+            builder_context.arms,
+            concrete_enum_id,
+            match_type,
+        )?;
 
         match variant_match_tree {
             VariantMatchTree::Empty => concrete_variants
@@ -1228,6 +1037,209 @@ trait EnumVariantScopeBuilder {
         }
         .into_iter()
         .collect::<LoweringResult<Vec<_>>>()
+    }
+
+    /// Builds a variant match tree from the arms of a match statement.
+    /// The tree is used to check for unreachable patterns and represent for each variant it's
+    /// corresponding matching pattern.
+    fn build_variant_match_tree(
+        ctx: &mut LoweringContext<'_, '_>,
+        arms: &[MatchArmWrapper<'_>],
+        concrete_enum_id: semantic::ConcreteEnumId,
+        match_type: MatchKind,
+    ) -> LoweringResult<VariantMatchTree> {
+        // An Enum might contain nested Enum variants. A good example using either is:
+        // ```Either<Either<felt252, Option<felt252>>, Either<Option<Array<felt252>>,
+        // Felt252Dict>>```
+        // If we draw it as a tree we can see different branches have different types and depths:
+        // ``` Either
+        // ├── Either
+        // │   ├── felt252
+        // │   └── Option
+        // │       ├── Some<felt252>
+        // │       └── None
+        // └── Either
+        //     ├── Option
+        //     |   └── Some<Array<felt252>> <---- Not an enum so no branching
+        //     │   └── None
+        //     └── Felt252Dict
+        // ```
+        // This can be generalized to a tree where each enum type intoduces one branch per variant.
+        // We use [VariantMatchTree] to check patterns are legal (reachable and all branches end with a pattern).
+        let mut variant_match_tree = VariantMatchTree::Empty;
+        for (arm_index, arm) in arms.iter().enumerate() {
+            let patterns = match arm {
+                MatchArmWrapper::DefaultClause => {
+                    let _ = variant_match_tree.push_pattern_path(
+                        match_type,
+                        PatternPath { arm_index, pattern_index: None },
+                    );
+                    continue;
+                }
+                MatchArmWrapper::ElseClause(e) => {
+                    let ptr = ctx.function_body.arenas.exprs[*e].stable_ptr();
+                    try_push(
+                        ctx,
+                        match_type,
+                        ptr,
+                        PatternPath { arm_index, pattern_index: None },
+                        &mut variant_match_tree,
+                    );
+                    continue;
+                }
+                MatchArmWrapper::Arm(patterns, _) => patterns,
+            };
+            for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
+                let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
+                let pattern_ptr = ctx.function_body.arenas.patterns[pattern].stable_ptr();
+
+                let variant_match_tree = &mut variant_match_tree;
+                if !(matches_enum(ctx, pattern) | matches_other(ctx, pattern)) {
+                    return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                        pattern_ptr,
+                        MatchError(MatchError {
+                            kind: match_type,
+                            error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
+                        }),
+                    )));
+                }
+                unfold_pattern_and_push_to_tree(
+                    ctx,
+                    match_type,
+                    pattern,
+                    pattern_path,
+                    variant_match_tree,
+                    concrete_enum_id,
+                )?;
+            }
+        }
+
+        /// Recursively unfolds a pattern and pushes it to a variant match tree.
+        /// This function handles nested enum patterns by traversing the enum patterns and updating
+        /// the variant match tree accordingly.
+        /// The function handles three main cases:
+        /// * Otherwise (_) patterns: fills all leaves in the tree
+        /// * Enum variant patterns: recursively processes nested patterns if they exist
+        /// * Other patterns: reports errors for unsupported pattern types
+        ///
+        /// # Returns
+        /// * `Ok(())` if the pattern was successfully unfolded and pushed to the tree.
+        /// * `Err(LoweringFlowError)` if an error occurred during processing (e.g., mismatched enum
+        ///   types, or unsupported pattern types).
+        fn unfold_pattern_and_push_to_tree(
+            ctx: &mut LoweringContext<'_, '_>,
+            match_type: MatchKind,
+            mut pattern: PatternId,
+            pattern_path: PatternPath,
+            mut variant_match_tree: &mut VariantMatchTree,
+            mut concrete_enum_id: semantic::ConcreteEnumId,
+        ) -> Result<(), LoweringFlowError> {
+            let pattern_ptr = ctx.function_body.arenas.patterns[pattern].stable_ptr();
+            loop {
+                match &ctx.function_body.arenas.patterns[pattern] {
+                    semantic::Pattern::Otherwise(_) => {
+                        // Fill leaves and check for usefulness.
+                        try_push(ctx, match_type, pattern_ptr, pattern_path, variant_match_tree);
+                        break;
+                    }
+                    semantic::Pattern::EnumVariant(enum_pattern) => {
+                        if concrete_enum_id != enum_pattern.variant.concrete_enum_id {
+                            return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
+                                pattern_ptr,
+                                MatchError(MatchError {
+                                    kind: match_type,
+                                    error: MatchDiagnostic::UnsupportedMatchArmNotAVariant,
+                                }),
+                            )));
+                        }
+                        // Expand paths in map to include all variants of this enum_pattern.
+                        if let Some(vmap) = variant_match_tree
+                            .get_mapping_or_insert(ctx, enum_pattern.variant.clone())
+                            .map_err(LoweringFlowError::Failed)?
+                        {
+                            variant_match_tree = vmap;
+                        } else {
+                            ctx.diagnostics.report(
+                                pattern_ptr,
+                                MatchError(MatchError {
+                                    kind: match_type,
+                                    error: MatchDiagnostic::UnreachableMatchArm,
+                                }),
+                            );
+                            break;
+                        }
+
+                        if let Some(inner_pattern) = enum_pattern.inner_pattern {
+                            if !matches_enum(ctx, inner_pattern) {
+                                try_push(
+                                    ctx,
+                                    match_type,
+                                    pattern_ptr,
+                                    pattern_path,
+                                    variant_match_tree,
+                                );
+                                break;
+                            }
+
+                            let ptr = ctx.function_body.arenas.patterns[inner_pattern].stable_ptr();
+                            let variant = &ctx
+                                .db
+                                .concrete_enum_variants(concrete_enum_id)
+                                .map_err(LoweringFlowError::Failed)?[enum_pattern.variant.idx];
+                            let next_enum =
+                                extract_concrete_enum(ctx, ptr.into(), variant.ty, match_type);
+                            concrete_enum_id = next_enum?.concrete_enum_id;
+
+                            pattern = inner_pattern;
+                        } else {
+                            try_push(
+                                ctx,
+                                match_type,
+                                pattern_ptr,
+                                pattern_path,
+                                variant_match_tree,
+                            );
+                            break;
+                        }
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+            Ok(())
+        }
+
+        /// This function attempts to push a pattern onto the [VariantMatchTree] This will fill the
+        /// appropriate subtrees as covered (i.e. full). If the pattern is unreachable (i.e.,
+        /// the enum variant it represents is already covered), it reports it. Assumes push can
+        /// only fail on unreachable patterns.
+        fn try_push(
+            ctx: &mut LoweringContext<'_, '_>,
+            match_type: MatchKind,
+            stable_ptr: impl Into<SyntaxStablePtrId>,
+            pattern_path: PatternPath,
+            variant_map: &mut VariantMatchTree,
+        ) {
+            let _ = variant_map
+                .push_pattern_path(match_type, pattern_path)
+                .map_err(|e| ctx.diagnostics.report(stable_ptr, e));
+        }
+
+        /// Checks if a pattern matches an enum variant.
+        fn matches_enum(ctx: &LoweringContext<'_, '_>, pattern: PatternId) -> bool {
+            matches!(ctx.function_body.arenas.patterns[pattern], semantic::Pattern::EnumVariant(_))
+        }
+
+        /// Checks if a pattern matches `otherwise` or a variable.
+        fn matches_other(ctx: &LoweringContext<'_, '_>, pattern: PatternId) -> bool {
+            matches!(
+                ctx.function_body.arenas.patterns[pattern],
+                semantic::Pattern::Otherwise(_) | semantic::Pattern::Variable(_)
+            )
+        }
+
+        Ok(variant_match_tree)
     }
 
     /// Prepares the lowering of a single match arm leaf.
