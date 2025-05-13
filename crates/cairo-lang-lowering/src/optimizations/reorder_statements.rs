@@ -13,7 +13,7 @@ use itertools::{Itertools, zip_eq};
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::{
-    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+    BlockId, Lowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
 
 /// Reorder the statements in the lowering in order to move variable definitions closer to their
@@ -22,7 +22,7 @@ use crate::{
 /// The list of call statements that can be moved is currently hardcoded.
 ///
 /// Removing unnecessary remapping before this optimization will result in better code.
-pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if lowered.blocks.is_empty() {
         return;
     }
@@ -76,7 +76,7 @@ pub struct ReorderStatementsInfo {
 
 pub struct ReorderStatementsContext<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
     // A list of function that can be moved.
     moveable_functions: &'a UnorderedHashSet<ExternFunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,

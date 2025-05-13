@@ -45,7 +45,7 @@ use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
 use self::lower_if::lower_expr_if;
 use self::lower_match::lower_expr_match;
-use crate::blocks::FlatBlocks;
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
@@ -57,7 +57,7 @@ use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, Va
 use crate::lower::generators::StructDestructure;
 use crate::lower::lower_match::MatchArmWrapper;
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
+    BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -75,8 +75,8 @@ mod generated_test;
 /// Lowering of a function together with extra generated functions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {
-    pub main_lowering: FlatLowered,
-    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
+    pub main_lowering: Lowered,
+    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, Lowered>,
 }
 
 /// Lowers a semantic free function.
@@ -111,13 +111,13 @@ pub fn lower_semantic_function(
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
-/// Lowers a function into [FlatLowered].
+/// Lowers a function into [Lowered].
 pub fn lower_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
     signature: Signature,
     block_expr_id: semantic::ExprId,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
     let return_type = signature.return_type;
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?;
@@ -159,8 +159,8 @@ pub fn lower_function(
     };
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
-    Ok(FlatLowered {
+        .unwrap_or_else(Blocks::new_errored);
+    Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
@@ -378,7 +378,7 @@ pub fn lower_expr_while_let(
     )
 }
 
-/// Lowers a loop inner function into [FlatLowered].
+/// Lowers a loop inner function into [Lowered].
 /// Similar to `lower_function`, but adds a recursive call.
 // TODO(spapini): Unite with `lower_function`.
 pub fn lower_loop_function(
@@ -387,7 +387,7 @@ pub fn lower_loop_function(
     loop_signature: Signature,
     loop_ctx: LoopContext,
     return_type: semantic::TypeId,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     let loop_expr_id = loop_ctx.loop_expr_id;
     let mut ctx =
         LoweringContext::new(encapsulating_ctx, function_id, loop_signature, return_type)?;
@@ -466,8 +466,8 @@ pub fn lower_loop_function(
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
-    Ok(FlatLowered {
+        .unwrap_or_else(Blocks::new_errored);
+    Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
@@ -1881,7 +1881,7 @@ fn get_destruct_lowering(
     mut ctx: LoweringContext<'_, '_>,
     location_id: LocationId,
     closure_info: &ClosureInfo,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
@@ -1902,7 +1902,7 @@ fn get_destruct_lowering(
         generators::StructConstruct { inputs: vec![], ty: unit_ty(ctx.db), location: location_id }
             .add(&mut ctx, &mut builder.statements);
     builder.ret(&mut ctx, var_usage, location_id)?;
-    let lowered_impl = FlatLowered {
+    let lowered_impl = Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks: ctx.blocks.build().unwrap(),
@@ -2032,9 +2032,9 @@ fn add_closure_call_function(
     });
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
+        .unwrap_or_else(Blocks::new_errored);
 
-    let lowered = FlatLowered {
+    let lowered = Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,

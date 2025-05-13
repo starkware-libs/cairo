@@ -12,7 +12,7 @@ use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, VariableId,
 };
@@ -25,7 +25,7 @@ use crate::{
 pub fn return_optimization(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if lowered.blocks.is_empty() {
         return;
@@ -52,7 +52,7 @@ pub fn return_optimization(
             location: return_info.location,
         };
         let vars = ctx.prepare_early_return_vars(&return_info.returned_vars);
-        block.end = FlatBlockEnd::Return(vars, return_info.location)
+        block.end = BlockEnd::Return(vars, return_info.location)
     }
 
     lowered.variables = variables.variables;
@@ -128,7 +128,7 @@ impl EarlyReturnContext<'_, '_> {
 
 pub struct ReturnOptimizerContext<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 
     /// The list of fixes that should be applied.
     fixes: Vec<FixInfo>,
@@ -488,7 +488,7 @@ impl AnalyzerInfo {
 impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
     type Info = AnalyzerInfo;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block) {
         if let Some(return_info) = info.try_get_early_return_info() {
             self.fixes.push(FixInfo { location: (block_id, 0), return_info: return_info.clone() });
         }
@@ -570,7 +570,7 @@ impl<'a> Analyzer<'a> for ReturnOptimizerContext<'_> {
         vars: &'a [VarUsage],
     ) -> Self::Info {
         let location = match &self.lowered.blocks[block_id].end {
-            FlatBlockEnd::Return(_vars, location) => *location,
+            BlockEnd::Return(_vars, location) => *location,
             _ => unreachable!(),
         };
 

@@ -37,7 +37,7 @@ use crate::lower::{
     match_extern_variant_arm_input_types,
 };
 use crate::{
-    FlatBlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage,
+    BlockEnd, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage,
     VariableId,
 };
 
@@ -826,7 +826,7 @@ fn lower_full_match_tree(
                     match_type,
                 )
                 .map(|match_info| {
-                    subscope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+                    subscope.finalize(ctx, BlockEnd::Match { info: match_info });
                 })
             }
             .map(|_| block_id);
@@ -1664,7 +1664,7 @@ fn lower_expr_felt252_arm(
 
         // we can use finalize here because the else block is an inner block of the match expression
         // and does not have sibling block it goes to.
-        else_block.finalize(ctx, FlatBlockEnd::Match { info: match_info });
+        else_block.finalize(ctx, BlockEnd::Match { info: match_info });
     }
     Ok(match_info)
 }
@@ -1878,7 +1878,7 @@ fn lower_expr_match_value(
         &literals_to_arm_map,
         &mut arms_vec,
     )?;
-    in_range_block.finalize(ctx, FlatBlockEnd::Match { info: inner_match_info });
+    in_range_block.finalize(ctx, BlockEnd::Match { info: inner_match_info });
 
     let otherwise_block = create_subscope(ctx, builder);
     let otherwise_block_id = otherwise_block.block_id;

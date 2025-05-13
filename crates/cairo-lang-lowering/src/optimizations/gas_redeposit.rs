@@ -13,8 +13,8 @@ use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;
 use crate::{
-    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, StatementEnumConstruct,
-    VarRemapping, VarUsage, VariableId,
+    BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementEnumConstruct, VarRemapping,
+    VarUsage, VariableId,
 };
 
 /// Adds redeposit gas actions.
@@ -31,7 +31,7 @@ use crate::{
 pub fn gas_redeposit(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if lowered.blocks.is_empty() {
         return;

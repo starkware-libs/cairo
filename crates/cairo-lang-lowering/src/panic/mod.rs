@@ -14,27 +14,27 @@ use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
-use crate::blocks::FlatBlocksBuilder;
+use crate::blocks::BlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, DependencyType, FlatBlock, FlatBlockEnd, FlatLowered, LoweringStage, MatchArm,
-    MatchEnumInfo, MatchExternInfo, MatchInfo, Statement, StatementCall, StatementEnumConstruct,
+    Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchEnumInfo,
+    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementEnumConstruct,
     StatementStructConstruct, StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
 // the Sierra type.
 
-/// Lowering phase that converts BlockEnd::Panic into BlockEnd::Return, and wraps necessary types
-/// with PanicResult<>.
+/// Lowering phase that converts `BlockEnd::Panic` into `BlockEnd::Return`, and wraps necessary
+/// types with `PanicResult<>`.
 pub fn lower_panics(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) -> Maybe<()> {
     // Skip this phase for non panicable functions.
     if !db.function_with_body_may_panic(function_id)? {
@@ -81,13 +81,13 @@ pub fn lower_panics(
     let mut ctx = PanicLoweringContext {
         variables,
         block_queue: VecDeque::from(lowered.blocks.get().clone()),
-        flat_blocks: FlatBlocksBuilder::new(),
+        flat_blocks: BlocksBuilder::new(),
         panic_info,
     };
 
     if let Some(trace_fn) = opt_trace_fn {
         for block in ctx.block_queue.iter_mut() {
-            if let FlatBlockEnd::Panic(end) = &block.end {
+            if let BlockEnd::Panic(end) = &block.end {
                 block.statements.push(Statement::Call(StatementCall {
                     function: trace_fn,
                     inputs: vec![],
@@ -114,7 +114,7 @@ pub fn lower_panics(
 /// 'opt_trace_fn' is an optional function to call before the panic.
 fn lower_unsafe_panic(
     db: &dyn LoweringGroup,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
     opt_trace_fn: Option<FunctionId>,
 ) {
     let panics = core_submodule(db, "panics");
@@ -123,7 +123,7 @@ fn lower_unsafe_panic(
             .intern(db);
 
     for block in lowered.blocks.iter_mut() {
-        let FlatBlockEnd::Panic(err_data) = &mut block.end else {
+        let BlockEnd::Panic(err_data) = &mut block.end else {
             continue;
         };
 
@@ -149,7 +149,7 @@ fn lower_unsafe_panic(
             }));
         }
 
-        block.end = FlatBlockEnd::Match {
+        block.end = BlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 arms: vec![],
                 location: err_data.location,
@@ -163,7 +163,7 @@ fn lower_unsafe_panic(
 /// Handles the lowering of panics in a single block.
 fn handle_block(
     mut ctx: PanicLoweringContext<'_>,
-    mut block: FlatBlock,
+    mut block: Block,
 ) -> Maybe<PanicLoweringContext<'_>> {
     let mut block_ctx = PanicBlockLoweringContext { ctx, statements: Vec::new() };
     for (i, stmt) in block.statements.iter().cloned().enumerate() {
@@ -237,8 +237,8 @@ impl PanicSignatureInfo {
 
 struct PanicLoweringContext<'a> {
     variables: VariableAllocator<'a>,
-    block_queue: VecDeque<FlatBlock>,
-    flat_blocks: FlatBlocksBuilder,
+    block_queue: VecDeque<Block>,
+    flat_blocks: BlocksBuilder,
     panic_info: PanicSignatureInfo,
 }
 impl PanicLoweringContext<'_> {
@@ -246,7 +246,7 @@ impl PanicLoweringContext<'_> {
         self.variables.db
     }
 
-    fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
+    fn enqueue_block(&mut self, block: Block) -> BlockId {
         self.block_queue.push_back(block);
         BlockId(self.flat_blocks.len() + self.block_queue.len())
     }
@@ -271,10 +271,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// The continuation block is the second block in the "split". This function already partially
     /// creates this second block, and returns it.
     /// In case there is no panic match - but just a panic, there is no continuation block.
-    fn handle_statement(
-        &mut self,
-        stmt: &Statement,
-    ) -> Maybe<Option<(FlatBlockEnd, Option<BlockId>)>> {
+    fn handle_statement(&mut self, stmt: &Statement) -> Maybe<Option<(BlockEnd, Option<BlockId>)>> {
         if let Statement::Call(call) = &stmt {
             if let Some(with_body) = call.function.body(self.db())? {
                 if self.db().function_with_body_may_panic(with_body)? {
@@ -289,10 +286,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// Handles a call statement to a panicking function.
     /// Returns the continuation block ID for the caller to complete it, and the block end to set
     /// for the current block.
-    fn handle_call_panic(
-        &mut self,
-        call: &StatementCall,
-    ) -> Maybe<(FlatBlockEnd, Option<BlockId>)> {
+    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockEnd, Option<BlockId>)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
         let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
@@ -312,10 +306,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 outputs: vec![panic_result_var],
                 location,
             }));
-            return Ok((
-                FlatBlockEnd::Panic(VarUsage { var_id: panic_result_var, location }),
-                None,
-            ));
+            return Ok((BlockEnd::Panic(VarUsage { var_id: panic_result_var, location }), None));
         }
 
         // Allocate 2 new variables.
@@ -346,17 +337,17 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Start constructing a match on the result.
         let block_continuation =
-            self.ctx.enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::NotSet });
+            self.ctx.enqueue_block(Block { statements: vec![], end: BlockEnd::NotSet });
 
         // Prepare Ok() match arm block. This block will be the continuation block.
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
-        let block_ok = self.ctx.enqueue_block(FlatBlock {
+        let block_ok = self.ctx.enqueue_block(Block {
             statements: vec![Statement::StructDestructure(StatementStructDestructure {
                 input: VarUsage { var_id: inner_ok_value, location },
                 outputs: inner_ok_values.clone(),
             })],
-            end: FlatBlockEnd::Goto(
+            end: BlockEnd::Goto(
                 block_continuation,
                 VarRemapping {
                     remapping: zip_eq(
@@ -370,12 +361,12 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Prepare Err() match arm block.
         let err_var = self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
-        let block_err = self.ctx.enqueue_block(FlatBlock {
+        let block_err = self.ctx.enqueue_block(Block {
             statements: vec![],
-            end: FlatBlockEnd::Panic(VarUsage { var_id: err_var, location }),
+            end: BlockEnd::Panic(VarUsage { var_id: err_var, location }),
         });
 
-        let cur_block_end = FlatBlockEnd::Match {
+        let cur_block_end = BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: VarUsage { var_id: panic_result_var, location },
@@ -398,10 +389,10 @@ impl<'a> PanicBlockLoweringContext<'a> {
         Ok((cur_block_end, Some(block_continuation)))
     }
 
-    fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
+    fn handle_end(mut self, end: BlockEnd) -> PanicLoweringContext<'a> {
         let end = match end {
-            FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
-            FlatBlockEnd::Panic(err_data) => {
+            BlockEnd::Goto(target, remapping) => BlockEnd::Goto(target, remapping),
+            BlockEnd::Panic(err_data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.actual_return_ty;
                 let location = err_data.location;
@@ -416,9 +407,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     }));
                     output
                 };
-                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
+                BlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
             }
-            FlatBlockEnd::Return(returns, location) => {
+            BlockEnd::Return(returns, location) => {
                 // Tuple construction.
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
@@ -435,12 +426,12 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
+                BlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
             }
-            FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },
+            BlockEnd::NotSet => unreachable!(),
+            BlockEnd::Match { info } => BlockEnd::Match { info },
         };
-        self.ctx.flat_blocks.alloc(FlatBlock { statements: self.statements, end });
+        self.ctx.flat_blocks.alloc(Block { statements: self.statements, end });
         self.ctx
     }
 }
@@ -511,6 +502,6 @@ pub fn has_direct_panic(
 ) -> Maybe<bool> {
     let lowered_function = db.lowered_body(function_id, LoweringStage::Monomorphized)?;
     Ok(itertools::any(&lowered_function.blocks, |(_, block)| {
-        matches!(&block.end, FlatBlockEnd::Panic(..))
+        matches!(&block.end, BlockEnd::Panic(..))
     }))
 }
