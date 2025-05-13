@@ -38,8 +38,7 @@ use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyI
 use crate::panic::lower_panics;
 use crate::utils::InliningStrategy;
 use crate::{
-    BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, LoweringStage, MatchInfo,
-    Statement, ids,
+    BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
 
 // Salsa database interface.
@@ -82,27 +81,27 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_lowering(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
+    ) -> Maybe<Arc<Lowered>>;
 
     /// Computes the lowered representation of a function with a body.
     /// Additionally applies borrow checking testing, and returns the possible calls per block.
     fn function_with_body_lowering_with_borrow_check(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)>;
+    ) -> Maybe<(Arc<Lowered>, Arc<PotentialDestructCalls>)>;
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowering(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
+    ) -> Maybe<Arc<Lowered>>;
 
     /// Computes the lowered representation of a function at the requested lowering stage.
     fn lowered_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         stage: LoweringStage,
-    ) -> Maybe<Arc<FlatLowered>>;
+    ) -> Maybe<Arc<Lowered>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), at the given stage.
@@ -358,7 +357,7 @@ fn cached_multi_lowerings(
 fn priv_function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
+) -> Maybe<Arc<Lowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
     let lowered = match &function_id.lookup_intern(db) {
@@ -373,14 +372,14 @@ fn priv_function_with_body_lowering(
 fn function_with_body_lowering_with_borrow_check(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
+) -> Maybe<(Arc<Lowered>, Arc<PotentialDestructCalls>)> {
     let lowered = db.priv_function_with_body_lowering(function_id)?;
     let borrow_check_result =
         borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &lowered);
 
     let lowered = match borrow_check_result.diagnostics.check_error_free() {
         Ok(_) => lowered,
-        Err(diag_added) => Arc::new(FlatLowered {
+        Err(diag_added) => Arc::new(Lowered {
             diagnostics: borrow_check_result.diagnostics,
             signature: lowered.signature.clone(),
             variables: lowered.variables.clone(),
@@ -395,7 +394,7 @@ fn function_with_body_lowering_with_borrow_check(
 fn function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
+) -> Maybe<Arc<Lowered>> {
     Ok(db.function_with_body_lowering_with_borrow_check(function_id)?.0)
 }
 
@@ -403,7 +402,7 @@ fn lowered_body(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
     stage: LoweringStage,
-) -> Maybe<Arc<FlatLowered>> {
+) -> Maybe<Arc<Lowered>> {
     match stage {
         LoweringStage::Monomorphized => {
             let generic_function_id = function.function_with_body_id(db);
@@ -439,7 +438,7 @@ fn lowered_body(
 /// what is considered a dependency.
 pub(crate) fn get_direct_callees(
     db: &dyn LoweringGroup,
-    lowered_function: &FlatLowered,
+    lowered_function: &Lowered,
     dependency_type: DependencyType,
     block_extra_calls: &UnorderedHashMap<BlockId, Vec<FunctionId>>,
 ) -> Vec<ids::FunctionId> {
@@ -471,9 +470,9 @@ pub(crate) fn get_direct_callees(
             direct_callees.extend(extra_calls.iter().copied());
         }
         match &block.end {
-            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
-            FlatBlockEnd::Goto(next, _) => stack.push(*next),
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(_) => {}
+            BlockEnd::Goto(next, _) => stack.push(*next),
+            BlockEnd::Match { info } => {
                 let mut arms = info.arms().iter();
                 if let MatchInfo::Extern(s) = info {
                     direct_callees.push(s.function);

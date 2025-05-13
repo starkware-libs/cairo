@@ -13,8 +13,7 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchExternInfo, MatchInfo, Statement, StatementCall,
-    VarUsage,
+    BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall, VarUsage,
 };
 
 /// Adds an early unsafe_panic when we detect that `return` is unreachable from a certain point in
@@ -23,7 +22,7 @@ use crate::{
 ///
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
-pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
+pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut Lowered) {
     if !flag_unsafe_panic(db) || lowered.blocks.is_empty() {
         return;
     }
@@ -47,7 +46,7 @@ pub fn early_unsafe_panic(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
 
-        block.end = FlatBlockEnd::Match {
+        block.end = BlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
                 arms: vec![],
                 location,

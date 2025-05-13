@@ -22,7 +22,7 @@ use cairo_lang_lowering::ids::{
 };
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
-use cairo_lang_lowering::{FlatLowered, LoweringStage};
+use cairo_lang_lowering::{Lowered, LoweringStage};
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
@@ -108,13 +108,13 @@ impl fmt::Display for PhasesDisplay<'_> {
             (*db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap()).clone();
 
         let mut phase_index = 0;
-        let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
+        let mut add_stage_state = |name: &str, lowered: &Lowered| {
             writeln!(f, "{phase_index}. {name}: {}", LoweredDisplay::new(db, lowered)).unwrap();
             phase_index += 1;
         };
         add_stage_state("before_all", &curr_state);
 
-        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut FlatLowered)| {
+        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut Lowered)| {
             (*stage)(&mut curr_state);
             add_stage_state(name, &curr_state);
         };
@@ -156,10 +156,10 @@ impl fmt::Display for PhasesDisplay<'_> {
 /// Helper for displaying the lowered representation of a concrete function.
 struct LoweredDisplay<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 }
 impl<'a> LoweredDisplay<'a> {
-    fn new(db: &'a dyn LoweringGroup, lowered: &'a FlatLowered) -> Self {
+    fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered) -> Self {
         Self { db, lowered }
     }
 }

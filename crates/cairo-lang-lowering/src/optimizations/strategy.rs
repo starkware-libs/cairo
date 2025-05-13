@@ -6,7 +6,7 @@ use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
-use crate::FlatLowered;
+use crate::Lowered;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
@@ -53,7 +53,7 @@ impl OptimizationPhase {
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-        lowered: &mut FlatLowered,
+        lowered: &mut Lowered,
     ) -> Maybe<()> {
         match self {
             OptimizationPhase::ApplyInlining => apply_inlining(db, function, lowered)?,
@@ -98,7 +98,7 @@ impl OptimizationStrategyId {
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
-        lowered: &mut FlatLowered,
+        lowered: &mut Lowered,
     ) -> Maybe<()> {
         for phase in self.lookup_intern(db).0 {
             phase.apply(db, function, lowered)?;

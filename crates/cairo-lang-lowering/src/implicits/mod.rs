@@ -13,14 +13,14 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
-    BlockId, DependencyType, FlatBlockEnd, FlatLowered, LoweringStage, MatchArm, MatchInfo,
-    Statement, VarUsage,
+    BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchInfo, Statement,
+    VarUsage,
 };
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
     variables: &'a mut VariableAllocator<'a>,
-    lowered: &'a mut FlatLowered,
+    lowered: &'a mut Lowered,
     implicit_index: HashMap<TypeId, usize>,
     implicits_tys: Vec<TypeId>,
     implicit_vars_for_block: HashMap<BlockId, Vec<VarUsage>>,
@@ -32,7 +32,7 @@ struct Context<'a> {
 pub fn lower_implicits(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) {
     if let Err(diag_added) = inner_lower_implicits(db, function_id, lowered) {
         lowered.blocks = Blocks::new_errored(diag_added);
@@ -43,7 +43,7 @@ pub fn lower_implicits(
 pub fn inner_lower_implicits(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
 ) -> Maybe<()> {
     let semantic_function = function_id.function_with_body_id(db).base_semantic_function(db);
     let location = LocationId::from_stable_location(
@@ -162,13 +162,13 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
         let implicits = block_body_implicits(ctx, block_id)?;
         // End.
         match &mut ctx.lowered.blocks[block_id].end {
-            FlatBlockEnd::Return(rets, _location) => {
+            BlockEnd::Return(rets, _location) => {
                 rets.splice(0..0, implicits.iter().cloned());
             }
-            FlatBlockEnd::Panic(_) => {
+            BlockEnd::Panic(_) => {
                 unreachable!("Panics should have been stripped in a previous phase.")
             }
-            FlatBlockEnd::Goto(block_id, remapping) => {
+            BlockEnd::Goto(block_id, remapping) => {
                 let target_implicits = ctx
                     .implicit_vars_for_block
                     .entry(*block_id)
@@ -187,7 +187,7 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                 .collect();
                 blocks_to_visit.push(*block_id);
             }
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::Match { info } => {
                 blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
                 match info {
                     MatchInfo::Enum(_) | MatchInfo::Value(_) => {
@@ -232,7 +232,7 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                     }
                 }
             }
-            FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::NotSet => unreachable!(),
         }
     }
     Ok(())

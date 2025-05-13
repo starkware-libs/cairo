@@ -24,7 +24,7 @@ use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
 
-use self::blocks::FlatBlocks;
+use self::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::ids::{FunctionId, LocationId, Signature};
@@ -134,7 +134,7 @@ pub struct VarUsage {
 
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FlatLowered {
+pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Function signature.
@@ -142,7 +142,7 @@ pub struct FlatLowered {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
-    pub blocks: FlatBlocks,
+    pub blocks: Blocks,
     /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
 }
@@ -166,32 +166,28 @@ impl DerefMut for VarRemapping {
     }
 }
 
-/// A block of statements. Unlike [`FlatBlock`], this has no reference information,
-/// and no panic ending.
+/// A block of statements.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FlatBlock {
+pub struct Block {
     /// Statements sequence running one after the other in the block, in a linear flow.
-    /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
-    /// Note: Match is a possible statement, which means it has control flow logic inside, but
-    /// after its execution is completed, the flow returns to the following statement of the block.
     pub statements: Vec<Statement>,
-    /// Describes how this block ends: returns to the caller or exits the function.
-    pub end: FlatBlockEnd,
+    /// Describes how this block ends.
+    pub end: BlockEnd,
 }
-impl Default for FlatBlock {
+impl Default for Block {
     fn default() -> Self {
-        Self { statements: Default::default(), end: FlatBlockEnd::NotSet }
+        Self { statements: Default::default(), end: BlockEnd::NotSet }
     }
 }
-impl FlatBlock {
+impl Block {
     pub fn is_set(&self) -> bool {
-        !matches!(self.end, FlatBlockEnd::NotSet)
+        !matches!(self.end, BlockEnd::NotSet)
     }
 }
 
-/// Describes what happens to the program flow at the end of a [`FlatBlock`].
+/// Describes what happens to the program flow at the end of a [`Block`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum FlatBlockEnd {
+pub enum BlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
