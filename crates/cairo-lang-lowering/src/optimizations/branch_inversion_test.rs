@@ -5,6 +5,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -36,7 +37,7 @@ fn test_branch_inversion(
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
     let mut before =
-        db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
+        db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap().deref().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     OptimizationPhase::ApplyInlining.apply(db, function_id, &mut before).unwrap();

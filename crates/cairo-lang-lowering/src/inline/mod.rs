@@ -27,8 +27,8 @@ use crate::ids::{
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementCall, VarRemapping,
-    VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, LoweringStage, Statement, StatementCall,
+    VarRemapping, VariableId,
 };
 
 pub fn get_inline_diagnostics(
@@ -60,7 +60,10 @@ pub fn priv_should_inline(
 ) -> Maybe<bool> {
     // Breaks cycles.
     // TODO(ilya): consider #[inline(never)] attributes for feedback set.
-    if db.function_with_body_feedback_set(function_id)?.contains(&function_id) {
+    if db
+        .function_with_body_feedback_set(function_id, LoweringStage::Monomorphized)?
+        .contains(&function_id)
+    {
         return Ok(false);
     }
 
@@ -89,7 +92,7 @@ fn should_inline_lowered(
     function_id: ConcreteFunctionWithBodyId,
     inline_small_functions_threshold: usize,
 ) -> Maybe<bool> {
-    let lowered = db.inlined_function_with_body_lowered(function_id)?;
+    let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline)?;
     // The inline heuristics optimization flag only applies to non-trivial small functions.
     // Functions which contain only a call or a literal are always inlined.
 
@@ -301,7 +304,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         function_id: ConcreteFunctionWithBodyId,
         call_stmt: &StatementCall,
     ) -> Maybe<()> {
-        let lowered = self.variables.db.inlined_function_with_body_lowered(function_id)?;
+        let lowered = self.variables.db.lowered_body(function_id, LoweringStage::PostBaseline)?;
         lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
