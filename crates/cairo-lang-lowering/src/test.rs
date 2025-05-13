@@ -16,6 +16,7 @@ use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
@@ -73,7 +74,7 @@ fn test_function_lowering(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered = db.final_concrete_function_with_body_lowered(function_id);
+    let lowered = db.lowered_body(function_id, LoweringStage::Final);
     if let Ok(lowered) = &lowered {
         assert!(
             lowered.blocks.iter().all(|(_, b)| b.is_set()),

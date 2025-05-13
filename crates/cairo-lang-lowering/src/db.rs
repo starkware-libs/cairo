@@ -38,7 +38,7 @@ use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyI
 use crate::panic::lower_panics;
 use crate::utils::InliningStrategy;
 use crate::{
-    BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement, ids,
+    BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
 
 // Salsa database interface.
@@ -81,89 +81,44 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_lowering(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
+    ) -> Maybe<Arc<Lowered>>;
 
     /// Computes the lowered representation of a function with a body.
     /// Additionally applies borrow checking testing, and returns the possible calls per block.
     fn function_with_body_lowering_with_borrow_check(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)>;
+    ) -> Maybe<(Arc<Lowered>, Arc<PotentialDestructCalls>)>;
 
     /// Computes the lowered representation of a function with a body.
     fn function_with_body_lowering(
         &self,
         function_id: ids::FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
+    ) -> Maybe<Arc<Lowered>>;
 
-    /// A concrete version of priv_function_with_body_multi_lowering
-    fn priv_concrete_function_with_body_lowered_flat(
+    /// Computes the lowered representation of a function at the requested lowering stage.
+    fn lowered_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
+        stage: LoweringStage,
+    ) -> Maybe<Arc<Lowered>>;
 
-    /// Computes the lowered representation after the panic phase.
-    fn concrete_function_with_body_postpanic_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
-    /// Applies optimizations to the post_panic lowering.
-    fn optimized_concrete_function_with_body_lowered(
-        &self,
-        function: ids::ConcreteFunctionWithBodyId,
-        optimization_strategy: OptimizationStrategyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
-    /// Computes the lowered representation of a function to be considered for inlining.
-    fn inlined_function_with_body_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
-    /// Computes the final lowered representation (after all the internal transformations).
-    fn final_concrete_function_with_body_lowered(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
-    /// Returns the set of direct callees of a concrete function with a body after the inline phase.
-    fn concrete_function_with_body_direct_callees(
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees), at the given stage.
+    fn lowered_direct_callees(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
-    ) -> Maybe<Vec<ids::FunctionId>>;
-
-    /// Returns the set of direct callees of a concrete function after the baseline optimization
-    /// phase.
-    fn concrete_function_with_body_inlined_direct_callees(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
+        stage: LoweringStage,
     ) -> Maybe<Vec<ids::FunctionId>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
-    /// a body (i.e. excluding libfunc callees), after the inline phase.
-    fn concrete_function_with_body_direct_callees_with_body(
+    /// a body (i.e. excluding libfunc callees), at the given stage.
+    fn lowered_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
-    ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
-
-    /// Returns the set of direct callees which are functions with body of a concrete function with
-    /// a body (i.e. excluding libfunc callees), after the baseline optimization phase.
-    fn concrete_function_with_body_inlined_direct_callees_with_body(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
-    ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
-
-    /// Returns the set of direct callees which are functions with body of a concrete function with
-    /// a body (i.e. excluding libfunc callees), after all optimization phases.
-    fn final_concrete_function_with_body_lowered_direct_callees(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
+        stage: LoweringStage,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
 
     /// Aggregates function level lowering diagnostics.
@@ -259,47 +214,23 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the concrete function's strongly connected component. The
     /// representative is consistently chosen for all the concrete functions in the same SCC.
     #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_representative
+        crate::graph_algorithms::strongly_connected_components::lowered_scc_representative
     )]
-    fn concrete_function_with_body_scc_representative(
+    fn lowered_scc_representative(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
+        stage: LoweringStage,
     ) -> ConcreteSCCRepresentative;
 
     /// Returns all the concrete functions in the same strongly connected component as the given
     /// concrete function.
-    #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc
-    )]
-    fn concrete_function_with_body_scc(
+    #[salsa::invoke(crate::graph_algorithms::strongly_connected_components::lowered_scc)]
+    fn lowered_scc(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
         dependency_type: DependencyType,
-    ) -> Vec<ids::ConcreteFunctionWithBodyId>;
-
-    /// Returns the representative of the concrete function's strongly connected component. The
-    /// representative is consistently chosen for all the concrete functions in the same SCC.
-    /// This is using the representation after the baseline optimization phase.
-    #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_inlined_representative
-    )]
-    fn concrete_function_with_body_scc_inlined_representative(
-        &self,
-        function: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
-    ) -> ConcreteSCCRepresentative;
-
-    /// Returns all the concrete functions in the same strongly connected component as the given
-    /// concrete function.
-    /// This is using the representation after the baseline optimization phase.
-    #[salsa::invoke(
-        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_inlined_scc
-    )]
-    fn concrete_function_with_body_inlined_scc(
-        &self,
-        function_id: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
+        stage: LoweringStage,
     ) -> Vec<ids::ConcreteFunctionWithBodyId>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
@@ -318,6 +249,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_feedback_set(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
+        stage: LoweringStage,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns whether the given function needs an additional withdraw_gas call.
@@ -330,6 +262,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_feedback_set_of_representative(
         &self,
         function: ConcreteSCCRepresentative,
+        stage: LoweringStage,
     ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Internal query for reorder_statements to cache the function ids that can be moved.
@@ -424,7 +357,7 @@ fn cached_multi_lowerings(
 fn priv_function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
+) -> Maybe<Arc<Lowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
     let lowered = match &function_id.lookup_intern(db) {
@@ -439,14 +372,14 @@ fn priv_function_with_body_lowering(
 fn function_with_body_lowering_with_borrow_check(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
+) -> Maybe<(Arc<Lowered>, Arc<PotentialDestructCalls>)> {
     let lowered = db.priv_function_with_body_lowering(function_id)?;
     let borrow_check_result =
         borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &lowered);
 
     let lowered = match borrow_check_result.diagnostics.check_error_free() {
         Ok(_) => lowered,
-        Err(diag_added) => Arc::new(FlatLowered {
+        Err(diag_added) => Arc::new(Lowered {
             diagnostics: borrow_check_result.diagnostics,
             signature: lowered.signature.clone(),
             variables: lowered.variables.clone(),
@@ -461,69 +394,43 @@ fn function_with_body_lowering_with_borrow_check(
 fn function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
+) -> Maybe<Arc<Lowered>> {
     Ok(db.function_with_body_lowering_with_borrow_check(function_id)?.0)
 }
 
-// * Concretizes lowered representation (monomorphization).
-fn priv_concrete_function_with_body_lowered_flat(
+fn lowered_body(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let semantic_db = db;
-    let generic_function_id = function.function_with_body_id(db);
-    db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
-    let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
-    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
-    Ok(Arc::new(lowered))
-}
-
-// * Adds `withdraw_gas` calls.
-// * Adds panics.
-// * Adds destructor calls.
-fn concrete_function_with_body_postpanic_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
-
-    add_withdraw_gas(db, function, &mut lowered)?;
-    lower_panics(db, function, &mut lowered)?;
-    add_destructs(db, function, &mut lowered);
-    scrub_units(db, &mut lowered);
-
-    Ok(Arc::new(lowered))
-}
-
-/// Query implementation of [LoweringGroup::optimized_concrete_function_with_body_lowered].
-fn optimized_concrete_function_with_body_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-    optimization_strategy: OptimizationStrategyId,
-) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
-    optimization_strategy.apply_strategy(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
-}
-
-/// Query implementation of [LoweringGroup::inlined_function_with_body_lowered].
-fn inlined_function_with_body_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    db.optimized_concrete_function_with_body_lowered(function, db.baseline_optimization_strategy())
-}
-
-/// Query implementation of [LoweringGroup::final_concrete_function_with_body_lowered].
-fn final_concrete_function_with_body_lowered(
-    db: &dyn LoweringGroup,
-    function: ids::ConcreteFunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    // Start from the `inlined_function_with_body_lowered` as it might already be computed.
-    let mut lowered = (*db.inlined_function_with_body_lowered(function)?).clone();
-
-    db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
-    Ok(Arc::new(lowered))
+    stage: LoweringStage,
+) -> Maybe<Arc<Lowered>> {
+    match stage {
+        LoweringStage::Monomorphized => {
+            let generic_function_id = function.function_with_body_id(db);
+            db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
+            let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
+            concretize_lowered(db, &mut lowered, &function.substitution(db)?)?;
+            Ok(Arc::new(lowered))
+        }
+        LoweringStage::PreOptimizations => {
+            let mut lowered = (*db.lowered_body(function, LoweringStage::Monomorphized)?).clone();
+            add_withdraw_gas(db, function, &mut lowered)?;
+            lower_panics(db, function, &mut lowered)?;
+            add_destructs(db, function, &mut lowered);
+            scrub_units(db, &mut lowered);
+            Ok(Arc::new(lowered))
+        }
+        LoweringStage::PostBaseline => {
+            let mut lowered =
+                (*db.lowered_body(function, LoweringStage::PreOptimizations)?).clone();
+            db.baseline_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            Ok(Arc::new(lowered))
+        }
+        LoweringStage::Final => {
+            let mut lowered = (*db.lowered_body(function, LoweringStage::PostBaseline)?).clone();
+            db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            Ok(Arc::new(lowered))
+        }
+    }
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,
@@ -531,7 +438,7 @@ fn final_concrete_function_with_body_lowered(
 /// what is considered a dependency.
 pub(crate) fn get_direct_callees(
     db: &dyn LoweringGroup,
-    lowered_function: &FlatLowered,
+    lowered_function: &Lowered,
     dependency_type: DependencyType,
     block_extra_calls: &UnorderedHashMap<BlockId, Vec<FunctionId>>,
 ) -> Vec<ids::FunctionId> {
@@ -563,9 +470,9 @@ pub(crate) fn get_direct_callees(
             direct_callees.extend(extra_calls.iter().copied());
         }
         match &block.end {
-            FlatBlockEnd::NotSet | FlatBlockEnd::Return(..) | FlatBlockEnd::Panic(_) => {}
-            FlatBlockEnd::Goto(next, _) => stack.push(*next),
-            FlatBlockEnd::Match { info } => {
+            BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(_) => {}
+            BlockEnd::Goto(next, _) => stack.push(*next),
+            BlockEnd::Match { info } => {
                 let mut arms = info.arms().iter();
                 if let MatchInfo::Extern(s) = info {
                     direct_callees.push(s.function);
@@ -581,24 +488,6 @@ pub(crate) fn get_direct_callees(
         }
     }
     direct_callees
-}
-
-fn concrete_function_with_body_direct_callees(
-    db: &dyn LoweringGroup,
-    function_id: ids::ConcreteFunctionWithBodyId,
-    dependency_type: DependencyType,
-) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
-}
-
-fn concrete_function_with_body_inlined_direct_callees(
-    db: &dyn LoweringGroup,
-    function_id: ids::ConcreteFunctionWithBodyId,
-    dependency_type: DependencyType,
-) -> Maybe<Vec<ids::FunctionId>> {
-    let lowered_function = db.inlined_function_with_body_lowered(function_id)?;
-    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
 /// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
@@ -670,39 +559,25 @@ fn extract_coupon_function(
     Ok(Some(ids::ConcreteFunctionWithBodyId::from_semantic(db, coupon_function_with_body_id)))
 }
 
-fn concrete_function_with_body_direct_callees_with_body(
+fn lowered_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
-) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
-    functions_with_body_from_function_ids(
-        db,
-        db.concrete_function_with_body_direct_callees(function_id, dependency_type)?,
-        dependency_type,
-    )
+    stage: LoweringStage,
+) -> Maybe<Vec<ids::FunctionId>> {
+    let lowered_function = db.lowered_body(function_id, stage)?;
+    Ok(get_direct_callees(db, &lowered_function, dependency_type, &Default::default()))
 }
 
-fn concrete_function_with_body_inlined_direct_callees_with_body(
+fn lowered_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
     dependency_type: DependencyType,
+    stage: LoweringStage,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
     functions_with_body_from_function_ids(
         db,
-        db.concrete_function_with_body_inlined_direct_callees(function_id, dependency_type)?,
-        dependency_type,
-    )
-}
-
-fn final_concrete_function_with_body_lowered_direct_callees(
-    db: &dyn LoweringGroup,
-    function_id: ids::ConcreteFunctionWithBodyId,
-    dependency_type: DependencyType,
-) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
-    let lowered_function = db.final_concrete_function_with_body_lowered(function_id)?;
-    functions_with_body_from_function_ids(
-        db,
-        get_direct_callees(db, &lowered_function, dependency_type, &Default::default()),
+        db.lowered_direct_callees(function_id, dependency_type, stage)?,
         dependency_type,
     )
 }

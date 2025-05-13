@@ -22,13 +22,13 @@ More precisely:
 | Type parameters | `PascalCase` generally, a single letter like `T` usually
 |===
 
-In `PascalCase`, acronyms count as one word: use `Sha` rather than `SHA`.
-In `snake_case`, acronyms are lower-cased: `sha3_hash`.
+In `PascalCase`, acronyms count as one word: use `L1Handler` rather than `L1_Handler`.
+In `snake_case`, acronyms are lower-cased: `rpc_call`, `json_data`.
 
 In `snake_case` or `UPPER_CASE`, a _word_ should never consist of a single character unless it is
 a digit or the last _word_.
-So, we have `btree_map` rather than `b_tree_map`, but `PI_2` rather than `PI2`.
-// TODO: More suitable examples
+Thus, we have `contract_class` rather than `c_class`, `compiled_program` rather than `c_program`, and `entry_point_selector` instead of `e_selector`.
+Also, examples like `CHAIN_ID_MAINNET` and `RPC_429_ERROR` illustrate correct handling of digits and acronyms.
 
 Language implementations can emit warnings when names do not follow these rules.
 

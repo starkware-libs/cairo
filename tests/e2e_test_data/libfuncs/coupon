@@ -22,7 +22,6 @@ test::foo: OrderedHashMap({})
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = drop<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>>;
 
@@ -77,7 +76,6 @@ test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 10
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
 type Tuple<Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> = Struct<ut@Tuple, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>, Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u8, 0> = Const<u8, 0> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -154,7 +152,6 @@ test::bar::<core::integer::u8, core::integer::u8Drop>: OrderedHashMap({Const: 10
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<u8, 0> = Const<u8, 0> [storable: false, drop: false, dup: false, zero_sized: false];
@@ -236,7 +233,6 @@ test::destruct: OrderedHashMap({Bitwise: 1, Const: 1200})
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 type test::NonDroppable = Struct<ut@test::NonDroppable, u64> [storable: true, drop: true, dup: true, zero_sized: false];
 type Uninitialized<test::NonDroppable> = Uninitialized<test::NonDroppable> [storable: false, drop: true, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
 type Coupon<user@test::destruct> = Coupon<user@test::destruct> [storable: true, drop: true, dup: false, zero_sized: true];
 type Tuple<test::NonDroppable, Coupon<user@test::destruct>> = Struct<ut@Tuple, test::NonDroppable, Coupon<user@test::destruct>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -398,7 +394,6 @@ core::panic_with_felt252: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
 type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];

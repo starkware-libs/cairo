@@ -54,7 +54,7 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
-use crate::blocks::FlatBlocksBuilder;
+use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::ids::{
     FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
@@ -65,9 +65,9 @@ use crate::objects::{
     VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, Location, MatchArm, MatchEnumInfo, MatchEnumValue,
-    MatchInfo, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
-    StatementStructConstruct, VarRemapping, VarUsage, Variable,
+    Block, BlockEnd, Location, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
+    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    VarRemapping, VarUsage, Variable,
 };
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
@@ -179,7 +179,7 @@ pub fn generate_crate_cache(
 /// Context for loading cache into the database.
 struct CacheLoadingContext<'db> {
     /// The variable ids of the flat lowered that is currently being loaded.
-    flat_lowered_variables_id: Vec<VariableId>,
+    lowered_variables_id: Vec<VariableId>,
     db: &'db dyn LoweringGroup,
 
     /// data for loading the entire cache into the database.
@@ -196,7 +196,7 @@ impl<'db> CacheLoadingContext<'db> {
         defs_loading_data: Arc<DefCacheLoadingData>,
     ) -> Self {
         Self {
-            flat_lowered_variables_id: Vec::new(),
+            lowered_variables_id: Vec::new(),
             db,
             data: CacheLoadingData {
                 function_ids: OrderedHashMap::default(),
@@ -460,21 +460,18 @@ impl DefsFunctionWithBodyIdCached {
 /// Cached version of [MultiLowering].
 #[derive(Serialize, Deserialize)]
 struct MultiLoweringCached {
-    main_lowering: FlatLoweredCached,
-    generated_lowerings: Vec<(GeneratedFunctionKeyCached, FlatLoweredCached)>,
+    main_lowering: LoweredCached,
+    generated_lowerings: Vec<(GeneratedFunctionKeyCached, LoweredCached)>,
 }
 impl MultiLoweringCached {
     fn new(lowering: MultiLowering, ctx: &mut CacheSavingContext<'_>) -> Self {
         Self {
-            main_lowering: FlatLoweredCached::new(lowering.main_lowering, ctx),
+            main_lowering: LoweredCached::new(lowering.main_lowering, ctx),
             generated_lowerings: lowering
                 .generated_lowerings
                 .into_iter()
-                .map(|(key, flat_lowered)| {
-                    (
-                        GeneratedFunctionKeyCached::new(key, ctx),
-                        FlatLoweredCached::new(flat_lowered, ctx),
-                    )
+                .map(|(key, lowered)| {
+                    (GeneratedFunctionKeyCached::new(key, ctx), LoweredCached::new(lowered, ctx))
                 })
                 .collect(),
         }
@@ -485,53 +482,53 @@ impl MultiLoweringCached {
             generated_lowerings: self
                 .generated_lowerings
                 .into_iter()
-                .map(|(key, flat_lowered)| (key.embed(ctx), flat_lowered.embed(ctx)))
+                .map(|(key, lowered)| (key.embed(ctx), lowered.embed(ctx)))
                 .collect(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize)]
-struct FlatLoweredCached {
+struct LoweredCached {
     /// Function signature.
     signature: SignatureCached,
     /// Arena of allocated lowered variables.
     variables: Vec<VariableCached>,
     /// Arena of allocated lowered blocks.
-    blocks: Vec<FlatBlockCached>,
+    blocks: Vec<BlockCached>,
     /// function parameters, including implicits.
     parameters: Vec<usize>,
 }
-impl FlatLoweredCached {
-    fn new(flat_lowered: FlatLowered, ctx: &mut CacheSavingContext<'_>) -> Self {
+impl LoweredCached {
+    fn new(lowered: Lowered, ctx: &mut CacheSavingContext<'_>) -> Self {
         Self {
-            signature: SignatureCached::new(flat_lowered.signature, ctx),
-            variables: flat_lowered
+            signature: SignatureCached::new(lowered.signature, ctx),
+            variables: lowered
                 .variables
                 .into_iter()
                 .map(|var| VariableCached::new(var.1, ctx))
                 .collect(),
-            blocks: flat_lowered
+            blocks: lowered
                 .blocks
                 .into_iter()
-                .map(|block: (BlockId, &FlatBlock)| FlatBlockCached::new(block.1.clone(), ctx))
+                .map(|block: (BlockId, &Block)| BlockCached::new(block.1.clone(), ctx))
                 .collect(),
-            parameters: flat_lowered.parameters.iter().map(|var| var.index()).collect(),
+            parameters: lowered.parameters.iter().map(|var| var.index()).collect(),
         }
     }
-    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> FlatLowered {
-        ctx.flat_lowered_variables_id.clear();
+    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> Lowered {
+        ctx.lowered_variables_id.clear();
         let mut variables = Arena::new();
         for var in self.variables {
             let id = variables.alloc(var.embed(ctx));
-            ctx.flat_lowered_variables_id.push(id);
+            ctx.lowered_variables_id.push(id);
         }
 
-        let mut blocks = FlatBlocksBuilder::new();
+        let mut blocks = BlocksBuilder::new();
         for block in self.blocks {
             blocks.alloc(block.embed(ctx));
         }
-        FlatLowered {
+        Lowered {
             diagnostics: Default::default(),
             signature: self.signature.embed(ctx),
             variables,
@@ -539,7 +536,7 @@ impl FlatLoweredCached {
             parameters: self
                 .parameters
                 .into_iter()
-                .map(|var_id| ctx.flat_lowered_variables_id[var_id])
+                .map(|var_id| ctx.lowered_variables_id[var_id])
                 .collect(),
         }
     }
@@ -861,39 +858,39 @@ impl VarUsageCached {
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> VarUsage {
         VarUsage {
-            var_id: ctx.flat_lowered_variables_id[self.var_id],
+            var_id: ctx.lowered_variables_id[self.var_id],
             location: self.location.embed(ctx),
         }
     }
 }
 
 #[derive(Serialize, Deserialize)]
-struct FlatBlockCached {
+struct BlockCached {
     /// Statements in the block.
     statements: Vec<StatementCached>,
     /// Block end.
-    end: FlatBlockEndCached,
+    end: BlockEndCached,
 }
-impl FlatBlockCached {
-    fn new(flat_block: FlatBlock, ctx: &mut CacheSavingContext<'_>) -> Self {
+impl BlockCached {
+    fn new(block: Block, ctx: &mut CacheSavingContext<'_>) -> Self {
         Self {
-            statements: flat_block
+            statements: block
                 .statements
                 .into_iter()
                 .map(|stmt| StatementCached::new(stmt, ctx))
                 .collect(),
-            end: FlatBlockEndCached::new(flat_block.end, ctx),
+            end: BlockEndCached::new(block.end, ctx),
         }
     }
-    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> FlatBlock {
-        FlatBlock {
+    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> Block {
+        Block {
             statements: self.statements.into_iter().map(|stmt| stmt.embed(ctx)).collect(),
             end: self.end.embed(ctx),
         }
     }
 }
 #[derive(Serialize, Deserialize)]
-enum FlatBlockEndCached {
+enum BlockEndCached {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
@@ -907,35 +904,35 @@ enum FlatBlockEndCached {
         info: MatchInfoCached,
     },
 }
-impl FlatBlockEndCached {
-    fn new(flat_block_end: FlatBlockEnd, ctx: &mut CacheSavingContext<'_>) -> Self {
-        match flat_block_end {
-            FlatBlockEnd::Return(returns, location) => FlatBlockEndCached::Return(
+impl BlockEndCached {
+    fn new(block_end: BlockEnd, ctx: &mut CacheSavingContext<'_>) -> Self {
+        match block_end {
+            BlockEnd::Return(returns, location) => BlockEndCached::Return(
                 returns.iter().map(|var| VarUsageCached::new(*var, ctx)).collect(),
                 LocationIdCached::new(location, ctx),
             ),
-            FlatBlockEnd::Panic(data) => FlatBlockEndCached::Panic(VarUsageCached::new(data, ctx)),
-            FlatBlockEnd::Goto(block_id, remapping) => {
-                FlatBlockEndCached::Goto(block_id.0, VarRemappingCached::new(remapping, ctx))
+            BlockEnd::Panic(data) => BlockEndCached::Panic(VarUsageCached::new(data, ctx)),
+            BlockEnd::Goto(block_id, remapping) => {
+                BlockEndCached::Goto(block_id.0, VarRemappingCached::new(remapping, ctx))
             }
-            FlatBlockEnd::NotSet => FlatBlockEndCached::NotSet,
-            FlatBlockEnd::Match { info } => {
-                FlatBlockEndCached::Match { info: MatchInfoCached::new(info, ctx) }
+            BlockEnd::NotSet => BlockEndCached::NotSet,
+            BlockEnd::Match { info } => {
+                BlockEndCached::Match { info: MatchInfoCached::new(info, ctx) }
             }
         }
     }
-    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> FlatBlockEnd {
+    fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> BlockEnd {
         match self {
-            FlatBlockEndCached::Return(returns, location) => FlatBlockEnd::Return(
+            BlockEndCached::Return(returns, location) => BlockEnd::Return(
                 returns.into_iter().map(|var_usage| var_usage.embed(ctx)).collect(),
                 location.embed(ctx),
             ),
-            FlatBlockEndCached::Panic(var_id) => FlatBlockEnd::Panic(var_id.embed(ctx)),
-            FlatBlockEndCached::Goto(block_id, remapping) => {
-                FlatBlockEnd::Goto(BlockId(block_id), remapping.embed(ctx))
+            BlockEndCached::Panic(var_id) => BlockEnd::Panic(var_id.embed(ctx)),
+            BlockEndCached::Goto(block_id, remapping) => {
+                BlockEnd::Goto(BlockId(block_id), remapping.embed(ctx))
             }
-            FlatBlockEndCached::NotSet => FlatBlockEnd::NotSet,
-            FlatBlockEndCached::Match { info } => FlatBlockEnd::Match { info: info.embed(ctx) },
+            BlockEndCached::NotSet => BlockEnd::NotSet,
+            BlockEndCached::Match { info } => BlockEnd::Match { info: info.embed(ctx) },
         }
     }
 }
@@ -957,7 +954,7 @@ impl VarRemappingCached {
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> VarRemapping {
         let mut remapping = OrderedHashMap::default();
         for (dst, src) in self.remapping {
-            remapping.insert(ctx.flat_lowered_variables_id[dst], src.embed(ctx));
+            remapping.insert(ctx.lowered_variables_id[dst], src.embed(ctx));
         }
         VarRemapping { remapping }
     }
@@ -1127,7 +1124,7 @@ impl MatchArmCached {
             var_ids: self
                 .var_ids
                 .into_iter()
-                .map(|var_id| ctx.flat_lowered_variables_id[var_id])
+                .map(|var_id| ctx.lowered_variables_id[var_id])
                 .collect(),
         }
     }
@@ -1233,7 +1230,7 @@ impl StatementConstCached {
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> StatementConst {
         StatementConst {
             value: self.value.embed(&mut ctx.semantic_ctx),
-            output: ctx.flat_lowered_variables_id[self.output],
+            output: ctx.lowered_variables_id[self.output],
         }
     }
 }
@@ -1370,7 +1367,7 @@ impl StatementCallCached {
             outputs: self
                 .outputs
                 .into_iter()
-                .map(|var_id| ctx.flat_lowered_variables_id[var_id])
+                .map(|var_id| ctx.lowered_variables_id[var_id])
                 .collect(),
             location: self.location.embed(ctx),
         }
@@ -1753,7 +1750,7 @@ impl StatementStructConstructCached {
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> StatementStructConstruct {
         StatementStructConstruct {
             inputs: self.inputs.into_iter().map(|var_id| var_id.embed(ctx)).collect(),
-            output: ctx.flat_lowered_variables_id[self.output],
+            output: ctx.lowered_variables_id[self.output],
         }
     }
 }
@@ -1777,7 +1774,7 @@ impl StatementStructDestructureCached {
             outputs: self
                 .outputs
                 .into_iter()
-                .map(|var_id| ctx.flat_lowered_variables_id[var_id])
+                .map(|var_id| ctx.lowered_variables_id[var_id])
                 .collect(),
         }
     }
@@ -1803,7 +1800,7 @@ impl StatementEnumConstructCached {
         StatementEnumConstruct {
             variant: self.variant.embed(&mut ctx.semantic_ctx),
             input: self.input.embed(ctx),
-            output: ctx.flat_lowered_variables_id[self.output],
+            output: ctx.lowered_variables_id[self.output],
         }
     }
 }
@@ -1824,8 +1821,8 @@ impl StatementSnapshotCached {
         StatementSnapshot {
             input: self.input.embed(ctx),
             outputs: [
-                ctx.flat_lowered_variables_id[self.outputs[0]],
-                ctx.flat_lowered_variables_id[self.outputs[1]],
+                ctx.lowered_variables_id[self.outputs[0]],
+                ctx.lowered_variables_id[self.outputs[1]],
             ],
         }
     }
@@ -1844,7 +1841,7 @@ impl StatementDesnapCached {
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> StatementDesnap {
         StatementDesnap {
             input: self.input.embed(ctx),
-            output: ctx.flat_lowered_variables_id[self.output],
+            output: ctx.lowered_variables_id[self.output],
         }
     }
 }

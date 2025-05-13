@@ -6,7 +6,7 @@
 //!
 //! System calls enable a contract to require services from the Starknet OS. You can use system
 //! calls in a function to get information that depends on the broader state of Starknet, such as
-//! the current timestamp of the address of the caller, but also to modify the state of Starknet by,
+//! the current timestamp or the address of the caller, but also to modify the state of Starknet by,
 //! for example, storing values in a contract's storage or deploying new contracts.
 
 use core::gas::GasBuiltin;

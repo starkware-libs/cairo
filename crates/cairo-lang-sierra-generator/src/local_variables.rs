@@ -18,7 +18,7 @@ use itertools::{chain, zip_eq};
 use lowering::borrow_check::Demand;
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
-use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage};
+use lowering::{Lowered, MatchInfo, Statement, VarRemapping, VarUsage};
 
 use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration};
 use crate::db::SierraGenGroup;
@@ -42,7 +42,7 @@ pub struct AnalyzeApChangesResult {
 /// See [AnalyzeApChangesResult].
 pub fn analyze_ap_changes(
     db: &dyn SierraGenGroup,
-    lowered_function: &FlatLowered,
+    lowered_function: &Lowered,
 ) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
@@ -118,7 +118,7 @@ struct CalledBlockInfo {
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'a> {
     db: &'a dyn SierraGenGroup,
-    lowered_function: &'a FlatLowered,
+    lowered_function: &'a Lowered,
     used_after_revoke: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
     /// Variables that are known not to be ap based, excluding constants.

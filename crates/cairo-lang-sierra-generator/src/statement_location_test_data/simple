@@ -751,18 +751,6 @@ Inlined at:
     let _ = foo(c);
             ^^^^^^
 In function: lib.cairo::main
-store_temp<test::MyEnum>([10]) -> ([10])
-Originating location:
-      match a {
- _____^
-| ...
-|     }
-|_____^
-In function: lib.cairo::foo
-Inlined at:
-    let _ = foo(c);
-            ^^^^^^
-In function: lib.cairo::main
 enum_match<test::MyEnum>([5]) { fallthrough([11]) label_test::main::1([12]) label_test::main::2([13]) label_test::main::3([14]) }
 Originating location:
       match a {
@@ -1099,6 +1087,18 @@ Inlined at:
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
+            ^^^^^^
+In function: lib.cairo::main
+store_temp<test::MyEnum>([10]) -> ([10])
+Originating location:
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+In function: lib.cairo::foo
+Inlined at:
+    let _ = foo(d);
             ^^^^^^
 In function: lib.cairo::main
 enum_match<test::MyEnum>([10]) { fallthrough([29]) label_test::main::9([30]) label_test::main::10([31]) label_test::main::11([32]) }
@@ -4044,7 +4044,7 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([31])
+drop<Array<bytes31>>([30]) -> ()
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -4065,79 +4065,92 @@ Inlined at:
     let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<u32, 0>>() -> ([32])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-struct_construct<core::byte_array::ByteArray>([30], [31], [32]) -> ([33])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-snapshot_take<core::byte_array::ByteArray>([33]) -> ([34], [35])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<core::byte_array::ByteArray>([34]) -> ()
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<Snapshot<core::byte_array::ByteArray>>([35]) -> ([35])
+array_new<felt252>() -> ([31])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-function_call<user@core::panics::panic_with_byte_array>([35]) -> ([36])
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([32])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([36]) -> ([37])
+store_temp<felt252>([32]) -> ([32])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([37]) -> ([37])
+array_append<felt252>([31], [32]) -> ([33])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-return([37])
+const_as_immediate<Const<felt252, 0>>() -> ([34])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([34]) -> ([34])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([33], [34]) -> ([35])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+const_as_immediate<Const<felt252, 0>>() -> ([36])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([36]) -> ([36])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([35], [36]) -> ([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+const_as_immediate<Const<felt252, 0>>() -> ([38])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([38]) -> ([38])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([37], [38]) -> ([39])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+struct_construct<core::panics::Panic>() -> ([40])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([40], [39]) -> ([41])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+enum_init<core::panics::PanicResult::<((),)>, 1>([41]) -> ([42])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<core::panics::PanicResult::<((),)>>([42]) -> ([42])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+return([42])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -4166,7 +4179,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-struct_construct<Unit>() -> ([38])
+struct_construct<Unit>() -> ([43])
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4174,7 +4187,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-struct_construct<Tuple<Unit>>([38]) -> ([39])
+struct_construct<Tuple<Unit>>([43]) -> ([44])
 Originating location:
   if !(array![1, 2] != array![2, 1]) {
  _^
@@ -4182,7 +4195,7 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 0>([39]) -> ([40])
+enum_init<core::panics::PanicResult::<((),)>, 0>([44]) -> ([45])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4190,7 +4203,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::some_array_checks
-store_temp<core::panics::PanicResult::<((),)>>([40]) -> ([40])
+store_temp<core::panics::PanicResult::<((),)>>([45]) -> ([45])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4198,7 +4211,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::some_array_checks
-return([40])
+return([45])
 Originating location:
   fn some_array_checks() {
  ________________________^
@@ -4252,17 +4265,17 @@ Inlined at:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([21]) -> ([41])
+enum_init<core::panics::PanicResult::<((),)>, 1>([21]) -> ([46])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<core::panics::PanicResult::<((),)>>([41]) -> ([41])
+store_temp<core::panics::PanicResult::<((),)>>([46]) -> ([46])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-return([41])
+return([46])
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

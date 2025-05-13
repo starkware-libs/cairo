@@ -17,7 +17,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 pub mod analysis;
 pub mod demand;
@@ -26,7 +26,7 @@ pub type BorrowCheckerDemand = Demand<VariableId, LocationId, PanicState>;
 pub struct BorrowChecker<'a> {
     db: &'a dyn LoweringGroup,
     diagnostics: &'a mut LoweringDiagnostics,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
     potential_destruct_calls: PotentialDestructCalls,
     destruct_fn: TraitFunctionId,
     panic_destruct_fn: TraitFunctionId,
@@ -291,7 +291,7 @@ pub struct BorrowCheckResult {
 pub fn borrow_check(
     db: &dyn LoweringGroup,
     is_panic_destruct_fn: bool,
-    lowered: &FlatLowered,
+    lowered: &Lowered,
 ) -> BorrowCheckResult {
     if lowered.blocks.has_root().is_err() {
         return Default::default();
@@ -328,7 +328,7 @@ pub fn borrow_check(
 pub fn borrow_check_possible_withdraw_gas(
     db: &dyn LoweringGroup,
     location_id: LocationId,
-    lowered: &FlatLowered,
+    lowered: &Lowered,
     diagnostics: &mut LoweringDiagnostics,
 ) {
     let info = db.core_info();

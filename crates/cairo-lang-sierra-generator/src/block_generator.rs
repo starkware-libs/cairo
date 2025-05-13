@@ -27,12 +27,12 @@ use crate::utils::{
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
-/// Generates Sierra code for the body of the given [lowering::FlatBlock].
+/// Generates Sierra code for the body of the given [lowering::Block].
 /// Returns a list of Sierra statements.
 pub fn generate_block_body_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-    block: &lowering::FlatBlock,
+    block: &lowering::Block,
 ) -> Maybe<()> {
     if context.should_disable_ap_tracking(&block_id) {
         context.set_ap_tracking(false);
@@ -123,7 +123,7 @@ pub fn generate_function_statements(
     Ok(context.statements())
 }
 
-/// Generates Sierra for a given [lowering::FlatBlock].
+/// Generates Sierra for a given [lowering::Block].
 ///
 /// Returns a list of Sierra statements.
 /// Assumes `block_id` exists in `self.lowered.blocks`.
@@ -138,13 +138,13 @@ fn generate_block_code(
     generate_block_body_code(context, block_id, block)?;
 
     match &block.end {
-        lowering::FlatBlockEnd::Return(returned_variables, _location) => {
+        lowering::BlockEnd::Return(returned_variables, _location) => {
             generate_return_code(context, returned_variables, &statement_location)?;
         }
-        lowering::FlatBlockEnd::Panic(_) => {
+        lowering::BlockEnd::Panic(_) => {
             unreachable!("Panics should have been stripped in a previous phase.")
         }
-        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
+        lowering::BlockEnd::Goto(target_block_id, remapping) => {
             let StatementWithLocation { statement: push_values_statement, location } =
                 generate_push_values_statement_for_remapping(
                     context,
@@ -168,9 +168,9 @@ fn generate_block_code(
                 context.push_statement(jump);
             }
         }
-        lowering::FlatBlockEnd::NotSet => unreachable!(),
+        lowering::BlockEnd::NotSet => unreachable!(),
         // Process the block end if it's a match.
-        lowering::FlatBlockEnd::Match { info } => {
+        lowering::BlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
             let statement_cairo_location = info.location().all_locations(context.get_db().upcast());
             if context.should_enable_ap_tracking(&block_id) {

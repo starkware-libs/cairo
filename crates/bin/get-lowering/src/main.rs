@@ -12,7 +12,6 @@ use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
@@ -23,6 +22,7 @@ use cairo_lang_lowering::ids::{
 };
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
+use cairo_lang_lowering::{Lowered, LoweringStage};
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
@@ -105,16 +105,16 @@ impl fmt::Display for PhasesDisplay<'_> {
         let function_id = self.function_id;
 
         let mut curr_state =
-            (*db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap()).clone();
+            (*db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap()).clone();
 
         let mut phase_index = 0;
-        let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
+        let mut add_stage_state = |name: &str, lowered: &Lowered| {
             writeln!(f, "{phase_index}. {name}: {}", LoweredDisplay::new(db, lowered)).unwrap();
             phase_index += 1;
         };
         add_stage_state("before_all", &curr_state);
 
-        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut FlatLowered)| {
+        let mut apply_stage = |name: &'static str, stage: &dyn Fn(&mut Lowered)| {
             (*stage)(&mut curr_state);
             add_stage_state(name, &curr_state);
         };
@@ -126,9 +126,10 @@ impl fmt::Display for PhasesDisplay<'_> {
         });
         apply_stage("after_add_destructs", &|lowered| add_destructs(db, function_id, lowered));
         apply_stage("scrub_units", &|lowered| scrub_units(db, lowered));
-        let pre_opts = db.concrete_function_with_body_postpanic_lowered(function_id).unwrap();
-        let post_base_opts = db.inlined_function_with_body_lowered(self.function_id).unwrap();
-        let final_state = db.final_concrete_function_with_body_lowered(self.function_id).unwrap();
+        let pre_opts = db.lowered_body(self.function_id, LoweringStage::PreOptimizations).unwrap();
+        let post_base_opts =
+            db.lowered_body(self.function_id, LoweringStage::PostBaseline).unwrap();
+        let final_state = db.lowered_body(self.function_id, LoweringStage::Final).unwrap();
         assert_eq!(
             LoweredDisplay::new(db, &curr_state).to_string(),
             LoweredDisplay::new(db, &pre_opts).to_string()
@@ -155,10 +156,10 @@ impl fmt::Display for PhasesDisplay<'_> {
 /// Helper for displaying the lowered representation of a concrete function.
 struct LoweredDisplay<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 }
 impl<'a> LoweredDisplay<'a> {
-    fn new(db: &'a dyn LoweringGroup, lowered: &'a FlatLowered) -> Self {
+    fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered) -> Self {
         Self { db, lowered }
     }
 }
@@ -290,7 +291,7 @@ fn main() -> anyhow::Result<()> {
             );
         }
 
-        let Ok(lowered) = db.final_concrete_function_with_body_lowered(function_id) else {
+        let Ok(lowered) = db.lowered_body(function_id, LoweringStage::Final) else {
             // Run DiagnosticsReporter only in case of failure.
             DiagnosticsReporter::default()
                 .with_crates(&main_crate_ids)

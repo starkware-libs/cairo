@@ -45,7 +45,7 @@ use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
 use self::lower_if::lower_expr_if;
 use self::lower_match::lower_expr_match;
-use crate::blocks::FlatBlocks;
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
@@ -57,7 +57,7 @@ use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, Va
 use crate::lower::generators::StructDestructure;
 use crate::lower::lower_match::MatchArmWrapper;
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
+    BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -75,8 +75,8 @@ mod generated_test;
 /// Lowering of a function together with extra generated functions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {
-    pub main_lowering: FlatLowered,
-    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
+    pub main_lowering: Lowered,
+    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, Lowered>,
 }
 
 /// Lowers a semantic free function.
@@ -111,13 +111,13 @@ pub fn lower_semantic_function(
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
-/// Lowers a function into [FlatLowered].
+/// Lowers a function into [Lowered].
 pub fn lower_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
     signature: Signature,
     block_expr_id: semantic::ExprId,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     log::trace!("Lowering a free function.");
     let return_type = signature.return_type;
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?;
@@ -159,8 +159,8 @@ pub fn lower_function(
     };
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
-    Ok(FlatLowered {
+        .unwrap_or_else(Blocks::new_errored);
+    Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
@@ -200,7 +200,6 @@ pub fn lower_for_loop(
     };
     let next_value_type = some_variant.ty;
     builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
-    let pattern = ctx.function_body.arenas.patterns[loop_expr.pattern].clone();
     let unit_ty = corelib::unit_ty(db);
     let some_block: cairo_lang_semantic::ExprBlock =
         extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
@@ -215,7 +214,8 @@ pub fn lower_for_loop(
         var_id: some_var_id,
         location: ctx.get_location(some_block.stable_ptr.untyped()),
     });
-    let lowered_pattern = lower_single_pattern(ctx, &mut some_subscope, pattern, variant_expr);
+    let lowered_pattern =
+        lower_single_pattern(ctx, &mut some_subscope, loop_expr.pattern, variant_expr);
     let sealed_some = match lowered_pattern {
         Ok(_) => {
             let block_expr = (|| {
@@ -365,10 +365,7 @@ pub fn lower_expr_while_let(
         )));
     }
 
-    let arms = vec![
-        MatchArmWrapper { patterns: patterns.into(), expr: Some(loop_expr.body) },
-        MatchArmWrapper { patterns: vec![], expr: None },
-    ];
+    let arms = vec![MatchArmWrapper::Arm(patterns, loop_expr.body), MatchArmWrapper::DefaultClause];
 
     lower_match::lower_match_arms(
         ctx,
@@ -381,7 +378,7 @@ pub fn lower_expr_while_let(
     )
 }
 
-/// Lowers a loop inner function into [FlatLowered].
+/// Lowers a loop inner function into [Lowered].
 /// Similar to `lower_function`, but adds a recursive call.
 // TODO(spapini): Unite with `lower_function`.
 pub fn lower_loop_function(
@@ -390,7 +387,7 @@ pub fn lower_loop_function(
     loop_signature: Signature,
     loop_ctx: LoopContext,
     return_type: semantic::TypeId,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     let loop_expr_id = loop_ctx.loop_expr_id;
     let mut ctx =
         LoweringContext::new(encapsulating_ctx, function_id, loop_signature, return_type)?;
@@ -469,8 +466,8 @@ pub fn lower_loop_function(
 
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
-    Ok(FlatLowered {
+        .unwrap_or_else(Blocks::new_errored);
+    Ok(Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
@@ -651,8 +648,7 @@ pub fn lower_statement(
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
-            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
-            lower_single_pattern(ctx, builder, pattern, lowered_expr)?
+            lower_single_pattern(ctx, builder, *pattern, lowered_expr)?
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
             log::trace!("Lowering a continue statement.");
@@ -698,16 +694,17 @@ pub fn lower_statement(
 fn lower_single_pattern(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    pattern: semantic::Pattern,
+    pattern_id: semantic::PatternId,
     lowered_expr: LoweredExpr,
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
+    let pattern = &ctx.function_body.arenas.patterns[pattern_id];
     match pattern {
         semantic::Pattern::Literal(_)
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(&pattern, UnsupportedPattern),
+                ctx.diagnostics.report(pattern.stable_ptr(), UnsupportedPattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {
@@ -715,7 +712,8 @@ fn lower_single_pattern(
             var: sem_var,
             stable_ptr,
         }) => {
-            let sem_var = semantic::Binding::LocalVar(sem_var);
+            let sem_var = semantic::Binding::LocalVar(sem_var.clone());
+            let stable_ptr = *stable_ptr;
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
             // Override variable location.
@@ -730,23 +728,25 @@ fn lower_single_pattern(
                 .concrete_struct_members(structure.concrete_struct_id)
                 .map_err(LoweringFlowError::Failed)?;
             let mut required_members = UnorderedHashMap::<_, _>::from_iter(
-                structure.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
+                structure.field_patterns.iter().map(|(member, pattern)| (member.id, *pattern)),
             );
+            let n_snapshots = structure.n_snapshots;
+            let stable_ptr = structure.stable_ptr.untyped();
             let generator = generators::StructDestructure {
                 input: lowered_expr.as_var_usage(ctx, builder)?,
                 var_reqs: members
                     .iter()
                     .map(|(_, member)| VarRequest {
-                        ty: wrap_in_snapshots(ctx.db, member.ty, structure.n_snapshots),
+                        ty: wrap_in_snapshots(ctx.db, member.ty, n_snapshots),
                         location: ctx.get_location(
                             required_members
                                 .get(&member.id)
                                 .map(|pattern| {
-                                    ctx.function_body.arenas.patterns[**pattern]
+                                    ctx.function_body.arenas.patterns[*pattern]
                                         .stable_ptr()
                                         .untyped()
                                 })
-                                .unwrap_or_else(|| structure.stable_ptr.untyped()),
+                                .unwrap_or_else(|| stable_ptr),
                         ),
                     })
                     .collect(),
@@ -755,8 +755,7 @@ fn lower_single_pattern(
                 izip!(generator.add(ctx, &mut builder.statements), members.iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
-                    let member_pattern = ctx.function_body.arenas.patterns[*member_pattern].clone();
-                    let stable_ptr = member_pattern.stable_ptr();
+                    let stable_ptr = ctx.function_body.arenas.patterns[member_pattern].stable_ptr();
                     lower_single_pattern(
                         ctx,
                         builder,
@@ -777,11 +776,13 @@ fn lower_single_pattern(
             ty,
             ..
         }) => {
-            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, ty)?;
+            let patterns = patterns.clone();
+            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, *ty)?;
         }
         semantic::Pattern::Otherwise(pattern) => {
+            let stable_ptr = pattern.stable_ptr.untyped();
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
-            ctx.variables.variables[var].location = ctx.get_location(pattern.stable_ptr.untyped());
+            ctx.variables.variables[var].location = ctx.get_location(stable_ptr);
         }
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
     }
@@ -840,12 +841,7 @@ fn lower_tuple_like_pattern_helper(
         }
     };
     for (var, pattern) in zip_eq(outputs, patterns) {
-        lower_single_pattern(
-            ctx,
-            builder,
-            ctx.function_body.arenas.patterns[*pattern].clone(),
-            var,
-        )?;
+        lower_single_pattern(ctx, builder, *pattern, var)?;
     }
     Ok(())
 }
@@ -1885,7 +1881,7 @@ fn get_destruct_lowering(
     mut ctx: LoweringContext<'_, '_>,
     location_id: LocationId,
     closure_info: &ClosureInfo,
-) -> Maybe<FlatLowered> {
+) -> Maybe<Lowered> {
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
@@ -1906,7 +1902,7 @@ fn get_destruct_lowering(
         generators::StructConstruct { inputs: vec![], ty: unit_ty(ctx.db), location: location_id }
             .add(&mut ctx, &mut builder.statements);
     builder.ret(&mut ctx, var_usage, location_id)?;
-    let lowered_impl = FlatLowered {
+    let lowered_impl = Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks: ctx.blocks.build().unwrap(),
@@ -2036,9 +2032,9 @@ fn add_closure_call_function(
     });
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
-        .unwrap_or_else(FlatBlocks::new_errored);
+        .unwrap_or_else(Blocks::new_errored);
 
-    let lowered = FlatLowered {
+    let lowered = Lowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,

@@ -15,7 +15,7 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
-use crate::FlatLowered;
+use crate::Lowered;
 use crate::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use crate::fmt::LoweredFormatter;
 use crate::utils::InliningStrategy;
@@ -103,7 +103,7 @@ impl Upcast<dyn ParserGroup> for LoweringDatabaseForTesting {
 }
 
 /// Helper for formatting a lowered representation for tests.
-pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&FlatLowered>) -> String {
+pub fn formatted_lowered(db: &dyn LoweringGroup, lowered: Option<&Lowered>) -> String {
     match lowered {
         Some(lowered) => {
             let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);

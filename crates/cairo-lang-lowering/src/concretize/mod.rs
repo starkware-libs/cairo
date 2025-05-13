@@ -4,7 +4,7 @@ use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction, SemanticFunctionIdEx};
-use crate::{FlatBlockEnd, FlatLowered, MatchArm, Statement};
+use crate::{BlockEnd, Lowered, MatchArm, Statement};
 
 /// Rewrites a [FunctionId] with a [GenericSubstitution].
 fn concretize_function(
@@ -31,7 +31,7 @@ fn concretize_function(
 /// variable types, variants and called functions.
 pub fn concretize_lowered(
     db: &dyn LoweringGroup,
-    lowered: &mut FlatLowered,
+    lowered: &mut Lowered,
     substitution: &GenericSubstitution,
 ) -> Maybe<()> {
     // Substitute all types.
@@ -62,7 +62,7 @@ pub fn concretize_lowered(
                 | Statement::StructDestructure(_) => {}
             }
         }
-        if let FlatBlockEnd::Match { info } = &mut block.end {
+        if let BlockEnd::Match { info } = &mut block.end {
             for MatchArm { arm_selector: selector, .. } in match info {
                 crate::MatchInfo::Enum(s) => s.arms.iter_mut(),
                 crate::MatchInfo::Extern(s) => {

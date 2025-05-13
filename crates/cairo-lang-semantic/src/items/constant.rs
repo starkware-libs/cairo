@@ -616,11 +616,12 @@ impl ConstantEvaluateContext<'_> {
         let expr = &self.arenas.exprs[expr_id];
         let db = self.db;
         match expr {
-            Expr::Var(expr) => self
-                .vars
-                .get(&expr.var)
-                .cloned()
-                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic())),
+            Expr::Var(expr) => self.vars.get(&expr.var).cloned().unwrap_or_else(|| {
+                ConstValue::Missing(
+                    self.diagnostics
+                        .report(expr.stable_ptr, SemanticDiagnosticKind::UnsupportedConstant),
+                )
+            }),
             Expr::Constant(expr) => self
                 .generic_substitution
                 .substitute(self.db, expr.const_value_id.lookup_intern(db))

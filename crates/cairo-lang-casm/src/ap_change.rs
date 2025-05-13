@@ -1,7 +1,5 @@
 use core::fmt::Display;
 
-use cairo_lang_utils::casts::IntoOrPanic;
-
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
 #[cfg(test)]
@@ -95,7 +93,7 @@ impl ApplyApChange for CellRef {
         Some(match &self.register {
             Register::AP => CellRef {
                 register: Register::AP,
-                offset: self.offset.checked_sub(ap_change.into_or_panic())?,
+                offset: self.offset.checked_sub(ap_change.try_into().ok()?)?,
             },
             Register::FP => self,
         })

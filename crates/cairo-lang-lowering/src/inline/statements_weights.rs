@@ -2,18 +2,18 @@ use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
 
 use crate::db::LoweringGroup;
-use crate::{FlatBlockEnd, FlatLowered, Statement, VarUsage, VariableId};
+use crate::{BlockEnd, Lowered, Statement, VarUsage, VariableId};
 
 /// Trait for calculating the weight of a lowered function, for the purpose of inlining.
 pub trait InlineWeight {
     /// The weight of calling the function.
-    fn calling_weight(&self, lowered: &FlatLowered) -> isize;
+    fn calling_weight(&self, lowered: &Lowered) -> isize;
     /// The weight of a statement in the lowered function.
     fn statement_weight(&self, statement: &Statement) -> isize;
     /// The weight of the block end in the lowered function.
-    fn block_end_weight(&self, block_end: &FlatBlockEnd) -> isize;
+    fn block_end_weight(&self, block_end: &BlockEnd) -> isize;
     /// The weight of the entire lowered function.
-    fn lowered_weight(&self, lowered: &FlatLowered) -> isize {
+    fn lowered_weight(&self, lowered: &Lowered) -> isize {
         self.calling_weight(lowered)
             + lowered
                 .blocks
@@ -33,7 +33,7 @@ pub trait InlineWeight {
 /// A simple inline weight that gives a weight of 1 to each statement and block end.
 pub struct SimpleInlineWeight;
 impl InlineWeight for SimpleInlineWeight {
-    fn calling_weight(&self, _lowered: &FlatLowered) -> isize {
+    fn calling_weight(&self, _lowered: &Lowered) -> isize {
         0
     }
 
@@ -41,7 +41,7 @@ impl InlineWeight for SimpleInlineWeight {
         1
     }
 
-    fn block_end_weight(&self, _block_end: &FlatBlockEnd) -> isize {
+    fn block_end_weight(&self, _block_end: &BlockEnd) -> isize {
         1
     }
 }
@@ -50,11 +50,11 @@ impl InlineWeight for SimpleInlineWeight {
 /// will add to the code.
 pub struct ApproxCasmInlineWeight<'a> {
     db: &'a dyn LoweringGroup,
-    lowered: &'a FlatLowered,
+    lowered: &'a Lowered,
 }
 impl<'a> ApproxCasmInlineWeight<'a> {
     /// Create a new `ApproxCasmInlineWeight` for the given lowered function.
-    pub fn new(db: &'a dyn LoweringGroup, lowered: &'a FlatLowered) -> Self {
+    pub fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered) -> Self {
         Self { db, lowered }
     }
     /// Calculate the total size of the given types.
@@ -72,7 +72,7 @@ impl<'a> ApproxCasmInlineWeight<'a> {
 }
 
 impl InlineWeight for ApproxCasmInlineWeight<'_> {
-    fn calling_weight(&self, _lowered: &FlatLowered) -> isize {
+    fn calling_weight(&self, _lowered: &Lowered) -> isize {
         0
     }
     fn statement_weight(&self, statement: &Statement) -> isize {
@@ -88,16 +88,16 @@ impl InlineWeight for ApproxCasmInlineWeight<'_> {
         .into_or_panic()
     }
 
-    fn block_end_weight(&self, block_end: &FlatBlockEnd) -> isize {
+    fn block_end_weight(&self, block_end: &BlockEnd) -> isize {
         match block_end {
             // Return are removed when the function is inlined.
-            FlatBlockEnd::Return(..) => 0,
+            BlockEnd::Return(..) => 0,
             // Goto requires the size of the variables in the mappings, as these are likely to be
             // stored for merge.
-            FlatBlockEnd::Goto(_, r) => self.vars_size(r.keys()),
+            BlockEnd::Goto(_, r) => self.vars_size(r.keys()),
             // The required store for the branch parameter, as well as the branch aligns.
-            FlatBlockEnd::Match { info } => info.arms().len() + self.inputs_size(info.inputs()),
-            FlatBlockEnd::Panic(_) | FlatBlockEnd::NotSet => unreachable!(),
+            BlockEnd::Match { info } => info.arms().len() + self.inputs_size(info.inputs()),
+            BlockEnd::Panic(_) | BlockEnd::NotSet => unreachable!(),
         }
         .into_or_panic()
     }
