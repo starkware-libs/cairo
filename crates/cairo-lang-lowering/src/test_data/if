@@ -697,7 +697,7 @@ enum MyEnum {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable else clause.
+warning: Unreachable else clause.
  --> lib.cairo:10:12-12:5
       } else {
  ____________^
@@ -706,7 +706,40 @@ error: Unreachable else clause.
 |_____^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: test::MyEnum
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v5: core::felt252) <- 5
+  (v6: core::felt252) <- core::felt252_add(v1, v5)
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v6, v7)
+End:
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -812,3 +845,68 @@ Statements:
   (v3: core::felt252) <- 2
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test if let unreachable-else by multipattern
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function
+fn foo(a: Option<felt252>) -> felt252 {
+    let mut y = 0;
+    if let None | Some(_) = a {
+        y = y + 5;
+    } else {
+        y = y + 8;
+    }
+    y = y + 1;
+    return y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable else clause.
+ --> lib.cairo:5:12-7:5
+      } else {
+ ____________^
+|         y = y + 8;
+|     }
+|_____^
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v4: core::felt252) <- 5
+  (v5: core::felt252) <- core::felt252_add(v1, v4)
+  (v6: core::felt252) <- 1
+  (v7: core::felt252) <- core::felt252_add(v5, v6)
+End:
+  Return(v7)

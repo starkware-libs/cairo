@@ -651,18 +651,55 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable pattern arm.
+warning: Unreachable pattern arm.
  --> lib.cairo:12:9
         A::Two(_) => 4,
         ^^^^^^^^^
 
-error: Unreachable pattern arm.
+warning: Unreachable pattern arm.
  --> lib.cairo:13:9
         A::Three(_) => 5,
         ^^^^^^^^^^^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v2) => blk2,
+    A::Three(v3) => blk3,
+    A::Four(v4) => blk4,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 2
+End:
+  Return(v6)
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 3
+End:
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -824,14 +861,6 @@ error: Inner patterns are not allowed in this context.
  --> lib.cairo:3:14
         Some(Some(x)) => x,
              ^^^^^^^
-
-error: Missing match arm: `Some` not covered.
- --> lib.cairo:2:5-5:5
-      match a {
- _____^
-| ...
-|     }
-|_____^
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
@@ -1678,13 +1707,50 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable pattern arm.
+warning: Unreachable pattern arm.
  --> lib.cairo:12:9
         _ => 5,
         ^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v2) => blk2,
+    A::Three(v3) => blk3,
+    A::Four(v4) => blk4,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 2
+End:
+  Return(v6)
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -1717,13 +1783,50 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable pattern arm.
+warning: Unreachable pattern arm.
  --> lib.cairo:12:9
         A::One(_) => 5,
         ^^^^^^^^^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: test::A
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    A::One(v1) => blk1,
+    A::Two(v2) => blk2,
+    A::Three(v3) => blk3,
+    A::Four(v4) => blk4,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 2
+End:
+  Return(v6)
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -1765,7 +1868,7 @@ enum B {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable pattern arm.
+warning: Unreachable pattern arm.
  --> lib.cairo:20:9
         (_, A::Three(((_, _), x))) => x,
         ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1948,10 +2051,10 @@ error: Unsupported matched value. Currently, match on tuples only supports enums
 
 //! > ==========================================================================
 
-//! > Test Match unreachable Otherwise.
+//! > Test match unreachable Otherwise.
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: false)
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Option<felt252>) -> felt252 {
@@ -1970,6 +2073,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+warning: Unreachable pattern arm.
+ --> lib.cairo:5:9
+        _ => 7,
+        ^
 
 //! > lowering_flat
 Parameters: v0: core::option::Option::<core::felt252>
