@@ -21,7 +21,8 @@ use crate::{
 ///
 /// The list of call statements that can be moved is currently hardcoded.
 ///
-/// Removing unnecessary remapping before this optimization will result in better code.
+/// Unused remapping should be removed before running this optimization (using
+/// `optimize_remappings`).
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -151,8 +152,12 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for VarUsage { var_id, .. } in remapping.values() {
-            info.next_use.insert(*var_id, statement_location);
+        for (dst, src) in remapping.iter() {
+            assert!(
+                info.next_use.contains_key(dst),
+                "Unused remappings should be removed before running this optimization."
+            );
+            info.next_use.insert(src.var_id, statement_location);
         }
     }
 
