@@ -230,6 +230,50 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
+#[derive(Drop, Copy, Debug, PartialEq, Serde)]
+pub struct storage_accessesDeployer {
+    pub class_hash: starknet::ClassHash,
+    pub deploy_from_zero: bool,
+}
+
+pub trait storage_accessesDeployerTrait<T> {
+    fn deploy(
+        self: T,
+        contract_address_salt: felt252,
+        name_: felt252,
+symbol_: felt252,
+decimals_: u8,
+initial_supply: u256,
+recipient: ContractAddress
+    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)>;
+}
+
+impl storage_accessesDeployerImpl of storage_accessesDeployerTrait<storage_accessesDeployer> {
+    fn deploy(
+        self: storage_accessesDeployer,
+        contract_address_salt: felt252,
+        name_: felt252,
+symbol_: felt252,
+decimals_: u8,
+initial_supply: u256,
+recipient: ContractAddress
+    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
+        let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+        core::serde::Serde::<felt252>::serialize(@name_, ref calldata);
+core::serde::Serde::<felt252>::serialize(@symbol_, ref calldata);
+core::serde::Serde::<u8>::serialize(@decimals_, ref calldata);
+core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
+core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
+
+        starknet::syscalls::deploy_syscall(
+            self.class_hash,
+            contract_address_salt,
+            core::array::ArrayTrait::span(@calldata),
+            self.deploy_from_zero,
+        )
+    }
+}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -560,6 +604,38 @@ impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+impl storage_accessesDeployerDrop<> of core::traits::Drop::<storage_accessesDeployer>;
+impl storage_accessesDeployerCopy<> of core::traits::Copy::<storage_accessesDeployer>;
+impl storage_accessesDeployerDebug<> of core::fmt::Debug::<storage_accessesDeployer> {
+    fn fmt(self: @storage_accessesDeployer, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "storage_accessesDeployer {{")?;
+        write!(f, " class_hash: ")?;
+        core::fmt::Debug::<starknet::ClassHash>::fmt(self.class_hash, ref f)?;
+        write!(f, ",")?;
+        write!(f, " deploy_from_zero: ")?;
+        core::fmt::Debug::<bool>::fmt(self.deploy_from_zero, ref f)?;
+        write!(f, " }}")
+    }
+}
+impl storage_accessesDeployerPartialEq<> of core::traits::PartialEq::<storage_accessesDeployer> {
+    fn eq(lhs: @storage_accessesDeployer, rhs: @storage_accessesDeployer) -> bool {
+        core::traits::PartialEq::<starknet::ClassHash>::eq(lhs.class_hash, rhs.class_hash) && core::traits::PartialEq::<bool>::eq(lhs.deploy_from_zero, rhs.deploy_from_zero)
+    }
+}
+impl storage_accessesDeployerSerde<> of core::serde::Serde::<storage_accessesDeployer> {
+    fn serialize(self: @storage_accessesDeployer, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output);
+        core::serde::Serde::<bool>::serialize(self.deploy_from_zero, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<storage_accessesDeployer> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let deploy_from_zero = core::internal::InferDestruct::<bool> { value: core::serde::Serde::<bool>::deserialize(ref serialized)? };
+        core::option::Option::Some(storage_accessesDeployer {
+            class_hash: class_hash.value,
+            deploy_from_zero: deploy_from_zero.value,
+        })
+    }
+}
 }
 trait IERC20DispatcherTrait<T> {
     fn get_name(self: T) -> felt252;
@@ -2141,6 +2217,50 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
+#[derive(Drop, Copy, Debug, PartialEq, Serde)]
+pub struct storage_accessesDeployer {
+    pub class_hash: starknet::ClassHash,
+    pub deploy_from_zero: bool,
+}
+
+pub trait storage_accessesDeployerTrait<T> {
+    fn deploy(
+        self: T,
+        contract_address_salt: felt252,
+        name_: felt252,
+symbol_: felt252,
+decimals_: u8,
+initial_supply: u256,
+recipient: ContractAddress
+    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)>;
+}
+
+impl storage_accessesDeployerImpl of storage_accessesDeployerTrait<storage_accessesDeployer> {
+    fn deploy(
+        self: storage_accessesDeployer,
+        contract_address_salt: felt252,
+        name_: felt252,
+symbol_: felt252,
+decimals_: u8,
+initial_supply: u256,
+recipient: ContractAddress
+    ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
+        let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+
+        core::serde::Serde::<felt252>::serialize(@name_, ref calldata);
+core::serde::Serde::<felt252>::serialize(@symbol_, ref calldata);
+core::serde::Serde::<u8>::serialize(@decimals_, ref calldata);
+core::serde::Serde::<u256>::serialize(@initial_supply, ref calldata);
+core::serde::Serde::<ContractAddress>::serialize(@recipient, ref calldata);
+
+        starknet::syscalls::deploy_syscall(
+            self.class_hash,
+            contract_address_salt,
+            core::array::ArrayTrait::span(@calldata),
+            self.deploy_from_zero,
+        )
+    }
+}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -2471,5 +2591,37 @@ impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+impl storage_accessesDeployerDrop<> of core::traits::Drop::<storage_accessesDeployer>;
+impl storage_accessesDeployerCopy<> of core::traits::Copy::<storage_accessesDeployer>;
+impl storage_accessesDeployerDebug<> of core::fmt::Debug::<storage_accessesDeployer> {
+    fn fmt(self: @storage_accessesDeployer, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {
+        write!(f, "storage_accessesDeployer {{")?;
+        write!(f, " class_hash: ")?;
+        core::fmt::Debug::<starknet::ClassHash>::fmt(self.class_hash, ref f)?;
+        write!(f, ",")?;
+        write!(f, " deploy_from_zero: ")?;
+        core::fmt::Debug::<bool>::fmt(self.deploy_from_zero, ref f)?;
+        write!(f, " }}")
+    }
+}
+impl storage_accessesDeployerPartialEq<> of core::traits::PartialEq::<storage_accessesDeployer> {
+    fn eq(lhs: @storage_accessesDeployer, rhs: @storage_accessesDeployer) -> bool {
+        core::traits::PartialEq::<starknet::ClassHash>::eq(lhs.class_hash, rhs.class_hash) && core::traits::PartialEq::<bool>::eq(lhs.deploy_from_zero, rhs.deploy_from_zero)
+    }
+}
+impl storage_accessesDeployerSerde<> of core::serde::Serde::<storage_accessesDeployer> {
+    fn serialize(self: @storage_accessesDeployer, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output);
+        core::serde::Serde::<bool>::serialize(self.deploy_from_zero, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<storage_accessesDeployer> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let deploy_from_zero = core::internal::InferDestruct::<bool> { value: core::serde::Serde::<bool>::deserialize(ref serialized)? };
+        core::option::Option::Some(storage_accessesDeployer {
+            class_hash: class_hash.value,
+            deploy_from_zero: deploy_from_zero.value,
+        })
+    }
+}
 
 //! > expected_diagnostics
