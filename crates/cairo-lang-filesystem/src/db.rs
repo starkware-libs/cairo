@@ -427,7 +427,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
 
     // If no mappings intersect with the span, translation is impossible.
     if matched.is_empty() {
-        return None;
+        return call_site;
     }
 
     // Take the first mapping to the left.
