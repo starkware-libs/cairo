@@ -77,3 +77,19 @@ pub fn in_cycle(
     }
     Ok(db.function_with_body_scc(function_id, dependency_type).len() > 1)
 }
+
+/// Query implementation of [LoweringGroup::concrete_in_cycle].
+pub fn concrete_in_cycle(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
+    stage: LoweringStage,
+) -> Maybe<bool> {
+    if db
+        .lowered_direct_callees_with_body(function_id, dependency_type, stage)?
+        .contains(&function_id)
+    {
+        return Ok(true);
+    }
+    Ok(db.lowered_scc(function_id, dependency_type, stage).len() > 1)
+}

@@ -982,8 +982,8 @@ End:
 //! > test #[inline] with indirect self call.
 
 //! > Motivation:
-//! #[inline] functions should inline a function unless it is recursively called by itself, even
-//! indirectly. In this case, the function bar should be inlined, but not the inner call to foo.
+//! #[inline] functions should inline a function unless they are on a call cycle.
+//! in this test `bar` should not be inlined into `foo`.
 
 //! > test_runner_name
 test_function_inlining
@@ -1066,8 +1066,12 @@ End:
 
 blk1:
 Statements:
+  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Goto(blk7, {})
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk4,
+    PanicResult::Err(v6) => blk5,
+  })
 
 blk2:
 Statements:
@@ -1094,38 +1098,6 @@ Statements:
   (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
 End:
   Return(v11)
-
-blk6:
-Statements:
-End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
-
-blk7:
-Statements:
-End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v12) => blk9,
-  })
-
-blk8:
-Statements:
-  (v13: core::felt252) <- 1
-  (v14: core::felt252) <- core::felt252_sub(v0, v13)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v14)
-End:
-  Goto(blk6, {v15 -> v3})
-
-blk9:
-Statements:
-  (v16: core::felt252) <- 1
-  (v17: (core::felt252,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v17)
-End:
-  Goto(blk6, {v18 -> v3})
 
 //! > lowering_diagnostics
 
@@ -1621,8 +1593,12 @@ End:
 
 blk1:
 Statements:
+  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Goto(blk7, {})
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk4,
+    PanicResult::Err(v6) => blk5,
+  })
 
 blk2:
 Statements:
@@ -1649,38 +1625,6 @@ Statements:
   (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
 End:
   Return(v11)
-
-blk6:
-Statements:
-End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
-
-blk7:
-Statements:
-End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero(v12) => blk9,
-  })
-
-blk8:
-Statements:
-  (v13: core::felt252) <- 1
-  (v14: core::felt252) <- core::felt252_sub(v0, v13)
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v14)
-End:
-  Goto(blk6, {v15 -> v3})
-
-blk9:
-Statements:
-  (v16: core::felt252) <- 1
-  (v17: (core::felt252,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v17)
-End:
-  Goto(blk6, {v18 -> v3})
 
 //! > lowering_diagnostics
 
