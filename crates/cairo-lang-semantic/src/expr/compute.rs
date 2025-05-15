@@ -525,7 +525,6 @@ fn compute_expr_inline_macro_semantic(
             let mut matcher_ctx =
                 MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
             let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
-
             let macro_defsite_resolver_data =
                 ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
             let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
