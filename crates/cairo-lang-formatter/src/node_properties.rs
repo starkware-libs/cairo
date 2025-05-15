@@ -170,7 +170,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenColon
                 if self.grandparent_kind(db) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
-                    || self.grandparent_kind(db) == Some(SyntaxKind::MacroRuleParam) =>
+                    || self.grandgrandparent_kind(db) == Some(SyntaxKind::MacroParam) =>
             {
                 true
             }
@@ -419,7 +419,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::MacroRulesList | SyntaxKind::MacroRule) => match self.kind(db) {
                 SyntaxKind::ItemMacroDeclaration => Some(3),
-                SyntaxKind::ParenthesizedMacroMatcher => Some(2),
+                SyntaxKind::ParenthesizedMacro => Some(2),
                 _ => Some(1),
             },
             _ => match self.kind(db) {

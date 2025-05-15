@@ -58,7 +58,7 @@ use crate::items::trt::{
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
-use crate::keyword::{CRATE_KW, MACRO_DEF_SITE, SELF_TYPE_KW, SUPER_KW};
+use crate::keyword::{CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_TYPE_KW, SUPER_KW};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
@@ -73,11 +73,6 @@ mod item;
 
 // Remove when this becomes an actual crate.
 const STARKNET_CRATE_NAME: &str = "starknet";
-
-// Macro related keywords. Notice that the `$` is not included here as it is only a prefix and not a
-// part of the segment.
-/// The modifier for a macro definition site.
-pub const MACRO_CALL_SITE: &str = "callsite";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
