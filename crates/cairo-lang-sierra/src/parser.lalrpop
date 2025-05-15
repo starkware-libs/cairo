@@ -82,29 +82,40 @@ ConcreteLibfuncId: ConcreteLibfuncId = {
 
 FunctionId: FunctionId = {
     <id:ConcreteLabel> => FunctionId::from_string(id),
-    <id:ConcreteLabel> "[" <extra:BasicLabel> "]"  =>
-        FunctionId::from_string(format!("{id}[{extra}]")),
-    <id:ConcreteLabel> "[" <start:UnsignedInt> <end:SignedInt> "]"  =>
-        FunctionId::from_string(format!("{id}[{start}{end}]")),
+    <id:ConcreteLabel> <extra1:BracketsTokenTree> <extra2:BracesTokenTree> =>
+        FunctionId::from_string(format!("{id}{extra1}{extra2}")),
+    <id:ConcreteLabel> <extra:BracketsTokenTree> => FunctionId::from_string(format!("{id}{extra}")),
+    <id:ConcreteLabel> <extra:BracesTokenTree> => FunctionId::from_string(format!("{id}{extra}")),
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
 UserTypeId: UserTypeId = {
     <id:ConcreteLabel> => UserTypeId::from_string(id),
     "[" <id:BigInt> "]" => UserTypeId { id: id.try_into().unwrap(), debug_name: None },
-    "{" <parts:(<UserTypeIdPart>)+> "}"
-     => UserTypeId::from_string(format!("{{{}}}", parts.join(""))),
+    <value:BracesTokenTree> => UserTypeId::from_string(value),
 }
 
-UserTypeIdPart: String = {
+TokenTree: String = {
+    <value:BracesTokenTree> => value,
+    <value:BracketsTokenTree> => value,
+    "(" <parts:(<TokenTree>)*> ")" => format!("({})", parts.join("")),
     <label:BasicLabel> => label.to_string(),
     <num:BigInt> => num.to_string(),
     ":" => <>.to_string(),
+    "," => <>.to_string(),
     "." => <>.to_string(),
     "@" => <>.to_string(),
     "/" => <>.to_string(),
     "\\" => <>.to_string(),
     "-" => <>.to_string(),
+}
+
+BracesTokenTree: String = {
+    "{" <parts:(<TokenTree>)*> "}" => format!("{{{}}}", parts.join("")),
+}
+
+BracketsTokenTree: String = {
+    "[" <parts:(<TokenTree>)*> "]" => format!("[{}]", parts.join("")),
 }
 
 VarId: VarId = {
