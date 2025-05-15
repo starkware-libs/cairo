@@ -128,6 +128,14 @@ impl CodeOrigin {
             CodeOrigin::Span(span) => Some(*span),
         }
     }
+
+    pub fn start(&self) -> TextOffset {
+        match self {
+            CodeOrigin::Start(start) => *start,
+            CodeOrigin::CallSite(span) => span.start,
+            CodeOrigin::Span(span) => span.start,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

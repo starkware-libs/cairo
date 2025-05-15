@@ -54,14 +54,11 @@ mod test_assert_eq {
     macro assert_eq {
         ($left:ident, $right:ident) => {
             if $left != $right {
-                // TODO(Gil): Call `panic!` directly when $callsite is supported inside plugins.
-                $callsite::panic();
+                $callsite::panic!("PANIC!");
             }
         };
     }
-    fn panic() {
-        panic!("PANIC!");
-    }
+
     #[test]
     #[should_panic(expected: ("PANIC!",))]
     fn test_user_defined_assert_eq() {
@@ -273,26 +270,14 @@ mod repetition_macro_matcher {
 mod repetition_macro_expansion {
     macro repetition_macro_expansion {
         ($($x:ident), +) => {
-            my_array![$($x + 2), +]
+            array![$($x + 2), +]
         };
 
         ($($x:expr), *) => {
-            my_array![$($x + 1), *]
+            array![$($x + 1), *]
         };
     }
 
-    macro my_array {
-        [$x:expr] => {
-            $x
-        };
-
-        [$x:expr, $y:expr] => {
-            let mut arr = $defsite::ArrayTrait::new();
-            arr.append($x);
-            arr.append($y);
-            arr
-        };
-    }
 
     #[test]
     fn test_repetition_macro_expansion() {
@@ -300,7 +285,7 @@ mod repetition_macro_expansion {
         let actual_expr = repetition_macro_expansion!(1, 2);
         assert_eq!(expected_expr, actual_expr);
         let x = 1;
-        let expected_ident = 3;
+        let expected_ident = array![3];
         let actual_ident = repetition_macro_expansion!(x);
         assert_eq!(expected_ident, actual_ident);
     }
@@ -331,7 +316,7 @@ fn test_count_exprs_rec() {
 
 macro my_array {
     [$x:expr] => {
-        let mut arr = $defsite::ArrayTrait::new();
+        let mut arr = $defsite::array![];
         arr.append($x);
         arr
     };
