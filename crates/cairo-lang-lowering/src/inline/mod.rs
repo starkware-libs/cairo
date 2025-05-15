@@ -62,7 +62,7 @@ pub fn priv_should_inline(
     }
 
     let config = db.function_declaration_inline_config(
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
     )?;
     match (db.optimization_config().inlining_strategy, config) {
         (_, InlineConfiguration::Always(_)) => Ok(true),
@@ -331,10 +331,9 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) -> Maybe<()> {
-    let function_with_body_id = function_id.function_with_body_id(db);
     let variables = VariableAllocator::new(
         db,
-        function_with_body_id.base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )?;
     if let Ok(new_lowered) = FunctionInlinerRewriter::apply(variables, lowered, function_id) {

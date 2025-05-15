@@ -258,7 +258,7 @@ fn main() -> anyhow::Result<()> {
         if let Some(generated_function_index) = args.generated_function_index {
             let multi = db
                 .priv_function_with_body_multi_lowering(
-                    function_id.function_with_body_id(db).base_semantic_function(db),
+                    function_id.base_semantic_function(db).function_with_body_id(db),
                 )
                 .unwrap();
             let keys = multi
