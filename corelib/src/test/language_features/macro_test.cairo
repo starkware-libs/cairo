@@ -374,3 +374,21 @@ mod callsite_test {
         assert_eq!(inner::call_foo!((foo(5))), 205);
     }
 }
+
+macro tt_array {
+    [$($x:expr),*] => {
+        let mut arr = $defsite::ArrayTrait::new();
+        $(
+            arr.append($x);
+        )*
+        arr
+    };
+
+}
+
+#[test]
+fn test_array() {
+    let result = tt_array![1, 2, 3];
+    let mut expected = array![1, 2, 3];
+    assert_eq!(result, expected);
+}

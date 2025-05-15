@@ -8,3 +8,4 @@ pub const CRATE_KW: &str = "crate";
 // part of the segment.
 /// The modifier for a macro definition site.
 pub const MACRO_DEF_SITE: &str = "defsite";
+pub const MACRO_CALL_SITE: &str = "callsite";
