@@ -312,7 +312,7 @@ pub fn add_destructs(
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )
     .unwrap();
@@ -323,7 +323,7 @@ pub fn add_destructs(
 
     // Add destructions.
     let stable_ptr =
-        function_id.function_with_body_id(db).base_semantic_function(db).untyped_stable_ptr(db);
+        function_id.base_semantic_function(db).function_with_body_id(db).untyped_stable_ptr(db);
 
     let location = variables.get_location(stable_ptr);
 

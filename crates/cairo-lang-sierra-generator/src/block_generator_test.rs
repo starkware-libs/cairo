@@ -5,9 +5,10 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::{self as lowering, LoweringStage};
+use cairo_lang_lowering::{self as lowering, LoweringStage, ids};
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lowering::fmt::LoweredFormatter;
@@ -57,8 +58,11 @@ fn block_generator_test(
     // Lower code.
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowering_diagnostics =
-        db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
+    let lowering_diagnostics = db
+        .function_with_body_lowering_diagnostics(
+            ids::FunctionWithBodyLongId::Semantic(test_function.function_id).intern(db),
+        )
+        .unwrap();
 
     let lowered = match db.lowered_body(function_id, LoweringStage::Final) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,

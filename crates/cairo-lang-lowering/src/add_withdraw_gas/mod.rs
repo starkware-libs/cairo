@@ -94,7 +94,7 @@ fn create_panic_block(
 ) -> Maybe<Block> {
     let mut variables = VariableAllocator::new(
         db,
-        function.function_with_body_id(db).base_semantic_function(db),
+        function.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )?;
     let never_ty = never_ty(db);

@@ -5,7 +5,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::concretize::concretize_lowered;
+use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -37,15 +37,10 @@ fn test_scrub_units(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let mut before = db
-        .function_with_body_lowering(function_id.function_with_body_id(db))
-        .unwrap()
-        .deref()
-        .clone();
-    concretize_lowered(db, &mut before, &function_id.substitution(db).unwrap()).unwrap();
+    let before = db.lowered_body(function_id, LoweringStage::Monomorphized).unwrap();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    let mut after = before.clone();
+    let mut after = before.deref().clone();
     scrub_units(db, &mut after);
 
     TestRunnerResult::success(OrderedHashMap::from([

@@ -45,7 +45,7 @@ pub fn inner_lower_implicits(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut Lowered,
 ) -> Maybe<()> {
-    let semantic_function = function_id.function_with_body_id(db).base_semantic_function(db);
+    let semantic_function = function_id.base_semantic_function(db).function_with_body_id(db);
     let location = LocationId::from_stable_location(
         db,
         StableLocation::new(semantic_function.untyped_stable_ptr(db)),
@@ -55,7 +55,7 @@ pub fn inner_lower_implicits(
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_id.base_semantic_function(db).function_with_body_id(db),
         lowered.variables.clone(),
     )?;
 
@@ -264,7 +264,7 @@ pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
         let mut implicits = db.scc_implicits(scc_representative)?;
 
         let precedence = db.function_declaration_implicit_precedence(
-            function.function_with_body_id(db).base_semantic_function(db),
+            function.base_semantic_function(db).function_with_body_id(db),
         )?;
         precedence.apply(&mut implicits, db);
 
