@@ -449,7 +449,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::MacroRule => {
             vec![]
         }
-        SyntaxKind::MacroRuleParam => {
+        SyntaxKind::ParamKind => {
+            vec![]
+        }
+        SyntaxKind::OptionParamKindEmpty => {
+            vec![]
+        }
+        SyntaxKind::MacroParam => {
             vec![]
         }
         SyntaxKind::MacroRepetition => {
@@ -458,28 +464,31 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::OptionTerminalCommaEmpty => {
             vec![]
         }
+        SyntaxKind::MacroRepetitionOperatorMissing => {
+            vec![]
+        }
         SyntaxKind::ParamIdent => {
             vec![]
         }
         SyntaxKind::ParamExpr => {
             vec![]
         }
-        SyntaxKind::MacroRuleParamKindMissing => {
+        SyntaxKind::MacroParamKindMissing => {
             vec![]
         }
-        SyntaxKind::MacroMatcherwrapper => {
+        SyntaxKind::MacroElements => vec![],
+        SyntaxKind::MacroWrapper => {
             vec![]
         }
-        SyntaxKind::ParenthesizedMacroMatcher => {
+        SyntaxKind::ParenthesizedMacro => {
             vec![]
         }
-        SyntaxKind::BracedMacroMatcher => {
+        SyntaxKind::BracedMacro => {
             vec![]
         }
-        SyntaxKind::BracketedMacroMatcher => {
+        SyntaxKind::BracketedMacro => {
             vec![]
         }
-        SyntaxKind::MacroRuleElements => vec![],
         SyntaxKind::LegacyExprInlineMacro => {
             vec![]
         }

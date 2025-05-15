@@ -25,6 +25,16 @@ use crate::validation::{validate_literal_number, validate_short_string, validate
 #[path = "parser_test.rs"]
 mod test;
 
+#[derive(PartialEq)]
+enum MacroParsingContext {
+    /// The code being parsed is a part of a macro rule.
+    MacroRule,
+    /// The code being parsed is a part of a macro expansion.
+    MacroExpansion,
+    /// None of the above.
+    None,
+}
+
 pub struct Parser<'a> {
     db: &'a dyn SyntaxGroup,
     file_id: FileId,
@@ -44,7 +54,7 @@ pub struct Parser<'a> {
     /// An accumulating vector of pending skipped tokens diagnostics.
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
-    is_inside_macro_expansion: bool,
+    macro_parsing_context: MacroParsingContext,
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -124,7 +134,7 @@ impl<'a> Parser<'a> {
             last_trivia_length: Default::default(),
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
-            is_inside_macro_expansion: false,
+            macro_parsing_context: MacroParsingContext::None,
         }
     }
 
@@ -665,41 +675,38 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a MacroRule kind or TryParseFailure if a macro rule can't
     /// be parsed.
     fn try_parse_macro_rule(&mut self) -> TryParseResult<MacroRuleGreen> {
-        let macro_matcher = match self.peek().kind {
+        let previous_macro_parsing_context =
+            mem::replace(&mut self.macro_parsing_context, MacroParsingContext::MacroRule);
+        let wrapped_macro = match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLParen, TerminalRParen, _, _>(
-                    ParenthesizedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLParen, TerminalRParen, _, _>(ParenthesizedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrace, TerminalRBrace, _, _>(
-                    BracedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrack, TerminalRBrack, _, _>(
-                    BracketedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLBrack, TerminalRBrack, _, _>(BracketedMacro::new_green)
                 .into(),
             _ => return Err(TryParseFailure::SkipToken),
         };
         let arrow = self.parse_token::<TerminalMatchArrow>();
-        let macro_body = self.parse_block_with_placeholders();
+        self.macro_parsing_context = MacroParsingContext::MacroExpansion;
+        let macro_body = self.parse_macro_elements();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        Ok(MacroRule::new_green(self.db, macro_matcher, arrow, macro_body, semicolon))
+        self.macro_parsing_context = previous_macro_parsing_context;
+        Ok(MacroRule::new_green(self.db, wrapped_macro, arrow, macro_body, semicolon))
     }
-
     /// Returns a GreenId of a node with a MacroRuleElement kind or TryParseFailure if a macro rule
     /// element can't be parsed.
-    /// Expected pattern: Either any token or a matcher of the pattern $ident:kind.
-    fn try_parse_macro_rule_element(&mut self) -> TryParseResult<MacroRuleElementGreen> {
+    /// Expected pattern: Either any token or a macro of the pattern $ident:kind.
+    fn try_parse_macro_element(&mut self) -> TryParseResult<MacroElementGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalDollar => {
                 let dollar: TerminalDollarGreen = self.take::<TerminalDollar>();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => {
                         let lparen = self.take::<TerminalLParen>();
-                        let elements = self.expect_wrapped_macro_matcher();
+                        let elements = self.expect_wrapped_macro();
                         let rparen = self.parse_token::<TerminalRParen>();
                         let separator: OptionTerminalCommaGreen = match self.peek().kind {
                             SyntaxKind::TerminalComma => self.take::<TerminalComma>().into(),
@@ -720,9 +727,37 @@ impl<'a> Parser<'a> {
                     }
                     _ => {
                         let ident = self.parse_identifier();
-                        let colon = self.parse_token::<TerminalColon>();
-                        let kind = self.parse_macro_rule_param_kind();
-                        Ok(MacroRuleParam::new_green(self.db, dollar, ident, colon, kind).into())
+                        let param_kind: OptionParamKindGreen = if self.peek().kind
+                            == SyntaxKind::TerminalColon
+                        {
+                            let colon = self.parse_token::<TerminalColon>();
+                            let kind = self.parse_macro_rule_param_kind();
+                            let result = ParamKind::new_green(self.db, colon, kind).into();
+                            if let MacroParsingContext::MacroExpansion = self.macro_parsing_context
+                            {
+                                self.add_diagnostic(
+                                    ParserDiagnosticKind::InvalidParamKindInMacroExpansion,
+                                    TextSpan {
+                                        start: self.offset,
+                                        end: self.offset.add_width(self.current_width),
+                                    },
+                                );
+                            }
+                            result
+                        } else {
+                            if let MacroParsingContext::MacroRule = self.macro_parsing_context {
+                                self.add_diagnostic(
+                                    ParserDiagnosticKind::InvalidParamKindInMacroRule,
+                                    TextSpan {
+                                        start: self.offset,
+                                        end: self.offset.add_width(self.current_width),
+                                    },
+                                );
+                            }
+                            OptionParamKindEmpty::new_green(self.db).into()
+                        };
+                        self.macro_parsing_context = MacroParsingContext::None;
+                        Ok(MacroParam::new_green(self.db, dollar, ident, param_kind).into())
                     }
                 }
             }
@@ -730,7 +765,7 @@ impl<'a> Parser<'a> {
             | SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLBrack => {
                 let subtree = self.parse_macro_elements();
-                Ok(MacroMatcherwrapper::new_green(self.db, subtree).into())
+                Ok(MacroWrapper::new_green(self.db, subtree).into())
             }
             _ => {
                 let token = self.parse_token_tree_leaf();
@@ -739,29 +774,23 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_macro_elements(&mut self) -> MacroMatcherGreen {
+    fn parse_macro_elements(&mut self) -> WrappedMacroGreen {
         match self.peek().kind {
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLParen, TerminalRParen, _, _>(
-                    ParenthesizedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLParen, TerminalRParen, _, _>(ParenthesizedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrace, TerminalRBrace, _, _>(
-                    BracedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLBrace, TerminalRBrace, _, _>(BracedMacro::new_green)
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_macro_matcher_wrapper::<TerminalLBrack, TerminalRBrack, _, _>(
-                    BracketedMacroMatcher::new_green,
-                )
+                .wrap_macro::<TerminalLBrack, TerminalRBrack, _, _>(BracketedMacro::new_green)
                 .into(),
             _ => unreachable!("parse_macro_elements called on non-delimiter token"),
         }
     }
 
-    fn expect_wrapped_macro_matcher(&mut self) -> MacroRuleElementsGreen {
-        let mut elements: Vec<MacroRuleElementGreen> = vec![];
+    fn expect_wrapped_macro(&mut self) -> MacroElementsGreen {
+        let mut elements: Vec<MacroElementGreen> = vec![];
         while !matches!(
             self.peek().kind,
             SyntaxKind::TerminalRParen
@@ -769,7 +798,7 @@ impl<'a> Parser<'a> {
                 | SyntaxKind::TerminalRBrack
                 | SyntaxKind::TerminalEndOfFile
         ) {
-            let element = self.try_parse_macro_rule_element();
+            let element = self.try_parse_macro_element();
             match element {
                 Ok(element) => elements.push(element),
                 Err(TryParseFailure::SkipToken) => {
@@ -779,31 +808,26 @@ impl<'a> Parser<'a> {
                 Err(TryParseFailure::DoNothing) => break,
             }
         }
-        MacroRuleElements::new_green(self.db, elements)
+        MacroElements::new_green(self.db, elements)
     }
 
-    fn expect_wrapped_macro_matcher_wrapper<
+    fn wrap_macro<
         LTerminal: syntax::node::Terminal,
         RTerminal: syntax::node::Terminal,
         ListGreen,
-        NewGreen: Fn(
-            &dyn SyntaxGroup,
-            LTerminal::Green,
-            MacroRuleElementsGreen,
-            RTerminal::Green,
-        ) -> ListGreen,
+        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, MacroElementsGreen, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
-        let elements = self.expect_wrapped_macro_matcher();
+        let elements = self.expect_wrapped_macro();
         let r_term = self.parse_token::<RTerminal>();
         new_green(self.db, l_term, elements, r_term)
     }
 
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
-    fn parse_macro_rule_param_kind(&mut self) -> MacroRuleParamKindGreen {
+    fn parse_macro_rule_param_kind(&mut self) -> MacroParamKindGreen {
         match (self.peek().kind, self.peek().text.as_str()) {
             (SyntaxKind::TerminalIdentifier, "ident") => {
                 ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
@@ -811,7 +835,7 @@ impl<'a> Parser<'a> {
             (SyntaxKind::TerminalIdentifier, "expr") => {
                 ParamExpr::new_green(self.db, self.parse_token::<TerminalIdentifier>()).into()
             }
-            _ => self.create_and_report_missing::<MacroRuleParamKind>(
+            _ => self.create_and_report_missing::<MacroParamKind>(
                 ParserDiagnosticKind::MissingMacroRuleParamKind,
             ),
         }
@@ -2167,15 +2191,6 @@ impl<'a> Parser<'a> {
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
 
-    /// Parses an expr block, while allowing placeholder expressions. Restores the previous
-    /// placeholder expression setting after parsing.
-    fn parse_block_with_placeholders(&mut self) -> ExprBlockGreen {
-        let prev_allow_placeholder_exprs = self.is_inside_macro_expansion;
-        self.is_inside_macro_expansion = true;
-        let block = self.parse_block();
-        self.is_inside_macro_expansion = prev_allow_placeholder_exprs;
-        block
-    }
     /// Assumes the current token is `Match`.
     /// Expected pattern: `match <expr> \{<MatchArm>*\}`
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
@@ -2824,7 +2839,7 @@ impl<'a> Parser<'a> {
         let dollar = match self.peek().kind {
             SyntaxKind::TerminalDollar => {
                 let dollar = self.take::<TerminalDollar>();
-                if !self.is_inside_macro_expansion {
+                if self.macro_parsing_context == MacroParsingContext::None {
                     self.add_diagnostic(
                         ParserDiagnosticKind::InvalidPlaceholderPath,
                         TextSpan {

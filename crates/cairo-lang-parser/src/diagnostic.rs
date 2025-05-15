@@ -107,6 +107,8 @@ pub enum ParserDiagnosticKind {
     MissingPattern,
     MissingMacroRuleParamKind,
     InvalidPlaceholderPath,
+    InvalidParamKindInMacroExpansion,
+    InvalidParamKindInMacroRule,
     ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
@@ -132,6 +134,12 @@ impl DiagnosticEntry for ParserDiagnostic {
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match &self.kind {
+            ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
+                "Invalid parameter kind in macro expansion.".to_string()
+            }
+            ParserDiagnosticKind::InvalidParamKindInMacroRule => {
+                "Invalid parameter kind in macro rule.".to_string()
+            }
             ParserDiagnosticKind::SkippedElement { element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
