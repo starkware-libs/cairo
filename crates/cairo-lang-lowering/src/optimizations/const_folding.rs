@@ -9,6 +9,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{ConstCalcInfo, ConstValue};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::types::TypeSizeInformation;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -23,7 +24,10 @@ use num_traits::cast::ToPrimitive;
 use num_traits::{Num, Zero};
 
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, SemanticFunctionIdEx,
+    SpecializedFunction,
+};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
     StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
@@ -80,6 +84,12 @@ pub fn const_folding(
     {
         return;
     }
+
+    let orig_base = match function_id.lookup_intern(db) {
+        ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
+        _ => function_id,
+    };
+
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
     let mut ctx = ConstFoldingContext {
@@ -142,6 +152,9 @@ pub fn const_folding(
                 Statement::Call(call_stmt) => {
                     if let Some(updated_stmt) =
                         ctx.handle_statement_call(call_stmt, &mut additional_stmts)
+                    {
+                        *stmt = updated_stmt;
+                    } else if let Some(updated_stmt) = ctx.try_specialize_call(call_stmt, orig_base)
                     {
                         *stmt = updated_stmt;
                     }
@@ -464,6 +477,96 @@ impl ConstFoldingContext<'_> {
         } else {
             None
         }
+    }
+
+    fn try_specialize_call(
+        &mut self,
+        call_stmt: &mut StatementCall,
+        caller_base: ConcreteFunctionWithBodyId,
+    ) -> Option<Statement> {
+        if call_stmt.with_coupon {
+            return None;
+        }
+
+        let Ok(Some(func_with_body)) = call_stmt.function.body(self.db) else {
+            return None;
+        };
+
+        if call_stmt
+            .inputs
+            .iter()
+            .all(|arg| !matches!(self.var_info.get(&arg.var_id), Some(VarInfo::Const(_))))
+        {
+            // No const inputs
+            return None;
+        }
+
+        let mut const_arg = vec![];
+        let mut new_args = vec![];
+        for arg in &call_stmt.inputs {
+            if let Some(VarInfo::Const(c)) = self.var_info.get(&arg.var_id) {
+                // Skip zero-sized constants as they are not supported in sierra-gen.
+                if self.db.type_size_info(self.variables[arg.var_id].ty).ok()?
+                    != TypeSizeInformation::ZeroSized
+                {
+                    const_arg.push(Some(c.clone()));
+                    continue;
+                }
+            }
+            const_arg.push(None);
+            new_args.push(*arg);
+        }
+
+        if new_args.len() == call_stmt.inputs.len() {
+            // No argument was assigned -> no specialization.
+            return None;
+        }
+
+        let (base, args) = match func_with_body.lookup_intern(self.db) {
+            ConcreteFunctionWithBodyLongId::Semantic(_)
+            | ConcreteFunctionWithBodyLongId::Generated(_) => {
+                (func_with_body, const_arg.into_iter().collect())
+            }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized_function) => {
+                // Canonicalize the specialization rather than adding a specialization of a
+                // specializaed function.
+                let mut new_args_iter = chain!(const_arg.into_iter(), std::iter::once(None));
+                let args = specialized_function
+                    .args
+                    .iter()
+                    .map(|arg| {
+                        if arg.is_none() {
+                            return new_args_iter.next().unwrap();
+                        }
+                        arg.clone()
+                    })
+                    .collect();
+
+                (specialized_function.base, args)
+            }
+        };
+
+        // Avoid specializing with the same base as the current function as it may lead to infinite
+        // specialization.
+        if base == caller_base {
+            return None;
+        }
+
+        let specialized_func_id =
+            ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, args })
+                .intern(self.db);
+
+        if self.db.priv_should_specialize(specialized_func_id) == Ok(false) {
+            return None;
+        }
+
+        Some(Statement::Call(StatementCall {
+            function: specialized_func_id.function_id(self.db).unwrap(),
+            inputs: new_args,
+            with_coupon: call_stmt.with_coupon,
+            outputs: std::mem::take(&mut call_stmt.outputs),
+            location: call_stmt.location,
+        }))
     }
 
     /// Adds `value` as a const to `var_info` and return a const statement for it.
