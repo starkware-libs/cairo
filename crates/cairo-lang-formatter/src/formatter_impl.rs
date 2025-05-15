@@ -883,6 +883,15 @@ impl BreakLinePointsPositions {
         }
     }
 }
+
+/// Data for the handling of the formatting spacing in nodes where the formatting is ignored.
+/// This is needed since spacing is handled in the formatting of terminals, and in nodes where the
+/// formatting is ignored, the formatter do not reach the terminals.
+pub struct IgnoreFormattingSpacingData {
+    pub(crate) add_space_before: bool,
+    pub(crate) prevent_space_after: bool,
+}
+
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
@@ -914,7 +923,10 @@ pub trait SyntaxNodeFormat {
     /// syntax tree.
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
     /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
-    fn should_ignore_node_format(&self, db: &dyn SyntaxGroup) -> bool;
+    fn should_ignore_node_format(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> Option<IgnoreFormattingSpacingData>;
 }
 
 pub struct FormatterImpl<'a> {
@@ -987,8 +999,12 @@ impl<'a> FormatterImpl<'a> {
         if syntax_node.force_no_space_before(self.db) {
             self.line_state.prevent_next_space = true;
         }
-        if syntax_node.should_ignore_node_format(self.db) {
+        if let Some(spacing_data) = syntax_node.should_ignore_node_format(self.db) {
+            if spacing_data.add_space_before && !self.line_state.prevent_next_space {
+                self.line_state.line_buffer.push_space();
+            }
             self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            self.line_state.prevent_next_space = spacing_data.prevent_space_after;
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
         } else {
@@ -1062,7 +1078,8 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                if !self.has_only_whitespace_trivia(node) || node.should_ignore_node_format(self.db)
+                if !self.has_only_whitespace_trivia(node)
+                    || node.should_ignore_node_format(self.db).is_some()
                 {
                     new_children.push(*node);
                     continue;

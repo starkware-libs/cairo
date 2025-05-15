@@ -374,3 +374,18 @@ mod callsite_test {
         assert_eq!(inner::call_foo!((foo(5))), 205);
     }
 }
+
+macro array_double_insertion {
+    [$($x:expr), *] => {
+        let mut arr = $defsite::ArrayTrait::new ();
+        $(arr.append ($x); arr.append ($x);
+    ) * arr
+    };
+}
+
+#[test]
+fn test_array() {
+    let result = array_double_insertion![1, 2, 3];
+    let mut expected = array![1, 1, 2, 2, 3, 3];
+    assert_eq!(result, expected);
+}
