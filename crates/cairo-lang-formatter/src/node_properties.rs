@@ -6,8 +6,8 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 
 use crate::formatter_impl::{
-    BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SortKind,
-    SyntaxNodeFormat,
+    BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions,
+    IgnoreFormattingSpacingData, SortKind, SyntaxNodeFormat,
 };
 use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
@@ -172,7 +172,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenColon
                 if self.grandparent_kind(db) == Some(SyntaxKind::ArgClauseFieldInitShorthand)
-                    || self.grandparent_kind(db) == Some(SyntaxKind::MacroRuleParam) =>
+                    || self.grandgrandparent_kind(db) == Some(SyntaxKind::MacroParam) =>
             {
                 true
             }
@@ -421,7 +421,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::MacroRulesList | SyntaxKind::MacroRule) => match self.kind(db) {
                 SyntaxKind::ItemMacroDeclaration => Some(3),
-                SyntaxKind::ParenthesizedMacroMatcher => Some(2),
+                SyntaxKind::ParenthesizedMacro => Some(2),
                 _ => Some(1),
             },
             _ => match self.kind(db) {
@@ -1032,8 +1032,25 @@ impl SyntaxNodeFormat for SyntaxNode {
             _ => SortKind::Immovable,
         }
     }
-    fn should_ignore_node_format(&self, db: &dyn SyntaxGroup) -> bool {
-        self.has_attr(db, FMT_SKIP_ATTR)
+    fn should_ignore_node_format(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> Option<IgnoreFormattingSpacingData> {
+        if self.has_attr(db, FMT_SKIP_ATTR) {
+            return Some(IgnoreFormattingSpacingData {
+                add_space_before: false,
+                prevent_space_after: false,
+            });
+        } else if matches!(
+            self.kind(db),
+            SyntaxKind::ParenthesizedMacro | SyntaxKind::BracedMacro | SyntaxKind::BracketedMacro
+        ) {
+            return Some(IgnoreFormattingSpacingData {
+                add_space_before: true,
+                prevent_space_after: false,
+            });
+        }
+        None
     }
 }
 
