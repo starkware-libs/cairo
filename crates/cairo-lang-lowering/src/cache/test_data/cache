@@ -219,9 +219,7 @@ foo
 
 //! > module_code
 macro my_macro {
-    ($x:expr) => {
-        $x + 1
-    };
+    ($x: expr) => {$x + 1 };
 }
 
 //! > semantic_diagnostics
