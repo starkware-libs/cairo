@@ -224,11 +224,8 @@ pub trait SemanticGroup:
     ) -> Maybe<Option<ModuleItemInfo>>;
 
     /// Returns all the items used within the module.
-    #[salsa::invoke(items::module::module_all_used_items)]
-    fn module_all_used_items(
-        &self,
-        module_id: ModuleId,
-    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::module::module_all_used_uses)]
+    fn module_all_used_uses(&self, module_id: ModuleId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
 
     /// Returns the attributes of a module.
     #[salsa::invoke(items::module::module_attributes)]
@@ -470,8 +467,8 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<TraitItemInfo>>;
     /// Returns all the items used within the trait.
-    #[salsa::invoke(items::trt::trait_all_used_items)]
-    fn trait_all_used_items(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::trt::trait_all_used_uses)]
+    fn trait_all_used_uses(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
@@ -792,11 +789,8 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<TraitImplId>>;
     /// Returns all the items used within the impl.
-    #[salsa::invoke(items::imp::impl_all_used_items)]
-    fn impl_all_used_items(
-        &self,
-        impl_def_id: ImplDefId,
-    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+    #[salsa::invoke(items::imp::impl_all_used_uses)]
+    fn impl_all_used_uses(&self, impl_def_id: ImplDefId) -> Maybe<Arc<OrderedHashSet<UseId>>>;
     /// Returns the type items in the impl.
     #[salsa::invoke(items::imp::impl_types)]
     fn impl_types(
@@ -1802,7 +1796,7 @@ fn add_unused_item_diagnostics(
     data: &ModuleSemanticData,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
-    let Ok(all_used_items) = db.module_all_used_items(module_id) else {
+    let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
     };
     for info in data.items.values() {
@@ -1810,7 +1804,7 @@ fn add_unused_item_diagnostics(
             continue;
         }
         if let ModuleItemId::Use(use_id) = info.item_id {
-            add_unused_import_diagnostics(db, &all_used_items, use_id, diagnostics);
+            add_unused_import_diagnostics(db, &all_used_uses, use_id, diagnostics);
         };
     }
 }
@@ -1818,7 +1812,7 @@ fn add_unused_item_diagnostics(
 /// Adds diagnostics for unused imports.
 fn add_unused_import_diagnostics(
     db: &dyn SemanticGroup,
-    all_used_items: &OrderedHashSet<LookupItemId>,
+    all_used_uses: &OrderedHashSet<UseId>,
     use_id: UseId,
     diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
 ) {
@@ -1830,7 +1824,7 @@ fn add_unused_import_diagnostics(
             item,
             ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
         ))?;
-        require(!all_used_items.contains(&LookupItemId::ModuleItem(ModuleItemId::Use(use_id))))?;
+        require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
         require(!resolver_data.feature_config.allow_unused_imports)?;
         Some(diagnostics.add(SemanticDiagnostic::new(

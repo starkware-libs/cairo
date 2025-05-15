@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
     ImplImplDefLongId, ImplItemId, ImplTypeDefId, ImplTypeDefLongId, LanguageElementId,
     LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId,
     TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId,
+    UseId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption, skip_diagnostic,
@@ -1052,19 +1053,19 @@ pub fn impl_implicit_impl_by_name(
     Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
 }
 
-/// Query implementation of [SemanticGroup::impl_all_used_items].
-pub fn impl_all_used_items(
+/// Query implementation of [SemanticGroup::impl_all_used_uses].
+pub fn impl_all_used_uses(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
-    let mut all_used_items = db.impl_def_resolver_data(impl_def_id)?.used_items.clone();
+) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+    let mut all_used_uses = db.impl_def_resolver_data(impl_def_id)?.used_uses.clone();
     let data = db.priv_impl_definition_data(impl_def_id)?;
     for item in data.item_id_by_name.values() {
         for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(item.id), db) {
-            all_used_items.extend(resolver_data.used_items.iter().cloned());
+            all_used_uses.extend(resolver_data.used_uses.iter().cloned());
         }
     }
-    Ok(all_used_items.into())
+    Ok(all_used_uses.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_types].
