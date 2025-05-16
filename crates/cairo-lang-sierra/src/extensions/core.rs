@@ -36,6 +36,7 @@ use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
 use super::modules::gas::{GasBuiltinType, GasLibfunc};
+use super::modules::gas_reserve::{GasReserveLibfunc, GasReserveType};
 use super::modules::mem::MemLibfunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibfunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
@@ -70,6 +71,7 @@ define_type_hierarchy! {
         EcState(EcStateType),
         Felt252(Felt252Type),
         GasBuiltin(GasBuiltinType),
+        GasReserve(GasReserveType),
         IntRange(IntRangeType),
         BuiltinCosts(BuiltinCostsType),
         Uint8(Uint8Type),
@@ -125,6 +127,7 @@ define_libfunc_hierarchy! {
         Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
+        GasReserve(GasReserveLibfunc),
         IntRange(IntRangeLibfunc),
         Uint8(Uint8Libfunc),
         Uint16(Uint16Libfunc),

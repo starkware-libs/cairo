@@ -16,9 +16,12 @@ pub fn get_type_size_map(
     let mut type_sizes = TypeSizeMap::default();
     for declaration in &program.type_declarations {
         let size = match registry.get_type(&declaration.id).ok()? {
+            // Size 0.
             CoreTypeConcrete::Coupon(_) => Some(0),
+            // Size 1.
             CoreTypeConcrete::Felt252(_)
             | CoreTypeConcrete::GasBuiltin(_)
+            | CoreTypeConcrete::GasReserve(_)
             | CoreTypeConcrete::Bitwise(_)
             | CoreTypeConcrete::BuiltinCosts(_)
             | CoreTypeConcrete::EcOp(_)
@@ -51,11 +54,13 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Bytes31(_)
             | CoreTypeConcrete::BoundedInt(_)
             | CoreTypeConcrete::QM31(_) => Some(1),
+            // Size 2.
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_)
             | CoreTypeConcrete::IntRange(_) => Some(2),
+            // Other.
             CoreTypeConcrete::NonZero(wrapped_ty)
             | CoreTypeConcrete::Snapshot(wrapped_ty)
             | CoreTypeConcrete::Uninitialized(wrapped_ty) => {

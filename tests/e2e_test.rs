@@ -72,6 +72,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         felt252_downcast: "felt252_downcast",
         felt252: "felt252",
         fixed_size_array: "fixed_size_array",
+        gas_reserve: "gas_reserve",
         i128: "i128",
         i16: "i16",
         i32: "i32",

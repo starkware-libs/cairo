@@ -28,6 +28,7 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, GetUnspentGas, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
+use cairo_lang_sierra::extensions::gas_reserve::GasReserveConcreteLibfunc;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -265,6 +266,12 @@ pub fn core_libfunc_cost(
                 ]
             }
             GetBuiltinCosts(_) => vec![ConstCost::steps(3).into()],
+        },
+        GasReserve(libfunc) => match libfunc {
+            GasReserveConcreteLibfunc::Create(_) => vec![
+                (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+            ],
         },
         BranchAlign(_) => vec![BranchCost::BranchAlign],
         Array(libfunc) => match libfunc {

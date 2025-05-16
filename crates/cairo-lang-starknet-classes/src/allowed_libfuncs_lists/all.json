@@ -86,6 +86,7 @@
         "felt252_sub_const",
         "finalize_locals",
         "function_call",
+        "gas_reserve_create",
         "get_block_hash_syscall",
         "get_builtin_costs",
         "get_circuit_descriptor",
