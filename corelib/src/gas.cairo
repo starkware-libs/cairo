@@ -77,3 +77,10 @@ pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
 pub fn get_builtin_costs() -> BuiltinCosts nopanic {
     BuiltinCosts {}
 }
+
+pub extern type GasCoupon;
+
+/// Buys a GasCoupon with the given amount of gas.
+pub extern fn gas_coupon_buy(
+    amount: u128,
+) -> Option<GasCoupon> implicits(RangeCheck, GasBuiltin) nopanic;
