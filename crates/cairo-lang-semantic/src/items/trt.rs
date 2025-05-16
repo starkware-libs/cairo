@@ -16,6 +16,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
+use salsa::InternKey;
 use smol_str::SmolStr;
 
 use super::TraitOrImplContext;
@@ -586,6 +587,7 @@ pub fn trait_all_used_items(
             all_used_items.extend(resolver_data.used_items.iter().cloned());
         }
     }
+    all_used_items.sort_by_cached_key(|k| k.stable_location(db).stable_ptr().as_intern_id());
     Ok(all_used_items.into())
 }
 
