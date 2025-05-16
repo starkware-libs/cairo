@@ -84,3 +84,7 @@ pub extern type GasCoupon;
 pub extern fn gas_coupon_buy(
     amount: u128,
 ) -> Option<GasCoupon> implicits(RangeCheck, GasBuiltin) nopanic;
+
+/// Adds the gas stored in the coupon back to the gas counter.
+/// The coupon is consumed in the process.
+pub extern fn redeposit_gas_coupon(coupon: GasCoupon) implicits(GasBuiltin) nopanic;

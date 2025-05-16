@@ -16,6 +16,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         GasCouponConcreteLibfunc::Buy(_) => build_buy_gas_coupon(builder),
+        GasCouponConcreteLibfunc::Redeposit(_) => build_redeposit_gas_coupon(builder),
     }
 }
 
@@ -63,5 +64,27 @@ fn build_buy_gas_coupon(
             }],
             extra_costs: None,
         },
+    ))
+}
+
+/// Handles the redeposit_coupon invocation.
+fn build_redeposit_gas_coupon(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [gas_counter, coupon] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref gas_counter;
+        deref coupon;
+    };
+
+    casm_build_extend! {casm_builder,
+        let updated_gas = gas_counter + coupon;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[updated_gas]], None)],
+        Default::default(),
     ))
 }

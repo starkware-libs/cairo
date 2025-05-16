@@ -1,7 +1,7 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::gas::GasBuiltinType;
 use crate::extensions::modules::int::unsigned128::Uint128Type;
@@ -29,6 +29,7 @@ impl NoGenericArgsGenericType for GasCouponType {
 define_libfunc_hierarchy! {
     pub enum GasCouponLibfunc {
         Buy(GasCouponBuyLibfunc),
+        Redeposit(RedepositGasCouponLibfunc),
     }, GasCouponConcreteLibfunc
 }
 
@@ -84,5 +85,29 @@ impl NoGenericArgsGenericLibfunc for GasCouponBuyLibfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for redepositing a gas coupon back into the gas counter.
+#[derive(Default)]
+pub struct RedepositGasCouponLibfunc {}
+impl NoGenericArgsGenericLibfunc for RedepositGasCouponLibfunc {
+    const STR_ID: &'static str = "redeposit_gas_coupon";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let gas_coupon_type = context.get_concrete_type(GasCouponType::id(), &[])?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![gas_builtin_type.clone(), gas_coupon_type],
+            vec![OutputVarInfo {
+                ty: gas_builtin_type,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }
