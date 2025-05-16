@@ -275,7 +275,7 @@ impl SierraCasmRunner {
         // Total weight of Sierra statements grouped by the respective (collapsed) user function
         // call stack.
         let mut scoped_sierra_statement_weights = OrderedHashMap::default();
-        for step in trace.iter() {
+        for step in trace {
             // Skip the header.
             if step.pc < real_pc_0 {
                 continue;
