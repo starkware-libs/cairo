@@ -136,7 +136,9 @@ fn visible_importables_in_module_ex(
         if !is_visible(use_id.name(db))? {
             continue;
         }
-        let resolved_item = db.use_resolved_item(use_id).ok()?;
+        let Some(resolved_item) = db.use_resolved_item(use_id).ok() else {
+            continue;
+        };
         let (resolved_item, name) = match resolved_item {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
                 result.extend_from_slice(
