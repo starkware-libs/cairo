@@ -89,3 +89,7 @@ pub extern type GasReserve;
 pub extern fn gas_reserve_create(
     amount: u128,
 ) -> Option<GasReserve> implicits(RangeCheck, GasBuiltin) nopanic;
+
+/// Adds the gas stored in the reserve back to the gas counter.
+/// The reserve is consumed in the process.
+pub extern fn gas_reserve_utilize(reserve: GasReserve) implicits(GasBuiltin) nopanic;

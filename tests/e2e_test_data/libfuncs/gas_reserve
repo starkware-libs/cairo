@@ -75,3 +75,36 @@ store_temp<core::option::Option::<core::gas::GasReserve>>([12]) -> ([12]);
 return([6], [10], [12]);
 
 test::foo@F0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::option::Option::<core::gas::GasReserve>);
+
+//! > ==========================================================================
+
+//! > gas_reserve_utilize libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn foo(reserve: gas::GasReserve) {
+    gas::gas_reserve_utilize(reserve)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type GasReserve = GasReserve [storable: true, drop: true, dup: false, zero_sized: false];
+
+libfunc gas_reserve_utilize = gas_reserve_utilize;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+
+F0:
+gas_reserve_utilize([0], [1]) -> ([2]);
+store_temp<GasBuiltin>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: GasBuiltin, [1]: GasReserve) -> (GasBuiltin);

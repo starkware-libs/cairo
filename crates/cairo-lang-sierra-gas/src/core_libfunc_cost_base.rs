@@ -272,6 +272,7 @@ pub fn core_libfunc_cost(
                 (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
                 (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
             ],
+            GasReserveConcreteLibfunc::Utilize(_) => vec![ConstCost::steps(0).into()],
         },
         BranchAlign(_) => vec![BranchCost::BranchAlign],
         Array(libfunc) => match libfunc {

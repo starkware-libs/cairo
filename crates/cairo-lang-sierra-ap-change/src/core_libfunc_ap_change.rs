@@ -222,6 +222,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             GasReserveConcreteLibfunc::Create(_) => {
                 vec![ApChange::Known(2), ApChange::Known(3)]
             }
+            GasReserveConcreteLibfunc::Utilize(_) => vec![ApChange::Known(0)],
         },
         Uint8(libfunc) => uint_ap_change(libfunc),
         Uint16(libfunc) => uint_ap_change(libfunc),
