@@ -16,11 +16,11 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use defs::ids::NamedLanguageElementId;
-use itertools::{Itertools, chain};
+use itertools::{Itertools, chain, zip_eq};
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::blocks::Blocks;
+use crate::blocks::{Blocks, BlocksBuilder};
 use crate::borrow_check::{
     PotentialDestructCalls, borrow_check, borrow_check_possible_withdraw_gas,
 };
@@ -29,9 +29,13 @@ use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, GenericOrSpecialized, LocationId,
+    SpecializedFunction,
+};
 use crate::inline::get_inline_diagnostics;
 use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
@@ -39,7 +43,8 @@ use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyI
 use crate::panic::lower_panics;
 use crate::utils::InliningStrategy;
 use crate::{
-    BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
+    Block, BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo,
+    Statement, StatementCall, StatementConst, VarUsage, VariableId, ids,
 };
 
 /// A trait for estimation of the code size of a function.
@@ -432,34 +437,90 @@ fn lowered_body(
     function: ids::ConcreteFunctionWithBodyId,
     stage: LoweringStage,
 ) -> Maybe<Arc<Lowered>> {
-    match stage {
-        LoweringStage::Monomorphized => {
-            let generic_function_id = function.function_with_body_id(db);
-            db.function_with_body_lowering_diagnostics(generic_function_id)?.check_error_free()?;
-            let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
-            concretize_lowered(db, &mut lowered, &function.substitution(db)?)?;
-            Ok(Arc::new(lowered))
-        }
+    let lowered = match stage {
+        LoweringStage::Monomorphized => match function.generic_or_specialized(db) {
+            GenericOrSpecialized::Generic(generic_function_id) => {
+                db.function_with_body_lowering_diagnostics(generic_function_id)?
+                    .check_error_free()?;
+                let mut lowered = (*db.function_with_body_lowering(generic_function_id)?).clone();
+                concretize_lowered(db, &mut lowered, &function.substitution(db)?)?;
+                lowered
+            }
+            GenericOrSpecialized::Specialized(specialized) => {
+                specialized_function_lowered(db, specialized)?
+            }
+        },
         LoweringStage::PreOptimizations => {
             let mut lowered = (*db.lowered_body(function, LoweringStage::Monomorphized)?).clone();
             add_withdraw_gas(db, function, &mut lowered)?;
             lower_panics(db, function, &mut lowered)?;
             add_destructs(db, function, &mut lowered);
             scrub_units(db, &mut lowered);
-            Ok(Arc::new(lowered))
+            lowered
         }
         LoweringStage::PostBaseline => {
             let mut lowered =
                 (*db.lowered_body(function, LoweringStage::PreOptimizations)?).clone();
             db.baseline_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
-            Ok(Arc::new(lowered))
+            lowered
         }
         LoweringStage::Final => {
             let mut lowered = (*db.lowered_body(function, LoweringStage::PostBaseline)?).clone();
             db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
-            Ok(Arc::new(lowered))
+            lowered
         }
+    };
+    Ok(Arc::new(lowered))
+}
+
+/// Returns the lowering of a specialized function.
+fn specialized_function_lowered(
+    db: &dyn LoweringGroup,
+    specialized: SpecializedFunction,
+) -> Maybe<Lowered> {
+    let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
+    let base_semantic = specialized.base.base_semantic_function(db);
+    let mut variables =
+        VariableAllocator::new(db, base_semantic.function_with_body_id(db), Default::default())?;
+    let mut statement = vec![];
+    let mut parameters = vec![];
+    for (param, arg) in zip_eq(&base.parameters, specialized.args.iter()) {
+        let var_id = variables.variables.alloc(base.variables[*param].clone());
+        if let Some(arg) = arg {
+            statement.push(Statement::Const(StatementConst { value: arg.clone(), output: var_id }));
+            continue;
+        }
+        parameters.push(var_id);
     }
+    let location = LocationId::from_stable_location(
+        db,
+        specialized.base.base_semantic_function(db).stable_location(db),
+    );
+    let inputs =
+        variables.variables.iter().map(|(var_id, _)| VarUsage { var_id, location }).collect();
+    let outputs: Vec<VariableId> =
+        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
+            .map(|ty| variables.new_var(VarRequest { ty, location }))
+            .collect_vec();
+    let mut block_builder = BlocksBuilder::new();
+    let ret_usage =
+        outputs.iter().map(|var_id| VarUsage { var_id: *var_id, location }).collect_vec();
+    statement.push(Statement::Call(StatementCall {
+        function: specialized.base.function_id(db)?,
+        with_coupon: false,
+        inputs,
+        outputs,
+        location,
+    }));
+    block_builder
+        .alloc(Block { statements: statement, end: BlockEnd::Return(ret_usage, location) });
+    Ok(Lowered {
+        signature: specialized.signature(db)?,
+        variables: variables.variables,
+        blocks: block_builder.build().unwrap(),
+        parameters,
+        diagnostics: Default::default(),
+    })
 }
 
 /// Given the lowering of a function, returns the set of direct dependencies of that function,

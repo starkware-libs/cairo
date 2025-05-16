@@ -251,6 +251,15 @@ impl<'db> FunctionInlinerRewriter<'db> {
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
             if let Some(called_func) = stmt.function.body(self.variables.db)? {
+                if let crate::ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) =
+                    self.calling_function_id.lookup_intern(self.variables.db)
+                {
+                    if specialized.base == called_func {
+                        // A specialized function should always inline its base.
+                        return self.inline_function(called_func, stmt);
+                    }
+                }
+
                 // TODO: Implement better logic to avoid inlining of destructors that call
                 // themselves.
                 if called_func != self.calling_function_id

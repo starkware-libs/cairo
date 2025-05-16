@@ -72,6 +72,9 @@ pub mod refs;
 #[cfg(test)]
 mod generated_test;
 
+#[cfg(test)]
+mod specialized_test;
+
 /// Lowering of a function together with extra generated functions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {

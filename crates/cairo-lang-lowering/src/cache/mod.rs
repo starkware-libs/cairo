@@ -1390,6 +1390,9 @@ impl FunctionCached {
             FunctionLongId::Generated(id) => {
                 FunctionCached::Generated(GeneratedFunctionCached::new(id, ctx))
             }
+            FunctionLongId::Specialized(_) => {
+                unreachable!("Specialization of functions only occurs post concretization.")
+            }
         }
     }
     fn embed(self, ctx: &mut CacheLoadingContext<'_>) -> FunctionId {

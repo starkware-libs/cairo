@@ -2,7 +2,9 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::{LoweringGroup, get_direct_callees};
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId, GenericOrSpecialized,
+};
 use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
@@ -31,7 +33,12 @@ pub fn function_with_body_direct_function_with_body_callees(
         .collect::<Maybe<Vec<Option<_>>>>()?
         .into_iter()
         .flatten()
-        .map(|x| x.function_with_body_id(db))
+        .map(|x| match x.generic_or_specialized(db) {
+            GenericOrSpecialized::Generic(id) => id,
+            GenericOrSpecialized::Specialized(_) => {
+                unreachable!("Specialization of functions only occurs post concretization.")
+            }
+        })
         .collect())
 }
 

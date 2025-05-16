@@ -24,6 +24,9 @@ fn concretize_function(
             })
             .intern(db))
         }
+        FunctionLongId::Specialized(_) => {
+            unreachable!("Specialization of functions only occurs post concretization.")
+        }
     }
 }
 
