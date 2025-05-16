@@ -1,5 +1,5 @@
 use crate::num::traits::{
-    BitSize, Bounded, CheckedAdd, CheckedMul, CheckedSub, OverflowingAdd, OverflowingMul,
+    BitSize, Bounded, CheckedAdd, CheckedMul, CheckedSub, DivRem, OverflowingAdd, OverflowingMul,
     OverflowingSub, Pow, SaturatingAdd, SaturatingMul, SaturatingSub, WrappingAdd, WrappingMul,
     WrappingSub,
 };
@@ -466,4 +466,50 @@ fn test_pow() {
     assert_eq!(2.pow(8), 0b100000000);
     assert_eq!(2.pow(9), 0b1000000000);
     assert_eq!(2.pow(10), 0b10000000000);
+}
+
+
+#[test]
+fn test_divrem() {
+    assert_eq!(DivRem::<u32, u32>::div_rem(27, 4), (6, 3));
+    assert_eq!(DivRem::<u256, u128>::div_rem(20, 6), (3, 2));
+    assert_eq!(DivRem::<u8, u8>::div_rem(5, 9), (0, 5));
+    assert_eq!(DivRem::<u16, u16>::div_rem(0xfffb, 0x10), (0x0fff, 0xb));
+    assert_eq!(DivRem::<u32, u32>::div_rem(0x1234_5678, 1), (0x1234_5678, 0));
+    assert_eq!(DivRem::<u64, u64>::div_rem(0, 17), (0, 0));
+    assert_eq!(DivRem::<u128, u128>::div_rem(123_456, 123_456), (1, 0));
+    assert_eq!(
+        DivRem::<u128, u128>::div_rem(core::num::traits::Bounded::<u128>::MAX, 10),
+        (34028236692093846346337460743176821145_u128, 5),
+    );
+    assert_eq!(DivRem::<u256, u256>::div_rem(1000_u256, 33), (30_u256, 10_u256));
+    assert_eq!(DivRem::<u256, u128>::div_rem(123_u256, 10), (12_u256, 3_u128));
+}
+
+
+#[test]
+fn test_divrem_legacy() {
+    assert_eq!(crate::traits::DivRem::div_rem(27_u32, 4), (6, 3));
+    assert_eq!(crate::traits::DivRem::div_rem(0x12_u8, 1), (0x12, 0));
+    assert_eq!(crate::traits::DivRem::div_rem(5_u16, 7), (0, 5));
+    assert_eq!(crate::traits::DivRem::div_rem(1_000_000_u64, 1_000), (1_000, 0));
+    assert_eq!(
+        crate::traits::DivRem::div_rem(
+            Bounded::<u128>::MAX, Bounded::<u128>::MAX.try_into().unwrap(),
+        ),
+        (1, 0),
+    );
+    assert_eq!(crate::traits::DivRem::div_rem(20_u256, 6), (3_u256, 2_u256));
+}
+
+/// One-off impl for the above test.
+impl U256ByU128DivRem of DivRem<u256, u128> {
+    type Quotient = u256;
+    type Remainder = u128;
+
+    fn div_rem(lhs: u256, rhs: NonZero<u128>) -> (u256, u128) {
+        let rhs_u128: u128 = rhs.into();
+        let rhs: u256 = rhs_u128.into();
+        (lhs / rhs, (lhs % rhs).low)
+    }
 }
