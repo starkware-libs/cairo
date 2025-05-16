@@ -23,14 +23,17 @@ use smol_str::SmolStr;
 
 use crate::corelib::CoreInfo;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::expr::inference::{self, ImplVar, ImplVarId};
+use crate::expr::inference::canonic::CanonicalImpl;
+use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::{self, ImplVar, ImplVarId, InferenceResult};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstCalcInfo, ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{GenericFunctionId, ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplItemInfo, ImplLookupContext, ImplicitImplImplData, UninferredImpl,
+    ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId, ImplicitImplImplData, TraitFilter,
+    UninferredImpl,
 };
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
@@ -129,6 +132,12 @@ pub trait SemanticGroup:
         &self,
         id: items::imp::UninferredGeneratedImplLongId,
     ) -> items::imp::UninferredGeneratedImplId;
+
+    #[salsa::interned]
+    fn intern_impl_lookup_context(
+        &self,
+        id: items::imp::ImplLookupContext,
+    ) -> items::imp::ImplLookupContextId;
 
     // Const.
     // ====
@@ -697,13 +706,6 @@ pub trait SemanticGroup:
     // Trait filter.
     // ==============
     /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
-    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
-    #[salsa::cycle(items::imp::module_impl_ids_for_trait_filter_cycle)]
-    fn module_impl_ids_for_trait_filter(
-        &self,
-        module_id: ModuleId,
-        trait_lookup_constraint: items::imp::TraitFilter,
-    ) -> Maybe<Vec<UninferredImpl>>;
     #[salsa::invoke(items::imp::impl_impl_ids_for_trait_filter)]
     #[salsa::cycle(items::imp::impl_impl_ids_for_trait_filter_cycle)]
     fn impl_impl_ids_for_trait_filter(
@@ -717,12 +719,20 @@ pub trait SemanticGroup:
     fn canonic_trait_solutions(
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
-        lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
         inference::InferenceError,
     >;
+
+    #[salsa::invoke(inference::solver::candidate_solution_set)]
+    fn candidate_solution_set(
+        &self,
+        mut candidate: inference::solver::CandidateSolver,
+        canonical_trait: inference::canonic::CanonicalTrait,
+        impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
+    ) -> InferenceResult<SolutionSet<CanonicalImpl>>;
 
     // Impl.
     // =======
@@ -1187,6 +1197,27 @@ pub trait SemanticGroup:
         impl_function_id: ImplFunctionId,
     ) -> Maybe<items::function_with_body::FunctionBodyData>;
 
+    #[salsa::invoke(items::imp::impl_lookup_context_insert_lookup_scope)]
+    fn impl_lookup_context_insert_lookup_scope(
+        &self,
+        impl_lookup_context_id: ImplLookupContextId,
+        uninferred_impl: UninferredImpl,
+    ) -> ImplLookupContextId;
+
+    #[salsa::invoke(items::imp::impl_lookup_context_insert_module)]
+    fn impl_lookup_context_insert_module(
+        &self,
+        impl_lookup_context_id: ImplLookupContextId,
+        module_id: ModuleId,
+    ) -> ImplLookupContextId;
+
+    #[salsa::invoke(items::imp::find_candidates_at_context)]
+    fn find_candidates_at_context(
+        &self,
+        lookup_context: ImplLookupContextId,
+        filter: TraitFilter,
+    ) -> Maybe<OrderedHashSet<UninferredImpl>>;
+
     // Implizations.
     // ==============
     /// Returns the impl type for the given trait type, by implization by the given impl context, if
@@ -1524,7 +1555,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(types::type_info)]
     fn type_info(
         &self,
-        lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContextId,
         ty: types::TypeId,
     ) -> Maybe<types::TypeInfo>;
 
