@@ -23,6 +23,7 @@ use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType, GasConcreteLibfunc};
+use cairo_lang_sierra::extensions::gas_coupon::GasCouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -216,6 +217,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 ]
             }
             GasConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
+        },
+        GasCoupon(libfunc) => match libfunc {
+            GasCouponConcreteLibfunc::Buy(_) => {
+                vec![ApChange::Known(2), ApChange::Known(3)]
+            }
         },
         Uint8(libfunc) => uint_ap_change(libfunc),
         Uint16(libfunc) => uint_ap_change(libfunc),
