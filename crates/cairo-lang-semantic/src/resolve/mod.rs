@@ -4,9 +4,8 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
-    VariantId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
+    ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
@@ -168,8 +167,8 @@ pub struct ResolverData {
     pub trait_or_impl_ctx: TraitOrImplContext,
     /// The configuration of allowed features.
     pub feature_config: FeatureConfig,
-    /// The set of used items in the current context.
-    pub used_items: OrderedHashSet<LookupItemId>,
+    /// The set of used `use` items in the current context.
+    pub used_uses: OrderedHashSet<UseId>,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -182,7 +181,7 @@ impl ResolverData {
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
             feature_config: Default::default(),
-            used_items: Default::default(),
+            used_uses: Default::default(),
         }
     }
     pub fn clone_with_inference_id(
@@ -199,7 +198,7 @@ impl ResolverData {
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
             feature_config: self.feature_config.clone(),
-            used_items: self.used_items.clone(),
+            used_uses: self.used_uses.clone(),
         }
     }
 }
@@ -420,7 +419,7 @@ impl<'db> Resolver<'db> {
         let generic_args_syntax = segment.generic_args(db);
         let segment_stable_ptr = segment.stable_ptr(db).untyped();
         self.validate_module_item_usability(diagnostics, module_id, identifier, &inner_item_info);
-        self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+        self.insert_used_use(inner_item_info.item_id);
         let inner_generic_item =
             ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
         let mut specialized_item = self.specialize_generic_module_item(
@@ -700,9 +699,7 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::FoundThroughGlobalUse {
                         item_info: inner_module_item, ..
                     } => {
-                        self.data
-                            .used_items
-                            .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
+                        self.insert_used_use(inner_module_item.item_id);
                         let generic_item = ResolvedGenericItem::from_module_item(
                             self.db,
                             inner_module_item.item_id,
@@ -737,10 +734,7 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::FoundThroughGlobalUse {
                         item_info: inner_module_item, ..
                     } => {
-                        self.data
-                            .used_items
-                            .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
-
+                        self.insert_used_use(inner_module_item.item_id);
                         let generic_item = ResolvedGenericItem::from_module_item(
                             self.db,
                             inner_module_item.item_id,
@@ -911,7 +905,6 @@ impl<'db> Resolver<'db> {
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
-                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
                 Ok(match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
                         ResolvedConcreteItem::Function(self.specialize_function(
@@ -955,7 +948,6 @@ impl<'db> Resolver<'db> {
                 {
                     self.validate_feature_constraints(diagnostics, identifier, &trait_item_info);
                 }
-                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -1066,7 +1058,6 @@ impl<'db> Resolver<'db> {
                         self.validate_feature_constraints(diagnostics, identifier, &impl_item_info);
                     }
                 }
-                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -1287,7 +1278,7 @@ impl<'db> Resolver<'db> {
     ) -> Option<ModuleItemInfo> {
         let inner_item_info = self.db.module_item_info_by_name(module_id, identifier.text(self.db));
         if let Ok(Some(inner_item_info)) = inner_item_info {
-            self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+            self.insert_used_use(inner_item_info.item_id);
             return Some(inner_item_info);
         }
         None
@@ -1319,7 +1310,7 @@ impl<'db> Resolver<'db> {
                     identifier,
                     &inner_item_info,
                 );
-                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+                self.insert_used_use(inner_item_info.item_id);
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
@@ -1899,6 +1890,13 @@ impl<'db> Resolver<'db> {
                 containing_module_id,
                 user_module,
             )
+    }
+
+    /// Inserts an item into the used uses set, if it is indeed a use.
+    pub fn insert_used_use(&mut self, item_id: ModuleItemId) {
+        if let ModuleItemId::Use(use_id) = item_id {
+            self.data.used_uses.insert(use_id);
+        }
     }
 
     /// Checks if an item uses a feature that is not allowed.

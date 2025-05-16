@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
     NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitConstantLongId,
     TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
-    TraitTypeId, TraitTypeLongId,
+    TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -574,19 +574,19 @@ pub fn trait_item_info_by_name(
     Ok(trait_definition_data.get_trait_item_info(&name))
 }
 
-/// Query implementation of [SemanticGroup::trait_all_used_items].
-pub fn trait_all_used_items(
+/// Query implementation of [SemanticGroup::trait_all_used_uses].
+pub fn trait_all_used_uses(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
-    let mut all_used_items = db.trait_resolver_data(trait_id)?.used_items.clone();
+) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+    let mut all_used_uses = db.trait_resolver_data(trait_id)?.used_uses.clone();
     let data = db.priv_trait_definition_data(trait_id)?;
     for item in data.item_id_by_name.values() {
         for resolver_data in get_resolver_data_options(LookupItemId::TraitItem(item.id), db) {
-            all_used_items.extend(resolver_data.used_items.iter().cloned());
+            all_used_uses.extend(resolver_data.used_uses.iter().cloned());
         }
     }
-    Ok(all_used_items.into())
+    Ok(all_used_uses.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].

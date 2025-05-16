@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    TraitId,
+    TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -150,30 +150,30 @@ pub fn get_module_global_uses(
     Ok(module_data.global_uses.clone())
 }
 
-/// Query implementation of [SemanticGroup::module_all_used_items].
-pub fn module_all_used_items(
+/// Query implementation of [SemanticGroup::module_all_used_uses].
+pub fn module_all_used_uses(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
-    let mut all_used_items = OrderedHashSet::default();
+) -> Maybe<Arc<OrderedHashSet<UseId>>> {
+    let mut all_used_uses = OrderedHashSet::default();
     let module_items = db.module_items(module_id)?;
     for item in module_items.iter() {
         if let Some(items) = match *item {
             ModuleItemId::Submodule(submodule_id) => {
-                Some(db.module_all_used_items(ModuleId::Submodule(submodule_id))?)
+                Some(db.module_all_used_uses(ModuleId::Submodule(submodule_id))?)
             }
-            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_items(trait_id)?),
-            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_items(impl_id)?),
+            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_uses(trait_id)?),
+            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_uses(impl_id)?),
             _ => None,
         } {
-            all_used_items.extend(items.iter().cloned());
+            all_used_uses.extend(items.iter().cloned());
         } else {
             for resolver_data in get_resolver_data_options(LookupItemId::ModuleItem(*item), db) {
-                all_used_items.extend(resolver_data.used_items.iter().cloned());
+                all_used_uses.extend(resolver_data.used_uses.iter().cloned());
             }
         }
     }
-    Ok(all_used_items.into())
+    Ok(all_used_uses.into())
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].

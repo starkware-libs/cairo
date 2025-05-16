@@ -3076,7 +3076,9 @@ fn method_call_expr(
             );
         }
     }
-    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
+    if let LookupItemId::ModuleItem(item_id) = candidate_traits[&actual_trait_id] {
+        ctx.resolver.insert_used_use(item_id);
+    }
     ctx.resolver.data.resolved_items.mark_concrete(
         ctx.db,
         &segment,
