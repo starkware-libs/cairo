@@ -716,7 +716,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 let kind = node.kind(db);
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
-                Self { children: node.get_children(db).into(), node }
+                Self { children: node.get_children(db), node }
             }
             fn cast(db: &dyn SyntaxGroup, node: SyntaxNode) -> Option<Self> {
                 let kind = node.kind(db);
